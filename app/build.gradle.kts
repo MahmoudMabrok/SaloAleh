@@ -40,6 +40,8 @@ kotlin {
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.androidx.lifecycle.viewmodel)
+            implementation(libs.androidx.lifecycle.runtime.compose)
+            implementation(compose.materialIconsExtended)
         }
         androidMain.dependencies {
             implementation(libs.androidx.core.ktx)
