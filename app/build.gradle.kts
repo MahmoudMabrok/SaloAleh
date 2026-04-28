@@ -58,6 +58,11 @@ kotlin {
     }
 }
 
+compose.resources {
+    packageOfResClass = "tools.mo3ta.salo.generated.resources"
+    generateResClass = always
+}
+
 android {
     namespace = "tools.mo3ta.salo"
     compileSdk = 36
@@ -84,5 +89,12 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    sourceSets {
+        getByName("main") {
+            res.srcDirs("src/main/res")
+            assets.srcDirs("src/main/assets")
+        }
     }
 }
