@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">محبو محمد</string>
+
+    <!-- Counter -->
+    <string name="mohamed_lovers_counter_tag">صلوات على النبي ﷺ</string>
+    <string name="mohamed_lovers_friday_bonus_label">مضاعفة الجمعة × 2</string>
+    <string name="mohamed_lovers_counter_pending">جلسة: %1$d</string>
+    <string name="mohamed_lovers_counter_hint">انقر للصلاة على النبي ﷺ</string>
+
+    <!-- Arch Shrine -->
+    <string name="mohamed_lovers_shrine_label">روضة النبي ﷺ</string>
+    <string name="mohamed_lovers_shrine_sub">اللهم صلِّ وسلِّم وبارك عليه</string>
+
+    <!-- Hadith Banner -->
+    <string name="mohamed_lovers_hadith_isnad">عن أنس بن مالك رضي الله عنه أن النبي ﷺ قال:</string>
+    <string name="mohamed_lovers_hadith_quote">«من صلَّى عليَّ صلاةً واحدةً، صلَّى الله عليه عَشْرَ صلوات»</string>
+
+    <!-- Info Sheet -->
+    <string name="mohamed_lovers_info_sheet_title">محبو محمد ﷺ</string>
+    <string name="mohamed_lovers_status_title">الحالة</string>
+    <string name="mohamed_lovers_status_waiting_network">جارٍ مزامنة الوقت من الشبكة…</string>
+    <string name="mohamed_lovers_status_firebase_off">الاتصال بالخدمة غير متاح</string>
+    <string name="mohamed_lovers_status_open">متصل</string>
+    <string name="mohamed_lovers_network_time">الوقت: %1$s</string>
+    <string name="mohamed_lovers_country_label">الدولة: %1$s</string>
+    <string name="mohamed_lovers_self_tag_label">المعرف: %1$s</string>
+    <string name="mohamed_lovers_leaderboard_title">المتصدرون</string>
+    <string name="mohamed_lovers_rank_pending_top">أنت في طريقك إلى الصدارة</string>
+    <string name="mohamed_lovers_leaderboard_empty">لا يوجد مشاركون بعد</string>
+    <string name="mohamed_lovers_winner_title">أنت الفائز!</string>
+    <string name="mohamed_lovers_winner_placeholder">سيُعلَن عنه قريباً</string>
+    <string name="mohamed_lovers_banner">كل جمعة تُضاعَف الصلوات — لا تفوِّت فرصة الجمعة!</string>
+
+    <!-- Screen / Platform Actions -->
+    <string name="mohamed_lovers_code_copied">تم نسخ الكود</string>
+    <string name="mohamed_lovers_connection_error">خطأ في الاتصال، يُرجى المحاولة لاحقاً</string>
+    <string name="mohamed_lovers_prayer_text">اللهم صلِّ على محمد</string>
+    <string name="mohamed_lovers_reward_text">نورٌ من نورك</string>
+    <string name="mohamed_lovers_blocked_waiting_network">جارٍ مزامنة الوقت…</string>
+    <string name="mohamed_lovers_blocked_firebase_off">الاتصال غير متاح</string>
+    <string name="mohamed_lovers_back_cd">رجوع</string>
+    <string name="mohamed_lovers_info_cd">معلومات</string>
+</resources>
