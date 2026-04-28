@@ -16,7 +16,7 @@ class MohamedLoversFirebaseClient {
 
     private val authMutex = Mutex()
 
-    fun isConfigured(): Boolean = runCatching { Firebase.app }.isSuccess
+    fun isConfigured(): Boolean = runCatching { Firebase.auth }.isSuccess
 
     suspend fun ensureSignedInAnonymously(): Result<String> = authMutex.withLock {
         runCatching {
@@ -52,18 +52,14 @@ class MohamedLoversFirebaseClient {
         countryCode: String,
     ): Result<Unit> = runCatching {
         val safeCode = countryCode.takeIf { it.length >= 2 } ?: MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE
-        Firebase.database.reference(playersPath(roundKey)).child(uid).runTransaction {
-            val current = value as? Map<*, *> ?: emptyMap<String, Any?>()
-            val existingTotal = (current[TOTAL_COUNT_KEY] as? Number)?.toInt() ?: 0
-            value = mapOf(
+        Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(
+            mapOf(
                 UID_KEY to uid,
                 COUNTRY_CODE_KEY to safeCode,
-                TOTAL_COUNT_KEY to (existingTotal + delta),
-                IS_WINNER_KEY to (current[IS_WINNER_KEY] as? Boolean ?: false),
-                WINNER_CODE_KEY to (current[WINNER_CODE_KEY] as? String ?: ""),
+                TOTAL_COUNT_KEY to ServerValue.increment(delta.toDouble()),
                 UPDATED_AT_KEY to ServerValue.TIMESTAMP,
             )
-        }
+        )
     }
 
     private fun playersPath(roundKey: String) = "$ROOT_PATH/$roundKey/$PLAYERS_PATH"

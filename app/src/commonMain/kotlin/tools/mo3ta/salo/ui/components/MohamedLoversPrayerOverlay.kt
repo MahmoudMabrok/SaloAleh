@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -77,7 +78,7 @@ internal fun MohamedLoversPrayerOverlay(
                     val windowTap = Offset(tapPoint.x + overlayOrigin.x, tapPoint.y + overlayOrigin.y)
                     ripples += RippleMark(id = id, at = windowTap)
 
-                    val now = System.currentTimeMillis()
+                    val now = Clock.System.now().toEpochMilliseconds()
                     val scheduledAt = max(now, lastEmitAt[0] + EMIT_INTERVAL_MS)
                     lastEmitAt[0] = scheduledAt
                     val waitMs = scheduledAt - now
