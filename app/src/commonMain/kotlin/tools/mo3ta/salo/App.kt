@@ -8,6 +8,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 import tools.mo3ta.salo.domain.Achievement
 import tools.mo3ta.salo.domain.EngagementData
 import tools.mo3ta.salo.ui.AchievementCelebrationDialog
@@ -27,7 +30,7 @@ fun App(
         }
         var pendingBadge by remember {
             mutableStateOf(
-                engagementData?.newlyEarnedBadge?.let { Achievement.StreakBadge(it, kotlinx.datetime.Clock.System.todayIn(kotlinx.datetime.TimeZone.currentSystemDefault())) }
+                engagementData?.newlyEarnedBadge?.let { Achievement.StreakBadge(it, Clock.System.todayIn(TimeZone.currentSystemDefault())) }
             )
         }
         var showAchievements by remember { mutableStateOf(false) }
