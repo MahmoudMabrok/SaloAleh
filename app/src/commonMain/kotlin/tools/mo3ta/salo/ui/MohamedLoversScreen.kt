@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -139,6 +140,15 @@ fun MohamedLoversScreen(
                     Icon(
                         imageVector = Icons.Default.Info,
                         contentDescription = infoCd,
+                        tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
+                    )
+                }
+            }
+            Box(modifier = Modifier.align(Alignment.TopStart).padding(start = 14.dp, top = 36.dp)) {
+                IconButton(onClick = onOpenAchievements) {
+                    Icon(
+                        imageVector = Icons.Default.EmojiEvents,
+                        contentDescription = "الإنجازات",
                         tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
                     )
                 }
