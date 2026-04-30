@@ -21,7 +21,6 @@ import tools.mo3ta.salo.ui.NotificationRationaleDialog
 @Composable
 fun App(
     engagementData: EngagementData? = null,
-    allAchievements: List<Achievement> = emptyList(),
     onNotificationPermissionRequest: (() -> Unit)? = null,
 ) {
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
@@ -37,7 +36,6 @@ fun App(
 
         if (showAchievements) {
             AchievementsScreen(
-                achievements = allAchievements,
                 onBack = { showAchievements = false },
             )
         } else {

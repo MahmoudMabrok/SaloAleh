@@ -40,12 +40,10 @@ class MainActivity : ComponentActivity() {
 
         val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
         val engagementData = engagementStore.recordOpen(today)
-        val allAchievements = engagementStore.getAllAchievements()
 
         setContent {
             App(
                 engagementData = engagementData,
-                allAchievements = allAchievements,
                 onNotificationPermissionRequest = {
                     requestNotificationPermissionIfNeeded()
                 },

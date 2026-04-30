@@ -55,6 +55,8 @@ class EngagementStore(private val settings: Settings) {
         )
     }
 
+    fun getCurrentStreak(): Int = settings.getInt(KEY_STREAK, 1)
+
     fun missedDays(today: LocalDate): Int {
         val lastDateStr = settings.getStringOrNull(KEY_LAST_OPEN_DATE) ?: return 0
         val lastDate = LocalDate.parse(lastDateStr)
