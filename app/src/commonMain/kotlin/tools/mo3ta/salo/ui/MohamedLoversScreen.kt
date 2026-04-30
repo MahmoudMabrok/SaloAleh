@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -30,7 +29,6 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.generated.resources.Res
-import tools.mo3ta.salo.generated.resources.mohamed_lovers_back_cd
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_blocked_firebase_off
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_blocked_waiting_network
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_code_copied
@@ -51,7 +49,6 @@ import tools.mo3ta.salo.ui.components.MohamedLoversSkyBackground
 
 @Composable
 fun MohamedLoversScreen(
-    onBackClick: () -> Unit,
     viewModel: MohamedLoversViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -64,7 +61,6 @@ fun MohamedLoversScreen(
     val rewardText = stringResource(Res.string.mohamed_lovers_reward_text)
     val waitingNetworkLabel = stringResource(Res.string.mohamed_lovers_blocked_waiting_network)
     val firebaseOffLabel = stringResource(Res.string.mohamed_lovers_blocked_firebase_off)
-    val backCd = stringResource(Res.string.mohamed_lovers_back_cd)
     val infoCd = stringResource(Res.string.mohamed_lovers_info_cd)
 
     DisposableEffect(lifecycleOwner, viewModel) {
@@ -137,15 +133,6 @@ fun MohamedLoversScreen(
                 isFridayBonus = state.isFridayBonus,
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 40.dp),
             )
-            Box(modifier = Modifier.align(Alignment.TopStart).padding(start = 14.dp, top = 36.dp)) {
-                IconButton(onClick = onBackClick) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = backCd,
-                        tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
-                    )
-                }
-            }
             Box(modifier = Modifier.align(Alignment.TopEnd).padding(end = 14.dp, top = 36.dp)) {
                 IconButton(onClick = { infoSheetOpen = true }) {
                     Icon(

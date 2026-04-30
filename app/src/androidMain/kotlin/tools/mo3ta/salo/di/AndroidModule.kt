@@ -1,6 +1,7 @@
 package tools.mo3ta.salo.di
 
 import android.content.Context
+import com.russhwolf.settings.Settings
 import com.russhwolf.settings.SharedPreferencesSettings
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
@@ -12,7 +13,7 @@ import tools.mo3ta.salo.data.time.NetworkTimeProvider
 val androidModule = module {
     single<NetworkTimeProvider> { KronosNetworkTimeProvider(androidContext()) }
     single<CountryCodeProvider> { AndroidCountryCodeProvider(androidContext()) }
-    single {
+    single<Settings> {
         SharedPreferencesSettings(
             androidContext().getSharedPreferences("ml_session", Context.MODE_PRIVATE),
         )
