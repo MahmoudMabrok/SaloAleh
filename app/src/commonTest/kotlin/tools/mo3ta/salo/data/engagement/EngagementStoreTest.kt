@@ -94,6 +94,26 @@ class EngagementStoreTest {
     }
 
     @Test
+    fun streak30_badge30Earned_onThirtiethDay() {
+        val s = MapSettings()
+        val store = store(s)
+        for (day in 1..29) {
+            store.recordOpen(today = LocalDate(2026, 1, day))
+        }
+        val data = store.recordOpen(today = LocalDate(2026, 1, 30))
+        assertEquals(BadgeType.STREAK_30, data.newlyEarnedBadge)
+    }
+
+    @Test
+    fun streak30_badge30NotDuplicated() {
+        val s = MapSettings()
+        val store = store(s)
+        for (day in 1..30) { store.recordOpen(today = LocalDate(2026, 1, day)) }
+        val data = store.recordOpen(today = LocalDate(2026, 1, 31))
+        assertNull(data.newlyEarnedBadge)
+    }
+
+    @Test
     fun missedDays_returns3() {
         val s = MapSettings()
         val store = store(s)
@@ -139,5 +159,16 @@ class EngagementStoreTest {
         val all = store.getAllAchievements()
         assertTrue(all.any { it is Achievement.StreakBadge })
         assertTrue(all.any { it is Achievement.RankAchievement })
+    }
+
+    @Test
+    fun rankAchievements_malformedStorageEntry_validEntriesStillReturned() {
+        val s = MapSettings()
+        // Pre-seed one garbage entry and one valid entry
+        s.putString("eng_rank_achievements", "garbage;round-2026-04-30:5:2026-04-30")
+        val store = store(s)
+        val ranks = store.getAllAchievements().filterIsInstance<Achievement.RankAchievement>()
+        assertEquals(1, ranks.size)
+        assertEquals(5, ranks[0].rank)
     }
 }

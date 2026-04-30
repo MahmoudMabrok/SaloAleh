@@ -62,6 +62,10 @@ class EngagementStore(private val settings: Settings) {
         return if (days > 0) days.toInt() else 0
     }
 
+    /**
+     * [roundKey] must not contain ':' or ';' — these are used as field/record delimiters in storage.
+     * Current round keys (e.g. "round-2026-04-30") are safe. Entries with unexpected characters are silently dropped on read.
+     */
     fun checkAndSaveRankAchievement(roundKey: String, rank: Int, today: LocalDate): Achievement.RankAchievement? {
         val existing = getRankAchievementsRaw()
         if (existing.any { it.first == roundKey }) return null
@@ -84,8 +88,8 @@ class EngagementStore(private val settings: Settings) {
         }
         return (streakBadges + rankAchievements).sortedByDescending {
             when (it) {
-                is Achievement.StreakBadge -> it.earnedDate.toString()
-                is Achievement.RankAchievement -> it.earnedDate.toString()
+                is Achievement.StreakBadge -> it.earnedDate
+                is Achievement.RankAchievement -> it.earnedDate
             }
         }
     }
