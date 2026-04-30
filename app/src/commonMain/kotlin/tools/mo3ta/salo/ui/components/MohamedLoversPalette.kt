@@ -21,4 +21,7 @@ internal object MohamedLoversPalette {
     val MoonHighlight = Color(0xFFFFF6D2)
     val MoonBody = Color(0xFFE7C15A)
     val MoonShadow = Color(0xFF9D6A1C)
+
+    val Gold = GoldHighlight
+    val DeepBlue = SkyTop
 }
