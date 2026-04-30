@@ -11,8 +11,12 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.todayIn
+import tools.mo3ta.salo.data.engagement.EngagementStore
+import tools.mo3ta.salo.domain.Achievement
 import tools.mo3ta.salo.domain.MOHAMED_LOVERS_FRIDAY_MULTIPLIER
 import tools.mo3ta.salo.domain.MohamedLoversCompetitionWindow
 import tools.mo3ta.salo.domain.MohamedLoversPlayer
@@ -21,6 +25,7 @@ import tools.mo3ta.salo.domain.buildMohamedLoversDisplayTag
 
 class MohamedLoversViewModel(
     private val repository: MohamedLoversRepository,
+    private val engagementStore: EngagementStore,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MohamedLoversUiState())
@@ -200,6 +205,8 @@ class MohamedLoversViewModel(
             )
         }
 
+        val selfInTop = uid != null && topEntries.any { e -> e.isCurrentUser }
+
         _state.update {
             it.copy(
                 syncedTotal = selfRemoteTotal,
@@ -207,8 +214,18 @@ class MohamedLoversViewModel(
                 winnerCode = remoteSelfPlayer?.winnerCode.orEmpty(),
                 topPlayers = topEntries,
                 selfEntry = selfEntry,
-                selfInTop = uid != null && topEntries.any { e -> e.isCurrentUser },
+                selfInTop = selfInTop,
             )
+        }
+
+        val selfTopEntry = topEntries.firstOrNull { it.isCurrentUser }
+        val roundKey = state.value.roundKey
+        if (selfInTop && selfTopEntry != null && roundKey != null) {
+            val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+            val newAchievement = engagementStore.checkAndSaveRankAchievement(roundKey, selfTopEntry.rank, today)
+            if (newAchievement != null) {
+                _state.update { it.copy(newlyEarnedRankAchievement = newAchievement) }
+            }
         }
     }
 

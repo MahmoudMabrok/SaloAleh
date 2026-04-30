@@ -1,5 +1,7 @@
 package tools.mo3ta.salo.presentation
 
+import tools.mo3ta.salo.domain.Achievement
+
 data class MohamedLoversLeaderboardEntry(
     val rank: Int,
     val displayTag: String,
@@ -35,4 +37,5 @@ data class MohamedLoversUiState(
     val selfInTop: Boolean = false,
     val topPlayers: List<MohamedLoversLeaderboardEntry> = emptyList(),
     val error: MohamedLoversError? = null,
+    val newlyEarnedRankAchievement: Achievement.RankAchievement? = null,
 )

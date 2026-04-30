@@ -16,5 +16,5 @@ val appModule = module {
     single { EngagementStore(get()) }
     single<AnalyticsManager> { NoOpAnalyticsManager() }
     single { MohamedLoversRepository(get(), get(), get(), get()) }
-    viewModel { MohamedLoversViewModel(get()) }
+    viewModel { MohamedLoversViewModel(get(), get()) }
 }
