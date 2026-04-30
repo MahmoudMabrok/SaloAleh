@@ -49,6 +49,7 @@ import tools.mo3ta.salo.ui.components.MohamedLoversSkyBackground
 
 @Composable
 fun MohamedLoversScreen(
+    onOpenAchievements: () -> Unit = {},
     viewModel: MohamedLoversViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
