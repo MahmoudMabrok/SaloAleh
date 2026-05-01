@@ -10,10 +10,12 @@
 		8336F72E92B056AA686DBCCF /* Pods_SaloAleh.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0253F236712DB51DF8B5EBC8 /* Pods_SaloAleh.framework */; };
 		AA0000000000000000000009 /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000006 /* iOSApp.swift */; };
 		AA000000000000000000000A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000007 /* ContentView.swift */; };
+		E4E7D78413B45ADF1B8947DF /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 94D181075E52DC9E8B97E657 /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		0253F236712DB51DF8B5EBC8 /* Pods_SaloAleh.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SaloAleh.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		94D181075E52DC9E8B97E657 /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		AA0000000000000000000005 /* SaloAleh.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SaloAleh.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0000000000000000000006 /* iOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
 		AA0000000000000000000007 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -76,6 +78,7 @@
 				AA0000000000000000000006 /* iOSApp.swift */,
 				AA0000000000000000000007 /* ContentView.swift */,
 				AA0000000000000000000008 /* Info.plist */,
+				94D181075E52DC9E8B97E657 /* GoogleService-Info.plist */,
 			);
 			path = iosApp;
 			sourceTree = "<group>";
@@ -141,6 +144,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E4E7D78413B45ADF1B8947DF /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
