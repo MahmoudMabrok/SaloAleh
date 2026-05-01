@@ -12,7 +12,7 @@ import tools.mo3ta.salo.presentation.AchievementsViewModel
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
 
 val appModule = module {
-    single { MohamedLoversFirebaseClient() }
+    single { MohamedLoversFirebaseClient(get()) }
     single { MohamedLoversSessionStore(get()) }
     single { EngagementStore(get()) }
     single<AnalyticsManager> { NoOpAnalyticsManager() }

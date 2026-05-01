@@ -5,6 +5,8 @@ import com.lyft.kronos.AndroidClockFactory
 import com.lyft.kronos.KronosClock
 import kotlinx.datetime.Instant
 import tools.mo3ta.salo.domain.MohamedLoversCompetitionWindow
+import java.util.Date
+import kotlin.time.Clock
 
 class KronosNetworkTimeProvider(context: Context) : NetworkTimeProvider {
 
@@ -20,7 +22,7 @@ class KronosNetworkTimeProvider(context: Context) : NetworkTimeProvider {
     override fun getCompetitionWindow(): MohamedLoversCompetitionWindow {
         val ms = kronosClock.getCurrentNtpTimeMs() ?: run {
             prime()
-            return MohamedLoversCompetitionWindow(message = "جارٍ مزامنة الوقت من الشبكة.")
+            return buildCompetitionWindow(Instant.fromEpochMilliseconds(Date().time))
         }
         return buildCompetitionWindow(Instant.fromEpochMilliseconds(ms))
     }

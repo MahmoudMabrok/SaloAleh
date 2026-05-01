@@ -34,7 +34,6 @@ kotlin {
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)
-            implementation(libs.gitlive.firebase.auth)
             implementation(libs.gitlive.firebase.database)
             implementation(libs.multiplatform.settings)
             implementation(libs.kotlinx.datetime)
@@ -72,8 +71,8 @@ android {
         applicationId = "tools.mo3ta.salo"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

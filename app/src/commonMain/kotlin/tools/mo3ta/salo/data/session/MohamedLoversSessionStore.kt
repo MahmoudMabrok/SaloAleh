@@ -1,6 +1,7 @@
 package tools.mo3ta.salo.data.session
 
 import com.russhwolf.settings.Settings
+import tools.mo3ta.salo.data.crypto.sha256hex
 import tools.mo3ta.salo.domain.MohamedLoversPendingSession
 
 class MohamedLoversSessionStore(private val settings: Settings) {
@@ -35,7 +36,15 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         settings.remove(KEY_PENDING_COUNT)
     }
 
+    @OptIn(kotlin.uuid.ExperimentalUuidApi::class)
+    fun getOrCreateUid(): String {
+        val raw = settings.getStringOrNull(KEY_UID)?.takeIf { it.isNotBlank() }
+            ?: kotlin.uuid.Uuid.random().toString().also { settings.putString(KEY_UID, it) }
+        return sha256hex(raw)
+    }
+
     private companion object {
+        const val KEY_UID = "user_uid"
         const val KEY_ALIAS = "alias"
         const val KEY_PENDING_ROUND = "pending_round_key"
         const val KEY_PENDING_COUNT = "pending_click_count"

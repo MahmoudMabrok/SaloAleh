@@ -1,31 +1,21 @@
 package tools.mo3ta.salo.data.firebase
 
 import dev.gitlive.firebase.Firebase
-import dev.gitlive.firebase.auth.auth
 import dev.gitlive.firebase.database.ServerValue
 import dev.gitlive.firebase.database.database
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.domain.MOHAMED_LOVERS_TOP_LIMIT
 import tools.mo3ta.salo.domain.MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE
 import tools.mo3ta.salo.domain.MohamedLoversPlayer
 
-class MohamedLoversFirebaseClient {
+class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSessionStore) {
 
-    private val authMutex = Mutex()
+    fun isConfigured(): Boolean = runCatching { Firebase.database }.isSuccess
 
-    fun isConfigured(): Boolean = runCatching { Firebase.auth }.isSuccess
-
-    suspend fun ensureSignedInAnonymously(): Result<String> = authMutex.withLock {
-        runCatching {
-            Firebase.auth.currentUser?.uid ?: run {
-                Firebase.auth.signInAnonymously().user?.uid
-                    ?: error("Firebase anonymous sign-in returned no user.")
-            }
-        }
-    }
+    suspend fun ensureSignedInAnonymously(): Result<String> =
+        runCatching { sessionStore.getOrCreateUid() }
 
     fun observeTopPlayers(
         roundKey: String,
