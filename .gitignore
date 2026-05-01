@@ -8,5 +8,16 @@ local.properties
 /captures
 .externalNativeBuild
 .cxx
-local.properties
+
+# Firebase config
 google-services.json
+GoogleService-Info.plist
+
+# Android release build outputs
+app/release/
+
+# CocoaPods
+iosApp/Pods/
+iosApp/Podfile.lock
+iosApp/iosApp.xcworkspace/
+GoogleService-Info.plist
