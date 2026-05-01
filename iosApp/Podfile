@@ -1,0 +1,7 @@
+platform :ios, '16.0'
+use_frameworks!
+
+target 'SaloAleh' do
+  pod 'Firebase/Auth', '~> 11.0'
+  pod 'Firebase/Database', '~> 11.0'
+end
