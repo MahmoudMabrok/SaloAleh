@@ -1,5 +1,6 @@
 package tools.mo3ta.salo.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -35,17 +36,31 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.domain.Achievement
 import tools.mo3ta.salo.domain.BadgeType
+import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.badge_10th_place
+import tools.mo3ta.salo.generated.resources.badge_1st_place
+import tools.mo3ta.salo.generated.resources.badge_2nd_place
+import tools.mo3ta.salo.generated.resources.badge_3rd_place
+import tools.mo3ta.salo.generated.resources.badge_4th_place
+import tools.mo3ta.salo.generated.resources.badge_5th_place
+import tools.mo3ta.salo.generated.resources.badge_6th_place
+import tools.mo3ta.salo.generated.resources.badge_7th_place
+import tools.mo3ta.salo.generated.resources.badge_8th_place
+import tools.mo3ta.salo.generated.resources.badge_9th_place
+import tools.mo3ta.salo.generated.resources.badge_streak_30_day
+import tools.mo3ta.salo.generated.resources.badge_streak_7_day
 import tools.mo3ta.salo.presentation.AchievementsViewModel
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 
@@ -56,21 +71,37 @@ private data class BadgeSpec(
     val title: String,
     val howToEarn: String,
     val canRepeat: Boolean,
-    val emoji: String? = null,         // streak badges only
-    val rankPosition: Int? = null,     // rank badges only; swap with Image when assets arrive
-    val streakTarget: Int? = null,     // 7 or 30; drives progress display
+    val drawable: DrawableResource,
+    val emoji: String? = null,
+    val rankPosition: Int? = null,
+    val streakTarget: Int? = null,
 )
+
+private fun rankDrawable(rank: Int): DrawableResource = when (rank) {
+    1 -> Res.drawable.badge_1st_place
+    2 -> Res.drawable.badge_2nd_place
+    3 -> Res.drawable.badge_3rd_place
+    4 -> Res.drawable.badge_4th_place
+    5 -> Res.drawable.badge_5th_place
+    6 -> Res.drawable.badge_6th_place
+    7 -> Res.drawable.badge_7th_place
+    8 -> Res.drawable.badge_8th_place
+    9 -> Res.drawable.badge_9th_place
+    else -> Res.drawable.badge_10th_place
+}
 
 private val ALL_BADGES: List<BadgeSpec> = buildList {
     add(BadgeSpec(
         id = "streak_7", emoji = "🏅", title = "المداومة",
         howToEarn = "افتح التطبيق 7 أيام متتالية دون انقطاع",
         canRepeat = false, streakTarget = 7,
+        drawable = Res.drawable.badge_streak_7_day,
     ))
     add(BadgeSpec(
-        id = "streak_30", emoji = "🌟", title = "الوفي",
+        id = "streak_30", emoji = "🌟", title = "المحب",
         howToEarn = "افتح التطبيق 30 يوماً متتالياً دون انقطاع",
         canRepeat = false, streakTarget = 30,
+        drawable = Res.drawable.badge_streak_30_day,
     ))
     for (rank in 1..10) {
         add(BadgeSpec(
@@ -78,6 +109,7 @@ private val ALL_BADGES: List<BadgeSpec> = buildList {
             title = "المركز $rank",
             howToEarn = "احصل على المركز $rank في أي جولة تنافسية",
             canRepeat = true,
+            drawable = rankDrawable(rank),
         ))
     }
 }
@@ -267,42 +299,28 @@ private fun BadgeCard(
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.alpha(if (achieved) 1f else 0.3f),
         ) {
-            if (spec.emoji != null) {
-                // Streak badge — emoji + optional progress
-                Text(text = spec.emoji, fontSize = 32.sp)
-                Spacer(Modifier.height(2.dp))
+            Image(
+                painter = painterResource(spec.drawable),
+                contentDescription = spec.title,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.size(48.dp),
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = spec.title,
+                color = if (achieved) MohamedLoversPalette.Gold else Color.White,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+            )
+            if (!achieved && spec.streakTarget != null) {
+                val progress = currentStreak.coerceAtMost(spec.streakTarget)
                 Text(
-                    text = spec.title,
-                    color = if (achieved) MohamedLoversPalette.Gold else Color.White,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                    maxLines = 2,
-                )
-                if (!achieved && spec.streakTarget != null) {
-                    val progress = currentStreak.coerceAtMost(spec.streakTarget)
-                    Text(
-                        text = "$progress / ${spec.streakTarget}",
-                        color = MohamedLoversPalette.Gold.copy(alpha = 0.8f),
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Medium,
-                    )
-                }
-            } else if (spec.rankPosition != null) {
-                // Rank badge — placeholder image area (swap with Image when assets arrive)
-                RankImagePlaceholder(
-                    position = spec.rankPosition,
-                    achieved = achieved,
-                    modifier = Modifier.size(44.dp),
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = spec.title,
-                    color = if (achieved) MohamedLoversPalette.Gold else Color.White,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
+                    text = "$progress / ${spec.streakTarget}",
+                    color = MohamedLoversPalette.Gold.copy(alpha = 0.8f),
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Medium,
                 )
             }
         }
@@ -334,30 +352,6 @@ private fun BadgeCard(
                 modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),
             )
         }
-    }
-}
-
-// Placeholder: replace Box content with Image(painterResource(id)) when assets arrive
-@Composable
-private fun RankImagePlaceholder(position: Int, achieved: Boolean, modifier: Modifier = Modifier) {
-    val gradient = when (position) {
-        1 -> Brush.radialGradient(listOf(Color(0xFFFFD700), Color(0xFFB8860B)))
-        2 -> Brush.radialGradient(listOf(Color(0xFFE8E8E8), Color(0xFF9E9E9E)))
-        3 -> Brush.radialGradient(listOf(Color(0xFFCD7F32), Color(0xFF8B4513)))
-        else -> Brush.radialGradient(listOf(Color(0xFF3A6BC9), Color(0xFF1A3A6B)))
-    }
-    Box(
-        modifier = modifier
-            .clip(CircleShape)
-            .background(gradient),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = "$position",
-            color = Color.White,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.ExtraBold,
-        )
     }
 }
 

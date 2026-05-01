@@ -39,7 +39,7 @@ fun AchievementCelebrationDialog(
             BadgeType.STREAK_30 -> Triple(
                 "🌟",
                 "شهر من الوفاء!",
-                "فتحت شارة «الوفي» لفتح التطبيق 30 يوماً متتالياً. بارك الله فيك.",
+                "فتحت شارة «المحب» لفتح التطبيق 30 يوماً متتالياً. بارك الله فيك.",
             )
         }
         is Achievement.RankAchievement -> {
