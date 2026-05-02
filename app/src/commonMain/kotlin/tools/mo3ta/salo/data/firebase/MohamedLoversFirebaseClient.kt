@@ -4,6 +4,7 @@ import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.database.ServerValue
 import dev.gitlive.firebase.database.database
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.domain.FirebaseLeaderboard
@@ -25,6 +26,7 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         Firebase.database.reference(playersPath(roundKey)).child(uid)
             .valueEvents
             .map { snapshot -> runCatching { snapshot.takeIf { it.exists }?.toPlayer() } }
+            .catch { e -> emit(Result.failure(e)) }
 
     fun observeLeaderboard(roundKey: String): Flow<Result<FirebaseLeaderboard>> =
         Firebase.database.reference(leaderboardPath(roundKey))
@@ -40,6 +42,7 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
                     FirebaseLeaderboard(entries = entries, isFinal = isFinal)
                 }
             }
+            .catch { e -> emit(Result.failure(e)) }
 
     suspend fun incrementSession(
         roundKey: String,

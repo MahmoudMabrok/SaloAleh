@@ -39,6 +39,7 @@ import tools.mo3ta.salo.generated.resources.mohamed_lovers_banner
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_country_label
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_info_sheet_title
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_empty
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_refresh_note
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_title
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_network_time
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_round_end_label
@@ -169,11 +170,19 @@ private fun LeaderboardCard(
     selfInTop: Boolean,
 ) {
     SheetCard {
-        Text(
-            text = stringResource(Res.string.mohamed_lovers_leaderboard_title),
-            style = TextStyle(fontFamily = MohamedLoversFonts.display, fontSize = 14.sp, fontWeight = FontWeight.W500),
-            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.95f),
-        )
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = stringResource(Res.string.mohamed_lovers_leaderboard_title),
+                style = TextStyle(fontFamily = MohamedLoversFonts.display, fontSize = 14.sp, fontWeight = FontWeight.W500),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.95f),
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = stringResource(Res.string.mohamed_lovers_leaderboard_refresh_note),
+                style = bodyStyle().copy(fontSize = 11.sp),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.45f),
+            )
+        }
         if (selfEntry != null && !selfInTop) {
             LeaderboardRow(entry = selfEntry, pinned = true)
             Text(
