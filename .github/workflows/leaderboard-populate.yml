@@ -3,7 +3,7 @@ name: Populate Round Leaderboard
 on:
   # Runs every hour. Script computes active roundKey and isFinal internally.
   schedule:
-    - cron: '0 * * * *'
+    - cron: '*/30 * * * *'
   workflow_dispatch:
     inputs:
       round_key:
