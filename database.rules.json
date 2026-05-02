@@ -1,0 +1,44 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "mohamed_lovers": {
+      "$round": {
+        "leaderboard": {
+          ".read": true,
+          ".write": false
+        },
+        "players": {
+          ".read": true,
+          ".indexOn": ["totalCount"],
+          "$uid": {
+            ".write": "newData.child('uid').val() === $uid",
+            ".validate": "newData.hasChildren(['uid','totalCount','updatedAt','countryCode'])",
+
+            "uid": {
+              ".validate": "newData.isString() && newData.val() === $uid"
+            },
+            "countryCode": {
+              ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 3"
+            },
+            "totalCount": {
+              ".validate": "newData.isNumber() && newData.val() >= (data.exists() ? data.val() : 0) && newData.val() <= (data.exists() ? data.val() : 0) + 10000"
+            },
+            "updatedAt": {
+              ".validate": "newData.val() === now"
+            },
+            "isWinner": {
+              ".validate": "newData.val() === (data.exists() ? data.val() : false)"
+            },
+            "winnerCode": {
+              ".validate": "newData.val() === (data.exists() ? data.val() : '')"
+            },
+
+            "$other": { ".validate": false }
+          }
+        }
+      }
+    }
+  }
+}
