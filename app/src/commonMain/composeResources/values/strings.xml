@@ -27,7 +27,7 @@
     <string name="mohamed_lovers_country_label">الدولة: %1$s</string>
     <string name="mohamed_lovers_self_tag_label">المعرف: %1$s</string>
     <string name="mohamed_lovers_leaderboard_title">المتصدرون</string>
-    <string name="mohamed_lovers_leaderboard_refresh_note">يُحدَّث كل 3 دقائق</string>
+    <string name="mohamed_lovers_leaderboard_refresh_note">يُحدَّث كل 30 دقائق</string>
     <string name="mohamed_lovers_rank_pending_top">أنت في طريقك إلى الصدارة</string>
     <string name="mohamed_lovers_leaderboard_empty">لا يوجد مشاركون بعد</string>
     <string name="mohamed_lovers_winner_title">أنت الفائز!</string>
