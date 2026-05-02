@@ -24,6 +24,12 @@ data class MohamedLoversCompetitionWindow(
     val message: String? = null,
 )
 
+data class FirebaseLeaderboardEntry(
+    val rank: Int,
+    val uid: String,
+    val score: Int,
+)
+
 data class MohamedLoversBootstrap(
     val firebaseConfigured: Boolean,
     val countryCode: String,

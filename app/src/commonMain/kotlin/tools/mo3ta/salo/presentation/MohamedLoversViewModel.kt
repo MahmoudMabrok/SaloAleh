@@ -34,6 +34,7 @@ class MohamedLoversViewModel(
     private val flushMutex = Mutex()
     private var topJob: Job? = null
     private var selfJob: Job? = null
+    private var leaderboardJob: Job? = null
     private var remoteTopPlayers: List<MohamedLoversPlayer> = emptyList()
     private var remoteSelfPlayer: MohamedLoversPlayer? = null
     private var authUid: String? = null
@@ -45,6 +46,7 @@ class MohamedLoversViewModel(
         repository.refreshNetworkTime()
         topJob?.cancel()
         selfJob?.cancel()
+        leaderboardJob?.cancel()
         remoteTopPlayers = emptyList()
         remoteSelfPlayer = null
         authUid = null
@@ -136,7 +138,7 @@ class MohamedLoversViewModel(
     private fun connectToLeaderboardIfPossible() {
         val roundKey = state.value.roundKey
         if (!state.value.firebaseConfigured || roundKey.isNullOrBlank()) {
-            topJob?.cancel(); selfJob?.cancel()
+            topJob?.cancel(); selfJob?.cancel(); leaderboardJob?.cancel()
             remoteTopPlayers = emptyList(); remoteSelfPlayer = null
             applyLeaderboard()
             return
@@ -165,6 +167,22 @@ class MohamedLoversViewModel(
                 repository.observeSelfPlayer(roundKey, uid).collectLatest { result ->
                     result.onSuccess { player -> remoteSelfPlayer = player; applyLeaderboard() }
                         .onFailure { t -> _state.update { it.copy(error = t.toLoversError()) } }
+                }
+            }
+
+            leaderboardJob?.cancel()
+            leaderboardJob = launch {
+                repository.observeLeaderboard(roundKey).collectLatest { result ->
+                    result.onSuccess { entries ->
+                        val match = entries.firstOrNull { it.uid == uid }
+                        if (match != null) {
+                            val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+                            val achievement = engagementStore.checkAndSaveRankAchievement(roundKey, match.rank, today)
+                            if (achievement != null) {
+                                _state.update { it.copy(newlyEarnedRankAchievement = achievement) }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -218,15 +236,6 @@ class MohamedLoversViewModel(
             )
         }
 
-        val selfTopEntry = topEntries.firstOrNull { it.isCurrentUser }
-        val roundKey = state.value.roundKey
-        if (selfInTop && selfTopEntry != null && roundKey != null) {
-            val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
-            val newAchievement = engagementStore.checkAndSaveRankAchievement(roundKey, selfTopEntry.rank, today)
-            if (newAchievement != null) {
-                _state.update { it.copy(newlyEarnedRankAchievement = newAchievement) }
-            }
-        }
     }
 
     private fun resolveStatus(

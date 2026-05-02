@@ -41,6 +41,7 @@ import tools.mo3ta.salo.generated.resources.mohamed_lovers_info_sheet_title
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_empty
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_title
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_network_time
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_round_end_label
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_rank_pending_top
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_self_tag_label
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_status_firebase_off
@@ -133,6 +134,13 @@ private fun StatusCard(state: MohamedLoversUiState) {
         if (state.networkTimeLabel.isNotBlank()) {
             Text(
                 text = stringResource(Res.string.mohamed_lovers_network_time, state.networkTimeLabel),
+                style = bodyStyle().copy(fontSize = 12.sp),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.55f),
+            )
+        }
+        if (state.roundEndLabel.isNotBlank()) {
+            Text(
+                text = stringResource(Res.string.mohamed_lovers_round_end_label, state.roundEndLabel),
                 style = bodyStyle().copy(fontSize = 12.sp),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.55f),
             )

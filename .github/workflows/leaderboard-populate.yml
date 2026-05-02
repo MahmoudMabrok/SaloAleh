@@ -1,0 +1,35 @@
+name: Populate Round Leaderboard
+
+on:
+  # Friday 16:30 UTC = 18:30 Cairo winter (UTC+2) / 19:30 Cairo summer (UTC+3)
+  # Both cases safely after the 18:00 Cairo round boundary, with buffer for GH Actions delay.
+  schedule:
+    - cron: '30 16 * * 5'
+  workflow_dispatch:
+    inputs:
+      round_key:
+        description: 'Round key to populate (yyyy-MM-dd). Defaults to today in Cairo timezone.'
+        required: false
+        default: ''
+
+jobs:
+  populate:
+    name: Write leaderboard to Firebase
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install firebase-admin
+        run: npm install firebase-admin
+        working-directory: scripts
+
+      - name: Populate leaderboard
+        run: node scripts/populate-leaderboard.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          ROUND_KEY: ${{ github.event.inputs.round_key }}

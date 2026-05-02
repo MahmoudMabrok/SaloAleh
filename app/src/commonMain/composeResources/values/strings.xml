@@ -23,6 +23,7 @@
     <string name="mohamed_lovers_status_firebase_off">الاتصال بالخدمة غير متاح</string>
     <string name="mohamed_lovers_status_open">متصل</string>
     <string name="mohamed_lovers_network_time">الوقت: %1$s</string>
+    <string name="mohamed_lovers_round_end_label">نهاية الجولة: %1$s</string>
     <string name="mohamed_lovers_country_label">الدولة: %1$s</string>
     <string name="mohamed_lovers_self_tag_label">المعرف: %1$s</string>
     <string name="mohamed_lovers_leaderboard_title">المتصدرون</string>

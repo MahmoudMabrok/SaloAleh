@@ -6,6 +6,7 @@ import dev.gitlive.firebase.database.database
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
+import tools.mo3ta.salo.domain.FirebaseLeaderboardEntry
 import tools.mo3ta.salo.domain.MOHAMED_LOVERS_TOP_LIMIT
 import tools.mo3ta.salo.domain.MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE
 import tools.mo3ta.salo.domain.MohamedLoversPlayer
@@ -35,6 +36,11 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
             .valueEvents
             .map { snapshot -> runCatching { snapshot.takeIf { it.exists }?.toPlayer() } }
 
+    fun observeLeaderboard(roundKey: String): Flow<Result<List<FirebaseLeaderboardEntry>>> =
+        Firebase.database.reference(leaderboardPath(roundKey))
+            .valueEvents
+            .map { snapshot -> runCatching { snapshot.children.mapNotNull { it.toLeaderboardEntry() } } }
+
     suspend fun incrementSession(
         roundKey: String,
         uid: String,
@@ -53,6 +59,15 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
     }
 
     private fun playersPath(roundKey: String) = "$ROOT_PATH/$roundKey/$PLAYERS_PATH"
+    private fun leaderboardPath(roundKey: String) = "$ROOT_PATH/$roundKey/$LEADERBOARD_PATH"
+
+    private fun dev.gitlive.firebase.database.DataSnapshot.toLeaderboardEntry(): FirebaseLeaderboardEntry? {
+        val map = value as? Map<*, *> ?: return null
+        val uid = map[UID_KEY] as? String ?: return null
+        val score = (map[SCORE_KEY] as? Number)?.toInt() ?: return null
+        val rank = (map[RANK_KEY] as? Number)?.toInt() ?: key?.toIntOrNull() ?: return null
+        return FirebaseLeaderboardEntry(rank = rank, uid = uid, score = score)
+    }
 
     private fun dev.gitlive.firebase.database.DataSnapshot.toPlayer(): MohamedLoversPlayer? {
         val map = value as? Map<*, *> ?: return null
@@ -70,7 +85,10 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
     private companion object {
         const val ROOT_PATH = "mohamed_lovers"
         const val PLAYERS_PATH = "players"
+        const val LEADERBOARD_PATH = "leaderboard"
         const val UID_KEY = "uid"
+        const val SCORE_KEY = "score"
+        const val RANK_KEY = "rank"
         const val TOTAL_COUNT_KEY = "totalCount"
         const val IS_WINNER_KEY = "isWinner"
         const val WINNER_CODE_KEY = "winnerCode"

@@ -21,6 +21,9 @@ class MohamedLoversRepository(
 
     suspend fun ensureAnonymousUser(): Result<String> = firebaseClient.ensureSignedInAnonymously()
 
+    fun observeLeaderboard(roundKey: String): Flow<Result<List<FirebaseLeaderboardEntry>>> =
+        firebaseClient.observeLeaderboard(roundKey)
+
     fun observeTopPlayers(roundKey: String): Flow<Result<List<MohamedLoversPlayer>>> =
         firebaseClient.observeTopPlayers(roundKey)
 
