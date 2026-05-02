@@ -16,7 +16,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
 import tools.mo3ta.salo.data.engagement.EngagementStore
-import tools.mo3ta.salo.domain.Achievement
+import tools.mo3ta.salo.domain.FirebaseLeaderboard
 import tools.mo3ta.salo.domain.MOHAMED_LOVERS_FRIDAY_MULTIPLIER
 import tools.mo3ta.salo.domain.MohamedLoversCompetitionWindow
 import tools.mo3ta.salo.domain.MohamedLoversPlayer
@@ -32,10 +32,9 @@ class MohamedLoversViewModel(
     val state: StateFlow<MohamedLoversUiState> = _state.asStateFlow()
 
     private val flushMutex = Mutex()
-    private var topJob: Job? = null
     private var selfJob: Job? = null
     private var leaderboardJob: Job? = null
-    private var remoteTopPlayers: List<MohamedLoversPlayer> = emptyList()
+    private var remoteLeaderboard: FirebaseLeaderboard = FirebaseLeaderboard(emptyList(), false)
     private var remoteSelfPlayer: MohamedLoversPlayer? = null
     private var authUid: String? = null
     private var currentWindow: MohamedLoversCompetitionWindow = MohamedLoversCompetitionWindow()
@@ -44,10 +43,9 @@ class MohamedLoversViewModel(
 
     fun refresh() {
         repository.refreshNetworkTime()
-        topJob?.cancel()
         selfJob?.cancel()
         leaderboardJob?.cancel()
-        remoteTopPlayers = emptyList()
+        remoteLeaderboard = FirebaseLeaderboard(emptyList(), false)
         remoteSelfPlayer = null
         authUid = null
 
@@ -138,8 +136,8 @@ class MohamedLoversViewModel(
     private fun connectToLeaderboardIfPossible() {
         val roundKey = state.value.roundKey
         if (!state.value.firebaseConfigured || roundKey.isNullOrBlank()) {
-            topJob?.cancel(); selfJob?.cancel(); leaderboardJob?.cancel()
-            remoteTopPlayers = emptyList(); remoteSelfPlayer = null
+            selfJob?.cancel(); leaderboardJob?.cancel()
+            remoteLeaderboard = FirebaseLeaderboard(emptyList(), false); remoteSelfPlayer = null
             applyLeaderboard()
             return
         }
@@ -154,14 +152,6 @@ class MohamedLoversViewModel(
             authUid = uid
             _state.update { it.copy(selfDisplayTag = buildMohamedLoversDisplayTag(uid, it.countryCode)) }
 
-            topJob?.cancel()
-            topJob = launch {
-                repository.observeTopPlayers(roundKey).collectLatest { result ->
-                    result.onSuccess { players -> remoteTopPlayers = players; applyLeaderboard() }
-                        .onFailure { t -> _state.update { it.copy(error = t.toLoversError()) } }
-                }
-            }
-
             selfJob?.cancel()
             selfJob = launch {
                 repository.observeSelfPlayer(roundKey, uid).collectLatest { result ->
@@ -173,16 +163,20 @@ class MohamedLoversViewModel(
             leaderboardJob?.cancel()
             leaderboardJob = launch {
                 repository.observeLeaderboard(roundKey).collectLatest { result ->
-                    result.onSuccess { entries ->
-                        val match = entries.firstOrNull { it.uid == uid }
-                        if (match != null) {
-                            val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
-                            val achievement = engagementStore.checkAndSaveRankAchievement(roundKey, match.rank, today)
-                            if (achievement != null) {
-                                _state.update { it.copy(newlyEarnedRankAchievement = achievement) }
+                    result.onSuccess { leaderboard ->
+                        remoteLeaderboard = leaderboard
+                        applyLeaderboard()
+                        if (leaderboard.isFinal) {
+                            val match = leaderboard.entries.firstOrNull { it.uid == uid }
+                            if (match != null) {
+                                val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+                                val achievement = engagementStore.checkAndSaveRankAchievement(roundKey, match.rank, today)
+                                if (achievement != null) {
+                                    _state.update { it.copy(newlyEarnedRankAchievement = achievement) }
+                                }
                             }
                         }
-                    }
+                    }.onFailure { t -> _state.update { it.copy(error = t.toLoversError()) } }
                 }
             }
         }
@@ -193,24 +187,21 @@ class MohamedLoversViewModel(
         val selfRemoteTotal = remoteSelfPlayer?.totalCount ?: 0
         val selfProjectedTotal = selfRemoteTotal + state.value.sessionClicks
 
-        val sortedTop = remoteTopPlayers.sortedWith(
-            compareByDescending<MohamedLoversPlayer> { it.totalCount }
-                .thenByDescending { it.updatedAt }
-                .thenBy { it.uid },
-        )
-
-        val topEntries = sortedTop.mapIndexed { index, player ->
-            val isCurrentUser = player.uid == uid
+        val topEntries = remoteLeaderboard.entries.map { entry ->
+            val isCurrentUser = entry.uid == uid
             MohamedLoversLeaderboardEntry(
-                rank = index + 1,
-                displayTag = buildMohamedLoversDisplayTag(player.uid, player.countryCode),
-                totalCount = if (isCurrentUser) selfProjectedTotal else player.totalCount,
+                rank = entry.rank,
+                displayTag = buildMohamedLoversDisplayTag(entry.uid, entry.countryCode),
+                totalCount = if (isCurrentUser) selfProjectedTotal else entry.score,
                 isCurrentUser = isCurrentUser,
             )
         }
 
+        val selfInTop = uid != null && topEntries.any { it.isCurrentUser }
+
         val selfEntry = when {
             uid == null || selfProjectedTotal <= 0 -> null
+            selfInTop -> null
             else -> MohamedLoversLeaderboardEntry(
                 rank = 0,
                 displayTag = buildMohamedLoversDisplayTag(
@@ -223,8 +214,6 @@ class MohamedLoversViewModel(
             )
         }
 
-        val selfInTop = uid != null && topEntries.any { e -> e.isCurrentUser }
-
         _state.update {
             it.copy(
                 syncedTotal = selfRemoteTotal,
@@ -235,7 +224,6 @@ class MohamedLoversViewModel(
                 selfInTop = selfInTop,
             )
         }
-
     }
 
     private fun resolveStatus(

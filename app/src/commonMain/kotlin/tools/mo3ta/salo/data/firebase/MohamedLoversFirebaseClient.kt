@@ -6,8 +6,8 @@ import dev.gitlive.firebase.database.database
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
+import tools.mo3ta.salo.domain.FirebaseLeaderboard
 import tools.mo3ta.salo.domain.FirebaseLeaderboardEntry
-import tools.mo3ta.salo.domain.MOHAMED_LOVERS_TOP_LIMIT
 import tools.mo3ta.salo.domain.MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE
 import tools.mo3ta.salo.domain.MohamedLoversPlayer
 
@@ -18,16 +18,6 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
     suspend fun ensureSignedInAnonymously(): Result<String> =
         runCatching { sessionStore.getOrCreateUid() }
 
-    fun observeTopPlayers(
-        roundKey: String,
-        limit: Int = MOHAMED_LOVERS_TOP_LIMIT,
-    ): Flow<Result<List<MohamedLoversPlayer>>> =
-        Firebase.database.reference(playersPath(roundKey))
-            .orderByChild(TOTAL_COUNT_KEY)
-            .limitToLast(limit)
-            .valueEvents
-            .map { snapshot -> runCatching { snapshot.children.mapNotNull { it.toPlayer() } } }
-
     fun observeSelfPlayer(
         roundKey: String,
         uid: String,
@@ -36,10 +26,20 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
             .valueEvents
             .map { snapshot -> runCatching { snapshot.takeIf { it.exists }?.toPlayer() } }
 
-    fun observeLeaderboard(roundKey: String): Flow<Result<List<FirebaseLeaderboardEntry>>> =
+    fun observeLeaderboard(roundKey: String): Flow<Result<FirebaseLeaderboard>> =
         Firebase.database.reference(leaderboardPath(roundKey))
             .valueEvents
-            .map { snapshot -> runCatching { snapshot.children.mapNotNull { it.toLeaderboardEntry() } } }
+            .map { snapshot ->
+                runCatching {
+                    val rootMap = snapshot.value as? Map<*, *> ?: emptyMap<Any, Any>()
+                    val isFinal = rootMap[IS_FINAL_KEY] as? Boolean ?: false
+                    val entries = snapshot.children
+                        .filter { it.key?.toIntOrNull() != null }
+                        .mapNotNull { it.toLeaderboardEntry() }
+                        .sortedBy { it.rank }
+                    FirebaseLeaderboard(entries = entries, isFinal = isFinal)
+                }
+            }
 
     suspend fun incrementSession(
         roundKey: String,
@@ -66,7 +66,8 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         val uid = map[UID_KEY] as? String ?: return null
         val score = (map[SCORE_KEY] as? Number)?.toInt() ?: return null
         val rank = (map[RANK_KEY] as? Number)?.toInt() ?: key?.toIntOrNull() ?: return null
-        return FirebaseLeaderboardEntry(rank = rank, uid = uid, score = score)
+        val countryCode = map[COUNTRY_CODE_KEY] as? String ?: ""
+        return FirebaseLeaderboardEntry(rank = rank, uid = uid, score = score, countryCode = countryCode)
     }
 
     private fun dev.gitlive.firebase.database.DataSnapshot.toPlayer(): MohamedLoversPlayer? {
@@ -86,6 +87,7 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         const val ROOT_PATH = "mohamed_lovers"
         const val PLAYERS_PATH = "players"
         const val LEADERBOARD_PATH = "leaderboard"
+        const val IS_FINAL_KEY = "isFinal"
         const val UID_KEY = "uid"
         const val SCORE_KEY = "score"
         const val RANK_KEY = "rank"

@@ -28,6 +28,12 @@ data class FirebaseLeaderboardEntry(
     val rank: Int,
     val uid: String,
     val score: Int,
+    val countryCode: String = "",
+)
+
+data class FirebaseLeaderboard(
+    val entries: List<FirebaseLeaderboardEntry>,
+    val isFinal: Boolean,
 )
 
 data class MohamedLoversBootstrap(

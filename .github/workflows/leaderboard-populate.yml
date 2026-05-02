@@ -1,10 +1,9 @@
 name: Populate Round Leaderboard
 
 on:
-  # Friday 16:30 UTC = 18:30 Cairo winter (UTC+2) / 19:30 Cairo summer (UTC+3)
-  # Both cases safely after the 18:00 Cairo round boundary, with buffer for GH Actions delay.
+  # Runs every hour. Script computes active roundKey and isFinal internally.
   schedule:
-    - cron: '30 16 * * 5'
+    - cron: '0 * * * *'
   workflow_dispatch:
     inputs:
       round_key:
