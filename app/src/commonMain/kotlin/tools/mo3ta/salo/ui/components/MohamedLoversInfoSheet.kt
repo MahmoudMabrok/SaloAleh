@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -17,6 +18,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -25,9 +31,11 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -169,40 +177,69 @@ private fun StatusCard(state: MohamedLoversUiState) {
 
 @Composable
 private fun TotalsCard(roundTotal: Int, allTimeTotal: Long) {
+    val infiniteTransition = rememberInfiniteTransition()
+    val glowAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.82f,
+        targetValue = 1.0f,
+        animationSpec = infiniteRepeatable(animation = tween(1600), repeatMode = RepeatMode.Reverse),
+    )
+
     SheetCard {
-        Text(
-            text = stringResource(Res.string.mohamed_lovers_stats_title),
-            style = TextStyle(fontFamily = MohamedLoversFonts.display, fontSize = 14.sp, fontWeight = FontWeight.W500),
-            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.95f),
-        )
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(
-                text = stringResource(Res.string.mohamed_lovers_round_total_label),
-                style = bodyStyle(),
-                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.65f),
-            )
-            Text(
-                text = roundTotal.toLong().formatCount(),
-                style = bodyStyle(),
-                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
-            )
-        }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(MohamedLoversPalette.GoldBase.copy(alpha = 0.15f)),
-        )
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(
-                text = stringResource(Res.string.mohamed_lovers_all_time_total_label),
-                style = bodyStyle(),
-                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.65f),
-            )
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             Text(
                 text = (allTimeTotal + roundTotal).formatCount(),
-                style = bodyStyle().copy(fontSize = 15.sp, fontWeight = FontWeight.W700),
-                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.97f),
+                style = TextStyle(
+                    fontFamily = MohamedLoversFonts.display,
+                    fontWeight = FontWeight.W600,
+                    fontSize = 52.sp,
+                    letterSpacing = (-0.5).sp,
+                ),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = glowAlpha),
+            )
+            Text(
+                text = stringResource(Res.string.mohamed_lovers_all_time_total_label),
+                style = TextStyle(
+                    fontFamily = MohamedLoversFonts.arabic,
+                    fontWeight = FontWeight.W400,
+                    fontSize = 11.sp,
+                    letterSpacing = 2.sp,
+                ),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.4f),
+            )
+            Spacer(Modifier.height(16.dp))
+            Box(
+                modifier = Modifier
+                    .width(48.dp)
+                    .height(1.dp)
+                    .background(
+                        brush = Brush.horizontalGradient(
+                            listOf(Color.Transparent, MohamedLoversPalette.GoldBase, Color.Transparent)
+                        )
+                    ),
+            )
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = roundTotal.toLong().formatCount(),
+                style = TextStyle(
+                    fontFamily = MohamedLoversFonts.display,
+                    fontWeight = FontWeight.W400,
+                    fontSize = 26.sp,
+                    letterSpacing = 0.sp,
+                ),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.65f),
+            )
+            Text(
+                text = stringResource(Res.string.mohamed_lovers_round_total_label),
+                style = TextStyle(
+                    fontFamily = MohamedLoversFonts.arabic,
+                    fontWeight = FontWeight.W400,
+                    fontSize = 11.sp,
+                    letterSpacing = 2.sp,
+                ),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.35f),
             )
         }
     }
