@@ -1,18 +1,32 @@
 SIMULATOR_ID := 79A4F6A5-F198-4CD3-9AD2-7ED68EFBABF1
 BUNDLE_ID    := com.mo3ta.saloalaihapp
-DERIVED_DATA := $(HOME)/Library/Developer/Xcode/DerivedData/iosApp-gotjmnfluldsuwfqumdprqjzjxrt/Build/Products/Debug-iphonesimulator/SaloAleh.app
+WORKSPACE    := iosApp/iosApp.xcworkspace
+SCHEME       := SaloAleh
+DESTINATION  := platform=iOS Simulator,id=$(SIMULATOR_ID)
+
+# Resolve build dir dynamically each run
+BUILD_DIR = $(shell xcodebuild \
+	-workspace $(WORKSPACE) \
+	-scheme $(SCHEME) \
+	-configuration Debug \
+	-destination '$(DESTINATION)' \
+	-showBuildSettings 2>/dev/null \
+	| awk '/CONFIGURATION_BUILD_DIR/{print $$NF}' | head -1)
+
+APP_PATH = $(BUILD_DIR)/SaloAleh.app
 
 .PHONY: ios android
 
 ios:
 	./gradlew :app:linkDebugFrameworkIosSimulatorArm64
+	rm -rf "$(APP_PATH)"
 	xcodebuild \
-		-workspace iosApp/iosApp.xcworkspace \
-		-scheme SaloAleh \
+		-workspace $(WORKSPACE) \
+		-scheme $(SCHEME) \
 		-configuration Debug \
-		-destination 'platform=iOS Simulator,id=$(SIMULATOR_ID)' \
+		-destination '$(DESTINATION)' \
 		build
-	xcrun simctl install $(SIMULATOR_ID) "$(DERIVED_DATA)"
+	xcrun simctl install $(SIMULATOR_ID) "$(APP_PATH)"
 	xcrun simctl launch $(SIMULATOR_ID) $(BUNDLE_ID)
 
 android:
