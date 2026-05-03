@@ -17,9 +17,9 @@ actual object NotificationScheduler {
 
         if (dailyEnabled) {
             val content = UNMutableNotificationContent().apply {
-                title = "اللهم صلِّ على محمد ﷺ"
-                body = "تذكيرك اليومي — اضغط لتشارك الصلاة على النبي"
-                sound = UNNotificationSound.defaultSound()
+                setTitle("اللهم صلِّ على محمد ﷺ")
+                setBody("تذكيرك اليومي — اضغط لتشارك الصلاة على النبي")
+                setSound(UNNotificationSound.defaultSound())
             }
             val components = NSDateComponents().apply { hour = 9L }
             val trigger = UNCalendarNotificationTrigger.triggerWithDateMatchingComponents(components, repeats = true)
@@ -32,9 +32,9 @@ actual object NotificationScheduler {
         if (fridayEnabled) {
             (9..17).forEach { hour ->
                 val content = UNMutableNotificationContent().apply {
-                    title = "اللهم صلِّ على محمد ﷺ"
-                    body = "يوم الجمعة المبارك — صلّ على النبي الكريم"
-                    sound = UNNotificationSound.defaultSound()
+                    setTitle("اللهم صلِّ على محمد ﷺ")
+                    setBody("يوم الجمعة المبارك — صلّ على النبي الكريم")
+                    setSound(UNNotificationSound.defaultSound())
                 }
                 val components = NSDateComponents().apply {
                     weekday = 6L
