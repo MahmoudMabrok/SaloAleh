@@ -12,6 +12,7 @@
 		AA000000000000000000000A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000007 /* ContentView.swift */; };
 		E4E7D78413B45ADF1B8947DF /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 94D181075E52DC9E8B97E657 /* GoogleService-Info.plist */; };
 		BB0000000000000000000002 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000001 /* Assets.xcassets */; };
+		CC0000000000000000000002 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = CC0000000000000000000001 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -22,6 +23,7 @@
 		AA0000000000000000000007 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BB0000000000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		CC0000000000000000000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		ACB6EF587E6D90896F292451 /* Pods-SaloAleh.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SaloAleh.release.xcconfig"; path = "Target Support Files/Pods-SaloAleh/Pods-SaloAleh.release.xcconfig"; sourceTree = "<group>"; };
 		DFDDED5F03CFC6379CD6468D /* Pods-SaloAleh.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SaloAleh.debug.xcconfig"; path = "Target Support Files/Pods-SaloAleh/Pods-SaloAleh.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -82,6 +84,7 @@
 				AA0000000000000000000008 /* Info.plist */,
 				94D181075E52DC9E8B97E657 /* GoogleService-Info.plist */,
 				BB0000000000000000000001 /* Assets.xcassets */,
+				CC0000000000000000000001 /* PrivacyInfo.xcprivacy */,
 			);
 			path = iosApp;
 			sourceTree = "<group>";
@@ -149,6 +152,7 @@
 			files = (
 				E4E7D78413B45ADF1B8947DF /* GoogleService-Info.plist in Resources */,
 				BB0000000000000000000002 /* Assets.xcassets in Resources */,
+				CC0000000000000000000002 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
