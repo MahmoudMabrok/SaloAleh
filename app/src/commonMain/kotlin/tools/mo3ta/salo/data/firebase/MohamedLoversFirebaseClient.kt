@@ -1,5 +1,6 @@
 package tools.mo3ta.salo.data.firebase
 
+import co.touchlab.kermit.Logger
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.database.ServerValue
 import dev.gitlive.firebase.database.database
@@ -7,6 +8,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.domain.FirebaseLeaderboard
 import tools.mo3ta.salo.domain.FirebaseLeaderboardEntry
@@ -15,10 +17,24 @@ import tools.mo3ta.salo.domain.MohamedLoversPlayer
 
 class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSessionStore) {
 
-    fun isConfigured(): Boolean = runCatching { Firebase.database }.isSuccess
+    private val log = Logger.withTag("FirebaseClient")
 
-    suspend fun ensureSignedInAnonymously(): Result<String> =
-        runCatching { sessionStore.getOrCreateUid() }
+    fun isConfigured(): Boolean {
+        val result = runCatching { Firebase.database }.isSuccess
+        log.d { "isConfigured=$result" }
+        return result
+    }
+
+    suspend fun ensureSignedInAnonymously(): Result<String> {
+        log.d { "ensureSignedInAnonymously: getting/creating uid" }
+        return runCatching { sessionStore.getOrCreateUid() }
+            .also { result ->
+                result.fold(
+                    onSuccess = { log.d { "uid=$it" } },
+                    onFailure = { log.e(it) { "ensureSignedInAnonymously failed" } },
+                )
+            }
+    }
 
     fun observeSelfPlayer(
         roundKey: String,
@@ -26,19 +42,46 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
     ): Flow<Result<MohamedLoversPlayer?>> =
         Firebase.database.reference(playersPath(roundKey)).child(uid)
             .valueEvents
-            .map { snapshot -> runCatching { snapshot.takeIf { it.exists }?.toPlayer() } }
-            .catch { e -> emit(Result.failure(e)) }
+            .map { snapshot ->
+                runCatching { snapshot.takeIf { it.exists }?.toPlayer() }
+            }
+            .onEach { result ->
+                result.fold(
+                    onSuccess = { log.d { "observeSelfPlayer[$roundKey/$uid]: $it" } },
+                    onFailure = { log.e(it) { "observeSelfPlayer[$roundKey/$uid] error" } },
+                )
+            }
+            .catch { e ->
+                log.e(e) { "observeSelfPlayer[$roundKey/$uid] flow error" }
+                emit(Result.failure(e))
+            }
 
-    suspend fun fetchRoundTotal(roundKey: String): Result<Int> = runCatching {
-        val snapshot = Firebase.database.reference("$ROOT_PATH/$roundKey/$ROUND_TOTAL_PATH")
-            .valueEvents.first()
-        (snapshot.value as? Number)?.toInt() ?: 0
+    suspend fun fetchRoundTotal(roundKey: String): Result<Int> {
+        log.d { "fetchRoundTotal[$roundKey]" }
+        return runCatching {
+            val snapshot = Firebase.database.reference("$ROOT_PATH/$roundKey/$ROUND_TOTAL_PATH")
+                .valueEvents.first()
+            (snapshot.value as? Number)?.toInt() ?: 0
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "fetchRoundTotal[$roundKey]=$it" } },
+                onFailure = { log.e(it) { "fetchRoundTotal[$roundKey] failed" } },
+            )
+        }
     }
 
-    suspend fun fetchAllTimeTotal(): Result<Long> = runCatching {
-        val snapshot = Firebase.database.reference("$ROOT_PATH/$ALL_TIME_TOTAL_PATH")
-            .valueEvents.first()
-        (snapshot.value as? Number)?.toLong() ?: 0L
+    suspend fun fetchAllTimeTotal(): Result<Long> {
+        log.d { "fetchAllTimeTotal" }
+        return runCatching {
+            val snapshot = Firebase.database.reference("$ROOT_PATH/$ALL_TIME_TOTAL_PATH")
+                .valueEvents.first()
+            (snapshot.value as? Number)?.toLong() ?: 0L
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "fetchAllTimeTotal=$it" } },
+                onFailure = { log.e(it) { "fetchAllTimeTotal failed" } },
+            )
+        }
     }
 
     fun observeLeaderboard(roundKey: String): Flow<Result<FirebaseLeaderboard>> =
@@ -55,23 +98,40 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
                     FirebaseLeaderboard(entries = entries, isFinal = isFinal)
                 }
             }
-            .catch { e -> emit(Result.failure(e)) }
+            .onEach { result ->
+                result.fold(
+                    onSuccess = { log.d { "observeLeaderboard[$roundKey]: ${it.entries.size} entries, isFinal=${it.isFinal}" } },
+                    onFailure = { log.e(it) { "observeLeaderboard[$roundKey] error" } },
+                )
+            }
+            .catch { e ->
+                log.e(e) { "observeLeaderboard[$roundKey] flow error" }
+                emit(Result.failure(e))
+            }
 
     suspend fun incrementSession(
         roundKey: String,
         uid: String,
         delta: Int,
         countryCode: String,
-    ): Result<Unit> = runCatching {
+    ): Result<Unit> {
+        log.d { "incrementSession[$roundKey/$uid] delta=$delta country=$countryCode" }
         val safeCode = countryCode.takeIf { it.length >= 2 } ?: MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE
-        Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(
-            mapOf(
-                UID_KEY to uid,
-                COUNTRY_CODE_KEY to safeCode,
-                TOTAL_COUNT_KEY to ServerValue.increment(delta.toDouble()),
-                UPDATED_AT_KEY to ServerValue.TIMESTAMP,
+        return runCatching {
+            Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(
+                mapOf(
+                    UID_KEY to uid,
+                    COUNTRY_CODE_KEY to safeCode,
+                    TOTAL_COUNT_KEY to ServerValue.increment(delta.toDouble()),
+                    UPDATED_AT_KEY to ServerValue.TIMESTAMP,
+                )
             )
-        )
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "incrementSession[$roundKey/$uid] ok" } },
+                onFailure = { log.e(it) { "incrementSession[$roundKey/$uid] failed" } },
+            )
+        }
     }
 
     private fun playersPath(roundKey: String) = "$ROOT_PATH/$roundKey/$PLAYERS_PATH"

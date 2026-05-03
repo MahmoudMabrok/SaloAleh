@@ -41,6 +41,7 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
             implementation(compose.materialIconsExtended)
+            implementation(libs.kermit)
         }
         androidMain.dependencies {
             implementation(libs.androidx.core.ktx)
@@ -71,8 +72,8 @@ android {
         applicationId = "tools.mo3ta.salo"
         minSdk = 24
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 4
+        versionName = "1.1.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

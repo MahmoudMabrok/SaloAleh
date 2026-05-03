@@ -4,7 +4,15 @@
     ".write": false,
 
     "mohamed_lovers": {
+      "allTimeTotal": {
+        ".read": true,
+        ".write": false
+      },
       "$round": {
+        "roundTotal": {
+          ".read": true,
+          ".write": false
+        },
         "leaderboard": {
           ".read": true,
           ".write": false
