@@ -104,9 +104,7 @@ internal fun MohamedLoversInfoSheet(
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.95f),
             )
             StatusCard(state = state)
-            if (state.roundTotal > 0 || state.allTimeTotal > 0L) {
-                TotalsCard(roundTotal = state.roundTotal, allTimeTotal = state.allTimeTotal)
-            }
+            TotalsCard(roundTotal = state.roundTotal, allTimeTotal = state.allTimeTotal)
             LeaderboardCard(
                 topPlayers = state.topPlayers,
                 selfEntry = state.selfEntry,
