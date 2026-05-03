@@ -227,3 +227,22 @@ jobs:
           git diff --cached --quiet && echo "No changes to commit" && exit 0
           git commit -m "chore: bump version to ${{ github.event.inputs.version_name }} [skip ci]"
           git push origin HEAD:${{ github.ref_name }}
+
+      - name: Create GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ github.event.inputs.version_name }}"
+          ANDROID="${{ needs.deploy-android.result }}"
+          IOS="${{ needs.deploy-ios.result }}"
+
+          NOTES="## v${VERSION}"$'\n'
+          [ "$ANDROID" = "success" ] && NOTES+="- ✅ Android published to Google Play (${{ github.event.inputs.track }})"$'\n'
+          [ "$ANDROID" != "success" ] && NOTES+="- ❌ Android deploy failed"$'\n'
+          [ "$IOS" = "success" ] && NOTES+="- ✅ iOS published to App Store Connect"$'\n'
+          [ "$IOS" != "success" ] && NOTES+="- ❌ iOS deploy failed"$'\n'
+
+          gh release create "v${VERSION}" \
+            --title "v${VERSION}" \
+            --notes "$NOTES" \
+            --target "${{ github.ref_name }}"
