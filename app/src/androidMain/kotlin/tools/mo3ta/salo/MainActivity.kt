@@ -14,6 +14,7 @@ import org.koin.android.ext.android.inject
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import tools.mo3ta.salo.data.engagement.EngagementStore
+import tools.mo3ta.salo.data.notification.NotificationSettingsStore
 import tools.mo3ta.salo.di.androidModule
 import tools.mo3ta.salo.di.appModule
 import tools.mo3ta.salo.notification.NotificationChannels
@@ -22,6 +23,7 @@ import tools.mo3ta.salo.notification.NotificationScheduler
 class MainActivity : ComponentActivity() {
 
     private val engagementStore: EngagementStore by inject()
+    private val notificationSettingsStore: NotificationSettingsStore by inject()
 
     private val notifPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -37,6 +39,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         NotificationChannels.createAll(this)
+        NotificationScheduler.apply(
+            notificationSettingsStore.dailyEnabled,
+            notificationSettingsStore.fridayEnabled,
+        )
 
         val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
         val engagementData = engagementStore.recordOpen(today)
@@ -52,7 +58,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun requestNotificationPermissionIfNeeded() {
-        NotificationScheduler.schedule(this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
