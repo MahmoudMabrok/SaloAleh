@@ -24,6 +24,12 @@ class MohamedLoversRepository(
     fun observeLeaderboard(roundKey: String): Flow<Result<FirebaseLeaderboard>> =
         firebaseClient.observeLeaderboard(roundKey)
 
+    suspend fun fetchRoundTotal(roundKey: String): Result<Int> =
+        firebaseClient.fetchRoundTotal(roundKey)
+
+    suspend fun fetchAllTimeTotal(): Result<Long> =
+        firebaseClient.fetchAllTimeTotal()
+
     fun observeSelfPlayer(roundKey: String, uid: String): Flow<Result<MohamedLoversPlayer?>> =
         firebaseClient.observeSelfPlayer(roundKey, uid)
 

@@ -5,6 +5,7 @@ import dev.gitlive.firebase.database.ServerValue
 import dev.gitlive.firebase.database.database
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.domain.FirebaseLeaderboard
@@ -27,6 +28,18 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
             .valueEvents
             .map { snapshot -> runCatching { snapshot.takeIf { it.exists }?.toPlayer() } }
             .catch { e -> emit(Result.failure(e)) }
+
+    suspend fun fetchRoundTotal(roundKey: String): Result<Int> = runCatching {
+        val snapshot = Firebase.database.reference("$ROOT_PATH/$roundKey/$ROUND_TOTAL_PATH")
+            .valueEvents.first()
+        (snapshot.value as? Number)?.toInt() ?: 0
+    }
+
+    suspend fun fetchAllTimeTotal(): Result<Long> = runCatching {
+        val snapshot = Firebase.database.reference("$ROOT_PATH/$ALL_TIME_TOTAL_PATH")
+            .valueEvents.first()
+        (snapshot.value as? Number)?.toLong() ?: 0L
+    }
 
     fun observeLeaderboard(roundKey: String): Flow<Result<FirebaseLeaderboard>> =
         Firebase.database.reference(leaderboardPath(roundKey))
@@ -99,5 +112,7 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         const val WINNER_CODE_KEY = "winnerCode"
         const val COUNTRY_CODE_KEY = "countryCode"
         const val UPDATED_AT_KEY = "updatedAt"
+        const val ROUND_TOTAL_PATH = "roundTotal"
+        const val ALL_TIME_TOTAL_PATH = "allTimeTotal"
     }
 }

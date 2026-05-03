@@ -55,20 +55,34 @@ async function main() {
   console.log(`Round key: ${roundKey} | isFinal: ${isFinal}`);
 
   const db = admin.database();
-  const snapshot = await db
-    .ref(`mohamed_lovers/${roundKey}/players`)
-    .orderByChild('totalCount')
-    .limitToLast(10)
-    .get();
+  const playersRef = db.ref(`mohamed_lovers/${roundKey}/players`);
 
-  if (!snapshot.exists()) {
+  // Full read for roundTotal — separate from top-10 leaderboard query.
+  const [top10Snapshot, allPlayersSnapshot] = await Promise.all([
+    playersRef.orderByChild('totalCount').limitToLast(10).get(),
+    playersRef.get(),
+  ]);
+
+  // Compute roundTotal across all players.
+  let roundTotal = 0;
+  if (allPlayersSnapshot.exists()) {
+    allPlayersSnapshot.forEach(child => {
+      const data = child.val();
+      if (data && typeof data.totalCount === 'number') roundTotal += data.totalCount;
+    });
+  }
+
+  if (!top10Snapshot.exists()) {
     console.log('No players found. Writing empty leaderboard.');
-    await db.ref(`mohamed_lovers/${roundKey}/leaderboard`).set({ isFinal });
+    await Promise.all([
+      db.ref(`mohamed_lovers/${roundKey}/leaderboard`).set({ isFinal }),
+      db.ref(`mohamed_lovers/${roundKey}/roundTotal`).set(roundTotal),
+    ]);
     process.exit(0);
   }
 
   const players = [];
-  snapshot.forEach(child => {
+  top10Snapshot.forEach(child => {
     const data = child.val();
     if (data && typeof data.uid === 'string' && typeof data.totalCount === 'number') {
       players.push({
@@ -92,8 +106,11 @@ async function main() {
     };
   });
 
-  await db.ref(`mohamed_lovers/${roundKey}/leaderboard`).set(leaderboard);
-  console.log(`Wrote ${players.length} entries.`);
+  await Promise.all([
+    db.ref(`mohamed_lovers/${roundKey}/leaderboard`).set(leaderboard),
+    db.ref(`mohamed_lovers/${roundKey}/roundTotal`).set(roundTotal),
+  ]);
+  console.log(`Wrote ${players.length} leaderboard entries. roundTotal=${roundTotal}`);
   console.log(JSON.stringify(leaderboard, null, 2));
   process.exit(0);
 }

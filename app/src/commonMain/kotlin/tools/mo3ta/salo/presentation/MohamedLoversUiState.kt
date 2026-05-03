@@ -38,4 +38,6 @@ data class MohamedLoversUiState(
     val topPlayers: List<MohamedLoversLeaderboardEntry> = emptyList(),
     val error: MohamedLoversError? = null,
     val newlyEarnedRankAchievement: Achievement.RankAchievement? = null,
+    val roundTotal: Int = 0,
+    val allTimeTotal: Long = 0L,
 )

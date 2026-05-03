@@ -143,6 +143,15 @@ class MohamedLoversViewModel(
         }
 
         viewModelScope.launch {
+            repository.fetchRoundTotal(roundKey).onSuccess { total ->
+                _state.update { it.copy(roundTotal = total) }
+            }
+            repository.fetchAllTimeTotal().onSuccess { total ->
+                _state.update { it.copy(allTimeTotal = total) }
+            }
+        }
+
+        viewModelScope.launch {
             val uid = repository.ensureAnonymousUser().getOrElse {
                 _state.update { it.copy(error = it.error ?: MohamedLoversError.Connection) }
                 applyLeaderboard()

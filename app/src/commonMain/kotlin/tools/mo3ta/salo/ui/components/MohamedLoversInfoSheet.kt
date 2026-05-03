@@ -38,9 +38,12 @@ import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_banner
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_country_label
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_info_sheet_title
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_all_time_total_label
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_empty
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_refresh_note
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_title
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_round_total_label
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_stats_title
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_network_time
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_round_end_label
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_rank_pending_top
@@ -101,6 +104,9 @@ internal fun MohamedLoversInfoSheet(
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.95f),
             )
             StatusCard(state = state)
+            if (state.roundTotal > 0 || state.allTimeTotal > 0L) {
+                TotalsCard(roundTotal = state.roundTotal, allTimeTotal = state.allTimeTotal)
+            }
             LeaderboardCard(
                 topPlayers = state.topPlayers,
                 selfEntry = state.selfEntry,
@@ -158,6 +164,47 @@ private fun StatusCard(state: MohamedLoversUiState) {
                 text = stringResource(Res.string.mohamed_lovers_self_tag_label, state.selfDisplayTag),
                 style = bodyStyle().copy(fontSize = 12.sp),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.55f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun TotalsCard(roundTotal: Int, allTimeTotal: Long) {
+    SheetCard {
+        Text(
+            text = stringResource(Res.string.mohamed_lovers_stats_title),
+            style = TextStyle(fontFamily = MohamedLoversFonts.display, fontSize = 14.sp, fontWeight = FontWeight.W500),
+            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.95f),
+        )
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(
+                text = stringResource(Res.string.mohamed_lovers_round_total_label),
+                style = bodyStyle(),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.65f),
+            )
+            Text(
+                text = roundTotal.toLong().formatCount(),
+                style = bodyStyle(),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
+            )
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(MohamedLoversPalette.GoldBase.copy(alpha = 0.15f)),
+        )
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(
+                text = stringResource(Res.string.mohamed_lovers_all_time_total_label),
+                style = bodyStyle(),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.65f),
+            )
+            Text(
+                text = (allTimeTotal + roundTotal).formatCount(),
+                style = bodyStyle().copy(fontSize = 15.sp, fontWeight = FontWeight.W700),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.97f),
             )
         }
     }
@@ -279,6 +326,13 @@ private fun SheetCard(content: @Composable ColumnScope.() -> Unit) {
         verticalArrangement = Arrangement.spacedBy(6.dp),
         content = content,
     )
+}
+
+private fun Long.formatCount(): String {
+    val s = toString()
+    val result = StringBuilder()
+    s.reversed().forEachIndexed { i, c -> if (i > 0 && i % 3 == 0) result.append(','); result.append(c) }
+    return result.reverse().toString()
 }
 
 private fun bodyStyle() = TextStyle(
