@@ -134,7 +134,8 @@ fun MohamedLoversScreen(
                 modifier = Modifier.align(Alignment.Center),
             )
             MohamedLoversCounter(
-                total = state.syncedTotal + state.sessionClicks,
+                allTimeTotal = state.allTimeTotal + state.sessionClicks,
+                roundTotal = state.roundTotal,
                 pending = state.sessionClicks,
                 isFridayBonus = state.isFridayBonus,
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 40.dp),
