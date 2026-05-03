@@ -1,11 +1,13 @@
 package tools.mo3ta.salo.ui
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,6 +53,7 @@ import tools.mo3ta.salo.ui.components.MohamedLoversSkyBackground
 @Composable
 fun MohamedLoversScreen(
     onOpenAchievements: () -> Unit = {},
+    onOpenSettings: () -> Unit = {},
     viewModel: MohamedLoversViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -136,12 +139,21 @@ fun MohamedLoversScreen(
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 40.dp),
             )
             Box(modifier = Modifier.align(Alignment.TopEnd).padding(end = 14.dp, top = 36.dp)) {
-                IconButton(onClick = { infoSheetOpen = true }) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = infoCd,
-                        tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
-                    )
+                Column {
+                    IconButton(onClick = { infoSheetOpen = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = infoCd,
+                            tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
+                        )
+                    }
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "الإعدادات",
+                            tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
+                        )
+                    }
                 }
             }
             Box(modifier = Modifier.align(Alignment.TopStart).padding(start = 14.dp, top = 36.dp)) {

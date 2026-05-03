@@ -1,0 +1,139 @@
+package tools.mo3ta.salo.ui.settings
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import org.koin.compose.koinInject
+import tools.mo3ta.salo.data.notification.NotificationSettingsStore
+import tools.mo3ta.salo.notification.NotificationScheduler
+import tools.mo3ta.salo.ui.components.MohamedLoversPalette
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsScreen(onBack: () -> Unit) {
+    val store: NotificationSettingsStore = koinInject()
+    var dailyEnabled by remember { mutableStateOf(store.dailyEnabled) }
+    var fridayEnabled by remember { mutableStateOf(store.fridayEnabled) }
+
+    Scaffold(
+        containerColor = Color(0xFF0f0f1a),
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "الإعدادات",
+                        color = MohamedLoversPalette.GoldGlow,
+                        fontWeight = FontWeight.Bold,
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "رجوع",
+                            tint = MohamedLoversPalette.GoldGlow,
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFF16213e),
+                ),
+            )
+        },
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        ) {
+            Text(
+                text = "الإشعارات",
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(vertical = 8.dp),
+            )
+
+            SettingToggleRow(
+                label = "تذكير يومي",
+                subtitle = "مرة واحدة يوميًا",
+                checked = dailyEnabled,
+                onToggle = { checked ->
+                    dailyEnabled = checked
+                    store.dailyEnabled = checked
+                    NotificationScheduler.apply(store.dailyEnabled, store.fridayEnabled)
+                },
+            )
+
+            SettingToggleRow(
+                label = "إشعارات الجمعة",
+                subtitle = "كل ساعة من 9ص – 5م",
+                checked = fridayEnabled,
+                onToggle = { checked ->
+                    fridayEnabled = checked
+                    store.fridayEnabled = checked
+                    NotificationScheduler.apply(store.dailyEnabled, store.fridayEnabled)
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingToggleRow(
+    label: String,
+    subtitle: String,
+    checked: Boolean,
+    onToggle: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                color = Color.White,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium,
+            )
+            Text(
+                text = subtitle,
+                color = Color.White.copy(alpha = 0.5f),
+                fontSize = 12.sp,
+            )
+        }
+        Spacer(modifier = Modifier.padding(8.dp))
+        Switch(
+            checked = checked,
+            onCheckedChange = onToggle,
+        )
+    }
+}

@@ -17,6 +17,7 @@ import tools.mo3ta.salo.ui.AchievementCelebrationDialog
 import tools.mo3ta.salo.ui.AchievementsScreen
 import tools.mo3ta.salo.ui.MohamedLoversScreen
 import tools.mo3ta.salo.ui.NotificationRationaleDialog
+import tools.mo3ta.salo.ui.settings.SettingsScreen
 
 @Composable
 fun App(
@@ -29,18 +30,20 @@ fun App(
         }
         var pendingBadge by remember {
             mutableStateOf(
-                engagementData?.newlyEarnedBadge?.let { Achievement.StreakBadge(it, Clock.System.todayIn(TimeZone.currentSystemDefault())) }
+                engagementData?.newlyEarnedBadge?.let {
+                    Achievement.StreakBadge(it, Clock.System.todayIn(TimeZone.currentSystemDefault()))
+                }
             )
         }
         var showAchievements by remember { mutableStateOf(false) }
+        var showSettings by remember { mutableStateOf(false) }
 
-        if (showAchievements) {
-            AchievementsScreen(
-                onBack = { showAchievements = false },
-            )
-        } else {
-            MohamedLoversScreen(
+        when {
+            showSettings -> SettingsScreen(onBack = { showSettings = false })
+            showAchievements -> AchievementsScreen(onBack = { showAchievements = false })
+            else -> MohamedLoversScreen(
                 onOpenAchievements = { showAchievements = true },
+                onOpenSettings = { showSettings = true },
             )
         }
 
