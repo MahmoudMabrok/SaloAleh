@@ -79,7 +79,7 @@ jobs:
           cache: gradle
 
       - name: Decode GoogleService-Info.plist
-        run: echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" | base64 --decode > iosApp/iosApp/GoogleService-Info.plist
+        run: echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" > iosApp/iosApp/GoogleService-Info.plist
 
       - name: Import distribution certificate
         run: |
