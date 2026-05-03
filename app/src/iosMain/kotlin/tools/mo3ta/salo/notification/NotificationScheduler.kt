@@ -2,6 +2,7 @@ package tools.mo3ta.salo.notification
 
 import platform.Foundation.NSDateComponents
 import platform.Foundation.NSTimeZone
+import platform.Foundation.timeZoneWithName
 import platform.UserNotifications.UNCalendarNotificationTrigger
 import platform.UserNotifications.UNMutableNotificationContent
 import platform.UserNotifications.UNNotificationRequest

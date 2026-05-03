@@ -48,5 +48,8 @@
         <array>
             <string>UIInterfaceOrientationPortrait</string>
         </array>
+
+        <key>NSUserNotificationUsageDescription</key>
+        <string>نريد إرسال تذكيرات يومية للصلاة على النبي ﷺ</string>
     </dict>
 </plist>
