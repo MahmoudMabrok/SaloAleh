@@ -122,29 +122,19 @@ jobs:
             -archivePath build/SaloAleh.xcarchive \
             archive
 
-      - name: Write App Store Connect API key
+      - name: Export IPA
         run: |
-          mkdir -p ~/.appstoreconnect/private_keys
-          echo "${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}" | base64 --decode \
-            > ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}.p8
-
-      - name: Export & Upload IPA
-        env:
-          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
-          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
-        run: |
-          cat > ExportOptions.plist << EOF
+          cat > ExportOptions.plist << 'EOF'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
             <key>method</key>
-            <string>app-store-connect</string>
-            <key>destination</key>
-            <string>upload</string>
-            <key>teamID</key>
-            <string>${TEAM_ID}</string>
+            <string>app-store</string>
+            <key>uploadSymbols</key>
+            <true/>
+            <key>compileBitcode</key>
+            <false/>
           </dict>
           </plist>
           EOF
@@ -152,7 +142,15 @@ jobs:
             -exportArchive \
             -archivePath build/SaloAleh.xcarchive \
             -exportOptionsPlist ExportOptions.plist \
-            -exportPath build/ipa \
-            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8 \
-            -authenticationKeyID "${KEY_ID}" \
-            -authenticationKeyIssuerID "${ISSUER_ID}"
+            -exportPath build/ipa
+
+      - name: Upload to App Store Connect
+        run: |
+          xcrun altool \
+            --upload-app \
+            --type ios \
+            --file build/ipa/SaloAleh.ipa \
+            --apiKey "${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}" \
+            --apiIssuer "${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}"
+        env:
+          APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
