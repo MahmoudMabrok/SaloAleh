@@ -1,6 +1,7 @@
 package tools.mo3ta.salo.notification
 
 import platform.Foundation.NSDateComponents
+import platform.Foundation.NSTimeZone
 import platform.UserNotifications.UNCalendarNotificationTrigger
 import platform.UserNotifications.UNMutableNotificationContent
 import platform.UserNotifications.UNNotificationRequest
@@ -21,7 +22,11 @@ actual object NotificationScheduler {
                 setBody("تذكيرك اليومي — اضغط لتشارك الصلاة على النبي")
                 setSound(UNNotificationSound.defaultSound())
             }
-            val components = NSDateComponents().apply { hour = 9L }
+            val components = NSDateComponents().apply {
+                hour = 9L
+                minute = 0L
+                timeZone = NSTimeZone.timeZoneWithName("Africa/Cairo")
+            }
             val trigger = UNCalendarNotificationTrigger.triggerWithDateMatchingComponents(components, repeats = true)
             val request = UNNotificationRequest.requestWithIdentifier(ID_DAILY, content, trigger)
             center.addNotificationRequest(request) { _ -> }
@@ -39,6 +44,8 @@ actual object NotificationScheduler {
                 val components = NSDateComponents().apply {
                     weekday = 6L
                     this.hour = hour.toLong()
+                    minute = 0L
+                    timeZone = NSTimeZone.timeZoneWithName("Africa/Cairo")
                 }
                 val trigger = UNCalendarNotificationTrigger.triggerWithDateMatchingComponents(components, repeats = true)
                 val request = UNNotificationRequest.requestWithIdentifier("notif_friday_$hour", content, trigger)
