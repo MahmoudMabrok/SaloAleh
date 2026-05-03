@@ -19,13 +19,12 @@ APP_PATH = $(BUILD_DIR)/SaloAleh.app
 
 ios:
 	./gradlew :app:linkDebugFrameworkIosSimulatorArm64
-	rm -rf "$(APP_PATH)"
 	xcodebuild \
 		-workspace $(WORKSPACE) \
 		-scheme $(SCHEME) \
 		-configuration Debug \
 		-destination '$(DESTINATION)' \
-		build
+		clean build
 	xcrun simctl install $(SIMULATOR_ID) "$(APP_PATH)"
 	xcrun simctl launch $(SIMULATOR_ID) $(BUNDLE_ID)
 
