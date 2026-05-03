@@ -319,7 +319,7 @@
 					"-framework",
 					ComposeApp,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = tools.mo3ta.salo;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mo3ta.saloalaihapp;
 				PRODUCT_NAME = SaloAleh;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -353,7 +353,7 @@
 					"-framework",
 					ComposeApp,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = tools.mo3ta.salo;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mo3ta.saloalaihapp;
 				PRODUCT_NAME = SaloAleh;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;

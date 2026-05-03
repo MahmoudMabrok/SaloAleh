@@ -1,6 +1,7 @@
 package tools.mo3ta.salo.ui
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -139,11 +140,20 @@ fun MohamedLoversScreen(
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 40.dp),
             )
             Box(modifier = Modifier.align(Alignment.TopEnd).padding(end = 14.dp, top = 36.dp)) {
-                Column {
-                    IconButton(onClick = { infoSheetOpen = true }) {
+                IconButton(onClick = { infoSheetOpen = true }) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = infoCd,
+                        tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
+                    )
+                }
+            }
+            Box(modifier = Modifier.align(Alignment.TopStart).padding(start = 14.dp, top = 36.dp)) {
+                Row {
+                    IconButton(onClick = onOpenAchievements) {
                         Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = infoCd,
+                            imageVector = Icons.Default.EmojiEvents,
+                            contentDescription = "الإنجازات",
                             tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
                         )
                     }
@@ -154,15 +164,6 @@ fun MohamedLoversScreen(
                             tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
                         )
                     }
-                }
-            }
-            Box(modifier = Modifier.align(Alignment.TopStart).padding(start = 14.dp, top = 36.dp)) {
-                IconButton(onClick = onOpenAchievements) {
-                    Icon(
-                        imageVector = Icons.Default.EmojiEvents,
-                        contentDescription = "الإنجازات",
-                        tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
-                    )
                 }
             }
             if (state.isLoading) {
