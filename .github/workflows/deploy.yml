@@ -1,5 +1,8 @@
 name: Deploy
 
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
     inputs:
@@ -177,3 +180,42 @@ jobs:
             -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8 \
             -authenticationKeyID "${KEY_ID}" \
             -authenticationKeyIssuerID "${ISSUER_ID}"
+
+  commit-version-bump:
+    name: Commit version bump
+    runs-on: ubuntu-latest
+    needs: [deploy-android, deploy-ios]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Apply version bumps
+        run: |
+          VERSION_NAME="${{ github.event.inputs.version_name }}"
+
+          # Android
+          CURRENT_CODE=$(grep 'versionCode = ' app/build.gradle.kts | grep -o '[0-9]*')
+          NEW_CODE=$((CURRENT_CODE + 1))
+          sed -i "s/versionCode = $CURRENT_CODE/versionCode = $NEW_CODE/" app/build.gradle.kts
+          sed -i "s/versionName = \"[^\"]*\"/versionName = \"$VERSION_NAME\"/" app/build.gradle.kts
+
+          # iOS
+          PBXPROJ="iosApp/iosApp.xcodeproj/project.pbxproj"
+          CURRENT_BUILD=$(grep 'CURRENT_PROJECT_VERSION' "$PBXPROJ" | head -1 | grep -o '[0-9]*')
+          NEW_BUILD=$((CURRENT_BUILD + 1))
+          sed -i "s/CURRENT_PROJECT_VERSION = $CURRENT_BUILD/CURRENT_PROJECT_VERSION = $NEW_BUILD/g" "$PBXPROJ"
+          sed -i "s/MARKETING_VERSION = [^;]*/MARKETING_VERSION = $VERSION_NAME/g" "$PBXPROJ"
+
+          echo "Android versionCode: $CURRENT_CODE → $NEW_CODE"
+          echo "iOS build: $CURRENT_BUILD → $NEW_BUILD"
+          echo "Version name: $VERSION_NAME"
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add app/build.gradle.kts iosApp/iosApp.xcodeproj/project.pbxproj
+          git commit -m "chore: bump version to ${{ github.event.inputs.version_name }} [skip ci]"
+          git push origin HEAD:${{ github.ref_name }}
