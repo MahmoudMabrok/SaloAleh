@@ -86,7 +86,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                 onToggle = { checked ->
                     dailyEnabled = checked
                     store.dailyEnabled = checked
-                    NotificationScheduler.apply(store.dailyEnabled, store.fridayEnabled)
+                    NotificationScheduler.apply(checked, store.fridayEnabled)
                 },
             )
 
@@ -97,7 +97,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                 onToggle = { checked ->
                     fridayEnabled = checked
                     store.fridayEnabled = checked
-                    NotificationScheduler.apply(store.dailyEnabled, store.fridayEnabled)
+                    NotificationScheduler.apply(store.dailyEnabled, checked)
                 },
             )
         }
