@@ -43,6 +43,7 @@ import tools.mo3ta.salo.generated.resources.mohamed_lovers_reward_text
 import tools.mo3ta.salo.presentation.MohamedLoversError
 import tools.mo3ta.salo.presentation.MohamedLoversStatus
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
+import tools.mo3ta.salo.ui.components.DailyHadithDialog
 import tools.mo3ta.salo.ui.components.MohamedLoversArchShrine
 import tools.mo3ta.salo.ui.components.MohamedLoversCounter
 import tools.mo3ta.salo.ui.components.MohamedLoversHadithBanner
@@ -115,8 +116,9 @@ fun MohamedLoversScreen(
             prayerText = prayerText,
             rewardText = rewardText,
             blockedMessage = blockedMessage,
-            onBlessing = { isLit = true; viewModel.onCountClick() },
+            onBlessing = { isLit = true },
             onTap = {
+                if (tapsEnabled) viewModel.onCountClick()
                 analyticsManager.logAction(
                     "mohamed_lovers_sky_tap",
                     mapOf("status" to state.status.name, "enabled" to tapsEnabled.toString()),
@@ -182,5 +184,10 @@ fun MohamedLoversScreen(
                 showPlatformToast(codeCopiedLabel)
             },
         )
+        if (state.showHadithDialog) {
+            DailyHadithDialog(
+                onDismiss = { viewModel.dismissHadithDialog() },
+            )
+        }
     }
 }

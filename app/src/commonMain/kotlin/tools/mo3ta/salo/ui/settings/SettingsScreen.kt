@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.koin.compose.koinInject
+import tools.mo3ta.salo.data.hadith.DailyHadithStore
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
 import tools.mo3ta.salo.notification.NotificationScheduler
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
@@ -39,8 +40,10 @@ import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 @Composable
 fun SettingsScreen(onBack: () -> Unit) {
     val store: NotificationSettingsStore = koinInject()
+    val hadithStore: DailyHadithStore = koinInject()
     var dailyEnabled by remember { mutableStateOf(store.dailyEnabled) }
     var fridayEnabled by remember { mutableStateOf(store.fridayEnabled) }
+    var hadithOnStartup by remember { mutableStateOf(hadithStore.showOnStartup) }
 
     Scaffold(
         containerColor = Color(0xFF0f0f1a),
@@ -101,6 +104,24 @@ fun SettingsScreen(onBack: () -> Unit) {
                     fridayEnabled = checked
                     store.fridayEnabled = checked
                     NotificationScheduler.apply(store.dailyEnabled, checked)
+                },
+            )
+
+            Text(
+                text = "المحتوى",
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 24.dp, bottom = 8.dp),
+            )
+
+            SettingToggleRow(
+                label = "حديث عند الفتح",
+                subtitle = "عرض حديث في فضل الصلاة على النبي ﷺ",
+                checked = hadithOnStartup,
+                onToggle = { checked ->
+                    hadithOnStartup = checked
+                    hadithStore.showOnStartup = checked
                 },
             )
 

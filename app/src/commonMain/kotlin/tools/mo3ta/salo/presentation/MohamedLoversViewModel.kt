@@ -16,6 +16,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
 import tools.mo3ta.salo.data.engagement.EngagementStore
+import tools.mo3ta.salo.data.hadith.DailyHadithStore
 import tools.mo3ta.salo.domain.FirebaseLeaderboard
 import tools.mo3ta.salo.domain.MOHAMED_LOVERS_FRIDAY_MULTIPLIER
 import tools.mo3ta.salo.domain.MohamedLoversCompetitionWindow
@@ -26,6 +27,7 @@ import tools.mo3ta.salo.domain.buildMohamedLoversDisplayTag
 class MohamedLoversViewModel(
     private val repository: MohamedLoversRepository,
     private val engagementStore: EngagementStore,
+    private val hadithStore: DailyHadithStore,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MohamedLoversUiState())
@@ -39,7 +41,12 @@ class MohamedLoversViewModel(
     private var authUid: String? = null
     private var currentWindow: MohamedLoversCompetitionWindow = MohamedLoversCompetitionWindow()
 
-    init { refresh() }
+    init {
+        _state.update { it.copy(showHadithDialog = hadithStore.showOnStartup) }
+        refresh()
+    }
+
+    fun dismissHadithDialog() = _state.update { it.copy(showHadithDialog = false) }
 
     fun refresh() {
         repository.refreshNetworkTime()

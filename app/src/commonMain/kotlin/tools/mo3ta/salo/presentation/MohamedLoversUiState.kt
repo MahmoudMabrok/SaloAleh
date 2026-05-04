@@ -40,4 +40,5 @@ data class MohamedLoversUiState(
     val newlyEarnedRankAchievement: Achievement.RankAchievement? = null,
     val roundTotal: Int = 0,
     val allTimeTotal: Long = 0L,
+    val showHadithDialog: Boolean = false,
 )
