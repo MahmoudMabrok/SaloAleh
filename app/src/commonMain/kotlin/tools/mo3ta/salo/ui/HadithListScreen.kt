@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -53,11 +54,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import tools.mo3ta.salo.data.hadith.DailyHadithStore
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.data.hadith.HadithItem
 import tools.mo3ta.salo.data.media.MediaItem
-import tools.mo3ta.salo.data.media.MediaStore
 import tools.mo3ta.salo.data.media.MediaType
+import tools.mo3ta.salo.presentation.HadithListViewModel
 
 private val HLGold      = Color(0xFFD4AF37)
 private val HLDeepNavy  = Color(0xFF09142B)
@@ -73,7 +75,11 @@ private val TypeChannel  = Color(0xFF6B2E1E)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HadithListScreen(onBack: () -> Unit) {
+fun HadithListScreen(
+    onBack: () -> Unit,
+    viewModel: HadithListViewModel = koinViewModel(),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
     var selectedTab by remember { mutableStateOf(0) }
 
     Scaffold(
@@ -90,9 +96,9 @@ fun HadithListScreen(onBack: () -> Unit) {
                         )
                         Text(
                             text = if (selectedTab == 0)
-                                "${DailyHadithStore.HADITHS.size} حديث وأثر"
+                                "${state.texts.size} حديث وأثر"
                             else
-                                "${MediaStore.ITEMS.size} مقطع وقائمة",
+                                "${state.media.size} مقطع وقائمة",
                             color = HLMutedGold,
                             fontSize = 11.sp,
                         )
@@ -130,8 +136,16 @@ fun HadithListScreen(onBack: () -> Unit) {
 
             Crossfade(targetState = selectedTab, animationSpec = tween(260), label = "tab") { tab ->
                 when (tab) {
-                    0 -> TextTab()
-                    else -> MediaTab()
+                    0 -> TextTab(
+                        items = state.texts,
+                        isLoading = state.isLoadingTexts,
+                        loaded = state.textsLoaded,
+                    )
+                    else -> MediaTab(
+                        items = state.media,
+                        isLoading = state.isLoadingMedia,
+                        loaded = state.mediaLoaded,
+                    )
                 }
             }
         }
@@ -141,37 +155,72 @@ fun HadithListScreen(onBack: () -> Unit) {
 // ── Text tab ─────────────────────────────────────────────────────────────────
 
 @Composable
-private fun TextTab() {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 14.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        item { Spacer(Modifier.height(4.dp)) }
-        itemsIndexed(DailyHadithStore.HADITHS) { index, item ->
-            HadithListItem(item = item, index = index)
+private fun TextTab(items: List<HadithItem>, isLoading: Boolean, loaded: Boolean) {
+    when {
+        isLoading -> LoadingState()
+        loaded && items.isEmpty() -> EmptyState(message = "لا يوجد محتوى")
+        else -> LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            item { Spacer(Modifier.height(4.dp)) }
+            itemsIndexed(items) { index, item ->
+                HadithListItem(item = item, index = index)
+            }
+            item { Spacer(Modifier.height(16.dp)) }
         }
-        item { Spacer(Modifier.height(16.dp)) }
     }
 }
 
 // ── Media tab ─────────────────────────────────────────────────────────────────
 
 @Composable
-private fun MediaTab() {
+private fun MediaTab(items: List<MediaItem>, isLoading: Boolean, loaded: Boolean) {
     val uriHandler = LocalUriHandler.current
-    LazyColumn(
+    when {
+        isLoading -> LoadingState()
+        loaded && items.isEmpty() -> EmptyState(message = "لا يوجد محتوى")
+        else -> LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            item { Spacer(Modifier.height(4.dp)) }
+            itemsIndexed(items) { _, item ->
+                MediaCard(item = item, onOpen = { uriHandler.openUri(item.url) })
+            }
+            item { Spacer(Modifier.height(16.dp)) }
+        }
+    }
+}
+
+@Composable
+private fun LoadingState() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        CircularProgressIndicator(color = HLGold)
+    }
+}
+
+@Composable
+private fun EmptyState(message: String) {
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 14.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+            .padding(horizontal = 24.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        item { Spacer(Modifier.height(4.dp)) }
-        itemsIndexed(MediaStore.ITEMS) { _, item ->
-            MediaCard(item = item, onOpen = { uriHandler.openUri(item.url) })
-        }
-        item { Spacer(Modifier.height(16.dp)) }
+        Text(
+            text = message,
+            color = HLMutedGold,
+            fontSize = 14.sp,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
