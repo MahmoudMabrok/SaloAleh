@@ -7,10 +7,20 @@ import tools.mo3ta.salo.data.media.MediaItem
 import tools.mo3ta.salo.data.media.MediaType
 
 @Serializable
+internal data class HadithResponseDto(
+    @SerialName("الأحاديث") val hadiths: List<HadithDto>,
+)
+
+@Serializable
 internal data class HadithDto(
-    val title: String,
-    val text: String,
-    val source: String,
+    @SerialName("العنوان") val title: String,
+    @SerialName("النص") val text: String,
+    @SerialName("المصدر") val source: String,
+)
+
+@Serializable
+internal data class MediaResponseDto(
+    val items: List<MediaDto>,
 )
 
 @Serializable

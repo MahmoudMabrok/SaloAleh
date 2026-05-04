@@ -4,7 +4,7 @@ import kotlinx.coroutines.CancellationException
 import tools.mo3ta.salo.data.media.MediaItem
 import tools.mo3ta.salo.data.remote.HadithRemoteDataSource
 
-internal class HadithListRepository(
+class HadithListRepository(
     private val remote: HadithRemoteDataSource,
 ) {
     suspend fun loadHadiths(): Result<List<HadithItem>> = safeCall { remote.fetchHadiths() }
