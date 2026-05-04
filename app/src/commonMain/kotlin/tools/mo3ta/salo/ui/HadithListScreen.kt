@@ -24,8 +24,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -44,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -52,6 +55,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
 import tools.mo3ta.salo.data.hadith.HadithItem
+import tools.mo3ta.salo.data.media.MediaItem
+import tools.mo3ta.salo.data.media.MediaStore
+import tools.mo3ta.salo.data.media.MediaType
 
 private val HLGold      = Color(0xFFD4AF37)
 private val HLDeepNavy  = Color(0xFF09142B)
@@ -61,9 +67,15 @@ private val HLCream     = Color(0xFFFFF8E7)
 private val HLMutedGold = Color(0xFFA89020)
 private val HLActionBg  = Color(0xFF0A1A30)
 
+private val TypeVideo    = Color(0xFF2E6B3E)
+private val TypePlaylist = Color(0xFF1E4A7A)
+private val TypeChannel  = Color(0xFF6B2E1E)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HadithListScreen(onBack: () -> Unit) {
+    var selectedTab by remember { mutableStateOf(0) }
+
     Scaffold(
         containerColor = HLDeepNavy,
         topBar = {
@@ -77,7 +89,10 @@ fun HadithListScreen(onBack: () -> Unit) {
                             fontSize = 15.sp,
                         )
                         Text(
-                            text = "${DailyHadithStore.HADITHS.size} حديث وأثر",
+                            text = if (selectedTab == 0)
+                                "${DailyHadithStore.HADITHS.size} حديث وأثر"
+                            else
+                                "${MediaStore.ITEMS.size} مقطع وقائمة",
                             color = HLMutedGold,
                             fontSize = 11.sp,
                         )
@@ -96,21 +111,183 @@ fun HadithListScreen(onBack: () -> Unit) {
             )
         },
     ) { padding ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(padding),
         ) {
-            item { Spacer(Modifier.height(4.dp)) }
-            itemsIndexed(DailyHadithStore.HADITHS) { index, item ->
-                HadithListItem(item = item, index = index)
+            // ── Tab bar ──────────────────────────────────────────────
+            SegmentedTabBar(
+                tabs = listOf("النصوص", "الوسائط"),
+                selected = selectedTab,
+                onSelect = { selectedTab = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+            )
+
+            GoldDivider(widthFraction = 1f, alpha = 0.15f)
+
+            Crossfade(targetState = selectedTab, animationSpec = tween(260), label = "tab") { tab ->
+                when (tab) {
+                    0 -> TextTab()
+                    else -> MediaTab()
+                }
             }
-            item { Spacer(Modifier.height(16.dp)) }
         }
     }
 }
+
+// ── Text tab ─────────────────────────────────────────────────────────────────
+
+@Composable
+private fun TextTab() {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        item { Spacer(Modifier.height(4.dp)) }
+        itemsIndexed(DailyHadithStore.HADITHS) { index, item ->
+            HadithListItem(item = item, index = index)
+        }
+        item { Spacer(Modifier.height(16.dp)) }
+    }
+}
+
+// ── Media tab ─────────────────────────────────────────────────────────────────
+
+@Composable
+private fun MediaTab() {
+    val uriHandler = LocalUriHandler.current
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        item { Spacer(Modifier.height(4.dp)) }
+        itemsIndexed(MediaStore.ITEMS) { _, item ->
+            MediaCard(item = item, onOpen = { uriHandler.openUri(item.url) })
+        }
+        item { Spacer(Modifier.height(16.dp)) }
+    }
+}
+
+// ── Media card ────────────────────────────────────────────────────────────────
+
+@Composable
+private fun MediaCard(item: MediaItem, onOpen: () -> Unit) {
+    val shape = RoundedCornerShape(16.dp)
+
+    val (typeLabel, typeBg) = when (item.type) {
+        MediaType.VIDEO    -> "فيديو" to TypeVideo
+        MediaType.PLAYLIST -> "قائمة" to TypePlaylist
+        MediaType.CHANNEL  -> "قناة"  to TypeChannel
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(Brush.verticalGradient(listOf(HLCardTop, HLMidNavy)))
+            .border(1.dp, HLGold.copy(alpha = 0.3f), shape)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onOpen,
+            ),
+    ) {
+        // Top shimmer
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(Color.Transparent, HLGold.copy(alpha = 0.4f), Color.Transparent),
+                    ),
+                ),
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            // Play / type icon
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(HLGold.copy(alpha = 0.1f))
+                    .border(1.dp, HLGold.copy(alpha = 0.3f), RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PlayCircle,
+                    contentDescription = null,
+                    tint = HLGold.copy(alpha = 0.75f),
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+
+            // Text block
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = item.title,
+                    color = HLCream,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    lineHeight = 20.sp,
+                    style = TextStyle(
+                        textDirection = if (item.language.contains("Arabic")) TextDirection.Rtl else TextDirection.Ltr,
+                    ),
+                    textAlign = if (item.language.contains("Arabic")) TextAlign.Start else TextAlign.Start,
+                )
+                Spacer(Modifier.height(5.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    // Type badge
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(typeBg.copy(alpha = 0.8f))
+                            .padding(horizontal = 7.dp, vertical = 2.dp),
+                    ) {
+                        Text(typeLabel, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                    // Language badge
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(HLGold.copy(alpha = 0.12f))
+                            .border(1.dp, HLGold.copy(alpha = 0.25f), RoundedCornerShape(4.dp))
+                            .padding(horizontal = 7.dp, vertical = 2.dp),
+                    ) {
+                        Text(item.language, color = HLMutedGold, fontSize = 10.sp)
+                    }
+                }
+            }
+
+            // External link icon
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                contentDescription = "فتح",
+                tint = HLGold.copy(alpha = 0.5f),
+                modifier = Modifier.size(18.dp),
+            )
+        }
+    }
+}
+
+// ── Hadith card (text tab) ────────────────────────────────────────────────────
 
 @Composable
 private fun HadithListItem(item: HadithItem, index: Int) {
@@ -130,7 +307,6 @@ private fun HadithListItem(item: HadithItem, index: Int) {
                 shape = shape,
             ),
     ) {
-        // Top shimmer stripe
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -138,13 +314,7 @@ private fun HadithListItem(item: HadithItem, index: Int) {
                 .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
                 .background(
                     Brush.horizontalGradient(
-                        listOf(
-                            Color.Transparent,
-                            HLGold.copy(alpha = 0.35f),
-                            HLGold.copy(alpha = 0.7f),
-                            HLGold.copy(alpha = 0.35f),
-                            Color.Transparent,
-                        ),
+                        listOf(Color.Transparent, HLGold.copy(0.35f), HLGold.copy(0.7f), HLGold.copy(0.35f), Color.Transparent),
                     ),
                 ),
         )
@@ -156,7 +326,6 @@ private fun HadithListItem(item: HadithItem, index: Int) {
                 .padding(top = 16.dp, bottom = 14.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // Header row: number badge ↔ ornament
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -170,24 +339,13 @@ private fun HadithListItem(item: HadithItem, index: Int) {
                         .border(1.dp, HLGold.copy(alpha = 0.4f), CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        text = "${index + 1}",
-                        color = HLGold,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
+                    Text("${index + 1}", color = HLGold, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
-                Text(
-                    text = "✦  ❖  ✦",
-                    color = HLGold.copy(alpha = 0.6f),
-                    fontSize = 10.sp,
-                    letterSpacing = 2.sp,
-                )
+                Text("✦  ❖  ✦", color = HLGold.copy(alpha = 0.6f), fontSize = 10.sp, letterSpacing = 2.sp)
             }
 
             Spacer(Modifier.height(12.dp))
 
-            // Title — TextAlign.Start = right-aligned in global RTL context
             Text(
                 text = item.title,
                 color = HLGold,
@@ -199,12 +357,9 @@ private fun HadithListItem(item: HadithItem, index: Int) {
             )
 
             Spacer(Modifier.height(10.dp))
-
             GoldDivider(widthFraction = 0.85f)
-
             Spacer(Modifier.height(12.dp))
 
-            // Body
             Text(
                 text = item.text,
                 color = HLCream,
@@ -217,7 +372,6 @@ private fun HadithListItem(item: HadithItem, index: Int) {
 
             Spacer(Modifier.height(10.dp))
 
-            // Source
             Text(
                 text = item.source,
                 color = HLMutedGold,
@@ -228,12 +382,9 @@ private fun HadithListItem(item: HadithItem, index: Int) {
             )
 
             Spacer(Modifier.height(12.dp))
-
             GoldDivider(widthFraction = 0.5f, alpha = 0.2f)
-
             Spacer(Modifier.height(12.dp))
 
-            // Action buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -250,21 +401,79 @@ private fun HadithListItem(item: HadithItem, index: Int) {
     }
 }
 
+// ── Shared tab bar ────────────────────────────────────────────────────────────
+
+@Composable
+private fun SegmentedTabBar(
+    tabs: List<String>,
+    selected: Int,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(12.dp)
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .background(Color(0xFF0A1528))
+            .border(1.dp, HLGold.copy(alpha = 0.2f), shape)
+            .padding(4.dp),
+    ) {
+        Row {
+            tabs.forEachIndexed { index, label ->
+                val isSelected = index == selected
+                val bgColor by animateColorAsState(
+                    targetValue = if (isSelected) HLGold.copy(alpha = 0.2f) else Color.Transparent,
+                    animationSpec = tween(200),
+                    label = "tab_bg_$index",
+                )
+                val textColor by animateColorAsState(
+                    targetValue = if (isSelected) HLGold else HLMutedGold,
+                    animationSpec = tween(200),
+                    label = "tab_text_$index",
+                )
+                val borderAlpha by animateFloatAsState(
+                    targetValue = if (isSelected) 0.5f else 0f,
+                    animationSpec = tween(200),
+                    label = "tab_border_$index",
+                )
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(9.dp))
+                        .background(bgColor)
+                        .border(1.dp, HLGold.copy(alpha = borderAlpha), RoundedCornerShape(9.dp))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) { onSelect(index) }
+                        .padding(vertical = 8.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = label,
+                        color = textColor,
+                        fontSize = 13.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ── Reusable composables ──────────────────────────────────────────────────────
+
 @Composable
 private fun CopyActionButton(text: String, modifier: Modifier = Modifier) {
     var copied by remember { mutableStateOf(false) }
-
     val bgColor by animateColorAsState(
         targetValue = if (copied) HLGold.copy(alpha = 0.18f) else HLActionBg,
-        animationSpec = tween(200),
-        label = "copy_bg",
+        animationSpec = tween(200), label = "copy_bg",
     )
     val borderAlpha by animateFloatAsState(
         targetValue = if (copied) 0.75f else 0.25f,
-        animationSpec = tween(200),
-        label = "copy_border",
+        animationSpec = tween(200), label = "copy_border",
     )
-
     val shape = RoundedCornerShape(10.dp)
     Box(
         modifier = modifier
@@ -274,19 +483,11 @@ private fun CopyActionButton(text: String, modifier: Modifier = Modifier) {
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
-            ) {
-                if (!copied) {
-                    copyToClipboard(text)
-                    copied = true
-                }
-            }
+            ) { if (!copied) { copyToClipboard(text); copied = true } }
             .padding(vertical = 9.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Crossfade(targetState = copied, animationSpec = tween(200), label = "copy_icon") { isCopied ->
                 Icon(
                     imageVector = if (isCopied) Icons.Default.Check else Icons.Default.ContentCopy,
@@ -326,17 +527,9 @@ private fun ActionButton(
             .padding(vertical = 9.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             icon()
-            Text(
-                text = label,
-                color = HLGold,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-            )
+            Text(text = label, color = HLGold, fontSize = 12.sp, fontWeight = FontWeight.Medium)
         }
     }
 }
