@@ -32,6 +32,11 @@ actual fun shareText(text: String) {
 actual fun areNotificationsEnabled(): Boolean =
     NotificationManagerCompat.from(AndroidAppContext.get()).areNotificationsEnabled()
 
+actual fun getAppVersion(): String {
+    val ctx = AndroidAppContext.get()
+    return ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName ?: "—"
+}
+
 actual fun openNotificationSettings() {
     val ctx = AndroidAppContext.get()
     val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {

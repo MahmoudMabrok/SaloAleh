@@ -5,3 +5,4 @@ expect fun copyToClipboard(text: String)
 expect fun shareText(text: String)
 expect fun areNotificationsEnabled(): Boolean
 expect fun openNotificationSettings()
+expect fun getAppVersion(): String

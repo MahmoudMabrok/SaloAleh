@@ -161,17 +161,17 @@ fun MohamedLoversScreen(
                             tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
                         )
                     }
-                    IconButton(onClick = onOpenSettings) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "الإعدادات",
-                            tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
-                        )
-                    }
                     IconButton(onClick = onOpenHadithList) {
                         Icon(
                             imageVector = Icons.Default.AutoStories,
                             contentDescription = "الأحاديث",
+                            tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
+                        )
+                    }
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "الإعدادات",
                             tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
                         )
                     }

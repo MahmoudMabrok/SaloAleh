@@ -19,12 +19,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -38,6 +36,7 @@ import tools.mo3ta.salo.data.notification.NotificationSettingsStore
 import tools.mo3ta.salo.notification.NotificationScheduler
 import tools.mo3ta.salo.ui.areNotificationsEnabled
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
+import tools.mo3ta.salo.ui.getAppVersion
 import tools.mo3ta.salo.ui.openNotificationSettings
 import tools.mo3ta.salo.ui.showPlatformToast
 
@@ -49,13 +48,7 @@ fun SettingsScreen(onBack: () -> Unit) {
     var dailyEnabled by remember { mutableStateOf(store.dailyEnabled) }
     var fridayEnabled by remember { mutableStateOf(store.fridayEnabled) }
     var hadithOnStartup by remember { mutableStateOf(hadithStore.showOnStartup) }
-    var notifPermGranted by remember { mutableStateOf(areNotificationsEnabled()) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(1000)
-            notifPermGranted = areNotificationsEnabled()
-        }
-    }
+    val notifPermGranted = remember { areNotificationsEnabled() }
 
     Scaffold(
         containerColor = Color(0xFF0f0f1a),
@@ -145,13 +138,13 @@ fun SettingsScreen(onBack: () -> Unit) {
                 },
             )
 
-            SettingLinkRow(
-                label = "اختبار الإشعار (10 ثوانٍ)",
-                onClick = {
-                    NotificationScheduler.scheduleTest(10.0)
-                    showPlatformToast("سيصلك إشعار بعد 10 ثوانٍ")
-                },
-            )
+//            SettingLinkRow(
+//                label = "اختبار الإشعار (10 ثوانٍ)",
+//                onClick = {
+//                    NotificationScheduler.scheduleTest(10.0)
+//                    showPlatformToast("سيصلك إشعار بعد 10 ثوانٍ")
+//                },
+//            )
 
             Text(
                 text = "عن التطبيق",
@@ -181,7 +174,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                     modifier = Modifier.weight(1f),
                 )
                 Text(
-                    text = "1.1.1",
+                    text = remember { getAppVersion() },
                     color = Color.White.copy(alpha = 0.5f),
                     fontSize = 14.sp,
                 )

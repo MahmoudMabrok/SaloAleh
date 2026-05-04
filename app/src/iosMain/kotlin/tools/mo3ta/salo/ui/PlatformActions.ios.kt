@@ -41,6 +41,10 @@ actual fun areNotificationsEnabled(): Boolean {
     return iosNotifGranted
 }
 
+actual fun getAppVersion(): String =
+    platform.Foundation.NSBundle.mainBundle.infoDictionary
+        ?.get("CFBundleShortVersionString") as? String ?: "—"
+
 actual fun openNotificationSettings() {
     val url = NSURL(string = UIApplicationOpenSettingsURLString) ?: return
     UIApplication.sharedApplication.openURL(url)
