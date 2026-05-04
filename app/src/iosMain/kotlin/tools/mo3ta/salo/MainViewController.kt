@@ -16,12 +16,16 @@ fun MainViewController() = ComposeUIViewController(
         val koin = startKoin { modules(appModule, iosModule) }.koin
         val store = koin.get<NotificationSettingsStore>()
 
+        println("[MainVC] requesting notification authorization")
         UNUserNotificationCenter.currentNotificationCenter()
             .requestAuthorizationWithOptions(
                 UNAuthorizationOptionAlert or UNAuthorizationOptionSound or UNAuthorizationOptionBadge,
-            ) { granted, _ ->
+            ) { granted, error ->
+                println("[MainVC] auth callback — granted=$granted error=${error?.localizedDescription}")
                 if (granted) {
                     NotificationScheduler.apply(store.dailyEnabled, store.fridayEnabled)
+                } else {
+                    println("[MainVC] permission NOT granted — notifications will not be scheduled")
                 }
             }
     },

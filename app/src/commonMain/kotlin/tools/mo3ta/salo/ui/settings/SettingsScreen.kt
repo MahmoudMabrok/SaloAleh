@@ -19,10 +19,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,7 +36,10 @@ import org.koin.compose.koinInject
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
 import tools.mo3ta.salo.notification.NotificationScheduler
+import tools.mo3ta.salo.ui.areNotificationsEnabled
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
+import tools.mo3ta.salo.ui.openNotificationSettings
+import tools.mo3ta.salo.ui.showPlatformToast
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,6 +49,13 @@ fun SettingsScreen(onBack: () -> Unit) {
     var dailyEnabled by remember { mutableStateOf(store.dailyEnabled) }
     var fridayEnabled by remember { mutableStateOf(store.fridayEnabled) }
     var hadithOnStartup by remember { mutableStateOf(hadithStore.showOnStartup) }
+    var notifPermGranted by remember { mutableStateOf(areNotificationsEnabled()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1000)
+            notifPermGranted = areNotificationsEnabled()
+        }
+    }
 
     Scaffold(
         containerColor = Color(0xFF0f0f1a),
@@ -85,6 +97,14 @@ fun SettingsScreen(onBack: () -> Unit) {
                 modifier = Modifier.padding(vertical = 8.dp),
             )
 
+            if (!notifPermGranted) {
+                SettingLinkRow(
+                    label = "الإشعارات معطّلة — اضغط للتفعيل",
+                    labelColor = Color(0xFFFF6B6B),
+                    onClick = { openNotificationSettings() },
+                )
+            }
+
             SettingToggleRow(
                 label = "تذكير يومي",
                 subtitle = "مرة واحدة يوميًا",
@@ -122,6 +142,14 @@ fun SettingsScreen(onBack: () -> Unit) {
                 onToggle = { checked ->
                     hadithOnStartup = checked
                     hadithStore.showOnStartup = checked
+                },
+            )
+
+            SettingLinkRow(
+                label = "اختبار الإشعار (10 ثوانٍ)",
+                onClick = {
+                    NotificationScheduler.scheduleTest(10.0)
+                    showPlatformToast("سيصلك إشعار بعد 10 ثوانٍ")
                 },
             )
 
@@ -166,6 +194,7 @@ fun SettingsScreen(onBack: () -> Unit) {
 private fun SettingLinkRow(
     label: String,
     onClick: () -> Unit,
+    labelColor: Color = Color.White,
 ) {
     Row(
         modifier = Modifier
@@ -176,7 +205,7 @@ private fun SettingLinkRow(
     ) {
         Text(
             text = label,
-            color = Color.White,
+            color = labelColor,
             fontSize = 15.sp,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.weight(1f),

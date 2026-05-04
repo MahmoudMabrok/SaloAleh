@@ -4,7 +4,9 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.provider.Settings
 import android.widget.Toast
+import androidx.core.app.NotificationManagerCompat
 import tools.mo3ta.salo.AndroidAppContext
 
 actual fun showPlatformToast(message: String) {
@@ -25,4 +27,16 @@ actual fun shareText(text: String) {
     AndroidAppContext.get().startActivity(Intent.createChooser(intent, null).apply {
         flags = Intent.FLAG_ACTIVITY_NEW_TASK
     })
+}
+
+actual fun areNotificationsEnabled(): Boolean =
+    NotificationManagerCompat.from(AndroidAppContext.get()).areNotificationsEnabled()
+
+actual fun openNotificationSettings() {
+    val ctx = AndroidAppContext.get()
+    val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+        putExtra(Settings.EXTRA_APP_PACKAGE, ctx.packageName)
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+    }
+    ctx.startActivity(intent)
 }

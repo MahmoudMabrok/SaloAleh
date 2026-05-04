@@ -1,6 +1,8 @@
 package tools.mo3ta.salo.notification
 
+import android.util.Log
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import tools.mo3ta.salo.AndroidAppContext
@@ -13,6 +15,7 @@ actual object NotificationScheduler {
     private const val TAG_RETENTION = "retention_check"
 
     actual fun apply(dailyEnabled: Boolean, fridayEnabled: Boolean) {
+        Log.d("NotifScheduler", "apply() daily=$dailyEnabled friday=$fridayEnabled")
         val workManager = WorkManager.getInstance(AndroidAppContext.get())
 
         if (dailyEnabled) {
@@ -46,5 +49,15 @@ actual object NotificationScheduler {
                 .setInitialDelay(1, TimeUnit.DAYS)
                 .build(),
         )
+    }
+
+    actual fun scheduleTest(afterSeconds: Double) {
+        Log.d("NotifScheduler", "scheduleTest() afterSeconds=$afterSeconds")
+        val request = OneTimeWorkRequestBuilder<DailyNotificationWorker>()
+            .setInitialDelay(afterSeconds.toLong(), TimeUnit.SECONDS)
+            .build()
+        val wm = WorkManager.getInstance(AndroidAppContext.get())
+        wm.enqueue(request)
+        Log.d("NotifScheduler", "test work enqueued id=${request.id}")
     }
 }
