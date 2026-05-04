@@ -2,13 +2,10 @@ package tools.mo3ta.salo.ui.components
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,7 +16,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -75,12 +71,10 @@ fun DailyHadithDialog(
                     item = DailyHadithStore.HADITHS[idx],
                     index = idx,
                     total = DailyHadithStore.HADITHS.size,
-                    onNext = {
-                        val next = (idx + 1) % DailyHadithStore.HADITHS.size
-                        store.currentIndex = next
-                        displayIndex = next
+                    onClose = {
+                        store.currentIndex = (idx + 1) % DailyHadithStore.HADITHS.size
+                        onDismiss()
                     },
-                    onClose = onDismiss,
                 )
             }
         }
@@ -92,7 +86,6 @@ private fun HadithCard(
     item: HadithItem,
     index: Int,
     total: Int,
-    onNext: () -> Unit,
     onClose: () -> Unit,
 ) {
     val shape = RoundedCornerShape(24.dp)
@@ -222,28 +215,15 @@ private fun HadithCard(
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(18.dp))
-            Row(
+            Button(
+                onClick = onClose,
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Gold,
+                    contentColor = DeepNavy,
+                ),
             ) {
-                OutlinedButton(
-                    onClick = onClose,
-                    modifier = Modifier.weight(1f),
-                    border = BorderStroke(1.dp, Gold.copy(alpha = 0.4f)),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Gold.copy(alpha = 0.7f)),
-                ) {
-                    Text(text = "إغلاق", fontWeight = FontWeight.Medium, fontSize = 14.sp)
-                }
-                Button(
-                    onClick = onNext,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Gold,
-                        contentColor = DeepNavy,
-                    ),
-                ) {
-                    Text(text = "التالي  ›", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                }
+                Text(text = "حسنًا", fontWeight = FontWeight.Bold, fontSize = 14.sp)
             }
         }
     }

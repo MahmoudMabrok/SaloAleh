@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
@@ -56,6 +57,7 @@ import tools.mo3ta.salo.ui.components.MohamedLoversSkyBackground
 fun MohamedLoversScreen(
     onOpenAchievements: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
+    onOpenHadithList: () -> Unit = {},
     viewModel: MohamedLoversViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -163,6 +165,13 @@ fun MohamedLoversScreen(
                         Icon(
                             imageVector = Icons.Default.Settings,
                             contentDescription = "الإعدادات",
+                            tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
+                        )
+                    }
+                    IconButton(onClick = onOpenHadithList) {
+                        Icon(
+                            imageVector = Icons.Default.AutoStories,
+                            contentDescription = "الأحاديث",
                             tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
                         )
                     }

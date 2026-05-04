@@ -15,6 +15,7 @@ import tools.mo3ta.salo.domain.Achievement
 import tools.mo3ta.salo.domain.EngagementData
 import tools.mo3ta.salo.ui.AchievementCelebrationDialog
 import tools.mo3ta.salo.ui.AchievementsScreen
+import tools.mo3ta.salo.ui.HadithListScreen
 import tools.mo3ta.salo.ui.MohamedLoversScreen
 import tools.mo3ta.salo.ui.NotificationRationaleDialog
 import tools.mo3ta.salo.ui.settings.SettingsScreen
@@ -37,13 +38,16 @@ fun App(
         }
         var showAchievements by remember { mutableStateOf(false) }
         var showSettings by remember { mutableStateOf(false) }
+        var showHadithList by remember { mutableStateOf(false) }
 
         when {
             showSettings -> SettingsScreen(onBack = { showSettings = false })
             showAchievements -> AchievementsScreen(onBack = { showAchievements = false })
+            showHadithList -> HadithListScreen(onBack = { showHadithList = false })
             else -> MohamedLoversScreen(
                 onOpenAchievements = { showAchievements = true },
                 onOpenSettings = { showSettings = true },
+                onOpenHadithList = { showHadithList = true },
             )
         }
 
