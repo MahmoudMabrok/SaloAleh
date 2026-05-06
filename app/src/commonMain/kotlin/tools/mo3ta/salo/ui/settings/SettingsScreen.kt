@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.koin.compose.koinInject
+import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
 import tools.mo3ta.salo.notification.NotificationScheduler
@@ -49,6 +51,11 @@ fun SettingsScreen(onBack: () -> Unit) {
     var fridayEnabled by remember { mutableStateOf(store.fridayEnabled) }
     var hadithOnStartup by remember { mutableStateOf(hadithStore.showOnStartup) }
     val notifPermGranted = remember { areNotificationsEnabled() }
+
+    val analyticsManager: AnalyticsManager = koinInject()
+    LaunchedEffect(Unit){
+        analyticsManager.logView("SettingsScreen")
+    }
 
     Scaffold(
         containerColor = Color(0xFF0f0f1a),

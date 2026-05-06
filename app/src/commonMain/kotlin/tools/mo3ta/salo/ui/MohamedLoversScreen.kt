@@ -95,6 +95,10 @@ fun MohamedLoversScreen(
         }
     }
 
+    LaunchedEffect(Unit){
+        analyticsManager.logView("Mohamed_lovers")
+    }
+
     var archCenter by remember { mutableStateOf<Offset?>(null) }
     var isLit by remember { mutableStateOf(false) }
     var infoSheetOpen by remember { mutableStateOf(false) }
@@ -123,7 +127,7 @@ fun MohamedLoversScreen(
                 if (tapsEnabled) viewModel.onCountClick()
                 analyticsManager.logAction(
                     "mohamed_lovers_sky_tap",
-                    mapOf("status" to state.status.name, "enabled" to tapsEnabled.toString()),
+                    emptyMap(),
                 )
             },
             modifier = Modifier.fillMaxSize(),

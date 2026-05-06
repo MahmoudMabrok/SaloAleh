@@ -38,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,7 +56,9 @@ import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.data.hadith.HadithItem
 import tools.mo3ta.salo.data.media.MediaItem
 import tools.mo3ta.salo.data.media.MediaType
@@ -79,8 +82,14 @@ fun HadithListScreen(
     onBack: () -> Unit,
     viewModel: HadithListViewModel = koinViewModel(),
 ) {
+    val analyticsManager: AnalyticsManager = koinInject()
+
     val state by viewModel.state.collectAsStateWithLifecycle()
     var selectedTab by remember { mutableStateOf(0) }
+
+    LaunchedEffect(Unit){
+        analyticsManager.logView("HadithListScreen")
+    }
 
     Scaffold(
         containerColor = HLDeepNavy,

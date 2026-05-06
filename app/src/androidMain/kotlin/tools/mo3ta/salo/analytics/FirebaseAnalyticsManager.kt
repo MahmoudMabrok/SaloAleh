@@ -12,4 +12,13 @@ class FirebaseAnalyticsManager(private val context: Context) : AnalyticsManager 
             params.forEach { (key, value) -> param(key, value) }
         }
     }
+
+    override fun logView(
+        name: String,
+        params: Map<String, String>
+    ) {
+        analytics.logEvent("screen_view_$name"){
+            params.forEach { (key, value) -> param(key, value) }
+        }
+    }
 }

@@ -29,6 +29,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,7 +46,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.domain.Achievement
 import tools.mo3ta.salo.domain.BadgeType
 import tools.mo3ta.salo.generated.resources.Res
@@ -125,6 +128,11 @@ fun AchievementsScreen(
 ) {
     val achievements by viewModel.achievements.collectAsStateWithLifecycle()
     val currentStreak by viewModel.currentStreak.collectAsStateWithLifecycle()
+
+    val analyticsManager: AnalyticsManager = koinInject()
+    LaunchedEffect(Unit){
+        analyticsManager.logView("AchievementsScreen")
+    }
 
     val items = remember(achievements) {
         ALL_BADGES.map { spec ->
