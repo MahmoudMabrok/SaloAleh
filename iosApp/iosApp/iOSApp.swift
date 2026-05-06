@@ -19,7 +19,12 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate {
 
         Messaging.messaging().delegate = self
         UNUserNotificationCenter.current().delegate = self
-        application.registerForRemoteNotifications()
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
+            guard granted else { return }
+            DispatchQueue.main.async {
+                application.registerForRemoteNotifications()
+            }
+        }
         return true
     }
 
@@ -31,7 +36,11 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate {
     }
 
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
-        Messaging.messaging().subscribe(toTopic: "general") { _ in }
+        Messaging.messaging().subscribe(toTopic: "general") { error in
+            #if DEBUG
+            if let error { print("[FCM] topic subscription failed: \(error)") }
+            #endif
+        }
     }
 }
 
