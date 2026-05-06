@@ -301,6 +301,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = DFDDED5F03CFC6379CD6468D /* Pods-SaloAleh.debug.xcconfig */;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
 				ENABLE_PREVIEWS = YES;
@@ -335,6 +336,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = ACB6EF587E6D90896F292451 /* Pods-SaloAleh.release.xcconfig */;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
 				ENABLE_PREVIEWS = YES;
