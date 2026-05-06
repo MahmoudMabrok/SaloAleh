@@ -23,10 +23,10 @@ class SaloFirebaseMessagingService : FirebaseMessagingService() {
         val pendingIntent = PendingIntent.getActivity(
             this, 0,
             Intent(this, MainActivity::class.java).apply { flags = Intent.FLAG_ACTIVITY_CLEAR_TOP },
-            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         NotificationManagerCompat.from(this).notify(
-            NotificationChannels.NOTIF_ID_DAILY,
+            NotificationChannels.NOTIF_ID_PUSH,
             NotificationCompat.Builder(this, NotificationChannels.CHANNEL_DAILY)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(title)

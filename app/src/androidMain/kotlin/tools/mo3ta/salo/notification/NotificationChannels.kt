@@ -13,6 +13,7 @@ object NotificationChannels {
     const val NOTIF_ID_DAILY = 1001
     const val NOTIF_ID_RETENTION = 1002
     const val NOTIF_ID_FRIDAY = 1003
+    const val NOTIF_ID_PUSH = 1004
 
     fun createAll(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
