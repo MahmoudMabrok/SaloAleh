@@ -2,8 +2,6 @@ package tools.mo3ta.salo.di
 
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
-import tools.mo3ta.salo.analytics.AnalyticsManager
-import tools.mo3ta.salo.analytics.NoOpAnalyticsManager
 import tools.mo3ta.salo.data.engagement.EngagementStore
 import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseClient
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
@@ -23,7 +21,6 @@ val appModule = module {
     single { EngagementStore(get()) }
     single { NotificationSettingsStore(get()) }
     single { DailyHadithStore(get()) }
-    single<AnalyticsManager> { NoOpAnalyticsManager() }
     single { MohamedLoversRepository(get(), get(), get(), get()) }
     single { createHttpClient() }
     single { HadithRemoteDataSource(get()) }

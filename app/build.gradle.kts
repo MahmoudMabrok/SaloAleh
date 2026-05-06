@@ -56,6 +56,7 @@ kotlin {
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.androidx.work.runtime.ktx)
             implementation(libs.ktor.client.okhttp)
+            implementation(libs.firebase.analytics)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
@@ -95,6 +96,14 @@ android {
                 "proguard-rules.pro"
             )
         }
+        debug {
+            // Debug configuration with App Check debug provider
+        }
+    }
+
+    dependencies {
+        releaseImplementation(libs.firebase.appcheck.playintegrity)
+        debugImplementation(libs.firebase.appcheck.debug)
     }
 
     compileOptions {

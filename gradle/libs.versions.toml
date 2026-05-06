@@ -48,6 +48,9 @@ ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serializatio
 ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
 ktor-client-darwin = { group = "io.ktor", name = "ktor-client-darwin", version.ref = "ktor" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
+firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics", version = "21.5.0" }
+firebase-appcheck-playintegrity = { group = "com.google.firebase", name = "firebase-appcheck-playintegrity", version = "18.0.0" }
+firebase-appcheck-debug = { group = "com.google.firebase", name = "firebase-appcheck-debug", version = "18.0.0" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
