@@ -305,7 +305,6 @@
 			baseConfigurationReference = DFDDED5F03CFC6379CD6468D /* Pods-SaloAleh.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
 				ENABLE_PREVIEWS = YES;
