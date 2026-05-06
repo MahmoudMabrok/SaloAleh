@@ -19,6 +19,8 @@ workManager = "2.9.1"
 kermit = "2.0.4"
 ktor = "3.0.3"
 kotlinxSerialization = "1.7.3"
+firebaseAnalytics = "21.5.0"
+firebaseAppCheck = "18.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -48,9 +50,9 @@ ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serializatio
 ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
 ktor-client-darwin = { group = "io.ktor", name = "ktor-client-darwin", version.ref = "ktor" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
-firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics", version = "21.5.0" }
-firebase-appcheck-playintegrity = { group = "com.google.firebase", name = "firebase-appcheck-playintegrity", version = "18.0.0" }
-firebase-appcheck-debug = { group = "com.google.firebase", name = "firebase-appcheck-debug", version = "18.0.0" }
+firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics", version.ref = "firebaseAnalytics" }
+firebase-appcheck-playintegrity = { group = "com.google.firebase", name = "firebase-appcheck-playintegrity", version.ref = "firebaseAppCheck" }
+firebase-appcheck-debug = { group = "com.google.firebase", name = "firebase-appcheck-debug", version.ref = "firebaseAppCheck" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

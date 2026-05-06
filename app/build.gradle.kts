@@ -96,9 +96,6 @@ android {
                 "proguard-rules.pro"
             )
         }
-        debug {
-            // Debug configuration with App Check debug provider
-        }
     }
 
     dependencies {
