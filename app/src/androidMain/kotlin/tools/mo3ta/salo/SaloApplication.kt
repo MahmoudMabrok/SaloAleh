@@ -8,12 +8,12 @@ import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderF
 class SaloApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        AndroidAppContext.init(this)
         val appCheck = FirebaseAppCheck.getInstance()
         if (BuildConfig.DEBUG) {
             appCheck.installAppCheckProviderFactory(DebugAppCheckProviderFactory.getInstance())
         } else {
             appCheck.installAppCheckProviderFactory(PlayIntegrityAppCheckProviderFactory.getInstance())
         }
+        AndroidAppContext.init(this)
     }
 }

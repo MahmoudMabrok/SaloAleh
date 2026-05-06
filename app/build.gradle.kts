@@ -101,7 +101,7 @@ android {
 
     dependencies {
         implementation(libs.firebase.appcheck.playintegrity)
-        debugImplementation(libs.firebase.appcheck.debug)
+        implementation(libs.firebase.appcheck.debug)
     }
 
     compileOptions {
