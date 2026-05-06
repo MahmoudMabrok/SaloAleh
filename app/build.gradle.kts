@@ -76,6 +76,7 @@ compose.resources {
 
 android {
     namespace = "tools.mo3ta.salo"
+    buildFeatures { buildConfig = true }
     compileSdk = 36
 
     defaultConfig {
@@ -99,7 +100,7 @@ android {
     }
 
     dependencies {
-        releaseImplementation(libs.firebase.appcheck.playintegrity)
+        implementation(libs.firebase.appcheck.playintegrity)
         debugImplementation(libs.firebase.appcheck.debug)
     }
 
