@@ -27,7 +27,7 @@ class SaloFirebaseMessagingService : FirebaseMessagingService() {
         )
         NotificationManagerCompat.from(this).notify(
             NotificationChannels.NOTIF_ID_PUSH,
-            NotificationCompat.Builder(this, NotificationChannels.CHANNEL_DAILY)
+            NotificationCompat.Builder(this, NotificationChannels.CHANNEL_PUSH)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(title)
                 .setContentText(body)

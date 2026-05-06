@@ -9,6 +9,7 @@ object NotificationChannels {
     const val CHANNEL_DAILY = "channel_daily"
     const val CHANNEL_RETENTION = "channel_retention"
     const val CHANNEL_FRIDAY = "channel_friday"
+    const val CHANNEL_PUSH = "channel_push"
 
     const val NOTIF_ID_DAILY = 1001
     const val NOTIF_ID_RETENTION = 1002
@@ -29,6 +30,10 @@ object NotificationChannels {
             manager.createNotificationChannel(
                 NotificationChannel(CHANNEL_FRIDAY, "إشعارات الجمعة", NotificationManager.IMPORTANCE_DEFAULT)
                     .apply { description = "تذكير بالصلاة على النبي كل ساعة يوم الجمعة" }
+            )
+            manager.createNotificationChannel(
+                NotificationChannel(CHANNEL_PUSH, "إشعارات عامة", NotificationManager.IMPORTANCE_DEFAULT)
+                    .apply { description = "إشعارات من الفريق" }
             )
         }
     }
