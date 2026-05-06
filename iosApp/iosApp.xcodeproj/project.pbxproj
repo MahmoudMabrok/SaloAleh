@@ -10,9 +10,9 @@
 		8336F72E92B056AA686DBCCF /* Pods_SaloAleh.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0253F236712DB51DF8B5EBC8 /* Pods_SaloAleh.framework */; };
 		AA0000000000000000000009 /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000006 /* iOSApp.swift */; };
 		AA000000000000000000000A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000007 /* ContentView.swift */; };
-		E4E7D78413B45ADF1B8947DF /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 94D181075E52DC9E8B97E657 /* GoogleService-Info.plist */; };
 		BB0000000000000000000002 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000001 /* Assets.xcassets */; };
 		CC0000000000000000000002 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = CC0000000000000000000001 /* PrivacyInfo.xcprivacy */; };
+		E4E7D78413B45ADF1B8947DF /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 94D181075E52DC9E8B97E657 /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -22,9 +22,9 @@
 		AA0000000000000000000006 /* iOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
 		AA0000000000000000000007 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		ACB6EF587E6D90896F292451 /* Pods-SaloAleh.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SaloAleh.release.xcconfig"; path = "Target Support Files/Pods-SaloAleh/Pods-SaloAleh.release.xcconfig"; sourceTree = "<group>"; };
 		BB0000000000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CC0000000000000000000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		ACB6EF587E6D90896F292451 /* Pods-SaloAleh.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SaloAleh.release.xcconfig"; path = "Target Support Files/Pods-SaloAleh/Pods-SaloAleh.release.xcconfig"; sourceTree = "<group>"; };
 		DFDDED5F03CFC6379CD6468D /* Pods-SaloAleh.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SaloAleh.debug.xcconfig"; path = "Target Support Files/Pods-SaloAleh/Pods-SaloAleh.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -46,7 +46,6 @@
 				DFDDED5F03CFC6379CD6468D /* Pods-SaloAleh.debug.xcconfig */,
 				ACB6EF587E6D90896F292451 /* Pods-SaloAleh.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -167,9 +166,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-SaloAleh/Pods-SaloAleh-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-SaloAleh/Pods-SaloAleh-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -301,6 +304,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = DFDDED5F03CFC6379CD6468D /* Pods-SaloAleh.debug.xcconfig */;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
@@ -318,7 +322,6 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.1;
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-framework",
@@ -336,9 +339,13 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = ACB6EF587E6D90896F292451 /* Pods-SaloAleh.release.xcconfig */;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements;
-				CODE_SIGN_STYLE = Automatic;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 85YR554LQK;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -353,7 +360,6 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.1;
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-framework",
@@ -361,6 +367,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.mo3ta.saloalaihapp;
 				PRODUCT_NAME = SaloAleh;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = saloalaih;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
