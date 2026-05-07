@@ -47,7 +47,7 @@ No new services. No breaking RTDB schema changes.
 |---|---|---|
 | Day-1 lapsed | No tap since install day, now day 2 | "لم تبدأ بعد — الجمعة القادمة فرصتك" |
 | Mid-week inactive | No open in 3+ days, round still active | "مضاعفة الجمعة بعد X أيام — أين أنت؟" |
-| Rival alert | Gap to next-rank player ≤ 50 taps | "EG•A3F9 يتقدم عليك بـ 30 صلاة فقط" |
+| Rival alert | User rank > 10 AND gap to 10th place ≤ 200 taps | "أنت على بُعد X صلاة من دخول قائمة الأوائل!" |
 | Round-end recap | `isFinal=true`, user played that round | "انتهت الجولة — أنت في المرتبة #X" |
 | Streak at risk | Has 5+ day streak, no open today | "سلسلتك 7 أيام على المحك — افتح الآن" |
 
@@ -57,13 +57,14 @@ No new services. No breaking RTDB schema changes.
 |---|---|---|---|
 | `notif_rival_enabled` | bool | true | Kill switch for rival alerts |
 | `notif_midweek_enabled` | bool | true | Kill switch for mid-week inactive |
-| `notif_rival_threshold` | int | 50 | Tap gap to trigger rival alert |
+| `notif_rival_threshold` | int | 200 | Max tap gap to 10th place that triggers rival alert |
 | `notif_messages_ar` | JSON | — | Message copy, A/B testable without deploy |
 
 ### FCM Strategy
 
 - **Topic-based:** Day-1 lapsed, mid-week inactive, streak at risk (simpler, no token needed)
 - **Targeted by uid:** Rival alert, round-end recap (personalized content requires FCM token)
+- Rival alert data source: script reads `mohamed_lovers/{roundKey}/leaderboard/10` for 10th-place score, compares against user's `totalCount` in player node. Gap = `leaderboard[10].score - user.totalCount`. Only fires if user rank > 10 AND gap ≤ `notif_rival_threshold`.
 - FCM token stored at `users/{uid}/fcmToken` in RTDB (already written on app start)
 
 ### Debounce
