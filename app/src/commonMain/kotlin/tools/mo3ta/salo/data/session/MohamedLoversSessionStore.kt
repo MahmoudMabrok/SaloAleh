@@ -1,6 +1,7 @@
 package tools.mo3ta.salo.data.session
 
 import com.russhwolf.settings.Settings
+import kotlinx.datetime.LocalDate
 import tools.mo3ta.salo.data.crypto.sha256hex
 import tools.mo3ta.salo.domain.MohamedLoversPendingSession
 
@@ -36,6 +37,25 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         settings.remove(KEY_PENDING_COUNT)
     }
 
+    fun getOrSetInstallDate(today: LocalDate): String {
+        val stored = settings.getStringOrNull(KEY_INSTALL_DATE)
+        if (stored != null) return stored
+        val s = today.toString()
+        settings.putString(KEY_INSTALL_DATE, s)
+        return s
+    }
+
+    fun markRecapShown(roundKey: String) = settings.putString(KEY_RECAP_SHOWN_ROUND, roundKey)
+    fun getRecapShownRound(): String? = settings.getStringOrNull(KEY_RECAP_SHOWN_ROUND)
+
+    fun getPersonalBestRank(): Int = settings.getInt(KEY_PERSONAL_BEST_RANK, Int.MAX_VALUE)
+    fun updatePersonalBestRank(rank: Int) {
+        if (rank < getPersonalBestRank()) settings.putInt(KEY_PERSONAL_BEST_RANK, rank)
+    }
+
+    fun getLastRoundTaps(): Int = settings.getInt(KEY_LAST_ROUND_TAPS, 0)
+    fun saveLastRoundTaps(taps: Int) = settings.putInt(KEY_LAST_ROUND_TAPS, taps)
+
     @OptIn(kotlin.uuid.ExperimentalUuidApi::class)
     fun getOrCreateUid(): String {
         val raw = settings.getStringOrNull(KEY_UID)?.takeIf { it.isNotBlank() }
@@ -49,5 +69,9 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         const val KEY_PENDING_ROUND = "pending_round_key"
         const val KEY_PENDING_COUNT = "pending_click_count"
         const val ALIAS_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        const val KEY_INSTALL_DATE = "install_date"
+        const val KEY_RECAP_SHOWN_ROUND = "recap_shown_round"
+        const val KEY_PERSONAL_BEST_RANK = "personal_best_rank"
+        const val KEY_LAST_ROUND_TAPS = "last_round_taps"
     }
 }
