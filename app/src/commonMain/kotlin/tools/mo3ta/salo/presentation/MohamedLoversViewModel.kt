@@ -202,6 +202,8 @@ class MohamedLoversViewModel(
 
             authUid = uid
             _state.update { it.copy(selfDisplayTag = buildMohamedLoversDisplayTag(uid, it.countryCode)) }
+            val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
+            launch { repository.writeUserActivity(uid, today) }
 
             selfJob?.cancel()
             selfJob = launch {

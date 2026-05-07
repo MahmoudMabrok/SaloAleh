@@ -73,6 +73,11 @@ class MohamedLoversRepository(
     fun getLastRoundTaps(): Int = sessionStore.getLastRoundTaps()
     fun saveLastRoundTaps(taps: Int) = sessionStore.saveLastRoundTaps(taps)
 
-    // User activity (written to RTDB in later task)
     fun getOrSetInstallDate(today: kotlinx.datetime.LocalDate): String = sessionStore.getOrSetInstallDate(today)
+
+    suspend fun writeUserActivity(uid: String, today: kotlinx.datetime.LocalDate): Result<Unit> {
+        val installDate = sessionStore.getOrSetInstallDate(today)
+        val lastOpenDate = today.toString()
+        return firebaseClient.writeUserActivity(uid, installDate, lastOpenDate)
+    }
 }
