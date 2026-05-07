@@ -1,7 +1,9 @@
 package tools.mo3ta.salo.notification
 
+import android.Manifest
 import android.app.PendingIntent
 import android.content.Intent
+import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -15,6 +17,7 @@ class SaloFirebaseMessagingService : FirebaseMessagingService() {
         // Topic subscription handles delivery — no token storage needed
     }
 
+    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
     override fun onMessageReceived(message: RemoteMessage) {
         val title = message.notification?.title ?: return
         val body = message.notification?.body ?: return
