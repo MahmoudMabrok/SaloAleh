@@ -228,7 +228,7 @@ class MohamedLoversViewModel(
                                 // Round recap — shown once per completed round
                                 val recapRound = repository.getRecapShownRound()
                                 if (recapRound != roundKey) {
-                                    val rank = remoteSelfPlayer?.rank ?: 0
+                                    val rank = match.rank
                                     val syncedTaps = state.value.syncedTotal
                                     val lastTaps = repository.getLastRoundTaps()
                                     val prevBest = repository.getPersonalBestRank()
@@ -243,7 +243,7 @@ class MohamedLoversViewModel(
                                                 recapRank = rank,
                                                 recapTotalPlayers = it.roundPlayerCount,
                                                 recapIsPersonalBest = isPersonalBest,
-                                                recapTapsDelta = syncedTaps - lastTaps,
+                                                recapTapsDelta = maxOf(0, syncedTaps - lastTaps),
                                             )
                                         }
                                     }
