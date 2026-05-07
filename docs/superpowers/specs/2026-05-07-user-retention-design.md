@@ -65,11 +65,11 @@ No new services. No breaking RTDB schema changes.
 - **Topic-based:** Day-1 lapsed, mid-week inactive, streak at risk (simpler, no token needed)
 - **Targeted by uid:** Rival alert, round-end recap (personalized content requires FCM token)
 - Rival alert data source: script reads `mohamed_lovers/{roundKey}/leaderboard/10` for 10th-place score, compares against user's `totalCount` in player node. Gap = `leaderboard[10].score - user.totalCount`. Only fires if user rank > 10 AND gap ≤ `notif_rival_threshold`.
-- FCM token stored at `users/{uid}/fcmToken` in RTDB (already written on app start)
+- FCM token stored at `mohamed_lovers/users/{uid}/fcmToken` — written by client on app start
 
 ### Debounce
 
-Rival alert: max 1 per day per user. Flag written to `users/{uid}/lastRivalNotifDate`. Script skips user if flag matches today's date (Cairo timezone).
+Rival alert: max 1 per day per user. Flag written to `mohamed_lovers/users_meta/{uid}/lastRivalNotifDate`. Script skips user if flag matches today's date (Cairo timezone).
 
 ### Script Schedule
 
@@ -130,14 +130,26 @@ Shown once per completed round as a bottom sheet over the main screen (same patt
 
 ## RTDB Schema Additions
 
+All user metadata nested under existing `mohamed_lovers` root — no new top-level node.
+
 ```
-users/
-  {uid}/
-    fcmToken: String          # already written
-    lastRivalNotifDate: String # new — ISO date, Cairo TZ
-    installDate: String        # new — written on first launch
-    lastOpenDate: String       # new — written from client on each foreground resume (app start or return from background)
+mohamed_lovers/
+  users/
+    {uid}/
+      fcmToken: String        # client writes on app start
+      installDate: String     # client writes on first launch only
+      lastOpenDate: String    # client writes on each foreground resume
+  users_meta/
+    {uid}/
+      lastRivalNotifDate: String  # notification script writes (Cairo ISO date debounce)
+  {roundKey}/
+    players/ ...
+    leaderboard/ ...
 ```
+
+**Client:** write-only to `mohamed_lovers/users/{uid}/`. No reads from this path on the client.
+
+**Script:** reads `mohamed_lovers/users/{uid}/` to evaluate notification segments. Writes debounce flags to `mohamed_lovers/users_meta/{uid}/`.
 
 Existing player nodes under `mohamed_lovers/{roundKey}/players/{uid}` unchanged.
 
