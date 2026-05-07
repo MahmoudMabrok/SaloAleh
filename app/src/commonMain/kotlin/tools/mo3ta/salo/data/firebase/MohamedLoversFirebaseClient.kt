@@ -148,6 +148,37 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         }
     }
 
+    suspend fun writeUserActivity(uid: String, installDate: String, lastOpenDate: String): Result<Unit> {
+        log.d { "writeUserActivity[$uid]" }
+        return runCatching {
+            Firebase.database.reference("$ROOT_PATH/$USERS_PATH/$uid").updateChildren(
+                mapOf(
+                    "installDate" to installDate,
+                    "lastOpenDate" to lastOpenDate,
+                )
+            )
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "writeUserActivity[$uid] ok" } },
+                onFailure = { log.e(it) { "writeUserActivity[$uid] failed" } },
+            )
+        }
+    }
+
+    suspend fun writeFcmToken(uid: String, token: String): Result<Unit> {
+        log.d { "writeFcmToken[$uid]" }
+        return runCatching {
+            Firebase.database.reference("$ROOT_PATH/$USERS_PATH/$uid").updateChildren(
+                mapOf("fcmToken" to token)
+            )
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "writeFcmToken[$uid] ok" } },
+                onFailure = { log.e(it) { "writeFcmToken[$uid] failed" } },
+            )
+        }
+    }
+
     private fun playersPath(roundKey: String) = "$ROOT_PATH/$roundKey/$PLAYERS_PATH"
     private fun leaderboardPath(roundKey: String) = "$ROOT_PATH/$roundKey/$LEADERBOARD_PATH"
 
@@ -190,5 +221,6 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         const val ROUND_TOTAL_PATH = "roundTotal"
         const val ROUND_PLAYER_COUNT_PATH = "roundPlayerCount"
         const val ALL_TIME_TOTAL_PATH = "allTimeTotal"
+        const val USERS_PATH = "users"
     }
 }
