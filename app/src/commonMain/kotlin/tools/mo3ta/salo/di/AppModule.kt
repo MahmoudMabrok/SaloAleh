@@ -2,6 +2,7 @@ package tools.mo3ta.salo.di
 
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
+import tools.mo3ta.salo.data.engagement.DailyGoalStore
 import tools.mo3ta.salo.data.engagement.EngagementStore
 import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseClient
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
@@ -19,13 +20,14 @@ val appModule = module {
     single { MohamedLoversFirebaseClient(get()) }
     single { MohamedLoversSessionStore(get()) }
     single { EngagementStore(get()) }
+    single { DailyGoalStore(get()) }
     single { NotificationSettingsStore(get()) }
     single { DailyHadithStore(get()) }
     single { MohamedLoversRepository(get(), get(), get(), get()) }
     single { createHttpClient() }
     single { HadithRemoteDataSource(get()) }
     single { HadithListRepository(get()) }
-    viewModel { MohamedLoversViewModel(get(), get(), get()) }
+    viewModel { MohamedLoversViewModel(get(), get(), get(), get()) }
     viewModel { AchievementsViewModel(get()) }
     viewModel { HadithListViewModel(get()) }
 }

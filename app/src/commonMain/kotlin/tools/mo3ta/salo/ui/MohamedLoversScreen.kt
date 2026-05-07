@@ -1,10 +1,16 @@
 package tools.mo3ta.salo.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.EmojiEvents
@@ -13,6 +19,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -23,7 +30,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -34,6 +43,7 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.grace_warning
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_blocked_firebase_off
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_blocked_waiting_network
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_code_copied
@@ -52,6 +62,7 @@ import tools.mo3ta.salo.ui.components.MohamedLoversInfoSheet
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.components.MohamedLoversPrayerOverlay
 import tools.mo3ta.salo.ui.components.MohamedLoversSkyBackground
+import tools.mo3ta.salo.ui.components.RoundRecapSheet
 
 @Composable
 fun MohamedLoversScreen(
@@ -147,6 +158,39 @@ fun MohamedLoversScreen(
                 isFridayBonus = state.isFridayBonus,
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 40.dp),
             )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .height(84.dp)
+                    .pointerInput(Unit) {
+                        awaitPointerEventScope {
+                            while (true) {
+                                awaitPointerEvent(PointerEventPass.Initial)
+                                    .changes.forEach { it.consume() }
+                            }
+                        }
+                    }
+            )
+            AnimatedVisibility(
+                visible = state.showGraceWarning,
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = 48.dp),
+            ) {
+                androidx.compose.material3.Surface(
+                    color = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.15f),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = stringResource(Res.string.grace_warning),
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .clickable { viewModel.dismissGraceWarning() },
+                        fontSize = 13.sp,
+                        textAlign = TextAlign.Center,
+                        color = MohamedLoversPalette.GoldHighlight,
+                    )
+                }
+            }
             Box(modifier = Modifier.align(Alignment.TopEnd).padding(end = 14.dp, top = 36.dp)) {
                 IconButton(onClick = { infoSheetOpen = true }) {
                     Icon(
@@ -197,6 +241,15 @@ fun MohamedLoversScreen(
                 showPlatformToast(codeCopiedLabel)
             },
         )
+        if (state.showRoundRecap) {
+            RoundRecapSheet(
+                rank = state.recapRank,
+                totalPlayers = state.recapTotalPlayers,
+                isPersonalBest = state.recapIsPersonalBest,
+                tapsDelta = state.recapTapsDelta,
+                onDismiss = { viewModel.dismissRoundRecap() },
+            )
+        }
         if (state.showHadithDialog) {
             DailyHadithDialog(
                 onDismiss = { viewModel.dismissHadithDialog() },
