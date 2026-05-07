@@ -16,6 +16,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
+import tools.mo3ta.salo.data.engagement.DailyGoalStore
 import tools.mo3ta.salo.data.engagement.EngagementStore
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
 import tools.mo3ta.salo.domain.FirebaseLeaderboard
@@ -29,6 +30,7 @@ class MohamedLoversViewModel(
     private val repository: MohamedLoversRepository,
     private val engagementStore: EngagementStore,
     private val hadithStore: DailyHadithStore,
+    private val dailyGoalStore: DailyGoalStore,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MohamedLoversUiState())
@@ -45,6 +47,16 @@ class MohamedLoversViewModel(
     init {
         _state.update { it.copy(showHadithDialog = hadithStore.showOnStartup) }
         refresh()
+        val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
+        if (engagementStore.wasGraceConsumedToday(today)) {
+            _state.update { it.copy(showGraceWarning = true) }
+        }
+        _state.update {
+            it.copy(
+                dailyGoalTarget = dailyGoalStore.todayTarget(today),
+                dailyGoalProgress = dailyGoalStore.todayProgress(today),
+            )
+        }
         viewModelScope.launch {
             delay(90_000L)
             refresh()
@@ -102,7 +114,18 @@ class MohamedLoversViewModel(
 
         val delta = if (current.isFridayBonus) MOHAMED_LOVERS_FRIDAY_MULTIPLIER else 1
         val pending = repository.registerLocalTap(roundKey, delta)
-        _state.update { it.copy(sessionClicks = pending.clickCount, error = null) }
+        val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
+        val wasComplete = dailyGoalStore.isGoalComplete(today)
+        dailyGoalStore.recordTap(today, delta)
+        val isNowComplete = dailyGoalStore.isGoalComplete(today)
+        _state.update {
+            it.copy(
+                sessionClicks = pending.clickCount,
+                error = null,
+                dailyGoalProgress = dailyGoalStore.todayProgress(today),
+                dailyGoalJustCompleted = !wasComplete && isNowComplete,
+            )
+        }
         applyLeaderboard()
     }
 
@@ -142,6 +165,10 @@ class MohamedLoversViewModel(
             }
         }
     }
+
+    fun dismissRoundRecap() = _state.update { it.copy(showRoundRecap = false) }
+    fun dismissGraceWarning() = _state.update { it.copy(showGraceWarning = false) }
+    fun dismissDailyGoalCompleted() = _state.update { it.copy(dailyGoalJustCompleted = false) }
 
     fun clearError() = _state.update { it.copy(error = null) }
 
@@ -197,6 +224,29 @@ class MohamedLoversViewModel(
                                 val achievement = engagementStore.checkAndSaveRankAchievement(roundKey, match.rank, today)
                                 if (achievement != null) {
                                     _state.update { it.copy(newlyEarnedRankAchievement = achievement) }
+                                }
+                                // Round recap — shown once per completed round
+                                val recapRound = repository.getRecapShownRound()
+                                if (recapRound != roundKey) {
+                                    val rank = remoteSelfPlayer?.rank ?: 0
+                                    val syncedTaps = state.value.syncedTotal
+                                    val lastTaps = repository.getLastRoundTaps()
+                                    val prevBest = repository.getPersonalBestRank()
+                                    val isPersonalBest = rank in 1..10 && rank < prevBest
+                                    if (rank > 0) {
+                                        repository.updatePersonalBestRank(rank)
+                                        repository.saveLastRoundTaps(syncedTaps)
+                                        repository.markRecapShown(roundKey)
+                                        _state.update {
+                                            it.copy(
+                                                showRoundRecap = true,
+                                                recapRank = rank,
+                                                recapTotalPlayers = it.roundPlayerCount,
+                                                recapIsPersonalBest = isPersonalBest,
+                                                recapTapsDelta = syncedTaps - lastTaps,
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
