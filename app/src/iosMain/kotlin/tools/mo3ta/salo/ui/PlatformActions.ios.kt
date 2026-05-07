@@ -49,3 +49,7 @@ actual fun openNotificationSettings() {
     val url = NSURL(string = UIApplicationOpenSettingsURLString) ?: return
     UIApplication.sharedApplication.openURL(url)
 }
+
+actual fun shareBitmap(imageBitmap: androidx.compose.ui.graphics.ImageBitmap) {
+    // TODO: implement iOS image sharing
+}
