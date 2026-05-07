@@ -3,6 +3,7 @@ package tools.mo3ta.salo.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,6 +45,10 @@ class MohamedLoversViewModel(
     init {
         _state.update { it.copy(showHadithDialog = hadithStore.showOnStartup) }
         refresh()
+        viewModelScope.launch {
+            delay(90_000L)
+            refresh()
+        }
     }
 
     fun dismissHadithDialog() = _state.update { it.copy(showHadithDialog = false) }
