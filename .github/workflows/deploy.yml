@@ -184,7 +184,7 @@ jobs:
   commit-version-bump:
     name: Commit version bump
     runs-on: ubuntu-latest
-    needs: [deploy-android, deploy-ios]
+    needs: [deploy-android]
     if: always() && (needs.deploy-android.result == 'success' || needs.deploy-ios.result == 'success')
 
     steps:
