@@ -64,4 +64,15 @@ class MohamedLoversRepository(
     }
 
     fun refreshNetworkTime() = networkTimeProvider.prime()
+
+    // Recap
+    fun markRecapShown(roundKey: String) = sessionStore.markRecapShown(roundKey)
+    fun getRecapShownRound(): String? = sessionStore.getRecapShownRound()
+    fun getPersonalBestRank(): Int = sessionStore.getPersonalBestRank()
+    fun updatePersonalBestRank(rank: Int) = sessionStore.updatePersonalBestRank(rank)
+    fun getLastRoundTaps(): Int = sessionStore.getLastRoundTaps()
+    fun saveLastRoundTaps(taps: Int) = sessionStore.saveLastRoundTaps(taps)
+
+    // User activity (written to RTDB in later task)
+    fun getOrSetInstallDate(today: kotlinx.datetime.LocalDate): String = sessionStore.getOrSetInstallDate(today)
 }
