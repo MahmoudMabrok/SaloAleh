@@ -153,6 +153,9 @@ class MohamedLoversViewModel(
             repository.fetchRoundTotal(roundKey).onSuccess { total ->
                 _state.update { it.copy(roundTotal = total) }
             }
+            repository.fetchRoundPlayerCount(roundKey).onSuccess { count ->
+                _state.update { it.copy(roundPlayerCount = count) }
+            }
             repository.fetchAllTimeTotal().onSuccess { total ->
                 _state.update { it.copy(allTimeTotal = total) }
             }
@@ -219,7 +222,7 @@ class MohamedLoversViewModel(
             uid == null || selfProjectedTotal <= 0 -> null
             selfInTop -> null
             else -> MohamedLoversLeaderboardEntry(
-                rank = 0,
+                rank = remoteSelfPlayer?.rank ?: 0,
                 displayTag = buildMohamedLoversDisplayTag(
                     uid,
                     remoteSelfPlayer?.countryCode?.ifBlank { state.value.countryCode }

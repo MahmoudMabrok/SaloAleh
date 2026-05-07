@@ -27,6 +27,9 @@ class MohamedLoversRepository(
     suspend fun fetchRoundTotal(roundKey: String): Result<Int> =
         firebaseClient.fetchRoundTotal(roundKey)
 
+    suspend fun fetchRoundPlayerCount(roundKey: String): Result<Int> =
+        firebaseClient.fetchRoundPlayerCount(roundKey)
+
     suspend fun fetchAllTimeTotal(): Result<Long> =
         firebaseClient.fetchAllTimeTotal()
 

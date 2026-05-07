@@ -5,6 +5,7 @@ import kotlinx.datetime.Instant
 data class MohamedLoversPlayer(
     val uid: String = "",
     val totalCount: Int = 0,
+    val rank: Int = 0,
     val isWinner: Boolean = false,
     val winnerCode: String = "",
     val countryCode: String = "",

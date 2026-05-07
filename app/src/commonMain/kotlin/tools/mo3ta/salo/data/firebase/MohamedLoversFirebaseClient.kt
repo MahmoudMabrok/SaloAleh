@@ -56,6 +56,20 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
                 emit(Result.failure(e))
             }
 
+    suspend fun fetchRoundPlayerCount(roundKey: String): Result<Int> {
+        log.d { "fetchRoundPlayerCount[$roundKey]" }
+        return runCatching {
+            val snapshot = Firebase.database.reference("$ROOT_PATH/$roundKey/$ROUND_PLAYER_COUNT_PATH")
+                .valueEvents.first()
+            (snapshot.value as? Number)?.toInt() ?: 0
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "fetchRoundPlayerCount[$roundKey]=$it" } },
+                onFailure = { log.e(it) { "fetchRoundPlayerCount[$roundKey] failed" } },
+            )
+        }
+    }
+
     suspend fun fetchRoundTotal(roundKey: String): Result<Int> {
         log.d { "fetchRoundTotal[$roundKey]" }
         return runCatching {
@@ -152,6 +166,7 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         return MohamedLoversPlayer(
             uid = uid,
             totalCount = (map[TOTAL_COUNT_KEY] as? Number)?.toInt() ?: 0,
+            rank = (map[RANK_KEY] as? Number)?.toInt() ?: 0,
             isWinner = map[IS_WINNER_KEY] as? Boolean ?: false,
             winnerCode = map[WINNER_CODE_KEY] as? String ?: "",
             countryCode = map[COUNTRY_CODE_KEY] as? String ?: "",
@@ -173,6 +188,7 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         const val COUNTRY_CODE_KEY = "countryCode"
         const val UPDATED_AT_KEY = "updatedAt"
         const val ROUND_TOTAL_PATH = "roundTotal"
+        const val ROUND_PLAYER_COUNT_PATH = "roundPlayerCount"
         const val ALL_TIME_TOTAL_PATH = "allTimeTotal"
     }
 }

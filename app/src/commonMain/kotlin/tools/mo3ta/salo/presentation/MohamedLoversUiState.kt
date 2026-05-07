@@ -7,7 +7,9 @@ data class MohamedLoversLeaderboardEntry(
     val displayTag: String,
     val totalCount: Int,
     val isCurrentUser: Boolean,
-)
+){
+    val displayedRank = if (rank > 0) "#$rank " else ""
+}
 
 enum class MohamedLoversStatus { WaitingNetwork, FirebaseOff, Open }
 
@@ -39,6 +41,7 @@ data class MohamedLoversUiState(
     val error: MohamedLoversError? = null,
     val newlyEarnedRankAchievement: Achievement.RankAchievement? = null,
     val roundTotal: Int = 0,
+    val roundPlayerCount: Int = 0,
     val allTimeTotal: Long = 0L,
     val showHadithDialog: Boolean = false,
 )

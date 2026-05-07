@@ -57,35 +57,27 @@ async function main() {
   const db = admin.database();
   const playersRef = db.ref(`mohamed_lovers/${roundKey}/players`);
 
-  // Full read for roundTotal — separate from top-10 leaderboard query.
-  const [top10Snapshot, allPlayersSnapshot] = await Promise.all([
-    playersRef.orderByChild('totalCount').limitToLast(10).get(),
-    playersRef.get(),
-  ]);
+  // Single ordered query — ascending by totalCount; we reverse for ranking.
+  const allPlayersSnapshot = await playersRef.orderByChild('totalCount').get();
 
-  // Compute roundTotal across all players.
-  let roundTotal = 0;
-  if (allPlayersSnapshot.exists()) {
-    allPlayersSnapshot.forEach(child => {
-      const data = child.val();
-      if (data && typeof data.totalCount === 'number') roundTotal += data.totalCount;
-    });
-  }
-
-  if (!top10Snapshot.exists()) {
+  if (!allPlayersSnapshot.exists()) {
     console.log('No players found. Writing empty leaderboard.');
     await Promise.all([
       db.ref(`mohamed_lovers/${roundKey}/leaderboard`).set({ isFinal }),
-      db.ref(`mohamed_lovers/${roundKey}/roundTotal`).set(roundTotal),
+      db.ref(`mohamed_lovers/${roundKey}/roundTotal`).set(0),
+      db.ref(`mohamed_lovers/${roundKey}/roundPlayerCount`).set(0),
     ]);
     process.exit(0);
   }
 
-  const players = [];
-  top10Snapshot.forEach(child => {
+  // Build full list (Firebase returns ascending order from orderByChild).
+  const allPlayers = [];
+  let roundTotal = 0;
+  allPlayersSnapshot.forEach(child => {
     const data = child.val();
     if (data && typeof data.uid === 'string' && typeof data.totalCount === 'number') {
-      players.push({
+      roundTotal += data.totalCount;
+      allPlayers.push({
         uid: data.uid,
         score: data.totalCount,
         updatedAt: data.updatedAt || 0,
@@ -94,10 +86,20 @@ async function main() {
     }
   });
 
-  players.sort((a, b) => b.score - a.score || b.updatedAt - a.updatedAt);
+  // Sort descending to assign ranks (highest score = rank 1).
+  allPlayers.sort((a, b) => b.score - a.score || b.updatedAt - a.updatedAt);
 
+  const roundPlayerCount = allPlayers.length;
+
+  // Write rank into each player node, then build top-10 leaderboard.
+  const rankUpdates = {};
+  allPlayers.forEach((player, i) => {
+    rankUpdates[`mohamed_lovers/${roundKey}/players/${player.uid}/rank`] = i + 1;
+  });
+
+  const top10 = allPlayers.slice(0, 10);
   const leaderboard = { isFinal };
-  players.forEach((player, i) => {
+  top10.forEach((player, i) => {
     leaderboard[String(i + 1)] = {
       rank: i + 1,
       uid: player.uid,
@@ -107,10 +109,12 @@ async function main() {
   });
 
   await Promise.all([
+    db.ref('/').update(rankUpdates),
     db.ref(`mohamed_lovers/${roundKey}/leaderboard`).set(leaderboard),
     db.ref(`mohamed_lovers/${roundKey}/roundTotal`).set(roundTotal),
+    db.ref(`mohamed_lovers/${roundKey}/roundPlayerCount`).set(roundPlayerCount),
   ]);
-  console.log(`Wrote ${players.length} leaderboard entries. roundTotal=${roundTotal}`);
+  console.log(`Wrote ${top10.length} leaderboard entries. roundTotal=${roundTotal} players=${roundPlayerCount}`);
   console.log(JSON.stringify(leaderboard, null, 2));
   process.exit(0);
 }

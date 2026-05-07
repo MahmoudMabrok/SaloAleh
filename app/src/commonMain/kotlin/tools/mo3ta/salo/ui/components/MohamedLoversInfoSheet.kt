@@ -32,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,6 +51,7 @@ import tools.mo3ta.salo.generated.resources.mohamed_lovers_all_time_total_label
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_empty
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_refresh_note
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_title
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_round_player_count_label
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_round_total_label
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_stats_title
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_network_time
@@ -112,7 +114,7 @@ internal fun MohamedLoversInfoSheet(
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.95f),
             )
             StatusCard(state = state)
-            TotalsCard(roundTotal = state.roundTotal, allTimeTotal = state.allTimeTotal)
+            TotalsCard(roundTotal = state.roundTotal, allTimeTotal = state.allTimeTotal, roundPlayerCount = state.roundPlayerCount)
             LeaderboardCard(
                 topPlayers = state.topPlayers,
                 selfEntry = state.selfEntry,
@@ -176,12 +178,17 @@ private fun StatusCard(state: MohamedLoversUiState) {
 }
 
 @Composable
-private fun TotalsCard(roundTotal: Int, allTimeTotal: Long) {
+private fun TotalsCard(roundTotal: Int, allTimeTotal: Long, roundPlayerCount: Int) {
     val infiniteTransition = rememberInfiniteTransition()
     val glowAlpha by infiniteTransition.animateFloat(
         initialValue = 0.82f,
         targetValue = 1.0f,
         animationSpec = infiniteRepeatable(animation = tween(1600), repeatMode = RepeatMode.Reverse),
+    )
+    val dotAlpha by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0.25f,
+        animationSpec = infiniteRepeatable(animation = tween(1800), repeatMode = RepeatMode.Reverse),
     )
 
     SheetCard {
@@ -209,18 +216,40 @@ private fun TotalsCard(roundTotal: Int, allTimeTotal: Long) {
                 ),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.4f),
             )
-            Spacer(Modifier.height(16.dp))
-            Box(
-                modifier = Modifier
-                    .width(48.dp)
-                    .height(1.dp)
-                    .background(
-                        brush = Brush.horizontalGradient(
-                            listOf(Color.Transparent, MohamedLoversPalette.GoldBase, Color.Transparent)
+            Spacer(Modifier.height(14.dp))
+            // Ornament divider: line ◆ line
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(0.6f),
+            ) {
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .height(1.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(Color.Transparent, MohamedLoversPalette.GoldBase.copy(alpha = 0.5f))
+                            )
                         )
-                    ),
-            )
-            Spacer(Modifier.height(16.dp))
+                )
+                Text(
+                    text = "◆",
+                    fontSize = 8.sp,
+                    color = MohamedLoversPalette.GoldBase,
+                )
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .height(1.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(MohamedLoversPalette.GoldBase.copy(alpha = 0.5f), Color.Transparent)
+                            )
+                        )
+                )
+            }
+            Spacer(Modifier.height(14.dp))
             Text(
                 text = roundTotal.toLong().formatCount(),
                 style = TextStyle(
@@ -241,6 +270,39 @@ private fun TotalsCard(roundTotal: Int, allTimeTotal: Long) {
                 ),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.35f),
             )
+            if (roundPlayerCount > 0) {
+                Spacer(Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(MohamedLoversPalette.GoldBase.copy(alpha = 0.1f))
+                        .border(
+                            width = 1.dp,
+                            color = MohamedLoversPalette.GoldBase.copy(alpha = 0.28f),
+                            shape = RoundedCornerShape(20.dp),
+                        )
+                        .padding(horizontal = 14.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(7.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(RoundedCornerShape(50))
+                            .background(MohamedLoversPalette.GoldBase.copy(alpha = dotAlpha)),
+                    )
+                    Text(
+                        text = stringResource(Res.string.mohamed_lovers_round_player_count_label, roundPlayerCount),
+                        style = TextStyle(
+                            fontFamily = MohamedLoversFonts.arabic,
+                            fontWeight = FontWeight.W400,
+                            fontSize = 12.sp,
+                            letterSpacing = 0.5.sp,
+                        ),
+                        color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.75f),
+                    )
+                }
+            }
         }
     }
 }
@@ -266,7 +328,31 @@ private fun LeaderboardCard(
             )
         }
         if (selfEntry != null && !selfInTop) {
-            LeaderboardRow(entry = selfEntry, pinned = true)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(MohamedLoversPalette.GoldBase.copy(alpha = 0.15f))
+                    .border(
+                        width = 1.dp,
+                        color = MohamedLoversPalette.GoldBase.copy(alpha = 0.4f),
+                        shape = RoundedCornerShape(10.dp),
+                    )
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "${selfEntry.displayedRank}${selfEntry.displayTag}",
+                    style = bodyStyle().copy(fontWeight = FontWeight.W700),
+                    color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.95f),
+                )
+                Text(
+                    text = selfEntry.totalCount.toString(),
+                    style = bodyStyle().copy(fontWeight = FontWeight.W700),
+                    color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
+                )
+            }
             Text(
                 text = stringResource(Res.string.mohamed_lovers_rank_pending_top),
                 style = bodyStyle().copy(fontSize = 11.sp),
@@ -287,6 +373,12 @@ private fun LeaderboardCard(
 
 @Composable
 private fun LeaderboardRow(entry: MohamedLoversLeaderboardEntry, pinned: Boolean) {
+    val rankColor = when (entry.rank) {
+        1 -> MohamedLoversPalette.GoldHighlight
+        2 -> MohamedLoversPalette.RankSilver
+        3 -> MohamedLoversPalette.RankBronze
+        else -> MohamedLoversPalette.GoldGlow.copy(alpha = 0.45f)
+    }
     val backgroundColor = when {
         pinned -> MohamedLoversPalette.GoldBase.copy(alpha = 0.2f)
         entry.isCurrentUser -> MohamedLoversPalette.GoldBase.copy(alpha = 0.1f)
@@ -299,12 +391,30 @@ private fun LeaderboardRow(entry: MohamedLoversLeaderboardEntry, pinned: Boolean
             .background(backgroundColor)
             .padding(horizontal = 10.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = if (entry.rank > 0) "#${entry.rank} ${entry.displayTag}" else entry.displayTag,
-            style = bodyStyle().copy(fontWeight = if (entry.isCurrentUser) FontWeight.W700 else FontWeight.W400),
-            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.92f),
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            if (entry.rank > 0) {
+                Text(
+                    text = "#${entry.rank}",
+                    style = bodyStyle().copy(
+                        fontWeight = FontWeight.W700,
+                        fontSize = if (entry.rank <= 3) 15.sp else 13.sp,
+                    ),
+                    color = rankColor,
+                )
+            }
+            Text(
+                text = entry.displayTag,
+                style = bodyStyle().copy(
+                    fontWeight = if (entry.isCurrentUser) FontWeight.W700 else FontWeight.W400,
+                ),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.92f),
+            )
+        }
         Text(
             text = entry.totalCount.toString(),
             style = bodyStyle(),

@@ -24,4 +24,7 @@ internal object MohamedLoversPalette {
 
     val Gold = GoldHighlight
     val DeepBlue = SkyTop
+
+    val RankSilver = Color(0xFFC0C0C0)
+    val RankBronze = Color(0xFFCD7F32)
 }
