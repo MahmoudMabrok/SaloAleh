@@ -8,12 +8,35 @@
         ".read": true,
         ".write": false
       },
+      "users": {
+        "$uid": {
+          ".read": false,
+          ".write": "auth == null || auth.uid != null",
+          "fcmToken": {
+            ".validate": "newData.isString() && newData.val().length > 0"
+          },
+          "installDate": {
+            ".validate": "newData.isString() && newData.val().length == 10"
+          },
+          "lastOpenDate": {
+            ".validate": "newData.isString() && newData.val().length == 10"
+          },
+          "lastRivalNotifDate": {
+            ".validate": "newData.isString() && newData.val().length == 10"
+          },
+          "$other": { ".validate": false }
+        }
+      },
       "$round": {
         "roundTotal": {
           ".read": true,
           ".write": false
         },
         "leaderboard": {
+          ".read": true,
+          ".write": false
+        },
+        "roundPlayerCount": {
           ".read": true,
           ".write": false
         },
