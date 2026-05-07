@@ -44,4 +44,19 @@ data class MohamedLoversUiState(
     val roundPlayerCount: Int = 0,
     val allTimeTotal: Long = 0L,
     val showHadithDialog: Boolean = false,
+
+    // Round recap (shown once per completed round)
+    val showRoundRecap: Boolean = false,
+    val recapRank: Int = 0,
+    val recapTotalPlayers: Int = 0,
+    val recapIsPersonalBest: Boolean = false,
+    val recapTapsDelta: Int = 0,
+
+    // Grace warning banner
+    val showGraceWarning: Boolean = false,
+
+    // Daily goal
+    val dailyGoalTarget: Int = 0,
+    val dailyGoalProgress: Int = 0,
+    val dailyGoalJustCompleted: Boolean = false,
 )
