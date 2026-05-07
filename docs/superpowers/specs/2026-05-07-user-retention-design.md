@@ -69,7 +69,7 @@ No new services. No breaking RTDB schema changes.
 
 ### Debounce
 
-Rival alert: max 1 per day per user. Flag written to `mohamed_lovers/users_meta/{uid}/lastRivalNotifDate`. Script skips user if flag matches today's date (Cairo timezone).
+Rival alert: max 1 per day per user. Flag written to `mohamed_lovers/users/{uid}/lastRivalNotifDate`. Script skips user if flag matches today's date (Cairo timezone).
 
 ### Script Schedule
 
@@ -136,12 +136,10 @@ All user metadata nested under existing `mohamed_lovers` root — no new top-lev
 mohamed_lovers/
   users/
     {uid}/
-      fcmToken: String        # client writes on app start
-      installDate: String     # client writes on first launch only
-      lastOpenDate: String    # client writes on each foreground resume
-  users_meta/
-    {uid}/
-      lastRivalNotifDate: String  # notification script writes (Cairo ISO date debounce)
+      fcmToken: String           # client writes on app start
+      installDate: String        # client writes on first launch only
+      lastOpenDate: String       # client writes on each foreground resume
+      lastRivalNotifDate: String # script writes (Cairo ISO date, debounce)
   {roundKey}/
     players/ ...
     leaderboard/ ...
@@ -149,7 +147,7 @@ mohamed_lovers/
 
 **Client:** write-only to `mohamed_lovers/users/{uid}/`. No reads from this path on the client.
 
-**Script:** reads `mohamed_lovers/users/{uid}/` to evaluate notification segments. Writes debounce flags to `mohamed_lovers/users_meta/{uid}/`.
+**Script:** reads and writes `mohamed_lovers/users/{uid}/`.
 
 Existing player nodes under `mohamed_lovers/{roundKey}/players/{uid}` unchanged.
 
