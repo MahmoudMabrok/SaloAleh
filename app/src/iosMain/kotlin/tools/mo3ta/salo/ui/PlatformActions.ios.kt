@@ -1,5 +1,19 @@
 package tools.mo3ta.salo.ui
 
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.toPixelMap
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.convert
+import kotlinx.cinterop.reinterpret
+import kotlinx.cinterop.usePinned
+import platform.CoreFoundation.CFDataCreate
+import platform.CoreFoundation.kCFAllocatorDefault
+import platform.CoreGraphics.CGColorRenderingIntent
+import platform.CoreGraphics.CGColorSpaceCreateDeviceRGB
+import platform.CoreGraphics.CGDataProviderCreateWithCFData
+import platform.CoreGraphics.CGImageAlphaInfo
+import platform.CoreGraphics.CGImageCreate
 import platform.Foundation.NSURL
 import platform.UIKit.UIActivityViewController
 import platform.UIKit.UIAlertAction
@@ -7,6 +21,7 @@ import platform.UIKit.UIAlertActionStyleDefault
 import platform.UIKit.UIAlertController
 import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationOpenSettingsURLString
+import platform.UIKit.UIImage
 import platform.UIKit.UIPasteboard
 import platform.UserNotifications.UNAuthorizationStatusAuthorized
 import platform.UserNotifications.UNAuthorizationStatusEphemeral
@@ -50,6 +65,54 @@ actual fun openNotificationSettings() {
     UIApplication.sharedApplication.openURL(url)
 }
 
-actual fun shareBitmap(imageBitmap: androidx.compose.ui.graphics.ImageBitmap) {
-    // TODO: implement iOS image sharing
+@OptIn(ExperimentalForeignApi::class)
+actual fun shareBitmap(imageBitmap: ImageBitmap) {
+    val pixelMap = imageBitmap.toPixelMap()
+    val width = pixelMap.width
+    val height = pixelMap.height
+    val bytesPerRow = width * 4
+
+    val rawBytes = ByteArray(height * bytesPerRow)
+    for (y in 0 until height) {
+        for (x in 0 until width) {
+            val color = pixelMap[x, y]
+            val i = (y * width + x) * 4
+            rawBytes[i]     = (color.red   * 255).toInt().and(0xFF).toByte()
+            rawBytes[i + 1] = (color.green * 255).toInt().and(0xFF).toByte()
+            rawBytes[i + 2] = (color.blue  * 255).toInt().and(0xFF).toByte()
+            rawBytes[i + 3] = (color.alpha * 255).toInt().and(0xFF).toByte()
+        }
+    }
+
+    val colorSpace = CGColorSpaceCreateDeviceRGB() ?: return
+    val uiImage: UIImage = rawBytes.usePinned { pinned ->
+        val cfData = CFDataCreate(
+            allocator = kCFAllocatorDefault,
+            bytes = pinned.addressOf(0).reinterpret(),
+            length = rawBytes.size.toLong(),
+        ) ?: return@usePinned null
+        val provider = CGDataProviderCreateWithCFData(cfData) ?: return@usePinned null
+        val cgImage = CGImageCreate(
+            width            = width.toULong(),
+            height           = height.toULong(),
+            bitsPerComponent = 8u,
+            bitsPerPixel     = 32u,
+            bytesPerRow      = bytesPerRow.toULong(),
+            space            = colorSpace,
+            bitmapInfo       = CGImageAlphaInfo.kCGImageAlphaPremultipliedLast.value,
+            provider         = provider,
+            decode           = null,
+            shouldInterpolate = false,
+            intent           = CGColorRenderingIntent.kCGRenderingIntentDefault,
+        ) ?: return@usePinned null
+        UIImage.imageWithCGImage(cgImage)
+    } ?: return
+
+    val activityVC = UIActivityViewController(
+        activityItems = listOf(uiImage),
+        applicationActivities = null,
+    )
+    UIApplication.sharedApplication.keyWindow
+        ?.rootViewController
+        ?.presentViewController(activityVC, animated = true, completion = null)
 }
