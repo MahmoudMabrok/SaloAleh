@@ -27,6 +27,7 @@ class SaloFirebaseMessagingService : FirebaseMessagingService() {
                 getSharedPreferences("ml_session", Context.MODE_PRIVATE)
             )
             val store = MohamedLoversSessionStore(settings)
+            store.saveLocalFcmToken(token)
             val uid = store.getOrCreateUid()
             MohamedLoversFirebaseClient(store).writeFcmToken(uid, token)
         }

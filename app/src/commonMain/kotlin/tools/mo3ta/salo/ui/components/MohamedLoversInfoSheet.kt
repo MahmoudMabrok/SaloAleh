@@ -18,6 +18,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -53,6 +55,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.roundToInt
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -260,6 +263,21 @@ private fun StatusCard(state: MohamedLoversUiState) {
 
 @Composable
 private fun TotalsCard(roundTotal: Int, allTimeTotal: Long, roundPlayerCount: Int) {
+    val easeOutExpo = remember { CubicBezierEasing(0.16f, 1f, 0.3f, 1f) }
+    val combinedTotal = allTimeTotal + roundTotal
+    val animatedCombined = remember { Animatable(0f) }
+    val animatedRound = remember { Animatable(0f) }
+    LaunchedEffect(combinedTotal) {
+        val delta = combinedTotal - animatedCombined.value.toLong()
+        val duration = if (delta > 5) 2000 else 200
+        animatedCombined.animateTo(combinedTotal.toFloat(), tween(duration, easing = easeOutExpo))
+    }
+    LaunchedEffect(roundTotal) {
+        val delta = roundTotal - animatedRound.value.roundToInt()
+        val duration = if (delta > 5) 2000 else 200
+        animatedRound.animateTo(roundTotal.toFloat(), tween(duration, easing = easeOutExpo))
+    }
+
     val infiniteTransition = rememberInfiniteTransition()
     val glowAlpha by infiniteTransition.animateFloat(
         initialValue = 0.82f,
@@ -278,7 +296,7 @@ private fun TotalsCard(roundTotal: Int, allTimeTotal: Long, roundPlayerCount: In
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                text = (allTimeTotal + roundTotal).formatCount(),
+                text = animatedCombined.value.toLong().formatCount(),
                 style = TextStyle(
                     fontFamily = MohamedLoversFonts.display,
                     fontWeight = FontWeight.W600,
@@ -332,7 +350,7 @@ private fun TotalsCard(roundTotal: Int, allTimeTotal: Long, roundPlayerCount: In
             }
             Spacer(Modifier.height(14.dp))
             Text(
-                text = roundTotal.toLong().formatCount(),
+                text = animatedRound.value.roundToInt().toLong().formatCount(),
                 style = TextStyle(
                     fontFamily = MohamedLoversFonts.display,
                     fontWeight = FontWeight.W400,

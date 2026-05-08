@@ -56,6 +56,9 @@ class MohamedLoversSessionStore(private val settings: Settings) {
     fun getLastRoundTaps(): Int = settings.getInt(KEY_LAST_ROUND_TAPS, 0)
     fun saveLastRoundTaps(taps: Int) = settings.putInt(KEY_LAST_ROUND_TAPS, taps)
 
+    fun getSavedFcmToken(): String? = settings.getStringOrNull(KEY_FCM_TOKEN)
+    fun saveLocalFcmToken(token: String) = settings.putString(KEY_FCM_TOKEN, token)
+
     @OptIn(kotlin.uuid.ExperimentalUuidApi::class)
     fun getOrCreateUid(): String {
         val raw = settings.getStringOrNull(KEY_UID)?.takeIf { it.isNotBlank() }
@@ -73,5 +76,6 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         const val KEY_RECAP_SHOWN_ROUND = "recap_shown_round"
         const val KEY_PERSONAL_BEST_RANK = "personal_best_rank"
         const val KEY_LAST_ROUND_TAPS = "last_round_taps"
+        const val KEY_FCM_TOKEN = "fcm_token"
     }
 }

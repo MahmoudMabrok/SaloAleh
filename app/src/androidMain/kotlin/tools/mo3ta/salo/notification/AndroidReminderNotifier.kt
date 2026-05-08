@@ -40,6 +40,22 @@ object AndroidReminderNotifier {
         )
     }
 
+    fun postRetention(context: Context, missedDays: Int) {
+        if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return
+
+        val dayWord = if (missedDays == 1) "يوم" else "أيام"
+        NotificationManagerCompat.from(context).notify(
+            NotificationChannels.NOTIF_ID_RETENTION,
+            NotificationCompat.Builder(context, NotificationChannels.CHANNEL_RETENTION)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle("نفتقدك 🤍")
+                .setContentText("مضى $missedDays $dayWord منذ آخر زيارة — لا تنسَ الصلاة على النبي ﷺ")
+                .setAutoCancel(true)
+                .setContentIntent(openAppIntent(context))
+                .build(),
+        )
+    }
+
     private fun openAppIntent(context: Context): PendingIntent =
         PendingIntent.getActivity(
             context,

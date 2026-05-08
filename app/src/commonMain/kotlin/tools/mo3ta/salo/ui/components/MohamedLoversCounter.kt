@@ -1,6 +1,7 @@
 package tools.mo3ta.salo.ui.components
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +18,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.stringResource
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_counter_hint
@@ -31,8 +33,13 @@ internal fun MohamedLoversCounter(
     isFridayBonus: Boolean,
     modifier: Modifier = Modifier,
 ) {
+    val easeOutExpo = remember { CubicBezierEasing(0.16f, 1f, 0.3f, 1f) }
+    val animatedValue = remember { Animatable(0f) }
     val scale = remember { Animatable(1f) }
     LaunchedEffect(total) {
+        val delta = total - animatedValue.value.roundToInt()
+        val duration = if (delta > 5) 2000 else 200
+        animatedValue.animateTo(total.toFloat(), tween(duration, easing = easeOutExpo))
         scale.snapTo(1f)
         scale.animateTo(1.08f, tween(120))
         scale.animateTo(1f, tween(200))
@@ -43,7 +50,7 @@ internal fun MohamedLoversCounter(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            text = total.toString(),
+            text = animatedValue.value.roundToInt().toString(),
             style = TextStyle(
                 fontFamily = MohamedLoversFonts.display,
                 fontWeight = FontWeight.W500,
