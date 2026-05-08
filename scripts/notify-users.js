@@ -8,7 +8,7 @@
  *
  * ## Flow
  *
- *   GitHub Actions (cron 0 */6 * * *)
+ *   GitHub Actions (schedule: every 6 hours)
  *       │
  *       ▼
  *   Resolve round context
