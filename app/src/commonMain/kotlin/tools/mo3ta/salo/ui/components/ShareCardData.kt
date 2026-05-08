@@ -6,4 +6,5 @@ data class ShareCardData(
     val userScore: Int,
     val roundTotal: Int,
     val roundPlayerCount: Int,
+    val dateLabel: String = "",
 )

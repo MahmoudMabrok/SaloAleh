@@ -50,6 +50,9 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import tools.mo3ta.salo.ui.shareBitmap
 import org.jetbrains.compose.resources.stringResource
 import tools.mo3ta.salo.generated.resources.Res
@@ -145,34 +148,36 @@ private fun ShareButton(state: MohamedLoversUiState) {
     val graphicsLayer = rememberGraphicsLayer()
     val scope = rememberCoroutineScope()
 
-    if (selfEntry != null) {
-        val shareData = ShareCardData(
-            displayTag = selfEntry.displayTag,
-            rank = selfEntry.rank,
-            userScore = selfEntry.totalCount,
-            roundTotal = state.roundTotal,
-            roundPlayerCount = state.roundPlayerCount,
-        )
-        // Off-screen capture: measure at full card size, report 0×0 to parent, place off-screen
-        Box(
-            modifier = Modifier
-                .layout { measurable, _ ->
-                    val w = 400.dp.roundToPx()
-                    val h = 620.dp.roundToPx()
-                    val placeable = measurable.measure(Constraints.fixed(w, h))
-                    layout(0, 0) { placeable.place(-w * 2, 0) }
-                }
-                .drawWithContent {
-                    graphicsLayer.record { this@drawWithContent.drawContent() }
-                }
-        ) {
-            ShareCard(data = shareData)
-        }
+    val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+    val dateLabel = "${now.dayOfMonth}/${now.monthNumber}/${now.year}"
+
+    val shareData = ShareCardData(
+        displayTag = selfEntry?.displayTag ?: "",
+        rank = selfEntry?.rank ?: 0,
+        userScore = selfEntry?.totalCount ?: 0,
+        roundTotal = state.roundTotal,
+        roundPlayerCount = state.roundPlayerCount,
+        dateLabel = dateLabel,
+    )
+
+    // Off-screen capture: measure at full card size, report 0×0 to parent, place off-screen
+    Box(
+        modifier = Modifier
+            .layout { measurable, _ ->
+                val w = 400.dp.roundToPx()
+                val h = 620.dp.roundToPx()
+                val placeable = measurable.measure(Constraints.fixed(w, h))
+                layout(0, 0) { placeable.place(-w * 2, 0) }
+            }
+            .drawWithContent {
+                graphicsLayer.record { this@drawWithContent.drawContent() }
+            }
+    ) {
+        ShareCard(data = shareData)
     }
 
     Button(
         onClick = { scope.launch { shareBitmap(graphicsLayer.toImageBitmap()) } },
-        enabled = selfEntry != null && selfEntry.rank > 0,
         modifier = Modifier.fillMaxWidth(),
         colors = ButtonDefaults.buttonColors(
             containerColor = MohamedLoversPalette.GoldGlow,

@@ -69,7 +69,7 @@ fun ShareCard(data: ShareCardData) {
                 Rosette(); Rosette()
             }
         }
-        ShareCardFooter()
+        ShareCardFooter(dateLabel = data.dateLabel)
     }
 }
 
@@ -89,7 +89,7 @@ private fun ShareCardHeader() {
 }
 
 @Composable
-private fun ShareCardFooter() {
+private fun ShareCardFooter(dateLabel: String) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -100,6 +100,9 @@ private fun ShareCardFooter() {
     ) {
         Text("✦ ✦ ✦", style = TextStyle(fontSize = 9.sp, color = Color(0x66FFEEB4), letterSpacing = 4.sp))
         Text("© SaloAleh · صلِّ عليه", style = TextStyle(fontSize = 10.sp, color = Color(0xB3FFF8E0), letterSpacing = 2.sp))
+        if (dateLabel.isNotBlank()) {
+            Text(dateLabel, style = TextStyle(fontSize = 9.sp, color = Color(0x80FFF8E0), letterSpacing = 1.sp))
+        }
     }
 }
 
@@ -132,7 +135,10 @@ private fun RankMedallion(rank: Int) {
             contentAlignment = Alignment.Center,
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("#$rank", style = TextStyle(fontSize = 36.sp, fontWeight = FontWeight.Black, color = SCGoldDark, lineHeight = 36.sp))
+                Text(
+                    text = if (rank > 0) "#$rank" else "؟",
+                    style = TextStyle(fontSize = 36.sp, fontWeight = FontWeight.Black, color = SCGoldDark, lineHeight = 36.sp),
+                )
                 Text("RANK", style = TextStyle(fontSize = 10.sp, color = SCGold, letterSpacing = 1.sp))
             }
         }
