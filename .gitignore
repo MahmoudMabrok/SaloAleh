@@ -21,3 +21,4 @@ iosApp/Pods/
 
 iosApp/iosApp.xcworkspace/
 GoogleService-Info.plist
+.worktrees/
