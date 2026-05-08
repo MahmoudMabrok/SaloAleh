@@ -1,9 +1,12 @@
 package tools.mo3ta.salo.ui
 
+import android.app.AlarmManager
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
 import androidx.compose.ui.graphics.ImageBitmap
@@ -32,6 +35,17 @@ actual fun shareText(text: String) {
     })
 }
 
+actual fun getStoreUrl(): String {
+    val packageName = AndroidAppContext.get().packageName
+    return "https://play.google.com/store/apps/details?id=$packageName"
+}
+
+actual fun canScheduleExactAlarms(): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return true
+    val alarmManager = AndroidAppContext.get().getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    return alarmManager.canScheduleExactAlarms()
+}
+
 actual fun areNotificationsEnabled(): Boolean =
     NotificationManagerCompat.from(AndroidAppContext.get()).areNotificationsEnabled()
 
@@ -47,6 +61,37 @@ actual fun openNotificationSettings() {
         flags = Intent.FLAG_ACTIVITY_NEW_TASK
     }
     ctx.startActivity(intent)
+}
+
+actual fun requestExactAlarmPermission() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || canScheduleExactAlarms()) return
+    val ctx = AndroidAppContext.get()
+    val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+        data = Uri.parse("package:${ctx.packageName}")
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+    }
+    runCatching { ctx.startActivity(intent) }
+        .onFailure { openNotificationSettings() }
+}
+
+actual fun openStorePage() {
+    val ctx = AndroidAppContext.get()
+    val packageName = ctx.packageName
+    val marketIntent = Intent(
+        Intent.ACTION_VIEW,
+        Uri.parse("market://details?id=$packageName"),
+    ).apply {
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+    }
+    val webIntent = Intent(
+        Intent.ACTION_VIEW,
+        Uri.parse(getStoreUrl()),
+    ).apply {
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+    }
+
+    runCatching { ctx.startActivity(marketIntent) }
+        .onFailure { ctx.startActivity(webIntent) }
 }
 
 actual fun shareBitmap(imageBitmap: ImageBitmap) {

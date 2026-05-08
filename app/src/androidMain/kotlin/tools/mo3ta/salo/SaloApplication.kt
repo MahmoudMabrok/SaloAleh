@@ -5,6 +5,7 @@ import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
 import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
 import com.google.firebase.messaging.FirebaseMessaging
+import tools.mo3ta.salo.notification.NotificationChannels
 
 class SaloApplication : Application() {
     override fun onCreate() {
@@ -16,6 +17,7 @@ class SaloApplication : Application() {
             appCheck.installAppCheckProviderFactory(PlayIntegrityAppCheckProviderFactory.getInstance())
         }
         AndroidAppContext.init(this)
+        NotificationChannels.createAll(this)
         FirebaseMessaging.getInstance().subscribeToTopic("general")
     }
 }
