@@ -7,7 +7,7 @@ const admin = require('firebase-admin');
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 const databaseURL = process.env.FIREBASE_DATABASE_URL;
 
-admin.initializeApp({ credential: admin.credential.cert(serviceAccount), databaseURL });q1  §   1
+admin.initializeApp({ credential: admin.credential.cert(serviceAccount), databaseURL });
 
 // Returns today's Cairo date — the round that just closed.
 // Reliable only when called on Friday after 18:00 Cairo (matches this cron).
