@@ -33,15 +33,19 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.TextStyle
@@ -49,7 +53,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -76,6 +79,7 @@ import tools.mo3ta.salo.generated.resources.mohamed_lovers_status_title
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_status_waiting_network
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_winner_placeholder
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_winner_title
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_share_rank
 import tools.mo3ta.salo.presentation.MohamedLoversLeaderboardEntry
 import tools.mo3ta.salo.presentation.MohamedLoversStatus
 import tools.mo3ta.salo.presentation.MohamedLoversUiState
@@ -146,7 +150,7 @@ internal fun MohamedLoversInfoSheet(
 private fun ShareButton(state: MohamedLoversUiState) {
     val selfEntry = state.selfEntry
     val graphicsLayer = rememberGraphicsLayer()
-    val scope = rememberCoroutineScope()
+    var capturing by remember { mutableStateOf(false) }
 
     val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
     val dateLabel = "${now.dayOfMonth}/${now.monthNumber}/${now.year}"
@@ -160,24 +164,35 @@ private fun ShareButton(state: MohamedLoversUiState) {
         dateLabel = dateLabel,
     )
 
-    // Off-screen capture: measure at full card size, report 0×0 to parent, place off-screen
-    Box(
-        modifier = Modifier
-            .layout { measurable, _ ->
-                val w = 400.dp.roundToPx()
-                val h = 620.dp.roundToPx()
-                val placeable = measurable.measure(Constraints.fixed(w, h))
-                layout(0, 0) { placeable.place(-w * 2, 0) }
-            }
-            .drawWithContent {
-                graphicsLayer.record { this@drawWithContent.drawContent() }
-            }
-    ) {
-        ShareCard(data = shareData)
+    // Render for one frame on tap, then capture.
+    // layout(0,0)+place(0,0)+alpha(0.002f) ensures Compose draws (not optimized away) but stays invisible.
+    if (capturing) {
+        Box(
+            modifier = Modifier
+                .layout { measurable, _ ->
+                    val w = 400.dp.roundToPx()
+                    val h = 620.dp.roundToPx()
+                    val placeable = measurable.measure(Constraints.fixed(w, h))
+                    layout(0, 0) { placeable.place(0, 0) }
+                }
+                .graphicsLayer { alpha = 0.002f }
+                .drawWithContent {
+                    graphicsLayer.record { this@drawWithContent.drawContent() }
+                    drawContent()
+                }
+        ) {
+            ShareCard(data = shareData)
+        }
+        LaunchedEffect(Unit) {
+            withFrameMillis { }
+            val bitmap = graphicsLayer.toImageBitmap()
+            capturing = false
+            shareBitmap(bitmap)
+        }
     }
 
     Button(
-        onClick = { scope.launch { shareBitmap(graphicsLayer.toImageBitmap()) } },
+        onClick = { capturing = true },
         modifier = Modifier.fillMaxWidth(),
         colors = ButtonDefaults.buttonColors(
             containerColor = MohamedLoversPalette.GoldGlow,
@@ -185,7 +200,7 @@ private fun ShareButton(state: MohamedLoversUiState) {
         ),
     ) {
         Text(
-            text = "مشاركة رتبتي",
+            text = stringResource(Res.string.mohamed_lovers_share_rank),
             style = TextStyle(
                 fontFamily = MohamedLoversFonts.display,
                 fontSize = 15.sp,
