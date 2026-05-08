@@ -24,6 +24,8 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,16 +34,23 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
+import tools.mo3ta.salo.ui.shareBitmap
 import org.jetbrains.compose.resources.stringResource
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_banner
@@ -115,6 +124,7 @@ internal fun MohamedLoversInfoSheet(
             )
             StatusCard(state = state)
             TotalsCard(roundTotal = state.roundTotal, allTimeTotal = state.allTimeTotal, roundPlayerCount = state.roundPlayerCount)
+            ShareButton(state = state)
             LeaderboardCard(
                 topPlayers = state.topPlayers,
                 selfEntry = state.selfEntry,
@@ -126,6 +136,57 @@ internal fun MohamedLoversInfoSheet(
             FridayNoteCard()
             Spacer(Modifier.height(8.dp))
         }
+    }
+}
+
+@Composable
+private fun ShareButton(state: MohamedLoversUiState) {
+    val selfEntry = state.selfEntry
+    val graphicsLayer = rememberGraphicsLayer()
+    val scope = rememberCoroutineScope()
+
+    if (selfEntry != null) {
+        val shareData = ShareCardData(
+            displayTag = selfEntry.displayTag,
+            rank = selfEntry.rank,
+            userScore = selfEntry.totalCount,
+            roundTotal = state.roundTotal,
+            roundPlayerCount = state.roundPlayerCount,
+        )
+        // Off-screen capture: measure at full card size, report 0×0 to parent, place off-screen
+        Box(
+            modifier = Modifier
+                .layout { measurable, _ ->
+                    val w = 400.dp.roundToPx()
+                    val h = 620.dp.roundToPx()
+                    val placeable = measurable.measure(Constraints.fixed(w, h))
+                    layout(0, 0) { placeable.place(-w * 2, 0) }
+                }
+                .drawWithContent {
+                    graphicsLayer.record { this@drawWithContent.drawContent() }
+                }
+        ) {
+            ShareCard(data = shareData)
+        }
+    }
+
+    Button(
+        onClick = { scope.launch { shareBitmap(graphicsLayer.toImageBitmap()) } },
+        enabled = selfEntry != null && selfEntry.rank > 0,
+        modifier = Modifier.fillMaxWidth(),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MohamedLoversPalette.GoldGlow,
+            contentColor = MohamedLoversPalette.SkyTop,
+        ),
+    ) {
+        Text(
+            text = "مشاركة رتبتي",
+            style = TextStyle(
+                fontFamily = MohamedLoversFonts.display,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.W500,
+            ),
+        )
     }
 }
 

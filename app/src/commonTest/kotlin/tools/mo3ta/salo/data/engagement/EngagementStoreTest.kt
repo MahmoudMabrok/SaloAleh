@@ -58,7 +58,8 @@ class EngagementStoreTest {
         val s = MapSettings()
         val store = store(s)
         store.recordOpen(today = LocalDate(2026, 4, 28))
-        val data = store.recordOpen(today = LocalDate(2026, 4, 30))
+        // Miss 2 days (Apr 29 + Apr 30); grace only covers 1 missed day
+        val data = store.recordOpen(today = LocalDate(2026, 5, 1))
         assertEquals(1, data.currentStreak)
     }
 
@@ -170,5 +171,82 @@ class EngagementStoreTest {
         val ranks = store.getAllAchievements().filterIsInstance<Achievement.RankAchievement>()
         assertEquals(1, ranks.size)
         assertEquals(5, ranks[0].rank)
+    }
+
+    @Test
+    fun missOneDay_graceAvailable_streakPreserved() {
+        val s = MapSettings()
+        val store = store(s)
+        // Build streak of 5
+        for (day in 26..30) store.recordOpen(today = LocalDate(2026, 4, day))
+        // Skip May 1 (miss exactly 1 day), open May 2
+        val data = store.recordOpen(today = LocalDate(2026, 5, 2))
+        assertEquals(6, data.currentStreak)
+        assertTrue(data.graceConsumedNow)
+    }
+
+    @Test
+    fun missOneDay_graceAlreadyUsed_streakBreaks() {
+        val s = MapSettings()
+        val store = store(s)
+        for (day in 26..30) store.recordOpen(today = LocalDate(2026, 4, day))
+        // First miss — grace consumed
+        store.recordOpen(today = LocalDate(2026, 5, 2))
+        // Build streak again within same 7-day window
+        store.recordOpen(today = LocalDate(2026, 5, 3))
+        store.recordOpen(today = LocalDate(2026, 5, 4))
+        // Second miss within same 7-day window — no grace
+        val data = store.recordOpen(today = LocalDate(2026, 5, 6))
+        assertEquals(1, data.currentStreak)
+        assertFalse(data.graceConsumedNow)
+    }
+
+    @Test
+    fun missOneDay_graceResets_after7Days() {
+        val s = MapSettings()
+        val store = store(s)
+        for (day in 26..30) store.recordOpen(today = LocalDate(2026, 4, day))
+        // Grace consumed May 2
+        store.recordOpen(today = LocalDate(2026, 5, 2))
+        // 8 days later — new 7-day window; miss 1 day
+        store.recordOpen(today = LocalDate(2026, 5, 9))
+        store.recordOpen(today = LocalDate(2026, 5, 10))
+        val data = store.recordOpen(today = LocalDate(2026, 5, 12))
+        assertTrue(data.graceConsumedNow)
+        assertEquals(3, data.currentStreak)
+    }
+
+    @Test
+    fun missTwoDays_noGrace_streakBreaks() {
+        val s = MapSettings()
+        val store = store(s)
+        for (day in 26..30) store.recordOpen(today = LocalDate(2026, 4, day))
+        // Miss 2 days — grace only covers 1 missed day
+        val data = store.recordOpen(today = LocalDate(2026, 5, 3))
+        assertEquals(1, data.currentStreak)
+        assertFalse(data.graceConsumedNow)
+    }
+
+    @Test
+    fun wasGraceConsumedToday_trueAfterGrace() {
+        val s = MapSettings()
+        val store = store(s)
+        for (day in 26..30) store.recordOpen(today = LocalDate(2026, 4, day))
+        store.recordOpen(today = LocalDate(2026, 5, 2))
+        assertTrue(store.wasGraceConsumedToday(LocalDate(2026, 5, 2)))
+        assertFalse(store.wasGraceConsumedToday(LocalDate(2026, 5, 3)))
+    }
+
+    @Test
+    fun missOneDay_graceConsumed_streakReachesBadgeThreshold() {
+        val s = MapSettings()
+        val store = store(s)
+        // Build streak of 6 days
+        for (day in 25..30) store.recordOpen(today = LocalDate(2026, 4, day))
+        // Miss May 1, open May 2 — grace saves streak → streak becomes 7 → badge earned
+        val data = store.recordOpen(today = LocalDate(2026, 5, 2))
+        assertEquals(7, data.currentStreak)
+        assertTrue(data.graceConsumedNow)
+        assertEquals(BadgeType.STREAK_7, data.newlyEarnedBadge)
     }
 }

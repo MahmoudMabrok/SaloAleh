@@ -47,4 +47,19 @@
     <string name="mohamed_lovers_blocked_firebase_off">الاتصال غير متاح</string>
     <string name="mohamed_lovers_back_cd">رجوع</string>
     <string name="mohamed_lovers_info_cd">معلومات</string>
+
+    <!-- Round Recap Sheet -->
+    <string name="recap_title">انتهت الجولة!</string>
+    <string name="recap_rank_label">جئت في المرتبة #%1$d من %2$d مشاركاً</string>
+    <string name="recap_personal_best">🏅 أفضل مرتبة لك!</string>
+    <string name="recap_taps_up">+%1$d صلاة عن الأسبوع الماضي</string>
+    <string name="recap_taps_down">%1$d صلاة عن الأسبوع الماضي</string>
+    <string name="recap_cta">ابدأ الجولة الجديدة</string>
+
+    <!-- Grace Warning Banner -->
+    <string name="grace_warning">استُخدِم الحذف الواحد هذا الأسبوع — حافظ على سلسلتك!</string>
+
+    <!-- Daily Goal -->
+    <string name="daily_goal_completed">أحسنت! هدف اليوم اكتمل 🎉</string>
+    <string name="daily_goal_progress">%1$d / %2$d صلاة</string>
 </resources>

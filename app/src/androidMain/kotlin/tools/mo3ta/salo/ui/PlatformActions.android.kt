@@ -6,7 +6,10 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Settings
 import android.widget.Toast
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.FileProvider
 import tools.mo3ta.salo.AndroidAppContext
 
 actual fun showPlatformToast(message: String) {
@@ -44,4 +47,23 @@ actual fun openNotificationSettings() {
         flags = Intent.FLAG_ACTIVITY_NEW_TASK
     }
     ctx.startActivity(intent)
+}
+
+actual fun shareBitmap(imageBitmap: ImageBitmap) {
+    val context = AndroidAppContext.get()
+    val androidBitmap = imageBitmap.asAndroidBitmap()
+
+    val shareDir = java.io.File(context.cacheDir, "share").also { it.mkdirs() }
+    val file = java.io.File(shareDir, "share_card.png")
+    file.outputStream().use { androidBitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+        type = "image/png"
+        putExtra(Intent.EXTRA_STREAM, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    context.startActivity(Intent.createChooser(sendIntent, null).apply {
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    })
 }

@@ -1,0 +1,35 @@
+name: Send User Retention Notifications
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'   # every 6 hours
+  workflow_dispatch:
+    inputs:
+      rival_threshold:
+        description: 'Tap gap to trigger rival alert (default 200)'
+        required: false
+        default: '200'
+
+jobs:
+  notify:
+    name: Evaluate segments and send FCM notifications
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install firebase-admin
+        run: npm install firebase-admin
+        working-directory: scripts
+
+      - name: Send notifications
+        run: node scripts/notify-users.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          NOTIF_RIVAL_THRESHOLD: ${{ github.event.inputs.rival_threshold || '200' }}
+          NOTIF_RIVAL_ENABLED: 'true'
+          NOTIF_MIDWEEK_ENABLED: 'true'

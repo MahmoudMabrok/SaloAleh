@@ -15,10 +15,20 @@ class EngagementStore(private val settings: Settings) {
         val lastDateStr = settings.getStringOrNull(KEY_LAST_OPEN_DATE)
         val lastDate = lastDateStr?.let { LocalDate.parse(it) }
 
+        var graceConsumedNow = false
         val streak = when {
             lastDate == null -> 1
             lastDate == today -> settings.getInt(KEY_STREAK, 1)
             lastDate == today.minusDays(1) -> settings.getInt(KEY_STREAK, 1) + 1
+            lastDate == today.minusDays(2) -> {
+                if (isGraceAvailable(today)) {
+                    consumeGrace(today)
+                    graceConsumedNow = true
+                    settings.getInt(KEY_STREAK, 1) + 1
+                } else {
+                    1
+                }
+            }
             else -> 1
         }
 
@@ -52,7 +62,25 @@ class EngagementStore(private val settings: Settings) {
             currentStreak = streak,
             newlyEarnedBadge = newBadge,
             shouldRequestNotifPermission = shouldAskNotif,
+            graceConsumedNow = graceConsumedNow,
         )
+    }
+
+    fun wasGraceConsumedToday(today: LocalDate): Boolean {
+        val date = settings.getStringOrNull(KEY_GRACE_DATE) ?: return false
+        return LocalDate.parse(date) == today
+    }
+
+    private fun isGraceAvailable(today: LocalDate): Boolean {
+        val used = settings.getBoolean(KEY_GRACE_USED, false)
+        if (!used) return true
+        val lastGrace = settings.getStringOrNull(KEY_GRACE_DATE) ?: return true
+        return today.toEpochDays() - LocalDate.parse(lastGrace).toEpochDays() >= 7
+    }
+
+    private fun consumeGrace(today: LocalDate) {
+        settings.putBoolean(KEY_GRACE_USED, true)
+        settings.putString(KEY_GRACE_DATE, today.toString())
     }
 
     fun getCurrentStreak(): Int = settings.getInt(KEY_STREAK, 1)
@@ -122,5 +150,7 @@ class EngagementStore(private val settings: Settings) {
         const val KEY_BADGE_30_DATE = "eng_badge_30_date"
         const val KEY_NOTIF_ASKED_AT_OPEN = "eng_notif_asked_at"
         const val KEY_RANK_ACHIEVEMENTS = "eng_rank_achievements"
+        const val KEY_GRACE_USED = "eng_grace_used"
+        const val KEY_GRACE_DATE = "eng_grace_date"
     }
 }
