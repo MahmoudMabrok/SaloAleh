@@ -43,6 +43,11 @@ actual fun shareText(text: String) {
     UIApplication.sharedApplication.keyWindow?.rootViewController?.presentViewController(vc, true, null)
 }
 
+actual fun getStoreUrl(): String =
+    "https://apps.apple.com/us/app/%D8%B5%D9%84%D9%88%D8%A7-%D8%B9%D9%84%D9%8A%D9%87/id6749495873"
+
+actual fun canScheduleExactAlarms(): Boolean = true
+
 private var iosNotifGranted: Boolean = true
 
 actual fun areNotificationsEnabled(): Boolean {
@@ -65,6 +70,13 @@ actual fun openNotificationSettings() {
     UIApplication.sharedApplication.openURL(url)
 }
 
+actual fun requestExactAlarmPermission() = Unit
+
+actual fun openStorePage() {
+    val url = NSURL(string = getStoreUrl()) ?: return
+    UIApplication.sharedApplication.openURL(url)
+}
+
 @OptIn(ExperimentalForeignApi::class)
 actual fun shareBitmap(imageBitmap: ImageBitmap) {
     val pixelMap = imageBitmap.toPixelMap()
@@ -77,9 +89,9 @@ actual fun shareBitmap(imageBitmap: ImageBitmap) {
         for (x in 0 until width) {
             val color = pixelMap[x, y]
             val i = (y * width + x) * 4
-            rawBytes[i]     = (color.red   * 255).toInt().and(0xFF).toByte()
+            rawBytes[i] = (color.red * 255).toInt().and(0xFF).toByte()
             rawBytes[i + 1] = (color.green * 255).toInt().and(0xFF).toByte()
-            rawBytes[i + 2] = (color.blue  * 255).toInt().and(0xFF).toByte()
+            rawBytes[i + 2] = (color.blue * 255).toInt().and(0xFF).toByte()
             rawBytes[i + 3] = (color.alpha * 255).toInt().and(0xFF).toByte()
         }
     }
@@ -93,17 +105,17 @@ actual fun shareBitmap(imageBitmap: ImageBitmap) {
         ) ?: return@usePinned null
         val provider = CGDataProviderCreateWithCFData(cfData) ?: return@usePinned null
         val cgImage = CGImageCreate(
-            width            = width.toULong(),
-            height           = height.toULong(),
+            width = width.toULong(),
+            height = height.toULong(),
             bitsPerComponent = 8u,
-            bitsPerPixel     = 32u,
-            bytesPerRow      = bytesPerRow.toULong(),
-            space            = colorSpace,
-            bitmapInfo       = CGImageAlphaInfo.kCGImageAlphaPremultipliedLast.value,
-            provider         = provider,
-            decode           = null,
+            bitsPerPixel = 32u,
+            bytesPerRow = bytesPerRow.toULong(),
+            space = colorSpace,
+            bitmapInfo = CGImageAlphaInfo.kCGImageAlphaPremultipliedLast.value,
+            provider = provider,
+            decode = null,
             shouldInterpolate = false,
-            intent           = CGColorRenderingIntent.kCGRenderingIntentDefault,
+            intent = CGColorRenderingIntent.kCGRenderingIntentDefault,
         ) ?: return@usePinned null
         UIImage.imageWithCGImage(cgImage)
     } ?: return

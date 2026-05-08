@@ -38,10 +38,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         NotificationChannels.createAll(this)
-        NotificationScheduler.apply(
-            notificationSettingsStore.dailyEnabled,
-            notificationSettingsStore.fridayEnabled,
-        )
+        syncNotificationSchedule()
 
         val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
         val engagementData = engagementStore.recordOpen(today)
@@ -60,5 +57,17 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        syncNotificationSchedule()
+    }
+
+    private fun syncNotificationSchedule() {
+        NotificationScheduler.apply(
+            notificationSettingsStore.dailyEnabled,
+            notificationSettingsStore.fridayEnabled,
+        )
     }
 }

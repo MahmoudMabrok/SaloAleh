@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,15 +32,23 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import org.koin.compose.koinInject
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
 import tools.mo3ta.salo.notification.NotificationScheduler
 import tools.mo3ta.salo.ui.areNotificationsEnabled
+import tools.mo3ta.salo.ui.canScheduleExactAlarms
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.getAppVersion
+import tools.mo3ta.salo.ui.getStoreUrl
 import tools.mo3ta.salo.ui.openNotificationSettings
+import tools.mo3ta.salo.ui.openStorePage
+import tools.mo3ta.salo.ui.requestExactAlarmPermission
+import tools.mo3ta.salo.ui.shareText
 import tools.mo3ta.salo.ui.showPlatformToast
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,11 +59,24 @@ fun SettingsScreen(onBack: () -> Unit) {
     var dailyEnabled by remember { mutableStateOf(store.dailyEnabled) }
     var fridayEnabled by remember { mutableStateOf(store.fridayEnabled) }
     var hadithOnStartup by remember { mutableStateOf(hadithStore.showOnStartup) }
-    val notifPermGranted = remember { areNotificationsEnabled() }
+    var notifPermGranted by remember { mutableStateOf(areNotificationsEnabled()) }
+    var exactAlarmGranted by remember { mutableStateOf(canScheduleExactAlarms()) }
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     val analyticsManager: AnalyticsManager = koinInject()
     LaunchedEffect(Unit){
         analyticsManager.logView("SettingsScreen")
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                notifPermGranted = areNotificationsEnabled()
+                exactAlarmGranted = canScheduleExactAlarms()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     Scaffold(
@@ -105,6 +127,14 @@ fun SettingsScreen(onBack: () -> Unit) {
                 )
             }
 
+            if (!exactAlarmGranted) {
+                SettingLinkRow(
+                    label = "التوقيت الدقيق للإشعارات غير مفعّل — اضغط للتفعيل",
+                    labelColor = Color(0xFFFFC857),
+                    onClick = { requestExactAlarmPermission() },
+                )
+            }
+
             SettingToggleRow(
                 label = "تذكير يومي",
                 subtitle = "مرة واحدة يوميًا",
@@ -113,6 +143,10 @@ fun SettingsScreen(onBack: () -> Unit) {
                     dailyEnabled = checked
                     store.dailyEnabled = checked
                     NotificationScheduler.apply(checked, store.fridayEnabled)
+                    if (checked && !exactAlarmGranted) {
+                        showPlatformToast("فعّل التوقيت الدقيق ليصل التذكير في موعده بالضبط")
+                        requestExactAlarmPermission()
+                    }
                 },
             )
 
@@ -124,6 +158,10 @@ fun SettingsScreen(onBack: () -> Unit) {
                     fridayEnabled = checked
                     store.fridayEnabled = checked
                     NotificationScheduler.apply(store.dailyEnabled, checked)
+                    if (checked && !exactAlarmGranted) {
+                        showPlatformToast("فعّل التوقيت الدقيق ليصل التذكير في موعده بالضبط")
+                        requestExactAlarmPermission()
+                    }
                 },
             )
 
@@ -165,6 +203,16 @@ fun SettingsScreen(onBack: () -> Unit) {
             SettingLinkRow(
                 label = "سياسة الخصوصية",
                 onClick = { uriHandler.openUri("https://mahmoudmabrok.github.io/MyDataCenter/policy/salo.html") },
+            )
+
+            SettingLinkRow(
+                label = "مشاركة التطبيق",
+                onClick = { shareText(getStoreUrl()) },
+            )
+
+            SettingLinkRow(
+                label = "فتح صفحة المتجر",
+                onClick = { openStorePage() },
             )
 
             Row(
