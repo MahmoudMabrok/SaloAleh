@@ -11,9 +11,15 @@ on:
         required: true
         default: ''
       track:
-        description: 'Google Play track (internal / alpha / beta / production)'
+        description: 'Google Play track'
         required: true
+        type: choice
         default: 'internal'
+        options:
+          - internal
+          - alpha
+          - beta
+          - production
 
 jobs:
   deploy-android:
