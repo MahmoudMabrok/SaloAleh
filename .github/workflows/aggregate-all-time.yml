@@ -1,9 +1,9 @@
 name: Aggregate All-Time Total
 
 on:
-  # Runs once per day at 03:00 UTC (05:00 Cairo).
+  # Runs once per week on Fridays at 17:00 UTC (19:00 Cairo).
   schedule:
-    - cron: '0 3 * * *'
+    - cron: '0 17 * * 5'
   workflow_dispatch:
 
 jobs:

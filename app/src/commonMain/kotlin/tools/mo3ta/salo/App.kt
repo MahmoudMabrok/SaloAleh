@@ -18,6 +18,7 @@ import tools.mo3ta.salo.ui.AchievementsScreen
 import tools.mo3ta.salo.ui.HadithListScreen
 import tools.mo3ta.salo.ui.MohamedLoversScreen
 import tools.mo3ta.salo.ui.NotificationRationaleDialog
+import tools.mo3ta.salo.ui.PlatformBackHandler
 import tools.mo3ta.salo.ui.settings.SettingsScreen
 
 @Composable
@@ -39,6 +40,14 @@ fun App(
         var showAchievements by remember { mutableStateOf(false) }
         var showSettings by remember { mutableStateOf(false) }
         var showHadithList by remember { mutableStateOf(false) }
+
+        PlatformBackHandler(enabled = showHadithList || showAchievements || showSettings) {
+            when {
+                showHadithList -> showHadithList = false
+                showAchievements -> showAchievements = false
+                showSettings -> showSettings = false
+            }
+        }
 
         when {
             showSettings -> SettingsScreen(onBack = { showSettings = false })

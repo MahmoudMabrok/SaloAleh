@@ -24,6 +24,13 @@
           "lastRivalNotifDate": {
             ".validate": "newData.isString() && newData.val().length == 10"
           },
+          "achievements": {
+            ".read": true,
+            ".write": false,
+            "$roundKey": {
+              ".validate": "newData.hasChildren(['rank', 'score', 'date'])"
+            }
+          },
           "$other": { ".validate": false }
         }
       },

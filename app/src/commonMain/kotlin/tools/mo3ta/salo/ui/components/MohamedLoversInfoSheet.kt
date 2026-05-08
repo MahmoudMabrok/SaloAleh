@@ -148,7 +148,7 @@ internal fun MohamedLoversInfoSheet(
 
 @Composable
 private fun ShareButton(state: MohamedLoversUiState) {
-    val selfEntry = state.selfEntry
+    val selfEntry = state.selfEntry ?: state.topPlayers.firstOrNull { it.isCurrentUser }
     val graphicsLayer = rememberGraphicsLayer()
     var capturing by remember { mutableStateOf(false) }
 

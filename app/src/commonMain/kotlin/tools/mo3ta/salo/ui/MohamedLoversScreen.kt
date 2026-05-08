@@ -8,7 +8,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material.icons.Icons
@@ -62,6 +65,7 @@ import tools.mo3ta.salo.ui.components.MohamedLoversInfoSheet
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.components.MohamedLoversPrayerOverlay
 import tools.mo3ta.salo.ui.components.MohamedLoversSkyBackground
+import tools.mo3ta.salo.ui.AchievementCelebrationDialog
 import tools.mo3ta.salo.ui.components.RoundRecapSheet
 
 @Composable
@@ -156,7 +160,7 @@ fun MohamedLoversScreen(
                 total = state.syncedTotal + state.sessionClicks,
                 pending = state.sessionClicks,
                 isFridayBonus = state.isFridayBonus,
-                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 40.dp),
+                modifier = Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.navigationBars).padding(bottom = 40.dp),
             )
             Box(
                 modifier = Modifier
@@ -253,6 +257,12 @@ fun MohamedLoversScreen(
         if (state.showHadithDialog) {
             DailyHadithDialog(
                 onDismiss = { viewModel.dismissHadithDialog() },
+            )
+        }
+        state.newlyEarnedRankAchievement?.let { achievement ->
+            AchievementCelebrationDialog(
+                achievement = achievement,
+                onDismiss = { viewModel.dismissNewlyEarnedAchievement() },
             )
         }
     }

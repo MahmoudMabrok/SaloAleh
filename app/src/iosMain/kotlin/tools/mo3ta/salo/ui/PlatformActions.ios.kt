@@ -1,5 +1,6 @@
 package tools.mo3ta.salo.ui
 
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toPixelMap
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -128,3 +129,6 @@ actual fun shareBitmap(imageBitmap: ImageBitmap) {
         ?.rootViewController
         ?.presentViewController(activityVC, animated = true, completion = null)
 }
+
+@Composable
+actual fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit) {}

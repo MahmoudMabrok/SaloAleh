@@ -1,14 +1,25 @@
-// Runs once per day. Sums roundTotal from all non-current rounds and writes
-// the result to mohamed_lovers/allTimeTotal. Current round is excluded because
-// populate-leaderboard.js keeps its roundTotal live on every hourly run.
+// Runs once per week on Fridays at 19:00 Cairo (17:00 UTC). Sums all past
+// rounds (including the one that just closed) into allTimeTotal, then writes
+// achievement records for every top-10 finisher so the app can surface them
+// to users who missed the live isFinal event.
 const admin = require('firebase-admin');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 const databaseURL = process.env.FIREBASE_DATABASE_URL;
 
-admin.initializeApp({ credential: admin.credential.cert(serviceAccount), databaseURL });
+admin.initializeApp({ credential: admin.credential.cert(serviceAccount), databaseURL });q1  §   1
 
-// Mirrors cairoRoundKey() in populate-leaderboard.js.
+// Returns today's Cairo date — the round that just closed.
+// Reliable only when called on Friday after 18:00 Cairo (matches this cron).
+function closedRoundKey() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Cairo',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+}
+
+// Mirrors cairoRoundKey() in populate-leaderboard.js — the *current* (next)
+// round. At 19:00 Cairo on Friday this returns NEXT Friday's date.
 function cairoRoundKey() {
   const now = new Date();
   const zone = 'Africa/Cairo';
@@ -30,7 +41,8 @@ const ROUND_KEY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 async function main() {
   const currentRound = cairoRoundKey();
-  console.log(`Current round: ${currentRound} — excluded from allTimeTotal`);
+  const closedRound = closedRoundKey();
+  console.log(`Closed round: ${closedRound} | Next round: ${currentRound}`);
 
   const db = admin.database();
   const rootSnapshot = await db.ref('mohamed_lovers').get();
@@ -40,6 +52,8 @@ async function main() {
     process.exit(0);
   }
 
+  // At 19:00 Cairo on Friday, cairoRoundKey() returns NEXT Friday, so the
+  // just-closed round is included in the sum automatically.
   let allTimeTotal = 0;
   rootSnapshot.forEach(child => {
     const key = child.key;
@@ -55,6 +69,37 @@ async function main() {
 
   await db.ref('mohamed_lovers/allTimeTotal').set(allTimeTotal);
   console.log(`allTimeTotal written: ${allTimeTotal}`);
+
+  // Write achievement records for every top-10 finisher of the closed round.
+  const leaderboardSnap = await db.ref(`mohamed_lovers/${closedRound}/leaderboard`).get();
+  if (!leaderboardSnap.exists()) {
+    console.log(`No leaderboard found for ${closedRound} — no achievements written.`);
+    process.exit(0);
+  }
+
+  const writes = {};
+  leaderboardSnap.forEach(child => {
+    if (child.key === 'isFinal') return;
+    const data = child.val();
+    const uid = data?.uid;
+    const rank = data?.rank;
+    const score = data?.score;
+    if (typeof uid !== 'string' || typeof rank !== 'number' || rank < 1 || rank > 10) return;
+    writes[`mohamed_lovers/users/${uid}/achievements/${closedRound}`] = {
+      rank,
+      score: typeof score === 'number' ? score : 0,
+      date: closedRound,
+    };
+    console.log(`  Achievement: uid=${uid} rank=${rank} score=${score}`);
+  });
+
+  if (Object.keys(writes).length === 0) {
+    console.log('No top-10 entries — no achievements written.');
+  } else {
+    await db.ref('/').update(writes);
+    console.log(`Wrote ${Object.keys(writes).length} achievement entries.`);
+  }
+
   process.exit(0);
 }
 

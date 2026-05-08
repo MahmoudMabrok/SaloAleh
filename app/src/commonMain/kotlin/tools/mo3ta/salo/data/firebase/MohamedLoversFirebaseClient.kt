@@ -179,6 +179,29 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         }
     }
 
+    suspend fun fetchUserAchievements(uid: String): Result<Map<String, Int>> {
+        log.d { "fetchUserAchievements[$uid]" }
+        return runCatching {
+            val snapshot = Firebase.database
+                .reference("$ROOT_PATH/$USERS_PATH/$uid/$ACHIEVEMENTS_PATH")
+                .valueEvents.first()
+            buildMap {
+                snapshot.children.forEach { child ->
+                    val roundKey = child.key ?: return@forEach
+                    val rank = (child.value as? Map<*, *>)
+                        ?.let { (it[RANK_KEY] as? Number)?.toInt() }
+                        ?: return@forEach
+                    put(roundKey, rank)
+                }
+            }
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "fetchUserAchievements[$uid]: ${it.size} entries" } },
+                onFailure = { log.e(it) { "fetchUserAchievements[$uid] failed" } },
+            )
+        }
+    }
+
     private fun playersPath(roundKey: String) = "$ROOT_PATH/$roundKey/$PLAYERS_PATH"
     private fun leaderboardPath(roundKey: String) = "$ROOT_PATH/$roundKey/$LEADERBOARD_PATH"
 
@@ -222,5 +245,6 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         const val ROUND_PLAYER_COUNT_PATH = "roundPlayerCount"
         const val ALL_TIME_TOTAL_PATH = "allTimeTotal"
         const val USERS_PATH = "users"
+        const val ACHIEVEMENTS_PATH = "achievements"
     }
 }

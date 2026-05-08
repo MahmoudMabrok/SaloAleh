@@ -75,6 +75,9 @@ class MohamedLoversRepository(
 
     fun getOrSetInstallDate(today: kotlinx.datetime.LocalDate): String = sessionStore.getOrSetInstallDate(today)
 
+    suspend fun fetchUserAchievements(uid: String): Result<Map<String, Int>> =
+        firebaseClient.fetchUserAchievements(uid)
+
     suspend fun writeUserActivity(uid: String, today: kotlinx.datetime.LocalDate): Result<Unit> {
         val installDate = sessionStore.getOrSetInstallDate(today)
         val lastOpenDate = today.toString()

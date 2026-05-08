@@ -1,5 +1,6 @@
 package tools.mo3ta.salo.ui
 
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.ImageBitmap
 
 expect fun showPlatformToast(message: String)
@@ -13,3 +14,6 @@ expect fun requestExactAlarmPermission()
 expect fun openStorePage()
 expect fun getAppVersion(): String
 expect fun shareBitmap(imageBitmap: ImageBitmap)
+
+@Composable
+expect fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit)

@@ -1,5 +1,7 @@
 package tools.mo3ta.salo.ui
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.Composable
 import android.app.AlarmManager
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -111,4 +113,9 @@ actual fun shareBitmap(imageBitmap: ImageBitmap) {
     context.startActivity(Intent.createChooser(sendIntent, null).apply {
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     })
+}
+
+@Composable
+actual fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit) {
+    BackHandler(enabled = enabled, onBack = onBack)
 }

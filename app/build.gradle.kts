@@ -52,7 +52,6 @@ kotlin {
             implementation(libs.androidx.core.ktx)
             implementation(libs.androidx.activity.compose)
             implementation(libs.koin.android)
-            implementation(libs.kronos.android)
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.androidx.work.runtime.ktx)
             implementation(libs.ktor.client.okhttp)

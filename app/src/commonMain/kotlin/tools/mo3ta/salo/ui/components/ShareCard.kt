@@ -50,11 +50,13 @@ fun ShareCard(data: ShareCardData) {
             }
             Spacer(Modifier.height(12.dp))
             RankMedallion(rank = data.rank)
-            Spacer(Modifier.height(10.dp))
-            Text(
-                text = "من أصل ${data.roundPlayerCount} مشارك",
-                style = TextStyle(fontSize = 14.sp, color = SCGoldDark.copy(alpha = 0.6f), textAlign = TextAlign.Center),
-            )
+            if (data.roundPlayerCount > 0) {
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = "من أصل ${data.roundPlayerCount} مشارك",
+                    style = TextStyle(fontSize = 14.sp, color = SCGoldDark.copy(alpha = 0.6f), textAlign = TextAlign.Center),
+                )
+            }
             Spacer(Modifier.height(10.dp))
             GoldHRule()
             Spacer(Modifier.height(10.dp))
@@ -136,7 +138,7 @@ private fun RankMedallion(rank: Int) {
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = if (rank > 0) "#$rank" else "؟",
+                    text = "#$rank",
                     style = TextStyle(fontSize = 36.sp, fontWeight = FontWeight.Black, color = SCGoldDark, lineHeight = 36.sp),
                 )
                 Text("RANK", style = TextStyle(fontSize = 10.sp, color = SCGold, letterSpacing = 1.sp))

@@ -1,29 +1,13 @@
 package tools.mo3ta.salo.data.time
 
 import android.content.Context
-import com.lyft.kronos.AndroidClockFactory
-import com.lyft.kronos.KronosClock
-import kotlinx.datetime.Instant
+import kotlinx.datetime.Clock
 import tools.mo3ta.salo.domain.MohamedLoversCompetitionWindow
-import java.util.Date
-import kotlin.time.Clock
 
 class KronosNetworkTimeProvider(context: Context) : NetworkTimeProvider {
 
-    private val kronosClock: KronosClock = AndroidClockFactory.createKronosClock(
-        context = context,
-        ntpHosts = listOf("time.google.com", "0.africa.pool.ntp.org", "1.africa.pool.ntp.org"),
-    )
+    override fun prime() = Unit
 
-    override fun prime() {
-        kronosClock.syncInBackground()
-    }
-
-    override fun getCompetitionWindow(): MohamedLoversCompetitionWindow {
-        val ms = kronosClock.getCurrentNtpTimeMs() ?: run {
-            prime()
-            return buildCompetitionWindow(Instant.fromEpochMilliseconds(Date().time))
-        }
-        return buildCompetitionWindow(Instant.fromEpochMilliseconds(ms))
-    }
+    override fun getCompetitionWindow(): MohamedLoversCompetitionWindow =
+        buildCompetitionWindow(Clock.System.now())
 }

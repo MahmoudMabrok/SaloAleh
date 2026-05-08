@@ -42,6 +42,7 @@ class MohamedLoversViewModel(
     private var remoteLeaderboard: FirebaseLeaderboard = FirebaseLeaderboard(emptyList(), false)
     private var remoteSelfPlayer: MohamedLoversPlayer? = null
     private var authUid: String? = null
+    private var achievementsFetchedFromRtdb = false
     private var currentWindow: MohamedLoversCompetitionWindow = MohamedLoversCompetitionWindow()
 
     init {
@@ -169,6 +170,7 @@ class MohamedLoversViewModel(
     fun dismissRoundRecap() = _state.update { it.copy(showRoundRecap = false) }
     fun dismissGraceWarning() = _state.update { it.copy(showGraceWarning = false) }
     fun dismissDailyGoalCompleted() = _state.update { it.copy(dailyGoalJustCompleted = false) }
+    fun dismissNewlyEarnedAchievement() = _state.update { it.copy(newlyEarnedRankAchievement = null) }
 
     fun clearError() = _state.update { it.copy(error = null) }
 
@@ -204,6 +206,19 @@ class MohamedLoversViewModel(
             _state.update { it.copy(selfDisplayTag = buildMohamedLoversDisplayTag(uid, it.countryCode)) }
             val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
             launch { repository.writeUserActivity(uid, today) }
+
+            if (!achievementsFetchedFromRtdb) {
+                achievementsFetchedFromRtdb = true
+                launch {
+                    repository.fetchUserAchievements(uid).onSuccess { achievements ->
+                        achievements.entries
+                            .firstNotNullOfOrNull { (rk, rank) ->
+                                engagementStore.checkAndSaveRankAchievement(rk, rank, today)
+                            }
+                            ?.let { earned -> _state.update { it.copy(newlyEarnedRankAchievement = earned) } }
+                    }
+                }
+            }
 
             selfJob?.cancel()
             selfJob = launch {
