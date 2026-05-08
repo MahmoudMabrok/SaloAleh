@@ -70,27 +70,28 @@ async function main() {
   await db.ref('mohamed_lovers/allTimeTotal').set(allTimeTotal);
   console.log(`allTimeTotal written: ${allTimeTotal}`);
 
-  // Write achievement records for every top-10 finisher of the closed round.
-  const leaderboardSnap = await db.ref(`mohamed_lovers/${closedRound}/leaderboard`).get();
-  if (!leaderboardSnap.exists()) {
-    console.log(`No leaderboard found for ${closedRound} — no achievements written.`);
+  // Write round-history records for every player who participated in the closed round.
+  // The app decides whether to surface each entry as an achievement badge (rank 1–10)
+  // or plain history based on the stored rank value.
+  const playersSnap = await db.ref(`mohamed_lovers/${closedRound}/players`).get();
+  if (!playersSnap.exists()) {
+    console.log(`No players found for ${closedRound} — no history written.`);
     process.exit(0);
   }
 
   const writes = {};
-  leaderboardSnap.forEach(child => {
-    if (child.key === 'isFinal') return;
+  playersSnap.forEach(child => {
     const data = child.val();
     const uid = data?.uid;
     const rank = data?.rank;
-    const score = data?.score;
-    if (typeof uid !== 'string' || typeof rank !== 'number' || rank < 1 || rank > 10) return;
+    const score = typeof data?.totalCount === 'number' ? data.totalCount : 0;
+    if (typeof uid !== 'string' || typeof rank !== 'number' || score <= 0) return;
     writes[`mohamed_lovers/users/${uid}/achievements/${closedRound}`] = {
       rank,
-      score: typeof score === 'number' ? score : 0,
+      score,
       date: closedRound,
     };
-    console.log(`  Achievement: uid=${uid} rank=${rank} score=${score}`);
+    console.log(`  History: uid=${uid} rank=${rank} score=${score}`);
   });
 
   if (Object.keys(writes).length === 0) {

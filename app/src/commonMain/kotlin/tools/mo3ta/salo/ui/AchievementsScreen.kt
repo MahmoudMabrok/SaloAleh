@@ -213,7 +213,7 @@ fun AchievementsScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = "لم تحصل على مركز ضمن أفضل 10 بعد\nاستمر في المشاركة! 🌟",
+                    text = "لم تشارك في أي جولة بعد\nاستمر في المشاركة! 🌟",
                     color = Color.White.copy(alpha = 0.45f),
                     textAlign = TextAlign.Center,
                     fontSize = 14.sp,
