@@ -236,7 +236,7 @@ async function main() {
       sendPromises.push(
         admin.messaging().send({
           token: fcmToken,
-          notification: { title: 'السلام عليكم', body: 'لم تبدأ بعد — الجمعة القادمة فرصتك' },
+          notification: { title: 'أهلاً بك في مجلس الصلاة 🌙', body: 'انضم إلى الأمة وابدأ صلاتك على النبي ﷺ — هذه فرصتك' },
         })
           .then(msgId => console.log(`[notify-users] sent day1_lapsed uid=${uid} msgId=${msgId}`))
           .catch(e => console.error(`[notify-users] failed day1_lapsed uid=${uid}: ${e.message}`))
@@ -252,7 +252,7 @@ async function main() {
       sendPromises.push(
         admin.messaging().send({
           token: fcmToken,
-          notification: { title: 'نفتقدك 🤍', body: `مضاعفة الجمعة بعد ${daysToFriday} أيام — أين أنت؟` },
+          notification: { title: 'الأمة تُصلي.. وأنت؟ 🤍', body: `بقي ${daysToFriday} أيام — عُد وصلِّ على سيد المرسلين ﷺ` },
         })
           .then(msgId => console.log(`[notify-users] sent midweek_inactive uid=${uid} msgId=${msgId}`))
           .catch(e => console.error(`[notify-users] failed midweek_inactive uid=${uid}: ${e.message}`))
@@ -267,7 +267,7 @@ async function main() {
       sendPromises.push(
         admin.messaging().send({
           token: fcmToken,
-          notification: { title: 'انتهت الجولة! 🏆', body: 'افتح التطبيق لتعرف ترتيبك النهائي' },
+          notification: { title: 'ختمت الجولة بالصلاة 🏆', body: 'شكر الله سعيكم — افتح التطبيق وشاهد من أحيا ذكر النبي ﷺ هذا الأسبوع' },
         })
           .then(msgId => console.log(`[notify-users] sent round_end uid=${uid} msgId=${msgId}`))
           .catch(e => console.error(`[notify-users] failed round_end uid=${uid}: ${e.message}`))
@@ -282,7 +282,7 @@ async function main() {
       sendPromises.push(
         admin.messaging().send({
           token: fcmToken,
-          notification: { title: 'لا تنقطع سلسلتك! 🔥', body: 'سلسلتك على المحك — افتح التطبيق الآن' },
+          notification: { title: 'أكمل سلسلتك من الصلاة! 🔥', body: 'لا تقطع يومك دون الصلاة على الحبيب ﷺ — افتح التطبيق الآن' },
         })
           .then(msgId => console.log(`[notify-users] sent streak_at_risk uid=${uid} msgId=${msgId}`))
           .catch(e => console.error(`[notify-users] failed streak_at_risk uid=${uid}: ${e.message}`))
@@ -304,7 +304,7 @@ async function main() {
             updates[`mohamed_lovers/users/${uid}/lastRivalNotifDate`] = today;
             return admin.messaging().send({
               token: fcmToken,
-              notification: { title: 'قريب من الصدارة! 🔥', body: `أنت على بُعد ${gap} صلاة من دخول قائمة الأوائل!` },
+              notification: { title: 'فرصتك للتصدر! 🔥', body: `${gap} صلاة على النبي ﷺ تكفي لتدخل قائمة أكثر المحبين — هيا!` },
             })
               .then(msgId => console.log(`[notify-users] sent rival_alert uid=${uid} gap=${gap} msgId=${msgId}`));
           } else {
