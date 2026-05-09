@@ -35,8 +35,8 @@ class SaloFirebaseMessagingService : FirebaseMessagingService() {
 
     @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
     override fun onMessageReceived(message: RemoteMessage) {
-        val title = message.notification?.title ?: return
-        val body = message.notification?.body ?: return
+        val title = message.data["title"] ?: message.notification?.title ?: return
+        val body = message.data["body"] ?: message.notification?.body ?: return
         if (!NotificationManagerCompat.from(this).areNotificationsEnabled()) return
 
         val pendingIntent = PendingIntent.getActivity(
