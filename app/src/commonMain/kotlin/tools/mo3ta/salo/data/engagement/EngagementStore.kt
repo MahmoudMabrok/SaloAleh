@@ -96,12 +96,12 @@ class EngagementStore(private val settings: Settings) {
      * [roundKey] must not contain ':' or ';' — these are used as field/record delimiters in storage.
      * Current round keys (e.g. "round-2026-04-30") are safe. Entries with unexpected characters are silently dropped on read.
      */
-    fun checkAndSaveRankAchievement(roundKey: String, rank: Int, today: LocalDate): Achievement.RankAchievement? {
+    fun checkAndSaveRankAchievement(roundKey: String, rank: Int, today: LocalDate, score: Int? = null): Achievement.RankAchievement? {
         val existing = getRankAchievementsRaw()
-        if (existing.any { it.first == roundKey }) return null
-        val updated = existing + Triple(roundKey, rank, today)
+        if (existing.any { it.roundKey == roundKey }) return null
+        val updated = existing + RankEntry(roundKey, rank, today, score)
         settings.putString(KEY_RANK_ACHIEVEMENTS, encodeRankAchievements(updated))
-        return Achievement.RankAchievement(roundKey = roundKey, rank = rank, earnedDate = today)
+        return Achievement.RankAchievement(roundKey = roundKey, rank = rank, earnedDate = today, score = score)
     }
 
     fun getAllAchievements(): List<Achievement> {
@@ -113,8 +113,8 @@ class EngagementStore(private val settings: Settings) {
                 add(Achievement.StreakBadge(BadgeType.STREAK_30, LocalDate.parse(it)))
             }
         }
-        val rankAchievements = getRankAchievementsRaw().map { (rk, rank, date) ->
-            Achievement.RankAchievement(roundKey = rk, rank = rank, earnedDate = date)
+        val rankAchievements = getRankAchievementsRaw().map {
+            Achievement.RankAchievement(roundKey = it.roundKey, rank = it.rank, earnedDate = it.date, score = it.score)
         }
         return (streakBadges + rankAchievements).sortedByDescending {
             when (it) {
@@ -124,18 +124,24 @@ class EngagementStore(private val settings: Settings) {
         }
     }
 
-    private fun getRankAchievementsRaw(): List<Triple<String, Int, LocalDate>> {
+    private data class RankEntry(val roundKey: String, val rank: Int, val date: LocalDate, val score: Int?)
+
+    private fun getRankAchievementsRaw(): List<RankEntry> {
         val raw = settings.getStringOrNull(KEY_RANK_ACHIEVEMENTS) ?: return emptyList()
         return raw.split(";").mapNotNull { entry ->
             val parts = entry.split(":")
-            if (parts.size != 3) return@mapNotNull null
+            if (parts.size < 3) return@mapNotNull null
             val rank = parts[1].toIntOrNull() ?: return@mapNotNull null
-            runCatching { Triple(parts[0], rank, LocalDate.parse(parts[2])) }.getOrNull()
+            val score = parts.getOrNull(3)?.toIntOrNull()
+            runCatching { RankEntry(parts[0], rank, LocalDate.parse(parts[2]), score) }.getOrNull()
         }
     }
 
-    private fun encodeRankAchievements(list: List<Triple<String, Int, LocalDate>>): String =
-        list.joinToString(";") { "${it.first}:${it.second}:${it.third}" }
+    private fun encodeRankAchievements(list: List<RankEntry>): String =
+        list.joinToString(";") {
+            if (it.score != null) "${it.roundKey}:${it.rank}:${it.date}:${it.score}"
+            else "${it.roundKey}:${it.rank}:${it.date}"
+        }
 
     private fun LocalDate.minusDays(n: Int): LocalDate =
         LocalDate.fromEpochDays(toEpochDays() - n)

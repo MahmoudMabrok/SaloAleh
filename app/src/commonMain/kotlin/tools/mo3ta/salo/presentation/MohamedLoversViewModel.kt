@@ -212,8 +212,9 @@ class MohamedLoversViewModel(
                 launch {
                     repository.fetchUserAchievements(uid).onSuccess { achievements ->
                         achievements.entries
-                            .mapNotNull { (rk, rank) ->
-                                engagementStore.checkAndSaveRankAchievement(rk, rank, today)?.takeIf { rank in 1..10 }
+                            .mapNotNull { (rk, rankAndScore) ->
+                                val (rank, score) = rankAndScore
+                                engagementStore.checkAndSaveRankAchievement(rk, rank, today, score)?.takeIf { rank in 1..10 }
                             }
                             .firstOrNull()
                             ?.let { earned -> _state.update { it.copy(newlyEarnedRankAchievement = earned) } }

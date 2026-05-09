@@ -75,7 +75,7 @@ class MohamedLoversRepository(
 
     fun getOrSetInstallDate(today: kotlinx.datetime.LocalDate): String = sessionStore.getOrSetInstallDate(today)
 
-    suspend fun fetchUserAchievements(uid: String): Result<Map<String, Int>> =
+    suspend fun fetchUserAchievements(uid: String): Result<Map<String, Pair<Int, Int?>>> =
         firebaseClient.fetchUserAchievements(uid)
 
     suspend fun writeUserActivity(uid: String, today: kotlinx.datetime.LocalDate): Result<Unit> {

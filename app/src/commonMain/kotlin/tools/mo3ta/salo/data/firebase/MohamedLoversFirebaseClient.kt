@@ -179,7 +179,7 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         }
     }
 
-    suspend fun fetchUserAchievements(uid: String): Result<Map<String, Int>> {
+    suspend fun fetchUserAchievements(uid: String): Result<Map<String, Pair<Int, Int?>>> {
         log.d { "fetchUserAchievements[$uid]" }
         return runCatching {
             val snapshot = Firebase.database
@@ -188,10 +188,10 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
             buildMap {
                 snapshot.children.forEach { child ->
                     val roundKey = child.key ?: return@forEach
-                    val rank = (child.value as? Map<*, *>)
-                        ?.let { (it[RANK_KEY] as? Number)?.toInt() }
-                        ?: return@forEach
-                    put(roundKey, rank)
+                    val map = child.value as? Map<*, *> ?: return@forEach
+                    val rank = (map[RANK_KEY] as? Number)?.toInt() ?: return@forEach
+                    val score = (map[SCORE_KEY] as? Number)?.toInt()
+                    put(roundKey, rank to score)
                 }
             }
         }.also { result ->

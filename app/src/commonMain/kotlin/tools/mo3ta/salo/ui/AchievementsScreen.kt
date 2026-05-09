@@ -392,11 +392,21 @@ private fun RoundHistoryCard(achievement: Achievement.RankAchievement) {
                 fontSize = 11.sp,
             )
         }
-        Text(
-            text = achievement.earnedDate.toString(),
-            color = Color.White.copy(alpha = 0.4f),
-            fontSize = 11.sp,
-        )
+        Column(horizontalAlignment = Alignment.End) {
+            Text(
+                text = achievement.earnedDate.toString(),
+                color = Color.White.copy(alpha = 0.4f),
+                fontSize = 11.sp,
+            )
+            if (achievement.score != null && achievement.score > 0) {
+                Text(
+                    text = "${achievement.score} 🤍",
+                    color = MohamedLoversPalette.Gold.copy(alpha = 0.85f),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+        }
     }
 }
 
