@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       rival_threshold:
-        description: 'Tap gap to trigger rival alert (default 200)'
+        description: 'Tap gap to trigger rival alert (default 50)'
         required: false
-        default: '200'
+        default: '50'
 
 jobs:
   notify:
