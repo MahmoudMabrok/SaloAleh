@@ -5,6 +5,11 @@ on:
   schedule:
     - cron: '0 17 * * 5'
   workflow_dispatch:
+    inputs:
+      closed_round:
+        description: 'Round key to aggregate (YYYY-MM-DD). Defaults to today Cairo date.'
+        required: false
+        type: string
 
 jobs:
   aggregate:
@@ -26,3 +31,4 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          CLOSED_ROUND: ${{ inputs.closed_round }}

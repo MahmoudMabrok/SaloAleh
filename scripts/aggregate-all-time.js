@@ -11,7 +11,16 @@ admin.initializeApp({ credential: admin.credential.cert(serviceAccount), databas
 
 // Returns today's Cairo date — the round that just closed.
 // Reliable only when called on Friday after 18:00 Cairo (matches this cron).
+// Override by setting CLOSED_ROUND=YYYY-MM-DD env var or passing as first arg.
 function closedRoundKey() {
+  const override = process.env.CLOSED_ROUND || process.argv[2];
+  if (override) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(override)) {
+      console.error(`Invalid CLOSED_ROUND: "${override}" — expected YYYY-MM-DD`);
+      process.exit(1);
+    }
+    return override;
+  }
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Africa/Cairo',
     year: 'numeric', month: '2-digit', day: '2-digit',
