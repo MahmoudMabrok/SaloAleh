@@ -51,7 +51,7 @@ async function main() {
       const score = data?.totalCount || 0;
       activePlayers++;
       if (score > topScore) topScore = score;
-      if (data?.country) countries.add(data.country);
+      if (data?.countryCode) countries.add(data.countryCode);
     });
   }
 
@@ -59,7 +59,8 @@ async function main() {
     allTimeSalawat,
     weekSalawat,
     activePlayers,
-    countries: countries.size,
+    countriesCount: countries.size,
+    countries: [...countries].sort(),
     topScore,
     roundKey,
     updatedAt: new Date().toISOString(),
