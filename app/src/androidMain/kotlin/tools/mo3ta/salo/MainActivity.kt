@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.NotificationManagerCompat
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,18 +48,39 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         NotificationChannels.createAll(this)
-        syncNotificationSchedule()
 
         val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
         val engagementData = engagementStore.recordOpen(today)
 
-        if (engagementData.openCount >= 2 && sessionStore.getSavedFcmToken() == null) {
-            fetchAndSendFcmToken()
+        // New users: set notification toggles to off by default
+        if (engagementData.shouldRequestNotifPermission) {
+            notificationSettingsStore.initializeToOff()
         }
+
+        syncNotificationSchedule()
+
+        val hasNotifPerm = NotificationManagerCompat.from(this).areNotificationsEnabled()
+        if (hasNotifPerm) {
+            engagementStore.clearFcmPermDenied()
+            FirebaseMessaging.getInstance().subscribeToTopic("general")
+            if (sessionStore.getSavedFcmToken() == null) {
+                fetchAndSendFcmToken()
+            }
+        } else {
+            engagementStore.saveFcmPermDenied(today)
+        }
+
+        val daysSinceDenied = engagementStore.fcmPermDeniedDaysAgo(today)
+        val shouldReshowFcmAlert = !hasNotifPerm && daysSinceDenied >= 3
+        if (shouldReshowFcmAlert) {
+            engagementStore.resetFcmPermDenied(today)
+        }
+
+        val finalEngagementData = engagementData.copy(shouldReshowFcmAlert = shouldReshowFcmAlert)
 
         setContent {
             App(
-                engagementData = engagementData,
+                engagementData = finalEngagementData,
                 onNotificationPermissionRequest = {
                     requestNotificationPermissionIfNeeded()
                 },
@@ -84,6 +106,12 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         syncNotificationSchedule()
+        val hasNotifPerm = NotificationManagerCompat.from(this).areNotificationsEnabled()
+        if (hasNotifPerm && sessionStore.getSavedFcmToken() == null) {
+            engagementStore.clearFcmPermDenied()
+            FirebaseMessaging.getInstance().subscribeToTopic("general")
+            fetchAndSendFcmToken()
+        }
     }
 
     private fun syncNotificationSchedule() {

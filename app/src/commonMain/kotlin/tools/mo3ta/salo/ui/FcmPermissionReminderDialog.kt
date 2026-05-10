@@ -24,7 +24,7 @@ import androidx.compose.ui.window.Dialog
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 
 @Composable
-fun NotificationRationaleDialog(
+fun FcmPermissionReminderDialog(
     onAllow: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -38,18 +38,18 @@ fun NotificationRationaleDialog(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
-                text = "🌙",
+                text = "🏆",
                 fontSize = 48.sp,
             )
             Text(
-                text = "مرحباً في صلاتك على النبي ﷺ",
+                text = "لا تفوتك نتائج محبّي محمد ﷺ",
                 color = Color.White,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
             )
             Text(
-                text = "• تذكير يومي بالصلاة على النبي محمد ﷺ\n• تنبيهات خاصة يوم الجمعة كل ساعة\n• إشعارات محبّي محمد — تابع نتائج المسابقة\n\nفعّل الإشعارات من الإعدادات لتصلك هذه الميزات.",
+                text = "فعّل الإشعارات لتصلك نتائج المسابقة وترتيبك بين المحبين فور صدورها.",
                 color = Color.White.copy(alpha = 0.8f),
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
@@ -62,7 +62,7 @@ fun NotificationRationaleDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = MohamedLoversPalette.Gold),
                 shape = RoundedCornerShape(12.dp),
             ) {
-                Text("افتح الإعدادات", color = Color.Black, fontWeight = FontWeight.Bold)
+                Text("تفعيل الإشعارات", color = Color.Black, fontWeight = FontWeight.Bold)
             }
             TextButton(onClick = onDismiss) {
                 Text("لاحقاً", color = Color.White.copy(alpha = 0.6f), fontSize = 13.sp)

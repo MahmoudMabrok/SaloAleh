@@ -17,7 +17,9 @@ import tools.mo3ta.salo.ui.AchievementCelebrationDialog
 import tools.mo3ta.salo.ui.AchievementsScreen
 import tools.mo3ta.salo.ui.HadithListScreen
 import tools.mo3ta.salo.ui.MohamedLoversScreen
+import tools.mo3ta.salo.ui.FcmPermissionReminderDialog
 import tools.mo3ta.salo.ui.NotificationRationaleDialog
+import tools.mo3ta.salo.ui.OnboardingScreen
 import tools.mo3ta.salo.ui.PlatformBackHandler
 import tools.mo3ta.salo.ui.settings.SettingsScreen
 
@@ -40,17 +42,23 @@ fun App(
         var showAchievements by remember { mutableStateOf(false) }
         var showSettings by remember { mutableStateOf(false) }
         var showHadithList by remember { mutableStateOf(false) }
+        var showOnboarding by remember { mutableStateOf(false) }
 
-        PlatformBackHandler(enabled = showHadithList || showAchievements || showSettings) {
+        PlatformBackHandler(enabled = showHadithList || showAchievements || showSettings || showOnboarding) {
             when {
                 showHadithList -> showHadithList = false
                 showAchievements -> showAchievements = false
+                showOnboarding -> showOnboarding = false
                 showSettings -> showSettings = false
             }
         }
 
         when {
-            showSettings -> SettingsScreen(onBack = { showSettings = false })
+            showOnboarding -> OnboardingScreen(onDone = { showOnboarding = false })
+            showSettings -> SettingsScreen(
+                onBack = { showSettings = false },
+                onOpenOnboarding = { showOnboarding = true },
+            )
             showAchievements -> AchievementsScreen(onBack = { showAchievements = false })
             showHadithList -> HadithListScreen(onBack = { showHadithList = false })
             else -> MohamedLoversScreen(
@@ -64,9 +72,22 @@ fun App(
             NotificationRationaleDialog(
                 onAllow = {
                     showRationale = false
-                    onNotificationPermissionRequest?.invoke()
+                    showSettings = true
                 },
                 onDismiss = { showRationale = false },
+            )
+        }
+
+        var showFcmReminder by remember {
+            mutableStateOf(engagementData?.shouldReshowFcmAlert == true)
+        }
+        if (showFcmReminder) {
+            FcmPermissionReminderDialog(
+                onAllow = {
+                    showFcmReminder = false
+                    onNotificationPermissionRequest?.invoke()
+                },
+                onDismiss = { showFcmReminder = false },
             )
         }
 

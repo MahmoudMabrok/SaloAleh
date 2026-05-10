@@ -11,6 +11,12 @@ class NotificationSettingsStore(private val settings: Settings) {
         get() = settings.getBoolean(KEY_FRIDAY_ENABLED, true)
         set(v) = settings.putBoolean(KEY_FRIDAY_ENABLED, v)
 
+    /** Called on first-ever app open to opt new users out of notifications by default. */
+    fun initializeToOff() {
+        settings.putBoolean(KEY_DAILY_ENABLED, false)
+        settings.putBoolean(KEY_FRIDAY_ENABLED, false)
+    }
+
     private companion object {
         const val KEY_DAILY_ENABLED = "notif_daily_enabled"
         const val KEY_FRIDAY_ENABLED = "notif_friday_enabled"

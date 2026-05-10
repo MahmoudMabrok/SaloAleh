@@ -54,7 +54,7 @@ class EngagementStore(private val settings: Settings) {
         }
 
         val notifAskedAt = settings.getInt(KEY_NOTIF_ASKED_AT_OPEN, -1)
-        val shouldAskNotif = openCount == 3 && notifAskedAt == -1
+        val shouldAskNotif = notifAskedAt == -1
         if (shouldAskNotif) settings.putInt(KEY_NOTIF_ASKED_AT_OPEN, openCount)
 
         return EngagementData(
@@ -84,6 +84,30 @@ class EngagementStore(private val settings: Settings) {
     }
 
     fun getCurrentStreak(): Int = settings.getInt(KEY_STREAK, 1)
+
+    /** Records the date when FCM permission was first denied. No-op if already recorded. */
+    fun saveFcmPermDenied(today: LocalDate) {
+        if (settings.getStringOrNull(KEY_FCM_PERM_DENIED_DATE) == null) {
+            settings.putString(KEY_FCM_PERM_DENIED_DATE, today.toString())
+        }
+    }
+
+    /** Resets the FCM denial date to today (called after showing the re-ask dialog). */
+    fun resetFcmPermDenied(today: LocalDate) {
+        settings.putString(KEY_FCM_PERM_DENIED_DATE, today.toString())
+    }
+
+    /** Clears FCM denial tracking (called when permission is granted). */
+    fun clearFcmPermDenied() {
+        settings.remove(KEY_FCM_PERM_DENIED_DATE)
+    }
+
+    /** Days since FCM permission was denied, or -1 if never denied. */
+    fun fcmPermDeniedDaysAgo(today: LocalDate): Int {
+        val dateStr = settings.getStringOrNull(KEY_FCM_PERM_DENIED_DATE) ?: return -1
+        val date = runCatching { LocalDate.parse(dateStr) }.getOrNull() ?: return -1
+        return (today.toEpochDays() - date.toEpochDays()).toInt()
+    }
 
     fun missedDays(today: LocalDate): Int {
         val lastDateStr = settings.getStringOrNull(KEY_LAST_OPEN_DATE) ?: return 0
@@ -158,5 +182,6 @@ class EngagementStore(private val settings: Settings) {
         const val KEY_RANK_ACHIEVEMENTS = "eng_rank_achievements"
         const val KEY_GRACE_USED = "eng_grace_used"
         const val KEY_GRACE_DATE = "eng_grace_date"
+        const val KEY_FCM_PERM_DENIED_DATE = "eng_fcm_perm_denied_date"
     }
 }

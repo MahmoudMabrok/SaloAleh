@@ -53,7 +53,7 @@ import tools.mo3ta.salo.ui.showPlatformToast
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit) {
+fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}) {
     val store: NotificationSettingsStore = koinInject()
     val hadithStore: DailyHadithStore = koinInject()
     var dailyEnabled by remember { mutableStateOf(store.dailyEnabled) }
@@ -140,12 +140,17 @@ fun SettingsScreen(onBack: () -> Unit) {
                 subtitle = "مرة واحدة يوميًا",
                 checked = dailyEnabled,
                 onToggle = { checked ->
-                    dailyEnabled = checked
-                    store.dailyEnabled = checked
-                    NotificationScheduler.apply(checked, store.fridayEnabled)
-                    if (checked && !exactAlarmGranted) {
-                        showPlatformToast("فعّل التوقيت الدقيق ليصل التذكير في موعده بالضبط")
-                        requestExactAlarmPermission()
+                    if (checked && !notifPermGranted) {
+                        showPlatformToast("فعّل إشعارات التطبيق أولاً")
+                        openNotificationSettings()
+                    } else {
+                        dailyEnabled = checked
+                        store.dailyEnabled = checked
+                        NotificationScheduler.apply(checked, store.fridayEnabled)
+                        if (checked && !exactAlarmGranted) {
+                            showPlatformToast("فعّل التوقيت الدقيق ليصل التذكير في موعده بالضبط")
+                            requestExactAlarmPermission()
+                        }
                     }
                 },
             )
@@ -155,12 +160,17 @@ fun SettingsScreen(onBack: () -> Unit) {
                 subtitle = "كل ساعة من 9ص – 5م",
                 checked = fridayEnabled,
                 onToggle = { checked ->
-                    fridayEnabled = checked
-                    store.fridayEnabled = checked
-                    NotificationScheduler.apply(store.dailyEnabled, checked)
-                    if (checked && !exactAlarmGranted) {
-                        showPlatformToast("فعّل التوقيت الدقيق ليصل التذكير في موعده بالضبط")
-                        requestExactAlarmPermission()
+                    if (checked && !notifPermGranted) {
+                        showPlatformToast("فعّل إشعارات التطبيق أولاً")
+                        openNotificationSettings()
+                    } else {
+                        fridayEnabled = checked
+                        store.fridayEnabled = checked
+                        NotificationScheduler.apply(store.dailyEnabled, checked)
+                        if (checked && !exactAlarmGranted) {
+                            showPlatformToast("فعّل التوقيت الدقيق ليصل التذكير في موعده بالضبط")
+                            requestExactAlarmPermission()
+                        }
                     }
                 },
             )
@@ -197,6 +207,11 @@ fun SettingsScreen(onBack: () -> Unit) {
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(top = 24.dp, bottom = 8.dp),
+            )
+
+            SettingLinkRow(
+                label = "دليل التطبيق",
+                onClick = onOpenOnboarding,
             )
 
             val uriHandler = LocalUriHandler.current

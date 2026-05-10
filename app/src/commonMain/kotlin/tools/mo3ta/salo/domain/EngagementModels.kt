@@ -8,6 +8,7 @@ data class EngagementData(
     val newlyEarnedBadge: BadgeType?,
     val shouldRequestNotifPermission: Boolean,
     val graceConsumedNow: Boolean = false,
+    val shouldReshowFcmAlert: Boolean = false,
 )
 
 enum class BadgeType { STREAK_7, STREAK_30 }
