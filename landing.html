@@ -945,19 +945,19 @@
   </div>
   <div class="stats-grid">
     <div class="stat-item reveal">
-      <div class="stat-num" data-target="9577" data-suffix="">0</div>
+      <div class="stat-num" data-stat="allTimeSalawat" data-target="9577" data-suffix="">0</div>
       <div class="stat-lbl">Salawat Sent</div>
     </div>
     <div class="stat-item reveal reveal-delay-1">
-      <div class="stat-num" data-target="43" data-suffix="+">0</div>
+      <div class="stat-num" data-stat="activePlayers" data-target="43" data-suffix="+">0</div>
       <div class="stat-lbl">Active Players</div>
     </div>
     <div class="stat-item reveal reveal-delay-2">
-      <div class="stat-num" data-target="9" data-suffix="">0</div>
+      <div class="stat-num" data-stat="countries" data-target="9" data-suffix="">0</div>
       <div class="stat-lbl">Countries</div>
     </div>
     <div class="stat-item reveal reveal-delay-3">
-      <div class="stat-num" data-target="3181" data-suffix="">0</div>
+      <div class="stat-num" data-stat="topScore" data-target="3181" data-suffix="">0</div>
       <div class="stat-lbl">Top Weekly Score</div>
     </div>
   </div>
@@ -1213,6 +1213,24 @@ const observer = new IntersectionObserver((entries) => {
 }, { threshold: .12 });
 
 document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+/* ── Live stats from stats.json ────────────────────────────── */
+fetch('stats.json')
+  .then(r => r.ok ? r.json() : null)
+  .then(stats => {
+    if (!stats) return;
+    const map = {
+      allTimeSalawat: stats.allTimeSalawat,
+      activePlayers:  stats.activePlayers,
+      countries:      stats.countries,
+      topScore:       stats.topScore,
+    };
+    document.querySelectorAll('.stat-num[data-stat]').forEach(el => {
+      const val = map[el.dataset.stat];
+      if (val != null) el.dataset.target = val;
+    });
+  })
+  .catch(() => { /* fallback to hardcoded values */ });
 
 /* ── Stat counters ─────────────────────────────────────────── */
 const statObserver = new IntersectionObserver((entries) => {
