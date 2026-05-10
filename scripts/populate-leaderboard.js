@@ -108,6 +108,23 @@ async function main() {
     };
   });
 
+  // Detect drop-outs: read old leaderboard before overwriting.
+  let droppedUids = [];
+  if (!isFinal) {
+    const oldLbSnap = await db.ref(`mohamed_lovers/${roundKey}/leaderboard`).get();
+    if (oldLbSnap.exists()) {
+      const oldLb = oldLbSnap.val();
+      const oldTop10Uids = new Set();
+      for (let i = 1; i <= 10; i++) {
+        const entry = oldLb[String(i)];
+        if (entry?.uid) oldTop10Uids.add(entry.uid);
+      }
+      const newTop10Uids = new Set(top10.map(p => p.uid));
+      droppedUids = [...oldTop10Uids].filter(uid => !newTop10Uids.has(uid));
+      console.log(`Drop-out detection: old=${oldTop10Uids.size} new=${newTop10Uids.size} dropped=${droppedUids.length}`);
+    }
+  }
+
   await Promise.all([
     db.ref('/').update(rankUpdates),
     db.ref(`mohamed_lovers/${roundKey}/leaderboard`).set(leaderboard),
@@ -116,6 +133,32 @@ async function main() {
   ]);
   console.log(`Wrote ${top10.length} leaderboard entries. roundTotal=${roundTotal} players=${roundPlayerCount}`);
   console.log(JSON.stringify(leaderboard, null, 2));
+
+  // Notify dropped-out users — once per round (debounced via lastDropOutNotifRound).
+  if (droppedUids.length > 0) {
+    console.log(`Notifying ${droppedUids.length} dropped user(s)...`);
+    const fcmUpdates = {};
+    const notifPromises = droppedUids.map(async uid => {
+      const userSnap = await db.ref(`mohamed_lovers/users/${uid}`).get();
+      const user = userSnap.val();
+      if (!user?.fcmToken) { console.log(`  uid=${uid}: no FCM token — skip`); return; }
+      if (user.lastDropOutNotifRound === roundKey) { console.log(`  uid=${uid}: already notified this round — skip`); return; }
+      fcmUpdates[`mohamed_lovers/users/${uid}/lastDropOutNotifRound`] = roundKey;
+      return admin.messaging().send({
+        token: user.fcmToken,
+        notification: { title: 'خرجت من قائمة الأوائل 😔', body: 'مكانك بين المحبين يستحق المنافسة — عُد وصلِّ على النبي ﷺ الآن!' },
+        data: { title: 'خرجت من قائمة الأوائل 😔', body: 'مكانك بين المحبين يستحق المنافسة — عُد وصلِّ على النبي ﷺ الآن!' },
+      })
+        .then(msgId => console.log(`  uid=${uid}: sent dropout alert msgId=${msgId}`))
+        .catch(e => console.error(`  uid=${uid}: send failed: ${e.message}`));
+    });
+    await Promise.all(notifPromises);
+    if (Object.keys(fcmUpdates).length > 0) {
+      await db.ref('/').update(fcmUpdates);
+      console.log(`Wrote ${Object.keys(fcmUpdates).length} lastDropOutNotifRound flag(s)`);
+    }
+  }
+
   process.exit(0);
 }
 

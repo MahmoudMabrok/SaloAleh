@@ -66,6 +66,13 @@ import tools.mo3ta.salo.generated.resources.badge_streak_30_day
 import tools.mo3ta.salo.generated.resources.badge_streak_7_day
 import tools.mo3ta.salo.presentation.AchievementsViewModel
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
+import androidx.compose.foundation.Canvas
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 
 // ── Badge definitions ──────────────────────────────────────────────────────────
 
@@ -130,18 +137,22 @@ fun AchievementsScreen(
     val currentStreak by viewModel.currentStreak.collectAsStateWithLifecycle()
 
     val analyticsManager: AnalyticsManager = koinInject()
-    LaunchedEffect(Unit){
-        analyticsManager.logView("AchievementsScreen")
-    }
+    LaunchedEffect(Unit) { analyticsManager.logView("AchievementsScreen") }
 
-    val items = remember(achievements) {
-        ALL_BADGES.map { spec ->
-            val count = when {
-                spec.id == "streak_7" -> achievements.count { it is Achievement.StreakBadge && it.type == BadgeType.STREAK_7 }
-                spec.id == "streak_30" -> achievements.count { it is Achievement.StreakBadge && it.type == BadgeType.STREAK_30 }
-                spec.rankPosition != null -> achievements.count { it is Achievement.RankAchievement && it.rank == spec.rankPosition }
+    val streakItems = remember(achievements) {
+        ALL_BADGES.filter { it.streakTarget != null }.map { spec ->
+            val count = when (spec.id) {
+                "streak_7" -> achievements.count { it is Achievement.StreakBadge && it.type == BadgeType.STREAK_7 }
+                "streak_30" -> achievements.count { it is Achievement.StreakBadge && it.type == BadgeType.STREAK_30 }
                 else -> 0
             }
+            BadgeDisplayItem(spec, count)
+        }
+    }
+
+    val rankItems = remember(achievements) {
+        ALL_BADGES.filter { it.rankPosition != null }.map { spec ->
+            val count = achievements.count { it is Achievement.RankAchievement && it.rank == spec.rankPosition }
             BadgeDisplayItem(spec, count)
         }
     }
@@ -152,7 +163,13 @@ fun AchievementsScreen(
             .sortedByDescending { it.earnedDate }
     }
 
+    val earnedBadgesCount = remember(streakItems, rankItems) {
+        (streakItems + rankItems).count { it.count > 0 }
+    }
+    val bestRank = remember(roundHistory) { roundHistory.minOfOrNull { it.rank } }
+
     var selectedSpec by remember { mutableStateOf<BadgeSpec?>(null) }
+    var showMedalInfo by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -180,18 +197,75 @@ fun AchievementsScreen(
             Spacer(Modifier.size(48.dp))
         }
 
-        // ── Badges grid ──
-        SectionLabel("الشارات")
+        // ── Stats trophy bar ──
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            StatCard("🏅", earnedBadgesCount.toString(), "شارات", Modifier.weight(1f))
+            StatCard("🗓️", roundHistory.size.toString(), "جولات", Modifier.weight(1f))
+            StatCard("🥇", if (bestRank != null) "#$bestRank" else "—", "أفضل مركز", Modifier.weight(1f))
+        }
+
+        // ── Streak badges (horizontal row cards) ──
+        SectionLabel("شارات الأيام")
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            streakItems.forEach { item ->
+                StreakBadgeCard(
+                    item = item,
+                    currentStreak = currentStreak,
+                    modifier = Modifier.weight(1f),
+                    onClick = { selectedSpec = item.spec },
+                )
+            }
+        }
+
+        // ── Rank badges ──
+        Spacer(Modifier.height(20.dp))
+        HorizontalDivider(color = Color.White.copy(alpha = 0.08f), modifier = Modifier.padding(horizontal = 16.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 20.dp, end = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "شارات المراكز",
+                color = Color.White.copy(alpha = 0.5f),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 1.sp,
+                modifier = Modifier.weight(1f).padding(vertical = 10.dp),
+            )
+            IconButton(
+                onClick = { showMedalInfo = true },
+                modifier = Modifier.size(32.dp),
+            ) {
+                Icon(
+                    Icons.Default.Info,
+                    contentDescription = "معلومات الميداليات",
+                    tint = Color.White.copy(alpha = 0.35f),
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+        }
         Column(
             modifier = Modifier.padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            items.chunked(3).forEach { row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            rankItems.chunked(3).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     row.forEach { item ->
                         BadgeCard(
                             item = item,
-                            currentStreak = currentStreak,
                             modifier = Modifier.weight(1f),
                             onClick = { selectedSpec = item.spec },
                         )
@@ -201,10 +275,9 @@ fun AchievementsScreen(
             }
         }
 
-        // ── Round history ──
+        // ── Round history timeline ──
         Spacer(Modifier.height(24.dp))
         HorizontalDivider(color = Color.White.copy(alpha = 0.08f), modifier = Modifier.padding(horizontal = 16.dp))
-        Spacer(Modifier.height(16.dp))
         SectionLabel("إنجازات الجولات")
 
         if (roundHistory.isEmpty()) {
@@ -221,8 +294,20 @@ fun AchievementsScreen(
                 )
             }
         } else {
+            val lineColor = MohamedLoversPalette.Gold.copy(alpha = 0.30f)
             Column(
-                modifier = Modifier.padding(horizontal = 16.dp),
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .drawBehind {
+                        if (roundHistory.size > 1) {
+                            drawLine(
+                                color = lineColor,
+                                start = Offset(size.width - 10.dp.toPx(), 22.dp.toPx()),
+                                end = Offset(size.width - 10.dp.toPx(), size.height - 22.dp.toPx()),
+                                strokeWidth = 2.dp.toPx(),
+                            )
+                        }
+                    },
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 roundHistory.forEach { RoundHistoryCard(it) }
@@ -232,7 +317,7 @@ fun AchievementsScreen(
         Spacer(Modifier.height(32.dp))
     }
 
-    // ── Tap-to-explain dialog ──
+    // ── Badge tap-to-explain dialog ──
     selectedSpec?.let { spec ->
         AlertDialog(
             onDismissRequest = { selectedSpec = null },
@@ -272,14 +357,46 @@ fun AchievementsScreen(
             },
         )
     }
+
+    // ── Medal info dialog ──
+    if (showMedalInfo) {
+        AlertDialog(
+            onDismissRequest = { showMedalInfo = false },
+            containerColor = MohamedLoversPalette.DeepBlue,
+            shape = RoundedCornerShape(20.dp),
+            title = {
+                Text(
+                    text = "🏅  شارات المراكز",
+                    color = MohamedLoversPalette.Gold,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            text = {
+                Text(
+                    text = "تُضاف الميداليات كل جمعة عند انتهاء المسابقة الأسبوعية.\n\nاستمر في المشاركة كل أسبوع وحقق أعلى مركز! 🌟",
+                    color = Color.White,
+                    fontSize = 15.sp,
+                    lineHeight = 24.sp,
+                    textAlign = TextAlign.Center,
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showMedalInfo = false }) {
+                    Text("حسناً", color = MohamedLoversPalette.Gold, fontWeight = FontWeight.Bold)
+                }
+            },
+        )
+    }
 }
 
-// ── Badge card ─────────────────────────────────────────────────────────────────
+// ── Badge card (rank badges) ──────────────────────────────────────────────────
 
 @Composable
 private fun BadgeCard(
     item: BadgeDisplayItem,
-    currentStreak: Int,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
@@ -322,18 +439,8 @@ private fun BadgeCard(
                 textAlign = TextAlign.Center,
                 maxLines = 2,
             )
-            if (!achieved && spec.streakTarget != null) {
-                val progress = currentStreak.coerceAtMost(spec.streakTarget)
-                Text(
-                    text = "$progress / ${spec.streakTarget}",
-                    color = MohamedLoversPalette.Gold.copy(alpha = 0.8f),
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Medium,
-                )
-            }
         }
 
-        // Count badge — top-left — 2+ earned
         if (item.count >= 2) {
             Box(
                 modifier = Modifier
@@ -343,74 +450,197 @@ private fun BadgeCard(
                     .background(MohamedLoversPalette.Gold, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    text = "${item.count}",
-                    color = Color.Black,
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold,
-                )
+                Text(text = "${item.count}", color = Color.Black, fontSize = 9.sp, fontWeight = FontWeight.Bold)
             }
         }
 
-        // Lock — top-right — unachieved
         if (!achieved) {
+            Text(text = "🔒", fontSize = 11.sp, modifier = Modifier.align(Alignment.TopEnd).padding(4.dp))
+        }
+    }
+}
+
+// ── Streak badge card (horizontal, with progress ring) ────────────────────────
+
+@Composable
+private fun StreakBadgeCard(
+    item: BadgeDisplayItem,
+    currentStreak: Int,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val achieved = item.count > 0
+    val spec = item.spec
+    val target = spec.streakTarget ?: return
+    val progress = if (achieved) target else currentStreak.coerceAtMost(target)
+
+    Row(
+        modifier = modifier
+            .background(
+                if (achieved) Color.White.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.04f),
+                RoundedCornerShape(14.dp),
+            )
+            .border(
+                1.dp,
+                if (achieved) MohamedLoversPalette.Gold.copy(alpha = 0.42f)
+                else MohamedLoversPalette.Gold.copy(alpha = 0.16f),
+                RoundedCornerShape(14.dp),
+            )
+            .clickable(onClick = onClick)
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Canvas(modifier = Modifier.size(42.dp)) {
+                val strokePx = 3.dp.toPx()
+                val r = (size.minDimension - strokePx) / 2
+                val tl = Offset((size.width - r * 2) / 2, (size.height - r * 2) / 2)
+                val sz = Size(r * 2, r * 2)
+                drawArc(
+                    color = Color.White.copy(alpha = 0.10f),
+                    startAngle = -90f, sweepAngle = 360f, useCenter = false,
+                    style = Stroke(width = strokePx, cap = StrokeCap.Round),
+                    topLeft = tl, size = sz,
+                )
+                if (progress > 0) {
+                    drawArc(
+                        color = MohamedLoversPalette.Gold.copy(alpha = if (achieved) 0.90f else 0.50f),
+                        startAngle = -90f,
+                        sweepAngle = 360f * progress / target,
+                        useCenter = false,
+                        style = Stroke(width = strokePx, cap = StrokeCap.Round),
+                        topLeft = tl, size = sz,
+                    )
+                }
+            }
+            Image(
+                painter = painterResource(spec.drawable),
+                contentDescription = spec.title,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.size(26.dp).alpha(if (!achieved && progress == 0) 0.3f else 1f),
+            )
+        }
+        Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "🔒",
+                text = spec.title,
+                color = if (achieved) MohamedLoversPalette.Gold else Color.White,
                 fontSize = 11.sp,
-                modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),
+                fontWeight = FontWeight.Bold,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = if (achieved) "✓ مكتملة" else "$progress / $target",
+                color = MohamedLoversPalette.Gold.copy(alpha = if (achieved) 0.7f else 0.8f),
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Medium,
             )
         }
     }
 }
 
-// ── Round history card ─────────────────────────────────────────────────────────
+// ── Round history card (timeline, Variation A style) ──────────────────────────
 
 @Composable
 private fun RoundHistoryCard(achievement: Achievement.RankAchievement) {
     val medalEmoji = when (achievement.rank) {
         1 -> "🥇"; 2 -> "🥈"; 3 -> "🥉"; else -> "🏅"
     }
+    val isTop3 = achievement.rank <= 3
+    val dotColor = when (achievement.rank) {
+        1 -> MohamedLoversPalette.Gold
+        2 -> MohamedLoversPalette.RankSilver
+        3 -> MohamedLoversPalette.RankBronze
+        else -> Color.White.copy(alpha = 0.15f)
+    }
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.White.copy(alpha = 0.07f), RoundedCornerShape(14.dp))
-            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text(text = medalEmoji, fontSize = 28.sp)
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = "المركز ${achievement.rank}",
-                color = MohamedLoversPalette.Gold,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-            )
-            Text(
-                text = achievement.roundKey,
-                color = Color.White.copy(alpha = 0.55f),
-                fontSize = 11.sp,
-            )
+        // Dot (first → appears on RIGHT in RTL, aligns with timeline line)
+        Box(
+            modifier = Modifier
+                .size(20.dp)
+                .background(dotColor, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(text = medalEmoji, fontSize = 10.sp)
         }
-        Column(horizontalAlignment = Alignment.End) {
-            Text(
-                text = achievement.earnedDate.toString(),
-                color = Color.White.copy(alpha = 0.4f),
-                fontSize = 11.sp,
-            )
-            if (achievement.score != null && achievement.score > 0) {
-                Text(
-                    text = "${achievement.score} 🤍",
-                    color = MohamedLoversPalette.Gold.copy(alpha = 0.85f),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
+        // Card
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .background(
+                    if (isTop3) MohamedLoversPalette.Gold.copy(alpha = 0.06f) else Color.White.copy(alpha = 0.06f),
+                    RoundedCornerShape(14.dp),
                 )
+                .border(
+                    1.dp,
+                    if (isTop3) MohamedLoversPalette.Gold.copy(alpha = 0.20f) else Color.White.copy(alpha = 0.06f),
+                    RoundedCornerShape(14.dp),
+                )
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "المركز ${achievement.rank}",
+                    color = MohamedLoversPalette.Gold,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                )
+                Spacer(Modifier.height(3.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text("الجولة:", color = Color.White.copy(alpha = 0.35f), fontSize = 10.sp)
+                    Text(achievement.roundKey, color = Color.White.copy(alpha = 0.55f), fontSize = 11.sp)
+                }
+            }
+            if (achievement.score != null && achievement.score > 0) {
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "عدد الصلوات",
+                        color = Color.White.copy(alpha = 0.35f),
+                        fontSize = 9.sp,
+                        letterSpacing = 0.3.sp,
+                    )
+                    Text(
+                        text = "${achievement.score} 🤍",
+                        color = MohamedLoversPalette.Gold.copy(alpha = 0.88f),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
             }
         }
     }
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun StatCard(icon: String, value: String, label: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(14.dp))
+            .border(1.dp, MohamedLoversPalette.Gold.copy(alpha = 0.22f), RoundedCornerShape(14.dp))
+            .padding(vertical = 12.dp, horizontal = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(text = icon, fontSize = 18.sp)
+        Text(text = value, color = MohamedLoversPalette.Gold, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+        Text(
+            text = label,
+            color = Color.White.copy(alpha = 0.45f),
+            fontSize = 9.sp,
+            fontWeight = FontWeight.SemiBold,
+            letterSpacing = 0.5.sp,
+        )
+    }
+}
 
 @Composable
 private fun SectionLabel(text: String) {
