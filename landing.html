@@ -1,28 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>صلوا عليه — Send Salawat. Lead the World.</title>
-  <meta name="description" content="Weekly salawat tap competition. Compete globally, earn achievements, send blessings on the Prophet ﷺ every day.">
+  <title>صلوا عليه — منافسة أسبوعية للصلاة على النبي ﷺ</title>
+  <meta name="description" content="منافسة أسبوعية للصلاة على النبي ﷺ. نافس العالم، اكسب الإنجازات، وأرسل الصلاة كل يوم.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=Cairo:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --ink:    #080910;
-      --deep:   #0c0f1c;
-      --card:   #111526;
-      --rim:    #191f35;
-      --gold:   #c8953c;
-      --shine:  #e5b65a;
-      --glow:   rgba(200,149,60,.13);
-      --cream:  #eedec4;
-      --dim:    rgba(238,222,196,.48);
-      --green:  #1d5c3e;
-      --g2:     #25785200;
+      --ink:   #080910;
+      --deep:  #0c0f1c;
+      --card:  #111526;
+      --rim:   #191f35;
+      --gold:  #c8953c;
+      --shine: #e5b65a;
+      --glow:  rgba(200,149,60,.13);
+      --cream: #eedec4;
+      --dim:   rgba(238,222,196,.48);
+      --green: #1d5c3e;
     }
 
     html { scroll-behavior: smooth; }
@@ -30,11 +29,32 @@
     body {
       background: var(--ink);
       color: var(--cream);
-      font-family: 'DM Sans', sans-serif;
-      font-weight: 300;
+      font-family: 'Cairo', sans-serif;
+      font-weight: 400;
       overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
     }
+
+    html[lang="en"] body { font-family: 'DM Sans', sans-serif; font-weight: 300; }
+
+    /* ─── RTL / LTR shared fixes ──────────────────────────────── */
+    [dir="rtl"] .eyebrow,
+    [dir="rtl"] .stat-lbl,
+    [dir="rtl"] .hero-label,
+    [dir="rtl"] .ps-round-badge,
+    [dir="rtl"] .ps-count-lbl,
+    [dir="rtl"] .ps-friday-badge,
+    [dir="rtl"] .live-pill { letter-spacing: 0; }
+
+    [dir="rtl"] .store-btn-text { text-align: right; }
+
+    [dir="rtl"] .feat-card::after {
+      background: radial-gradient(circle at 100% 100%, rgba(200,149,60,.06), transparent 65%);
+    }
+
+    html[lang="ar"] .feat-desc,
+    html[lang="ar"] .sec-body,
+    html[lang="ar"] .step-desc { line-height: 2; }
 
     /* ─── NAV ─────────────────────────────────────────────────── */
     nav {
@@ -58,6 +78,12 @@
       letter-spacing: .02em;
     }
 
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+    }
+
     .nav-links {
       display: flex;
       gap: 2.5rem;
@@ -68,8 +94,7 @@
       color: var(--dim);
       text-decoration: none;
       font-size: .85rem;
-      letter-spacing: .06em;
-      text-transform: uppercase;
+      letter-spacing: .04em;
       transition: color .2s;
     }
 
@@ -80,9 +105,28 @@
       background: var(--gold);
       color: var(--ink) !important;
       border-radius: 2px;
-      font-weight: 500 !important;
-      text-transform: none !important;
+      font-weight: 600 !important;
       letter-spacing: .02em !important;
+    }
+
+    .lang-toggle {
+      background: none;
+      border: 1px solid rgba(200,149,60,.35);
+      color: var(--gold);
+      padding: .35rem .8rem;
+      border-radius: 2px;
+      cursor: pointer;
+      font-size: .8rem;
+      font-family: 'Cairo', 'DM Sans', sans-serif;
+      font-weight: 500;
+      letter-spacing: .04em;
+      transition: all .2s;
+      white-space: nowrap;
+    }
+
+    .lang-toggle:hover {
+      background: var(--glow);
+      border-color: var(--gold);
     }
 
     @media (max-width: 640px) {
@@ -140,7 +184,7 @@
     .hero-label {
       font-family: 'Cormorant Garamond', serif;
       font-size: clamp(.8rem, 1.5vw, 1rem);
-      letter-spacing: .4em;
+      letter-spacing: .3em;
       text-transform: uppercase;
       color: var(--gold);
       opacity: .75;
@@ -152,24 +196,26 @@
       font-family: 'Cormorant Garamond', serif;
       font-size: clamp(1.6rem, 4.5vw, 3rem);
       font-weight: 300;
-      line-height: 1.3;
+      line-height: 1.4;
       color: var(--cream);
-      max-width: 620px;
+      max-width: 640px;
       margin: 0 auto 1.25rem;
       animation: riseUp 1.1s .28s cubic-bezier(.22,.68,0,1.1) both;
     }
 
-    .hero-headline em {
-      font-style: italic;
-      color: var(--shine);
+    html[lang="ar"] .hero-headline {
+      font-family: 'Cairo', serif;
+      font-weight: 300;
     }
+
+    .hero-headline em { font-style: italic; color: var(--shine); }
 
     .hero-sub {
       font-size: clamp(.95rem, 2vw, 1.1rem);
       color: var(--dim);
-      max-width: 460px;
+      max-width: 500px;
       margin: 0 auto 2.75rem;
-      line-height: 1.75;
+      line-height: 1.85;
       animation: riseUp 1.1s .4s cubic-bezier(.22,.68,0,1.1) both;
     }
 
@@ -190,7 +236,7 @@
       color: var(--ink);
       text-decoration: none;
       font-size: .92rem;
-      font-weight: 500;
+      font-weight: 600;
       border-radius: 2px;
       transition: all .22s;
     }
@@ -199,25 +245,6 @@
       background: var(--shine);
       transform: translateY(-2px);
       box-shadow: 0 10px 36px rgba(200,149,60,.35);
-    }
-
-    .btn-ghost {
-      display: inline-flex;
-      align-items: center;
-      gap: .6rem;
-      padding: .9rem 2.1rem;
-      border: 1px solid rgba(200,149,60,.35);
-      color: var(--shine);
-      text-decoration: none;
-      font-size: .92rem;
-      border-radius: 2px;
-      transition: all .22s;
-    }
-
-    .btn-ghost:hover {
-      border-color: var(--gold);
-      background: var(--glow);
-      transform: translateY(-2px);
     }
 
     .scroll-prompt {
@@ -269,9 +296,11 @@
       font-family: 'Cormorant Garamond', serif;
       font-size: clamp(1.9rem, 4.5vw, 3rem);
       font-weight: 300;
-      line-height: 1.25;
+      line-height: 1.3;
       color: var(--cream);
     }
+
+    html[lang="ar"] .sec-title { font-family: 'Cairo', sans-serif; font-weight: 300; line-height: 1.5; }
 
     .sec-title em { font-style: italic; color: var(--shine); }
 
@@ -285,7 +314,6 @@
 
     /* ─── FEATURES ────────────────────────────────────────────── */
     .features { background: var(--deep); }
-
     .features-intro { margin-bottom: clamp(2.5rem, 6vw, 5rem); }
 
     .feat-grid {
@@ -335,6 +363,8 @@
       z-index: 1;
     }
 
+    html[lang="ar"] .feat-name { font-family: 'Cairo', sans-serif; font-weight: 500; font-size: 1.15rem; }
+
     .feat-desc {
       color: var(--dim);
       font-size: .88rem;
@@ -351,7 +381,7 @@
       border: 1px solid rgba(200,149,60,.2);
       color: var(--gold);
       font-size: .72rem;
-      letter-spacing: .06em;
+      letter-spacing: .04em;
       border-radius: 2px;
       position: relative;
       z-index: 1;
@@ -376,12 +406,6 @@
       font-weight: 300;
       color: var(--shine);
       line-height: 1;
-    }
-
-    .stat-num sup {
-      font-size: .5em;
-      opacity: .7;
-      vertical-align: super;
     }
 
     .stat-lbl {
@@ -427,8 +451,8 @@
     }
 
     .step-num {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 1.2rem;
+      font-family: 'Amiri', serif;
+      font-size: 1.3rem;
       color: var(--gold);
     }
 
@@ -439,6 +463,8 @@
       margin-bottom: .4rem;
     }
 
+    html[lang="ar"] .step-title { font-family: 'Cairo', sans-serif; font-weight: 500; font-size: 1.05rem; }
+
     .step-desc {
       color: var(--dim);
       font-size: .88rem;
@@ -446,11 +472,7 @@
     }
 
     /* phone mockup */
-    .phone-wrap {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
+    .phone-wrap { display: flex; justify-content: center; align-items: center; }
 
     .phone-frame {
       width: 260px;
@@ -553,7 +575,8 @@
       border-radius: 20px;
       font-size: .72rem;
       color: var(--gold);
-      letter-spacing: .06em;
+      letter-spacing: .04em;
+      text-align: center;
     }
 
     /* ─── LEADERBOARD ─────────────────────────────────────────── */
@@ -591,6 +614,8 @@
       font-size: 1rem;
       color: var(--cream);
     }
+
+    html[lang="ar"] .lb-head-title { font-family: 'Cairo', sans-serif; font-size: .9rem; }
 
     .live-pill {
       display: flex;
@@ -634,17 +659,8 @@
     .lb-rank.r2 { color: #94a3b8; }
     .lb-rank.r3 { color: #b45309; }
 
-    .lb-name {
-      font-size: .82rem;
-      color: var(--cream);
-      font-family: monospace;
-    }
-
-    .lb-score {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 1.1rem;
-      color: var(--shine);
-    }
+    .lb-name { font-size: .82rem; color: var(--cream); font-family: monospace; }
+    .lb-score { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; color: var(--shine); }
 
     /* ─── ACHIEVEMENTS ────────────────────────────────────────── */
     .ach-section { background: var(--deep); }
@@ -675,17 +691,9 @@
       box-shadow: 0 12px 40px rgba(200,149,60,.12);
     }
 
-    .badge-icon {
-      font-size: 2.2rem;
-      line-height: 1;
-    }
+    .badge-icon { font-size: 2.2rem; line-height: 1; }
 
-    .badge-name {
-      font-size: .75rem;
-      color: var(--dim);
-      text-align: center;
-      line-height: 1.4;
-    }
+    .badge-name { font-size: .75rem; color: var(--dim); text-align: center; line-height: 1.5; }
 
     /* ─── DOWNLOAD ────────────────────────────────────────────── */
     .download {
@@ -743,7 +751,7 @@
 
     .store-btn-text { text-align: left; }
     .store-btn-sub { display: block; font-size: .68rem; color: var(--dim); margin-bottom: .1rem; }
-    .store-btn-name { display: block; font-size: .95rem; font-weight: 400; }
+    .store-btn-name { display: block; font-size: .95rem; font-weight: 500; }
 
     /* ─── FOOTER ──────────────────────────────────────────────── */
     footer {
@@ -756,19 +764,10 @@
       gap: 1rem;
     }
 
-    .footer-brand {
-      font-family: 'Amiri', serif;
-      font-size: 1.4rem;
-      color: var(--gold);
-    }
-
+    .footer-brand { font-family: 'Amiri', serif; font-size: 1.4rem; color: var(--gold); }
     .footer-note { font-size: .78rem; color: var(--dim); }
 
-    .footer-links {
-      display: flex;
-      gap: 1.5rem;
-      list-style: none;
-    }
+    .footer-links { display: flex; gap: 1.5rem; list-style: none; }
 
     .footer-links a {
       font-size: .78rem;
@@ -829,11 +828,14 @@
 <!-- NAV -->
 <nav>
   <a class="nav-brand" href="#">صلوا عليه</a>
-  <ul class="nav-links">
-    <li><a href="#features">Features</a></li>
-    <li><a href="#leaderboard">Leaderboard</a></li>
-    <li><a href="#download" class="nav-cta">Download</a></li>
-  </ul>
+  <div class="nav-right">
+    <ul class="nav-links">
+      <li><a href="#features" data-i18n="navFeatures">المميزات</a></li>
+      <li><a href="#leaderboard" data-i18n="navLeaderboard">المتصدرون</a></li>
+      <li><a href="#download" class="nav-cta" data-i18n="navDownload">حمّل التطبيق</a></li>
+    </ul>
+    <button class="lang-toggle" id="langToggle">EN</button>
+  </div>
 </nav>
 
 <!-- HERO -->
@@ -844,26 +846,20 @@
 
   <div class="hero-content">
     <div class="arabic-blessings">صلّ على النبي ﷺ</div>
-    <p class="hero-label">SaloAleh — سالو الله</p>
-    <h1 class="hero-headline">
-      Send blessings on the Prophet.<br>
-      <em>Compete with the world.</em>
-    </h1>
-    <p class="hero-sub">
-      A weekly salawat tap competition. Earn rank badges, build streaks,
-      and join believers across 9 countries — every Friday the round resets.
-    </p>
+    <p class="hero-label" data-i18n="heroLabel">صلوا عليه — منافسة أسبوعية</p>
+    <h1 class="hero-headline" data-i18n-html="heroHeadline">أرسل الصلاة على النبي.<br><em>نافس العالم.</em></h1>
+    <p class="hero-sub" data-i18n="heroSub">منافسة أسبوعية للصلاة على النبي ﷺ. اكسب شارات الترتيب، وابنِ سلاسلك، وانضم لمؤمنين من ٩ دول — كل جمعة تبدأ جولة جديدة.</p>
     <div class="hero-actions">
       <a href="https://play.google.com/store/apps/details?id=tools.mo3ta.salo" class="btn-gold" target="_blank" rel="noopener">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.76c.3.17.64.24.99.19l12.24-7.07-2.76-2.76-10.47 9.64zM20.45 10.6L17.67 9l-3.16 3.16 3.16 3.16 2.81-1.62a1.74 1.74 0 000-3.1zM3 1.05a1.74 1.74 0 00-.82 1.5v18.9c0 .63.33 1.17.82 1.5l.1.06 10.58-10.58v-.25L3.1.99 3 1.05zm7.63 11.37L3 20.05V3.95l7.63 7.47z"/></svg>
-        Google Play
+        <span data-i18n="heroCta">حمّل من Google Play</span>
       </a>
     </div>
   </div>
 
   <div class="scroll-prompt">
     <div class="scroll-line"></div>
-    <span>scroll</span>
+    <span data-i18n="heroScroll">مرر</span>
   </div>
 </section>
 
@@ -872,9 +868,9 @@
 <!-- FEATURES -->
 <section class="features" id="features">
   <div class="features-intro reveal">
-    <p class="eyebrow">What's inside</p>
-    <h2 class="sec-title">Everything you need to <em>worship with intention</em></h2>
-    <p class="sec-body">Six features built for daily engagement and weekly competition — simple to start, rewarding to stick with.</p>
+    <p class="eyebrow" data-i18n="featEyebrow">داخل التطبيق</p>
+    <h2 class="sec-title" data-i18n-html="featTitle">كل ما تحتاجه <em>للعبادة بنية</em></h2>
+    <p class="sec-body" data-i18n="featBody">ست ميزات مبنية للمشاركة اليومية والمنافسة الأسبوعية — سهل البداية، ومجزٍ للاستمرار.</p>
   </div>
 
   <div class="feat-grid">
@@ -882,18 +878,18 @@
       <svg class="feat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
         <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
       </svg>
-      <h3 class="feat-name">Weekly Competition</h3>
-      <p class="feat-desc">Every Friday at midnight Cairo time, the round resets and a new competition begins. Tap as many salawat as you can before the week ends.</p>
-      <span class="feat-pill">Resets every Friday</span>
+      <h3 class="feat-name" data-i18n="feat1Name">المنافسة الأسبوعية</h3>
+      <p class="feat-desc" data-i18n="feat1Desc">كل جمعة منتصف الليل بتوقيت القاهرة، تنتهي الجولة وتبدأ جديدة. اضغط أكبر عدد من الصلوات قبل نهاية الأسبوع.</p>
+      <span class="feat-pill" data-i18n="feat1Pill">تُعاد كل جمعة</span>
     </div>
 
     <div class="feat-card reveal reveal-delay-1">
       <svg class="feat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
       </svg>
-      <h3 class="feat-name">Friday 2× Bonus</h3>
-      <p class="feat-desc">On the blessed day of Jumu'ah, every tap counts double. Your score multiplies on Fridays (Africa/Cairo timezone) to reward the holiest day.</p>
-      <span class="feat-pill">2× multiplier</span>
+      <h3 class="feat-name" data-i18n="feat2Name">مضاعفة الجمعة ٢×</h3>
+      <p class="feat-desc" data-i18n="feat2Desc">في يوم الجمعة المبارك، كل ضغطة تُحتسب مرتين. نقاطك تتضاعف كل جمعة بتوقيت القاهرة.</p>
+      <span class="feat-pill" data-i18n="feat2Pill">مضاعف ٢×</span>
     </div>
 
     <div class="feat-card reveal reveal-delay-2">
@@ -901,36 +897,36 @@
         <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
         <path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
       </svg>
-      <h3 class="feat-name">Global Leaderboard</h3>
-      <p class="feat-desc">Compete anonymously with believers worldwide. Your tag shows only your country and last 6 characters of a hashed ID — privacy first, glory second.</p>
-      <span class="feat-pill">9 countries active</span>
+      <h3 class="feat-name" data-i18n="feat3Name">المتصدرون العالميون</h3>
+      <p class="feat-desc" data-i18n="feat3Desc">نافس المؤمنين حول العالم بشكل مجهول. علامتك تُظهر فقط رمز بلدك وآخر ٦ أحرف من معرفك المشفر.</p>
+      <span class="feat-pill" data-i18n="feat3Pill">٩ دول نشطة</span>
     </div>
 
     <div class="feat-card reveal">
       <svg class="feat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
         <circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
       </svg>
-      <h3 class="feat-name">Rank Achievements</h3>
-      <p class="feat-desc">Finish in the top 10 of any completed round and earn a permanent rank badge. Place 1st through 10th — each rank has its own distinct badge.</p>
-      <span class="feat-pill">10 rank badges</span>
+      <h3 class="feat-name" data-i18n="feat4Name">شارات الترتيب</h3>
+      <p class="feat-desc" data-i18n="feat4Desc">أنهِ الجولة ضمن أفضل ١٠ واحصل على شارة دائمة. كل مرتبة من ١ إلى ١٠ لها شارة مميزة.</p>
+      <span class="feat-pill" data-i18n="feat4Pill">١٠ شارات ترتيب</span>
     </div>
 
     <div class="feat-card reveal reveal-delay-1">
       <svg class="feat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
       </svg>
-      <h3 class="feat-name">Streak Badges</h3>
-      <p class="feat-desc">Open the app every day and build your streak. Hit 7 days and 30 days to unlock special streak badges added to your achievements history.</p>
-      <span class="feat-pill">7 & 30 day streaks</span>
+      <h3 class="feat-name" data-i18n="feat5Name">شارات السلاسل</h3>
+      <p class="feat-desc" data-i18n="feat5Desc">افتح التطبيق كل يوم وابنِ سلسلتك. اوصل إلى ٧ أيام و٣٠ يوماً لتفتح شارات خاصة.</p>
+      <span class="feat-pill" data-i18n="feat5Pill">سلاسل ٧ و٣٠ يوم</span>
     </div>
 
     <div class="feat-card reveal reveal-delay-2">
       <svg class="feat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
         <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
       </svg>
-      <h3 class="feat-name">Daily Hadiths</h3>
-      <p class="feat-desc">Between rounds, browse a curated collection of authentic hadiths. A reminder of why we send salawat and the blessings it brings.</p>
-      <span class="feat-pill">Islamic wisdom</span>
+      <h3 class="feat-name" data-i18n="feat6Name">أحاديث يومية</h3>
+      <p class="feat-desc" data-i18n="feat6Desc">بين الجولات، تصفح مجموعة من الأحاديث الصحيحة. تذكير بفضل الصلاة على النبي ﷺ.</p>
+      <span class="feat-pill" data-i18n="feat6Pill">حكمة إسلامية</span>
     </div>
   </div>
 </section>
@@ -940,25 +936,25 @@
 <!-- STATS -->
 <section class="stats" id="stats">
   <div class="reveal">
-    <p class="eyebrow">By the numbers</p>
-    <h2 class="sec-title">A growing <em>global community</em></h2>
+    <p class="eyebrow" data-i18n="statsEyebrow">بالأرقام</p>
+    <h2 class="sec-title" data-i18n-html="statsTitle">مجتمع عالمي <em>نامٍ</em></h2>
   </div>
   <div class="stats-grid">
     <div class="stat-item reveal">
       <div class="stat-num" data-stat="allTimeSalawat" data-target="9577" data-suffix="">0</div>
-      <div class="stat-lbl">Salawat Sent</div>
+      <div class="stat-lbl" data-i18n="statLbl1">صلاة مُرسَلة</div>
     </div>
     <div class="stat-item reveal reveal-delay-1">
       <div class="stat-num" data-stat="activePlayers" data-target="43" data-suffix="+">0</div>
-      <div class="stat-lbl">Active Players</div>
+      <div class="stat-lbl" data-i18n="statLbl2">لاعب نشط</div>
     </div>
     <div class="stat-item reveal reveal-delay-2">
       <div class="stat-num" data-stat="countries" data-target="9" data-suffix="">0</div>
-      <div class="stat-lbl">Countries</div>
+      <div class="stat-lbl" data-i18n="statLbl3">دولة</div>
     </div>
     <div class="stat-item reveal reveal-delay-3">
       <div class="stat-num" data-stat="topScore" data-target="3181" data-suffix="">0</div>
-      <div class="stat-lbl">Top Weekly Score</div>
+      <div class="stat-lbl" data-i18n="statLbl4">أعلى نقاط أسبوعية</div>
     </div>
   </div>
 </section>
@@ -968,30 +964,30 @@
 <!-- HOW IT WORKS -->
 <section class="how" id="how">
   <div class="reveal">
-    <p class="eyebrow">Getting started</p>
-    <h2 class="sec-title">Three steps to your <em>first salawat</em></h2>
+    <p class="eyebrow" data-i18n="howEyebrow">البداية</p>
+    <h2 class="sec-title" data-i18n-html="howTitle">ثلاث خطوات <em>لصلاتك الأولى</em></h2>
   </div>
   <div class="how-layout">
     <div class="steps">
       <div class="step reveal">
         <div class="step-num-wrap"><span class="step-num">١</span></div>
         <div>
-          <h3 class="step-title">Download the app</h3>
-          <p class="step-desc">Install on Android or iOS. No account needed — your anonymous identity is generated securely on your device.</p>
+          <h3 class="step-title" data-i18n="step1Title">حمّل التطبيق</h3>
+          <p class="step-desc" data-i18n="step1Desc">ثبّت على أندرويد. لا حساب مطلوب — هويتك المجهولة تُنشأ بأمان على جهازك.</p>
         </div>
       </div>
       <div class="step reveal reveal-delay-1">
         <div class="step-num-wrap"><span class="step-num">٢</span></div>
         <div>
-          <h3 class="step-title">Tap to send salawat</h3>
-          <p class="step-desc">Hit the counter button to send صلّ على النبي ﷺ. Each tap adds to your weekly score. On Fridays, every tap counts double.</p>
+          <h3 class="step-title" data-i18n="step2Title">اضغط لترسل صلاة</h3>
+          <p class="step-desc" data-i18n="step2Desc">اضغط زر العداد لترسل صلّ على النبي ﷺ. كل ضغطة تُضاف إلى نقاطك الأسبوعية. في الجمعة كل ضغطة مرتين.</p>
         </div>
       </div>
       <div class="step reveal reveal-delay-2">
         <div class="step-num-wrap"><span class="step-num">٣</span></div>
         <div>
-          <h3 class="step-title">Climb the leaderboard</h3>
-          <p class="step-desc">Check where you rank among believers worldwide. Rounds close every Friday midnight — earn your rank badge and start fresh.</p>
+          <h3 class="step-title" data-i18n="step3Title">تصعّد في الترتيب</h3>
+          <p class="step-desc" data-i18n="step3Desc">تحقق من مرتبتك بين المؤمنين حول العالم. الجولات تُغلق كل جمعة منتصف الليل — اكسب شارتك وابدأ من جديد.</p>
         </div>
       </div>
     </div>
@@ -1000,13 +996,13 @@
       <div class="phone-frame">
         <div class="phone-notch"><div class="phone-notch-pill"></div></div>
         <div class="phone-screen">
-          <p class="ps-round-badge">Week 20 — Round Active</p>
+          <p class="ps-round-badge" data-i18n="phoneRound">الأسبوع ٢٠ — جولة نشطة</p>
           <div class="ps-tap-ring" id="demoTapBtn">
             <div class="ps-tap-arabic">صلّ<br>على<br>النبي</div>
           </div>
           <div class="ps-count" id="demoCount">0</div>
-          <p class="ps-count-lbl">taps this week</p>
-          <div class="ps-friday-badge">⭐ Friday: 2× Bonus Active</div>
+          <p class="ps-count-lbl" data-i18n="phoneLbl">ضغطات هذا الأسبوع</p>
+          <div class="ps-friday-badge" data-i18n="phoneFriday">⭐ الجمعة: مضاعفة ٢× نشطة</div>
         </div>
       </div>
     </div>
@@ -1021,8 +1017,8 @@
     <div class="lb-card-wrap reveal">
       <div class="lb-card">
         <div class="lb-head">
-          <span class="lb-head-title">This Week's Leaders</span>
-          <span class="live-pill"><span class="live-dot"></span>Live</span>
+          <span class="lb-head-title" data-i18n="lbCardTitle">قادة هذا الأسبوع</span>
+          <span class="live-pill"><span class="live-dot"></span><span data-i18n="lbLive">مباشر</span></span>
         </div>
         <div class="lb-row">
           <span class="lb-rank r1">1</span>
@@ -1063,14 +1059,10 @@
     </div>
 
     <div class="lb-text reveal reveal-delay-1">
-      <p class="eyebrow">Weekly rankings</p>
-      <h2 class="sec-title">Anonymous by design.<br><em>Glory by merit.</em></h2>
-      <p class="sec-body">
-        Your leaderboard tag is just your country flag and the last 6 characters of a secure hash. No username. No profile. The salawat count is all that matters.
-      </p>
-      <p class="sec-body" style="margin-top:.75rem;">
-        Leaderboard refreshes every 30 minutes. At Friday midnight Cairo time, the top 10 are awarded permanent rank badges and a new round opens.
-      </p>
+      <p class="eyebrow" data-i18n="lbEyebrow">الترتيب الأسبوعي</p>
+      <h2 class="sec-title" data-i18n-html="lbTitle">مجهول بالتصميم.<br><em>مجد بالجدارة.</em></h2>
+      <p class="sec-body" data-i18n="lbBody1">علامتك في المتصدرين هي فقط رمز بلدك وآخر ٦ أحرف من كود مشفر. لا اسم مستخدم. لا ملف شخصي. عدد الصلوات هو كل ما يهم.</p>
+      <p class="sec-body" style="margin-top:.75rem;" data-i18n="lbBody2">يتجدد الترتيب كل ٣٠ دقيقة. في منتصف ليلة الجمعة بتوقيت القاهرة، يُكافأ أفضل ١٠ بشارات دائمة وتبدأ جولة جديدة.</p>
     </div>
   </div>
 </section>
@@ -1080,44 +1072,20 @@
 <!-- ACHIEVEMENTS -->
 <section class="ach-section" id="achievements">
   <div class="reveal">
-    <p class="eyebrow">Achievements</p>
-    <h2 class="sec-title">Earn badges for every <em>milestone</em></h2>
-    <p class="sec-body">From 7-day streaks to top-10 finishes — each achievement is a permanent record of your dedication.</p>
+    <p class="eyebrow" data-i18n="achEyebrow">الإنجازات</p>
+    <h2 class="sec-title" data-i18n-html="achTitle">اكسب شارات <em>لكل إنجاز</em></h2>
+    <p class="sec-body" data-i18n="achBody">من سلاسل ٧ أيام إلى أفضل ١٠ — كل إنجاز سجل دائم لتفانيك.</p>
   </div>
 
   <div class="badges-row">
-    <div class="badge-item reveal">
-      <div class="badge-icon">🥇</div>
-      <div class="badge-name">1st Place</div>
-    </div>
-    <div class="badge-item reveal reveal-delay-1">
-      <div class="badge-icon">🥈</div>
-      <div class="badge-name">2nd Place</div>
-    </div>
-    <div class="badge-item reveal reveal-delay-2">
-      <div class="badge-icon">🥉</div>
-      <div class="badge-name">3rd Place</div>
-    </div>
-    <div class="badge-item reveal reveal-delay-3">
-      <div class="badge-icon">🏅</div>
-      <div class="badge-name">Top 10 Finish</div>
-    </div>
-    <div class="badge-item reveal">
-      <div class="badge-icon">🔥</div>
-      <div class="badge-name">7-Day Streak</div>
-    </div>
-    <div class="badge-item reveal reveal-delay-1">
-      <div class="badge-icon">⚡</div>
-      <div class="badge-name">30-Day Streak</div>
-    </div>
-    <div class="badge-item reveal reveal-delay-2">
-      <div class="badge-icon">⭐</div>
-      <div class="badge-name">Friday Hero</div>
-    </div>
-    <div class="badge-item reveal reveal-delay-3">
-      <div class="badge-icon">🕌</div>
-      <div class="badge-name">Faithful Sender</div>
-    </div>
+    <div class="badge-item reveal"><div class="badge-icon">🥇</div><div class="badge-name" data-i18n="badge1">المركز الأول</div></div>
+    <div class="badge-item reveal reveal-delay-1"><div class="badge-icon">🥈</div><div class="badge-name" data-i18n="badge2">المركز الثاني</div></div>
+    <div class="badge-item reveal reveal-delay-2"><div class="badge-icon">🥉</div><div class="badge-name" data-i18n="badge3">المركز الثالث</div></div>
+    <div class="badge-item reveal reveal-delay-3"><div class="badge-icon">🏅</div><div class="badge-name" data-i18n="badge4">أفضل ١٠</div></div>
+    <div class="badge-item reveal"><div class="badge-icon">🔥</div><div class="badge-name" data-i18n="badge5">سلسلة ٧ أيام</div></div>
+    <div class="badge-item reveal reveal-delay-1"><div class="badge-icon">⚡</div><div class="badge-name" data-i18n="badge6">سلسلة ٣٠ يوماً</div></div>
+    <div class="badge-item reveal reveal-delay-2"><div class="badge-icon">⭐</div><div class="badge-name" data-i18n="badge7">بطل الجمعة</div></div>
+    <div class="badge-item reveal reveal-delay-3"><div class="badge-icon">🕌</div><div class="badge-name" data-i18n="badge8">المُصلّي الوفي</div></div>
   </div>
 </section>
 
@@ -1128,18 +1096,16 @@
   <div class="dl-content">
     <div class="dl-arabic reveal">اللهمَّ صَلِّ عَلَى مُحَمَّد</div>
     <div class="reveal reveal-delay-1">
-      <p class="eyebrow" style="margin-top:1rem;">Available now</p>
-      <h2 class="sec-title" style="max-width:580px;margin:0 auto;">Start sending salawat <em>today</em></h2>
-      <p class="sec-body" style="margin:1rem auto 0;text-align:center;">
-        Free to download. No account required. Available on Android and iOS.
-      </p>
+      <p class="eyebrow" style="margin-top:1rem;" data-i18n="dlEyebrow">متاح الآن</p>
+      <h2 class="sec-title" style="max-width:580px;margin:0 auto;" data-i18n-html="dlTitle">ابدأ إرسال الصلاة <em>اليوم</em></h2>
+      <p class="sec-body" style="margin:1rem auto 0;text-align:center;" data-i18n="dlBody">مجاني للتنزيل. لا حساب مطلوب. متاح على أندرويد.</p>
     </div>
     <div class="store-row reveal reveal-delay-2">
       <a href="https://play.google.com/store/apps/details?id=tools.mo3ta.salo" class="store-btn" target="_blank" rel="noopener">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="var(--gold)"><path d="M3.18 23.76c.3.17.64.24.99.19l12.24-7.07-2.76-2.76-10.47 9.64zM20.45 10.6L17.67 9l-3.16 3.16 3.16 3.16 2.81-1.62a1.74 1.74 0 000-3.1zM3 1.05a1.74 1.74 0 00-.82 1.5v18.9c0 .63.33 1.17.82 1.5l.1.06 10.58-10.58v-.25L3.1.99 3 1.05zm7.63 11.37L3 20.05V3.95l7.63 7.47z"/></svg>
         <div class="store-btn-text">
-          <span class="store-btn-sub">Get it on</span>
-          <span class="store-btn-name">Google Play</span>
+          <span class="store-btn-sub" data-i18n="dlStoreSub">حمّل من</span>
+          <span class="store-btn-name" data-i18n="dlStoreName">Google Play</span>
         </div>
       </a>
     </div>
@@ -1150,32 +1116,131 @@
 <footer>
   <span class="footer-brand">صلوا عليه</span>
   <ul class="footer-links">
-    <li><a href="#">Privacy</a></li>
+    <li><a href="#" data-i18n="footerPrivacy">الخصوصية</a></li>
     <li><a href="https://github.com/MahmoudMabrok/SaloAleh">GitHub</a></li>
-    <li><a href="#features">Features</a></li>
+    <li><a href="#features" data-i18n="footerFeatures">المميزات</a></li>
   </ul>
-  <span class="footer-note">© 2026 SaloAleh. Built with ♥ in KMP.</span>
+  <span class="footer-note" data-i18n="footerNote">© ٢٠٢٦ صلوا عليه. مبني بـ ♥ في KMP.</span>
 </footer>
 
 <script>
+/* ── i18n strings ──────────────────────────────────────────── */
+const STRINGS = {
+  ar: {
+    navFeatures: 'المميزات', navLeaderboard: 'المتصدرون', navDownload: 'حمّل التطبيق',
+    heroLabel: 'صلوا عليه — منافسة أسبوعية',
+    heroHeadline: 'أرسل الصلاة على النبي.<br><em>نافس العالم.</em>',
+    heroSub: 'منافسة أسبوعية للصلاة على النبي ﷺ. اكسب شارات الترتيب، وابنِ سلاسلك، وانضم لمؤمنين من ٩ دول — كل جمعة تبدأ جولة جديدة.',
+    heroCta: 'حمّل من Google Play', heroScroll: 'مرر',
+    featEyebrow: 'داخل التطبيق',
+    featTitle: 'كل ما تحتاجه <em>للعبادة بنية</em>',
+    featBody: 'ست ميزات مبنية للمشاركة اليومية والمنافسة الأسبوعية — سهل البداية، ومجزٍ للاستمرار.',
+    feat1Name: 'المنافسة الأسبوعية', feat1Desc: 'كل جمعة منتصف الليل بتوقيت القاهرة، تنتهي الجولة وتبدأ جديدة. اضغط أكبر عدد من الصلوات قبل نهاية الأسبوع.', feat1Pill: 'تُعاد كل جمعة',
+    feat2Name: 'مضاعفة الجمعة ٢×', feat2Desc: 'في يوم الجمعة المبارك، كل ضغطة تُحتسب مرتين. نقاطك تتضاعف كل جمعة بتوقيت القاهرة.', feat2Pill: 'مضاعف ٢×',
+    feat3Name: 'المتصدرون العالميون', feat3Desc: 'نافس المؤمنين حول العالم بشكل مجهول. علامتك تُظهر فقط رمز بلدك وآخر ٦ أحرف من معرفك المشفر.', feat3Pill: '٩ دول نشطة',
+    feat4Name: 'شارات الترتيب', feat4Desc: 'أنهِ الجولة ضمن أفضل ١٠ واحصل على شارة دائمة. كل مرتبة من ١ إلى ١٠ لها شارة مميزة.', feat4Pill: '١٠ شارات ترتيب',
+    feat5Name: 'شارات السلاسل', feat5Desc: 'افتح التطبيق كل يوم وابنِ سلسلتك. اوصل إلى ٧ أيام و٣٠ يوماً لتفتح شارات خاصة.', feat5Pill: 'سلاسل ٧ و٣٠ يوم',
+    feat6Name: 'أحاديث يومية', feat6Desc: 'بين الجولات، تصفح مجموعة من الأحاديث الصحيحة. تذكير بفضل الصلاة على النبي ﷺ.', feat6Pill: 'حكمة إسلامية',
+    statsEyebrow: 'بالأرقام', statsTitle: 'مجتمع عالمي <em>نامٍ</em>',
+    statLbl1: 'صلاة مُرسَلة', statLbl2: 'لاعب نشط', statLbl3: 'دولة', statLbl4: 'أعلى نقاط أسبوعية',
+    howEyebrow: 'البداية', howTitle: 'ثلاث خطوات <em>لصلاتك الأولى</em>',
+    step1Title: 'حمّل التطبيق', step1Desc: 'ثبّت على أندرويد. لا حساب مطلوب — هويتك المجهولة تُنشأ بأمان على جهازك.',
+    step2Title: 'اضغط لترسل صلاة', step2Desc: 'اضغط زر العداد لترسل صلّ على النبي ﷺ. كل ضغطة تُضاف إلى نقاطك الأسبوعية. في الجمعة كل ضغطة مرتين.',
+    step3Title: 'تصعّد في الترتيب', step3Desc: 'تحقق من مرتبتك بين المؤمنين حول العالم. الجولات تُغلق كل جمعة منتصف الليل — اكسب شارتك وابدأ من جديد.',
+    phoneRound: 'الأسبوع ٢٠ — جولة نشطة', phoneLbl: 'ضغطات هذا الأسبوع', phoneFriday: '⭐ الجمعة: مضاعفة ٢× نشطة',
+    lbEyebrow: 'الترتيب الأسبوعي', lbTitle: 'مجهول بالتصميم.<br><em>مجد بالجدارة.</em>',
+    lbBody1: 'علامتك في المتصدرين هي فقط رمز بلدك وآخر ٦ أحرف من كود مشفر. لا اسم مستخدم. لا ملف شخصي. عدد الصلوات هو كل ما يهم.',
+    lbBody2: 'يتجدد الترتيب كل ٣٠ دقيقة. في منتصف ليلة الجمعة بتوقيت القاهرة، يُكافأ أفضل ١٠ بشارات دائمة وتبدأ جولة جديدة.',
+    lbCardTitle: 'قادة هذا الأسبوع', lbLive: 'مباشر',
+    achEyebrow: 'الإنجازات', achTitle: 'اكسب شارات <em>لكل إنجاز</em>',
+    achBody: 'من سلاسل ٧ أيام إلى أفضل ١٠ — كل إنجاز سجل دائم لتفانيك.',
+    badge1: 'المركز الأول', badge2: 'المركز الثاني', badge3: 'المركز الثالث', badge4: 'أفضل ١٠',
+    badge5: 'سلسلة ٧ أيام', badge6: 'سلسلة ٣٠ يوماً', badge7: 'بطل الجمعة', badge8: 'المُصلّي الوفي',
+    dlEyebrow: 'متاح الآن', dlTitle: 'ابدأ إرسال الصلاة <em>اليوم</em>',
+    dlBody: 'مجاني للتنزيل. لا حساب مطلوب. متاح على أندرويد.',
+    dlStoreSub: 'حمّل من', dlStoreName: 'Google Play',
+    footerPrivacy: 'الخصوصية', footerFeatures: 'المميزات',
+    footerNote: '© ٢٠٢٦ صلوا عليه. مبني بـ ♥ في KMP.',
+    langToggle: 'EN',
+  },
+  en: {
+    navFeatures: 'Features', navLeaderboard: 'Leaderboard', navDownload: 'Download',
+    heroLabel: 'SaloAleh — Weekly Competition',
+    heroHeadline: 'Send blessings on the Prophet.<br><em>Compete with the world.</em>',
+    heroSub: 'A weekly salawat tap competition. Earn rank badges, build streaks, and join believers across 9 countries — every Friday the round resets.',
+    heroCta: 'Google Play', heroScroll: 'scroll',
+    featEyebrow: "What's inside",
+    featTitle: 'Everything you need to <em>worship with intention</em>',
+    featBody: 'Six features built for daily engagement and weekly competition — simple to start, rewarding to stick with.',
+    feat1Name: 'Weekly Competition', feat1Desc: 'Every Friday at midnight Cairo time, the round resets and a new competition begins. Tap as many salawat as you can before the week ends.', feat1Pill: 'Resets every Friday',
+    feat2Name: 'Friday 2× Bonus', feat2Desc: "On the blessed day of Jumu'ah, every tap counts double. Your score multiplies on Fridays (Africa/Cairo timezone) to reward the holiest day.", feat2Pill: '2× multiplier',
+    feat3Name: 'Global Leaderboard', feat3Desc: 'Compete anonymously with believers worldwide. Your tag shows only your country and last 6 characters of a hashed ID — privacy first, glory second.', feat3Pill: '9 countries active',
+    feat4Name: 'Rank Achievements', feat4Desc: 'Finish in the top 10 of any completed round and earn a permanent rank badge. Place 1st through 10th — each rank has its own distinct badge.', feat4Pill: '10 rank badges',
+    feat5Name: 'Streak Badges', feat5Desc: 'Open the app every day and build your streak. Hit 7 days and 30 days to unlock special streak badges added to your achievements history.', feat5Pill: '7 & 30 day streaks',
+    feat6Name: 'Daily Hadiths', feat6Desc: 'Between rounds, browse a curated collection of authentic hadiths. A reminder of why we send salawat and the blessings it brings.', feat6Pill: 'Islamic wisdom',
+    statsEyebrow: 'By the numbers', statsTitle: 'A growing <em>global community</em>',
+    statLbl1: 'Salawat Sent', statLbl2: 'Active Players', statLbl3: 'Countries', statLbl4: 'Top Weekly Score',
+    howEyebrow: 'Getting started', howTitle: 'Three steps to your <em>first salawat</em>',
+    step1Title: 'Download the app', step1Desc: 'Install on Android. No account needed — your anonymous identity is generated securely on your device.',
+    step2Title: 'Tap to send salawat', step2Desc: 'Hit the counter button to send صلّ على النبي ﷺ. Each tap adds to your weekly score. On Fridays, every tap counts double.',
+    step3Title: 'Climb the leaderboard', step3Desc: 'Check where you rank among believers worldwide. Rounds close every Friday midnight — earn your rank badge and start fresh.',
+    phoneRound: 'Week 20 — Round Active', phoneLbl: 'taps this week', phoneFriday: '⭐ Friday: 2× Bonus Active',
+    lbEyebrow: 'Weekly rankings', lbTitle: 'Anonymous by design.<br><em>Glory by merit.</em>',
+    lbBody1: 'Your leaderboard tag is just your country flag and the last 6 characters of a secure hash. No username. No profile. The salawat count is all that matters.',
+    lbBody2: 'Leaderboard refreshes every 30 minutes. At Friday midnight Cairo time, the top 10 are awarded permanent rank badges and a new round opens.',
+    lbCardTitle: "This Week's Leaders", lbLive: 'Live',
+    achEyebrow: 'Achievements', achTitle: 'Earn badges for every <em>milestone</em>',
+    achBody: 'From 7-day streaks to top-10 finishes — each achievement is a permanent record of your dedication.',
+    badge1: '1st Place', badge2: '2nd Place', badge3: '3rd Place', badge4: 'Top 10 Finish',
+    badge5: '7-Day Streak', badge6: '30-Day Streak', badge7: 'Friday Hero', badge8: 'Faithful Sender',
+    dlEyebrow: 'Available now', dlTitle: 'Start sending salawat <em>today</em>',
+    dlBody: 'Free to download. No account required. Available on Android.',
+    dlStoreSub: 'Get it on', dlStoreName: 'Google Play',
+    footerPrivacy: 'Privacy', footerFeatures: 'Features',
+    footerNote: '© 2026 SaloAleh. Built with ♥ in KMP.',
+    langToggle: 'عربي',
+  }
+};
+
+function applyLang(lang) {
+  const s   = STRINGS[lang];
+  const html = document.documentElement;
+  html.lang = lang;
+  html.dir  = lang === 'ar' ? 'rtl' : 'ltr';
+
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (s[key] !== undefined) el.textContent = s[key];
+  });
+
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    const key = el.dataset.i18nHtml;
+    if (s[key] !== undefined) el.innerHTML = s[key];
+  });
+
+  document.getElementById('langToggle').textContent = s.langToggle;
+  localStorage.setItem('salo-lang', lang);
+}
+
+const initLang = localStorage.getItem('salo-lang') || 'ar';
+applyLang(initLang);
+
+document.getElementById('langToggle').addEventListener('click', () => {
+  applyLang(document.documentElement.lang === 'ar' ? 'en' : 'ar');
+});
+
 /* ── Starfield ─────────────────────────────────────────────── */
 (function() {
   const canvas = document.getElementById('starfield');
   const ctx = canvas.getContext('2d');
-  let stars = [];
-  let W, H;
+  let stars = [], W, H;
 
-  function resize() {
-    W = canvas.width  = window.innerWidth;
-    H = canvas.height = window.innerHeight;
-  }
+  function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
 
   function initStars() {
     stars = Array.from({ length: 160 }, () => ({
-      x: Math.random() * W,
-      y: Math.random() * H,
-      r: Math.random() * 1.2 + .2,
-      a: Math.random(),
+      x: Math.random() * W, y: Math.random() * H,
+      r: Math.random() * 1.2 + .2, a: Math.random(),
       da: (Math.random() - .5) * .003,
       speed: Math.random() * .25 + .05,
       gold: Math.random() < .15,
@@ -1191,25 +1256,19 @@
       if (s.y < -5) { s.y = H + 5; s.x = Math.random() * W; }
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fillStyle = s.gold
-        ? `rgba(200,149,60,${s.a * .7})`
-        : `rgba(238,222,196,${s.a * .45})`;
+      ctx.fillStyle = s.gold ? `rgba(200,149,60,${s.a*.7})` : `rgba(238,222,196,${s.a*.45})`;
       ctx.fill();
     }
     requestAnimationFrame(draw);
   }
 
-  resize();
-  initStars();
-  draw();
+  resize(); initStars(); draw();
   window.addEventListener('resize', () => { resize(); initStars(); });
 })();
 
 /* ── Reveal on scroll ──────────────────────────────────────── */
 const observer = new IntersectionObserver((entries) => {
-  entries.forEach(e => {
-    if (e.isIntersecting) { e.target.classList.add('visible'); }
-  });
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
 }, { threshold: .12 });
 
 document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
@@ -1219,18 +1278,13 @@ fetch('stats.json')
   .then(r => r.ok ? r.json() : null)
   .then(stats => {
     if (!stats) return;
-    const map = {
-      allTimeSalawat: stats.allTimeSalawat,
-      activePlayers:  stats.activePlayers,
-      countries:      stats.countries,
-      topScore:       stats.topScore,
-    };
+    const map = { allTimeSalawat: stats.allTimeSalawat, activePlayers: stats.activePlayers, countries: stats.countries, topScore: stats.topScore };
     document.querySelectorAll('.stat-num[data-stat]').forEach(el => {
       const val = map[el.dataset.stat];
       if (val != null) el.dataset.target = val;
     });
   })
-  .catch(() => { /* fallback to hardcoded values */ });
+  .catch(() => {});
 
 /* ── Stat counters ─────────────────────────────────────────── */
 const statObserver = new IntersectionObserver((entries) => {
@@ -1239,14 +1293,12 @@ const statObserver = new IntersectionObserver((entries) => {
     const el = e.target;
     const target = +el.dataset.target;
     const suffix = el.dataset.suffix || '';
-    const dur = 1800;
-    const start = performance.now();
+    const dur = 1800, start = performance.now();
     const easeOut = t => 1 - Math.pow(1 - t, 3);
 
     function tick(now) {
       const t = Math.min(1, (now - start) / dur);
-      const val = Math.floor(easeOut(t) * target);
-      el.textContent = val.toLocaleString() + suffix;
+      el.textContent = Math.floor(easeOut(t) * target).toLocaleString() + suffix;
       if (t < 1) requestAnimationFrame(tick);
       else el.textContent = target.toLocaleString() + suffix;
     }
@@ -1260,7 +1312,7 @@ document.querySelectorAll('.stat-num[data-target]').forEach(el => statObserver.o
 
 /* ── Demo tap button ───────────────────────────────────────── */
 (function() {
-  const btn   = document.getElementById('demoTapBtn');
+  const btn = document.getElementById('demoTapBtn');
   const count = document.getElementById('demoCount');
   let n = 0;
 
@@ -1269,50 +1321,33 @@ document.querySelectorAll('.stat-num[data-target]').forEach(el => statObserver.o
     count.textContent = n.toLocaleString();
     count.style.transform = 'scale(1.18)';
     count.style.color = 'var(--shine)';
-    setTimeout(() => {
-      count.style.transform = '';
-      count.style.color = 'var(--cream)';
-    }, 160);
+    setTimeout(() => { count.style.transform = ''; count.style.color = 'var(--cream)'; }, 160);
 
-    /* burst particles */
     const rect = btn.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top  + rect.height / 2;
+    const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
 
     for (let i = 0; i < 6; i++) {
       const p = document.createElement('div');
       const angle = (Math.PI * 2 / 6) * i + (Math.random() - .5) * .5;
       const dist  = 40 + Math.random() * 30;
-      p.style.cssText = `
-        position:fixed; left:${cx}px; top:${cy}px;
-        width:5px; height:5px; border-radius:50%;
-        background:var(--gold); pointer-events:none; z-index:999;
-        --dx:${Math.cos(angle)*dist}px; --dy:${Math.sin(angle)*dist}px;
-        animation: floatBurst .6s ease-out forwards;
-        transform-origin: center;
-      `;
+      p.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;width:5px;height:5px;border-radius:50%;background:var(--gold);pointer-events:none;z-index:999;--dx:${Math.cos(angle)*dist}px;--dy:${Math.sin(angle)*dist}px;animation:floatBurst .6s ease-out forwards;`;
       document.body.appendChild(p);
       setTimeout(() => p.remove(), 650);
     }
   });
 })();
 
-/* ── Smooth nav highlight ──────────────────────────────────── */
-const sections = document.querySelectorAll('section[id]');
-const navLinks  = document.querySelectorAll('.nav-links a');
-
+/* ── Nav highlight ─────────────────────────────────────────── */
 const navObserver = new IntersectionObserver((entries) => {
   entries.forEach(e => {
     if (!e.isIntersecting) return;
-    navLinks.forEach(a => {
-      a.style.color = a.getAttribute('href') === '#' + e.target.id
-        ? 'var(--cream)'
-        : '';
+    document.querySelectorAll('.nav-links a').forEach(a => {
+      a.style.color = a.getAttribute('href') === '#' + e.target.id ? 'var(--cream)' : '';
     });
   });
 }, { rootMargin: '-40% 0px -40% 0px' });
 
-sections.forEach(s => navObserver.observe(s));
+document.querySelectorAll('section[id]').forEach(s => navObserver.observe(s));
 </script>
 </body>
 </html>
