@@ -15,23 +15,23 @@ class EngagementStoreTest {
     private fun store(settings: MapSettings = MapSettings()) = EngagementStore(settings)
 
     @Test
-    fun firstOpen_openCountIs1_streakIs1_noPermission() {
+    fun firstOpen_openCountIs1_streakIs1_showsWelcomeDialog() {
         val data = store().recordOpen(today = LocalDate(2026, 4, 30))
         assertEquals(1, data.openCount)
         assertEquals(1, data.currentStreak)
         assertNull(data.newlyEarnedBadge)
-        assertFalse(data.shouldRequestNotifPermission)
+        assertTrue(data.shouldRequestNotifPermission)
     }
 
     @Test
-    fun thirdOpen_shouldRequestPermission() {
+    fun thirdOpen_dialogNotShownAgain() {
         val s = MapSettings()
         val store = store(s)
         store.recordOpen(today = LocalDate(2026, 4, 28))
         store.recordOpen(today = LocalDate(2026, 4, 29))
         val data = store.recordOpen(today = LocalDate(2026, 4, 30))
         assertEquals(3, data.openCount)
-        assertTrue(data.shouldRequestNotifPermission)
+        assertFalse(data.shouldRequestNotifPermission)
     }
 
     @Test

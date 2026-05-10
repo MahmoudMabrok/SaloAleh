@@ -63,28 +63,22 @@ import tools.mo3ta.salo.ui.shareBitmap
 import org.jetbrains.compose.resources.stringResource
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_banner
-import tools.mo3ta.salo.generated.resources.mohamed_lovers_country_label
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_competition_title
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_info_sheet_title
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_ornament_divider
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_rank_number
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_all_time_total_label
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_empty
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_refresh_note
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_title
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_round_player_count_label
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_round_total_label
-import tools.mo3ta.salo.generated.resources.mohamed_lovers_stats_title
-import tools.mo3ta.salo.generated.resources.mohamed_lovers_network_time
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_round_end_label
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_rank_pending_top
-import tools.mo3ta.salo.generated.resources.mohamed_lovers_self_tag_label
-import tools.mo3ta.salo.generated.resources.mohamed_lovers_status_firebase_off
-import tools.mo3ta.salo.generated.resources.mohamed_lovers_status_open
-import tools.mo3ta.salo.generated.resources.mohamed_lovers_status_title
-import tools.mo3ta.salo.generated.resources.mohamed_lovers_status_waiting_network
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_winner_placeholder
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_winner_title
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_share_rank
 import tools.mo3ta.salo.presentation.MohamedLoversLeaderboardEntry
-import tools.mo3ta.salo.presentation.MohamedLoversStatus
 import tools.mo3ta.salo.presentation.MohamedLoversUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -132,8 +126,8 @@ internal fun MohamedLoversInfoSheet(
                 ),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.95f),
             )
-            StatusCard(state = state)
-            TotalsCard(roundTotal = state.roundTotal, allTimeTotal = state.allTimeTotal, roundPlayerCount = state.roundPlayerCount)
+            CompetitionCard(roundEndLabel = state.roundEndLabel, roundPlayerCount = state.roundPlayerCount)
+            TotalsCard(roundTotal = state.roundTotal, allTimeTotal = state.allTimeTotal)
             ShareButton(state = state)
             LeaderboardCard(
                 topPlayers = state.topPlayers,
@@ -214,46 +208,56 @@ private fun ShareButton(state: MohamedLoversUiState) {
 }
 
 @Composable
-private fun StatusCard(state: MohamedLoversUiState) {
+private fun CompetitionCard(roundEndLabel: String, roundPlayerCount: Int) {
+    val dotAlpha by rememberInfiniteTransition().animateFloat(
+        initialValue = 1f,
+        targetValue = 0.25f,
+        animationSpec = infiniteRepeatable(animation = tween(1800), repeatMode = RepeatMode.Reverse),
+    )
     SheetCard {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = stringResource(Res.string.mohamed_lovers_status_title),
+                text = stringResource(Res.string.mohamed_lovers_competition_title),
                 style = TextStyle(fontFamily = MohamedLoversFonts.display, fontSize = 14.sp, fontWeight = FontWeight.W500),
-                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.95f),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.9f),
                 modifier = Modifier.weight(1f),
             )
+            if (roundPlayerCount > 0) {
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(MohamedLoversPalette.GoldBase.copy(alpha = 0.1f))
+                        .border(
+                            width = 1.dp,
+                            color = MohamedLoversPalette.GoldBase.copy(alpha = 0.28f),
+                            shape = RoundedCornerShape(20.dp),
+                        )
+                        .padding(horizontal = 14.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(7.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(RoundedCornerShape(50))
+                            .background(MohamedLoversPalette.GoldBase.copy(alpha = dotAlpha)),
+                    )
+                    Text(
+                        text = stringResource(Res.string.mohamed_lovers_round_player_count_label, roundPlayerCount),
+                        style = TextStyle(
+                            fontFamily = MohamedLoversFonts.arabic,
+                            fontWeight = FontWeight.W400,
+                            fontSize = 12.sp,
+                            letterSpacing = 0.5.sp,
+                        ),
+                        color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.75f),
+                    )
+                }
+            }
         }
-        val statusText = when (state.status) {
-            MohamedLoversStatus.WaitingNetwork -> stringResource(Res.string.mohamed_lovers_status_waiting_network)
-            MohamedLoversStatus.FirebaseOff -> stringResource(Res.string.mohamed_lovers_status_firebase_off)
-            MohamedLoversStatus.Open -> stringResource(Res.string.mohamed_lovers_status_open)
-        }
-        Text(text = statusText, style = bodyStyle(), color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.78f))
-        if (state.networkTimeLabel.isNotBlank()) {
+        if (roundEndLabel.isNotBlank()) {
             Text(
-                text = stringResource(Res.string.mohamed_lovers_network_time, state.networkTimeLabel),
-                style = bodyStyle().copy(fontSize = 12.sp),
-                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.55f),
-            )
-        }
-        if (state.roundEndLabel.isNotBlank()) {
-            Text(
-                text = stringResource(Res.string.mohamed_lovers_round_end_label, state.roundEndLabel),
-                style = bodyStyle().copy(fontSize = 12.sp),
-                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.55f),
-            )
-        }
-        if (state.countryCode.isNotBlank()) {
-            Text(
-                text = stringResource(Res.string.mohamed_lovers_country_label, state.countryCode),
-                style = bodyStyle().copy(fontSize = 12.sp),
-                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.55f),
-            )
-        }
-        if (state.selfDisplayTag.isNotBlank()) {
-            Text(
-                text = stringResource(Res.string.mohamed_lovers_self_tag_label, state.selfDisplayTag),
+                text = stringResource(Res.string.mohamed_lovers_round_end_label, roundEndLabel),
                 style = bodyStyle().copy(fontSize = 12.sp),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.55f),
             )
@@ -262,7 +266,7 @@ private fun StatusCard(state: MohamedLoversUiState) {
 }
 
 @Composable
-private fun TotalsCard(roundTotal: Int, allTimeTotal: Long, roundPlayerCount: Int) {
+private fun TotalsCard(roundTotal: Int, allTimeTotal: Long) {
     val easeOutExpo = remember { CubicBezierEasing(0.16f, 1f, 0.3f, 1f) }
     val combinedTotal = allTimeTotal + roundTotal
     val animatedCombined = remember { Animatable(0f) }
@@ -284,12 +288,6 @@ private fun TotalsCard(roundTotal: Int, allTimeTotal: Long, roundPlayerCount: In
         targetValue = 1.0f,
         animationSpec = infiniteRepeatable(animation = tween(1600), repeatMode = RepeatMode.Reverse),
     )
-    val dotAlpha by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 0.25f,
-        animationSpec = infiniteRepeatable(animation = tween(1800), repeatMode = RepeatMode.Reverse),
-    )
-
     SheetCard {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -333,7 +331,7 @@ private fun TotalsCard(roundTotal: Int, allTimeTotal: Long, roundPlayerCount: In
                         )
                 )
                 Text(
-                    text = "◆",
+                    text = stringResource(Res.string.mohamed_lovers_ornament_divider),
                     fontSize = 8.sp,
                     color = MohamedLoversPalette.GoldBase,
                 )
@@ -369,39 +367,6 @@ private fun TotalsCard(roundTotal: Int, allTimeTotal: Long, roundPlayerCount: In
                 ),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.35f),
             )
-            if (roundPlayerCount > 0) {
-                Spacer(Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(MohamedLoversPalette.GoldBase.copy(alpha = 0.1f))
-                        .border(
-                            width = 1.dp,
-                            color = MohamedLoversPalette.GoldBase.copy(alpha = 0.28f),
-                            shape = RoundedCornerShape(20.dp),
-                        )
-                        .padding(horizontal = 14.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(7.dp),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .clip(RoundedCornerShape(50))
-                            .background(MohamedLoversPalette.GoldBase.copy(alpha = dotAlpha)),
-                    )
-                    Text(
-                        text = stringResource(Res.string.mohamed_lovers_round_player_count_label, roundPlayerCount),
-                        style = TextStyle(
-                            fontFamily = MohamedLoversFonts.arabic,
-                            fontWeight = FontWeight.W400,
-                            fontSize = 12.sp,
-                            letterSpacing = 0.5.sp,
-                        ),
-                        color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.75f),
-                    )
-                }
-            }
         }
     }
 }
@@ -498,7 +463,7 @@ private fun LeaderboardRow(entry: MohamedLoversLeaderboardEntry, pinned: Boolean
         ) {
             if (entry.rank > 0) {
                 Text(
-                    text = "#${entry.rank}",
+                    text = stringResource(Res.string.mohamed_lovers_rank_number, entry.rank),
                     style = bodyStyle().copy(
                         fontWeight = FontWeight.W700,
                         fontSize = if (entry.rank <= 3) 15.sp else 13.sp,
