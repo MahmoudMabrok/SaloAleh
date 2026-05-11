@@ -17,6 +17,9 @@ class FloatingBubbleView(context: Context) : LinearLayout(context) {
     var onTap: () -> Unit = {}
     var onClose: () -> Unit = {}
 
+    private fun Int.dp(): Int =
+        TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, this.toFloat(), resources.displayMetrics).toInt()
+
     init {
         orientation = VERTICAL
         gravity = Gravity.CENTER_HORIZONTAL
@@ -29,6 +32,7 @@ class FloatingBubbleView(context: Context) : LinearLayout(context) {
         addView(bubbleContainer)
 
         countText = bubbleContainer.findViewWithTag("count")
+            ?: throw IllegalStateException("Count view not found in FloatingBubbleView")
     }
 
     fun updateCount(count: Int) {
@@ -36,15 +40,16 @@ class FloatingBubbleView(context: Context) : LinearLayout(context) {
     }
 
     fun showTooltip() {
+        tooltipGroup.animate().cancel()
         tooltipGroup.animate().alpha(1f).setDuration(300).start()
     }
 
     fun hideTooltip() {
+        tooltipGroup.animate().cancel()
         tooltipGroup.animate().alpha(0f).setDuration(300).start()
     }
 
     private fun buildTooltip(context: Context): LinearLayout {
-        val dp = { v: Int -> TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v.toFloat(), context.resources.displayMetrics).toInt() }
 
         val container = LinearLayout(context).apply {
             orientation = VERTICAL
@@ -58,15 +63,15 @@ class FloatingBubbleView(context: Context) : LinearLayout(context) {
             gravity = Gravity.CENTER
             setTextColor(Color.WHITE)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
-            setPadding(dp(16), dp(10), dp(16), dp(10))
+            setPadding(16.dp(), 10.dp(), 16.dp(), 10.dp())
             background = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
-                cornerRadius = dp(14).toFloat()
+                cornerRadius = 14.dp().toFloat()
                 setColor(Color.argb(50, 255, 255, 255))
                 setStroke(1, Color.argb(65, 255, 255, 255))
             }
             layoutParams = LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply {
-                bottomMargin = dp(4)
+                bottomMargin = 4.dp()
             }
         }
         container.addView(card)
@@ -84,11 +89,10 @@ class FloatingBubbleView(context: Context) : LinearLayout(context) {
     }
 
     private fun buildBubble(context: Context): FrameLayout {
-        val dp = { v: Int -> TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v.toFloat(), context.resources.displayMetrics).toInt() }
-        val bubbleSize = dp(68)
+        val bubbleSize = 68.dp()
 
         val container = FrameLayout(context).apply {
-            layoutParams = LayoutParams(bubbleSize + dp(12), bubbleSize + dp(12))
+            layoutParams = LayoutParams(bubbleSize + 12.dp(), bubbleSize + 12.dp())
         }
 
         val circle = FrameLayout(context).apply {
@@ -99,7 +103,8 @@ class FloatingBubbleView(context: Context) : LinearLayout(context) {
                 GradientDrawable.Orientation.TL_BR,
                 intArrayOf(Color.parseColor("#4CAF50"), Color.parseColor("#1b5e20"))
             ).apply { shape = GradientDrawable.OVAL }
-            elevation = dp(4).toFloat()
+            elevation = 4.dp().toFloat()
+            contentDescription = "اضغط للصلاة على النبي"
             setOnClickListener { onTap() }
         }
 
@@ -110,7 +115,7 @@ class FloatingBubbleView(context: Context) : LinearLayout(context) {
             gravity = Gravity.CENTER
             layoutParams = FrameLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply {
                 gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
-                topMargin = dp(14)
+                topMargin = 14.dp()
             }
         }
         circle.addView(label)
@@ -123,7 +128,7 @@ class FloatingBubbleView(context: Context) : LinearLayout(context) {
             gravity = Gravity.CENTER
             layoutParams = FrameLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply {
                 gravity = Gravity.CENTER
-                topMargin = dp(6)
+                topMargin = 6.dp()
             }
         }
         circle.addView(count)
@@ -139,10 +144,11 @@ class FloatingBubbleView(context: Context) : LinearLayout(context) {
                 shape = GradientDrawable.OVAL
                 setColor(Color.parseColor("#E53935"))
             }
-            val size = dp(20)
+            val size = 20.dp()
             layoutParams = FrameLayout.LayoutParams(size, size).apply {
                 gravity = Gravity.TOP or Gravity.END
             }
+            contentDescription = "إغلاق الفقاعة"
             setOnClickListener { onClose() }
         }
         container.addView(closeBtn)
