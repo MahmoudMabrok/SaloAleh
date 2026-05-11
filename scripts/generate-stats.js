@@ -38,8 +38,8 @@ async function main() {
     db.ref(`mohamed_lovers/${roundKey}/roundTotal`).get(),
   ]);
 
-  const allTimeSalawat = allTimeTotalSnap.val() || 0;
   const weekSalawat    = roundTotalSnap.val()    || 0;
+  const allTimeSalawat = (allTimeTotalSnap.val() || 0) + weekSalawat;
 
   let activePlayers = 0;
   let topScore      = 0;
