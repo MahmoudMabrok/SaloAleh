@@ -1272,18 +1272,23 @@ const observer = new IntersectionObserver((entries) => {
 
 document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-/* ── Live stats from stats.json ────────────────────────────── */
-fetch('stats.json')
-  .then(r => r.ok ? r.json() : null)
-  .then(stats => {
-    if (!stats) return;
-    const map = { allTimeSalawat: stats.allTimeSalawat, activePlayers: stats.activePlayers, countries: stats.countries, topScore: stats.topScore };
-    document.querySelectorAll('.stat-num[data-stat]').forEach(el => {
-      const val = map[el.dataset.stat];
-      if (val != null) el.dataset.target = val;
-    });
-  })
-  .catch(() => {});
+/* ── Live stats from daily stats file ─────────────────────── */
+(function () {
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+  fetch(`stats/${today}.json`)
+    .then(r => r.ok ? r.json() : null)
+    .then(stats => {
+      if (!stats) return;
+      const map = { allTimeSalawat: stats.allTimeSalawat, activePlayers: stats.activePlayers, countries: stats.countries, topScore: stats.topScore };
+      document.querySelectorAll('.stat-num[data-stat]').forEach(el => {
+        const val = map[el.dataset.stat];
+        if (val != null) el.dataset.target = val;
+      });
+    })
+    .catch(() => {});
+})();
 
 /* ── Stat counters ─────────────────────────────────────────── */
 const statObserver = new IntersectionObserver((entries) => {

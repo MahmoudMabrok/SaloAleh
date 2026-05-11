@@ -41,6 +41,22 @@ async function main() {
   const weekSalawat    = roundTotalSnap.val()    || 0;
   const allTimeSalawat = (allTimeTotalSnap.val() || 0) + weekSalawat;
 
+  // Compute today's count by diffing against yesterday's file (same round only)
+  const dateStr = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+  const statsDir = path.join(__dirname, '..', 'stats');
+  const yesterdayDate = new Date(Date.now() - 86400000);
+  const yesterdayStr  = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(yesterdayDate);
+  let prevWeekSalawat = 0;
+  try {
+    const prev = JSON.parse(fs.readFileSync(path.join(statsDir, `${yesterdayStr}.json`), 'utf8'));
+    if (prev.roundKey === roundKey) prevWeekSalawat = prev.weekSalawat || 0;
+  } catch {}
+  const todaySalawat = Math.max(0, weekSalawat - prevWeekSalawat);
+
   let activePlayers = 0;
   let topScore      = 0;
   const countries   = new Set();
@@ -58,6 +74,7 @@ async function main() {
   const stats = {
     allTimeSalawat,
     weekSalawat,
+    todaySalawat,
     activePlayers,
     countriesCount: countries.size,
     countries: [...countries].sort(),
@@ -66,9 +83,10 @@ async function main() {
     updatedAt: new Date().toISOString(),
   };
 
-  const outPath = path.join(__dirname, '..', 'stats.json');
+  if (!fs.existsSync(statsDir)) fs.mkdirSync(statsDir);
+  const outPath = path.join(statsDir, `${dateStr}.json`);
   fs.writeFileSync(outPath, JSON.stringify(stats, null, 2));
-  console.log('stats.json written:', stats);
+  console.log(`stats/${dateStr}.json written:`, stats);
 
   process.exit(0);
 }
