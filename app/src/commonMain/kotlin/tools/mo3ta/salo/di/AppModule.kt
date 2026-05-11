@@ -1,9 +1,11 @@
 package tools.mo3ta.salo.di
 
 import org.koin.core.module.dsl.viewModel
+import org.koin.dsl.bind
 import org.koin.dsl.module
 import tools.mo3ta.salo.data.engagement.DailyGoalStore
 import tools.mo3ta.salo.data.engagement.EngagementStore
+import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseApi
 import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseClient
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
 import tools.mo3ta.salo.data.hadith.HadithListRepository
@@ -17,7 +19,7 @@ import tools.mo3ta.salo.presentation.HadithListViewModel
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
 
 val appModule = module {
-    single { MohamedLoversFirebaseClient(get()) }
+    single { MohamedLoversFirebaseClient(get()) } bind MohamedLoversFirebaseApi::class
     single { MohamedLoversSessionStore(get()) }
     single { EngagementStore(get()) }
     single { DailyGoalStore(get()) }
