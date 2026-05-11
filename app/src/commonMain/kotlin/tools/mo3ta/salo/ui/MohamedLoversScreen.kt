@@ -292,6 +292,7 @@ fun MohamedLoversScreen(
             }
             Box(modifier = Modifier.align(Alignment.TopStart).padding(start = 14.dp, top = 36.dp)) {
                 Row {
+                    FloatingBubbleButton(roundKey = state.roundKey)
                     IconButton(onClick = onOpenAchievements) {
                         Icon(
                             imageVector = Icons.Default.EmojiEvents,
