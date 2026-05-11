@@ -15,27 +15,61 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         return alias
     }
 
-    fun getPendingSession(): MohamedLoversPendingSession = MohamedLoversPendingSession(
-        roundKey = settings.getStringOrNull(KEY_PENDING_ROUND),
-        clickCount = settings.getInt(KEY_PENDING_COUNT, 0),
-    )
+    fun getPendingSession(roundKey: String): MohamedLoversPendingSession {
+        migrateIfNeeded()
+        return MohamedLoversPendingSession(
+            roundKey = roundKey,
+            clickCount = settings.getInt(pendingCountKey(roundKey), 0),
+        )
+    }
 
     fun incrementPendingClick(roundKey: String, delta: Int = 1): MohamedLoversPendingSession {
-        val currentRoundKey = settings.getStringOrNull(KEY_PENDING_ROUND)
-        val currentCount = if (currentRoundKey == roundKey) settings.getInt(KEY_PENDING_COUNT, 0) else 0
-        val updated = MohamedLoversPendingSession(
-            roundKey = roundKey,
-            clickCount = currentCount + delta.coerceAtLeast(1),
-        )
-        settings.putString(KEY_PENDING_ROUND, roundKey)
-        settings.putInt(KEY_PENDING_COUNT, updated.clickCount)
-        return updated
+        migrateIfNeeded()
+        val key = pendingCountKey(roundKey)
+        val updated = settings.getInt(key, 0) + delta.coerceAtLeast(1)
+        settings.putInt(key, updated)
+        addToPendingIndex(roundKey)
+        return MohamedLoversPendingSession(roundKey = roundKey, clickCount = updated)
     }
 
-    fun clearPendingSession() {
-        settings.remove(KEY_PENDING_ROUND)
-        settings.remove(KEY_PENDING_COUNT)
+    fun getAllPendingRounds(): Map<String, Int> {
+        migrateIfNeeded()
+        return getPendingRoundKeys()
+            .associateWith { settings.getInt(pendingCountKey(it), 0) }
+            .filter { it.value > 0 }
     }
+
+    fun clearPendingRound(roundKey: String) {
+        settings.remove(pendingCountKey(roundKey))
+        val updated = getPendingRoundKeys() - roundKey
+        settings.putString(KEY_PENDING_ROUNDS_INDEX, updated.joinToString(","))
+    }
+
+    private fun migrateIfNeeded() {
+        val oldRoundKey = settings.getStringOrNull(KEY_PENDING_ROUND_LEGACY) ?: return
+        val oldCount = settings.getInt(KEY_PENDING_COUNT_LEGACY, 0)
+        if (oldCount > 0 && oldRoundKey.isNotBlank()) {
+            settings.putInt(pendingCountKey(oldRoundKey), oldCount)
+            addToPendingIndex(oldRoundKey)
+        }
+        settings.remove(KEY_PENDING_ROUND_LEGACY)
+        settings.remove(KEY_PENDING_COUNT_LEGACY)
+    }
+
+    private fun getPendingRoundKeys(): Set<String> =
+        settings.getStringOrNull(KEY_PENDING_ROUNDS_INDEX)
+            ?.split(",")
+            ?.filter { it.isNotBlank() }
+            ?.toSet()
+            ?: emptySet()
+
+    private fun addToPendingIndex(roundKey: String) {
+        val rounds = getPendingRoundKeys().toMutableSet()
+        rounds.add(roundKey)
+        settings.putString(KEY_PENDING_ROUNDS_INDEX, rounds.joinToString(","))
+    }
+
+    private fun pendingCountKey(roundKey: String) = "pending_count_$roundKey"
 
     fun getOrSetInstallDate(today: LocalDate): String {
         val stored = settings.getStringOrNull(KEY_INSTALL_DATE)
@@ -69,8 +103,9 @@ class MohamedLoversSessionStore(private val settings: Settings) {
     private companion object {
         const val KEY_UID = "user_uid"
         const val KEY_ALIAS = "alias"
-        const val KEY_PENDING_ROUND = "pending_round_key"
-        const val KEY_PENDING_COUNT = "pending_click_count"
+        const val KEY_PENDING_ROUND_LEGACY = "pending_round_key"
+        const val KEY_PENDING_COUNT_LEGACY = "pending_click_count"
+        const val KEY_PENDING_ROUNDS_INDEX = "pending_rounds_index"
         const val ALIAS_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
         const val KEY_INSTALL_DATE = "install_date"
         const val KEY_RECAP_SHOWN_ROUND = "recap_shown_round"

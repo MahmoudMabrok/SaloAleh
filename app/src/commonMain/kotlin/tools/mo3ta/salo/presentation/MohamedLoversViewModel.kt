@@ -149,9 +149,8 @@ class MohamedLoversViewModel(
 
                 val result = repository.flushPendingSession(
                     countryCode = state.value.countryCode,
-                    fallbackRoundKey = roundKey,
                 )
-                val latestPending = repository.getPendingSession()
+                val latestPending = repository.getPendingSession(roundKey)
 
                 _state.update {
                     it.copy(

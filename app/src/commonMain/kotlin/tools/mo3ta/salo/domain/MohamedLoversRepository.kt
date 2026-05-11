@@ -12,12 +12,15 @@ class MohamedLoversRepository(
     private val sessionStore: MohamedLoversSessionStore,
     private val countryCodeProvider: CountryCodeProvider,
 ) {
-    suspend fun bootstrap(): MohamedLoversBootstrap = MohamedLoversBootstrap(
-        firebaseConfigured = firebaseClient.isConfigured(),
-        countryCode = countryCodeProvider.get(),
-        competitionWindow = networkTimeProvider.getCompetitionWindow(),
-        pendingSession = sessionStore.getPendingSession(),
-    )
+    suspend fun bootstrap(): MohamedLoversBootstrap {
+        val window = networkTimeProvider.getCompetitionWindow()
+        return MohamedLoversBootstrap(
+            firebaseConfigured = firebaseClient.isConfigured(),
+            countryCode = countryCodeProvider.get(),
+            competitionWindow = window,
+            pendingSession = sessionStore.getPendingSession(window.roundKey ?: ""),
+        )
+    }
 
     suspend fun ensureAnonymousUser(): Result<String> = firebaseClient.ensureSignedInAnonymously()
 
@@ -39,28 +42,27 @@ class MohamedLoversRepository(
     fun registerLocalTap(roundKey: String, delta: Int = 1): MohamedLoversPendingSession =
         sessionStore.incrementPendingClick(roundKey, delta)
 
-    fun getPendingSession(): MohamedLoversPendingSession = sessionStore.getPendingSession()
+    fun getPendingSession(roundKey: String): MohamedLoversPendingSession =
+        sessionStore.getPendingSession(roundKey)
 
-    suspend fun flushPendingSession(
-        countryCode: String,
-        fallbackRoundKey: String? = null,
-    ): Result<Unit> {
-        val pending = sessionStore.getPendingSession()
-        val roundKey = pending.roundKey?.takeIf { it.isNotBlank() }
-            ?: fallbackRoundKey?.takeIf { it.isNotBlank() }
-            ?: return Result.success(Unit)
+    suspend fun flushPendingSession(countryCode: String): Result<Unit> {
+        val allPending = sessionStore.getAllPendingRounds()
+        if (allPending.isEmpty()) return Result.success(Unit)
 
         val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
 
-        val result = firebaseClient.incrementSession(
-            roundKey = roundKey,
-            uid = uid,
-            delta = pending.clickCount.coerceAtLeast(0),
-            countryCode = countryCode,
-        )
-
-        result.onSuccess { if (pending.clickCount > 0) sessionStore.clearPendingSession() }
-        return result
+        var lastError: Throwable? = null
+        for ((roundKey, count) in allPending) {
+            val result = firebaseClient.incrementSession(
+                roundKey = roundKey,
+                uid = uid,
+                delta = count,
+                countryCode = countryCode,
+            )
+            result.onSuccess { sessionStore.clearPendingRound(roundKey) }
+                .onFailure { lastError = it }
+        }
+        return if (lastError != null) Result.failure(lastError!!) else Result.success(Unit)
     }
 
     fun refreshNetworkTime() = networkTimeProvider.prime()
