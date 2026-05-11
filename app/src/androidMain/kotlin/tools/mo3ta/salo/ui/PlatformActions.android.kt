@@ -179,14 +179,18 @@ actual fun FloatingBubbleButton(roundKey: String?) {
         )
     }
 
+    val analyticsManager: tools.mo3ta.salo.analytics.AnalyticsManager = org.koin.compose.koinInject()
+
     val onClick: () -> Unit = {
         if (isActive) {
             context.stopService(Intent(context, FloatingBubbleService::class.java))
+            analyticsManager.logAction("bubble_deactivate")
         } else if (!Settings.canDrawOverlays(context)) {
             showPermissionDialog = true
         } else if (roundKey.isNullOrBlank()) {
             Toast.makeText(context, "لا يوجد جولة نشطة", Toast.LENGTH_SHORT).show()
         } else {
+            analyticsManager.logAction("bubble_activate")
             ContextCompat.startForegroundService(
                 context,
                 Intent(context, FloatingBubbleService::class.java)

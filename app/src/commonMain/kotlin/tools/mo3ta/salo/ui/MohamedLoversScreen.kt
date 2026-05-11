@@ -196,7 +196,10 @@ fun MohamedLoversScreen(
                         Surface(
                             shape = RoundedCornerShape(20.dp),
                             color = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.13f),
-                            modifier = Modifier.clickable { infoSheetOpen = true },
+                            modifier = Modifier.clickable {
+                                analyticsManager.logAction("open_info_sheet", mapOf("source" to "rank_chip"))
+                                infoSheetOpen = true
+                            },
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
@@ -320,7 +323,10 @@ fun MohamedLoversScreen(
 
 
             Box(modifier = Modifier.align(Alignment.TopEnd).padding(end = 14.dp, top = 36.dp)) {
-                IconButton(onClick = { infoSheetOpen = true }) {
+                IconButton(onClick = {
+                    analyticsManager.logAction("open_info_sheet", mapOf("source" to "icon"))
+                    infoSheetOpen = true
+                }) {
                     Icon(
                         imageVector = Icons.Default.Info,
                         contentDescription = infoCd,
@@ -344,7 +350,10 @@ fun MohamedLoversScreen(
                             tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
                         )
                     }
-                    IconButton(onClick = onOpenSettings) {
+                    IconButton(onClick = {
+                        analyticsManager.logAction("open_settings")
+                        onOpenSettings()
+                    }) {
                         Icon(
                             imageVector = Icons.Default.Settings,
                             contentDescription = "الإعدادات",

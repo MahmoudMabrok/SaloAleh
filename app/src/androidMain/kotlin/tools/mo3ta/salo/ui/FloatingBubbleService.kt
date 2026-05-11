@@ -2,9 +2,13 @@ package tools.mo3ta.salo.ui
 
 import android.app.Notification
 import android.app.Service
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.PixelFormat
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.SystemClock
 import android.view.Gravity
 import android.view.MotionEvent
@@ -39,6 +43,7 @@ class FloatingBubbleService : Service() {
 
     private val sessionStore: MohamedLoversSessionStore by inject()
     private val dailyGoalStore: DailyGoalStore by inject()
+    private val analyticsManager: tools.mo3ta.salo.analytics.AnalyticsManager by inject()
 
     private lateinit var windowManager: WindowManager
     private lateinit var bubbleView: FloatingBubbleView
@@ -46,12 +51,25 @@ class FloatingBubbleService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private var roundKey: String = ""
-    private var sessionCount = 0
+    private lateinit var prefs: SharedPreferences
+    private val mainHandler = Handler(Looper.getMainLooper())
+
+    private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == pendingCountKey() && ::bubbleView.isInitialized) {
+            mainHandler.post {
+                bubbleView.updateCount(currentPendingCount())
+            }
+        }
+    }
+
+    private fun pendingCountKey() = "pending_count_$roundKey"
+    private fun currentPendingCount() = prefs.getInt(pendingCountKey(), 0)
 
     override fun onCreate() {
         super.onCreate()
         _isRunning.value = true
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        prefs = getSharedPreferences("ml_session", Context.MODE_PRIVATE)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -64,9 +82,9 @@ class FloatingBubbleService : Service() {
             return START_NOT_STICKY
         }
         if (!::bubbleView.isInitialized) {
-            sessionCount = sessionStore.getPendingSession(roundKey).clickCount
             setupBubble()
-            bubbleView.updateCount(sessionCount)
+            bubbleView.updateCount(currentPendingCount())
+            prefs.registerOnSharedPreferenceChangeListener(prefListener)
             startReminderCycle()
         }
         return START_NOT_STICKY
@@ -136,11 +154,11 @@ class FloatingBubbleService : Service() {
 
     private fun handleTap() {
         if (roundKey.isBlank()) return
-        sessionCount++
-        sessionStore.incrementPendingClick(roundKey, 1)
+        val pending = sessionStore.incrementPendingClick(roundKey, 1)
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
         dailyGoalStore.recordTap(today, 1)
-        bubbleView.updateCount(sessionCount)
+        bubbleView.updateCount(pending.clickCount)
+        analyticsManager.logAction("bubble_tap", mapOf("count" to pending.clickCount.toString()))
     }
 
     private fun startReminderCycle() {
@@ -165,6 +183,7 @@ class FloatingBubbleService : Service() {
 
     override fun onDestroy() {
         _isRunning.value = false
+        prefs.unregisterOnSharedPreferenceChangeListener(prefListener)
         scope.cancel()
         if (::bubbleView.isInitialized) {
             runCatching { windowManager.removeView(bubbleView) }
