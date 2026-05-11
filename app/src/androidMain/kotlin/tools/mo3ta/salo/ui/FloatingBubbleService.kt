@@ -5,6 +5,7 @@ import android.app.Service
 import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.IBinder
+import android.os.SystemClock
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.WindowManager
@@ -31,6 +32,9 @@ class FloatingBubbleService : Service() {
         const val EXTRA_ROUND_KEY = "round_key"
         private val _isRunning = MutableStateFlow(false)
         val isRunning: StateFlow<Boolean> = _isRunning
+        private const val DRAG_THRESHOLD_PX = 10
+        private const val TAP_THRESHOLD = 10
+        private const val TAP_DURATION_MS = 300L
     }
 
     private val sessionStore: MohamedLoversSessionStore by inject()
@@ -91,13 +95,13 @@ class FloatingBubbleService : Service() {
                 MotionEvent.ACTION_DOWN -> {
                     initialX = params.x; initialY = params.y
                     initialTouchX = event.rawX; initialTouchY = event.rawY
-                    touchDownTime = System.currentTimeMillis()
+                    touchDownTime = SystemClock.elapsedRealtime()
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
                     val distX = kotlin.math.abs(event.rawX - initialTouchX)
                     val distY = kotlin.math.abs(event.rawY - initialTouchY)
-                    if (distX > 10 || distY > 10) {
+                    if (distX > DRAG_THRESHOLD_PX || distY > DRAG_THRESHOLD_PX) {
                         params.x = initialX - (event.rawX - initialTouchX).toInt()
                         params.y = initialY + (event.rawY - initialTouchY).toInt()
                         windowManager.updateViewLayout(bubbleView, params)
@@ -107,9 +111,13 @@ class FloatingBubbleService : Service() {
                 MotionEvent.ACTION_UP -> {
                     val distX = kotlin.math.abs(event.rawX - initialTouchX)
                     val distY = kotlin.math.abs(event.rawY - initialTouchY)
-                    val duration = System.currentTimeMillis() - touchDownTime
-                    if (distX < 10 && distY < 10 && duration < 300) {
-                        if (bubbleView.isCloseButtonHit(event.x, event.y)) {
+                    val duration = SystemClock.elapsedRealtime() - touchDownTime
+                    if (distX < TAP_THRESHOLD && distY < TAP_THRESHOLD && duration < TAP_DURATION_MS) {
+                        val bubbleRect = android.graphics.Rect()
+                        bubbleView.getGlobalVisibleRect(bubbleRect)
+                        val localX = event.rawX - bubbleRect.left
+                        val localY = event.rawY - bubbleRect.top
+                        if (bubbleView.isCloseButtonHit(localX, localY)) {
                             stopSelf()
                         } else {
                             handleTap()
