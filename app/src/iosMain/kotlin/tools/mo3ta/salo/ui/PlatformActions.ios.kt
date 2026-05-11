@@ -132,3 +132,9 @@ actual fun shareBitmap(imageBitmap: ImageBitmap) {
 
 @Composable
 actual fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit) {}
+
+@Composable
+actual fun FloatingBubbleButton(roundKey: String?) {}
+
+@Composable
+actual fun BubbleFeaturePromo(roundKey: String?) {}

@@ -17,14 +17,10 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import org.koin.android.ext.android.inject
-import org.koin.android.ext.koin.androidContext
-import org.koin.core.context.startKoin
 import tools.mo3ta.salo.data.engagement.EngagementStore
 import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseClient
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
-import tools.mo3ta.salo.di.androidModule
-import tools.mo3ta.salo.di.appModule
 import tools.mo3ta.salo.notification.NotificationChannels
 import tools.mo3ta.salo.notification.NotificationScheduler
 
@@ -41,10 +37,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        startKoin {
-            androidContext(this@MainActivity)
-            modules(appModule, androidModule)
-        }
         enableEdgeToEdge()
 
         NotificationChannels.createAll(this)

@@ -169,6 +169,13 @@ class MohamedLoversViewModel(
         }
     }
 
+    fun refreshSessionClicks() {
+        val roundKey = state.value.roundKey ?: return
+        val pending = repository.getPendingSession(roundKey)
+        _state.update { it.copy(sessionClicks = pending.clickCount) }
+        applyLeaderboard()
+    }
+
     fun dismissRoundRecap() = _state.update { it.copy(showRoundRecap = false) }
     fun dismissGraceWarning() = _state.update { it.copy(showGraceWarning = false) }
     fun dismissDailyGoalCompleted() = _state.update { it.copy(dailyGoalJustCompleted = false) }

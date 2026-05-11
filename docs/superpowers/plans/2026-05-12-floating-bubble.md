@@ -2,6 +2,21 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+## ✅ Progress (session 2026-05-12)
+
+All 6 tasks complete. Branch: `feat/floating-bubble`. Final commit: `9b60af0`.
+
+| Task | Status | Commit(s) |
+|------|--------|-----------|
+| 1: Manifest permissions + service | ✅ Done | fee3b20 |
+| 2: NotificationChannels bubble channel | ✅ Done | fee3b20 |
+| 3: FloatingBubbleView | ✅ Done | 0ba1ff6, 7fd973b, e571b1c |
+| 4: FloatingBubbleService | ✅ Done | 03be4c9, e571b1c, 76f37d6 |
+| 5: PlatformActions expect/actual | ✅ Done | fbbaa3c, 9b60af0 |
+| 6: MohamedLoversScreen wire button | ✅ Done | dcb40ed |
+
+**Remaining:** Manual device test + final quality review + merge to main. Run on Android device (API 26+) to verify overlay permission flow, bubble tap, drag, close, and 10-min tooltip cycle.
+
 **Goal:** Add an Android-only floating overlay bubble that lets users increment their salawat count while in other apps, with a 10-minute reminder tooltip cycle and a close button.
 
 **Architecture:** A `FloatingBubbleService` (foreground service) draws a custom `FloatingBubbleView` via `WindowManager`. Tap events call `MohamedLoversSessionStore.incrementPendingClick()` and `DailyGoalStore.recordTap()` directly (both are Koin singletons). The `roundKey` is passed via Intent extra when starting the service. A `@Composable expect fun FloatingBubbleButton` in `PlatformActions` shows an icon button on Android and nothing on iOS.

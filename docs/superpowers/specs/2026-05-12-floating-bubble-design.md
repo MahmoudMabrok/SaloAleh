@@ -30,7 +30,7 @@ A floating overlay bubble that lets users increment their salawat count while us
 | `ui/PlatformActions.android.kt` | `actual` impl for `startFloatingBubble()` / `stopFloatingBubble()` |
 | `ui/PlatformActions.ios.kt` | `actual` no-ops for `startFloatingBubble()` / `stopFloatingBubble()` (feature is Android-only) |
 | `ui/PlatformActions.kt` | `expect` declarations for `startFloatingBubble()` / `stopFloatingBubble()` |
-| `ui/MohamedLoversScreen.kt` | Start bubble button (calls `PlatformActions`; iOS no-op means button can exist in common UI) |
+| `ui/MohamedLoversScreen.kt` | Start bubble button rendered only on Android via `expect/actual` platform composable — not visible on iOS |
 
 ---
 
