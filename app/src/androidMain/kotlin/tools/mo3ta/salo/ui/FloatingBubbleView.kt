@@ -14,6 +14,7 @@ class FloatingBubbleView(context: Context) : LinearLayout(context) {
 
     private val countText: TextView
     private val tooltipGroup: LinearLayout
+    private lateinit var closeBtn: TextView
     var onTap: () -> Unit = {}
     var onClose: () -> Unit = {}
 
@@ -37,6 +38,12 @@ class FloatingBubbleView(context: Context) : LinearLayout(context) {
 
     fun updateCount(count: Int) {
         countText.text = count.toString()
+    }
+
+    fun isCloseButtonHit(x: Float, y: Float): Boolean {
+        val rect = android.graphics.Rect()
+        closeBtn.getHitRect(rect)
+        return rect.contains(x.toInt(), y.toInt())
     }
 
     fun showTooltip() {
@@ -105,7 +112,6 @@ class FloatingBubbleView(context: Context) : LinearLayout(context) {
             ).apply { shape = GradientDrawable.OVAL }
             elevation = 4.dp().toFloat()
             contentDescription = "اضغط للصلاة على النبي"
-            setOnClickListener { onTap() }
         }
 
         val label = TextView(context).apply {
@@ -135,7 +141,7 @@ class FloatingBubbleView(context: Context) : LinearLayout(context) {
 
         container.addView(circle)
 
-        val closeBtn = TextView(context).apply {
+        closeBtn = TextView(context).apply {
             text = "✕"
             setTextColor(Color.WHITE)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
@@ -149,7 +155,6 @@ class FloatingBubbleView(context: Context) : LinearLayout(context) {
                 gravity = Gravity.TOP or Gravity.END
             }
             contentDescription = "إغلاق الفقاعة"
-            setOnClickListener { onClose() }
         }
         container.addView(closeBtn)
 

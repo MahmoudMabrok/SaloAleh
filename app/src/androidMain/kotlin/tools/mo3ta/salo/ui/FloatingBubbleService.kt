@@ -52,9 +52,11 @@ class FloatingBubbleService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         roundKey = intent?.getStringExtra(EXTRA_ROUND_KEY) ?: ""
-        startForeground(NotificationChannels.NOTIF_ID_BUBBLE, buildNotification())
-        setupBubble()
-        startReminderCycle()
+        if (!::bubbleView.isInitialized) {
+            startForeground(NotificationChannels.NOTIF_ID_BUBBLE, buildNotification())
+            setupBubble()
+            startReminderCycle()
+        }
         return START_NOT_STICKY
     }
 
@@ -82,18 +84,37 @@ class FloatingBubbleService : Service() {
     private fun setupDrag() {
         var initialX = 0; var initialY = 0
         var initialTouchX = 0f; var initialTouchY = 0f
+        var touchDownTime = 0L
 
         bubbleView.setOnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     initialX = params.x; initialY = params.y
                     initialTouchX = event.rawX; initialTouchY = event.rawY
+                    touchDownTime = System.currentTimeMillis()
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    params.x = initialX - (event.rawX - initialTouchX).toInt()
-                    params.y = initialY + (event.rawY - initialTouchY).toInt()
-                    windowManager.updateViewLayout(bubbleView, params)
+                    val distX = kotlin.math.abs(event.rawX - initialTouchX)
+                    val distY = kotlin.math.abs(event.rawY - initialTouchY)
+                    if (distX > 10 || distY > 10) {
+                        params.x = initialX - (event.rawX - initialTouchX).toInt()
+                        params.y = initialY + (event.rawY - initialTouchY).toInt()
+                        windowManager.updateViewLayout(bubbleView, params)
+                    }
+                    true
+                }
+                MotionEvent.ACTION_UP -> {
+                    val distX = kotlin.math.abs(event.rawX - initialTouchX)
+                    val distY = kotlin.math.abs(event.rawY - initialTouchY)
+                    val duration = System.currentTimeMillis() - touchDownTime
+                    if (distX < 10 && distY < 10 && duration < 300) {
+                        if (bubbleView.isCloseButtonHit(event.x, event.y)) {
+                            stopSelf()
+                        } else {
+                            handleTap()
+                        }
+                    }
                     true
                 }
                 else -> false
