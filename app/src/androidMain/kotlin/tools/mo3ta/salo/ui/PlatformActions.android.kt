@@ -119,3 +119,8 @@ actual fun shareBitmap(imageBitmap: ImageBitmap) {
 actual fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit) {
     BackHandler(enabled = enabled, onBack = onBack)
 }
+
+@Composable
+actual fun FloatingBubbleButton(roundKey: String?) {
+    // TODO: replaced in next task
+}

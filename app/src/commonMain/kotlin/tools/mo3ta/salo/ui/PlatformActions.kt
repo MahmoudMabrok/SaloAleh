@@ -17,3 +17,6 @@ expect fun shareBitmap(imageBitmap: ImageBitmap)
 
 @Composable
 expect fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit)
+
+@Composable
+expect fun FloatingBubbleButton(roundKey: String?)
