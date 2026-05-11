@@ -20,6 +20,11 @@ on:
           - alpha
           - beta
           - production
+      submit_for_review:
+        description: 'Submit for review (uncheck to upload only)'
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   deploy-android:
@@ -84,6 +89,7 @@ jobs:
           packageName: tools.mo3ta.salo
           releaseFiles: app/build/outputs/bundle/release/app-release.aab
           track: ${{ github.event.inputs.track }}
+          status: ${{ github.event.inputs.submit_for_review == 'true' && 'completed' || 'draft' }}
 
   # deploy-ios:
   #   name: Deploy iOS → App Store
