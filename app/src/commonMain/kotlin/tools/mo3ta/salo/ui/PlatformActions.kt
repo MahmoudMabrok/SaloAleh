@@ -20,3 +20,6 @@ expect fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit)
 
 @Composable
 expect fun FloatingBubbleButton(roundKey: String?)
+
+@Composable
+expect fun BubbleFeaturePromo(roundKey: String?)

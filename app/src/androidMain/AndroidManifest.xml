@@ -42,7 +42,11 @@
         <service
             android:name=".ui.FloatingBubbleService"
             android:foregroundServiceType="specialUse"
-            android:exported="false" />
+            android:exported="false">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="floating bubble overlay for counting salawat" />
+        </service>
 
         <receiver
             android:name=".notification.NotificationAlarmReceiver"

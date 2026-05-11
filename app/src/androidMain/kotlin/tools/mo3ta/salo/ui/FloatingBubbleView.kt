@@ -40,10 +40,14 @@ class FloatingBubbleView(context: Context) : LinearLayout(context) {
         countText.text = count.toString()
     }
 
-    fun isCloseButtonHit(x: Float, y: Float): Boolean {
-        val rect = android.graphics.Rect()
-        closeBtn.getHitRect(rect)
-        return rect.contains(x.toInt(), y.toInt())
+    // Asymmetric padding: generous outward (screen edge), small inward (avoid stealing bubble taps)
+    fun isCloseButtonHit(rawX: Float, rawY: Float): Boolean {
+        val loc = IntArray(2)
+        closeBtn.getLocationOnScreen(loc)
+        val padOut = 14.dp()
+        val padIn = 4.dp()
+        return rawX >= loc[0] - padIn && rawX < loc[0] + closeBtn.width + padOut &&
+               rawY >= loc[1] - padOut && rawY < loc[1] + closeBtn.height + padIn
     }
 
     fun showTooltip() {
@@ -116,6 +120,7 @@ class FloatingBubbleView(context: Context) : LinearLayout(context) {
 
         val label = TextView(context).apply {
             text = "صلوات"
+            textDirection = TEXT_DIRECTION_RTL
             setTextColor(Color.argb(180, 255, 255, 255))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 9f)
             gravity = Gravity.CENTER

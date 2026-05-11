@@ -55,10 +55,18 @@ class FloatingBubbleService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        roundKey = intent?.getStringExtra(EXTRA_ROUND_KEY) ?: ""
         if (!::bubbleView.isInitialized) {
             startForeground(NotificationChannels.NOTIF_ID_BUBBLE, buildNotification())
+        }
+        intent?.getStringExtra(EXTRA_ROUND_KEY)?.let { roundKey = it }
+        if (roundKey.isBlank()) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
+        if (!::bubbleView.isInitialized) {
+            sessionCount = sessionStore.getPendingSession(roundKey).clickCount
             setupBubble()
+            bubbleView.updateCount(sessionCount)
             startReminderCycle()
         }
         return START_NOT_STICKY
@@ -113,11 +121,7 @@ class FloatingBubbleService : Service() {
                     val distY = kotlin.math.abs(event.rawY - initialTouchY)
                     val duration = SystemClock.elapsedRealtime() - touchDownTime
                     if (distX < TAP_THRESHOLD && distY < TAP_THRESHOLD && duration < TAP_DURATION_MS) {
-                        val bubbleRect = android.graphics.Rect()
-                        bubbleView.getGlobalVisibleRect(bubbleRect)
-                        val localX = event.rawX - bubbleRect.left
-                        val localY = event.rawY - bubbleRect.top
-                        if (bubbleView.isCloseButtonHit(localX, localY)) {
+                        if (bubbleView.isCloseButtonHit(event.rawX, event.rawY)) {
                             stopSelf()
                         } else {
                             handleTap()

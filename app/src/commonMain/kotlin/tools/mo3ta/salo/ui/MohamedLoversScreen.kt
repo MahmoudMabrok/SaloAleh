@@ -99,7 +99,10 @@ fun MohamedLoversScreen(
     DisposableEffect(lifecycleOwner, viewModel) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP) viewModel.flushPendingSession()
-            if (event == Lifecycle.Event.ON_RESUME) showRankChip = settingsStore.showRankChip
+            if (event == Lifecycle.Event.ON_RESUME) {
+                showRankChip = settingsStore.showRankChip
+                viewModel.refreshSessionClicks()
+            }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
@@ -128,6 +131,7 @@ fun MohamedLoversScreen(
     var isLit by remember { mutableStateOf(false) }
     var infoSheetOpen by remember { mutableStateOf(false) }
     var showRankTooltip by remember { mutableStateOf(false) }
+    var showBubbleTooltip by remember { mutableStateOf(false) }
 
     LaunchedEffect(isLit) {
         if (isLit) { delay(1600); isLit = false }
@@ -142,6 +146,16 @@ fun MohamedLoversScreen(
             settingsStore.rankChipTooltipShown = true
             delay(4000)
             showRankTooltip = false
+        }
+    }
+
+    LaunchedEffect(state.canCount) {
+        if (state.canCount && !settingsStore.bubbleTooltipShown) {
+            delay(2500)
+            showBubbleTooltip = true
+            settingsStore.bubbleTooltipShown = true
+            delay(5000)
+            showBubbleTooltip = false
         }
     }
 
@@ -233,6 +247,30 @@ fun MohamedLoversScreen(
                         }
                     }
                 }
+                Spacer(Modifier.height(8.dp))
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    FloatingBubbleButton(roundKey = state.roundKey)
+                    AnimatedVisibility(
+                        visible = showBubbleTooltip,
+                        enter = fadeIn(),
+                        exit = fadeOut(),
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.15f),
+                            modifier = Modifier
+                                .padding(top = 4.dp)
+                                .clickable { showBubbleTooltip = false },
+                        ) {
+                            Text(
+                                text = "صلّ على النبي ﷺ وأنت تتصفح",
+                                color = MohamedLoversPalette.GoldGlow,
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                            )
+                        }
+                    }
+                }
             }
 
             MohamedLoversArchShrine(
@@ -292,7 +330,6 @@ fun MohamedLoversScreen(
             }
             Box(modifier = Modifier.align(Alignment.TopStart).padding(start = 14.dp, top = 36.dp)) {
                 Row {
-                    FloatingBubbleButton(roundKey = state.roundKey)
                     IconButton(onClick = onOpenAchievements) {
                         Icon(
                             imageVector = Icons.Default.EmojiEvents,
@@ -352,5 +389,6 @@ fun MohamedLoversScreen(
                 onDismiss = { viewModel.dismissNewlyEarnedAchievement() },
             )
         }
+        BubbleFeaturePromo(roundKey = state.roundKey)
     }
 }
