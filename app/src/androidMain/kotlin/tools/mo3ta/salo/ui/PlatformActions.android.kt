@@ -1,7 +1,14 @@
 package tools.mo3ta.salo.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FiberManualRecord
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import android.app.AlarmManager
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -11,11 +18,15 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import tools.mo3ta.salo.AndroidAppContext
+import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 
 actual fun showPlatformToast(message: String) {
     Toast.makeText(AndroidAppContext.get(), message, Toast.LENGTH_SHORT).show()
@@ -122,5 +133,33 @@ actual fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit) {
 
 @Composable
 actual fun FloatingBubbleButton(roundKey: String?) {
-    // TODO: replaced in next task
+    val context = LocalContext.current
+    val isActive by FloatingBubbleService.isRunning.collectAsState()
+
+    IconButton(onClick = {
+        if (isActive) {
+            context.stopService(Intent(context, FloatingBubbleService::class.java))
+        } else {
+            if (!Settings.canDrawOverlays(context)) {
+                context.startActivity(
+                    Intent(
+                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:${context.packageName}")
+                    )
+                )
+            } else {
+                ContextCompat.startForegroundService(
+                    context,
+                    Intent(context, FloatingBubbleService::class.java)
+                        .putExtra(FloatingBubbleService.EXTRA_ROUND_KEY, roundKey ?: "")
+                )
+            }
+        }
+    }) {
+        Icon(
+            imageVector = if (isActive) Icons.Default.Stop else Icons.Default.FiberManualRecord,
+            contentDescription = if (isActive) "إيقاف الفقاعة" else "تشغيل الفقاعة",
+            tint = if (isActive) Color.Red else MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
+        )
+    }
 }
