@@ -44,6 +44,7 @@ class MohamedLoversViewModel(
     private var authUid: String? = null
     private var achievementsFetchedFromRtdb = false
     private var currentWindow: MohamedLoversCompetitionWindow = MohamedLoversCompetitionWindow()
+    private var inFlightFlush = 0
 
     init {
         _state.update { it.copy(showHadithDialog = hadithStore.showOnStartup) }
@@ -145,12 +146,14 @@ class MohamedLoversViewModel(
                     return@withLock
                 }
 
+                inFlightFlush = state.value.sessionClicks
                 _state.update { it.copy(isSavingSession = true, error = null) }
 
                 val result = repository.flushPendingSession(
                     countryCode = state.value.countryCode,
                 )
                 val latestPending = repository.getPendingSession(roundKey)
+                inFlightFlush = 0
 
                 _state.update {
                     it.copy(
@@ -284,7 +287,8 @@ class MohamedLoversViewModel(
     private fun applyLeaderboard() {
         val uid = authUid
         val selfRemoteTotal = remoteSelfPlayer?.totalCount ?: 0
-        val selfProjectedTotal = selfRemoteTotal + state.value.sessionClicks
+        val pendingNet = (state.value.sessionClicks - inFlightFlush).coerceAtLeast(0)
+        val selfProjectedTotal = selfRemoteTotal + pendingNet
 
         val topEntries = remoteLeaderboard.entries.map { entry ->
             val isCurrentUser = entry.uid == uid

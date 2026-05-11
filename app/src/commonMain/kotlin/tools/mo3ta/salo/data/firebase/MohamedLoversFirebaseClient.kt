@@ -15,17 +15,17 @@ import tools.mo3ta.salo.domain.FirebaseLeaderboardEntry
 import tools.mo3ta.salo.domain.MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE
 import tools.mo3ta.salo.domain.MohamedLoversPlayer
 
-class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSessionStore) {
+class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSessionStore) : MohamedLoversFirebaseApi {
 
     private val log = Logger.withTag("FirebaseClient")
 
-    fun isConfigured(): Boolean {
+    override fun isConfigured(): Boolean {
         val result = runCatching { Firebase.database }.isSuccess
         log.d { "isConfigured=$result" }
         return result
     }
 
-    suspend fun ensureSignedInAnonymously(): Result<String> {
+    override suspend fun ensureSignedInAnonymously(): Result<String> {
         log.d { "ensureSignedInAnonymously: getting/creating uid" }
         return runCatching { sessionStore.getOrCreateUid() }
             .also { result ->
@@ -36,7 +36,7 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
             }
     }
 
-    fun observeSelfPlayer(
+    override fun observeSelfPlayer(
         roundKey: String,
         uid: String,
     ): Flow<Result<MohamedLoversPlayer?>> =
@@ -56,7 +56,7 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
                 emit(Result.failure(e))
             }
 
-    suspend fun fetchRoundPlayerCount(roundKey: String): Result<Int> {
+    override suspend fun fetchRoundPlayerCount(roundKey: String): Result<Int> {
         log.d { "fetchRoundPlayerCount[$roundKey]" }
         return runCatching {
             val snapshot = Firebase.database.reference("$ROOT_PATH/$roundKey/$ROUND_PLAYER_COUNT_PATH")
@@ -70,7 +70,7 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         }
     }
 
-    suspend fun fetchRoundTotal(roundKey: String): Result<Int> {
+    override suspend fun fetchRoundTotal(roundKey: String): Result<Int> {
         log.d { "fetchRoundTotal[$roundKey]" }
         return runCatching {
             val snapshot = Firebase.database.reference("$ROOT_PATH/$roundKey/$ROUND_TOTAL_PATH")
@@ -84,7 +84,7 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         }
     }
 
-    suspend fun fetchAllTimeTotal(): Result<Long> {
+    override suspend fun fetchAllTimeTotal(): Result<Long> {
         log.d { "fetchAllTimeTotal" }
         return runCatching {
             val snapshot = Firebase.database.reference("$ROOT_PATH/$ALL_TIME_TOTAL_PATH")
@@ -98,7 +98,7 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         }
     }
 
-    fun observeLeaderboard(roundKey: String): Flow<Result<FirebaseLeaderboard>> =
+    override fun observeLeaderboard(roundKey: String): Flow<Result<FirebaseLeaderboard>> =
         Firebase.database.reference(leaderboardPath(roundKey))
             .valueEvents
             .map { snapshot ->
@@ -123,7 +123,7 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
                 emit(Result.failure(e))
             }
 
-    suspend fun incrementSession(
+    override suspend fun incrementSession(
         roundKey: String,
         uid: String,
         delta: Int,
@@ -148,7 +148,7 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         }
     }
 
-    suspend fun writeUserActivity(uid: String, installDate: String, lastOpenDate: String): Result<Unit> {
+    override suspend fun writeUserActivity(uid: String, installDate: String, lastOpenDate: String): Result<Unit> {
         log.d { "writeUserActivity[$uid]" }
         return runCatching {
             Firebase.database.reference("$ROOT_PATH/$USERS_PATH/$uid").updateChildren(
@@ -165,7 +165,7 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         }
     }
 
-    suspend fun writeFcmToken(uid: String, token: String): Result<Unit> {
+    override suspend fun writeFcmToken(uid: String, token: String): Result<Unit> {
         log.d { "writeFcmToken[$uid]" }
         return runCatching {
             Firebase.database.reference("$ROOT_PATH/$USERS_PATH/$uid").updateChildren(
@@ -179,7 +179,7 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         }
     }
 
-    suspend fun fetchUserAchievements(uid: String): Result<Map<String, Pair<Int, Int?>>> {
+    override suspend fun fetchUserAchievements(uid: String): Result<Map<String, Pair<Int, Int?>>> {
         log.d { "fetchUserAchievements[$uid]" }
         return runCatching {
             val snapshot = Firebase.database

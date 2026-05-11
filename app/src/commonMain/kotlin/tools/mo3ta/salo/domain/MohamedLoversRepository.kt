@@ -2,12 +2,12 @@ package tools.mo3ta.salo.domain
 
 import kotlinx.coroutines.flow.Flow
 import tools.mo3ta.salo.data.country.CountryCodeProvider
-import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseClient
+import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseApi
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.data.time.NetworkTimeProvider
 
 class MohamedLoversRepository(
-    private val firebaseClient: MohamedLoversFirebaseClient,
+    private val firebaseClient: MohamedLoversFirebaseApi,
     private val networkTimeProvider: NetworkTimeProvider,
     private val sessionStore: MohamedLoversSessionStore,
     private val countryCodeProvider: CountryCodeProvider,
@@ -59,7 +59,7 @@ class MohamedLoversRepository(
                 delta = count,
                 countryCode = countryCode,
             )
-            result.onSuccess { sessionStore.clearPendingRound(roundKey) }
+            result.onSuccess { sessionStore.decrementPendingClick(roundKey, count) }
                 .onFailure { lastError = it }
         }
         return if (lastError != null) Result.failure(lastError!!) else Result.success(Unit)
