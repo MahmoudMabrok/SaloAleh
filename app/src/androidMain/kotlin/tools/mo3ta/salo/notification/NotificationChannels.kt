@@ -15,6 +15,8 @@ object NotificationChannels {
     const val NOTIF_ID_RETENTION = 1002
     const val NOTIF_ID_FRIDAY = 1003
     const val NOTIF_ID_PUSH = 1004
+    const val CHANNEL_BUBBLE = "channel_bubble"
+    const val NOTIF_ID_BUBBLE = 1005
 
     fun createAll(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -34,6 +36,14 @@ object NotificationChannels {
             manager.createNotificationChannel(
                 NotificationChannel(CHANNEL_PUSH, "إشعارات عامة", NotificationManager.IMPORTANCE_DEFAULT)
                     .apply { description = "إشعارات من الفريق" }
+            )
+            manager.createNotificationChannel(
+                NotificationChannel(CHANNEL_BUBBLE, "الفقاعة العائمة", NotificationManager.IMPORTANCE_LOW)
+                    .apply {
+                        description = "إشعار نشط أثناء استخدام الفقاعة العائمة"
+                        setSound(null, null)
+                        enableVibration(false)
+                    }
             )
         }
     }
