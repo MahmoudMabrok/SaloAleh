@@ -1,7 +1,7 @@
 {
-  "allTimeSalawat": 10681,
-  "weekSalawat": 1104,
-  "todaySalawat": 0,
+  "allTimeSalawat": 10836,
+  "weekSalawat": 1259,
+  "todaySalawat": 155,
   "activePlayers": 20,
   "countriesCount": 4,
   "countries": [
@@ -10,7 +10,7 @@
     "US",
     "YE"
   ],
-  "topScore": 418,
+  "topScore": 565,
   "roundKey": "2026-05-15",
-  "updatedAt": "2026-05-11T09:27:17.692Z"
+  "updatedAt": "2026-05-11T18:16:08.406Z"
 }
