@@ -32,10 +32,11 @@ async function main() {
   const roundKey = cairoRoundKey();
   console.log(`Active round: ${roundKey}`);
 
-  const [allTimeTotalSnap, playersSnap, roundTotalSnap] = await Promise.all([
+  const [allTimeTotalSnap, playersSnap, roundTotalSnap, leaderboardSnap] = await Promise.all([
     db.ref('mohamed_lovers/allTimeTotal').get(),
     db.ref(`mohamed_lovers/${roundKey}/players`).get(),
     db.ref(`mohamed_lovers/${roundKey}/roundTotal`).get(),
+    db.ref(`mohamed_lovers/${roundKey}/leaderboard`).get(),
   ]);
 
   const weekSalawat    = roundTotalSnap.val()    || 0;
@@ -71,6 +72,15 @@ async function main() {
     });
   }
 
+  const leaderboard = [];
+  if (leaderboardSnap.exists()) {
+    const lb = leaderboardSnap.val();
+    for (let i = 1; i <= 10; i++) {
+      const entry = lb[String(i)];
+      if (entry) leaderboard.push(entry);
+    }
+  }
+
   const stats = {
     allTimeSalawat,
     weekSalawat,
@@ -80,6 +90,7 @@ async function main() {
     countries: [...countries].sort(),
     topScore,
     roundKey,
+    leaderboard,
     updatedAt: new Date().toISOString(),
   };
 
