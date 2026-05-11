@@ -39,6 +39,19 @@ class MohamedLoversSessionStore(private val settings: Settings) {
             .filter { it.value > 0 }
     }
 
+    fun decrementPendingClick(roundKey: String, delta: Int) {
+        val key = pendingCountKey(roundKey)
+        val current = settings.getInt(key, 0)
+        val remaining = (current - delta).coerceAtLeast(0)
+        if (remaining == 0) {
+            settings.remove(key)
+            val updated = getPendingRoundKeys() - roundKey
+            settings.putString(KEY_PENDING_ROUNDS_INDEX, updated.joinToString(","))
+        } else {
+            settings.putInt(key, remaining)
+        }
+    }
+
     fun clearPendingRound(roundKey: String) {
         settings.remove(pendingCountKey(roundKey))
         val updated = getPendingRoundKeys() - roundKey
