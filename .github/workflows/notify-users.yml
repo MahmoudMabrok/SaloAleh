@@ -32,6 +32,6 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
-          NOTIF_RIVAL_THRESHOLD: ${{ github.event.inputs.rival_threshold || '200' }}
+          NOTIF_RIVAL_THRESHOLD: ${{ github.event.inputs.rival_threshold || '50' }}
           NOTIF_RIVAL_ENABLED: 'true'
           NOTIF_MIDWEEK_ENABLED: 'true'
