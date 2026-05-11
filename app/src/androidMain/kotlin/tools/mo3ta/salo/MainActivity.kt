@@ -63,11 +63,11 @@ class MainActivity : ComponentActivity() {
         if (hasNotifPerm) {
             engagementStore.clearFcmPermDenied()
             FirebaseMessaging.getInstance().subscribeToTopic("general")
-            if (sessionStore.getSavedFcmToken() == null) {
-                fetchAndSendFcmToken()
-            }
         } else {
             engagementStore.saveFcmPermDenied(today)
+        }
+        if (sessionStore.getSavedFcmToken() == null) {
+            fetchAndSendFcmToken()
         }
 
         val daysSinceDenied = engagementStore.fcmPermDeniedDaysAgo(today)
@@ -107,9 +107,11 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         syncNotificationSchedule()
         val hasNotifPerm = NotificationManagerCompat.from(this).areNotificationsEnabled()
-        if (hasNotifPerm && sessionStore.getSavedFcmToken() == null) {
+        if (hasNotifPerm) {
             engagementStore.clearFcmPermDenied()
             FirebaseMessaging.getInstance().subscribeToTopic("general")
+        }
+        if (sessionStore.getSavedFcmToken() == null) {
             fetchAndSendFcmToken()
         }
     }

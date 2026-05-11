@@ -59,6 +59,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}) {
     var dailyEnabled by remember { mutableStateOf(store.dailyEnabled) }
     var fridayEnabled by remember { mutableStateOf(store.fridayEnabled) }
     var hadithOnStartup by remember { mutableStateOf(hadithStore.showOnStartup) }
+    var showRankChip by remember { mutableStateOf(store.showRankChip) }
     var notifPermGranted by remember { mutableStateOf(areNotificationsEnabled()) }
     var exactAlarmGranted by remember { mutableStateOf(canScheduleExactAlarms()) }
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -190,6 +191,16 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}) {
                 onToggle = { checked ->
                     hadithOnStartup = checked
                     hadithStore.showOnStartup = checked
+                },
+            )
+
+            SettingToggleRow(
+                label = "عرض ترتيبك",
+                subtitle = "إظهار مرتبتك في المسابقة على الشاشة الرئيسية",
+                checked = showRankChip,
+                onToggle = { checked ->
+                    showRankChip = checked
+                    store.showRankChip = checked
                 },
             )
 

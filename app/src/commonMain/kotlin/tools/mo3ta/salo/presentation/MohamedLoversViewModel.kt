@@ -282,12 +282,13 @@ class MohamedLoversViewModel(
         val topEntries = remoteLeaderboard.entries.map { entry ->
             val isCurrentUser = entry.uid == uid
             MohamedLoversLeaderboardEntry(
-                rank = entry.rank,
+                rank = 0,
                 displayTag = buildMohamedLoversDisplayTag(entry.uid, entry.countryCode),
                 totalCount = if (isCurrentUser) selfProjectedTotal else entry.score,
                 isCurrentUser = isCurrentUser,
             )
-        }
+        }.sortedByDescending { it.totalCount }
+            .mapIndexed { index, entry -> entry.copy(rank = index + 1) }
 
         val selfInTop = uid != null && topEntries.any { it.isCurrentUser }
 

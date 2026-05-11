@@ -1,10 +1,14 @@
 package tools.mo3ta.salo.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -12,6 +16,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material.icons.Icons
@@ -22,6 +27,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -44,6 +50,7 @@ import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import tools.mo3ta.salo.data.notification.NotificationSettingsStore
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.grace_warning
@@ -78,6 +85,8 @@ fun MohamedLoversScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
     val analyticsManager: AnalyticsManager = koinInject()
+    val settingsStore: NotificationSettingsStore = koinInject()
+    var showRankChip by remember { mutableStateOf(settingsStore.showRankChip) }
 
     val codeCopiedLabel = stringResource(Res.string.mohamed_lovers_code_copied)
     val connectionErrorLabel = stringResource(Res.string.mohamed_lovers_connection_error)
@@ -90,6 +99,7 @@ fun MohamedLoversScreen(
     DisposableEffect(lifecycleOwner, viewModel) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP) viewModel.flushPendingSession()
+            if (event == Lifecycle.Event.ON_RESUME) showRankChip = settingsStore.showRankChip
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
@@ -117,9 +127,22 @@ fun MohamedLoversScreen(
     var archCenter by remember { mutableStateOf<Offset?>(null) }
     var isLit by remember { mutableStateOf(false) }
     var infoSheetOpen by remember { mutableStateOf(false) }
+    var showRankTooltip by remember { mutableStateOf(false) }
 
     LaunchedEffect(isLit) {
         if (isLit) { delay(1600); isLit = false }
+    }
+
+    val currentUserEntry = state.topPlayers.firstOrNull { it.isCurrentUser } ?: state.selfEntry
+    val rankChipVisible = showRankChip && (currentUserEntry?.rank ?: 0) > 0
+    LaunchedEffect(rankChipVisible) {
+        if (rankChipVisible && !settingsStore.rankChipTooltipShown) {
+            delay(1200)
+            showRankTooltip = true
+            settingsStore.rankChipTooltipShown = true
+            delay(4000)
+            showRankTooltip = false
+        }
     }
 
     val blockedMessage = when (state.status) {
@@ -148,9 +171,70 @@ fun MohamedLoversScreen(
             modifier = Modifier.fillMaxSize(),
         )
         Box(modifier = Modifier.fillMaxSize()) {
-            MohamedLoversHadithBanner(
-                modifier = Modifier.align(Alignment.TopCenter).padding(top = 96.dp),
-            )
+            Column (Modifier.align(Alignment.TopCenter).padding(top = 96.dp)){
+                MohamedLoversHadithBanner()
+                // Rank chip + first-time tooltip
+                if (rankChipVisible) {
+                    val rank = currentUserEntry!!.rank
+                    val medal = when (rank) { 1 -> "🥇"; 2 -> "🥈"; 3 -> "🥉"; else -> "🏅" }
+                    Spacer(Modifier.height(6.dp))
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.13f),
+                            modifier = Modifier.clickable { infoSheetOpen = true },
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(text = "$medal ", fontSize = 18.sp)
+                                Text(
+                                    text = "ترتيبك ",
+                                    color = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.6f),
+                                    fontSize = 14.sp,
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                                )
+                                Text(
+                                    text = "$rank",
+                                    color = MohamedLoversPalette.GoldHighlight,
+                                    fontSize = 18.sp,
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                                )
+                                if (state.roundPlayerCount > 0) {
+                                    Text(
+                                        text = " / ${state.roundPlayerCount}",
+                                        color = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.45f),
+                                        fontSize = 14.sp,
+                                        fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                                    )
+                                }
+                            }
+                        }
+                        AnimatedVisibility(
+                            visible = showRankTooltip,
+                            enter = fadeIn(),
+                            exit = fadeOut(),
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.15f),
+                                modifier = Modifier
+                                    .padding(top = 4.dp)
+                                    .clickable { showRankTooltip = false },
+                            ) {
+                                Text(
+                                    text = "يمكنك التحكم في هذا من الإعدادات",
+                                    color = MohamedLoversPalette.GoldGlow,
+                                    fontSize = 11.sp,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             MohamedLoversArchShrine(
                 isLit = isLit,
                 onArchCenterPositioned = { archCenter = it },
@@ -195,6 +279,8 @@ fun MohamedLoversScreen(
                     )
                 }
             }
+
+
             Box(modifier = Modifier.align(Alignment.TopEnd).padding(end = 14.dp, top = 36.dp)) {
                 IconButton(onClick = { infoSheetOpen = true }) {
                     Icon(
