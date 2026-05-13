@@ -1,7 +1,7 @@
 {
-  "allTimeSalawat": 11968,
-  "weekSalawat": 2391,
-  "todaySalawat": 0,
+  "allTimeSalawat": 12590,
+  "weekSalawat": 3013,
+  "todaySalawat": 622,
   "activePlayers": 22,
   "countriesCount": 5,
   "countries": [
@@ -11,19 +11,19 @@
     "US",
     "YE"
   ],
-  "topScore": 1298,
+  "topScore": 1457,
   "roundKey": "2026-05-15",
   "leaderboard": [
     {
       "countryCode": "EG",
       "rank": 1,
-      "score": 1298,
+      "score": 1457,
       "uid": "cf0116cf9c1bf2ef2965b238768139059a0088bbb734739297ac650ede2fd00b"
     },
     {
       "countryCode": "EG",
       "rank": 2,
-      "score": 432,
+      "score": 895,
       "uid": "d37ab9ff8d45a9931d24389990545bdb773791e2873b2d23534c26bdcef8f48a"
     },
     {
@@ -75,5 +75,5 @@
       "uid": "d4e41a0b738d2590d6300c02d19b0d1fa958d38f6f3de772385053a52647b167"
     }
   ],
-  "updatedAt": "2026-05-12T21:54:58.776Z"
+  "updatedAt": "2026-05-13T20:51:42.417Z"
 }
