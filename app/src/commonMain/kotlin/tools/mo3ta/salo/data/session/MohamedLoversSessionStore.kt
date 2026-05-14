@@ -113,6 +113,12 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         return sha256hex(raw)
     }
 
+    @OptIn(kotlin.uuid.ExperimentalUuidApi::class)
+    fun getRawUid(): String {
+        return settings.getStringOrNull(KEY_UID)?.takeIf { it.isNotBlank() }
+            ?: kotlin.uuid.Uuid.random().toString().also { settings.putString(KEY_UID, it) }
+    }
+
     private companion object {
         const val KEY_UID = "user_uid"
         const val KEY_ALIAS = "alias"

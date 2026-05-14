@@ -44,6 +44,6 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
     override suspend fun writeFcmToken(uid: String, token: String): Result<Unit> =
         Result.success(Unit)
 
-    override suspend fun fetchUserAchievements(uid: String): Result<Map<String, Pair<Int, Int?>>> =
+    override suspend fun fetchUserAchievements(uid: String): Result<Map<String, UserAchievement>> =
         Result.success(emptyMap())
 }
