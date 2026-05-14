@@ -60,8 +60,10 @@
     <string name="recap_taps_down">%1$d صلاة عن الأسبوع الماضي</string>
     <string name="recap_cta">ابدأ الجولة الجديدة</string>
 
-    <!-- Grace Warning Banner -->
-    <string name="grace_warning">استُخدِم الحذف الواحد هذا الأسبوع — حافظ على سلسلتك!</string>
+    <!-- Streak Grace Dialog -->
+    <string name="grace_warning_title">حافظنا على سلسلتك</string>
+    <string name="grace_warning">فاتك يوم واحد، فاستُخدمت فرصة السماح الأسبوعية حتى لا تبدأ سلسلتك من جديد. افتح التطبيق غداً لتحافظ على الاستمرار.</string>
+    <string name="grace_warning_cta">فهمت</string>
 
     <!-- Daily Goal -->
     <string name="daily_goal_completed">أحسنت! هدف اليوم اكتمل 🎉</string>

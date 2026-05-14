@@ -39,10 +39,12 @@ import org.koin.compose.koinInject
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
+import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.notification.NotificationScheduler
 import tools.mo3ta.salo.ui.areNotificationsEnabled
 import tools.mo3ta.salo.ui.canScheduleExactAlarms
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
+import tools.mo3ta.salo.ui.copyToClipboard
 import tools.mo3ta.salo.ui.getAppVersion
 import tools.mo3ta.salo.ui.getStoreUrl
 import tools.mo3ta.salo.ui.openNotificationSettings
@@ -55,6 +57,7 @@ import tools.mo3ta.salo.ui.showPlatformToast
 @Composable
 fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}) {
     val store: NotificationSettingsStore = koinInject()
+    val sessionStore: MohamedLoversSessionStore = koinInject()
     val hadithStore: DailyHadithStore = koinInject()
     var dailyEnabled by remember { mutableStateOf(store.dailyEnabled) }
     var fridayEnabled by remember { mutableStateOf(store.fridayEnabled) }
@@ -239,6 +242,14 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}) {
             SettingLinkRow(
                 label = "فتح صفحة المتجر",
                 onClick = { openStorePage() },
+            )
+
+            SettingLinkRow(
+                label = "نسخ معرّف الجهاز (UUID)",
+                onClick = {
+                    copyToClipboard(sessionStore.getRawUid())
+                    showPlatformToast("تم النسخ — الصقه في إضافة المتصفح")
+                },
             )
 
             Row(

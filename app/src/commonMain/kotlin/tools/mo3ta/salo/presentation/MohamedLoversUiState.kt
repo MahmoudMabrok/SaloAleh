@@ -52,7 +52,7 @@ data class MohamedLoversUiState(
     val recapIsPersonalBest: Boolean = false,
     val recapTapsDelta: Int = 0,
 
-    // Grace warning banner
+    // Streak grace dialog
     val showGraceWarning: Boolean = false,
 
     // Daily goal

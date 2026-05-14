@@ -50,7 +50,7 @@ class MohamedLoversViewModel(
         _state.update { it.copy(showHadithDialog = hadithStore.showOnStartup) }
         refresh()
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
-        if (engagementStore.wasGraceConsumedToday(today)) {
+        if (engagementStore.shouldShowGraceWarning(today)) {
             _state.update { it.copy(showGraceWarning = true) }
         }
         _state.update {
@@ -177,7 +177,11 @@ class MohamedLoversViewModel(
     }
 
     fun dismissRoundRecap() = _state.update { it.copy(showRoundRecap = false) }
-    fun dismissGraceWarning() = _state.update { it.copy(showGraceWarning = false) }
+    fun dismissGraceWarning() {
+        val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
+        engagementStore.markGraceWarningShown(today)
+        _state.update { it.copy(showGraceWarning = false) }
+    }
     fun dismissDailyGoalCompleted() = _state.update { it.copy(dailyGoalJustCompleted = false) }
     fun dismissNewlyEarnedAchievement() = _state.update { it.copy(newlyEarnedRankAchievement = null) }
 
@@ -221,9 +225,14 @@ class MohamedLoversViewModel(
                 launch {
                     repository.fetchUserAchievements(uid).onSuccess { achievements ->
                         achievements.entries
-                            .mapNotNull { (rk, rankAndScore) ->
-                                val (rank, score) = rankAndScore
-                                engagementStore.checkAndSaveRankAchievement(rk, rank, today, score)?.takeIf { rank in 1..10 }
+                            .mapNotNull { (rk, achievement) ->
+                                engagementStore.checkAndSaveRankAchievement(
+                                    roundKey = rk,
+                                    rank = achievement.rank,
+                                    today = today,
+                                    score = achievement.score,
+                                    winnerCode = achievement.winnerCode,
+                                )?.takeIf { achievement.rank in 1..10 }
                             }
                             .firstOrNull()
                             ?.let { earned -> _state.update { it.copy(newlyEarnedRankAchievement = earned) } }
@@ -249,7 +258,13 @@ class MohamedLoversViewModel(
                             val match = leaderboard.entries.firstOrNull { it.uid == uid }
                             if (match != null) {
                                 val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
-                                val achievement = engagementStore.checkAndSaveRankAchievement(roundKey, match.rank, today)
+                                val achievement = engagementStore.checkAndSaveRankAchievement(
+                                    roundKey = roundKey,
+                                    rank = match.rank,
+                                    today = today,
+                                    score = match.score,
+                                    winnerCode = remoteSelfPlayer?.winnerCode.orEmpty(),
+                                )
                                 if (achievement != null) {
                                     _state.update { it.copy(newlyEarnedRankAchievement = achievement) }
                                 }

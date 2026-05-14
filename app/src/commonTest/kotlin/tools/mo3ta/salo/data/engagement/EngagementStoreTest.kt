@@ -151,6 +151,19 @@ class EngagementStoreTest {
     }
 
     @Test
+    fun rankAchievement_existingRound_enrichedWithWinnerCode() {
+        val s = MapSettings()
+        val store = store(s)
+        val today = LocalDate(2026, 4, 30)
+        store.checkAndSaveRankAchievement("round-2026-04-30", 3, today)
+        val second = store.checkAndSaveRankAchievement("round-2026-04-30", 3, today, winnerCode = "WIN-123")
+        val rank = store.getAllAchievements().filterIsInstance<Achievement.RankAchievement>().single()
+
+        assertNull(second)
+        assertEquals("WIN-123", rank.winnerCode)
+    }
+
+    @Test
     fun getAllAchievements_returnsStreakBadgeAndRank() {
         val s = MapSettings()
         val store = store(s)
@@ -235,6 +248,34 @@ class EngagementStoreTest {
         store.recordOpen(today = LocalDate(2026, 5, 2))
         assertTrue(store.wasGraceConsumedToday(LocalDate(2026, 5, 2)))
         assertFalse(store.wasGraceConsumedToday(LocalDate(2026, 5, 3)))
+    }
+
+    @Test
+    fun shouldShowGraceWarning_falseAfterMarkedShownUntilNextGrace() {
+        val s = MapSettings()
+        val store = store(s)
+        for (day in 26..30) store.recordOpen(today = LocalDate(2026, 4, day))
+        store.recordOpen(today = LocalDate(2026, 5, 2))
+
+        assertTrue(store.shouldShowGraceWarning(LocalDate(2026, 5, 2)))
+
+        store.markGraceWarningShown(LocalDate(2026, 5, 2))
+
+        assertFalse(store.shouldShowGraceWarning(LocalDate(2026, 5, 2)))
+    }
+
+    @Test
+    fun shouldShowGraceWarning_trueAgainForNewGraceDate() {
+        val s = MapSettings()
+        val store = store(s)
+        for (day in 26..30) store.recordOpen(today = LocalDate(2026, 4, day))
+        store.recordOpen(today = LocalDate(2026, 5, 2))
+        store.markGraceWarningShown(LocalDate(2026, 5, 2))
+
+        for (day in 3..9) store.recordOpen(today = LocalDate(2026, 5, day))
+        store.recordOpen(today = LocalDate(2026, 5, 11))
+
+        assertTrue(store.shouldShowGraceWarning(LocalDate(2026, 5, 11)))
     }
 
     @Test

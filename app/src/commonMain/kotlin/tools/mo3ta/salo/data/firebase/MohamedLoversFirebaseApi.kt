@@ -3,6 +3,7 @@ package tools.mo3ta.salo.data.firebase
 import kotlinx.coroutines.flow.Flow
 import tools.mo3ta.salo.domain.FirebaseLeaderboard
 import tools.mo3ta.salo.domain.MohamedLoversPlayer
+import tools.mo3ta.salo.domain.UserAchievement
 
 interface MohamedLoversFirebaseApi {
     fun isConfigured(): Boolean
@@ -15,5 +16,5 @@ interface MohamedLoversFirebaseApi {
     suspend fun incrementSession(roundKey: String, uid: String, delta: Int, countryCode: String): Result<Unit>
     suspend fun writeUserActivity(uid: String, installDate: String, lastOpenDate: String): Result<Unit>
     suspend fun writeFcmToken(uid: String, token: String): Result<Unit>
-    suspend fun fetchUserAchievements(uid: String): Result<Map<String, Pair<Int, Int?>>>
+    suspend fun fetchUserAchievements(uid: String): Result<Map<String, UserAchievement>>
 }

@@ -14,6 +14,7 @@ import tools.mo3ta.salo.domain.FirebaseLeaderboard
 import tools.mo3ta.salo.domain.FirebaseLeaderboardEntry
 import tools.mo3ta.salo.domain.MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE
 import tools.mo3ta.salo.domain.MohamedLoversPlayer
+import tools.mo3ta.salo.domain.UserAchievement
 
 class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSessionStore) : MohamedLoversFirebaseApi {
 
@@ -179,7 +180,7 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         }
     }
 
-    override suspend fun fetchUserAchievements(uid: String): Result<Map<String, Pair<Int, Int?>>> {
+    override suspend fun fetchUserAchievements(uid: String): Result<Map<String, UserAchievement>> {
         log.d { "fetchUserAchievements[$uid]" }
         return runCatching {
             val snapshot = Firebase.database
@@ -191,7 +192,8 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
                     val map = child.value as? Map<*, *> ?: return@forEach
                     val rank = (map[RANK_KEY] as? Number)?.toInt() ?: return@forEach
                     val score = (map[SCORE_KEY] as? Number)?.toInt()
-                    put(roundKey, rank to score)
+                    val winnerCode = map[WINNER_CODE_KEY] as? String ?: ""
+                    put(roundKey, UserAchievement(rank = rank, score = score, winnerCode = winnerCode))
                 }
             }
         }.also { result ->

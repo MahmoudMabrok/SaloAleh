@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -46,6 +47,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.analytics.AnalyticsManager
@@ -64,6 +66,7 @@ import tools.mo3ta.salo.generated.resources.badge_8th_place
 import tools.mo3ta.salo.generated.resources.badge_9th_place
 import tools.mo3ta.salo.generated.resources.badge_streak_30_day
 import tools.mo3ta.salo.generated.resources.badge_streak_7_day
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_code_copied
 import tools.mo3ta.salo.presentation.AchievementsViewModel
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import androidx.compose.foundation.Canvas
@@ -543,6 +546,8 @@ private fun StreakBadgeCard(
 
 @Composable
 private fun RoundHistoryCard(achievement: Achievement.RankAchievement) {
+    val codeCopiedLabel = stringResource(Res.string.mohamed_lovers_code_copied)
+    val winnerCode = remember(achievement.winnerCode) { winnerCodeForCopyButton(achievement) }
     val medalEmoji = when (achievement.rank) {
         1 -> "🥇"; 2 -> "🥈"; 3 -> "🥉"; else -> "🏅"
     }
@@ -598,25 +603,47 @@ private fun RoundHistoryCard(achievement: Achievement.RankAchievement) {
                     Text(achievement.roundKey, color = Color.White.copy(alpha = 0.55f), fontSize = 11.sp)
                 }
             }
-            if (achievement.score != null && achievement.score > 0) {
+            if ((achievement.score != null && achievement.score > 0) || winnerCode != null) {
                 Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = "عدد الصلوات",
-                        color = Color.White.copy(alpha = 0.35f),
-                        fontSize = 9.sp,
-                        letterSpacing = 0.3.sp,
-                    )
-                    Text(
-                        text = "${achievement.score} 🤍",
-                        color = MohamedLoversPalette.Gold.copy(alpha = 0.88f),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
+                    if (achievement.score != null && achievement.score > 0) {
+                        Text(
+                            text = "عدد الصلوات",
+                            color = Color.White.copy(alpha = 0.35f),
+                            fontSize = 9.sp,
+                            letterSpacing = 0.3.sp,
+                        )
+                        Text(
+                            text = "${achievement.score} 🤍",
+                            color = MohamedLoversPalette.Gold.copy(alpha = 0.88f),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                    if (winnerCode != null) {
+                        Spacer(Modifier.height(4.dp))
+                        IconButton(
+                            onClick = {
+                                copyToClipboard(winnerCode)
+                                showPlatformToast(codeCopiedLabel)
+                            },
+                            modifier = Modifier.size(32.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ContentCopy,
+                                contentDescription = "نسخ كود الفائز",
+                                tint = MohamedLoversPalette.Gold,
+                                modifier = Modifier.size(17.dp),
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 }
+
+internal fun winnerCodeForCopyButton(achievement: Achievement.RankAchievement): String? =
+    achievement.winnerCode.trim().takeIf { it.isNotBlank() }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 

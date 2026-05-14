@@ -2,6 +2,10 @@ package tools.mo3ta.salo.data.engagement
 
 import com.russhwolf.settings.Settings
 import kotlinx.datetime.LocalDate
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import tools.mo3ta.salo.domain.Achievement
 import tools.mo3ta.salo.domain.BadgeType
 import tools.mo3ta.salo.domain.EngagementData
@@ -71,6 +75,18 @@ class EngagementStore(private val settings: Settings) {
         return LocalDate.parse(date) == today
     }
 
+    fun shouldShowGraceWarning(today: LocalDate): Boolean {
+        val graceDate = settings.getStringOrNull(KEY_GRACE_DATE) ?: return false
+        if (runCatching { LocalDate.parse(graceDate) }.getOrNull() != today) return false
+        return settings.getStringOrNull(KEY_GRACE_WARNING_SHOWN_DATE) != graceDate
+    }
+
+    fun markGraceWarningShown(today: LocalDate) {
+        if (wasGraceConsumedToday(today)) {
+            settings.putString(KEY_GRACE_WARNING_SHOWN_DATE, today.toString())
+        }
+    }
+
     private fun isGraceAvailable(today: LocalDate): Boolean {
         val used = settings.getBoolean(KEY_GRACE_USED, false)
         if (!used) return true
@@ -116,16 +132,38 @@ class EngagementStore(private val settings: Settings) {
         return if (days > 0) days.toInt() else 0
     }
 
-    /**
-     * [roundKey] must not contain ':' or ';' — these are used as field/record delimiters in storage.
-     * Current round keys (e.g. "round-2026-04-30") are safe. Entries with unexpected characters are silently dropped on read.
-     */
-    fun checkAndSaveRankAchievement(roundKey: String, rank: Int, today: LocalDate, score: Int? = null): Achievement.RankAchievement? {
+    fun checkAndSaveRankAchievement(
+        roundKey: String,
+        rank: Int,
+        today: LocalDate,
+        score: Int? = null,
+        winnerCode: String = "",
+    ): Achievement.RankAchievement? {
         val existing = getRankAchievementsRaw()
-        if (existing.any { it.roundKey == roundKey }) return null
-        val updated = existing + RankEntry(roundKey, rank, today, score)
+        val existingIndex = existing.indexOfFirst { it.roundKey == roundKey }
+        if (existingIndex != -1) {
+            val current = existing[existingIndex]
+            val updated = current.copy(
+                score = score ?: current.score,
+                winnerCode = winnerCode.ifBlank { current.winnerCode },
+            )
+            if (updated != current) {
+                settings.putString(
+                    KEY_RANK_ACHIEVEMENTS,
+                    encodeRankAchievements(existing.toMutableList().apply { set(existingIndex, updated) }),
+                )
+            }
+            return null
+        }
+        val updated = existing + RankEntry(roundKey, rank, today, score, winnerCode)
         settings.putString(KEY_RANK_ACHIEVEMENTS, encodeRankAchievements(updated))
-        return Achievement.RankAchievement(roundKey = roundKey, rank = rank, earnedDate = today, score = score)
+        return Achievement.RankAchievement(
+            roundKey = roundKey,
+            rank = rank,
+            earnedDate = today,
+            score = score,
+            winnerCode = winnerCode,
+        )
     }
 
     fun getAllAchievements(): List<Achievement> {
@@ -138,7 +176,13 @@ class EngagementStore(private val settings: Settings) {
             }
         }
         val rankAchievements = getRankAchievementsRaw().map {
-            Achievement.RankAchievement(roundKey = it.roundKey, rank = it.rank, earnedDate = it.date, score = it.score)
+            Achievement.RankAchievement(
+                roundKey = it.roundKey,
+                rank = it.rank,
+                earnedDate = it.date,
+                score = it.score,
+                winnerCode = it.winnerCode,
+            )
         }
         return (streakBadges + rankAchievements).sortedByDescending {
             when (it) {
@@ -148,10 +192,20 @@ class EngagementStore(private val settings: Settings) {
         }
     }
 
-    private data class RankEntry(val roundKey: String, val rank: Int, val date: LocalDate, val score: Int?)
+    @Serializable
+    private data class RankEntry(
+        val roundKey: String,
+        val rank: Int,
+        val date: LocalDate,
+        val score: Int? = null,
+        val winnerCode: String = "",
+    )
 
     private fun getRankAchievementsRaw(): List<RankEntry> {
         val raw = settings.getStringOrNull(KEY_RANK_ACHIEVEMENTS) ?: return emptyList()
+        if (raw.startsWith("[")) {
+            return runCatching { json.decodeFromString<List<RankEntry>>(raw) }.getOrDefault(emptyList())
+        }
         return raw.split(";").mapNotNull { entry ->
             val parts = entry.split(":")
             if (parts.size < 3) return@mapNotNull null
@@ -162,10 +216,7 @@ class EngagementStore(private val settings: Settings) {
     }
 
     private fun encodeRankAchievements(list: List<RankEntry>): String =
-        list.joinToString(";") {
-            if (it.score != null) "${it.roundKey}:${it.rank}:${it.date}:${it.score}"
-            else "${it.roundKey}:${it.rank}:${it.date}"
-        }
+        json.encodeToString(list)
 
     private fun LocalDate.minusDays(n: Int): LocalDate =
         LocalDate.fromEpochDays(toEpochDays() - n)
@@ -182,6 +233,8 @@ class EngagementStore(private val settings: Settings) {
         const val KEY_RANK_ACHIEVEMENTS = "eng_rank_achievements"
         const val KEY_GRACE_USED = "eng_grace_used"
         const val KEY_GRACE_DATE = "eng_grace_date"
+        const val KEY_GRACE_WARNING_SHOWN_DATE = "eng_grace_warning_shown_date"
         const val KEY_FCM_PERM_DENIED_DATE = "eng_fcm_perm_denied_date"
+        val json = Json { ignoreUnknownKeys = true }
     }
 }

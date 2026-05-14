@@ -24,11 +24,13 @@ import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -54,6 +56,8 @@ import tools.mo3ta.salo.data.notification.NotificationSettingsStore
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.grace_warning
+import tools.mo3ta.salo.generated.resources.grace_warning_cta
+import tools.mo3ta.salo.generated.resources.grace_warning_title
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_blocked_firebase_off
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_blocked_waiting_network
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_code_copied
@@ -301,26 +305,6 @@ fun MohamedLoversScreen(
                         }
                     }
             )
-            AnimatedVisibility(
-                visible = state.showGraceWarning,
-                modifier = Modifier.align(Alignment.TopCenter).padding(top = 48.dp),
-            ) {
-                androidx.compose.material3.Surface(
-                    color = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.15f),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(
-                        text = stringResource(Res.string.grace_warning),
-                        modifier = Modifier
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                            .clickable { viewModel.dismissGraceWarning() },
-                        fontSize = 13.sp,
-                        textAlign = TextAlign.Center,
-                        color = MohamedLoversPalette.GoldHighlight,
-                    )
-                }
-            }
-
 
             Box(modifier = Modifier.align(Alignment.TopEnd).padding(end = 14.dp, top = 36.dp)) {
                 IconButton(onClick = {
@@ -392,6 +376,9 @@ fun MohamedLoversScreen(
                 onDismiss = { viewModel.dismissHadithDialog() },
             )
         }
+        if (state.showGraceWarning) {
+            GraceWarningDialog(onDismiss = { viewModel.dismissGraceWarning() })
+        }
         state.newlyEarnedRankAchievement?.let { achievement ->
             AchievementCelebrationDialog(
                 achievement = achievement,
@@ -400,4 +387,39 @@ fun MohamedLoversScreen(
         }
         BubbleFeaturePromo(roundKey = state.roundKey)
     }
+}
+
+@Composable
+private fun GraceWarningDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = MohamedLoversPalette.DeepBlue,
+        shape = RoundedCornerShape(20.dp),
+        title = {
+            Text(
+                text = stringResource(Res.string.grace_warning_title),
+                color = MohamedLoversPalette.GoldHighlight,
+                fontSize = 18.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        text = {
+            Text(
+                text = stringResource(Res.string.grace_warning),
+                color = MohamedLoversPalette.GoldGlow,
+                fontSize = 14.sp,
+                lineHeight = 22.sp,
+                textAlign = TextAlign.Center,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(
+                    text = stringResource(Res.string.grace_warning_cta),
+                    color = MohamedLoversPalette.GoldHighlight,
+                )
+            }
+        },
+    )
 }
