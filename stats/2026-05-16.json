@@ -1,7 +1,7 @@
 {
-  "allTimeSalawat": 19750,
-  "weekSalawat": 504,
-  "todaySalawat": 504,
+  "allTimeSalawat": 19763,
+  "weekSalawat": 517,
+  "todaySalawat": 517,
   "activePlayers": 4,
   "countriesCount": 2,
   "countries": [
@@ -28,7 +28,13 @@
       "rank": 3,
       "score": 82,
       "uid": "cf0116cf9c1bf2ef2965b238768139059a0088bbb734739297ac650ede2fd00b"
+    },
+    {
+      "countryCode": "MA",
+      "rank": 4,
+      "score": 13,
+      "uid": "3faf41a4f0816f1330402c34ea51257c348e4e794d5bce9aaa5d21a938af1a2a"
     }
   ],
-  "updatedAt": "2026-05-15T21:44:48.326Z"
+  "updatedAt": "2026-05-15T21:59:38.527Z"
 }
