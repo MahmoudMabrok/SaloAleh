@@ -97,24 +97,31 @@ async function main() {
     process.exit(0);
   }
 
-  const writes = {};
+  const players = [];
   playersSnap.forEach(child => {
     const data = child.val();
     const uid = data?.uid;
-    const rank = data?.rank;
     const score = typeof data?.totalCount === 'number' ? data.totalCount : 0;
+    if (typeof uid === 'string' && score > 0) {
+      players.push({ uid, score, updatedAt: data.updatedAt || 0 });
+    }
+  });
 
-    if (typeof uid !== 'string' || typeof rank !== 'number' || score <= 0) return;
 
+  players.sort((a, b) => b.score - a.score || b.updatedAt - a.updatedAt);
+
+  const writes = {};
+  players.forEach((player, i) => {
+    const rank = i + 1;
     const winnerCode = rank <= 5 ? generateWinnerCode() : undefined;
 
-    writes[`mohamed_lovers/users/${uid}/achievements/${closedRound}`] = {
+    writes[`mohamed_lovers/users/${player.uid}/achievements/${closedRound}`] = {
       rank,
-      score,
+      score: player.score,
       date: closedRound,
       ...(winnerCode !== undefined && { winnerCode }),
     };
-    console.log(`  History: uid=${uid} rank=${rank} score=${score}${winnerCode ? ` winnerCode=${winnerCode}` : ''}`);
+    console.log(`  History: uid=${player.uid} rank=${rank} score=${player.score}${winnerCode ? ` winnerCode=${winnerCode}` : ''}`);
   });
 
   if (Object.keys(writes).length === 0) {
