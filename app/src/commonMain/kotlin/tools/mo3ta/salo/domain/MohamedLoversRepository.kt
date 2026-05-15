@@ -24,8 +24,8 @@ class MohamedLoversRepository(
 
     suspend fun ensureAnonymousUser(): Result<String> = firebaseClient.ensureSignedInAnonymously()
 
-    fun observeLeaderboard(roundKey: String): Flow<Result<FirebaseLeaderboard>> =
-        firebaseClient.observeLeaderboard(roundKey)
+    fun observeLeaderboard(roundKey: String, daily: Boolean = false): Flow<Result<FirebaseLeaderboard>> =
+        firebaseClient.observeLeaderboard(roundKey, daily)
 
     suspend fun fetchRoundTotal(roundKey: String): Result<Int> =
         firebaseClient.fetchRoundTotal(roundKey)

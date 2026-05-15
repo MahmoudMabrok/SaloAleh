@@ -41,6 +41,8 @@ import tools.mo3ta.salo.data.hadith.DailyHadithStore
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.notification.NotificationScheduler
+import tools.mo3ta.salo.presentation.MohamedLoversViewModel
+import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.ui.areNotificationsEnabled
 import tools.mo3ta.salo.ui.canScheduleExactAlarms
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
@@ -59,10 +61,12 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}) {
     val store: NotificationSettingsStore = koinInject()
     val sessionStore: MohamedLoversSessionStore = koinInject()
     val hadithStore: DailyHadithStore = koinInject()
+    val viewModel: MohamedLoversViewModel = koinViewModel()
     var dailyEnabled by remember { mutableStateOf(store.dailyEnabled) }
     var fridayEnabled by remember { mutableStateOf(store.fridayEnabled) }
     var hadithOnStartup by remember { mutableStateOf(hadithStore.showOnStartup) }
     var showRankChip by remember { mutableStateOf(store.showRankChip) }
+    var useDailyLeaderboard by remember { mutableStateOf(store.useDailyLeaderboard) }
     var notifPermGranted by remember { mutableStateOf(areNotificationsEnabled()) }
     var exactAlarmGranted by remember { mutableStateOf(canScheduleExactAlarms()) }
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -204,6 +208,16 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}) {
                 onToggle = { checked ->
                     showRankChip = checked
                     store.showRankChip = checked
+                },
+            )
+
+            SettingToggleRow(
+                label = "لوحة المتصدرين اليومية",
+                subtitle = "ترتيب بناءً على صلوات اليوم فقط",
+                checked = useDailyLeaderboard,
+                onToggle = { checked ->
+                    useDailyLeaderboard = checked
+                    viewModel.setLeaderboardMode(checked)
                 },
             )
 

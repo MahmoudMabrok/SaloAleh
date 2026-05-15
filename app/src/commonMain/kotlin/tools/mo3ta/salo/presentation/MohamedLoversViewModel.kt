@@ -19,6 +19,7 @@ import kotlinx.datetime.todayIn
 import tools.mo3ta.salo.data.engagement.DailyGoalStore
 import tools.mo3ta.salo.data.engagement.EngagementStore
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
+import tools.mo3ta.salo.data.notification.NotificationSettingsStore
 import tools.mo3ta.salo.domain.FirebaseLeaderboard
 import tools.mo3ta.salo.domain.MOHAMED_LOVERS_FRIDAY_MULTIPLIER
 import tools.mo3ta.salo.domain.MohamedLoversCompetitionWindow
@@ -31,6 +32,7 @@ class MohamedLoversViewModel(
     private val engagementStore: EngagementStore,
     private val hadithStore: DailyHadithStore,
     private val dailyGoalStore: DailyGoalStore,
+    private val settingsStore: NotificationSettingsStore,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MohamedLoversUiState())
@@ -185,6 +187,14 @@ class MohamedLoversViewModel(
     fun dismissDailyGoalCompleted() = _state.update { it.copy(dailyGoalJustCompleted = false) }
     fun dismissNewlyEarnedAchievement() = _state.update { it.copy(newlyEarnedRankAchievement = null) }
 
+    fun setLeaderboardMode(daily: Boolean) {
+        settingsStore.useDailyLeaderboard = daily
+        leaderboardJob?.cancel()
+        remoteLeaderboard = FirebaseLeaderboard(emptyList(), false)
+        applyLeaderboard()
+        connectToLeaderboardIfPossible()
+    }
+
     fun clearError() = _state.update { it.copy(error = null) }
 
     private fun connectToLeaderboardIfPossible() {
@@ -250,7 +260,7 @@ class MohamedLoversViewModel(
 
             leaderboardJob?.cancel()
             leaderboardJob = launch {
-                repository.observeLeaderboard(roundKey).collectLatest { result ->
+                repository.observeLeaderboard(roundKey, settingsStore.useDailyLeaderboard).collectLatest { result ->
                     result.onSuccess { leaderboard ->
                         remoteLeaderboard = leaderboard
                         applyLeaderboard()

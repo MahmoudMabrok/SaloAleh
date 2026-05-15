@@ -82,6 +82,7 @@ async function main() {
         score: data.totalCount,
         updatedAt: data.updatedAt || 0,
         countryCode: typeof data.countryCode === 'string' ? data.countryCode : 'NA',
+        yesterdayTotalScore: typeof data.yesterdayTotalScore === 'number' ? data.yesterdayTotalScore : 0,
       });
     }
   });
@@ -108,6 +109,23 @@ async function main() {
     };
   });
 
+  // Daily leaderboard: rank by todayScore = totalCount - yesterdayTotalScore.
+  const dailyPlayers = allPlayers.map(p => ({
+    ...p,
+    dailyScore: Math.max(0, p.score - (p.yesterdayTotalScore || 0)),
+  }));
+  dailyPlayers.sort((a, b) => b.dailyScore - a.dailyScore || b.updatedAt - a.updatedAt);
+  const dailyTop10 = dailyPlayers.filter(p => p.dailyScore > 0).slice(0, 10);
+  const dailyLeaderboard = { isFinal };
+  dailyTop10.forEach((player, i) => {
+    dailyLeaderboard[String(i + 1)] = {
+      rank: i + 1,
+      uid: player.uid,
+      score: player.dailyScore,
+      countryCode: player.countryCode,
+    };
+  });
+
   // Detect drop-outs: read old leaderboard before overwriting.
   let droppedUids = [];
   if (!isFinal) {
@@ -128,10 +146,11 @@ async function main() {
   await Promise.all([
     db.ref('/').update(rankUpdates),
     db.ref(`mohamed_lovers/${roundKey}/leaderboard`).set(leaderboard),
+    db.ref(`mohamed_lovers/${roundKey}/dailyLeaderboard`).set(dailyLeaderboard),
     db.ref(`mohamed_lovers/${roundKey}/roundTotal`).set(roundTotal),
     db.ref(`mohamed_lovers/${roundKey}/roundPlayerCount`).set(roundPlayerCount),
   ]);
-  console.log(`Wrote ${top10.length} leaderboard entries. roundTotal=${roundTotal} players=${roundPlayerCount}`);
+  console.log(`Wrote ${top10.length} leaderboard + ${dailyTop10.length} daily entries. roundTotal=${roundTotal} players=${roundPlayerCount}`);
   console.log(JSON.stringify(leaderboard, null, 2));
 
   // Notify dropped-out users — once per round (debounced via lastDropOutNotifRound).

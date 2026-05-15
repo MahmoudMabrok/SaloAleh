@@ -29,7 +29,7 @@ val appModule = module {
     single { createHttpClient() }
     single { HadithRemoteDataSource(get()) }
     single { HadithListRepository(get()) }
-    viewModel { MohamedLoversViewModel(get(), get(), get(), get()) }
+    viewModel { MohamedLoversViewModel(get(), get(), get(), get(), get()) }
     viewModel { AchievementsViewModel(get()) }
     viewModel { HadithListViewModel(get()) }
 }

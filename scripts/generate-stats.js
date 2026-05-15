@@ -61,6 +61,7 @@ async function main() {
   let activePlayers = 0;
   let topScore      = 0;
   const countries   = new Set();
+  const yesterdayTotalScoreUpdates = {};
 
   if (playersSnap.exists()) {
     playersSnap.forEach(child => {
@@ -69,6 +70,11 @@ async function main() {
       activePlayers++;
       if (score > topScore) topScore = score;
       if (data?.countryCode) countries.add(data.countryCode);
+      if (child.key) {
+        yesterdayTotalScoreUpdates[
+          `mohamed_lovers/${roundKey}/players/${child.key}/yesterdayTotalScore`
+        ] = score;
+      }
     });
   }
 
@@ -93,6 +99,11 @@ async function main() {
     leaderboard,
     updatedAt: new Date().toISOString(),
   };
+
+  if (Object.keys(yesterdayTotalScoreUpdates).length > 0) {
+    await db.ref('/').update(yesterdayTotalScoreUpdates);
+    console.log(`Updated yesterdayTotalScore for ${Object.keys(yesterdayTotalScoreUpdates).length} player(s).`);
+  }
 
   if (!fs.existsSync(statsDir)) fs.mkdirSync(statsDir);
   const outPath = path.join(statsDir, `${dateStr}.json`);

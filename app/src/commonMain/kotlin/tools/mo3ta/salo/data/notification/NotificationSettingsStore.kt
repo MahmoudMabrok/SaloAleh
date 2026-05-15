@@ -29,11 +29,16 @@ class NotificationSettingsStore(private val settings: Settings) {
         get() = settings.getBoolean(KEY_BUBBLE_TOOLTIP_SHOWN, false)
         set(v) = settings.putBoolean(KEY_BUBBLE_TOOLTIP_SHOWN, v)
 
+    var useDailyLeaderboard: Boolean
+        get() = settings.getBoolean(KEY_USE_DAILY_LEADERBOARD, false)
+        set(v) = settings.putBoolean(KEY_USE_DAILY_LEADERBOARD, v)
+
     private companion object {
         const val KEY_DAILY_ENABLED = "notif_daily_enabled"
         const val KEY_FRIDAY_ENABLED = "notif_friday_enabled"
         const val KEY_SHOW_RANK_CHIP = "show_rank_chip"
         const val KEY_RANK_CHIP_TOOLTIP_SHOWN = "rank_chip_tooltip_shown"
         const val KEY_BUBBLE_TOOLTIP_SHOWN = "bubble_tooltip_shown"
+        const val KEY_USE_DAILY_LEADERBOARD = "use_daily_leaderboard"
     }
 }

@@ -99,8 +99,8 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         }
     }
 
-    override fun observeLeaderboard(roundKey: String): Flow<Result<FirebaseLeaderboard>> =
-        Firebase.database.reference(leaderboardPath(roundKey))
+    override fun observeLeaderboard(roundKey: String, daily: Boolean): Flow<Result<FirebaseLeaderboard>> =
+        Firebase.database.reference(leaderboardPath(roundKey, daily))
             .valueEvents
             .map { snapshot ->
                 runCatching {
@@ -205,7 +205,10 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
     }
 
     private fun playersPath(roundKey: String) = "$ROOT_PATH/$roundKey/$PLAYERS_PATH"
-    private fun leaderboardPath(roundKey: String) = "$ROOT_PATH/$roundKey/$LEADERBOARD_PATH"
+    private fun leaderboardPath(roundKey: String, daily: Boolean = false): String {
+        val node = if (daily) DAILY_LEADERBOARD_PATH else LEADERBOARD_PATH
+        return "$ROOT_PATH/$roundKey/$node"
+    }
 
     private fun dev.gitlive.firebase.database.DataSnapshot.toLeaderboardEntry(): FirebaseLeaderboardEntry? {
         val map = value as? Map<*, *> ?: return null
@@ -234,6 +237,7 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         const val ROOT_PATH = "mohamed_lovers"
         const val PLAYERS_PATH = "players"
         const val LEADERBOARD_PATH = "leaderboard"
+        const val DAILY_LEADERBOARD_PATH = "dailyLeaderboard"
         const val IS_FINAL_KEY = "isFinal"
         const val UID_KEY = "uid"
         const val SCORE_KEY = "score"

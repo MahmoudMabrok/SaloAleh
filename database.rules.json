@@ -43,6 +43,10 @@
           ".read": true,
           ".write": false
         },
+        "dailyLeaderboard": {
+          ".read": true,
+          ".write": false
+        },
         "roundPlayerCount": {
           ".read": true,
           ".write": false
@@ -62,6 +66,10 @@
             },
             "totalCount": {
               ".validate": "newData.isNumber() && newData.val() >= (data.exists() ? data.val() : 0) && newData.val() <= (data.exists() ? data.val() : 0) + 10000"
+            },
+            "yesterdayTotalScore": {
+              ".read": true,
+              ".write": false
             },
             "updatedAt": {
               ".validate": "newData.val() === now"
