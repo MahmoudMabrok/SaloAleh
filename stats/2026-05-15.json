@@ -1,12 +1,80 @@
 {
-  "allTimeSalawat": 9577,
-  "weekSalawat": 0,
-  "todaySalawat": 0,
-  "activePlayers": 0,
-  "countriesCount": 0,
-  "countries": [],
-  "topScore": 0,
-  "roundKey": "2026-05-22",
-  "leaderboard": [],
-  "updatedAt": "2026-05-14T21:49:24.454Z"
+  "allTimeSalawat": 14775,
+  "weekSalawat": 5198,
+  "todaySalawat": 1723,
+  "activePlayers": 27,
+  "countriesCount": 6,
+  "countries": [
+    "EG",
+    "GM",
+    "IL",
+    "TD",
+    "US",
+    "YE"
+  ],
+  "topScore": 2309,
+  "roundKey": "2026-05-15",
+  "leaderboard": [
+    {
+      "countryCode": "EG",
+      "rank": 1,
+      "score": 2309,
+      "uid": "d37ab9ff8d45a9931d24389990545bdb773791e2873b2d23534c26bdcef8f48a"
+    },
+    {
+      "countryCode": "EG",
+      "rank": 2,
+      "score": 1887,
+      "uid": "cf0116cf9c1bf2ef2965b238768139059a0088bbb734739297ac650ede2fd00b"
+    },
+    {
+      "countryCode": "US",
+      "rank": 3,
+      "score": 190,
+      "uid": "525878d2f0dacd63ccf97fce0abb86a2ac45acfc7688649e82d463e0664406a4"
+    },
+    {
+      "countryCode": "EG",
+      "rank": 4,
+      "score": 180,
+      "uid": "c7dbd5efa5abcf552cc107bbb66b94a042c1d178f8006fb4d5149513c07aa535"
+    },
+    {
+      "countryCode": "EG",
+      "rank": 5,
+      "score": 170,
+      "uid": "5a4b1d0ed314c539aefe3fedeb07054b2acf361dd98189761e80e047fbf80305"
+    },
+    {
+      "countryCode": "YE",
+      "rank": 6,
+      "score": 102,
+      "uid": "74b54edcc03a30eba78d276c13d95a39e402486e6de3a90beac360b44abd2bc0"
+    },
+    {
+      "countryCode": "EG",
+      "rank": 7,
+      "score": 86,
+      "uid": "c4fe2ef52972fb9bc4c9461f02a447f3a547f5dff36f021632f4746051aeb617"
+    },
+    {
+      "countryCode": "GM",
+      "rank": 8,
+      "score": 51,
+      "uid": "6188d02cdbcc1481a51379e95dee52885bd9e028a94daa78cf2bb271c35642a0"
+    },
+    {
+      "countryCode": "EG",
+      "rank": 9,
+      "score": 33,
+      "uid": "091cba8ac419018c98b64cc8d8576406e39d7e6165568e620781519ffeeaa8ca"
+    },
+    {
+      "countryCode": "US",
+      "rank": 10,
+      "score": 32,
+      "uid": "e8a4088a59edec78a86602822baa843b4e33f33a6311df402165fbf2c3e21fad"
+    }
+  ],
+  "updatedAt": "2026-05-15T07:15:59.412Z"
 }
