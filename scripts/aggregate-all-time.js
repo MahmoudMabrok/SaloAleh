@@ -1,7 +1,8 @@
 // Runs once per week on Fridays at 19:00 Cairo (17:00 UTC). Sums all past
 // rounds (including the one that just closed) into allTimeTotal, then writes
-// achievement records for every top-10 finisher so the app can surface them
-// to users who missed the live isFinal event.
+// achievement records for every finisher so the app can surface them
+// to users who missed the live isFinal event. Top-5 finishers also receive
+// a unique winnerCode in their achievement record.
 const admin = require('firebase-admin');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -46,6 +47,15 @@ function cairoRoundKey() {
   }).format(fridayDate);
 }
 
+function generateWinnerCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
 const ROUND_KEY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 async function main() {
@@ -80,8 +90,7 @@ async function main() {
   console.log(`allTimeTotal written: ${allTimeTotal}`);
 
   // Write round-history records for every player who participated in the closed round.
-  // The app decides whether to surface each entry as an achievement badge (rank 1–10)
-  // or plain history based on the stored rank value.
+  // Top-5 finishers also receive a unique randomly generated winnerCode.
   const playersSnap = await db.ref(`mohamed_lovers/${closedRound}/players`).get();
   if (!playersSnap.exists()) {
     console.log(`No players found for ${closedRound} — no history written.`);
@@ -94,17 +103,22 @@ async function main() {
     const uid = data?.uid;
     const rank = data?.rank;
     const score = typeof data?.totalCount === 'number' ? data.totalCount : 0;
+
     if (typeof uid !== 'string' || typeof rank !== 'number' || score <= 0) return;
+
+    const winnerCode = rank <= 5 ? generateWinnerCode() : undefined;
+
     writes[`mohamed_lovers/users/${uid}/achievements/${closedRound}`] = {
       rank,
       score,
       date: closedRound,
+      ...(winnerCode !== undefined && { winnerCode }),
     };
-    console.log(`  History: uid=${uid} rank=${rank} score=${score}`);
+    console.log(`  History: uid=${uid} rank=${rank} score=${score}${winnerCode ? ` winnerCode=${winnerCode}` : ''}`);
   });
 
   if (Object.keys(writes).length === 0) {
-    console.log('No top-10 entries — no achievements written.');
+    console.log('No entries — no achievements written.');
   } else {
     await db.ref('/').update(writes);
     console.log(`Wrote ${Object.keys(writes).length} achievement entries.`);
