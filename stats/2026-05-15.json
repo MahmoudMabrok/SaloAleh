@@ -1,8 +1,8 @@
 {
-  "allTimeSalawat": 14775,
-  "weekSalawat": 5198,
-  "todaySalawat": 1723,
-  "activePlayers": 27,
+  "allTimeSalawat": 19246,
+  "weekSalawat": 9669,
+  "todaySalawat": 6194,
+  "activePlayers": 28,
   "countriesCount": 6,
   "countries": [
     "EG",
@@ -12,19 +12,19 @@
     "US",
     "YE"
   ],
-  "topScore": 2309,
+  "topScore": 4568,
   "roundKey": "2026-05-15",
   "leaderboard": [
     {
       "countryCode": "EG",
       "rank": 1,
-      "score": 2309,
+      "score": 4568,
       "uid": "d37ab9ff8d45a9931d24389990545bdb773791e2873b2d23534c26bdcef8f48a"
     },
     {
       "countryCode": "EG",
       "rank": 2,
-      "score": 1887,
+      "score": 4049,
       "uid": "cf0116cf9c1bf2ef2965b238768139059a0088bbb734739297ac650ede2fd00b"
     },
     {
@@ -66,15 +66,15 @@
     {
       "countryCode": "EG",
       "rank": 9,
-      "score": 33,
-      "uid": "091cba8ac419018c98b64cc8d8576406e39d7e6165568e620781519ffeeaa8ca"
+      "score": 50,
+      "uid": "60d883e0b9c85a9a414d72b85b806de92f095b27cb4a48ddb53b385f1529da7a"
     },
     {
-      "countryCode": "US",
+      "countryCode": "EG",
       "rank": 10,
-      "score": 32,
-      "uid": "e8a4088a59edec78a86602822baa843b4e33f33a6311df402165fbf2c3e21fad"
+      "score": 33,
+      "uid": "091cba8ac419018c98b64cc8d8576406e39d7e6165568e620781519ffeeaa8ca"
     }
   ],
-  "updatedAt": "2026-05-15T07:15:59.412Z"
+  "updatedAt": "2026-05-15T14:31:33.220Z"
 }
