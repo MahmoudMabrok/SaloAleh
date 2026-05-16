@@ -126,21 +126,51 @@ async function main() {
     };
   });
 
-  // Detect drop-outs: read old leaderboard before overwriting.
+  // Read old leaderboards before overwriting — used for rank-diff and drop-out detection.
   let droppedUids = [];
-  if (!isFinal) {
-    const oldLbSnap = await db.ref(`mohamed_lovers/${roundKey}/leaderboard`).get();
-    if (oldLbSnap.exists()) {
-      const oldLb = oldLbSnap.val();
-      const oldTop10Uids = new Set();
-      for (let i = 1; i <= 10; i++) {
-        const entry = oldLb[String(i)];
-        if (entry?.uid) oldTop10Uids.add(entry.uid);
-      }
-      const newTop10Uids = new Set(top10.map(p => p.uid));
-      droppedUids = [...oldTop10Uids].filter(uid => !newTop10Uids.has(uid));
-      console.log(`Drop-out detection: old=${oldTop10Uids.size} new=${newTop10Uids.size} dropped=${droppedUids.length}`);
+  const oldLbSnap = await db.ref(`mohamed_lovers/${roundKey}/leaderboard`).get();
+  const oldDailyLbSnap = await db.ref(`mohamed_lovers/${roundKey}/dailyLeaderboard`).get();
+
+  // Build uid→rank maps from old leaderboards.
+  function buildOldRankMap(snap) {
+    const map = {};
+    if (!snap.exists()) return map;
+    const val = snap.val();
+    for (let i = 1; i <= 10; i++) {
+      const entry = val[String(i)];
+      if (entry?.uid) map[entry.uid] = entry.rank;
     }
+    return map;
+  }
+  const oldRanks = buildOldRankMap(oldLbSnap);
+  const oldDailyRanks = buildOldRankMap(oldDailyLbSnap);
+
+  // Compute rankChange for each entry: "same", "up", "down", or "new".
+  function computeRankChange(uid, newRank, oldRankMap) {
+    const oldRank = oldRankMap[uid];
+    if (oldRank == null) return 'new';
+    if (oldRank === newRank) return 'same';
+    return newRank < oldRank ? 'up' : 'down';
+  }
+
+  // Enrich weekly leaderboard entries with rankChange.
+  top10.forEach((player, i) => {
+    const rank = i + 1;
+    leaderboard[String(rank)].rankChange = computeRankChange(player.uid, rank, oldRanks);
+  });
+
+  // Enrich daily leaderboard entries with rankChange.
+  dailyTop10.forEach((player, i) => {
+    const rank = i + 1;
+    dailyLeaderboard[String(rank)].rankChange = computeRankChange(player.uid, rank, oldDailyRanks);
+  });
+
+  // Drop-out detection.
+  if (!isFinal && oldLbSnap.exists()) {
+    const oldTop10Uids = new Set(Object.values(oldRanks).length ? Object.keys(oldRanks) : []);
+    const newTop10Uids = new Set(top10.map(p => p.uid));
+    droppedUids = [...oldTop10Uids].filter(uid => !newTop10Uids.has(uid));
+    console.log(`Drop-out detection: old=${oldTop10Uids.size} new=${newTop10Uids.size} dropped=${droppedUids.length}`);
   }
 
   await Promise.all([
@@ -152,6 +182,51 @@ async function main() {
   ]);
   console.log(`Wrote ${top10.length} leaderboard + ${dailyTop10.length} daily entries. roundTotal=${roundTotal} players=${roundPlayerCount}`);
   console.log(JSON.stringify(leaderboard, null, 2));
+
+  // Top-3 change notifications — detect drops from top 3 and position losses.
+  if (!isFinal) {
+    const top3Notifs = [];
+
+    // Players who were in top 3 but dropped out (now rank 4+ or gone).
+    for (const [uid, oldRank] of Object.entries(oldRanks)) {
+      if (oldRank > 3) continue;
+      const newEntry = top10.find(p => p.uid === uid);
+      const newRank = newEntry ? top10.indexOf(newEntry) + 1 : null;
+      if (newRank == null || newRank > 3) {
+        top3Notifs.push({ uid, event: 'dropped', oldRank, newRank });
+      } else if (newRank > oldRank) {
+        top3Notifs.push({ uid, event: 'lost_position', oldRank, newRank });
+      }
+    }
+
+    if (top3Notifs.length > 0) {
+      console.log(`Top-3 changes: ${top3Notifs.length} notification(s) to send`);
+      const top3Messages = {
+        dropped: {
+          title: 'مكانك بين المحبين يناديك 🤍',
+          body: 'كنت من أكثر المصلّين على النبي ﷺ — لا تتوقف، فالصلاة عليه نور وشفاعة يوم القيامة!',
+        },
+        lost_position: {
+          title: 'المنافسة تشتد بين المحبين 🔥',
+          body: 'تراجع ترتيبك بين أكثر المصلّين على النبي ﷺ — زِد صلواتك وارتقِ، فأقربكم مني مجلسًا أكثركم صلاةً عليّ!',
+        },
+      };
+      const top3Promises = top3Notifs.map(async ({ uid, event }) => {
+        const userSnap = await db.ref(`mohamed_lovers/users/${uid}`).get();
+        const user = userSnap.val();
+        if (!user?.fcmToken) { console.log(`  top3 uid=${uid}: no FCM token — skip`); return; }
+        const msg = top3Messages[event];
+        return admin.messaging().send({
+          token: user.fcmToken,
+          notification: { title: msg.title, body: msg.body },
+          data: { title: msg.title, body: msg.body },
+        })
+          .then(msgId => console.log(`  top3 uid=${uid} (${event}): sent msgId=${msgId}`))
+          .catch(e => console.error(`  top3 uid=${uid} (${event}): send failed: ${e.message}`));
+      });
+      await Promise.all(top3Promises);
+    }
+  }
 
   // Notify dropped-out users — once per round (debounced via lastDropOutNotifRound).
   if (droppedUids.length > 0) {
