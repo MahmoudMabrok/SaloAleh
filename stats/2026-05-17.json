@@ -1,0 +1,73 @@
+{
+  "allTimeSalawat": 21257,
+  "weekSalawat": 2011,
+  "todaySalawat": 1494,
+  "activePlayers": 8,
+  "countriesCount": 3,
+  "countries": [
+    "EG",
+    "MA",
+    "US"
+  ],
+  "topScore": 1175,
+  "roundKey": "2026-05-22",
+  "leaderboard": [
+    {
+      "countryCode": "EG",
+      "rank": 1,
+      "rankChange": "same",
+      "score": 1175,
+      "uid": "cf0116cf9c1bf2ef2965b238768139059a0088bbb734739297ac650ede2fd00b"
+    },
+    {
+      "countryCode": "EG",
+      "rank": 2,
+      "rankChange": "same",
+      "score": 306,
+      "uid": "d37ab9ff8d45a9931d24389990545bdb773791e2873b2d23534c26bdcef8f48a"
+    },
+    {
+      "countryCode": "EG",
+      "rank": 3,
+      "rankChange": "same",
+      "score": 243,
+      "uid": "b404902c252709675cb3f9f65edbf13a648af2fc9127e4d4a6fa09efe1b5a9e3"
+    },
+    {
+      "countryCode": "EG",
+      "rank": 4,
+      "rankChange": "same",
+      "score": 222,
+      "uid": "17854c308f4d078166229c7706f8f4e355d3e434f3f212eec40170d7c1b406b0"
+    },
+    {
+      "countryCode": "US",
+      "rank": 5,
+      "rankChange": "same",
+      "score": 41,
+      "uid": "e8a4088a59edec78a86602822baa843b4e33f33a6311df402165fbf2c3e21fad"
+    },
+    {
+      "countryCode": "MA",
+      "rank": 6,
+      "rankChange": "same",
+      "score": 13,
+      "uid": "3faf41a4f0816f1330402c34ea51257c348e4e794d5bce9aaa5d21a938af1a2a"
+    },
+    {
+      "countryCode": "EG",
+      "rank": 7,
+      "rankChange": "same",
+      "score": 11,
+      "uid": "91557988987ea7a7d7b85b37b1c728334c4f13ea4742e7040b3d6abf17f126ac"
+    },
+    {
+      "countryCode": "EG",
+      "rank": 8,
+      "rankChange": "same",
+      "score": 0,
+      "uid": "ea3d3438322aeb0e5a2ae2842698029532546e54b13132001c2ee20fdb3be756"
+    }
+  ],
+  "updatedAt": "2026-05-16T21:33:07.009Z"
+}
