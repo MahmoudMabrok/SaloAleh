@@ -49,7 +49,7 @@ class MohamedLoversViewModel(
     private var inFlightFlush = 0
 
     init {
-        _state.update { it.copy(showHadithDialog = hadithStore.showOnStartup) }
+        _state.update { it.copy(showHadithDialog = hadithStore.showOnStartup, isUsingDailyLeaderboard = settingsStore.useDailyLeaderboard) }
         refresh()
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
         if (engagementStore.shouldShowGraceWarning(today)) {
@@ -191,6 +191,7 @@ class MohamedLoversViewModel(
 
     fun setLeaderboardMode(daily: Boolean) {
         settingsStore.useDailyLeaderboard = daily
+        _state.update { it.copy(isUsingDailyLeaderboard = daily) }
         leaderboardJob?.cancel()
         remoteLeaderboard = FirebaseLeaderboard(emptyList(), false)
         applyLeaderboard()

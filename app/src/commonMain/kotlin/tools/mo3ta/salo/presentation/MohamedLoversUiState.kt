@@ -39,6 +39,7 @@ data class MohamedLoversUiState(
     val selfEntry: MohamedLoversLeaderboardEntry? = null,
     val selfInTop: Boolean = false,
     val topPlayers: List<MohamedLoversLeaderboardEntry> = emptyList(),
+    val isUsingDailyLeaderboard: Boolean = false,
     val error: MohamedLoversError? = null,
     val newlyEarnedRankAchievement: Achievement.RankAchievement? = null,
     val roundTotal: Int = 0,

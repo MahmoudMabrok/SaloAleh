@@ -68,9 +68,11 @@ import tools.mo3ta.salo.generated.resources.mohamed_lovers_info_sheet_title
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_ornament_divider
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_rank_number
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_all_time_total_label
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_daily
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_empty
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_refresh_note
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_title
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_weekly
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_round_player_count_label
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_round_total_label
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_round_end_label
@@ -133,6 +135,7 @@ internal fun MohamedLoversInfoSheet(
                 topPlayers = state.topPlayers,
                 selfEntry = state.selfEntry,
                 selfInTop = state.selfInTop,
+                isDaily = state.isUsingDailyLeaderboard,
             )
             if (state.isWinner) {
                 WinnerCard(winnerCode = state.winnerCode, onCopyWinnerCode = onCopyWinnerCode)
@@ -376,6 +379,7 @@ private fun LeaderboardCard(
     topPlayers: List<MohamedLoversLeaderboardEntry>,
     selfEntry: MohamedLoversLeaderboardEntry?,
     selfInTop: Boolean,
+    isDaily: Boolean,
 ) {
     SheetCard {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -383,8 +387,10 @@ private fun LeaderboardCard(
                 text = stringResource(Res.string.mohamed_lovers_leaderboard_title),
                 style = TextStyle(fontFamily = MohamedLoversFonts.display, fontSize = 14.sp, fontWeight = FontWeight.W500),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.95f),
-                modifier = Modifier.weight(1f),
             )
+            Spacer(Modifier.width(8.dp))
+            LeaderboardTypeBadge(isDaily)
+            Spacer(Modifier.weight(1f))
             Text(
                 text = stringResource(Res.string.mohamed_lovers_leaderboard_refresh_note),
                 style = bodyStyle().copy(fontSize = 11.sp),
@@ -501,6 +507,22 @@ private fun RankChangeIndicator(rankChange: String) {
         style = bodyStyle().copy(fontSize = 11.sp, fontWeight = FontWeight.W700),
         color = color,
         modifier = Modifier.width(18.dp),
+    )
+}
+
+@Composable
+private fun LeaderboardTypeBadge(isDaily: Boolean) {
+    val label = stringResource(if (isDaily) Res.string.mohamed_lovers_leaderboard_daily else Res.string.mohamed_lovers_leaderboard_weekly)
+    val badgeColor = if (isDaily) Color(0xFF42A5F5) else MohamedLoversPalette.GoldGlow
+    Text(
+        text = label,
+        style = bodyStyle().copy(fontSize = 10.sp, fontWeight = FontWeight.W700),
+        color = badgeColor.copy(alpha = 0.85f),
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(badgeColor.copy(alpha = 0.15f))
+            .border(1.dp, badgeColor.copy(alpha = 0.3f), RoundedCornerShape(999.dp))
+            .padding(horizontal = 10.dp, vertical = 3.dp),
     )
 }
 
