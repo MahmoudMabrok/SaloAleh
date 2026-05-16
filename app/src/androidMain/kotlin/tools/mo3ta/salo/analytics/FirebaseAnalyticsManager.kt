@@ -8,7 +8,7 @@ class FirebaseAnalyticsManager(private val context: Context) : AnalyticsManager 
     private val analytics: FirebaseAnalytics by lazy { FirebaseAnalytics.getInstance(context) }
 
     override fun logAction(name: String, params: Map<String, String>) {
-        analytics.logEvent(name) {
+        analytics.logEvent("salo_$name") {
             params.forEach { (key, value) -> param(key, value) }
         }
     }
@@ -17,7 +17,7 @@ class FirebaseAnalyticsManager(private val context: Context) : AnalyticsManager 
         name: String,
         params: Map<String, String>
     ) {
-        analytics.logEvent("screen_view_$name"){
+        analytics.logEvent("salo_screen_view_$name"){
             params.forEach { (key, value) -> param(key, value) }
         }
     }
