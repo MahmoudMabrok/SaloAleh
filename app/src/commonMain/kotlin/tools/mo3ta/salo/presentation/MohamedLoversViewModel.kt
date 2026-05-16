@@ -49,7 +49,13 @@ class MohamedLoversViewModel(
     private var inFlightFlush = 0
 
     init {
-        _state.update { it.copy(showHadithDialog = hadithStore.showOnStartup, isUsingDailyLeaderboard = settingsStore.useDailyLeaderboard) }
+        _state.update {
+            it.copy(
+                showHadithDialog = hadithStore.showOnStartup,
+                isUsingDailyLeaderboard = settingsStore.useDailyLeaderboard,
+                showDailyLeaderboardPromo = !settingsStore.dailyLeaderboardPromoShown,
+            )
+        }
         refresh()
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
         if (engagementStore.shouldShowGraceWarning(today)) {
@@ -188,6 +194,10 @@ class MohamedLoversViewModel(
     }
     fun dismissDailyGoalCompleted() = _state.update { it.copy(dailyGoalJustCompleted = false) }
     fun dismissNewlyEarnedAchievement() = _state.update { it.copy(newlyEarnedRankAchievement = null) }
+    fun dismissDailyLeaderboardPromo() {
+        settingsStore.dailyLeaderboardPromoShown = true
+        _state.update { it.copy(showDailyLeaderboardPromo = false) }
+    }
 
     fun setLeaderboardMode(daily: Boolean) {
         settingsStore.useDailyLeaderboard = daily

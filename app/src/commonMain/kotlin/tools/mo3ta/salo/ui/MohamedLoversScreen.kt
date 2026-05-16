@@ -386,6 +386,9 @@ fun MohamedLoversScreen(
             )
         }
         BubbleFeaturePromo(roundKey = state.roundKey)
+        if (state.showDailyLeaderboardPromo) {
+            DailyLeaderboardPromoDialog(onDismiss = { viewModel.dismissDailyLeaderboardPromo() })
+        }
     }
 }
 
