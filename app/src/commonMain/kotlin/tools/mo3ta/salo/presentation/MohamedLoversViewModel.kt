@@ -64,6 +64,8 @@ class MohamedLoversViewModel(
         viewModelScope.launch {
             delay(90_000L)
             refresh()
+            delay(5*60_000L)
+            refresh()
         }
     }
 
