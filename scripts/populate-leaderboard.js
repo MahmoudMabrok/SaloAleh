@@ -115,7 +115,7 @@ async function main() {
     dailyScore: Math.max(0, p.score - (p.yesterdayTotalScore || 0)),
   }));
   dailyPlayers.sort((a, b) => b.dailyScore - a.dailyScore || b.updatedAt - a.updatedAt);
-  const dailyTop10 = dailyPlayers.filter(p => p.dailyScore > 0).slice(0, 10);
+  const dailyTop10 = dailyPlayers.slice(0, 10);
   const dailyLeaderboard = { isFinal };
   dailyTop10.forEach((player, i) => {
     dailyLeaderboard[String(i + 1)] = {
