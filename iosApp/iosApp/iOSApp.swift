@@ -36,6 +36,10 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate {
     }
 
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+        if let token = fcmToken {
+            UserDefaults.standard.set(token, forKey: "fcm_token")
+            UserDefaults.standard.set(false, forKey: "fcm_token_synced")
+        }
         Messaging.messaging().subscribe(toTopic: "general") { error in
             #if DEBUG
             if let error { print("[FCM] topic subscription failed: \(error)") }

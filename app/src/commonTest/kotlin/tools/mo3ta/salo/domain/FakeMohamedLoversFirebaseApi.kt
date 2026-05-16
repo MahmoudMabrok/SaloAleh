@@ -29,7 +29,7 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
 
     override suspend fun fetchAllTimeTotal(): Result<Long> = Result.success(0L)
 
-    override fun observeLeaderboard(roundKey: String): Flow<Result<FirebaseLeaderboard>> =
+    override fun observeLeaderboard(roundKey: String, daily: Boolean): Flow<Result<FirebaseLeaderboard>> =
         flowOf(Result.success(FirebaseLeaderboard(emptyList(), false)))
 
     override suspend fun incrementSession(roundKey: String, uid: String, delta: Int, countryCode: String): Result<Unit> {

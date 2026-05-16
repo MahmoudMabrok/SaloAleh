@@ -459,8 +459,9 @@ private fun LeaderboardRow(entry: MohamedLoversLeaderboardEntry, pinned: Boolean
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
+            RankChangeIndicator(entry.rankChange)
             if (entry.rank > 0) {
                 Text(
                     text = stringResource(Res.string.mohamed_lovers_rank_number, entry.rank),
@@ -485,6 +486,22 @@ private fun LeaderboardRow(entry: MohamedLoversLeaderboardEntry, pinned: Boolean
             color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
         )
     }
+}
+
+@Composable
+private fun RankChangeIndicator(rankChange: String) {
+    val (symbol, color) = when (rankChange) {
+        "up" -> "▲" to Color(0xFF4CAF50)
+        "down" -> "▼" to Color(0xFFE53935)
+        "new" -> "★" to Color(0xFF42A5F5)
+        else -> "──" to MohamedLoversPalette.GoldGlow.copy(alpha = 0.3f)
+    }
+    Text(
+        text = symbol,
+        style = bodyStyle().copy(fontSize = 11.sp, fontWeight = FontWeight.W700),
+        color = color,
+        modifier = Modifier.width(18.dp),
+    )
 }
 
 @Composable

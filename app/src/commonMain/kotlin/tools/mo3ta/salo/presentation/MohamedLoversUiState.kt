@@ -7,6 +7,7 @@ data class MohamedLoversLeaderboardEntry(
     val displayTag: String,
     val totalCount: Int,
     val isCurrentUser: Boolean,
+    val rankChange: String = "",
 ){
     val displayedRank = if (rank > 0) "#$rank " else ""
 }

@@ -58,7 +58,7 @@ class MainActivity : ComponentActivity() {
         } else {
             engagementStore.saveFcmPermDenied(today)
         }
-        if (sessionStore.getSavedFcmToken() == null) {
+        if (!sessionStore.isFcmTokenSynced()) {
             fetchAndSendFcmToken()
         }
 
@@ -83,8 +83,11 @@ class MainActivity : ComponentActivity() {
     private fun fetchAndSendFcmToken() {
         FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
             sessionStore.saveLocalFcmToken(token)
+            sessionStore.setFcmTokenSynced(false)
             CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
-                firebaseClient.writeFcmToken(sessionStore.getOrCreateUid(), token)
+                firebaseClient.writeFcmToken(sessionStore.getOrCreateUid(), token).onSuccess {
+                    sessionStore.setFcmTokenSynced(true)
+                }
             }
         }
     }
@@ -103,7 +106,7 @@ class MainActivity : ComponentActivity() {
             engagementStore.clearFcmPermDenied()
             FirebaseMessaging.getInstance().subscribeToTopic("general")
         }
-        if (sessionStore.getSavedFcmToken() == null) {
+        if (!sessionStore.isFcmTokenSynced()) {
             fetchAndSendFcmToken()
         }
     }

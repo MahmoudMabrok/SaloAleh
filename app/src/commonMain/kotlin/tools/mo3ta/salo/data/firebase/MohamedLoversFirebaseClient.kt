@@ -216,7 +216,8 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         val score = (map[SCORE_KEY] as? Number)?.toInt() ?: return null
         val rank = (map[RANK_KEY] as? Number)?.toInt() ?: key?.toIntOrNull() ?: return null
         val countryCode = map[COUNTRY_CODE_KEY] as? String ?: ""
-        return FirebaseLeaderboardEntry(rank = rank, uid = uid, score = score, countryCode = countryCode)
+        val rankChange = map[RANK_CHANGE_KEY] as? String ?: ""
+        return FirebaseLeaderboardEntry(rank = rank, uid = uid, score = score, countryCode = countryCode, rankChange = rankChange)
     }
 
     private fun dev.gitlive.firebase.database.DataSnapshot.toPlayer(): MohamedLoversPlayer? {
@@ -246,6 +247,7 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         const val IS_WINNER_KEY = "isWinner"
         const val WINNER_CODE_KEY = "winnerCode"
         const val COUNTRY_CODE_KEY = "countryCode"
+        const val RANK_CHANGE_KEY = "rankChange"
         const val UPDATED_AT_KEY = "updatedAt"
         const val ROUND_TOTAL_PATH = "roundTotal"
         const val ROUND_PLAYER_COUNT_PATH = "roundPlayerCount"

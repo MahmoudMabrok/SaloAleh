@@ -28,8 +28,11 @@ class SaloFirebaseMessagingService : FirebaseMessagingService() {
             )
             val store = MohamedLoversSessionStore(settings)
             store.saveLocalFcmToken(token)
+            store.setFcmTokenSynced(false)
             val uid = store.getOrCreateUid()
-            MohamedLoversFirebaseClient(store).writeFcmToken(uid, token)
+            MohamedLoversFirebaseClient(store).writeFcmToken(uid, token).onSuccess {
+                store.setFcmTokenSynced(true)
+            }
         }
     }
 

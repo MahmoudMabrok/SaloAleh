@@ -322,6 +322,7 @@ class MohamedLoversViewModel(
                 displayTag = buildMohamedLoversDisplayTag(entry.uid, entry.countryCode),
                 totalCount = if (isCurrentUser) selfProjectedTotal else entry.score,
                 isCurrentUser = isCurrentUser,
+                rankChange = entry.rankChange,
             )
         }.sortedByDescending { it.totalCount }
             .mapIndexed { index, entry -> entry.copy(rank = index + 1) }

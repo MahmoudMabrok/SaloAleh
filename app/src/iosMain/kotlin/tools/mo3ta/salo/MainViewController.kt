@@ -1,12 +1,18 @@
 package tools.mo3ta.salo
 
 import androidx.compose.ui.window.ComposeUIViewController
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import org.koin.core.context.startKoin
 import platform.UserNotifications.UNAuthorizationOptionAlert
 import platform.UserNotifications.UNAuthorizationOptionBadge
 import platform.UserNotifications.UNAuthorizationOptionSound
 import platform.UserNotifications.UNUserNotificationCenter
+import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseClient
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
+import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.di.appModule
 import tools.mo3ta.salo.di.iosModule
 import tools.mo3ta.salo.notification.NotificationScheduler
@@ -15,6 +21,8 @@ fun MainViewController() = ComposeUIViewController(
     configure = {
         val koin = startKoin { modules(appModule, iosModule) }.koin
         val store = koin.get<NotificationSettingsStore>()
+
+        syncFcmTokenIfNeeded(koin.get(), koin.get())
 
         println("[MainVC] requesting notification authorization")
         UNUserNotificationCenter.currentNotificationCenter()
@@ -30,3 +38,16 @@ fun MainViewController() = ComposeUIViewController(
             }
     },
 ) { App() }
+
+private fun syncFcmTokenIfNeeded(
+    sessionStore: MohamedLoversSessionStore,
+    firebaseClient: MohamedLoversFirebaseClient,
+) {
+    if (sessionStore.isFcmTokenSynced()) return
+    val token = sessionStore.getSavedFcmToken() ?: return
+    CoroutineScope(Dispatchers.Default + SupervisorJob()).launch {
+        firebaseClient.writeFcmToken(sessionStore.getOrCreateUid(), token).onSuccess {
+            sessionStore.setFcmTokenSynced(true)
+        }
+    }
+}

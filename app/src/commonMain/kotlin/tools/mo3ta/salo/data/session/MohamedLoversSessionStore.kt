@@ -106,6 +106,9 @@ class MohamedLoversSessionStore(private val settings: Settings) {
     fun getSavedFcmToken(): String? = settings.getStringOrNull(KEY_FCM_TOKEN)
     fun saveLocalFcmToken(token: String) = settings.putString(KEY_FCM_TOKEN, token)
 
+    fun isFcmTokenSynced(): Boolean = settings.getBoolean(KEY_FCM_TOKEN_SYNCED, false)
+    fun setFcmTokenSynced(synced: Boolean) = settings.putBoolean(KEY_FCM_TOKEN_SYNCED, synced)
+
     @OptIn(kotlin.uuid.ExperimentalUuidApi::class)
     fun getOrCreateUid(): String {
         val raw = settings.getStringOrNull(KEY_UID)?.takeIf { it.isNotBlank() }
@@ -131,5 +134,6 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         const val KEY_PERSONAL_BEST_RANK = "personal_best_rank"
         const val KEY_LAST_ROUND_TAPS = "last_round_taps"
         const val KEY_FCM_TOKEN = "fcm_token"
+        const val KEY_FCM_TOKEN_SYNCED = "fcm_token_synced"
     }
 }
