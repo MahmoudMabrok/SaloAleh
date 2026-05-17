@@ -18,15 +18,18 @@ mobile app via a QR code.
 - **Per-round storage** — round key is computed locally with the same
   algorithm as the mobile app (`CompetitionWindowUtils.kt`): the ISO
   date of the next Friday 18:00 in `Africa/Cairo`, accounting for DST.
-- **QR handoff with smart deduct** — the options page renders a QR with payload:
+- **Timed QR submission window** — the options page renders a QR with payload:
   ```json
   {"v":2,"type":"saloaleh-submit","round":"2026-05-22","count":1234,
-   "country":"EG","src":"chrome-ext","ts":1747...}
+   "country":"EG","src":"chrome-ext","ts":1747000000000,
+   "ttl":1747000120000}
   ```
-  The extension snapshots the count at QR-render time. After scanning
-  on the phone, the user presses "تم الإرسال — خصم العدد" and the
-  extension subtracts the **snapshotted** count from the current round
-  total — so any taps made between QR render and the click are kept.
+  The user clicks "عرض الكود" and the QR is shown alongside a 2-minute
+  countdown. The mobile app must scan within that window. When the
+  countdown hits zero (driven by `chrome.alarms` so it works even when
+  the page is closed), the QR is hidden and the local count for that
+  round is zeroed. The `+1` button in the popup is disabled while the
+  window is open so taps during submission can't be silently lost.
   The extension does **not** call Firebase: the mobile app is the only
   party that writes to RTDB.
 
@@ -60,17 +63,18 @@ chrome-extension/
 
 ```json
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "uid": "<sha256 hex of a per-profile uuid>",
   "countryCode": "EG",
   "countryAuto": true,
   "rounds": { "2026-05-22": { "count": 1234 } },
-  "pendingSubmission": {
+  "qrSession": {
     "roundKey": "2026-05-22",
     "count": 1234,
-    "createdAt": 1747000000000
+    "startedAt": 1747000000000,
+    "endsAt": 1747000120000
   },
-  "lastSubmittedAt": 1747000050000
+  "lastSubmittedAt": 1747000120000
 }
 ```
 
@@ -85,18 +89,20 @@ The mobile app needs to:
 
 1. Open a QR scanner and parse the JSON payload.
 2. Validate `type === "saloaleh-submit"` and `v === 2`.
-3. Reject if `round` is not the current round, or if the same payload
+3. Reject if `Date.now() > payload.ttl` — the extension considers the
+   window closed and has already zeroed its local count, so accepting
+   a stale scan would double-count.
+4. Reject if `round` is not the current round, or if the same payload
    was already consumed (suggest hashing `(round, count, ts)` and
-   keeping a local consumed-set).
-4. Call the existing `MohamedLoversRepository.incrementSession` with
+   keeping a small local consumed-set).
+5. Call the existing `MohamedLoversRepository.incrementSession` with
    `delta = payload.count`, attributing the write to the mobile's own
    UID. The extension's UID is intentionally not in the payload.
 
-After the user sees the score appear on the phone, they switch back to
-the browser and click "تم الإرسال — خصم العدد" — the extension does the
-local deduct on its own. Because there's no back-channel from Firebase
-to the extension, an automatic reset would have required the extension
-to read RTDB; that's explicitly out of scope.
+There is no acknowledgement channel: when the 2-minute countdown ends
+the extension trusts that the user pointed the phone at the QR and
+zeroes the local count. If the user doesn't scan in time, those taps
+are lost — surface that risk in the UI so the user understands.
 
 ## Not included
 

@@ -5,13 +5,26 @@ const countryAutoEl = document.getElementById("country-auto");
 const countryCodeEl = document.getElementById("country-code");
 const saveCountryBtn = document.getElementById("save-country");
 const countryStatusEl = document.getElementById("country-status");
+
+const idlePane = document.getElementById("idle-pane");
+const activePane = document.getElementById("active-pane");
+const donePane = document.getElementById("done-pane");
+const startBtn = document.getElementById("start-btn");
+const cancelBtn = document.getElementById("cancel-btn");
+const restartBtn = document.getElementById("restart-btn");
+const countdownEl = document.getElementById("countdown");
+const doneMsgEl = document.getElementById("done-msg");
 const qrEl = document.getElementById("qr");
 const qrMetaEl = document.getElementById("qr-meta");
 const qrRawEl = document.getElementById("qr-raw");
-const confirmResetBtn = document.getElementById("confirm-reset");
-const refreshQrBtn = document.getElementById("refresh-qr");
-const handoffStatusEl = document.getElementById("handoff-status");
+const rawWrap = document.getElementById("raw-wrap");
 const roundsTbody = document.querySelector("#rounds-table tbody");
+
+let tickHandle = null;
+
+function fmtArabic(n) {
+  return n.toLocaleString("ar-EG");
+}
 
 function renderQr(payload) {
   const qr = qrcode(0, "M");
@@ -20,13 +33,44 @@ function renderQr(payload) {
   qrEl.innerHTML = qr.createSvgTag({ scalable: true, margin: 1 });
 }
 
-function fmtArabic(n) {
-  return n.toLocaleString("ar-EG");
+function setPane(name) {
+  idlePane.classList.toggle("hidden", name !== "idle");
+  activePane.classList.toggle("hidden", name !== "active");
+  donePane.classList.toggle("hidden", name !== "done");
+  rawWrap.classList.toggle("hidden", name !== "active");
 }
 
-function setHandoffStatus(text, kind) {
-  handoffStatusEl.textContent = text || "";
-  handoffStatusEl.className = "hint" + (kind ? " " + kind : "");
+function fmtCountdown(ms) {
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  const m = String(Math.floor(total / 60)).padStart(2, "0");
+  const s = String(total % 60).padStart(2, "0");
+  return `${m}:${s}`;
+}
+
+function stopTick() {
+  if (tickHandle) {
+    clearInterval(tickHandle);
+    tickHandle = null;
+  }
+}
+
+function startTick(endsAt) {
+  stopTick();
+  const update = async () => {
+    const remaining = endsAt - Date.now();
+    countdownEl.textContent = fmtCountdown(remaining);
+    countdownEl.classList.toggle("warn", remaining > 0 && remaining < 15000);
+    if (remaining <= 0) {
+      stopTick();
+      // Service worker alarm will have run finishQrSession; storage
+      // change will trigger a re-render. As a fallback in case the
+      // alarm was suspended, call it here too — finishQrSession is a
+      // no-op when there's no session.
+      await SaloState.finishQrSession();
+    }
+  };
+  update();
+  tickHandle = setInterval(update, 500);
 }
 
 async function render() {
@@ -39,19 +83,28 @@ async function render() {
   countryCodeEl.value = view.countryCode;
   countryCodeEl.disabled = view.countryAuto;
 
-  const snapshot = await SaloState.ensureSubmissionSnapshot();
-  const payload = SaloState.buildQrPayload(view, snapshot);
-  renderQr(payload);
-  qrRawEl.textContent = payload;
-  qrMetaEl.textContent = `${view.countryCode} · ${view.roundKey} · ${fmtArabic(
-    snapshot.count,
-  )}`;
-
-  if (view.lastSubmittedAt) {
+  if (view.qrSessionActive) {
+    const session = view.qrSession;
+    const payload = SaloState.buildQrPayload(view, session);
+    renderQr(payload);
+    qrRawEl.textContent = payload;
+    qrMetaEl.textContent = `${view.countryCode} · ${view.roundKey} · ${fmtArabic(
+      session.count,
+    )}`;
+    setPane("active");
+    startTick(session.endsAt);
+  } else if (view.qrSession && !view.qrSessionActive) {
+    // Stale session in storage but past endsAt — finalize.
+    await SaloState.finishQrSession();
+    return;
+  } else if (view.lastSubmittedAt) {
+    stopTick();
     const when = new Date(view.lastSubmittedAt).toLocaleString("ar-EG");
-    setHandoffStatus(`آخر إرسال مؤكّد: ${when}.`, "ok");
+    doneMsgEl.textContent = `تم تصفير العداد بعد انتهاء النافذة بتاريخ ${when}.`;
+    setPane("done");
   } else {
-    setHandoffStatus("");
+    stopTick();
+    setPane("idle");
   }
 
   renderRoundsTable();
@@ -97,37 +150,25 @@ saveCountryBtn.addEventListener("click", async () => {
   render();
 });
 
-refreshQrBtn.addEventListener("click", render);
+startBtn.addEventListener("click", async () => {
+  await SaloState.startQrSession();
+  render();
+});
 
-confirmResetBtn.addEventListener("click", async () => {
-  const view = await SaloState.getView();
-  if (view.count === 0) {
-    setHandoffStatus("العداد فارغ بالفعل.", "");
-    return;
-  }
-  const snapshot = await SaloState.ensureSubmissionSnapshot();
-  const ok = confirm(
-    `سيتم خصم ${fmtArabic(snapshot.count)} صلاة (ما يحتويه الكود) من جولة ${
-      view.roundKey
-    }. تابع فقط بعد أن أرسل الجوال النتيجة.`,
-  );
-  if (!ok) return;
-  const result = await SaloState.applySubmitted();
-  if (result.applied) {
-    setHandoffStatus(
-      `تم خصم ${fmtArabic(result.subtracted)} صلاة. المتبقي للجولة: ${fmtArabic(
-        result.newCount,
-      )}.`,
-      "ok",
-    );
-  }
+restartBtn.addEventListener("click", async () => {
+  await SaloState.startQrSession();
+  render();
+});
+
+cancelBtn.addEventListener("click", async () => {
+  await SaloState.cancelQrSession();
   render();
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === "local" && changes[SaloState.STORAGE_KEY]) {
-    render();
-  }
+  if (area === "local" && changes[SaloState.STORAGE_KEY]) render();
 });
+
+window.addEventListener("beforeunload", stopTick);
 
 render();

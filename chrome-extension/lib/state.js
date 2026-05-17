@@ -1,16 +1,22 @@
 // Storage shape:
 // {
-//   schemaVersion: 3,
+//   schemaVersion: 4,
 //   uid: "<hex sha256>",
 //   countryCode: "EG",
 //   countryAuto: true,
 //   rounds: { "YYYY-MM-DD": { count: 1234 } },
-//   pendingSubmission: { roundKey, count, createdAt } | null,
-//   lastSubmittedAt: 1747000000000 | null
+//   qrSession: {
+//     roundKey: "YYYY-MM-DD",
+//     count: 1234,           // snapshot at the moment the QR opened
+//     startedAt: 1747000000000,
+//     endsAt: 1747000120000  // startedAt + WINDOW_MS
+//   } | null,
+//   lastSubmittedAt: 1747000120000 | null
 // }
 
 const STORAGE_KEY = "saloAleh";
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
+const WINDOW_MS = 2 * 60 * 1000; // 2 minutes
 
 async function loadRaw() {
   const obj = await chrome.storage.local.get(STORAGE_KEY);
@@ -48,21 +54,16 @@ async function ensureState() {
       countryCode: SaloCountry.detectCountryCode(),
       countryAuto: true,
       rounds: {},
-      pendingSubmission: null,
+      qrSession: null,
       lastSubmittedAt: null,
     };
     await saveRaw(state);
   } else if ((state.schemaVersion ?? 1) < SCHEMA_VERSION) {
     state.schemaVersion = SCHEMA_VERSION;
-    state.pendingSubmission =
-      state.pendingHandoff
-        ? {
-            roundKey: state.pendingHandoff.roundKey,
-            count: state.pendingHandoff.count,
-            createdAt: state.pendingHandoff.createdAt,
-          }
-        : (state.pendingSubmission ?? null);
-    state.lastSubmittedAt = state.lastApplied?.at ?? state.lastSubmittedAt ?? null;
+    state.qrSession = state.qrSession ?? null;
+    state.lastSubmittedAt =
+      state.lastSubmittedAt ?? state.lastApplied?.at ?? null;
+    delete state.pendingSubmission;
     delete state.pendingHandoff;
     delete state.lastApplied;
     delete state.lastSubmittedRound;
@@ -78,6 +79,13 @@ async function getView() {
     ? SaloCountry.detectCountryCode()
     : state.countryCode || SaloCountry.UNKNOWN;
   const count = state.rounds?.[roundKey]?.count ?? 0;
+  const now = Date.now();
+  const session = state.qrSession;
+  const isActive = !!(
+    session &&
+    session.roundKey === roundKey &&
+    session.endsAt > now
+  );
   return {
     uid: state.uid,
     roundKey,
@@ -85,7 +93,9 @@ async function getView() {
     countryCode: country,
     countryAuto: state.countryAuto,
     isFridayBonus: SaloRound.isFridayBonus(),
-    pendingSubmission: state.pendingSubmission,
+    qrSession: session,
+    qrSessionActive: isActive,
+    msRemaining: isActive ? Math.max(0, session.endsAt - now) : 0,
     lastSubmittedAt: state.lastSubmittedAt,
   };
 }
@@ -93,6 +103,14 @@ async function getView() {
 async function increment(delta = 1) {
   const state = await ensureState();
   const roundKey = SaloRound.currentRoundKey();
+  // Lock the counter while a QR submission window is open.
+  if (
+    state.qrSession &&
+    state.qrSession.roundKey === roundKey &&
+    state.qrSession.endsAt > Date.now()
+  ) {
+    return state.rounds[roundKey]?.count ?? 0;
+  }
   const prev = state.rounds[roundKey]?.count ?? 0;
   const next = Math.max(0, prev + delta);
   state.rounds[roundKey] = { count: next };
@@ -113,55 +131,53 @@ async function setCountry(code, auto) {
   return state.countryCode;
 }
 
-// Snapshot the current round count for the QR. Refreshes whenever the
-// user has tapped more since the last snapshot, so the displayed QR
-// always matches what they'd hand off right now.
-async function ensureSubmissionSnapshot() {
+// Start a fresh 2-minute QR submission window. Snapshots the count
+// that the mobile app should apply.
+async function startQrSession() {
   const state = await ensureState();
   const roundKey = SaloRound.currentRoundKey();
   const count = state.rounds[roundKey]?.count ?? 0;
-  const pending = state.pendingSubmission;
-  if (!pending || pending.roundKey !== roundKey || pending.count !== count) {
-    state.pendingSubmission = { roundKey, count, createdAt: Date.now() };
-    await saveRaw(state);
-  }
-  return state.pendingSubmission;
+  const now = Date.now();
+  state.qrSession = {
+    roundKey,
+    count,
+    startedAt: now,
+    endsAt: now + WINDOW_MS,
+  };
+  await saveRaw(state);
+  return state.qrSession;
 }
 
-// Called when the user confirms "submitted from phone".
-// Subtracts the SNAPSHOTTED count (what the QR contained) from the
-// current round total, so taps made after the QR was generated are
-// preserved.
-async function applySubmitted() {
+// Cancel the window without resetting anything.
+async function cancelQrSession() {
   const state = await ensureState();
-  const pending = state.pendingSubmission;
-  if (!pending) return { applied: false, reason: "no-snapshot" };
-  const roundKey = SaloRound.currentRoundKey();
-  if (pending.roundKey !== roundKey) {
-    // Round rolled over since the QR was generated — drop the snapshot.
-    state.pendingSubmission = null;
-    await saveRaw(state);
-    return { applied: false, reason: "round-rolled" };
-  }
-  const current = state.rounds[roundKey]?.count ?? 0;
-  const subtract = Math.min(pending.count, current);
-  const next = current - subtract;
-  state.rounds[roundKey] = { count: next };
-  state.pendingSubmission = null;
+  state.qrSession = null;
+  await saveRaw(state);
+}
+
+// Window expired (or finished manually) → zero the round count.
+async function finishQrSession() {
+  const state = await ensureState();
+  const session = state.qrSession;
+  if (!session) return { applied: false, reason: "no-session" };
+  const roundKey = session.roundKey;
+  state.rounds[roundKey] = { count: 0 };
+  state.qrSession = null;
   state.lastSubmittedAt = Date.now();
   await saveRaw(state);
-  return { applied: true, subtracted: subtract, previousCount: current, newCount: next };
+  return { applied: true, roundKey, submittedCount: session.count };
 }
 
-function buildQrPayload(view, snapshot) {
+function buildQrPayload(view, session) {
   return JSON.stringify({
     v: 2,
     type: "saloaleh-submit",
     round: view.roundKey,
-    count: snapshot.count,
+    count: session.count,
     country: view.countryCode,
     src: "chrome-ext",
-    ts: Date.now(),
+    ts: session.startedAt,
+    ttl: session.endsAt,
   });
 }
 
@@ -170,8 +186,10 @@ self.SaloState = {
   getView,
   increment,
   setCountry,
-  ensureSubmissionSnapshot,
-  applySubmitted,
+  startQrSession,
+  cancelQrSession,
+  finishQrSession,
   buildQrPayload,
   STORAGE_KEY,
+  WINDOW_MS,
 };

@@ -41,24 +41,41 @@
 
       <section class="card">
         <h2>إرسال النتيجة عبر QR</h2>
-        <p class="hint">
-          امسح هذا الكود من تطبيق الجوال. الكود يحتوي عدد الصلوات لهذه
-          الجولة فقط. بعد أن يُرسل التطبيق النتيجة، اضغط
-          «تم الإرسال — خصم العدد» ليتم خصم العدد الذي أُرسل من العداد
-          المحلي (مع الاحتفاظ بأي صلوات إضافية أضفتها بعد إنشاء الكود).
-        </p>
-        <div class="qr-wrap">
-          <div id="qr" class="qr"></div>
-          <div class="qr-meta" id="qr-meta"></div>
-        </div>
-        <div class="actions">
-          <button class="btn btn-primary" id="confirm-reset" type="button">
-            تم الإرسال — خصم العدد
+
+        <div id="idle-pane">
+          <p class="hint">
+            عند الضغط على الزر سيظهر كود QR لمدة دقيقتين. خلال هذه المدة
+            عليك مسحه من تطبيق الجوال، وبعد انتهاء العدّ التنازلي سيُصفَّر
+            العدّاد المحلي تلقائياً.
+          </p>
+          <button class="btn btn-primary" id="start-btn" type="button">
+            عرض الكود (دقيقتان)
           </button>
-          <button class="btn ghost" id="refresh-qr" type="button">تحديث الكود</button>
         </div>
-        <p class="hint" id="handoff-status"></p>
-        <details class="raw">
+
+        <div id="active-pane" class="hidden">
+          <div class="countdown" id="countdown">02:00</div>
+          <div class="qr-wrap">
+            <div id="qr" class="qr"></div>
+            <div class="qr-meta" id="qr-meta"></div>
+          </div>
+          <p class="hint">
+            امسح الكود الآن من تطبيق الجوال. بعد انتهاء الوقت سيُصفَّر
+            العدّاد محلياً ولن يقبل التطبيق المسح بعد ذلك.
+          </p>
+          <button class="btn ghost" id="cancel-btn" type="button">
+            إلغاء
+          </button>
+        </div>
+
+        <div id="done-pane" class="hidden">
+          <p class="hint ok" id="done-msg"></p>
+          <button class="btn ghost" id="restart-btn" type="button">
+            إنشاء كود جديد
+          </button>
+        </div>
+
+        <details class="raw" id="raw-wrap">
           <summary>عرض البيانات المشفّرة</summary>
           <pre id="qr-raw"></pre>
         </details>
