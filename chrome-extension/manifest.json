@@ -5,7 +5,10 @@
   "version": "1.0.0",
   "description": "عداد للصلاة على النبي ﷺ من المتصفح، مع كود QR لإرسال النتيجة إلى تطبيق الجوال.",
   "default_locale": "ar",
-  "permissions": ["storage"],
+  "permissions": ["storage", "alarms"],
+  "host_permissions": [
+    "https://kamapp-3b3ac-default-rtdb.firebaseio.com/*"
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_title": "SaloAleh",

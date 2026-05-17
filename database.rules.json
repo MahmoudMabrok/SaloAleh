@@ -34,6 +34,26 @@
           "$other": { ".validate": false }
         }
       },
+      "handoffs": {
+        "$nonce": {
+          ".read": "$nonce.length >= 16",
+          ".write": "$nonce.length >= 16 && $nonce.length <= 64 && newData.exists() && !data.exists()",
+          ".validate": "newData.hasChildren(['consumedAt','byUid','round','count'])",
+          "consumedAt": {
+            ".validate": "newData.val() === now"
+          },
+          "byUid": {
+            ".validate": "newData.isString() && newData.val().length === 64"
+          },
+          "round": {
+            ".validate": "newData.isString() && newData.val().length === 10"
+          },
+          "count": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
+          },
+          "$other": { ".validate": false }
+        }
+      },
       "$round": {
         "roundTotal": {
           ".read": true,
