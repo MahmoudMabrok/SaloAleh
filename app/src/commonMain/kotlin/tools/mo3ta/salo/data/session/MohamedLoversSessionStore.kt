@@ -58,6 +58,13 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         settings.putString(KEY_PENDING_ROUNDS_INDEX, updated.joinToString(","))
     }
 
+    fun clearAllPendingRounds() {
+        for (roundKey in getPendingRoundKeys()) {
+            settings.remove(pendingCountKey(roundKey))
+        }
+        settings.putString(KEY_PENDING_ROUNDS_INDEX, "")
+    }
+
     private fun migrateIfNeeded() {
         val oldRoundKey = settings.getStringOrNull(KEY_PENDING_ROUND_LEGACY) ?: return
         val oldCount = settings.getInt(KEY_PENDING_COUNT_LEGACY, 0)
