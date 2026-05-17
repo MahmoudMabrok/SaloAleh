@@ -2,6 +2,7 @@ package tools.mo3ta.salo.data.crypto
 
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.readBytes
 import kotlinx.cinterop.usePinned
 import platform.CoreCrypto.CC_SHA256
 import platform.CoreCrypto.CC_SHA256_DIGEST_LENGTH
@@ -16,4 +17,15 @@ actual fun sha256hex(input: String): String {
         }
     }
     return digest.joinToString("") { it.toString(16).padStart(2, '0') }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+actual fun sha256Bytes(input: ByteArray): ByteArray {
+    val digest = UByteArray(CC_SHA256_DIGEST_LENGTH)
+    input.usePinned { pinned ->
+        digest.usePinned { digestPinned ->
+            CC_SHA256(pinned.addressOf(0), input.size.toUInt(), digestPinned.addressOf(0))
+        }
+    }
+    return ByteArray(digest.size) { digest[it].toByte() }
 }

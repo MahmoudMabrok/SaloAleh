@@ -43,12 +43,14 @@ import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.notification.NotificationScheduler
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
 import org.koin.compose.viewmodel.koinViewModel
+import tools.mo3ta.salo.data.qr.QrVerifyResult
+import tools.mo3ta.salo.data.qr.verifyExtensionQr
 import tools.mo3ta.salo.ui.areNotificationsEnabled
 import tools.mo3ta.salo.ui.canScheduleExactAlarms
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
-import tools.mo3ta.salo.ui.copyToClipboard
 import tools.mo3ta.salo.ui.getAppVersion
 import tools.mo3ta.salo.ui.getStoreUrl
+import tools.mo3ta.salo.ui.launchQrScanner
 import tools.mo3ta.salo.ui.openNotificationSettings
 import tools.mo3ta.salo.ui.openStorePage
 import tools.mo3ta.salo.ui.requestExactAlarmPermission
@@ -230,6 +232,35 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}) {
 //            )
 
             Text(
+                text = "إضافة المتصفح",
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 24.dp, bottom = 8.dp),
+            )
+
+            SettingLinkRow(
+                label = "استلام صلوات من الإضافة",
+                onClick = {
+                    launchQrScanner { raw ->
+                        if (raw == null) return@launchQrScanner
+                        val nowMs = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
+                        val lastTs = sessionStore.getLastAppliedQrTs()
+                        when (val result = verifyExtensionQr(raw, nowMs, lastTs)) {
+                            is QrVerifyResult.Success -> {
+                                viewModel.applyExtensionScore(result.round, result.count)
+                                sessionStore.saveLastAppliedQrTs(nowMs)
+                                showPlatformToast("تمت إضافة ${result.count} صلاة من الإضافة")
+                            }
+                            is QrVerifyResult.Error -> {
+                                showPlatformToast(result.message)
+                            }
+                        }
+                    }
+                },
+            )
+
+            Text(
                 text = "عن التطبيق",
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
                 fontSize = 12.sp,
@@ -256,14 +287,6 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}) {
             SettingLinkRow(
                 label = "فتح صفحة المتجر",
                 onClick = { openStorePage() },
-            )
-
-            SettingLinkRow(
-                label = "نسخ معرّف الجهاز (UUID)",
-                onClick = {
-                    copyToClipboard(sessionStore.getRawUid())
-                    showPlatformToast("تم النسخ — الصقه في إضافة المتصفح")
-                },
             )
 
             Row(

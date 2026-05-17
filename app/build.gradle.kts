@@ -57,6 +57,7 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.firebase.analytics)
             implementation(libs.firebase.messaging)
+            implementation(libs.gms.code.scanner)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)

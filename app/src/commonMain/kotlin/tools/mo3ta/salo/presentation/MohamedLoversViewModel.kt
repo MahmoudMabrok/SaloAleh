@@ -186,6 +186,14 @@ class MohamedLoversViewModel(
         applyLeaderboard()
     }
 
+    fun applyExtensionScore(round: String, count: Int) {
+        repository.registerLocalTap(round, count)
+        val pending = repository.getPendingSession(round)
+        _state.update { it.copy(sessionClicks = pending.clickCount) }
+        applyLeaderboard()
+        flushPendingSession()
+    }
+
     fun dismissRoundRecap() = _state.update { it.copy(showRoundRecap = false) }
     fun dismissGraceWarning() {
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))

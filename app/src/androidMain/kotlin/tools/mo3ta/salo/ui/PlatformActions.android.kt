@@ -55,6 +55,18 @@ import androidx.core.content.FileProvider
 import tools.mo3ta.salo.AndroidAppContext
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 
+actual fun launchQrScanner(onResult: (String?) -> Unit) {
+    val ctx = AndroidAppContext.get()
+    val options = com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions.Builder()
+        .setBarcodeFormats(com.google.mlkit.vision.barcode.common.Barcode.FORMAT_QR_CODE)
+        .build()
+    com.google.mlkit.vision.codescanner.GmsBarcodeScanning.getClient(ctx, options)
+        .startScan()
+        .addOnSuccessListener { barcode -> onResult(barcode.rawValue) }
+        .addOnFailureListener { onResult(null) }
+        .addOnCanceledListener { onResult(null) }
+}
+
 actual fun showPlatformToast(message: String) {
     Toast.makeText(AndroidAppContext.get(), message, Toast.LENGTH_SHORT).show()
 }
