@@ -13,9 +13,6 @@ const refreshQrBtn = document.getElementById("refresh-qr");
 const handoffStatusEl = document.getElementById("handoff-status");
 const roundsTbody = document.querySelector("#rounds-table tbody");
 
-const POLL_INTERVAL_MS = 4000;
-let pollTimer = null;
-
 function renderQr(payload) {
   const qr = qrcode(0, "M");
   qr.addData(payload, "Byte");
@@ -42,22 +39,17 @@ async function render() {
   countryCodeEl.value = view.countryCode;
   countryCodeEl.disabled = view.countryAuto;
 
-  const handoff = await SaloState.ensureHandoff();
-  const payload = SaloState.buildQrPayload(view, handoff);
+  const snapshot = await SaloState.ensureSubmissionSnapshot();
+  const payload = SaloState.buildQrPayload(view, snapshot);
   renderQr(payload);
   qrRawEl.textContent = payload;
   qrMetaEl.textContent = `${view.countryCode} · ${view.roundKey} · ${fmtArabic(
-    handoff.count,
+    snapshot.count,
   )}`;
 
-  if (view.lastApplied && !view.lastApplied.manual) {
-    const when = new Date(view.lastApplied.at).toLocaleString("ar-EG");
-    setHandoffStatus(
-      `تم استلام ${fmtArabic(view.lastApplied.count)} صلاة عبر الجوال بتاريخ ${when}.`,
-      "ok",
-    );
-  } else if (view.pendingHandoff) {
-    setHandoffStatus("بانتظار مسح الكود من تطبيق الجوال…", "");
+  if (view.lastSubmittedAt) {
+    const when = new Date(view.lastSubmittedAt).toLocaleString("ar-EG");
+    setHandoffStatus(`آخر إرسال مؤكّد: ${when}.`, "ok");
   } else {
     setHandoffStatus("");
   }
@@ -84,26 +76,6 @@ async function renderRoundsTable() {
   }
 }
 
-async function pollHandoff() {
-  const obj = await chrome.storage.local.get(SaloState.STORAGE_KEY);
-  const state = obj[SaloState.STORAGE_KEY];
-  const pending = state?.pendingHandoff;
-  if (!pending?.nonce) return;
-  try {
-    const record = await SaloFirebase.readHandoff(pending.nonce);
-    if (!record) return;
-    const result = await SaloState.applyHandoffRecord(record);
-    if (result.applied) {
-      setHandoffStatus(
-        `تم استلام ${fmtArabic(result.previousCount - result.newCount)} صلاة عبر الجوال.`,
-        "ok",
-      );
-    }
-  } catch (e) {
-    // Network errors are silent — the background alarm will retry.
-  }
-}
-
 countryAutoEl.addEventListener("change", () => {
   countryCodeEl.disabled = countryAutoEl.checked;
   if (countryAutoEl.checked) {
@@ -125,10 +97,7 @@ saveCountryBtn.addEventListener("click", async () => {
   render();
 });
 
-refreshQrBtn.addEventListener("click", async () => {
-  await SaloState.refreshHandoff();
-  render();
-});
+refreshQrBtn.addEventListener("click", render);
 
 confirmResetBtn.addEventListener("click", async () => {
   const view = await SaloState.getView();
@@ -136,11 +105,22 @@ confirmResetBtn.addEventListener("click", async () => {
     setHandoffStatus("العداد فارغ بالفعل.", "");
     return;
   }
+  const snapshot = await SaloState.ensureSubmissionSnapshot();
   const ok = confirm(
-    `سيتم تصفير ${fmtArabic(view.count)} صلاة لجولة ${view.roundKey}. متابعة؟`,
+    `سيتم خصم ${fmtArabic(snapshot.count)} صلاة (ما يحتويه الكود) من جولة ${
+      view.roundKey
+    }. تابع فقط بعد أن أرسل الجوال النتيجة.`,
   );
   if (!ok) return;
-  await SaloState.resetCurrentRound();
+  const result = await SaloState.applySubmitted();
+  if (result.applied) {
+    setHandoffStatus(
+      `تم خصم ${fmtArabic(result.subtracted)} صلاة. المتبقي للجولة: ${fmtArabic(
+        result.newCount,
+      )}.`,
+      "ok",
+    );
+  }
   render();
 });
 
@@ -149,19 +129,5 @@ chrome.storage.onChanged.addListener((changes, area) => {
     render();
   }
 });
-
-(function startPolling() {
-  pollHandoff();
-  pollTimer = setInterval(pollHandoff, POLL_INTERVAL_MS);
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) {
-      clearInterval(pollTimer);
-      pollTimer = null;
-    } else if (!pollTimer) {
-      pollHandoff();
-      pollTimer = setInterval(pollHandoff, POLL_INTERVAL_MS);
-    }
-  });
-})();
 
 render();

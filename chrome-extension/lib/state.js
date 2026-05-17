@@ -1,16 +1,16 @@
 // Storage shape:
 // {
-//   schemaVersion: 2,
+//   schemaVersion: 3,
 //   uid: "<hex sha256>",
 //   countryCode: "EG",
 //   countryAuto: true,
 //   rounds: { "YYYY-MM-DD": { count: 1234 } },
-//   pendingHandoff: { nonce, roundKey, count, createdAt } | null,
-//   lastApplied: { nonce, roundKey, count, byUid, at } | null
+//   pendingSubmission: { roundKey, count, createdAt } | null,
+//   lastSubmittedAt: 1747000000000 | null
 // }
 
 const STORAGE_KEY = "saloAleh";
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 async function loadRaw() {
   const obj = await chrome.storage.local.get(STORAGE_KEY);
@@ -48,23 +48,27 @@ async function ensureState() {
       countryCode: SaloCountry.detectCountryCode(),
       countryAuto: true,
       rounds: {},
-      pendingHandoff: null,
-      lastApplied: null,
+      pendingSubmission: null,
+      lastSubmittedAt: null,
     };
     await saveRaw(state);
-  } else if ((state.schemaVersion ?? 1) < 2) {
+  } else if ((state.schemaVersion ?? 1) < SCHEMA_VERSION) {
     state.schemaVersion = SCHEMA_VERSION;
-    state.pendingHandoff = state.pendingHandoff ?? null;
-    state.lastApplied = state.lastApplied ?? null;
+    state.pendingSubmission =
+      state.pendingHandoff
+        ? {
+            roundKey: state.pendingHandoff.roundKey,
+            count: state.pendingHandoff.count,
+            createdAt: state.pendingHandoff.createdAt,
+          }
+        : (state.pendingSubmission ?? null);
+    state.lastSubmittedAt = state.lastApplied?.at ?? state.lastSubmittedAt ?? null;
+    delete state.pendingHandoff;
+    delete state.lastApplied;
     delete state.lastSubmittedRound;
     await saveRaw(state);
   }
   return state;
-}
-
-function randomNonce() {
-  const bytes = crypto.getRandomValues(new Uint8Array(16));
-  return [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 async function getView() {
@@ -81,8 +85,8 @@ async function getView() {
     countryCode: country,
     countryAuto: state.countryAuto,
     isFridayBonus: SaloRound.isFridayBonus(),
-    pendingHandoff: state.pendingHandoff,
-    lastApplied: state.lastApplied,
+    pendingSubmission: state.pendingSubmission,
+    lastSubmittedAt: state.lastSubmittedAt,
   };
 }
 
@@ -99,85 +103,6 @@ async function increment(delta = 1) {
   return next;
 }
 
-async function resetCurrentRound() {
-  const state = await ensureState();
-  const roundKey = SaloRound.currentRoundKey();
-  const current = state.rounds[roundKey]?.count ?? 0;
-  state.rounds[roundKey] = { count: 0 };
-  state.lastApplied = {
-    nonce: null,
-    roundKey,
-    count: current,
-    byUid: null,
-    at: Date.now(),
-    manual: true,
-  };
-  state.pendingHandoff = null;
-  await saveRaw(state);
-  return roundKey;
-}
-
-async function refreshHandoff() {
-  const state = await ensureState();
-  const roundKey = SaloRound.currentRoundKey();
-  const count = state.rounds[roundKey]?.count ?? 0;
-  const nonce = randomNonce();
-  state.pendingHandoff = { nonce, roundKey, count, createdAt: Date.now() };
-  await saveRaw(state);
-  return state.pendingHandoff;
-}
-
-async function ensureHandoff() {
-  const state = await ensureState();
-  const roundKey = SaloRound.currentRoundKey();
-  const count = state.rounds[roundKey]?.count ?? 0;
-  const pending = state.pendingHandoff;
-  // Regenerate when:
-  //  - none yet
-  //  - belongs to an older round
-  //  - count changed (taps added/removed since last QR)
-  if (!pending || pending.roundKey !== roundKey || pending.count !== count) {
-    return refreshHandoff();
-  }
-  return pending;
-}
-
-async function applyHandoffRecord(record) {
-  const state = await ensureState();
-  const pending = state.pendingHandoff;
-  if (!pending) return { applied: false, reason: "no-pending" };
-  if (record?.round !== pending.roundKey) {
-    return { applied: false, reason: "round-mismatch" };
-  }
-  if (typeof record?.count !== "number" || record.count < 0) {
-    return { applied: false, reason: "bad-count" };
-  }
-  if (record.count > pending.count) {
-    // Mobile claims more taps than we offered — clamp to what we sent.
-    record.count = pending.count;
-  }
-  const current = state.rounds[pending.roundKey]?.count ?? 0;
-  const next = Math.max(0, current - record.count);
-  state.rounds[pending.roundKey] = { count: next };
-  state.lastApplied = {
-    nonce: pending.nonce,
-    roundKey: pending.roundKey,
-    count: record.count,
-    byUid: typeof record.byUid === "string" ? record.byUid : null,
-    at: Date.now(),
-    manual: false,
-  };
-  state.pendingHandoff = null;
-  await saveRaw(state);
-  return { applied: true, newCount: next, previousCount: current };
-}
-
-async function clearPendingHandoff() {
-  const state = await ensureState();
-  state.pendingHandoff = null;
-  await saveRaw(state);
-}
-
 async function setCountry(code, auto) {
   const state = await ensureState();
   state.countryAuto = !!auto;
@@ -188,14 +113,53 @@ async function setCountry(code, auto) {
   return state.countryCode;
 }
 
-function buildQrPayload(view, handoff) {
+// Snapshot the current round count for the QR. Refreshes whenever the
+// user has tapped more since the last snapshot, so the displayed QR
+// always matches what they'd hand off right now.
+async function ensureSubmissionSnapshot() {
+  const state = await ensureState();
+  const roundKey = SaloRound.currentRoundKey();
+  const count = state.rounds[roundKey]?.count ?? 0;
+  const pending = state.pendingSubmission;
+  if (!pending || pending.roundKey !== roundKey || pending.count !== count) {
+    state.pendingSubmission = { roundKey, count, createdAt: Date.now() };
+    await saveRaw(state);
+  }
+  return state.pendingSubmission;
+}
+
+// Called when the user confirms "submitted from phone".
+// Subtracts the SNAPSHOTTED count (what the QR contained) from the
+// current round total, so taps made after the QR was generated are
+// preserved.
+async function applySubmitted() {
+  const state = await ensureState();
+  const pending = state.pendingSubmission;
+  if (!pending) return { applied: false, reason: "no-snapshot" };
+  const roundKey = SaloRound.currentRoundKey();
+  if (pending.roundKey !== roundKey) {
+    // Round rolled over since the QR was generated — drop the snapshot.
+    state.pendingSubmission = null;
+    await saveRaw(state);
+    return { applied: false, reason: "round-rolled" };
+  }
+  const current = state.rounds[roundKey]?.count ?? 0;
+  const subtract = Math.min(pending.count, current);
+  const next = current - subtract;
+  state.rounds[roundKey] = { count: next };
+  state.pendingSubmission = null;
+  state.lastSubmittedAt = Date.now();
+  await saveRaw(state);
+  return { applied: true, subtracted: subtract, previousCount: current, newCount: next };
+}
+
+function buildQrPayload(view, snapshot) {
   return JSON.stringify({
     v: 2,
     type: "saloaleh-submit",
     round: view.roundKey,
-    count: handoff.count,
+    count: snapshot.count,
     country: view.countryCode,
-    nonce: handoff.nonce,
     src: "chrome-ext",
     ts: Date.now(),
   });
@@ -205,12 +169,9 @@ self.SaloState = {
   ensureState,
   getView,
   increment,
-  resetCurrentRound,
   setCountry,
-  ensureHandoff,
-  refreshHandoff,
-  applyHandoffRecord,
-  clearPendingHandoff,
+  ensureSubmissionSnapshot,
+  applySubmitted,
   buildQrPayload,
   STORAGE_KEY,
 };
