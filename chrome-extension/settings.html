@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <title>SaloAleh — الإعدادات</title>
+    <link rel="stylesheet" href="settings.css" />
+  </head>
+  <body>
+    <main class="wrap">
+      <h1>الإعدادات</h1>
+
+      <section class="card">
+        <h2>الحساب الحالي</h2>
+        <div class="row">
+          <span class="lbl">الجولة</span>
+          <span class="val" id="round">—</span>
+        </div>
+        <div class="row">
+          <span class="lbl">عدد الصلوات في هذه الجولة</span>
+          <span class="val big" id="count">0</span>
+        </div>
+        <div class="row">
+          <span class="lbl">معرّف الجهاز</span>
+          <span class="val mono" id="uid">—</span>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>الدولة</h2>
+        <label class="check">
+          <input type="checkbox" id="country-auto" />
+          <span>اكتشاف تلقائي من لغة المتصفح</span>
+        </label>
+        <div class="row">
+          <label for="country-code" class="lbl">رمز الدولة</label>
+          <input id="country-code" class="input" maxlength="3" />
+        </div>
+        <button class="btn" id="save-country" type="button">حفظ</button>
+        <p class="hint" id="country-status"></p>
+      </section>
+
+      <section class="card">
+        <h2>إرسال النتيجة عبر QR</h2>
+        <p class="hint">
+          امسح هذا الكود من تطبيق الجوال لإضافة عدد الصلوات إلى حسابك في القائمة.
+          بعد المسح، اضغط «تأكيد الإرسال والتصفير» لتصفير العداد محلياً.
+        </p>
+        <div class="qr-wrap">
+          <div id="qr" class="qr"></div>
+          <div class="qr-meta" id="qr-meta"></div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" id="confirm-reset" type="button">
+            تأكيد الإرسال والتصفير
+          </button>
+          <button class="btn ghost" id="refresh-qr" type="button">تحديث الكود</button>
+        </div>
+        <details class="raw">
+          <summary>عرض البيانات المشفّرة</summary>
+          <pre id="qr-raw"></pre>
+        </details>
+      </section>
+
+      <section class="card">
+        <h2>السجل المحلي</h2>
+        <table class="rounds" id="rounds-table">
+          <thead>
+            <tr><th>الجولة</th><th>العدد</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+    </main>
+
+    <script src="lib/qrcode.js"></script>
+    <script src="lib/round.js"></script>
+    <script src="lib/country.js"></script>
+    <script src="lib/state.js"></script>
+    <script src="settings.js"></script>
+  </body>
+</html>
