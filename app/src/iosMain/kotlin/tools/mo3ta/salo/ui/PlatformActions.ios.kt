@@ -29,6 +29,11 @@ import platform.UserNotifications.UNAuthorizationStatusEphemeral
 import platform.UserNotifications.UNAuthorizationStatusProvisional
 import platform.UserNotifications.UNUserNotificationCenter
 
+actual fun launchQrScanner(onResult: (String?) -> Unit) {
+    showPlatformToast("ماسح QR متاح على أندرويد فقط حاليًا")
+    onResult(null)
+}
+
 actual fun showPlatformToast(message: String) {
     val alert = UIAlertController.alertControllerWithTitle(null, message, 0)
     alert.addAction(UIAlertAction.actionWithTitle("OK", UIAlertActionStyleDefault, null))

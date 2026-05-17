@@ -103,6 +103,9 @@ class MohamedLoversSessionStore(private val settings: Settings) {
     fun getLastRoundTaps(): Int = settings.getInt(KEY_LAST_ROUND_TAPS, 0)
     fun saveLastRoundTaps(taps: Int) = settings.putInt(KEY_LAST_ROUND_TAPS, taps)
 
+    fun getLastAppliedQrTs(): Long = settings.getLong(KEY_LAST_QR_TS, 0L)
+    fun saveLastAppliedQrTs(ts: Long) = settings.putLong(KEY_LAST_QR_TS, ts)
+
     fun getSavedFcmToken(): String? = settings.getStringOrNull(KEY_FCM_TOKEN)
     fun saveLocalFcmToken(token: String) = settings.putString(KEY_FCM_TOKEN, token)
 
@@ -135,5 +138,6 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         const val KEY_LAST_ROUND_TAPS = "last_round_taps"
         const val KEY_FCM_TOKEN = "fcm_token"
         const val KEY_FCM_TOKEN_SYNCED = "fcm_token_synced"
+        const val KEY_LAST_QR_TS = "last_applied_qr_ts"
     }
 }
