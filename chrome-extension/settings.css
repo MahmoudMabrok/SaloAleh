@@ -186,5 +186,21 @@ h1 {
   margin: 0 0 8px;
 }
 
+.hint.ok { color: #7fd285; }
+
+.hidden { display: none !important; }
+
+.countdown {
+  text-align: center;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  margin: 4px 0 10px;
+  letter-spacing: 0.04em;
+}
+
+.countdown.warn { color: #d36b6b; }
+
 #country-status.ok { color: #7fd285; }
 #country-status.err { color: var(--danger); }

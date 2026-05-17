@@ -95,6 +95,13 @@ html, body {
   outline-offset: 2px;
 }
 
+.tap:disabled {
+  background: var(--surface);
+  color: var(--muted);
+  cursor: not-allowed;
+  border: 1px solid var(--border);
+}
+
 .ftr {
   display: flex;
   justify-content: space-between;
