@@ -39,18 +39,14 @@ import org.koin.compose.koinInject
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
-import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.notification.NotificationScheduler
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
 import org.koin.compose.viewmodel.koinViewModel
-import tools.mo3ta.salo.data.qr.QrVerifyResult
-import tools.mo3ta.salo.data.qr.verifyExtensionQr
 import tools.mo3ta.salo.ui.areNotificationsEnabled
 import tools.mo3ta.salo.ui.canScheduleExactAlarms
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.getAppVersion
 import tools.mo3ta.salo.ui.getStoreUrl
-import tools.mo3ta.salo.ui.launchQrScanner
 import tools.mo3ta.salo.ui.openNotificationSettings
 import tools.mo3ta.salo.ui.openStorePage
 import tools.mo3ta.salo.ui.requestExactAlarmPermission
@@ -59,9 +55,8 @@ import tools.mo3ta.salo.ui.showPlatformToast
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}) {
+fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpenExtensionQr: () -> Unit = {}) {
     val store: NotificationSettingsStore = koinInject()
-    val sessionStore: MohamedLoversSessionStore = koinInject()
     val hadithStore: DailyHadithStore = koinInject()
     val viewModel: MohamedLoversViewModel = koinViewModel()
     var dailyEnabled by remember { mutableStateOf(store.dailyEnabled) }
@@ -241,23 +236,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}) {
 
             SettingLinkRow(
                 label = "استلام صلوات من الإضافة",
-                onClick = {
-                    launchQrScanner { raw ->
-                        if (raw == null) return@launchQrScanner
-                        val nowMs = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
-                        val lastTs = sessionStore.getLastAppliedQrTs()
-                        when (val result = verifyExtensionQr(raw, nowMs, lastTs)) {
-                            is QrVerifyResult.Success -> {
-                                viewModel.applyExtensionScore(result.round, result.count)
-                                sessionStore.saveLastAppliedQrTs(nowMs)
-                                showPlatformToast("تمت إضافة ${result.count} صلاة من الإضافة")
-                            }
-                            is QrVerifyResult.Error -> {
-                                showPlatformToast(result.message)
-                            }
-                        }
-                    }
-                },
+                onClick = onOpenExtensionQr,
             )
 
             Text(

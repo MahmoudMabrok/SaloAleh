@@ -194,6 +194,16 @@ class MohamedLoversViewModel(
         flushPendingSession()
     }
 
+    fun resetCurrentRoundScore() {
+        val roundKey = state.value.roundKey ?: return
+        repository.clearAllPendingRounds()
+        _state.update { it.copy(sessionClicks = 0) }
+        applyLeaderboard()
+        viewModelScope.launch {
+            repository.resetPlayerScore(roundKey)
+        }
+    }
+
     fun dismissRoundRecap() = _state.update { it.copy(showRoundRecap = false) }
     fun dismissGraceWarning() {
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
