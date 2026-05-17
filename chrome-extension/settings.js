@@ -10,32 +10,57 @@ const qrMetaEl = document.getElementById("qr-meta");
 const qrRawEl = document.getElementById("qr-raw");
 const confirmResetBtn = document.getElementById("confirm-reset");
 const refreshQrBtn = document.getElementById("refresh-qr");
+const handoffStatusEl = document.getElementById("handoff-status");
 const roundsTbody = document.querySelector("#rounds-table tbody");
 
+const POLL_INTERVAL_MS = 4000;
+let pollTimer = null;
+
 function renderQr(payload) {
-  // typeNumber=0 lets the library pick the smallest version that fits.
   const qr = qrcode(0, "M");
   qr.addData(payload, "Byte");
   qr.make();
   qrEl.innerHTML = qr.createSvgTag({ scalable: true, margin: 1 });
 }
 
+function fmtArabic(n) {
+  return n.toLocaleString("ar-EG");
+}
+
+function setHandoffStatus(text, kind) {
+  handoffStatusEl.textContent = text || "";
+  handoffStatusEl.className = "hint" + (kind ? " " + kind : "");
+}
+
 async function render() {
   const view = await SaloState.getView();
   roundEl.textContent = view.roundKey;
-  countEl.textContent = view.count.toLocaleString("ar-EG");
+  countEl.textContent = fmtArabic(view.count);
   uidEl.textContent = view.uid;
 
   countryAutoEl.checked = view.countryAuto;
   countryCodeEl.value = view.countryCode;
   countryCodeEl.disabled = view.countryAuto;
 
-  const payload = SaloState.buildQrPayload(view);
+  const handoff = await SaloState.ensureHandoff();
+  const payload = SaloState.buildQrPayload(view, handoff);
   renderQr(payload);
   qrRawEl.textContent = payload;
-  qrMetaEl.textContent = `${view.countryCode} · ${view.roundKey} · ${view.count.toLocaleString(
-    "ar-EG",
+  qrMetaEl.textContent = `${view.countryCode} · ${view.roundKey} · ${fmtArabic(
+    handoff.count,
   )}`;
+
+  if (view.lastApplied && !view.lastApplied.manual) {
+    const when = new Date(view.lastApplied.at).toLocaleString("ar-EG");
+    setHandoffStatus(
+      `تم استلام ${fmtArabic(view.lastApplied.count)} صلاة عبر الجوال بتاريخ ${when}.`,
+      "ok",
+    );
+  } else if (view.pendingHandoff) {
+    setHandoffStatus("بانتظار مسح الكود من تطبيق الجوال…", "");
+  } else {
+    setHandoffStatus("");
+  }
 
   renderRoundsTable();
 }
@@ -53,9 +78,29 @@ async function renderRoundsTable() {
     const tdR = document.createElement("td");
     tdR.textContent = round;
     const tdC = document.createElement("td");
-    tdC.textContent = (data.count ?? 0).toLocaleString("ar-EG");
+    tdC.textContent = fmtArabic(data.count ?? 0);
     tr.append(tdR, tdC);
     roundsTbody.appendChild(tr);
+  }
+}
+
+async function pollHandoff() {
+  const obj = await chrome.storage.local.get(SaloState.STORAGE_KEY);
+  const state = obj[SaloState.STORAGE_KEY];
+  const pending = state?.pendingHandoff;
+  if (!pending?.nonce) return;
+  try {
+    const record = await SaloFirebase.readHandoff(pending.nonce);
+    if (!record) return;
+    const result = await SaloState.applyHandoffRecord(record);
+    if (result.applied) {
+      setHandoffStatus(
+        `تم استلام ${fmtArabic(result.previousCount - result.newCount)} صلاة عبر الجوال.`,
+        "ok",
+      );
+    }
+  } catch (e) {
+    // Network errors are silent — the background alarm will retry.
   }
 }
 
@@ -80,17 +125,19 @@ saveCountryBtn.addEventListener("click", async () => {
   render();
 });
 
-refreshQrBtn.addEventListener("click", render);
+refreshQrBtn.addEventListener("click", async () => {
+  await SaloState.refreshHandoff();
+  render();
+});
 
 confirmResetBtn.addEventListener("click", async () => {
   const view = await SaloState.getView();
   if (view.count === 0) {
-    countryStatusEl.textContent = "العداد فارغ بالفعل.";
-    countryStatusEl.className = "hint";
+    setHandoffStatus("العداد فارغ بالفعل.", "");
     return;
   }
   const ok = confirm(
-    `سيتم تصفير ${view.count.toLocaleString("ar-EG")} صلاة لجولة ${view.roundKey}. متابعة؟`,
+    `سيتم تصفير ${fmtArabic(view.count)} صلاة لجولة ${view.roundKey}. متابعة؟`,
   );
   if (!ok) return;
   await SaloState.resetCurrentRound();
@@ -102,5 +149,19 @@ chrome.storage.onChanged.addListener((changes, area) => {
     render();
   }
 });
+
+(function startPolling() {
+  pollHandoff();
+  pollTimer = setInterval(pollHandoff, POLL_INTERVAL_MS);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      clearInterval(pollTimer);
+      pollTimer = null;
+    } else if (!pollTimer) {
+      pollHandoff();
+      pollTimer = setInterval(pollHandoff, POLL_INTERVAL_MS);
+    }
+  });
+})();
 
 render();

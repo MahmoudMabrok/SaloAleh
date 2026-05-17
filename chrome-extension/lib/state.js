@@ -1,15 +1,16 @@
 // Storage shape:
 // {
-//   schemaVersion: 1,
-//   uid: "<hex sha256>",        // stable per browser profile
-//   countryCode: "EG",          // last known value
-//   countryAuto: true,          // re-detect on read when true
+//   schemaVersion: 2,
+//   uid: "<hex sha256>",
+//   countryCode: "EG",
+//   countryAuto: true,
 //   rounds: { "YYYY-MM-DD": { count: 1234 } },
-//   lastSubmittedRound: "YYYY-MM-DD" | null
+//   pendingHandoff: { nonce, roundKey, count, createdAt } | null,
+//   lastApplied: { nonce, roundKey, count, byUid, at } | null
 // }
 
 const STORAGE_KEY = "saloAleh";
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 
 async function loadRaw() {
   const obj = await chrome.storage.local.get(STORAGE_KEY);
@@ -47,11 +48,23 @@ async function ensureState() {
       countryCode: SaloCountry.detectCountryCode(),
       countryAuto: true,
       rounds: {},
-      lastSubmittedRound: null,
+      pendingHandoff: null,
+      lastApplied: null,
     };
+    await saveRaw(state);
+  } else if ((state.schemaVersion ?? 1) < 2) {
+    state.schemaVersion = SCHEMA_VERSION;
+    state.pendingHandoff = state.pendingHandoff ?? null;
+    state.lastApplied = state.lastApplied ?? null;
+    delete state.lastSubmittedRound;
     await saveRaw(state);
   }
   return state;
+}
+
+function randomNonce() {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 async function getView() {
@@ -68,7 +81,8 @@ async function getView() {
     countryCode: country,
     countryAuto: state.countryAuto,
     isFridayBonus: SaloRound.isFridayBonus(),
-    lastSubmittedRound: state.lastSubmittedRound,
+    pendingHandoff: state.pendingHandoff,
+    lastApplied: state.lastApplied,
   };
 }
 
@@ -88,14 +102,80 @@ async function increment(delta = 1) {
 async function resetCurrentRound() {
   const state = await ensureState();
   const roundKey = SaloRound.currentRoundKey();
-  if (state.rounds[roundKey]) {
-    state.rounds[roundKey].count = 0;
-  } else {
-    state.rounds[roundKey] = { count: 0 };
-  }
-  state.lastSubmittedRound = roundKey;
+  const current = state.rounds[roundKey]?.count ?? 0;
+  state.rounds[roundKey] = { count: 0 };
+  state.lastApplied = {
+    nonce: null,
+    roundKey,
+    count: current,
+    byUid: null,
+    at: Date.now(),
+    manual: true,
+  };
+  state.pendingHandoff = null;
   await saveRaw(state);
   return roundKey;
+}
+
+async function refreshHandoff() {
+  const state = await ensureState();
+  const roundKey = SaloRound.currentRoundKey();
+  const count = state.rounds[roundKey]?.count ?? 0;
+  const nonce = randomNonce();
+  state.pendingHandoff = { nonce, roundKey, count, createdAt: Date.now() };
+  await saveRaw(state);
+  return state.pendingHandoff;
+}
+
+async function ensureHandoff() {
+  const state = await ensureState();
+  const roundKey = SaloRound.currentRoundKey();
+  const count = state.rounds[roundKey]?.count ?? 0;
+  const pending = state.pendingHandoff;
+  // Regenerate when:
+  //  - none yet
+  //  - belongs to an older round
+  //  - count changed (taps added/removed since last QR)
+  if (!pending || pending.roundKey !== roundKey || pending.count !== count) {
+    return refreshHandoff();
+  }
+  return pending;
+}
+
+async function applyHandoffRecord(record) {
+  const state = await ensureState();
+  const pending = state.pendingHandoff;
+  if (!pending) return { applied: false, reason: "no-pending" };
+  if (record?.round !== pending.roundKey) {
+    return { applied: false, reason: "round-mismatch" };
+  }
+  if (typeof record?.count !== "number" || record.count < 0) {
+    return { applied: false, reason: "bad-count" };
+  }
+  if (record.count > pending.count) {
+    // Mobile claims more taps than we offered — clamp to what we sent.
+    record.count = pending.count;
+  }
+  const current = state.rounds[pending.roundKey]?.count ?? 0;
+  const next = Math.max(0, current - record.count);
+  state.rounds[pending.roundKey] = { count: next };
+  state.lastApplied = {
+    nonce: pending.nonce,
+    roundKey: pending.roundKey,
+    count: record.count,
+    byUid: typeof record.byUid === "string" ? record.byUid : null,
+    at: Date.now(),
+    manual: false,
+  };
+  state.pendingHandoff = null;
+  await saveRaw(state);
+  return { applied: true, newCount: next, previousCount: current };
+}
+
+async function clearPendingHandoff() {
+  const state = await ensureState();
+  state.pendingHandoff = null;
+  await saveRaw(state);
 }
 
 async function setCountry(code, auto) {
@@ -108,13 +188,14 @@ async function setCountry(code, auto) {
   return state.countryCode;
 }
 
-function buildQrPayload(view) {
+function buildQrPayload(view, handoff) {
   return JSON.stringify({
-    v: 1,
+    v: 2,
     type: "saloaleh-submit",
     round: view.roundKey,
-    count: view.count,
+    count: handoff.count,
     country: view.countryCode,
+    nonce: handoff.nonce,
     src: "chrome-ext",
     ts: Date.now(),
   });
@@ -126,6 +207,10 @@ self.SaloState = {
   increment,
   resetCurrentRound,
   setCountry,
+  ensureHandoff,
+  refreshHandoff,
+  applyHandoffRecord,
+  clearPendingHandoff,
   buildQrPayload,
   STORAGE_KEY,
 };
