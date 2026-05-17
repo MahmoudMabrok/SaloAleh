@@ -18,19 +18,17 @@ mobile app via a QR code.
 - **Per-round storage** — round key is computed locally with the same
   algorithm as the mobile app (`CompetitionWindowUtils.kt`): the ISO
   date of the next Friday 18:00 in `Africa/Cairo`, accounting for DST.
-- **QR handoff with auto-reset** — the options page renders a QR with payload:
+- **QR handoff with smart deduct** — the options page renders a QR with payload:
   ```json
   {"v":2,"type":"saloaleh-submit","round":"2026-05-22","count":1234,
-   "country":"EG","nonce":"<32 hex>","src":"chrome-ext","ts":1747...}
+   "country":"EG","src":"chrome-ext","ts":1747...}
   ```
-  The extension polls Firebase RTDB at `mohamed_lovers/handoffs/<nonce>`
-  (4s while the options page is open, plus a 1-minute `chrome.alarms`
-  job in the service worker) and decrements the local round count by
-  `record.count` once the mobile app has written its confirmation. Taps
-  made after the QR was generated are preserved (subtraction, not
-  zeroing). A manual fallback button is available for offline cases.
-  The extension's UID is never sent in the payload — the mobile app
-  attributes the score to its own UID when writing.
+  The extension snapshots the count at QR-render time. After scanning
+  on the phone, the user presses "تم الإرسال — خصم العدد" and the
+  extension subtracts the **snapshotted** count from the current round
+  total — so any taps made between QR render and the click are kept.
+  The extension does **not** call Firebase: the mobile app is the only
+  party that writes to RTDB.
 
 ## Install (dev)
 
@@ -62,25 +60,17 @@ chrome-extension/
 
 ```json
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "uid": "<sha256 hex of a per-profile uuid>",
   "countryCode": "EG",
   "countryAuto": true,
   "rounds": { "2026-05-22": { "count": 1234 } },
-  "pendingHandoff": {
-    "nonce": "<32 hex>",
+  "pendingSubmission": {
     "roundKey": "2026-05-22",
     "count": 1234,
     "createdAt": 1747000000000
   },
-  "lastApplied": {
-    "nonce": "<32 hex>",
-    "roundKey": "2026-05-22",
-    "count": 1234,
-    "byUid": "<mobile sha256 hash>",
-    "at": 1747000050000,
-    "manual": false
-  }
+  "lastSubmittedAt": 1747000050000
 }
 ```
 
@@ -91,51 +81,27 @@ would write to a row no real user owns.
 
 ## Mobile-side contract (to implement)
 
-For auto-reset to work end-to-end, the mobile app needs to:
+The mobile app needs to:
 
-1. Open a QR scanner and parse the JSON payload above.
+1. Open a QR scanner and parse the JSON payload.
 2. Validate `type === "saloaleh-submit"` and `v === 2`.
-3. Refuse stale payloads — reject if `round` is not the current round,
-   or if `nonce` was already consumed locally.
-4. Call the existing `MohamedLoversRepository.incrementSession` (or
-   equivalent) with `delta = payload.count`, attributing it to the
-   mobile's own UID.
-5. **After** that write succeeds, write a one-shot handoff confirmation
-   to RTDB at `mohamed_lovers/handoffs/<nonce>`:
-   ```json
-   {
-     "consumedAt": {".sv": "timestamp"},
-     "byUid": "<mobile sha256 hash, 64 chars>",
-     "round": "<roundKey from payload>",
-     "count": <count from payload>
-   }
-   ```
-6. Treat the write as fire-and-forget; if the chrome extension never
-   sees it, the user can use the manual-confirm button.
+3. Reject if `round` is not the current round, or if the same payload
+   was already consumed (suggest hashing `(round, count, ts)` and
+   keeping a local consumed-set).
+4. Call the existing `MohamedLoversRepository.incrementSession` with
+   `delta = payload.count`, attributing the write to the mobile's own
+   UID. The extension's UID is intentionally not in the payload.
 
-The security rules in `database.rules.json` accept this write only when
-the path doesn't already exist (write-once), the nonce is 16–64 chars,
-and the schema validates — so a bad QR can't poison another nonce.
+After the user sees the score appear on the phone, they switch back to
+the browser and click "تم الإرسال — خصم العدد" — the extension does the
+local deduct on its own. Because there's no back-channel from Firebase
+to the extension, an automatic reset would have required the extension
+to read RTDB; that's explicitly out of scope.
 
 ## Not included
 
-- No direct Firebase RTDB writes from the extension to player rows. Only
-  the handoff path is polled (REST GET, no auth). All score persistence
-  goes through the mobile app.
+- No Firebase access of any kind from the extension. The mobile app is
+  the only writer/reader.
 - No QR scanning on the mobile side — that's a separate change in
   `commonMain` / platform code (CameraX + ML Kit on Android,
-  AVFoundation on iOS). See the contract above for the exact payload.
-- No periodic cleanup of stale handoff records. Each entry is ~80 bytes;
-  a cron in `scripts/` can be added later to prune handoffs older than
-  72h if storage cost ever becomes a concern.
-
-## Deploying the security rule change
-
-The `handoffs` rule was added to `database.rules.json`. Deploy with:
-
-```bash
-firebase deploy --only database
-```
-
-Without that deploy, the mobile app's handoff write will be rejected and
-auto-reset won't work (the manual-confirm button will still function).
+  AVFoundation on iOS).

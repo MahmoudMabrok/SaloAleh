@@ -42,9 +42,10 @@
       <section class="card">
         <h2>إرسال النتيجة عبر QR</h2>
         <p class="hint">
-          امسح هذا الكود من تطبيق الجوال. بعد إرسال التطبيق للنتيجة إلى
-          Firebase سيُصفَّر العداد محلياً تلقائياً. زر «تأكيد يدوي» للحالات
-          التي يتعذر فيها الاتصال بالشبكة.
+          امسح هذا الكود من تطبيق الجوال. الكود يحتوي عدد الصلوات لهذه
+          الجولة فقط. بعد أن يُرسل التطبيق النتيجة، اضغط
+          «تم الإرسال — خصم العدد» ليتم خصم العدد الذي أُرسل من العداد
+          المحلي (مع الاحتفاظ بأي صلوات إضافية أضفتها بعد إنشاء الكود).
         </p>
         <div class="qr-wrap">
           <div id="qr" class="qr"></div>
@@ -52,9 +53,9 @@
         </div>
         <div class="actions">
           <button class="btn btn-primary" id="confirm-reset" type="button">
-            تأكيد يدوي + تصفير
+            تم الإرسال — خصم العدد
           </button>
-          <button class="btn ghost" id="refresh-qr" type="button">كود جديد</button>
+          <button class="btn ghost" id="refresh-qr" type="button">تحديث الكود</button>
         </div>
         <p class="hint" id="handoff-status"></p>
         <details class="raw">
@@ -78,7 +79,6 @@
     <script src="lib/round.js"></script>
     <script src="lib/country.js"></script>
     <script src="lib/state.js"></script>
-    <script src="lib/firebase.js"></script>
     <script src="settings.js"></script>
   </body>
 </html>
