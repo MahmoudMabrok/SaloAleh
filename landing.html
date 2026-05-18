@@ -832,6 +832,7 @@
     <ul class="nav-links">
       <li><a href="#features" data-i18n="navFeatures">المميزات</a></li>
       <li><a href="#leaderboard" data-i18n="navLeaderboard">المتصدرون</a></li>
+      <li><a href="#extension" data-i18n="navExtension">إضافة المتصفح</a></li>
       <li><a href="#download" class="nav-cta" data-i18n="navDownload">حمّل التطبيق</a></li>
     </ul>
     <button class="lang-toggle" id="langToggle">EN</button>
@@ -1091,6 +1092,57 @@
 
 <div class="sep"></div>
 
+<!-- EXTENSION -->
+<section class="how" id="extension">
+  <div class="reveal">
+    <p class="eyebrow" data-i18n="extEyebrow">جديد — إضافة المتصفح</p>
+    <h2 class="sec-title" data-i18n-html="extTitle">صلّ على النبي <em>من المتصفح</em></h2>
+    <p class="sec-body" data-i18n="extBody">إضافة كروم تُظهر فقاعة ذكر عائمة أثناء تصفحك. عداد الصلوات يتزامن مع حسابك في التطبيق عبر رمز QR.</p>
+  </div>
+  <div class="how-layout">
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-num-wrap"><span class="step-num">١</span></div>
+        <div>
+          <h3 class="step-title" data-i18n="ext1Title">حمّل الإضافة</h3>
+          <p class="step-desc" data-i18n="ext1Desc">حمّل ملف الإضافة من الرابط أدناه وفك الضغط.</p>
+        </div>
+      </div>
+      <div class="step reveal reveal-delay-1">
+        <div class="step-num-wrap"><span class="step-num">٢</span></div>
+        <div>
+          <h3 class="step-title" data-i18n="ext2Title">ثبّت في كروم</h3>
+          <p class="step-desc" data-i18n="ext2Desc">افتح chrome://extensions — فعّل "وضع المطور" — اضغط "تحميل غير مُحزّم" واختر مجلد الإضافة.</p>
+        </div>
+      </div>
+      <div class="step reveal reveal-delay-2">
+        <div class="step-num-wrap"><span class="step-num">٣</span></div>
+        <div>
+          <h3 class="step-title" data-i18n="ext3Title">اربط بالتطبيق</h3>
+          <p class="step-desc" data-i18n="ext3Desc">افتح التطبيق → الإعدادات → "ربط إضافة المتصفح" وامسح رمز QR من الإضافة. الصلوات تتزامن تلقائياً.</p>
+        </div>
+      </div>
+    </div>
+    <div class="phone-wrap reveal reveal-delay-1" style="flex-direction:column;gap:1.5rem;">
+      <div style="text-align:center;">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.2">
+          <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/>
+          <line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/>
+          <line x1="10.88" y1="21.94" x2="15.46" y2="14"/>
+        </svg>
+        <p style="color:var(--cream);font-size:1.1rem;margin-top:.75rem;font-weight:500;" data-i18n="extChrome">إضافة كروم</p>
+        <p style="color:var(--dim);font-size:.85rem;margin-top:.35rem;" data-i18n="extSync">تزامن تلقائي مع التطبيق</p>
+      </div>
+      <a href="https://drive.google.com/file/d/16vbK84YBgD_1nh7a5NBr7LvDmlBcsupL/view?usp=sharing" class="btn-gold" target="_blank" rel="noopener" style="text-decoration:none;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+        <span data-i18n="extDownload">حمّل الإضافة</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
 <!-- DOWNLOAD -->
 <section class="download" id="download">
   <div class="dl-content">
@@ -1126,7 +1178,7 @@
 /* ── i18n strings ──────────────────────────────────────────── */
 const STRINGS = {
   ar: {
-    navFeatures: 'المميزات', navLeaderboard: 'المتصدرون', navDownload: 'حمّل التطبيق',
+    navFeatures: 'المميزات', navLeaderboard: 'المتصدرون', navExtension: 'إضافة المتصفح', navDownload: 'حمّل التطبيق',
     heroLabel: 'صلوا عليه — منافسة أسبوعية',
     heroHeadline: 'أرسل الصلاة على النبي.<br><em>نافس العالم.</em>',
     heroSub: 'منافسة أسبوعية للصلاة على النبي ﷺ. اكسب شارات الترتيب، وابنِ سلاسلك، وانضم لمؤمنين من ٩ دول — كل جمعة تبدأ جولة جديدة.',
@@ -1155,6 +1207,12 @@ const STRINGS = {
     achBody: 'من سلاسل ٧ أيام إلى أفضل ١٠ — كل إنجاز سجل دائم لتفانيك.',
     badge1: 'المركز الأول', badge2: 'المركز الثاني', badge3: 'المركز الثالث', badge4: 'أفضل ١٠',
     badge5: 'سلسلة ٧ أيام', badge6: 'سلسلة ٣٠ يوماً', badge7: 'بطل الجمعة', badge8: 'المُصلّي الوفي',
+    extEyebrow: 'جديد — إضافة المتصفح', extTitle: 'صلّ على النبي <em>من المتصفح</em>',
+    extBody: 'إضافة كروم تُظهر فقاعة ذكر عائمة أثناء تصفحك. عداد الصلوات يتزامن مع حسابك في التطبيق عبر رمز QR.',
+    ext1Title: 'حمّل الإضافة', ext1Desc: 'حمّل ملف الإضافة من الرابط أدناه وفك الضغط.',
+    ext2Title: 'ثبّت في كروم', ext2Desc: 'افتح chrome://extensions — فعّل "وضع المطور" — اضغط "تحميل غير مُحزّم" واختر مجلد الإضافة.',
+    ext3Title: 'اربط بالتطبيق', ext3Desc: 'افتح التطبيق → الإعدادات → "ربط إضافة المتصفح" وامسح رمز QR من الإضافة. الصلوات تتزامن تلقائياً.',
+    extChrome: 'إضافة كروم', extSync: 'تزامن تلقائي مع التطبيق', extDownload: 'حمّل الإضافة',
     dlEyebrow: 'متاح الآن', dlTitle: 'ابدأ إرسال الصلاة <em>اليوم</em>',
     dlBody: 'مجاني للتنزيل. لا حساب مطلوب. متاح على أندرويد.',
     dlStoreSub: 'حمّل من', dlStoreName: 'Google Play',
@@ -1163,7 +1221,7 @@ const STRINGS = {
     langToggle: 'EN',
   },
   en: {
-    navFeatures: 'Features', navLeaderboard: 'Leaderboard', navDownload: 'Download',
+    navFeatures: 'Features', navLeaderboard: 'Leaderboard', navExtension: 'Browser Extension', navDownload: 'Download',
     heroLabel: 'SaloAleh — Weekly Competition',
     heroHeadline: 'Send blessings on the Prophet.<br><em>Compete with the world.</em>',
     heroSub: 'A weekly salawat tap competition. Earn rank badges, build streaks, and join believers across 9 countries — every Friday the round resets.',
@@ -1192,6 +1250,12 @@ const STRINGS = {
     achBody: 'From 7-day streaks to top-10 finishes — each achievement is a permanent record of your dedication.',
     badge1: '1st Place', badge2: '2nd Place', badge3: '3rd Place', badge4: 'Top 10 Finish',
     badge5: '7-Day Streak', badge6: '30-Day Streak', badge7: 'Friday Hero', badge8: 'Faithful Sender',
+    extEyebrow: 'New — Browser Extension', extTitle: 'Send salawat <em>from your browser</em>',
+    extBody: 'A Chrome extension that shows a floating dhikr bubble while you browse. Your salawat count syncs with the app via QR code.',
+    ext1Title: 'Download the extension', ext1Desc: 'Download the extension file from the link below and unzip it.',
+    ext2Title: 'Install in Chrome', ext2Desc: 'Open chrome://extensions — enable "Developer mode" — click "Load unpacked" and select the extension folder.',
+    ext3Title: 'Link to the app', ext3Desc: 'Open the app → Settings → "Link Browser Extension" and scan the QR code from the extension. Salawat sync automatically.',
+    extChrome: 'Chrome Extension', extSync: 'Auto-sync with the app', extDownload: 'Download Extension',
     dlEyebrow: 'Available now', dlTitle: 'Start sending salawat <em>today</em>',
     dlBody: 'Free to download. No account required. Available on Android.',
     dlStoreSub: 'Get it on', dlStoreName: 'Google Play',

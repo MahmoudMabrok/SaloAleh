@@ -243,6 +243,13 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
             )
 
             Text(
+                text = "حمّل إضافة كروم من موقعنا لتصلّي على النبي ﷺ أثناء التصفح",
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.5f),
+                fontSize = 11.sp,
+                modifier = Modifier.padding(start = 4.dp, top = 4.dp),
+            )
+
+            Text(
                 text = "عن التطبيق",
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
                 fontSize = 12.sp,
