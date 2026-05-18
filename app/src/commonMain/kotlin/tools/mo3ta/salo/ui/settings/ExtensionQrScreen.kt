@@ -132,8 +132,12 @@ fun ExtensionQrScreen(onBack: () -> Unit) {
                                 showPlatformToast("تمت إضافة ${result.count} صلاة من الإضافة ✓")
                             }
                             is QrVerifyResult.Error -> {
-                                viewModel.resetCurrentRoundScore()
-                                showPlatformToast("⚠️ ${result.message} — تم تصفير نقاطك")
+                                if (result.isCheat) {
+                                    viewModel.resetCurrentRoundScore()
+                                    showPlatformToast("⚠️ ${result.message} — تم تصفير نقاطك")
+                                } else {
+                                    showPlatformToast("⚠️ ${result.message}")
+                                }
                             }
                         }
                     }

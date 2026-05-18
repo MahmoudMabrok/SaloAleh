@@ -20,7 +20,7 @@ data class ExtensionQrPayload(
 
 sealed class QrVerifyResult {
     data class Success(val round: String, val count: Int) : QrVerifyResult()
-    data class Error(val message: String) : QrVerifyResult()
+    data class Error(val message: String, val isCheat: Boolean = false) : QrVerifyResult()
 }
 
 private val json = Json { ignoreUnknownKeys = true }
@@ -50,7 +50,7 @@ fun verifyExtensionQr(raw: String, nowMs: Long, lastAppliedTs: Long): QrVerifyRe
 
     val expectedSig = hmacSha256Hex("${payload.round}|${payload.count}")
     if (!payload.sig.equals(expectedSig, ignoreCase = true)) {
-        return QrVerifyResult.Error("توقيع غير صالح")
+        return QrVerifyResult.Error("توقيع غير صالح", isCheat = true)
     }
 
     return QrVerifyResult.Success(round = payload.round, count = payload.count)
