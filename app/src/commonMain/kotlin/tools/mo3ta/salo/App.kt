@@ -10,11 +10,14 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import com.russhwolf.settings.Settings
 import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import org.koin.compose.koinInject
 import tools.mo3ta.salo.domain.Achievement
 import tools.mo3ta.salo.domain.EngagementData
+import tools.mo3ta.salo.data.engagement.EngagementStore
+import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.ui.AchievementCelebrationDialog
 import tools.mo3ta.salo.ui.AchievementsScreen
 import tools.mo3ta.salo.ui.HadithListScreen
@@ -23,6 +26,8 @@ import tools.mo3ta.salo.ui.FcmPermissionReminderDialog
 import tools.mo3ta.salo.ui.NotificationRationaleDialog
 import tools.mo3ta.salo.ui.OnboardingScreen
 import tools.mo3ta.salo.ui.PlatformBackHandler
+import tools.mo3ta.salo.ui.ReviewDialog
+import tools.mo3ta.salo.ui.openStorePage
 import tools.mo3ta.salo.ui.settings.ExtensionQrScreen
 import tools.mo3ta.salo.ui.settings.SettingsScreen
 import tools.mo3ta.salo.ui.tendays.TenDaysPromoDialog
@@ -126,6 +131,29 @@ fun App(
                 onDismiss = {
                     settings.putBoolean("ten_days_promo_shown", true)
                     showTenDaysPromo = false
+                },
+            )
+        }
+
+        val engagementStore = koinInject<EngagementStore>()
+        val sessionStore = koinInject<MohamedLoversSessionStore>()
+        val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
+        val installDate = remember {
+            runCatching { LocalDate.parse(sessionStore.getOrSetInstallDate(today)) }.getOrDefault(today)
+        }
+        var showReview by remember {
+            mutableStateOf(engagementStore.shouldShowReviewDialog(today, installDate))
+        }
+        if (showReview) {
+            ReviewDialog(
+                onGoToStore = {
+                    engagementStore.markReviewCompleted()
+                    showReview = false
+                    openStorePage()
+                },
+                onDismiss = {
+                    engagementStore.markReviewDialogShown(today)
+                    showReview = false
                 },
             )
         }

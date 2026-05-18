@@ -125,6 +125,24 @@ class EngagementStore(private val settings: Settings) {
         return (today.toEpochDays() - date.toEpochDays()).toInt()
     }
 
+    fun shouldShowReviewDialog(today: LocalDate, installDate: LocalDate): Boolean {
+        if (settings.getBoolean(KEY_REVIEW_COMPLETED, false)) return false
+        val daysSinceInstall = (today.toEpochDays() - installDate.toEpochDays()).toInt()
+        if (daysSinceInstall < 2) return false
+        val lastShown = settings.getStringOrNull(KEY_REVIEW_LAST_SHOWN)
+        if (lastShown == null) return true
+        val lastDate = runCatching { LocalDate.parse(lastShown) }.getOrNull() ?: return true
+        return (today.toEpochDays() - lastDate.toEpochDays()) >= 7
+    }
+
+    fun markReviewDialogShown(today: LocalDate) {
+        settings.putString(KEY_REVIEW_LAST_SHOWN, today.toString())
+    }
+
+    fun markReviewCompleted() {
+        settings.putBoolean(KEY_REVIEW_COMPLETED, true)
+    }
+
     fun missedDays(today: LocalDate): Int {
         val lastDateStr = settings.getStringOrNull(KEY_LAST_OPEN_DATE) ?: return 0
         val lastDate = LocalDate.parse(lastDateStr)
@@ -235,6 +253,8 @@ class EngagementStore(private val settings: Settings) {
         const val KEY_GRACE_DATE = "eng_grace_date"
         const val KEY_GRACE_WARNING_SHOWN_DATE = "eng_grace_warning_shown_date"
         const val KEY_FCM_PERM_DENIED_DATE = "eng_fcm_perm_denied_date"
+        const val KEY_REVIEW_COMPLETED = "eng_review_completed"
+        const val KEY_REVIEW_LAST_SHOWN = "eng_review_last_shown"
         val json = Json { ignoreUnknownKeys = true }
     }
 }
