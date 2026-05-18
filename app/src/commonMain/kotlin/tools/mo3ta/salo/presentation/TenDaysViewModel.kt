@@ -14,6 +14,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.daysUntil
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
 import tools.mo3ta.salo.data.tendays.DhikrType
 import tools.mo3ta.salo.data.tendays.TenDaysFirebaseClient
@@ -51,9 +52,14 @@ class TenDaysViewModel(
         debouncedSync()
     }
 
+    fun canToggleFasting(): Boolean {
+        val now = Clock.System.now().toLocalDateTime(cairoTz)
+        return now.hour >= 20
+    }
+
     fun onFastingToggle() {
         val day = _state.value.currentDay
-        if (!store.isFasting(day)) {
+        if (!store.isFasting(day) && canToggleFasting()) {
             store.setFasting(day, true)
             refreshDay(day)
             debouncedSync()
@@ -102,6 +108,7 @@ class TenDaysViewModel(
             days = days,
             totalScore = totalScore,
             autoPlayTakbeer = store.isAutoPlayTakbeer(),
+            canFast = canToggleFasting(),
             periodKey = periodKey,
         )
     }

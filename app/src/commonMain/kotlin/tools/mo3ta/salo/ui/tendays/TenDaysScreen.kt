@@ -99,7 +99,11 @@ fun TenDaysScreen(
 
             BaqiyatSection(dayState = currentDayState, onDhikrTap = viewModel::onDhikrTap)
             Spacer(Modifier.height(10.dp))
-            FastingRow(isFasting = currentDayState.isFasting, onToggle = viewModel::onFastingToggle)
+            FastingRow(
+                isFasting = currentDayState.isFasting,
+                canToggle = state.canFast,
+                onToggle = viewModel::onFastingToggle,
+            )
             Spacer(Modifier.height(10.dp))
             TakbeerRow(
                 count = currentDayState.takbeerCount,
@@ -315,16 +319,47 @@ private fun DhikrCell(
 }
 
 @Composable
-private fun FastingRow(isFasting: Boolean, onToggle: () -> Unit) {
-    ActionRow(title = "الصيام", pointsLabel = "+١٠٠ نقطة") {
-        Switch(
-            checked = isFasting,
-            onCheckedChange = { if (!isFasting) onToggle() },
-            colors = SwitchDefaults.colors(
-                checkedTrackColor = TenDaysPalette.Green,
-                uncheckedTrackColor = TenDaysPalette.GrayBorder,
-            ),
-        )
+private fun FastingRow(isFasting: Boolean, canToggle: Boolean, onToggle: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(TenDaysPalette.CardBackgroundAlpha)
+            .padding(12.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "الصيام",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TenDaysPalette.TextPrimary,
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(text = "+١٠٠ نقطة", fontSize = 11.sp, color = TenDaysPalette.Gold)
+            }
+            Switch(
+                checked = isFasting,
+                onCheckedChange = { if (!isFasting && canToggle) onToggle() },
+                enabled = canToggle || isFasting,
+                colors = SwitchDefaults.colors(
+                    checkedTrackColor = TenDaysPalette.Green,
+                    uncheckedTrackColor = TenDaysPalette.GrayBorder,
+                ),
+            )
+        }
+        if (!canToggle && !isFasting) {
+            Text(
+                text = "متاح بعد الساعة ٨ مساءً",
+                fontSize = 11.sp,
+                color = TenDaysPalette.TextSecondary,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
     }
 }
 
