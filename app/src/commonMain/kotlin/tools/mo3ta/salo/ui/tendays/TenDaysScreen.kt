@@ -1,6 +1,7 @@
 package tools.mo3ta.salo.ui.tendays
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,6 +26,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Switch
@@ -117,11 +120,19 @@ fun TenDaysScreen(
                 onTap = viewModel::onTakbeerTap,
                 autoPlay = state.autoPlayTakbeer,
                 onAutoPlayToggle = viewModel::onAutoPlayToggle,
+                intervalMinutes = state.takbeerIntervalMinutes,
+                onIntervalChanged = viewModel::onTakbeerIntervalChanged,
+                repeatCount = state.takbeerRepeatCount,
+                onRepeatChanged = viewModel::onTakbeerRepeatChanged,
             )
             Spacer(Modifier.height(10.dp))
             SadaqahRow(isSadaqah = currentDayState.isSadaqah, onToggle = viewModel::onSadaqahToggle)
             Spacer(Modifier.height(10.dp))
-            TakbeerOverlayButton(autoRemind = state.autoPlayTakbeer)
+            TakbeerOverlayButton(
+                autoRemind = state.autoPlayTakbeer,
+                intervalMinutes = state.takbeerIntervalMinutes,
+                repeatCount = state.takbeerRepeatCount,
+            )
             Spacer(Modifier.height(14.dp))
             MiniLeaderboard(state)
             Spacer(Modifier.height(24.dp))
@@ -212,8 +223,7 @@ private fun DaySelector(
                     .padding(horizontal = 3.dp)
                     .size(30.dp)
                     .clip(CircleShape)
-                    .background(bgColor)
-                    .clickable { onDaySelected(dayState.day) },
+                    .background(bgColor),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -372,15 +382,40 @@ private fun FastingRow(isFasting: Boolean, canToggle: Boolean, onToggle: () -> U
     }
 }
 
+private val INTERVAL_OPTIONS = listOf(1, 5, 10, 30, 60)
+private val REPEAT_OPTIONS = listOf(1, 2, 3)
+
+private fun intervalLabel(minutes: Int): String = when (minutes) {
+    1 -> "١ دقيقة"
+    5 -> "٥ دقائق"
+    10 -> "١٠ دقائق"
+    30 -> "٣٠ دقيقة"
+    60 -> "٦٠ دقيقة"
+    else -> "$minutes د"
+}
+
+private fun repeatLabel(count: Int): String = when (count) {
+    1 -> "مرة"
+    2 -> "مرتين"
+    3 -> "٣ مرات"
+    else -> "$count مرات"
+}
+
 @Composable
 private fun TakbeerRow(
     count: Int,
     onTap: () -> Unit,
     autoPlay: Boolean,
     onAutoPlayToggle: () -> Unit,
+    intervalMinutes: Int,
+    onIntervalChanged: (Int) -> Unit,
+    repeatCount: Int,
+    onRepeatChanged: (Int) -> Unit,
 ) {
     var cooldown by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    var intervalExpanded by remember { mutableStateOf(false) }
+    var repeatExpanded by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -454,7 +489,7 @@ private fun TakbeerRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "تشغيل تلقائي كل ١٠ دقائق",
+                text = "تشغيل تلقائي",
                 fontSize = 12.sp,
                 color = TenDaysPalette.TextSecondary,
             )
@@ -466,6 +501,96 @@ private fun TakbeerRow(
                     uncheckedTrackColor = TenDaysPalette.GrayBorder,
                 ),
             )
+        }
+
+        if (autoPlay) {
+            Spacer(Modifier.height(6.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "كل",
+                    fontSize = 12.sp,
+                    color = TenDaysPalette.TextSecondary,
+                )
+                Box {
+                    Button(
+                        onClick = { intervalExpanded = true },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = TenDaysPalette.SurfaceDark,
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                    ) {
+                        Text(
+                            text = intervalLabel(intervalMinutes),
+                            fontSize = 13.sp,
+                            color = TenDaysPalette.Gold,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = intervalExpanded,
+                        onDismissRequest = { intervalExpanded = false },
+                    ) {
+                        INTERVAL_OPTIONS.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(intervalLabel(option)) },
+                                onClick = {
+                                    onIntervalChanged(option)
+                                    intervalExpanded = false
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(6.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "عدد مرات التشغيل",
+                    fontSize = 12.sp,
+                    color = TenDaysPalette.TextSecondary,
+                )
+                Box {
+                    Button(
+                        onClick = { repeatExpanded = true },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = TenDaysPalette.SurfaceDark,
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                    ) {
+                        Text(
+                            text = repeatLabel(repeatCount),
+                            fontSize = 13.sp,
+                            color = TenDaysPalette.Gold,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = repeatExpanded,
+                        onDismissRequest = { repeatExpanded = false },
+                    ) {
+                        REPEAT_OPTIONS.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(repeatLabel(option)) },
+                                onClick = {
+                                    onRepeatChanged(option)
+                                    repeatExpanded = false
+                                },
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -515,6 +640,8 @@ private fun ActionRow(
 
 @Composable
 private fun MiniLeaderboard(state: TenDaysUiState) {
+    val selfInTop = state.leaderboard.any { it.uid == state.currentUid }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -529,54 +656,141 @@ private fun MiniLeaderboard(state: TenDaysUiState) {
         ) {
             Text(
                 text = "المتصدرين",
-                fontSize = 14.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
-                color = TenDaysPalette.TextPrimary,
+                color = TenDaysPalette.Gold,
             )
             if (state.selfRank > 0) {
                 Text(
                     text = "ترتيبك: #${state.selfRank}",
-                    fontSize = 11.sp,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
                     color = TenDaysPalette.Gold,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(TenDaysPalette.Gold.copy(alpha = 0.12f))
+                        .padding(horizontal = 10.dp, vertical = 3.dp),
                 )
             }
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(10.dp))
 
         if (state.leaderboard.isEmpty()) {
             Text(
                 text = "لا يوجد بيانات بعد",
                 fontSize = 12.sp,
                 color = TenDaysPalette.TextSecondary,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
                 textAlign = TextAlign.Center,
             )
         } else {
-            state.leaderboard.take(3).forEachIndexed { index, entry ->
-                val medal = when (index) {
-                    0 -> "🥇"
-                    1 -> "🥈"
-                    2 -> "🥉"
-                    else -> "${index + 1}"
-                }
+            if (!selfInTop && state.selfRank > 0) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(TenDaysPalette.Gold.copy(alpha = 0.10f))
+                        .border(
+                            width = 1.dp,
+                            color = TenDaysPalette.Gold.copy(alpha = 0.35f),
+                            shape = RoundedCornerShape(10.dp),
+                        )
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "$medal ${entry.uid.take(8)}",
-                        fontSize = 12.sp,
-                        color = TenDaysPalette.TextPrimary,
+                        text = "#${state.selfRank}  أنت",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TenDaysPalette.Gold,
                     )
                     Text(
-                        text = "${entry.totalScore}",
-                        fontSize = 12.sp,
+                        text = "${state.totalScore}",
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = TenDaysPalette.Gold,
                     )
                 }
+                Spacer(Modifier.height(8.dp))
+            }
+
+            state.leaderboard.forEachIndexed { index, entry ->
+                val rank = index + 1
+                val isMe = entry.uid == state.currentUid
+                LeaderboardEntryRow(
+                    rank = rank,
+                    displayTag = entry.uid.take(8),
+                    score = entry.totalScore,
+                    isCurrentUser = isMe,
+                )
             }
         }
+    }
+}
+
+@Composable
+private fun LeaderboardEntryRow(
+    rank: Int,
+    displayTag: String,
+    score: Int,
+    isCurrentUser: Boolean,
+) {
+    val rankColor = when (rank) {
+        1 -> TenDaysPalette.Gold
+        2 -> TenDaysPalette.RankSilver
+        3 -> TenDaysPalette.RankBronze
+        else -> TenDaysPalette.TextSecondary
+    }
+    val medal = when (rank) {
+        1 -> "🥇"
+        2 -> "🥈"
+        3 -> "🥉"
+        else -> null
+    }
+    val bgColor = if (isCurrentUser) TenDaysPalette.Gold.copy(alpha = 0.12f) else Color.Transparent
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(bgColor)
+            .padding(horizontal = 10.dp, vertical = 7.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            if (medal != null) {
+                Text(
+                    text = medal,
+                    fontSize = 16.sp,
+                )
+            } else {
+                Text(
+                    text = "#$rank",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = rankColor,
+                    modifier = Modifier.width(28.dp),
+                    textAlign = TextAlign.Center,
+                )
+            }
+            Text(
+                text = if (isCurrentUser) "أنت" else displayTag,
+                fontSize = 13.sp,
+                fontWeight = if (isCurrentUser) FontWeight.Bold else FontWeight.Normal,
+                color = if (isCurrentUser) TenDaysPalette.Gold else TenDaysPalette.TextPrimary,
+            )
+        }
+        Text(
+            text = "$score",
+            fontSize = 13.sp,
+            fontWeight = if (isCurrentUser) FontWeight.Bold else FontWeight.Normal,
+            color = if (isCurrentUser) TenDaysPalette.Gold else TenDaysPalette.TextSecondary,
+        )
     }
 }

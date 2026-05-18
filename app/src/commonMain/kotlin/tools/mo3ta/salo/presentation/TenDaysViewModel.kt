@@ -75,14 +75,23 @@ class TenDaysViewModel(
         }
     }
 
-    fun onDaySelected(day: Int) {
-        _state.update { it.copy(currentDay = day.coerceIn(1, 9)) }
+    fun onDaySelected(@Suppress("UNUSED_PARAMETER") day: Int) {
     }
 
     fun onAutoPlayToggle() {
         val newValue = !_state.value.autoPlayTakbeer
         store.setAutoPlayTakbeer(newValue)
         _state.update { it.copy(autoPlayTakbeer = newValue) }
+    }
+
+    fun onTakbeerIntervalChanged(minutes: Int) {
+        store.setTakbeerIntervalMinutes(minutes)
+        _state.update { it.copy(takbeerIntervalMinutes = minutes) }
+    }
+
+    fun onTakbeerRepeatChanged(count: Int) {
+        store.setTakbeerRepeatCount(count)
+        _state.update { it.copy(takbeerRepeatCount = count) }
     }
 
     private fun loadState() {
@@ -108,6 +117,8 @@ class TenDaysViewModel(
             days = days,
             totalScore = totalScore,
             autoPlayTakbeer = store.isAutoPlayTakbeer(),
+            takbeerIntervalMinutes = store.getTakbeerIntervalMinutes(),
+            takbeerRepeatCount = store.getTakbeerRepeatCount(),
             canFast = canToggleFasting(),
             periodKey = periodKey,
         )
@@ -147,9 +158,10 @@ class TenDaysViewModel(
         viewModelScope.launch {
             val periodKey = _state.value.periodKey
             if (periodKey.isBlank()) return@launch
+            val uid = sessionStore.getOrCreateUid()
+            _state.update { it.copy(currentUid = uid) }
             firebaseClient.observeLeaderboard(periodKey).collectLatest { result ->
                 result.onSuccess { entries ->
-                    val uid = sessionStore.getOrCreateUid()
                     val selfRank = entries.indexOfFirst { it.uid == uid } + 1
                     _state.update { it.copy(leaderboard = entries.take(10), selfRank = selfRank) }
                 }
@@ -158,6 +170,6 @@ class TenDaysViewModel(
     }
 
     private fun computePeriodKey(): String {
-        return "2026-06-06"
+        return "2026-05-18"
     }
 }

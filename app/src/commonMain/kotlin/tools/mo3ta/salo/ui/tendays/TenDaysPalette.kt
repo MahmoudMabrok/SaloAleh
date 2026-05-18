@@ -15,4 +15,6 @@ object TenDaysPalette {
     val TextPrimary = Color(0xFFEEEEEE)
     val TextSecondary = Color(0xFF94A3B8)
     val GrayBorder = Color(0xFF475569)
+    val RankSilver = Color(0xFFC0C0C0)
+    val RankBronze = Color(0xFFCD7F32)
 }

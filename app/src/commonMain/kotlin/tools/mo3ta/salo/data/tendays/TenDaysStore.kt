@@ -42,10 +42,24 @@ class TenDaysStore(private val settings: Settings) {
     fun setAutoPlayTakbeer(enabled: Boolean) =
         settings.putBoolean(KEY_AUTO_PLAY, enabled)
 
+    fun getTakbeerIntervalMinutes(): Int =
+        settings.getInt(KEY_TAKBEER_INTERVAL, 10)
+
+    fun setTakbeerIntervalMinutes(minutes: Int) =
+        settings.putInt(KEY_TAKBEER_INTERVAL, minutes)
+
+    fun getTakbeerRepeatCount(): Int =
+        settings.getInt(KEY_TAKBEER_REPEAT, 1)
+
+    fun setTakbeerRepeatCount(count: Int) =
+        settings.putInt(KEY_TAKBEER_REPEAT, count)
+
     private fun key(day: Int, suffix: String) = "tenDays_day${day}_$suffix"
 
     private companion object {
         const val KEY_AUTO_PLAY = "tenDays_autoPlayTakbeer"
+        const val KEY_TAKBEER_INTERVAL = "tenDays_takbeerIntervalMinutes"
+        const val KEY_TAKBEER_REPEAT = "tenDays_takbeerRepeatCount"
     }
 }
 

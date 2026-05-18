@@ -24,6 +24,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import tools.mo3ta.salo.R
@@ -33,11 +34,13 @@ class TakbeerOverlayService : Service() {
 
     companion object {
         const val EXTRA_AUTO_REMIND = "auto_remind"
+        const val EXTRA_INTERVAL_MINUTES = "interval_minutes"
+        const val EXTRA_REPEAT_COUNT = "repeat_count"
         private val _isRunning = MutableStateFlow(false)
         val isRunning: StateFlow<Boolean> = _isRunning
         private const val DRAG_THRESHOLD_PX = 10
-        private const val AUTO_HIDE_MS = 22_000L
-        private const val REMINDER_INTERVAL_MS = 10 * 60 * 1000L
+        private const val DEFAULT_INTERVAL_MINUTES = 10
+        private const val DEFAULT_REPEAT_COUNT = 1
     }
 
     private lateinit var windowManager: WindowManager
@@ -47,6 +50,8 @@ class TakbeerOverlayService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var hideJob: Job? = null
     private var autoRemind = false
+    private var intervalMs = DEFAULT_INTERVAL_MINUTES * 60 * 1000L
+    private var repeatCount = DEFAULT_REPEAT_COUNT
 
     private fun Int.dp(): Int =
         TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, this.toFloat(), resources.displayMetrics).toInt()
@@ -60,6 +65,9 @@ class TakbeerOverlayService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startForeground(NotificationChannels.NOTIF_ID_BUBBLE + 1, buildNotification())
         autoRemind = intent?.getBooleanExtra(EXTRA_AUTO_REMIND, false) ?: false
+        val minutes = intent?.getIntExtra(EXTRA_INTERVAL_MINUTES, DEFAULT_INTERVAL_MINUTES) ?: DEFAULT_INTERVAL_MINUTES
+        intervalMs = minutes * 60 * 1000L
+        repeatCount = intent?.getIntExtra(EXTRA_REPEAT_COUNT, DEFAULT_REPEAT_COUNT) ?: DEFAULT_REPEAT_COUNT
         if (overlayView == null) {
             createOverlay()
         }
@@ -187,11 +195,10 @@ class TakbeerOverlayService : Service() {
             windowManager.addView(view, params)
         }
         view.visibility = LinearLayout.VISIBLE
-        playTakbeer()
 
         hideJob?.cancel()
         hideJob = scope.launch {
-            delay(AUTO_HIDE_MS)
+            playTakbeerRepeated(repeatCount)
             hideOverlay()
             if (!autoRemind) stopSelf()
         }
@@ -204,17 +211,27 @@ class TakbeerOverlayService : Service() {
     private fun startReminderCycle() {
         scope.launch {
             while (true) {
-                delay(REMINDER_INTERVAL_MS)
+                delay(intervalMs)
                 showOverlay()
             }
         }
     }
 
-    private fun playTakbeer() {
-        mediaPlayer?.release()
-        mediaPlayer = MediaPlayer.create(this, R.raw.takbeer)?.apply {
-            setOnCompletionListener { it.release() }
-            start()
+    private suspend fun playTakbeerRepeated(times: Int) {
+        repeat(times) {
+            suspendCancellableCoroutine { cont ->
+                mediaPlayer?.release()
+                mediaPlayer = MediaPlayer.create(this@TakbeerOverlayService, R.raw.takbeer)?.apply {
+                    setOnCompletionListener {
+                        it.release()
+                        if (cont.isActive) cont.resumeWith(Result.success(Unit))
+                    }
+                    start()
+                }
+                if (mediaPlayer == null && cont.isActive) {
+                    cont.resumeWith(Result.success(Unit))
+                }
+            }
         }
     }
 

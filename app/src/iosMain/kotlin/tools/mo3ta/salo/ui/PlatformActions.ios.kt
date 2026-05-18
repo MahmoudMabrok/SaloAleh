@@ -145,4 +145,4 @@ actual fun FloatingBubbleButton(roundKey: String?) {}
 actual fun BubbleFeaturePromo(roundKey: String?) {}
 
 @Composable
-actual fun TakbeerOverlayButton(autoRemind: Boolean) {}
+actual fun TakbeerOverlayButton(autoRemind: Boolean, intervalMinutes: Int, repeatCount: Int) {}

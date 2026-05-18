@@ -25,7 +25,10 @@ data class TenDaysUiState(
     val selfRank: Int = 0,
     val leaderboard: List<TenDaysLeaderboardEntry> = emptyList(),
     val autoPlayTakbeer: Boolean = false,
+    val takbeerIntervalMinutes: Int = 10,
+    val takbeerRepeatCount: Int = 1,
     val canFast: Boolean = false,
     val isActive: Boolean = true,
     val periodKey: String = "",
+    val currentUid: String = "",
 )

@@ -352,7 +352,7 @@ actual fun BubbleFeaturePromo(roundKey: String?) {
 }
 
 @Composable
-actual fun TakbeerOverlayButton(autoRemind: Boolean) {
+actual fun TakbeerOverlayButton(autoRemind: Boolean, intervalMinutes: Int, repeatCount: Int) {
     val context = LocalContext.current
     val isActive by TakbeerOverlayService.isRunning.collectAsState()
     var showPermissionDialog by remember { mutableStateOf(false) }
@@ -386,6 +386,8 @@ actual fun TakbeerOverlayButton(autoRemind: Boolean) {
                     context,
                     Intent(context, TakbeerOverlayService::class.java)
                         .putExtra(TakbeerOverlayService.EXTRA_AUTO_REMIND, autoRemind)
+                        .putExtra(TakbeerOverlayService.EXTRA_INTERVAL_MINUTES, intervalMinutes)
+                        .putExtra(TakbeerOverlayService.EXTRA_REPEAT_COUNT, repeatCount)
                 )
             }
         },
