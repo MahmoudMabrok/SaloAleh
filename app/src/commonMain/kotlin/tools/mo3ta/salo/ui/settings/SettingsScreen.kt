@@ -237,16 +237,16 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
                 modifier = Modifier.padding(top = 24.dp, bottom = 8.dp),
             )
 
+            val uriHandler = LocalUriHandler.current
+
             SettingLinkRow(
                 label = "مزامنة من إضافة المتصفح",
                 onClick = onOpenExtensionQr,
             )
 
-            Text(
-                text = "حمّل إضافة كروم من موقعنا لتصلّي على النبي ﷺ أثناء التصفح",
-                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.5f),
-                fontSize = 11.sp,
-                modifier = Modifier.padding(start = 4.dp, top = 4.dp),
+            SettingLinkRow(
+                label = "حمّل إضافة كروم",
+                onClick = { uriHandler.openUri("https://mahmoudmabrok.github.io/SaloAleh/landing.html#extension") },
             )
 
             Text(
@@ -261,8 +261,6 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
                 label = "دليل التطبيق",
                 onClick = onOpenOnboarding,
             )
-
-            val uriHandler = LocalUriHandler.current
             SettingLinkRow(
                 label = "سياسة الخصوصية",
                 onClick = { uriHandler.openUri("https://mahmoudmabrok.github.io/MyDataCenter/policy/salo.html") },
