@@ -58,6 +58,13 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         settings.putString(KEY_PENDING_ROUNDS_INDEX, updated.joinToString(","))
     }
 
+    fun clearAllPendingRounds() {
+        for (roundKey in getPendingRoundKeys()) {
+            settings.remove(pendingCountKey(roundKey))
+        }
+        settings.putString(KEY_PENDING_ROUNDS_INDEX, "")
+    }
+
     private fun migrateIfNeeded() {
         val oldRoundKey = settings.getStringOrNull(KEY_PENDING_ROUND_LEGACY) ?: return
         val oldCount = settings.getInt(KEY_PENDING_COUNT_LEGACY, 0)
@@ -103,6 +110,9 @@ class MohamedLoversSessionStore(private val settings: Settings) {
     fun getLastRoundTaps(): Int = settings.getInt(KEY_LAST_ROUND_TAPS, 0)
     fun saveLastRoundTaps(taps: Int) = settings.putInt(KEY_LAST_ROUND_TAPS, taps)
 
+    fun getLastAppliedQrTs(): Long = settings.getLong(KEY_LAST_QR_TS, 0L)
+    fun saveLastAppliedQrTs(ts: Long) = settings.putLong(KEY_LAST_QR_TS, ts)
+
     fun getSavedFcmToken(): String? = settings.getStringOrNull(KEY_FCM_TOKEN)
     fun saveLocalFcmToken(token: String) = settings.putString(KEY_FCM_TOKEN, token)
 
@@ -135,5 +145,6 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         const val KEY_LAST_ROUND_TAPS = "last_round_taps"
         const val KEY_FCM_TOKEN = "fcm_token"
         const val KEY_FCM_TOKEN_SYNCED = "fcm_token_synced"
+        const val KEY_LAST_QR_TS = "last_applied_qr_ts"
     }
 }

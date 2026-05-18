@@ -15,6 +15,8 @@ expect fun openStorePage()
 expect fun getAppVersion(): String
 expect fun shareBitmap(imageBitmap: ImageBitmap)
 
+expect fun launchQrScanner(onResult: (String?) -> Unit)
+
 @Composable
 expect fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit)
 

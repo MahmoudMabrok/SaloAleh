@@ -6,3 +6,6 @@ actual fun sha256hex(input: String): String {
     val bytes = MessageDigest.getInstance("SHA-256").digest(input.toByteArray(Charsets.UTF_8))
     return bytes.joinToString("") { "%02x".format(it) }
 }
+
+actual fun sha256Bytes(input: ByteArray): ByteArray =
+    MessageDigest.getInstance("SHA-256").digest(input)

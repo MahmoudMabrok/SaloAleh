@@ -263,7 +263,7 @@ jobs:
     name: Notify users — new build available
     runs-on: ubuntu-latest
     needs: [deploy-android]
-    if: needs.deploy-android.result == 'success'
+    if: needs.deploy-android.result == 'success' && github.event.inputs.track == 'production'
 
     steps:
       - uses: actions/checkout@v4

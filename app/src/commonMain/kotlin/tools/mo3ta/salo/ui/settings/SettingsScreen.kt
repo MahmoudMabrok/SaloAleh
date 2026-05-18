@@ -2,6 +2,8 @@ package tools.mo3ta.salo.ui.settings
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,14 +41,12 @@ import org.koin.compose.koinInject
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
-import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.notification.NotificationScheduler
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
 import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.ui.areNotificationsEnabled
 import tools.mo3ta.salo.ui.canScheduleExactAlarms
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
-import tools.mo3ta.salo.ui.copyToClipboard
 import tools.mo3ta.salo.ui.getAppVersion
 import tools.mo3ta.salo.ui.getStoreUrl
 import tools.mo3ta.salo.ui.openNotificationSettings
@@ -57,9 +57,8 @@ import tools.mo3ta.salo.ui.showPlatformToast
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}) {
+fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpenExtensionQr: () -> Unit = {}) {
     val store: NotificationSettingsStore = koinInject()
-    val sessionStore: MohamedLoversSessionStore = koinInject()
     val hadithStore: DailyHadithStore = koinInject()
     val viewModel: MohamedLoversViewModel = koinViewModel()
     var dailyEnabled by remember { mutableStateOf(store.dailyEnabled) }
@@ -117,6 +116,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
             Text(
@@ -230,6 +230,19 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}) {
 //            )
 
             Text(
+                text = "المزامنة",
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 24.dp, bottom = 8.dp),
+            )
+
+            SettingLinkRow(
+                label = "مزامنة من إضافة المتصفح",
+                onClick = onOpenExtensionQr,
+            )
+
+            Text(
                 text = "عن التطبيق",
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
                 fontSize = 12.sp,
@@ -256,14 +269,6 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}) {
             SettingLinkRow(
                 label = "فتح صفحة المتجر",
                 onClick = { openStorePage() },
-            )
-
-            SettingLinkRow(
-                label = "نسخ معرّف الجهاز (UUID)",
-                onClick = {
-                    copyToClipboard(sessionStore.getRawUid())
-                    showPlatformToast("تم النسخ — الصقه في إضافة المتصفح")
-                },
             )
 
             Row(

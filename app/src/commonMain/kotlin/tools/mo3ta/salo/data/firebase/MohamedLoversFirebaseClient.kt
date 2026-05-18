@@ -149,6 +149,20 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         }
     }
 
+    override suspend fun resetPlayerScore(roundKey: String, uid: String): Result<Unit> {
+        log.d { "resetPlayerScore[$roundKey/$uid]" }
+        return runCatching {
+            Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(
+                mapOf(TOTAL_COUNT_KEY to 0)
+            )
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "resetPlayerScore[$roundKey/$uid] ok" } },
+                onFailure = { log.e(it) { "resetPlayerScore[$roundKey/$uid] failed" } },
+            )
+        }
+    }
+
     override suspend fun writeUserActivity(uid: String, installDate: String, lastOpenDate: String): Result<Unit> {
         log.d { "writeUserActivity[$uid]" }
         return runCatching {

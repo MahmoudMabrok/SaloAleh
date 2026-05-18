@@ -57,6 +57,7 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.firebase.analytics)
             implementation(libs.firebase.messaging)
+            implementation(libs.gms.code.scanner)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
@@ -83,8 +84,8 @@ android {
         applicationId = "tools.mo3ta.salo"
         minSdk = 24
         targetSdk = 36
-        versionCode = 23
-        versionName = "1.5.0"
+        versionCode = 25
+        versionName = "1.6.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

@@ -45,6 +45,14 @@ class MohamedLoversRepository(
     fun getPendingSession(roundKey: String): MohamedLoversPendingSession =
         sessionStore.getPendingSession(roundKey)
 
+    fun clearAllPendingRounds() = sessionStore.clearAllPendingRounds()
+
+    suspend fun resetPlayerScore(roundKey: String): Result<Unit> {
+        val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
+        sessionStore.clearPendingRound(roundKey)
+        return firebaseClient.resetPlayerScore(roundKey, uid)
+    }
+
     suspend fun flushPendingSession(countryCode: String): Result<Unit> {
         val allPending = sessionStore.getAllPendingRounds()
         if (allPending.isEmpty()) return Result.success(Unit)
