@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -84,6 +85,7 @@ fun MohamedLoversScreen(
     onOpenAchievements: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
     onOpenHadithList: () -> Unit = {},
+    onOpenTenDays: () -> Unit = {},
     viewModel: MohamedLoversViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -331,6 +333,13 @@ fun MohamedLoversScreen(
                         Icon(
                             imageVector = Icons.Default.AutoStories,
                             contentDescription = "الأحاديث",
+                            tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
+                        )
+                    }
+                    IconButton(onClick = onOpenTenDays) {
+                        Icon(
+                            imageVector = Icons.Default.WbSunny,
+                            contentDescription = "عشر ذي الحجة",
                             tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
                         )
                     }

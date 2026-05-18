@@ -22,6 +22,7 @@ import tools.mo3ta.salo.ui.NotificationRationaleDialog
 import tools.mo3ta.salo.ui.OnboardingScreen
 import tools.mo3ta.salo.ui.PlatformBackHandler
 import tools.mo3ta.salo.ui.settings.SettingsScreen
+import tools.mo3ta.salo.ui.tendays.TenDaysScreen
 
 @Composable
 fun App(
@@ -43,9 +44,11 @@ fun App(
         var showSettings by remember { mutableStateOf(false) }
         var showHadithList by remember { mutableStateOf(false) }
         var showOnboarding by remember { mutableStateOf(false) }
+        var showTenDays by remember { mutableStateOf(false) }
 
-        PlatformBackHandler(enabled = showHadithList || showAchievements || showSettings || showOnboarding) {
+        PlatformBackHandler(enabled = showTenDays || showHadithList || showAchievements || showSettings || showOnboarding) {
             when {
+                showTenDays -> showTenDays = false
                 showHadithList -> showHadithList = false
                 showAchievements -> showAchievements = false
                 showOnboarding -> showOnboarding = false
@@ -61,10 +64,12 @@ fun App(
             )
             showAchievements -> AchievementsScreen(onBack = { showAchievements = false })
             showHadithList -> HadithListScreen(onBack = { showHadithList = false })
+            showTenDays -> TenDaysScreen(onBack = { showTenDays = false })
             else -> MohamedLoversScreen(
                 onOpenAchievements = { showAchievements = true },
                 onOpenSettings = { showSettings = true },
                 onOpenHadithList = { showHadithList = true },
+                onOpenTenDays = { showTenDays = true },
             )
         }
 

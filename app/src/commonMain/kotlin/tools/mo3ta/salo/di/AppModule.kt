@@ -14,9 +14,12 @@ import tools.mo3ta.salo.data.remote.HadithRemoteDataSource
 import tools.mo3ta.salo.data.remote.createHttpClient
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.domain.MohamedLoversRepository
+import tools.mo3ta.salo.data.tendays.TenDaysStore
+import tools.mo3ta.salo.data.tendays.TenDaysFirebaseClient
 import tools.mo3ta.salo.presentation.AchievementsViewModel
 import tools.mo3ta.salo.presentation.HadithListViewModel
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
+import tools.mo3ta.salo.presentation.TenDaysViewModel
 
 val appModule = module {
     single { MohamedLoversFirebaseClient(get()) } bind MohamedLoversFirebaseApi::class
@@ -32,4 +35,7 @@ val appModule = module {
     viewModel { MohamedLoversViewModel(get(), get(), get(), get(), get()) }
     viewModel { AchievementsViewModel(get()) }
     viewModel { HadithListViewModel(get()) }
+    single { TenDaysStore(get()) }
+    single { TenDaysFirebaseClient(get()) }
+    viewModel { TenDaysViewModel(get(), get(), get()) }
 }
