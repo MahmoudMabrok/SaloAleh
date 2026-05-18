@@ -3,6 +3,41 @@
     ".read": false,
     ".write": false,
 
+    "ten_days_dhul_hijjah": {
+      "$periodKey": {
+        "leaderboard": {
+          ".read": true,
+          ".write": false
+        },
+        "players": {
+          ".indexOn": ["totalScore"],
+          "$uid": {
+            ".write": "newData.child('uid').val() === $uid",
+            ".validate": "newData.hasChildren(['uid','totalScore','updatedAt','countryCode'])",
+
+            "uid": {
+              ".validate": "newData.isString() && newData.val() === $uid"
+            },
+            "totalScore": {
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "updatedAt": {
+              ".validate": "newData.val() === now"
+            },
+            "countryCode": {
+              ".validate": "newData.isString()"
+            },
+            "rank": {
+              ".read": true,
+              ".write": false
+            },
+
+            "$other": { ".validate": false }
+          }
+        }
+      }
+    },
+
     "mohamed_lovers": {
       "allTimeTotal": {
         ".read": true,
