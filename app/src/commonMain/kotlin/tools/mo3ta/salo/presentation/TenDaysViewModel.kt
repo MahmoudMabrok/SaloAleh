@@ -36,6 +36,17 @@ class TenDaysViewModel(
     init {
         loadState()
         observeLeaderboard()
+        refreshCanFastPeriodically()
+    }
+
+    private fun refreshCanFastPeriodically() {
+        viewModelScope.launch {
+            while (true) {
+                delay(30_000)
+                val canFast = canToggleFasting()
+                _state.update { it.copy(canFast = canFast) }
+            }
+        }
     }
 
     fun onDhikrTap(dhikr: DhikrType) {

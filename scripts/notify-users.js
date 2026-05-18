@@ -335,8 +335,129 @@ async function main() {
   }
 
   console.log(`[notify-users] done — ${sendPromises.length} send(s) dispatched`);
+
+  // --- Ten Days of Dhul Hijjah notifications ---
+  await notifyTenDaysUsers(db, today);
+
   console.log('[notify-users] ===== run end =====');
   process.exit(0);
+}
+
+function isTenDaysPeriodActive(periodKey) {
+  const zone = 'Africa/Cairo';
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+  const start = new Date(periodKey + 'T00:00:00');
+  const endDate = new Date(start.getTime() + 9 * 86400000);
+  const end = new Intl.DateTimeFormat('en-CA', {
+    timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(endDate);
+  return today >= periodKey && today < end;
+}
+
+async function notifyTenDaysUsers(db, today) {
+  const root = 'ten_days_dhul_hijjah';
+  const periodKeys = ['2026-05-18'];
+
+  for (const periodKey of periodKeys) {
+    if (!isTenDaysPeriodActive(periodKey)) {
+      console.log(`[ten-days-notif] period ${periodKey} not active — skip`);
+      continue;
+    }
+    console.log(`\n[ten-days-notif] --- period ${periodKey} ---`);
+
+    // Compute day number (1-9).
+    const startMs = new Date(periodKey + 'T00:00:00').getTime();
+    const todayMs = new Date(today + 'T00:00:00').getTime();
+    const dayNum = Math.floor((todayMs - startMs) / 86400000) + 1;
+    const daysLeft = 9 - dayNum;
+
+    // Fetch 10th-place score for rival alerts.
+    const lbSnap = await db.ref(`${root}/${periodKey}/leaderboard/10`).get();
+    const tenthScore = lbSnap.exists() ? (lbSnap.val()?.totalScore ?? null) : null;
+    console.log(`[ten-days-notif] dayNum=${dayNum} daysLeft=${daysLeft} 10th-score=${tenthScore}`);
+
+    // Fetch all users with FCM tokens.
+    const usersSnap = await db.ref('mohamed_lovers/users').get();
+    if (!usersSnap.exists()) continue;
+
+    const sendPromises = [];
+    const updates = {};
+    let rivalCount = 0;
+    let inactiveCount = 0;
+
+    usersSnap.forEach(userSnap => {
+      const uid = userSnap.key;
+      const user = userSnap.val();
+      if (!user?.fcmToken) return;
+
+      // Check if user participates in ten-days.
+      sendPromises.push(
+        db.ref(`${root}/${periodKey}/players/${uid}`).get().then(async playerSnap => {
+          if (!playerSnap.exists()) return;
+          const player = playerSnap.val();
+          const userScore = player?.totalScore ?? 0;
+
+          // Inactive reminder: user has score but hasn't updated in 2+ days (once per day).
+          const lastUpdate = player?.updatedAt;
+          if (lastUpdate) {
+            const hoursSinceUpdate = (Date.now() - lastUpdate) / 3600000;
+            const inactiveDebounceKey = `tendays_inactive_${periodKey}_${today}`;
+            if (hoursSinceUpdate >= 48 && user.lastTenDaysInactiveNotif !== inactiveDebounceKey) {
+              inactiveCount++;
+              updates[`mohamed_lovers/users/${uid}/lastTenDaysInactiveNotif`] = inactiveDebounceKey;
+              await admin.messaging().send({
+                token: user.fcmToken,
+                notification: {
+                  title: 'أيام العشر تمضي ⏳',
+                  body: `اليوم ${dayNum} من عشر ذي الحجة — بقي ${daysLeft} أيام، لا تفوّت الأجر!`,
+                },
+                data: {
+                  title: 'أيام العشر تمضي ⏳',
+                  body: `اليوم ${dayNum} من عشر ذي الحجة — بقي ${daysLeft} أيام، لا تفوّت الأجر!`,
+                },
+              })
+                .then(msgId => console.log(`[ten-days-notif] sent inactive uid=${uid} msgId=${msgId}`))
+                .catch(e => console.error(`[ten-days-notif] failed inactive uid=${uid}: ${e.message}`));
+              return;
+            }
+          }
+
+          // Rival alert: close to top 10.
+          if (tenthScore !== null) {
+            const gap = tenthScore - userScore;
+            const rivalThreshold = 200;
+            if (gap > 0 && gap <= rivalThreshold) {
+              const rivalDebounceKey = `tendays_rival_${periodKey}_${today}`;
+              if (user.lastTenDaysRivalNotif === rivalDebounceKey) return;
+              rivalCount++;
+              updates[`mohamed_lovers/users/${uid}/lastTenDaysRivalNotif`] = rivalDebounceKey;
+              await admin.messaging().send({
+                token: user.fcmToken,
+                notification: {
+                  title: 'فرصتك في العشر! 🔥',
+                  body: `${gap} نقطة تفصلك عن دخول قائمة الأوائل في عشر ذي الحجة — هيا!`,
+                },
+                data: {
+                  title: 'فرصتك في العشر! 🔥',
+                  body: `${gap} نقطة تفصلك عن دخول قائمة الأوائل في عشر ذي الحجة — هيا!`,
+                },
+              })
+                .then(msgId => console.log(`[ten-days-notif] sent rival uid=${uid} gap=${gap} msgId=${msgId}`))
+                .catch(e => console.error(`[ten-days-notif] failed rival uid=${uid}: ${e.message}`));
+            }
+          }
+        }).catch(e => console.error(`[ten-days-notif] error uid=${uid}: ${e.message}`))
+      );
+    });
+
+    await Promise.all(sendPromises);
+    if (Object.keys(updates).length > 0) {
+      await db.ref('/').update(updates);
+    }
+    console.log(`[ten-days-notif] period=${periodKey} inactive=${inactiveCount} rivals=${rivalCount}`);
+  }
 }
 
 main().catch(err => { console.error(err); process.exit(1); });

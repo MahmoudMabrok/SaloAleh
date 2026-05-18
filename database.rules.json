@@ -59,6 +59,18 @@
           "lastRivalNotifDate": {
             ".validate": "newData.isString() && newData.val().length == 10"
           },
+          "lastDropOutNotifRound": {
+            ".validate": "newData.isString()"
+          },
+          "lastTenDaysDropOutNotif": {
+            ".validate": "newData.isString()"
+          },
+          "lastTenDaysRivalNotif": {
+            ".validate": "newData.isString()"
+          },
+          "lastTenDaysInactiveNotif": {
+            ".validate": "newData.isString()"
+          },
           "achievements": {
             ".read": true,
             ".write": false,
