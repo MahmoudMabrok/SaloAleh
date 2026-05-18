@@ -27,4 +27,4 @@ expect fun FloatingBubbleButton(roundKey: String?)
 expect fun BubbleFeaturePromo(roundKey: String?)
 
 @Composable
-expect fun TakbeerOverlayButton()
+expect fun TakbeerOverlayButton(autoRemind: Boolean)

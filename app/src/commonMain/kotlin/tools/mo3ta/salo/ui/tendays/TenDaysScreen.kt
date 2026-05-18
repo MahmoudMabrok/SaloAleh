@@ -121,7 +121,7 @@ fun TenDaysScreen(
             Spacer(Modifier.height(10.dp))
             SadaqahRow(isSadaqah = currentDayState.isSadaqah, onToggle = viewModel::onSadaqahToggle)
             Spacer(Modifier.height(10.dp))
-            TakbeerOverlayButton()
+            TakbeerOverlayButton(autoRemind = state.autoPlayTakbeer)
             Spacer(Modifier.height(14.dp))
             MiniLeaderboard(state)
             Spacer(Modifier.height(24.dp))
