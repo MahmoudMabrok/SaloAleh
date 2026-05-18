@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.PixelFormat
+import android.media.MediaPlayer
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
@@ -26,6 +27,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import org.koin.android.ext.android.inject
+import tools.mo3ta.salo.R
 import tools.mo3ta.salo.data.engagement.DailyGoalStore
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.notification.NotificationChannels
@@ -53,6 +55,7 @@ class FloatingBubbleService : Service() {
     private var roundKey: String = ""
     private lateinit var prefs: SharedPreferences
     private val mainHandler = Handler(Looper.getMainLooper())
+    private var mediaPlayer: MediaPlayer? = null
 
     private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         if (key == pendingCountKey() && ::bubbleView.isInitialized) {
@@ -161,11 +164,24 @@ class FloatingBubbleService : Service() {
         analyticsManager.logAction("bubble_tap", mapOf("count" to pending.clickCount.toString()))
     }
 
+    private fun playTakbeer() {
+        mediaPlayer?.release()
+        mediaPlayer = MediaPlayer.create(this, R.raw.takbeer)?.apply {
+            setOnCompletionListener { it.release() }
+            start()
+        }
+    }
+
     private fun startReminderCycle() {
         scope.launch {
+            bubbleView.showTooltip()
+            playTakbeer()
+            delay(5_000L)
+            bubbleView.hideTooltip()
             while (true) {
                 delay(10 * 60 * 1000L)
                 bubbleView.showTooltip()
+                playTakbeer()
                 delay(5_000L)
                 bubbleView.hideTooltip()
             }
@@ -184,6 +200,8 @@ class FloatingBubbleService : Service() {
     override fun onDestroy() {
         _isRunning.value = false
         prefs.unregisterOnSharedPreferenceChangeListener(prefListener)
+        mediaPlayer?.release()
+        mediaPlayer = null
         scope.cancel()
         if (::bubbleView.isInitialized) {
             runCatching { windowManager.removeView(bubbleView) }

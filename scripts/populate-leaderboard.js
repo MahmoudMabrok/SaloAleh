@@ -253,7 +253,60 @@ async function main() {
     }
   }
 
+  // --- Ten Days of Dhul Hijjah leaderboard ---
+  await populateTenDaysLeaderboard(db);
+
   process.exit(0);
+}
+
+async function populateTenDaysLeaderboard(db) {
+  const periodKey = '2026-06-06';
+  const root = 'ten_days_dhul_hijjah';
+  console.log(`\n--- Ten Days Leaderboard [${periodKey}] ---`);
+
+  const playersSnap = await db.ref(`${root}/${periodKey}/players`).orderByChild('totalScore').get();
+  if (!playersSnap.exists()) {
+    console.log('No ten-days players found.');
+    await db.ref(`${root}/${periodKey}/leaderboard`).set({});
+    return;
+  }
+
+  const allPlayers = [];
+  playersSnap.forEach(child => {
+    const data = child.val();
+    if (data && typeof data.uid === 'string' && typeof data.totalScore === 'number') {
+      allPlayers.push({
+        uid: data.uid,
+        totalScore: data.totalScore,
+        updatedAt: data.updatedAt || 0,
+        countryCode: typeof data.countryCode === 'string' ? data.countryCode : '',
+      });
+    }
+  });
+
+  allPlayers.sort((a, b) => b.totalScore - a.totalScore || b.updatedAt - a.updatedAt);
+
+  const top10 = allPlayers.slice(0, 10);
+  const leaderboard = {};
+  top10.forEach((player, i) => {
+    leaderboard[String(i + 1)] = {
+      rank: i + 1,
+      uid: player.uid,
+      totalScore: player.totalScore,
+      countryCode: player.countryCode,
+    };
+  });
+
+  const rankUpdates = {};
+  allPlayers.forEach((player, i) => {
+    rankUpdates[`${root}/${periodKey}/players/${player.uid}/rank`] = i + 1;
+  });
+
+  await Promise.all([
+    db.ref('/').update(rankUpdates),
+    db.ref(`${root}/${periodKey}/leaderboard`).set(leaderboard),
+  ]);
+  console.log(`Wrote ${top10.length} ten-days leaderboard entries (${allPlayers.length} total players).`);
 }
 
 main().catch(err => { console.error(err); process.exit(1); });

@@ -48,6 +48,15 @@
                 android:value="floating bubble overlay for counting salawat" />
         </service>
 
+        <service
+            android:name=".ui.TakbeerOverlayService"
+            android:foregroundServiceType="specialUse"
+            android:exported="false">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="floating takbeer overlay for Dhul Hijjah" />
+        </service>
+
         <receiver
             android:name=".notification.NotificationAlarmReceiver"
             android:exported="false" />

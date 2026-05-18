@@ -13,7 +13,7 @@ data class TenDaysDayState(
     val dayScore: Int
         get() = dhikrCounts.values.sum() +
                 (if (isFasting) 100 else 0) +
-                (takbeerCount * 5) +
+                (takbeerCount * 10) +
                 (if (isSadaqah) 150 else 0)
 }
 

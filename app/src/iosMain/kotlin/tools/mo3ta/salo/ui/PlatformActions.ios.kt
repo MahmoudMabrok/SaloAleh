@@ -138,3 +138,6 @@ actual fun FloatingBubbleButton(roundKey: String?) {}
 
 @Composable
 actual fun BubbleFeaturePromo(roundKey: String?) {}
+
+@Composable
+actual fun TakbeerOverlayButton() {}

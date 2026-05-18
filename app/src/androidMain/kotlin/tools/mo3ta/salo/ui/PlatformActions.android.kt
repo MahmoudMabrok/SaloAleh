@@ -8,6 +8,9 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -51,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import tools.mo3ta.salo.ui.tendays.TenDaysPalette
 import androidx.core.content.FileProvider
 import tools.mo3ta.salo.AndroidAppContext
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
@@ -332,5 +336,50 @@ actual fun BubbleFeaturePromo(roundKey: String?) {
                 showPromo = false
             },
         )
+    }
+}
+
+@Composable
+actual fun TakbeerOverlayButton() {
+    val context = LocalContext.current
+    val isActive by TakbeerOverlayService.isRunning.collectAsState()
+    var showPermissionDialog by remember { mutableStateOf(false) }
+
+    if (showPermissionDialog) {
+        OverlayPermissionRationaleDialog(
+            onAllow = {
+                showPermissionDialog = false
+                context.startActivity(
+                    Intent(
+                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:${context.packageName}")
+                    )
+                )
+            },
+            onDismiss = { showPermissionDialog = false },
+        )
+    }
+
+    val label = if (isActive) "إيقاف التكبير" else "تشغيل التكبير"
+    val containerColor = if (isActive) Color(0xFFE53935) else TenDaysPalette.Gold
+
+    Button(
+        onClick = {
+            if (isActive) {
+                context.stopService(Intent(context, TakbeerOverlayService::class.java))
+            } else if (!Settings.canDrawOverlays(context)) {
+                showPermissionDialog = true
+            } else {
+                ContextCompat.startForegroundService(
+                    context,
+                    Intent(context, TakbeerOverlayService::class.java)
+                )
+            }
+        },
+        modifier = Modifier.fillMaxWidth(),
+        colors = ButtonDefaults.buttonColors(containerColor = containerColor),
+        shape = RoundedCornerShape(12.dp),
+    ) {
+        Text(label, color = Color.Black, fontWeight = FontWeight.Bold)
     }
 }

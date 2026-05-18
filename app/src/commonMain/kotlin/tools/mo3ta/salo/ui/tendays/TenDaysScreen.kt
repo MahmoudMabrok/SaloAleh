@@ -32,6 +32,12 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.data.tendays.DhikrType
+import tools.mo3ta.salo.ui.TakbeerOverlayButton
 import tools.mo3ta.salo.presentation.TenDaysDayState
 import tools.mo3ta.salo.presentation.TenDaysUiState
 import tools.mo3ta.salo.presentation.TenDaysViewModel
@@ -113,6 +120,8 @@ fun TenDaysScreen(
             )
             Spacer(Modifier.height(10.dp))
             SadaqahRow(isSadaqah = currentDayState.isSadaqah, onToggle = viewModel::onSadaqahToggle)
+            Spacer(Modifier.height(10.dp))
+            TakbeerOverlayButton()
             Spacer(Modifier.height(14.dp))
             MiniLeaderboard(state)
             Spacer(Modifier.height(24.dp))
@@ -370,6 +379,9 @@ private fun TakbeerRow(
     autoPlay: Boolean,
     onAutoPlayToggle: () -> Unit,
 ) {
+    var cooldown by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -390,7 +402,7 @@ private fun TakbeerRow(
                     color = TenDaysPalette.TextPrimary,
                 )
                 Spacer(Modifier.width(8.dp))
-                Text(text = "+٥ نقاط", fontSize = 11.sp, color = TenDaysPalette.Gold)
+                Text(text = "+١٠ نقاط", fontSize = 11.sp, color = TenDaysPalette.Gold)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -401,12 +413,25 @@ private fun TakbeerRow(
                 )
                 Spacer(Modifier.width(8.dp))
                 Button(
-                    onClick = onTap,
-                    colors = ButtonDefaults.buttonColors(containerColor = TenDaysPalette.Gold),
+                    onClick = {
+                        if (!cooldown) {
+                            onTap()
+                            cooldown = true
+                            scope.launch {
+                                delay(5000)
+                                cooldown = false
+                            }
+                        }
+                    },
+                    enabled = !cooldown,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = TenDaysPalette.Gold,
+                        disabledContainerColor = TenDaysPalette.Gold.copy(alpha = 0.35f),
+                    ),
                     shape = RoundedCornerShape(8.dp),
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
                 ) {
-                    Text("كبّر", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    Text("كبّر", color = if (cooldown) Color.Black.copy(alpha = 0.4f) else Color.Black, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 }
             }
         }

@@ -8,9 +8,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
+import com.russhwolf.settings.Settings
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
+import org.koin.compose.koinInject
 import tools.mo3ta.salo.domain.Achievement
 import tools.mo3ta.salo.domain.EngagementData
 import tools.mo3ta.salo.ui.AchievementCelebrationDialog
@@ -22,6 +24,7 @@ import tools.mo3ta.salo.ui.NotificationRationaleDialog
 import tools.mo3ta.salo.ui.OnboardingScreen
 import tools.mo3ta.salo.ui.PlatformBackHandler
 import tools.mo3ta.salo.ui.settings.SettingsScreen
+import tools.mo3ta.salo.ui.tendays.TenDaysPromoDialog
 import tools.mo3ta.salo.ui.tendays.TenDaysScreen
 
 @Composable
@@ -100,6 +103,25 @@ fun App(
             AchievementCelebrationDialog(
                 achievement = badge,
                 onDismiss = { pendingBadge = null },
+            )
+        }
+
+        val settings = koinInject<Settings>()
+        var showTenDaysPromo by remember {
+            val shown = settings.getBoolean("ten_days_promo_shown", false)
+            mutableStateOf(!shown)
+        }
+        if (showTenDaysPromo) {
+            TenDaysPromoDialog(
+                onOpen = {
+                    settings.putBoolean("ten_days_promo_shown", true)
+                    showTenDaysPromo = false
+                    showTenDays = true
+                },
+                onDismiss = {
+                    settings.putBoolean("ten_days_promo_shown", true)
+                    showTenDaysPromo = false
+                },
             )
         }
     }
