@@ -411,6 +411,16 @@ private fun TakbeerRow(
             }
         }
 
+        Spacer(Modifier.height(6.dp))
+
+        Text(
+            text = "الله أكبر، الله أكبر، الله أكبر، لا إله إلا الله، والله أكبر، الله أكبر، الله أكبر، ولله الحمد",
+            fontSize = 12.sp,
+            color = TenDaysPalette.TextSecondary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
         Spacer(Modifier.height(8.dp))
 
         Row(
