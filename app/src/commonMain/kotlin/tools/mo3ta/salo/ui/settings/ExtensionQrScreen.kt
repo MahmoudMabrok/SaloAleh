@@ -55,7 +55,7 @@ fun ExtensionQrScreen(onBack: () -> Unit) {
             TopAppBar(
                 title = {
                     Text(
-                        text = "استلام من الإضافة",
+                        text = "مزامنة البيانات",
                         color = MohamedLoversPalette.GoldGlow,
                         fontWeight = FontWeight.Bold,
                     )
@@ -90,7 +90,7 @@ fun ExtensionQrScreen(onBack: () -> Unit) {
             Spacer(Modifier.height(16.dp))
 
             Text(
-                text = "تحذير مهم",
+                text = "تنبيه",
                 color = Color(0xFFFF6B6B),
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
@@ -100,7 +100,7 @@ fun ExtensionQrScreen(onBack: () -> Unit) {
             Spacer(Modifier.height(16.dp))
 
             Text(
-                text = "استخدام رمز QR مزوّر أو غير صالح (محاولة غش) سيؤدي إلى تصفير جميع بياناتك بالكامل.",
+                text = "أي رمز غير صحيح سيؤدي لتصفير نقاطك في الجولة الحالية.",
                 color = Color.White,
                 fontSize = 15.sp,
                 textAlign = TextAlign.Center,
@@ -110,7 +110,7 @@ fun ExtensionQrScreen(onBack: () -> Unit) {
             Spacer(Modifier.height(12.dp))
 
             Text(
-                text = "امسح فقط رمز QR الظاهر في إضافة المتصفح الخاصة بك.",
+                text = "امسح الرمز من إضافة المتصفح فقط.",
                 color = Color.White.copy(alpha = 0.7f),
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
@@ -146,7 +146,7 @@ fun ExtensionQrScreen(onBack: () -> Unit) {
                 ),
             ) {
                 Text(
-                    text = "مسح رمز QR",
+                    text = "مزامنة الآن",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(vertical = 8.dp),
