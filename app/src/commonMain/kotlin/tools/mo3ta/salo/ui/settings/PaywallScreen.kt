@@ -48,6 +48,7 @@ import tools.mo3ta.salo.data.billing.BillingManager
 import tools.mo3ta.salo.data.billing.PremiumFeature
 import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.billing.ProductRegistry
+import tools.mo3ta.salo.data.billing.SupportTier
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,7 +60,7 @@ fun PaywallScreen(onBack: () -> Unit) {
 
     val isPremium = premiumStore.hasFeature(PremiumFeature.SCORE_MASK)
     var scoreMasked by remember { mutableStateOf(premiumStore.isScoreMasked) }
-    val price = billingManager.getProductPrice(ProductRegistry.SUPPORT_APP_PREMIUM) ?: "$1.99"
+    var selectedTier by remember { mutableStateOf(ProductRegistry.tiers[1]) }
 
     LaunchedEffect(Unit) {
         analyticsManager.logAction(BillingAnalytics.PAYWALL_VIEWED)
@@ -155,22 +156,39 @@ fun PaywallScreen(onBack: () -> Unit) {
                     )
                 }
             } else {
+                ProductRegistry.tiers.forEach { tier ->
+                    SupportTierCard(
+                        tier = tier,
+                        price = billingManager.getProductPrice(tier.productId) ?: tier.defaultPrice,
+                        isSelected = selectedTier == tier,
+                        onClick = { selectedTier = tier },
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "كلما زاد دعمك، زاد أجرك في الآخرة بإذن الله 🤲",
+                    color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
+                    fontSize = 13.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(16.dp))
                 Button(
                     onClick = {
                         analyticsManager.logAction(
                             BillingAnalytics.PURCHASE_STARTED,
-                            mapOf(BillingAnalytics.PARAM_PRODUCT_ID to ProductRegistry.SUPPORT_APP_PREMIUM),
+                            mapOf(BillingAnalytics.PARAM_PRODUCT_ID to selectedTier.productId),
                         )
-                        billingManager.purchaseProduct(ProductRegistry.SUPPORT_APP_PREMIUM)
+                        billingManager.purchaseProduct(selectedTier.productId)
                     },
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Transparent,
-                    ),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
                 ) {
+                    val tierPrice = billingManager.getProductPrice(selectedTier.productId) ?: selectedTier.defaultPrice
                     Text(
-                        text = "ادعم الآن — $price",
+                        text = "ادعم الآن — $tierPrice",
                         color = Color(0xFF0f0f1a),
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
@@ -198,6 +216,57 @@ fun PaywallScreen(onBack: () -> Unit) {
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun SupportTierCard(
+    tier: SupportTier,
+    price: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+) {
+    val borderColor = if (isSelected) MohamedLoversPalette.GoldGlow else Color(0xFF333333)
+    val bgColor = if (isSelected) Color(0xFF1a1a2e) else Color(0xFF13132a)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(bgColor)
+            .border(if (isSelected) 2.dp else 1.dp, borderColor, RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(text = tier.emoji, fontSize = 24.sp)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = tier.label,
+                color = if (isSelected) MohamedLoversPalette.GoldGlow else Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp,
+            )
+            if (tier.features.contains(PremiumFeature.SCORE_MASK)) {
+                Text(
+                    text = "إخفاء النتيجة + شارة الداعم",
+                    color = Color.White.copy(alpha = 0.5f),
+                    fontSize = 11.sp,
+                )
+            } else {
+                Text(
+                    text = "شارة الداعم",
+                    color = Color.White.copy(alpha = 0.5f),
+                    fontSize = 11.sp,
+                )
+            }
+        }
+        Text(
+            text = price,
+            color = if (isSelected) MohamedLoversPalette.GoldGlow else Color.White.copy(alpha = 0.7f),
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp,
+        )
     }
 }
 
