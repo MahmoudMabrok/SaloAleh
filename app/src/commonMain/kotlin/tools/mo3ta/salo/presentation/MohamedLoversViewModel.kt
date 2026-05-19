@@ -354,6 +354,7 @@ class MohamedLoversViewModel(
                 totalCount = if (isCurrentUser) selfProjectedTotal else entry.score,
                 isCurrentUser = isCurrentUser,
                 rankChange = entry.rankChange,
+                scoreMasked = entry.scoreMasked,
             )
         }.sortedByDescending { it.totalCount }
             .mapIndexed { index, entry -> entry.copy(rank = index + 1) }
