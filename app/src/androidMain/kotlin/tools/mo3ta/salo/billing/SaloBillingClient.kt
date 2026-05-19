@@ -24,7 +24,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
 class SaloBillingClient(context: Context) {
@@ -34,6 +33,8 @@ class SaloBillingClient(context: Context) {
 
     private val _isConnected = MutableStateFlow(false)
     val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
+
+    var onPurchaseCompleted: ((List<String>) -> Unit)? = null
 
     private val purchasesListener = PurchasesUpdatedListener { result, purchases ->
         if (result.responseCode == BillingClient.BillingResponseCode.OK && purchases != null) {
@@ -110,9 +111,19 @@ class SaloBillingClient(context: Context) {
         }
     }
 
+    suspend fun queryPurchases(): List<Purchase> {
+        val result = client.queryPurchasesAsync(
+            QueryPurchasesParams.newBuilder()
+                .setProductType(BillingClient.ProductType.INAPP)
+                .build()
+        )
+        return result.purchasesList
+    }
+
     private suspend fun handlePurchase(purchase: Purchase) {
         if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
             log.d { "Purchase completed: ${purchase.products}" }
+            onPurchaseCompleted?.invoke(purchase.products)
             val consumeParams = ConsumeParams.newBuilder()
                 .setPurchaseToken(purchase.purchaseToken)
                 .build()
