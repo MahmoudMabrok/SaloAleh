@@ -127,6 +127,9 @@
             "winnerCode": {
               ".validate": "newData.val() === (data.exists() ? data.val() : '')"
             },
+            "scoreMasked": {
+              ".validate": "newData.isBoolean()"
+            },
 
             "$other": { ".validate": false }
           }
