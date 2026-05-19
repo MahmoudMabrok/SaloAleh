@@ -29,7 +29,9 @@ import tools.mo3ta.salo.ui.PlatformBackHandler
 import tools.mo3ta.salo.ui.ReviewDialog
 import tools.mo3ta.salo.ui.openStorePage
 import tools.mo3ta.salo.ui.settings.ExtensionQrScreen
+import tools.mo3ta.salo.data.billing.BillingManager
 import tools.mo3ta.salo.ui.settings.PaywallScreen
+import tools.mo3ta.salo.ui.settings.PremiumPromoDialog
 import tools.mo3ta.salo.ui.settings.SettingsScreen
 import tools.mo3ta.salo.ui.tendays.TenDaysPromoDialog
 import tools.mo3ta.salo.ui.tendays.TenDaysScreen
@@ -136,6 +138,25 @@ fun App(
                 onDismiss = {
                     settings.putBoolean("ten_days_promo_shown", true)
                     showTenDaysPromo = false
+                },
+            )
+        }
+
+        val billingManager = koinInject<BillingManager>()
+        var showPremiumPromo by remember {
+            val shown = settings.getBoolean("premium_promo_shown", false)
+            mutableStateOf(!shown && billingManager.isEnabled)
+        }
+        if (showPremiumPromo) {
+            PremiumPromoDialog(
+                onOpen = {
+                    settings.putBoolean("premium_promo_shown", true)
+                    showPremiumPromo = false
+                    showPaywall = true
+                },
+                onDismiss = {
+                    settings.putBoolean("premium_promo_shown", true)
+                    showPremiumPromo = false
                 },
             )
         }
