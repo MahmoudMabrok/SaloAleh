@@ -42,6 +42,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.BillingAnalytics
 import tools.mo3ta.salo.data.billing.BillingManager
@@ -49,6 +50,7 @@ import tools.mo3ta.salo.data.billing.PremiumFeature
 import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.billing.ProductRegistry
 import tools.mo3ta.salo.data.billing.SupportTier
+import tools.mo3ta.salo.presentation.MohamedLoversViewModel
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,6 +59,7 @@ fun PaywallScreen(onBack: () -> Unit) {
     val billingManager: BillingManager = koinInject()
     val premiumStore: PremiumStore = koinInject()
     val analyticsManager: AnalyticsManager = koinInject()
+    val viewModel: MohamedLoversViewModel = koinViewModel()
 
     val isPremium = premiumStore.hasFeature(PremiumFeature.SCORE_MASK)
     var scoreMasked by remember { mutableStateOf(premiumStore.isScoreMasked) }
@@ -148,6 +151,7 @@ fun PaywallScreen(onBack: () -> Unit) {
                         onCheckedChange = { checked ->
                             scoreMasked = checked
                             premiumStore.isScoreMasked = checked
+                            viewModel.setScoreMasked(checked)
                             analyticsManager.logAction(
                                 BillingAnalytics.SCORE_MASK_TOGGLED,
                                 mapOf(BillingAnalytics.PARAM_ENABLED to checked.toString()),

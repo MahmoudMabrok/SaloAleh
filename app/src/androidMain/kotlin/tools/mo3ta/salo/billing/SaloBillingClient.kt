@@ -8,13 +8,13 @@ import com.android.billingclient.api.BillingClientStateListener
 import com.android.billingclient.api.PendingPurchasesParams
 import com.android.billingclient.api.BillingFlowParams
 import com.android.billingclient.api.BillingResult
-import com.android.billingclient.api.ConsumeParams
+import com.android.billingclient.api.AcknowledgePurchaseParams
 import com.android.billingclient.api.ProductDetailsResult
 import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
-import com.android.billingclient.api.consumePurchase
+import com.android.billingclient.api.acknowledgePurchase
 import com.android.billingclient.api.queryProductDetails
 import com.android.billingclient.api.queryPurchasesAsync
 import kotlinx.coroutines.CoroutineScope
@@ -124,11 +124,13 @@ class SaloBillingClient(context: Context) {
         if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
             log.d { "Purchase completed: ${purchase.products}" }
             onPurchaseCompleted?.invoke(purchase.products)
-            val consumeParams = ConsumeParams.newBuilder()
-                .setPurchaseToken(purchase.purchaseToken)
-                .build()
-            val consumeResult = client.consumePurchase(consumeParams)
-            log.d { "Consume result: ${consumeResult.billingResult.responseCode}" }
+            if (!purchase.isAcknowledged) {
+                val ackParams = AcknowledgePurchaseParams.newBuilder()
+                    .setPurchaseToken(purchase.purchaseToken)
+                    .build()
+                val ackResult = client.acknowledgePurchase(ackParams)
+                log.d { "Acknowledge result: ${ackResult.responseCode}" }
+            }
         }
     }
 

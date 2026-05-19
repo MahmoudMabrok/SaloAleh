@@ -226,6 +226,14 @@ class MohamedLoversViewModel(
         connectToLeaderboardIfPossible()
     }
 
+    fun setScoreMasked(masked: Boolean) {
+        val roundKey = state.value.roundKey ?: return
+        val uid = authUid ?: return
+        viewModelScope.launch {
+            repository.setScoreMasked(roundKey, uid, masked)
+        }
+    }
+
     fun clearError() = _state.update { it.copy(error = null) }
 
     private fun connectToLeaderboardIfPossible() {
