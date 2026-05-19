@@ -15,6 +15,9 @@ class PremiumStore(private val settings: Settings) {
             isPurchased(productId) && feature in ProductRegistry.featuresFor(productId)
         }
 
+    val highestTier: SupportTier?
+        get() = ProductRegistry.tiers.lastOrNull { isPurchased(it.productId) }
+
     var isScoreMasked: Boolean
         get() = settings.getBoolean("score_masked", false)
         set(value) { settings.putBoolean("score_masked", value) }

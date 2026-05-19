@@ -1,7 +1,12 @@
 package tools.mo3ta.salo.data.billing
 
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+
 class NoOpBillingManager : BillingManager {
     override val isEnabled: Boolean = false
+    override val purchaseEvents: SharedFlow<String> = MutableSharedFlow<String>().asSharedFlow()
     override fun initialize() = Unit
     override fun purchaseProduct(productId: String) = Unit
     override fun restorePurchases() = Unit
