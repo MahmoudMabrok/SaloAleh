@@ -83,6 +83,7 @@ async function main() {
         updatedAt: data.updatedAt || 0,
         countryCode: typeof data.countryCode === 'string' ? data.countryCode : 'NA',
         yesterdayTotalScore: typeof data.yesterdayTotalScore === 'number' ? data.yesterdayTotalScore : 0,
+        scoreMasked: data.scoreMasked === true,
       });
     }
   });
@@ -101,12 +102,14 @@ async function main() {
   const top10 = allPlayers.slice(0, 10);
   const leaderboard = { isFinal };
   top10.forEach((player, i) => {
-    leaderboard[String(i + 1)] = {
+    const entry = {
       rank: i + 1,
       uid: player.uid,
       score: player.score,
       countryCode: player.countryCode,
     };
+    if (player.scoreMasked) entry.scoreMasked = true;
+    leaderboard[String(i + 1)] = entry;
   });
 
   // Daily leaderboard: rank by todayScore = totalCount - yesterdayTotalScore.
@@ -118,12 +121,14 @@ async function main() {
   const dailyTop10 = dailyPlayers.slice(0, 10);
   const dailyLeaderboard = { isFinal };
   dailyTop10.forEach((player, i) => {
-    dailyLeaderboard[String(i + 1)] = {
+    const entry = {
       rank: i + 1,
       uid: player.uid,
       score: player.dailyScore,
       countryCode: player.countryCode,
     };
+    if (player.scoreMasked) entry.scoreMasked = true;
+    dailyLeaderboard[String(i + 1)] = entry;
   });
 
   // Read old leaderboards before overwriting — used for rank-diff and drop-out detection.
