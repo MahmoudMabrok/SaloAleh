@@ -53,6 +53,9 @@ class MohamedLoversRepository(
         return firebaseClient.resetPlayerScore(roundKey, uid)
     }
 
+    suspend fun setScoreMasked(roundKey: String, uid: String, masked: Boolean): Result<Unit> =
+        firebaseClient.setScoreMasked(roundKey, uid, masked)
+
     suspend fun flushPendingSession(countryCode: String): Result<Unit> {
         val allPending = sessionStore.getAllPendingRounds()
         if (allPending.isEmpty()) return Result.success(Unit)

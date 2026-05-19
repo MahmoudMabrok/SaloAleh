@@ -29,6 +29,9 @@ import tools.mo3ta.salo.ui.PlatformBackHandler
 import tools.mo3ta.salo.ui.ReviewDialog
 import tools.mo3ta.salo.ui.openStorePage
 import tools.mo3ta.salo.ui.settings.ExtensionQrScreen
+import tools.mo3ta.salo.data.billing.BillingManager
+import tools.mo3ta.salo.ui.settings.PaywallScreen
+import tools.mo3ta.salo.ui.settings.PremiumPromoDialog
 import tools.mo3ta.salo.ui.settings.SettingsScreen
 import tools.mo3ta.salo.ui.tendays.TenDaysPromoDialog
 import tools.mo3ta.salo.ui.tendays.TenDaysScreen
@@ -55,9 +58,11 @@ fun App(
         var showOnboarding by remember { mutableStateOf(false) }
         var showTenDays by remember { mutableStateOf(false) }
         var showExtensionQr by remember { mutableStateOf(false) }
+        var showPaywall by remember { mutableStateOf(false) }
 
-        PlatformBackHandler(enabled = showTenDays || showExtensionQr || showHadithList || showAchievements || showSettings || showOnboarding) {
+        PlatformBackHandler(enabled = showPaywall || showTenDays || showExtensionQr || showHadithList || showAchievements || showSettings || showOnboarding) {
             when {
+                showPaywall -> showPaywall = false
                 showTenDays -> showTenDays = false
                 showExtensionQr -> showExtensionQr = false
                 showHadithList -> showHadithList = false
@@ -68,12 +73,14 @@ fun App(
         }
 
         when {
+            showPaywall -> PaywallScreen(onBack = { showPaywall = false })
             showExtensionQr -> ExtensionQrScreen(onBack = { showExtensionQr = false })
             showOnboarding -> OnboardingScreen(onDone = { showOnboarding = false })
             showSettings -> SettingsScreen(
                 onBack = { showSettings = false },
                 onOpenOnboarding = { showOnboarding = true },
                 onOpenExtensionQr = { showExtensionQr = true },
+                onOpenPaywall = { showPaywall = true },
             )
             showAchievements -> AchievementsScreen(onBack = { showAchievements = false })
             showHadithList -> HadithListScreen(onBack = { showHadithList = false })
@@ -131,6 +138,25 @@ fun App(
                 onDismiss = {
                     settings.putBoolean("ten_days_promo_shown", true)
                     showTenDaysPromo = false
+                },
+            )
+        }
+
+        val billingManager = koinInject<BillingManager>()
+        var showPremiumPromo by remember {
+            val shown = settings.getBoolean("premium_promo_shown", false)
+            mutableStateOf(!shown && billingManager.isEnabled)
+        }
+        if (showPremiumPromo) {
+            PremiumPromoDialog(
+                onOpen = {
+                    settings.putBoolean("premium_promo_shown", true)
+                    showPremiumPromo = false
+                    showPaywall = true
+                },
+                onDismiss = {
+                    settings.putBoolean("premium_promo_shown", true)
+                    showPremiumPromo = false
                 },
             )
         }

@@ -39,6 +39,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import org.koin.compose.koinInject
 import tools.mo3ta.salo.analytics.AnalyticsManager
+import tools.mo3ta.salo.data.billing.BillingManager
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
 import tools.mo3ta.salo.notification.NotificationScheduler
@@ -57,7 +58,7 @@ import tools.mo3ta.salo.ui.showPlatformToast
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpenExtensionQr: () -> Unit = {}) {
+fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpenExtensionQr: () -> Unit = {}, onOpenPaywall: () -> Unit = {}) {
     val store: NotificationSettingsStore = koinInject()
     val hadithStore: DailyHadithStore = koinInject()
     val viewModel: MohamedLoversViewModel = koinViewModel()
@@ -71,6 +72,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val analyticsManager: AnalyticsManager = koinInject()
+    val billingManager: BillingManager = koinInject()
     LaunchedEffect(Unit){
         analyticsManager.logView("SettingsScreen")
     }
@@ -248,6 +250,21 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
                 label = "حمّل إضافة كروم",
                 onClick = { uriHandler.openUri("https://mahmoudmabrok.github.io/SaloAleh/landing.html#extension") },
             )
+
+            if (billingManager.isEnabled) {
+                Text(
+                    text = "الدعم",
+                    color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(top = 24.dp, bottom = 8.dp),
+                )
+                SettingLinkRow(
+                    label = "🌟 ادعم التطبيق",
+                    labelColor = MohamedLoversPalette.GoldGlow,
+                    onClick = onOpenPaywall,
+                )
+            }
 
             Text(
                 text = "عن التطبيق",

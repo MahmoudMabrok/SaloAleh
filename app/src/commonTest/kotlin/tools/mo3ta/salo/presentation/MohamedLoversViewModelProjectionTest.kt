@@ -13,6 +13,7 @@ import tools.mo3ta.salo.data.country.CountryCodeProvider
 import tools.mo3ta.salo.data.engagement.DailyGoalStore
 import tools.mo3ta.salo.data.engagement.EngagementStore
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
+import tools.mo3ta.salo.data.notification.NotificationSettingsStore
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.data.time.NetworkTimeProvider
 import tools.mo3ta.salo.domain.FakeMohamedLoversFirebaseApi
@@ -60,6 +61,7 @@ class MohamedLoversViewModelProjectionTest {
             engagementStore = EngagementStore(MapSettings()),
             hadithStore = DailyHadithStore(MapSettings()),
             dailyGoalStore = DailyGoalStore(MapSettings()),
+            settingsStore = NotificationSettingsStore(MapSettings()),
         )
     }
 
