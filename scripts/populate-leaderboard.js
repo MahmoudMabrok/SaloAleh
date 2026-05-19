@@ -49,6 +49,24 @@ function isRoundFinal(roundKey) {
   return false;
 }
 
+function buildOldRankMap(snap) {
+  const map = {};
+  if (!snap.exists()) return map;
+  const val = snap.val();
+  for (let i = 1; i <= 10; i++) {
+    const entry = val[String(i)];
+    if (entry?.uid) map[entry.uid] = entry.rank;
+  }
+  return map;
+}
+
+function computeRankChange(uid, newRank, oldRankMap) {
+  const oldRank = oldRankMap[uid];
+  if (oldRank == null) return 'new';
+  if (oldRank === newRank) return 'same';
+  return newRank < oldRank ? 'up' : 'down';
+}
+
 async function main() {
   const roundKey = explicitRoundKey || cairoRoundKey();
   const isFinal = isRoundFinal(roundKey);
@@ -131,27 +149,8 @@ async function main() {
   const oldLbSnap = await db.ref(`mohamed_lovers/${roundKey}/leaderboard`).get();
   const oldDailyLbSnap = await db.ref(`mohamed_lovers/${roundKey}/dailyLeaderboard`).get();
 
-  // Build uid→rank maps from old leaderboards.
-  function buildOldRankMap(snap) {
-    const map = {};
-    if (!snap.exists()) return map;
-    const val = snap.val();
-    for (let i = 1; i <= 10; i++) {
-      const entry = val[String(i)];
-      if (entry?.uid) map[entry.uid] = entry.rank;
-    }
-    return map;
-  }
   const oldRanks = buildOldRankMap(oldLbSnap);
   const oldDailyRanks = buildOldRankMap(oldDailyLbSnap);
-
-  // Compute rankChange for each entry: "same", "up", "down", or "new".
-  function computeRankChange(uid, newRank, oldRankMap) {
-    const oldRank = oldRankMap[uid];
-    if (oldRank == null) return 'new';
-    if (oldRank === newRank) return 'same';
-    return newRank < oldRank ? 'up' : 'down';
-  }
 
   // Enrich weekly leaderboard entries with rankChange.
   top10.forEach((player, i) => {
