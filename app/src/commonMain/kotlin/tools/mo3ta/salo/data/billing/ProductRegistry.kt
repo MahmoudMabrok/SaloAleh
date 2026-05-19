@@ -17,9 +17,9 @@ object ProductRegistry {
     const val SUPPORT_APP_PREMIUM = SUPPORT_PREMIUM
 
     val tiers: List<SupportTier> = listOf(
-        SupportTier(SUPPORT_BASIC, "دعم بسيط", "$0.99", "☕", setOf(PremiumFeature.SUPPORTER_BADGE)),
-        SupportTier(SUPPORT_PREMIUM, "دعم مميز", "$1.99", "🌟", setOf(PremiumFeature.SCORE_MASK, PremiumFeature.SUPPORTER_BADGE)),
-        SupportTier(SUPPORT_GENEROUS, "دعم كبير", "$4.99", "💎", setOf(PremiumFeature.SCORE_MASK, PremiumFeature.SUPPORTER_BADGE)),
+        SupportTier(SUPPORT_BASIC, "صدقة جارية", "$0.99", "☕", setOf(PremiumFeature.SUPPORTER_BADGE)),
+        SupportTier(SUPPORT_PREMIUM, "نصرة الحبيب ﷺ", "$1.99", "🌟", setOf(PremiumFeature.SCORE_MASK, PremiumFeature.SUPPORTER_BADGE)),
+        SupportTier(SUPPORT_GENEROUS, "باب من أبواب الجنة", "$4.99", "💎", setOf(PremiumFeature.SCORE_MASK, PremiumFeature.SUPPORTER_BADGE)),
     )
 
     private val productFeatures: Map<String, Set<PremiumFeature>> =
