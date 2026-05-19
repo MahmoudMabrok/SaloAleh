@@ -23,6 +23,7 @@ firebaseAppCheck = "18.0.0"
 firebaseMessaging = "24.1.0"
 gmsCodeScanner = "16.1.0"
 billing = "7.1.1"
+zxing = "3.5.3"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -57,10 +58,13 @@ firebase-appcheck-debug = { group = "com.google.firebase", name = "firebase-appc
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging", version.ref = "firebaseMessaging" }
 gms-code-scanner = { group = "com.google.android.gms", name = "play-services-code-scanner", version.ref = "gmsCodeScanner" }
 billing = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "billing" }
+zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
+zxing-javase = { group = "com.google.zxing", name = "javase", version.ref = "zxing" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }

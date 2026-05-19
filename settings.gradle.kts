@@ -21,4 +21,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "SaloAleh"
 include(":app")
+include(":desktop")
  

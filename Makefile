@@ -15,7 +15,7 @@ BUILD_DIR = $(shell xcodebuild \
 
 APP_PATH = $(BUILD_DIR)/SaloAleh.app
 
-.PHONY: ios android
+.PHONY: ios android desktop desktop-package
 
 ios:
 	./gradlew :app:linkDebugFrameworkIosSimulatorArm64
@@ -32,3 +32,9 @@ android:
 	./gradlew assembleDebug
 	adb install -r app/build/outputs/apk/debug/app-debug.apk
 	adb shell am start -n tools.mo3ta.salo/tools.mo3ta.salo.MainActivity
+
+desktop:
+	./gradlew :desktop:run
+
+desktop-package:
+	./gradlew :desktop:packageDistributionForCurrentOS
