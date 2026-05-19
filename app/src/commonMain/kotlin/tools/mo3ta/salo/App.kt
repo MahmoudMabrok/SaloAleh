@@ -2,6 +2,7 @@ package tools.mo3ta.salo
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,8 +31,11 @@ import tools.mo3ta.salo.ui.ReviewDialog
 import tools.mo3ta.salo.ui.openStorePage
 import tools.mo3ta.salo.ui.settings.ExtensionQrScreen
 import tools.mo3ta.salo.data.billing.BillingManager
+import tools.mo3ta.salo.data.billing.ProductRegistry
+import tools.mo3ta.salo.data.billing.SupportTier
 import tools.mo3ta.salo.ui.settings.PaywallScreen
 import tools.mo3ta.salo.ui.settings.PremiumPromoDialog
+import tools.mo3ta.salo.ui.settings.PurchaseSuccessDialog
 import tools.mo3ta.salo.ui.settings.SettingsScreen
 import tools.mo3ta.salo.ui.tendays.TenDaysPromoDialog
 import tools.mo3ta.salo.ui.tendays.TenDaysScreen
@@ -158,6 +162,21 @@ fun App(
                     settings.putBoolean("premium_promo_shown", true)
                     showPremiumPromo = false
                 },
+            )
+        }
+
+        var celebratedTier by remember { mutableStateOf<SupportTier?>(null) }
+        LaunchedEffect(billingManager) {
+            billingManager.purchaseEvents.collect { productId ->
+                val tier = ProductRegistry.tiers.firstOrNull { it.productId == productId } ?: return@collect
+                showPaywall = false
+                celebratedTier = tier
+            }
+        }
+        celebratedTier?.let { tier ->
+            PurchaseSuccessDialog(
+                tier = tier,
+                onDismiss = { celebratedTier = null },
             )
         }
 

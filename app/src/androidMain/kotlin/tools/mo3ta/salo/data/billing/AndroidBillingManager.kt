@@ -10,6 +10,9 @@ import com.android.billingclient.api.queryPurchasesAsync
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import tools.mo3ta.salo.billing.SaloBillingClient
 
@@ -24,14 +27,21 @@ class AndroidBillingManager(
 
     override val isEnabled: Boolean = true
 
+    private val _purchaseEvents = MutableSharedFlow<String>(extraBufferCapacity = 4)
+    override val purchaseEvents: SharedFlow<String> = _purchaseEvents.asSharedFlow()
+
     private var currentActivity: Activity? = null
 
     override fun initialize() {
         billingClient.onPurchaseCompleted = { productIds ->
             for (productId in productIds) {
                 if (productId in ProductRegistry.allProductIds) {
+                    val wasAlreadyPurchased = premiumStore.isPurchased(productId)
                     premiumStore.markPurchased(productId)
-                    log.d { "Purchase confirmed: $productId" }
+                    log.d { "Purchase confirmed: $productId (new=${!wasAlreadyPurchased})" }
+                    if (!wasAlreadyPurchased) {
+                        _purchaseEvents.tryEmit(productId)
+                    }
                 }
             }
         }

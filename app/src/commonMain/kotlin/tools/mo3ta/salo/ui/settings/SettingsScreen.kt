@@ -1,8 +1,12 @@
 package tools.mo3ta.salo.ui.settings
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -29,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
@@ -40,6 +45,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import org.koin.compose.koinInject
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.data.billing.BillingManager
+import tools.mo3ta.salo.data.billing.PremiumStore
+import tools.mo3ta.salo.data.billing.SupportTier
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
 import tools.mo3ta.salo.notification.NotificationScheduler
@@ -73,6 +80,8 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
 
     val analyticsManager: AnalyticsManager = koinInject()
     val billingManager: BillingManager = koinInject()
+    val premiumStore: PremiumStore = koinInject()
+    val supporterTier = premiumStore.highestTier
     LaunchedEffect(Unit){
         analyticsManager.logView("SettingsScreen")
     }
@@ -259,11 +268,15 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(top = 24.dp, bottom = 8.dp),
                 )
-                SettingLinkRow(
-                    label = "🌟 ادعم التطبيق",
-                    labelColor = MohamedLoversPalette.GoldGlow,
-                    onClick = onOpenPaywall,
-                )
+                if (supporterTier != null) {
+                    SupporterStatusCard(tier = supporterTier, onClick = onOpenPaywall)
+                } else {
+                    SettingLinkRow(
+                        label = "🌟 ادعم التطبيق",
+                        labelColor = MohamedLoversPalette.GoldGlow,
+                        onClick = onOpenPaywall,
+                    )
+                }
             }
 
             Text(
@@ -340,6 +353,41 @@ private fun SettingLinkRow(
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription = null,
             tint = Color.White.copy(alpha = 0.5f),
+        )
+    }
+}
+
+@Composable
+private fun SupporterStatusCard(tier: SupportTier, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0xFF1A1A2E))
+            .border(1.dp, MohamedLoversPalette.GoldGlow.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(text = tier.emoji, fontSize = 24.sp)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "أنت داعم — ${tier.label}",
+                color = MohamedLoversPalette.GoldGlow,
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp,
+            )
+            Text(
+                text = "اضغط لإدارة المزايا",
+                color = Color.White.copy(alpha = 0.55f),
+                fontSize = 12.sp,
+            )
+        }
+        Text(
+            text = "✅",
+            fontSize = 18.sp,
         )
     }
 }
