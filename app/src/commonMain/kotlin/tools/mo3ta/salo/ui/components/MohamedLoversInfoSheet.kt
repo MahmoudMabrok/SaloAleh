@@ -43,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Brush
@@ -486,10 +487,38 @@ private fun LeaderboardRow(entry: MohamedLoversLeaderboardEntry, pinned: Boolean
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.92f),
             )
         }
+        val isFriday = Clock.System.now()
+            .toLocalDateTime(TimeZone.of("Africa/Cairo"))
+            .dayOfWeek == kotlinx.datetime.DayOfWeek.FRIDAY
+        if (entry.isCurrentUser || !isFriday) {
+            Text(
+                text = entry.totalCount.toString(),
+                style = bodyStyle().copy(
+                    fontWeight = if (entry.isCurrentUser) FontWeight.W700 else FontWeight.W400,
+                ),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = if (entry.isCurrentUser) 0.85f else 0.7f),
+            )
+        } else {
+            MaskedScore(entry.totalCount)
+        }
+    }
+}
+
+@Composable
+private fun MaskedScore(score: Int) {
+    val str = score.toString()
+    val keep = if (str.length >= 4) 2 else 1
+    Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
-            text = entry.totalCount.toString(),
+            text = str.take(keep),
             style = bodyStyle(),
             color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
+        )
+        Text(
+            text = str.drop(keep),
+            modifier = Modifier.blur(6.dp),
+            style = bodyStyle(),
+            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.5f),
         )
     }
 }

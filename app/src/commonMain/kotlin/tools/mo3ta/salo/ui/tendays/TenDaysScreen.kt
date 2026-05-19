@@ -40,9 +40,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -642,27 +647,31 @@ private fun MiniLeaderboard(state: TenDaysUiState) {
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = "المتصدرين",
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = TenDaysPalette.Gold,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.W500,
+                color = TenDaysPalette.Gold.copy(alpha = 0.95f),
             )
-            if (state.selfRank > 0) {
-                Text(
-                    text = "ترتيبك: #${state.selfRank}",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TenDaysPalette.Gold,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(TenDaysPalette.Gold.copy(alpha = 0.12f))
-                        .padding(horizontal = 10.dp, vertical = 3.dp),
-                )
-            }
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = "يومي",
+                fontSize = 10.sp,
+                color = TenDaysPalette.Gold.copy(alpha = 0.7f),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(TenDaysPalette.Gold.copy(alpha = 0.12f))
+                    .border(1.dp, TenDaysPalette.Gold.copy(alpha = 0.2f), RoundedCornerShape(999.dp))
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
+            )
+            Spacer(Modifier.weight(1f))
+            Text(
+                text = "تحديث كل ساعة",
+                fontSize = 11.sp,
+                color = TenDaysPalette.Gold.copy(alpha = 0.4f),
+            )
         }
 
         Spacer(Modifier.height(10.dp))
@@ -681,10 +690,10 @@ private fun MiniLeaderboard(state: TenDaysUiState) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
-                        .background(TenDaysPalette.Gold.copy(alpha = 0.10f))
+                        .background(TenDaysPalette.Gold.copy(alpha = 0.15f))
                         .border(
                             width = 1.dp,
-                            color = TenDaysPalette.Gold.copy(alpha = 0.35f),
+                            color = TenDaysPalette.Gold.copy(alpha = 0.4f),
                             shape = RoundedCornerShape(10.dp),
                         )
                         .padding(horizontal = 12.dp, vertical = 10.dp),
@@ -694,31 +703,43 @@ private fun MiniLeaderboard(state: TenDaysUiState) {
                     Text(
                         text = "#${state.selfRank}  أنت",
                         fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TenDaysPalette.Gold,
+                        fontWeight = FontWeight.W700,
+                        color = TenDaysPalette.Gold.copy(alpha = 0.95f),
                     )
                     Text(
                         text = "${state.totalScore}",
                         fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TenDaysPalette.Gold,
+                        fontWeight = FontWeight.W700,
+                        color = TenDaysPalette.Gold.copy(alpha = 0.85f),
                     )
                 }
-                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "ادخل قائمة المتصدرين بمزيد من العبادات",
+                    fontSize = 11.sp,
+                    color = TenDaysPalette.Gold.copy(alpha = 0.5f),
+                )
+                Spacer(Modifier.height(4.dp))
             }
 
             state.leaderboard.forEachIndexed { index, entry ->
                 val rank = index + 1
                 val isMe = entry.uid == state.currentUid
+                val tag = buildTenDaysDisplayTag(entry.uid, entry.countryCode)
                 LeaderboardEntryRow(
                     rank = rank,
-                    displayTag = entry.uid.take(8),
+                    displayTag = tag,
                     score = entry.totalScore,
                     isCurrentUser = isMe,
                 )
             }
         }
     }
+}
+
+private fun buildTenDaysDisplayTag(uid: String, countryCode: String): String {
+    val tag = uid.takeLast(6).uppercase().ifBlank { "------" }
+    val country = countryCode.uppercase().ifBlank { "--" }
+    return "$country • $tag"
 }
 
 @Composable
@@ -732,22 +753,19 @@ private fun LeaderboardEntryRow(
         1 -> TenDaysPalette.Gold
         2 -> TenDaysPalette.RankSilver
         3 -> TenDaysPalette.RankBronze
-        else -> TenDaysPalette.TextSecondary
+        else -> TenDaysPalette.Gold.copy(alpha = 0.45f)
     }
-    val medal = when (rank) {
-        1 -> "🥇"
-        2 -> "🥈"
-        3 -> "🥉"
-        else -> null
+    val bgColor = when {
+        isCurrentUser -> TenDaysPalette.Gold.copy(alpha = 0.1f)
+        else -> Color.Transparent
     }
-    val bgColor = if (isCurrentUser) TenDaysPalette.Gold.copy(alpha = 0.12f) else Color.Transparent
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(10.dp))
             .background(bgColor)
-            .padding(horizontal = 10.dp, vertical = 7.dp),
+            .padding(horizontal = 10.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -755,33 +773,57 @@ private fun LeaderboardEntryRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            if (medal != null) {
-                Text(
-                    text = medal,
-                    fontSize = 16.sp,
-                )
-            } else {
+            Text(
+                text = "──",
+                fontSize = 9.sp,
+                color = TenDaysPalette.Gold.copy(alpha = 0.35f),
+            )
+            if (rank > 0) {
                 Text(
                     text = "#$rank",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontSize = if (rank <= 3) 15.sp else 13.sp,
+                    fontWeight = FontWeight.W700,
                     color = rankColor,
-                    modifier = Modifier.width(28.dp),
-                    textAlign = TextAlign.Center,
                 )
             }
             Text(
-                text = if (isCurrentUser) "أنت" else displayTag,
+                text = displayTag,
                 fontSize = 13.sp,
-                fontWeight = if (isCurrentUser) FontWeight.Bold else FontWeight.Normal,
-                color = if (isCurrentUser) TenDaysPalette.Gold else TenDaysPalette.TextPrimary,
+                fontWeight = if (isCurrentUser) FontWeight.W700 else FontWeight.W400,
+                color = TenDaysPalette.Gold.copy(alpha = 0.92f),
             )
         }
+        val isFriday = Clock.System.now()
+            .toLocalDateTime(TimeZone.of("Africa/Cairo"))
+            .dayOfWeek == DayOfWeek.FRIDAY
+        if (isCurrentUser || !isFriday) {
+            Text(
+                text = "$score",
+                fontSize = 13.sp,
+                fontWeight = if (isCurrentUser) FontWeight.W700 else FontWeight.W400,
+                color = TenDaysPalette.Gold.copy(alpha = if (isCurrentUser) 0.85f else 0.7f),
+            )
+        } else {
+            TenDaysMaskedScore(score)
+        }
+    }
+}
+
+@Composable
+private fun TenDaysMaskedScore(score: Int) {
+    val str = score.toString()
+    val keep = if (str.length >= 4) 2 else 1
+    Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
-            text = "$score",
+            text = str.take(keep),
             fontSize = 13.sp,
-            fontWeight = if (isCurrentUser) FontWeight.Bold else FontWeight.Normal,
-            color = if (isCurrentUser) TenDaysPalette.Gold else TenDaysPalette.TextSecondary,
+            color = TenDaysPalette.Gold.copy(alpha = 0.7f),
+        )
+        Text(
+            text = str.drop(keep),
+            modifier = Modifier.blur(6.dp),
+            fontSize = 13.sp,
+            color = TenDaysPalette.Gold.copy(alpha = 0.5f),
         )
     }
 }
