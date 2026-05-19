@@ -1,0 +1,91 @@
+{
+  "allTimeSalawat": 50174,
+  "weekSalawat": 30928,
+  "todaySalawat": 10777,
+  "activePlayers": 29,
+  "countriesCount": 7,
+  "countries": [
+    "AE",
+    "AU",
+    "EG",
+    "MA",
+    "SA",
+    "TR",
+    "US"
+  ],
+  "topScore": 7698,
+  "roundKey": "2026-05-22",
+  "leaderboard": [
+    {
+      "countryCode": "EG",
+      "rank": 1,
+      "rankChange": "same",
+      "score": 7698,
+      "uid": "d37ab9ff8d45a9931d24389990545bdb773791e2873b2d23534c26bdcef8f48a"
+    },
+    {
+      "countryCode": "EG",
+      "rank": 2,
+      "rankChange": "up",
+      "score": 5318,
+      "uid": "22209706044a8b6889d6411a541c3b8c0c735d123ea7c7c83ca0e379a7d5b334"
+    },
+    {
+      "countryCode": "EG",
+      "rank": 3,
+      "rankChange": "down",
+      "score": 5233,
+      "uid": "08a867f71960b712aea4daf4aab49b33eebec129f522461401bba17634f8522c"
+    },
+    {
+      "countryCode": "EG",
+      "rank": 4,
+      "rankChange": "same",
+      "score": 3823,
+      "uid": "cf0116cf9c1bf2ef2965b238768139059a0088bbb734739297ac650ede2fd00b"
+    },
+    {
+      "countryCode": "EG",
+      "rank": 5,
+      "rankChange": "same",
+      "score": 3350,
+      "uid": "52ef117845eae13c2bd16421dcec4f8880439f8f34877d9b35465fdccac17080"
+    },
+    {
+      "countryCode": "AE",
+      "rank": 6,
+      "rankChange": "same",
+      "score": 2851,
+      "uid": "405039430ae1e29f8d847a6d18a1dbad5ade88628382f830a0af1109b069cc4b"
+    },
+    {
+      "countryCode": "EG",
+      "rank": 7,
+      "rankChange": "same",
+      "score": 1234,
+      "uid": "5a4b1d0ed314c539aefe3fedeb07054b2acf361dd98189761e80e047fbf80305"
+    },
+    {
+      "countryCode": "EG",
+      "rank": 8,
+      "rankChange": "same",
+      "score": 338,
+      "uid": "abcc7116e7de1a8159c3d983d094084f83b6b26bc33873b1fc8d92a56cbf823b"
+    },
+    {
+      "countryCode": "EG",
+      "rank": 9,
+      "rankChange": "same",
+      "score": 250,
+      "uid": "342e4602bf40ecd5e71c3d1419a97c7bb04971a361b1ec2b9a23a3633d360822"
+    },
+    {
+      "countryCode": "EG",
+      "rank": 10,
+      "rankChange": "same",
+      "score": 243,
+      "uid": "b404902c252709675cb3f9f65edbf13a648af2fc9127e4d4a6fa09efe1b5a9e3"
+    }
+  ],
+  "updatedAt": "2026-05-19T21:59:57.401Z"
+}
