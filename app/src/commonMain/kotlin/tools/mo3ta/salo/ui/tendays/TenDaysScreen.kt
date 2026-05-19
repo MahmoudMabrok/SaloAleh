@@ -111,7 +111,6 @@ fun TenDaysScreen(
             Spacer(Modifier.height(10.dp))
             FastingRow(
                 isFasting = currentDayState.isFasting,
-                canToggle = state.canFast,
                 onToggle = viewModel::onFastingToggle,
             )
             Spacer(Modifier.height(10.dp))
@@ -338,7 +337,7 @@ private fun DhikrCell(
 }
 
 @Composable
-private fun FastingRow(isFasting: Boolean, canToggle: Boolean, onToggle: () -> Unit) {
+private fun FastingRow(isFasting: Boolean, onToggle: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -363,20 +362,12 @@ private fun FastingRow(isFasting: Boolean, canToggle: Boolean, onToggle: () -> U
             }
             Switch(
                 checked = isFasting,
-                onCheckedChange = { if (!isFasting && canToggle) onToggle() },
-                enabled = canToggle || isFasting,
+                onCheckedChange = { if (!isFasting) onToggle() },
+                enabled = !isFasting,
                 colors = SwitchDefaults.colors(
                     checkedTrackColor = TenDaysPalette.Green,
                     uncheckedTrackColor = TenDaysPalette.GrayBorder,
                 ),
-            )
-        }
-        if (!canToggle && !isFasting) {
-            Text(
-                text = "متاح بعد الساعة ٨ مساءً",
-                fontSize = 11.sp,
-                color = TenDaysPalette.TextSecondary,
-                modifier = Modifier.padding(top = 4.dp),
             )
         }
     }

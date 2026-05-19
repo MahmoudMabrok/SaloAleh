@@ -14,7 +14,6 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.daysUntil
-import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
 import tools.mo3ta.salo.data.tendays.DhikrType
 import tools.mo3ta.salo.data.tendays.TenDaysFirebaseClient
@@ -36,17 +35,6 @@ class TenDaysViewModel(
     init {
         loadState()
         observeLeaderboard()
-        refreshCanFastPeriodically()
-    }
-
-    private fun refreshCanFastPeriodically() {
-        viewModelScope.launch {
-            while (true) {
-                delay(30_000)
-                val canFast = canToggleFasting()
-                _state.update { it.copy(canFast = canFast) }
-            }
-        }
     }
 
     fun onDhikrTap(dhikr: DhikrType) {
@@ -63,14 +51,9 @@ class TenDaysViewModel(
         debouncedSync()
     }
 
-    fun canToggleFasting(): Boolean {
-        val now = Clock.System.now().toLocalDateTime(cairoTz)
-        return now.hour >= 20
-    }
-
     fun onFastingToggle() {
         val day = _state.value.currentDay
-        if (!store.isFasting(day) && canToggleFasting()) {
+        if (!store.isFasting(day)) {
             store.setFasting(day, true)
             refreshDay(day)
             debouncedSync()
@@ -130,7 +113,6 @@ class TenDaysViewModel(
             autoPlayTakbeer = store.isAutoPlayTakbeer(),
             takbeerIntervalMinutes = store.getTakbeerIntervalMinutes(),
             takbeerRepeatCount = store.getTakbeerRepeatCount(),
-            canFast = canToggleFasting(),
             periodKey = periodKey,
         )
     }
