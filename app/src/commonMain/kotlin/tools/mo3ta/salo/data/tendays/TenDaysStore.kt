@@ -24,6 +24,16 @@ class TenDaysStore(private val settings: Settings) {
         return updated
     }
 
+    fun getTakbeerSoundCount(day: Int): Int =
+        settings.getInt(key(day, "takbeer_sound"), 0)
+
+    fun incrementTakbeerSound(day: Int): Int {
+        val k = key(day, "takbeer_sound")
+        val updated = settings.getInt(k, 0) + 1
+        settings.putInt(k, updated)
+        return updated
+    }
+
     fun isFasting(day: Int): Boolean =
         settings.getBoolean(key(day, "fasting"), false)
 

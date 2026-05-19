@@ -7,6 +7,7 @@ data class TenDaysDayState(
     val day: Int,
     val dhikrCounts: Map<DhikrType, Int> = DhikrType.entries.associateWith { 0 },
     val takbeerCount: Int = 0,
+    val takbeerSoundCount: Int = 0,
     val isFasting: Boolean = false,
     val isSadaqah: Boolean = false,
 ) {
@@ -14,6 +15,7 @@ data class TenDaysDayState(
         get() = dhikrCounts.values.sum() +
                 (if (isFasting) 100 else 0) +
                 (takbeerCount * 10) +
+                (takbeerSoundCount * 2) +
                 (if (isSadaqah) 150 else 0)
 }
 

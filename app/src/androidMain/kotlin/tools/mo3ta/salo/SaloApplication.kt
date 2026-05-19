@@ -4,8 +4,10 @@ import android.app.Application
 import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
 import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
+import org.koin.android.ext.android.inject
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
+import tools.mo3ta.salo.billing.SaloBillingClient
 import tools.mo3ta.salo.di.androidModule
 import tools.mo3ta.salo.di.appModule
 import tools.mo3ta.salo.notification.NotificationChannels
@@ -25,5 +27,7 @@ class SaloApplication : Application() {
             modules(appModule, androidModule)
         }
         NotificationChannels.createAll(this)
+        val billing: SaloBillingClient by inject()
+        billing.connect()
     }
 }

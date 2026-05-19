@@ -27,7 +27,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.daysUntil
+import kotlinx.datetime.todayIn
+import org.koin.android.ext.android.inject
 import tools.mo3ta.salo.R
+import tools.mo3ta.salo.data.tendays.TenDaysStore
 import tools.mo3ta.salo.notification.NotificationChannels
 
 class TakbeerOverlayService : Service() {
@@ -42,6 +49,8 @@ class TakbeerOverlayService : Service() {
         private const val DEFAULT_INTERVAL_MINUTES = 10
         private const val DEFAULT_REPEAT_COUNT = 1
     }
+
+    private val store: TenDaysStore by inject()
 
     private lateinit var windowManager: WindowManager
     private lateinit var params: WindowManager.LayoutParams
@@ -217,6 +226,13 @@ class TakbeerOverlayService : Service() {
         }
     }
 
+    private fun currentDay(): Int {
+        val cairoTz = TimeZone.of("Africa/Cairo")
+        val today = Clock.System.todayIn(cairoTz)
+        val startDate = LocalDate.parse("2026-05-18")
+        return (startDate.daysUntil(today) + 1).coerceIn(1, 9)
+    }
+
     private suspend fun playTakbeerRepeated(times: Int) {
         repeat(times) {
             suspendCancellableCoroutine { cont ->
@@ -224,6 +240,7 @@ class TakbeerOverlayService : Service() {
                 mediaPlayer = MediaPlayer.create(this@TakbeerOverlayService, R.raw.takbeer)?.apply {
                     setOnCompletionListener {
                         it.release()
+                        store.incrementTakbeerSound(currentDay())
                         if (cont.isActive) cont.resumeWith(Result.success(Unit))
                     }
                     start()

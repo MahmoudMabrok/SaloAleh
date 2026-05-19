@@ -58,6 +58,7 @@ kotlin {
             implementation(libs.firebase.analytics)
             implementation(libs.firebase.messaging)
             implementation(libs.gms.code.scanner)
+            implementation(libs.billing)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)

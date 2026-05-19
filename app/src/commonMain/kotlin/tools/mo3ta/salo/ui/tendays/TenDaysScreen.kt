@@ -30,6 +30,8 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -365,13 +367,14 @@ private fun FastingRow(isFasting: Boolean, onToggle: () -> Unit) {
                 Spacer(Modifier.width(8.dp))
                 Text(text = "+١٠٠ نقطة", fontSize = 11.sp, color = TenDaysPalette.Gold)
             }
-            Switch(
+            Checkbox(
                 checked = isFasting,
                 onCheckedChange = { if (!isFasting) onToggle() },
                 enabled = !isFasting,
-                colors = SwitchDefaults.colors(
-                    checkedTrackColor = TenDaysPalette.Green,
-                    uncheckedTrackColor = TenDaysPalette.GrayBorder,
+                colors = CheckboxDefaults.colors(
+                    checkedColor = TenDaysPalette.Green,
+                    uncheckedColor = TenDaysPalette.GrayBorder,
+                    checkmarkColor = Color.White,
                 ),
             )
         }
@@ -653,24 +656,24 @@ private fun MiniLeaderboard(state: TenDaysUiState) {
                 text = "المتصدرين",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.W500,
-                color = TenDaysPalette.Gold.copy(alpha = 0.95f),
+                color = TenDaysPalette.TextPrimary,
             )
             Spacer(Modifier.width(8.dp))
             Text(
                 text = "يومي",
                 fontSize = 10.sp,
-                color = TenDaysPalette.Gold.copy(alpha = 0.7f),
+                color = TenDaysPalette.GoldDim,
                 modifier = Modifier
                     .clip(RoundedCornerShape(999.dp))
                     .background(TenDaysPalette.Gold.copy(alpha = 0.12f))
-                    .border(1.dp, TenDaysPalette.Gold.copy(alpha = 0.2f), RoundedCornerShape(999.dp))
+                    .border(1.dp, TenDaysPalette.Gold.copy(alpha = 0.25f), RoundedCornerShape(999.dp))
                     .padding(horizontal = 8.dp, vertical = 2.dp),
             )
             Spacer(Modifier.weight(1f))
             Text(
                 text = "تحديث كل ساعة",
                 fontSize = 11.sp,
-                color = TenDaysPalette.Gold.copy(alpha = 0.4f),
+                color = TenDaysPalette.TextSecondary,
             )
         }
 
@@ -704,19 +707,19 @@ private fun MiniLeaderboard(state: TenDaysUiState) {
                         text = "#${state.selfRank}  أنت",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.W700,
-                        color = TenDaysPalette.Gold.copy(alpha = 0.95f),
+                        color = TenDaysPalette.TextPrimary,
                     )
                     Text(
                         text = "${state.totalScore}",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.W700,
-                        color = TenDaysPalette.Gold.copy(alpha = 0.85f),
+                        color = TenDaysPalette.Gold,
                     )
                 }
                 Text(
                     text = "ادخل قائمة المتصدرين بمزيد من العبادات",
                     fontSize = 11.sp,
-                    color = TenDaysPalette.Gold.copy(alpha = 0.5f),
+                    color = TenDaysPalette.TextSecondary,
                 )
                 Spacer(Modifier.height(4.dp))
             }
@@ -790,7 +793,7 @@ private fun LeaderboardEntryRow(
                 text = displayTag,
                 fontSize = 13.sp,
                 fontWeight = if (isCurrentUser) FontWeight.W700 else FontWeight.W400,
-                color = TenDaysPalette.Gold.copy(alpha = 0.92f),
+                color = if (isCurrentUser) TenDaysPalette.TextPrimary else TenDaysPalette.TextPrimary.copy(alpha = 0.75f),
             )
         }
         val isFriday = Clock.System.now()
@@ -801,7 +804,7 @@ private fun LeaderboardEntryRow(
                 text = "$score",
                 fontSize = 13.sp,
                 fontWeight = if (isCurrentUser) FontWeight.W700 else FontWeight.W400,
-                color = TenDaysPalette.Gold.copy(alpha = if (isCurrentUser) 0.85f else 0.7f),
+                color = if (isCurrentUser) TenDaysPalette.Gold else TenDaysPalette.TextSecondary,
             )
         } else {
             TenDaysMaskedScore(score)
@@ -817,13 +820,13 @@ private fun TenDaysMaskedScore(score: Int) {
         Text(
             text = str.take(keep),
             fontSize = 13.sp,
-            color = TenDaysPalette.Gold.copy(alpha = 0.7f),
+            color = TenDaysPalette.TextSecondary,
         )
         Text(
             text = str.drop(keep),
             modifier = Modifier.blur(6.dp),
             fontSize = 13.sp,
-            color = TenDaysPalette.Gold.copy(alpha = 0.5f),
+            color = TenDaysPalette.TextSecondary.copy(alpha = 0.5f),
         )
     }
 }

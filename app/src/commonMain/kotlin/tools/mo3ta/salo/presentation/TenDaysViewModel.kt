@@ -51,6 +51,13 @@ class TenDaysViewModel(
         debouncedSync()
     }
 
+    fun onTakbeerSoundPlayed() {
+        val day = _state.value.currentDay
+        store.incrementTakbeerSound(day)
+        refreshDay(day)
+        debouncedSync()
+    }
+
     fun onFastingToggle() {
         val day = _state.value.currentDay
         if (!store.isFasting(day)) {
@@ -99,6 +106,7 @@ class TenDaysViewModel(
                 day = day,
                 dhikrCounts = DhikrType.entries.associateWith { store.getDhikrCount(day, it) },
                 takbeerCount = store.getTakbeerCount(day),
+                takbeerSoundCount = store.getTakbeerSoundCount(day),
                 isFasting = store.isFasting(day),
                 isSadaqah = store.isSadaqah(day),
             )
@@ -122,6 +130,7 @@ class TenDaysViewModel(
             day = day,
             dhikrCounts = DhikrType.entries.associateWith { store.getDhikrCount(day, it) },
             takbeerCount = store.getTakbeerCount(day),
+            takbeerSoundCount = store.getTakbeerSoundCount(day),
             isFasting = store.isFasting(day),
             isSadaqah = store.isSadaqah(day),
         )

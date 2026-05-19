@@ -9,6 +9,7 @@ import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.FirebaseAnalyticsManager
 import tools.mo3ta.salo.data.country.AndroidCountryCodeProvider
 import tools.mo3ta.salo.data.country.CountryCodeProvider
+import tools.mo3ta.salo.billing.SaloBillingClient
 import tools.mo3ta.salo.data.time.KronosNetworkTimeProvider
 import tools.mo3ta.salo.data.time.NetworkTimeProvider
 
@@ -16,6 +17,7 @@ val androidModule = module {
     single<AnalyticsManager> { FirebaseAnalyticsManager(androidContext()) }
     single<NetworkTimeProvider> { KronosNetworkTimeProvider(androidContext()) }
     single<CountryCodeProvider> { AndroidCountryCodeProvider(androidContext()) }
+    single { SaloBillingClient(androidContext()) }
     single<Settings> {
         SharedPreferencesSettings(
             androidContext().getSharedPreferences("ml_session", Context.MODE_PRIVATE),
