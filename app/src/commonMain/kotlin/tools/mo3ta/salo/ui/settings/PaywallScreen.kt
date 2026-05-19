@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,8 +17,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -178,34 +177,27 @@ fun PaywallScreen(onBack: () -> Unit) {
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(16.dp))
-                Button(
-                    onClick = {
-                        analyticsManager.logAction(
-                            BillingAnalytics.PURCHASE_STARTED,
-                            mapOf(BillingAnalytics.PARAM_PRODUCT_ID to selectedTier.productId),
-                        )
-                        billingManager.purchaseProduct(selectedTier.productId)
-                    },
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                val tierPrice = billingManager.getProductPrice(selectedTier.productId) ?: selectedTier.defaultPrice
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Brush.horizontalGradient(listOf(Color(0xFFFFD700), Color(0xFFFF8C00))))
+                        .clickable {
+                            analyticsManager.logAction(
+                                BillingAnalytics.PURCHASE_STARTED,
+                                mapOf(BillingAnalytics.PARAM_PRODUCT_ID to selectedTier.productId),
+                            )
+                            billingManager.purchaseProduct(selectedTier.productId)
+                        },
+                    contentAlignment = Alignment.Center,
                 ) {
-                    val tierPrice = billingManager.getProductPrice(selectedTier.productId) ?: selectedTier.defaultPrice
                     Text(
                         text = "ادعم الآن — $tierPrice",
                         color = Color(0xFF0f0f1a),
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                Brush.horizontalGradient(
-                                    listOf(Color(0xFFFFD700), Color(0xFFFF8C00)),
-                                ),
-                                RoundedCornerShape(12.dp),
-                            )
-                            .padding(vertical = 12.dp),
                     )
                 }
                 Spacer(Modifier.height(8.dp))
