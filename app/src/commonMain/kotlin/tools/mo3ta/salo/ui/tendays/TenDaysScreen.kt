@@ -61,6 +61,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.data.tendays.DhikrType
 import tools.mo3ta.salo.ui.TakbeerOverlayButton
+import tools.mo3ta.salo.ui.TakbeerSessionButton
 import tools.mo3ta.salo.presentation.TenDaysDayState
 import tools.mo3ta.salo.presentation.TenDaysUiState
 import tools.mo3ta.salo.presentation.TenDaysViewModel
@@ -139,6 +140,8 @@ fun TenDaysScreen(
                 intervalMinutes = state.takbeerIntervalMinutes,
                 repeatCount = state.takbeerRepeatCount,
             )
+            Spacer(Modifier.height(8.dp))
+            TakbeerSessionButton()
             Spacer(Modifier.height(14.dp))
             MiniLeaderboard(state)
             Spacer(Modifier.height(24.dp))
