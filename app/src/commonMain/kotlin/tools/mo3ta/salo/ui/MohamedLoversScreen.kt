@@ -350,7 +350,7 @@ fun MohamedLoversScreen(
                             )
                         }
                     }
-                    TopBarTooltip(text = "أعمال وفضائل عشر ذي الحجة") {
+                    TopBarTooltip(text = "أعمال وفضائل عشر ذي الحجة", autoShow = true) {
                         IconButton(onClick = onOpenTenDays) {
                             Icon(
                                 imageVector = Icons.Default.WbSunny,
@@ -459,8 +459,16 @@ private fun GraceWarningDialog(onDismiss: () -> Unit) {
 @Composable
 private fun TopBarTooltip(
     text: String,
+    autoShow: Boolean = false,
     content: @Composable () -> Unit,
 ) {
+    val state = rememberTooltipState()
+    if (autoShow) {
+        LaunchedEffect(Unit) {
+            delay(800)
+            state.show()
+        }
+    }
     TooltipBox(
         positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
         tooltip = {
@@ -471,7 +479,7 @@ private fun TopBarTooltip(
                 Text(text = text, fontSize = 13.sp)
             }
         },
-        state = rememberTooltipState(),
+        state = state,
         content = content,
     )
 }
