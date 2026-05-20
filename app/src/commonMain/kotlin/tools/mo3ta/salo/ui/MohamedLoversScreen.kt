@@ -1,6 +1,11 @@
 package tools.mo3ta.salo.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -16,6 +21,8 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
@@ -24,14 +31,25 @@ import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -42,6 +60,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -312,40 +331,7 @@ fun MohamedLoversScreen(
             )
 
             Box(modifier = Modifier.align(Alignment.TopEnd).padding(end = 14.dp, top = 36.dp)) {
-                IconButton(onClick = {
-                    analyticsManager.logAction("open_info_sheet", mapOf("source" to "icon"))
-                    infoSheetOpen = true
-                }) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = infoCd,
-                        tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
-                    )
-                }
-            }
-            Box(modifier = Modifier.align(Alignment.TopStart).padding(start = 14.dp, top = 36.dp)) {
-                Row {
-                    IconButton(onClick = onOpenAchievements) {
-                        Icon(
-                            imageVector = Icons.Default.EmojiEvents,
-                            contentDescription = "الإنجازات",
-                            tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
-                        )
-                    }
-                    IconButton(onClick = onOpenHadithList) {
-                        Icon(
-                            imageVector = Icons.Default.AutoStories,
-                            contentDescription = "الأحاديث",
-                            tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
-                        )
-                    }
-                    IconButton(onClick = onOpenTenDays) {
-                        Icon(
-                            imageVector = Icons.Default.WbSunny,
-                            contentDescription = "عشر ذي الحجة",
-                            tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
-                        )
-                    }
+                TopBarTooltip(text = "الإعدادات والإشعارات") {
                     IconButton(onClick = {
                         analyticsManager.logAction("open_settings")
                         onOpenSettings()
@@ -355,6 +341,49 @@ fun MohamedLoversScreen(
                             contentDescription = "الإعدادات",
                             tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
                         )
+                    }
+                }
+            }
+            Box(modifier = Modifier.align(Alignment.TopStart).padding(start = 14.dp, top = 36.dp)) {
+                Row {
+                    TopBarTooltip(text = "إنجازاتك وترتيبك في الجولات السابقة") {
+                        IconButton(onClick = onOpenAchievements) {
+                            Icon(
+                                imageVector = Icons.Default.EmojiEvents,
+                                contentDescription = "الإنجازات",
+                                tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
+                            )
+                        }
+                    }
+                    TopBarTooltip(text = "أحاديث عن فضل الصلاة على النبي") {
+                        IconButton(onClick = onOpenHadithList) {
+                            Icon(
+                                imageVector = Icons.Default.AutoStories,
+                                contentDescription = "الأحاديث",
+                                tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
+                            )
+                        }
+                    }
+                    TopBarTooltip(text = "أعمال وفضائل عشر ذي الحجة", autoShow = true) {
+                        IconButton(onClick = onOpenTenDays) {
+                            Icon(
+                                imageVector = Icons.Default.CalendarMonth,
+                                contentDescription = "عشر ذي الحجة",
+                                tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
+                            )
+                        }
+                    }
+                    TopBarTooltip(text = "معلومات عن الجولة وكيفية اللعب") {
+                        IconButton(onClick = {
+                            analyticsManager.logAction("open_info_sheet", mapOf("source" to "icon"))
+                            infoSheetOpen = true
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = infoCd,
+                                tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
+                            )
+                        }
                     }
                 }
             }
@@ -437,5 +466,76 @@ private fun GraceWarningDialog(onDismiss: () -> Unit) {
                 )
             }
         },
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TopBarTooltip(
+    text: String,
+    autoShow: Boolean = false,
+    content: @Composable () -> Unit,
+) {
+    val state = rememberTooltipState()
+    if (autoShow) {
+        LaunchedEffect(Unit) {
+            delay(800)
+            state.show()
+        }
+    }
+    val density = LocalDensity.current
+    val belowProvider = remember(density) {
+        val spacing = with(density) { 4.dp.roundToPx() }
+        object : PopupPositionProvider {
+            override fun calculatePosition(
+                anchorBounds: IntRect,
+                windowSize: IntSize,
+                layoutDirection: LayoutDirection,
+                popupContentSize: IntSize,
+            ): IntOffset {
+                val x = (anchorBounds.left + anchorBounds.width / 2 - popupContentSize.width / 2)
+                    .coerceIn(0, (windowSize.width - popupContentSize.width).coerceAtLeast(0))
+                val y = anchorBounds.bottom + spacing
+                return IntOffset(x, y)
+            }
+        }
+    }
+    TooltipBox(
+        positionProvider = belowProvider,
+        tooltip = {
+            val flash = rememberInfiniteTransition()
+            val caretAlpha by flash.animateFloat(
+                initialValue = 0.4f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(600),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Canvas(modifier = Modifier.size(width = 12.dp, height = 6.dp)) {
+                    val path = Path().apply {
+                        moveTo(size.width / 2f, 0f)
+                        lineTo(size.width, size.height)
+                        lineTo(0f, size.height)
+                        close()
+                    }
+                    drawPath(path, color = MohamedLoversPalette.GoldHighlight.copy(alpha = caretAlpha))
+                }
+                Surface(
+                    color = MohamedLoversPalette.DeepBlue,
+                    shape = RoundedCornerShape(4.dp),
+                ) {
+                    Text(
+                        text = text,
+                        fontSize = 13.sp,
+                        color = MohamedLoversPalette.GoldGlow,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    )
+                }
+            }
+        },
+        state = state,
+        content = content,
     )
 }
