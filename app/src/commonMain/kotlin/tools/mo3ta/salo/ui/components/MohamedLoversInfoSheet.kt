@@ -55,7 +55,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.CompositionLocalProvider
 import kotlin.math.roundToInt
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
@@ -490,7 +493,16 @@ private fun LeaderboardRow(entry: MohamedLoversLeaderboardEntry, pinned: Boolean
                 )
             }
             if (entry.isSupporter) {
-                Text(text = "⭐", fontSize = 12.sp)
+                Text(
+                    text = "داعم",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.W600,
+                    color = MohamedLoversPalette.GoldHighlight,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(MohamedLoversPalette.GoldHighlight.copy(alpha = 0.2f))
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                )
             }
             Text(
                 text = entry.displayTag,
@@ -524,18 +536,21 @@ private fun LeaderboardRow(entry: MohamedLoversLeaderboardEntry, pinned: Boolean
 @Composable
 private fun MaskedScore(score: Int) {
     val str = score.toString()
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            text = str.take(1),
-            style = bodyStyle(),
-            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
-        )
-        Text(
-            text = str.drop(1),
-            modifier = Modifier.blur(6.dp),
-            style = bodyStyle(),
-            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.5f),
-        )
+    val keep = if (str.length >= 5) 2 else 1
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = str.take(keep),
+                style = bodyStyle(),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
+            )
+            Text(
+                text = str.drop(keep),
+                modifier = Modifier.blur(6.dp),
+                style = bodyStyle(),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.5f),
+            )
+        }
     }
 }
 
