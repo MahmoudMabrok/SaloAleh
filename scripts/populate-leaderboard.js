@@ -1,5 +1,5 @@
 // Reads top-10 players for the active round from Firebase RTDB and writes
-// them to the leaderboard node. Runs hourly; detects isFinal automatically.
+// them to the leaderboard node. Runs every 30 minutes; detects isFinal automatically.
 const admin = require('firebase-admin');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);

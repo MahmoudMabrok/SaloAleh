@@ -87,7 +87,7 @@ Two separate Node.js runtimes, both use `firebase-admin` v12:
 |----------|----------|--------|
 | `build.yml` | PR to main | Android + iOS CI build |
 | `deploy.yml` | Manual dispatch | Google Play release (iOS commented out) |
-| `leaderboard-populate.yml` | Hourly | `scripts/populate-leaderboard.js` |
+| `leaderboard-populate.yml` | Every 30 min | `scripts/populate-leaderboard.js` |
 | `notify-users.yml` | Cairo-aware schedule, Friday hourly | `scripts/notify-users.js` |
 | `update-stats.yml` | Daily 23:45 Cairo | `scripts/generate-stats.js` |
 | `aggregate-all-time.yml` | Fridays 19:00 Cairo | `scripts/aggregate-all-time.js` |
