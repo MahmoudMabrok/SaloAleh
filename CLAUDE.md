@@ -74,12 +74,13 @@ Security rules live in `database.rules.json`. Deploy with: `firebase deploy --on
 
 ## Server-side scripts
 
-Two separate Node.js runtimes, both use `firebase-admin` v12:
+Two Node.js runtimes use `firebase-admin` v12; a third (Deno) only triggers a workflow:
 
 | Directory | Runtime | Purpose |
 |-----------|---------|---------|
 | `scripts/` | GitHub Actions cron | Admin scripts: notifications, leaderboard, stats |
 | `functions/` | Cloud Functions (Node 20) | Firebase-triggered functions |
+| `deno-scheduler/` | Deno Deploy cron | Dispatches `leaderboard-populate.yml` every 30 min via the GitHub REST API (Deno Cron is precise; GitHub `schedule:` cron is best-effort). Needs `GITHUB_TOKEN` env var. |
 
 ### GitHub Actions workflows
 
@@ -87,7 +88,7 @@ Two separate Node.js runtimes, both use `firebase-admin` v12:
 |----------|----------|--------|
 | `build.yml` | PR to main | Android + iOS CI build |
 | `deploy.yml` | Manual dispatch | Google Play release (iOS commented out) |
-| `leaderboard-populate.yml` | Every 30 min | `scripts/populate-leaderboard.js` |
+| `leaderboard-populate.yml` | Deno Deploy cron, every 30 min (workflow_dispatch only) | `scripts/populate-leaderboard.js` |
 | `notify-users.yml` | Cairo-aware schedule, Friday hourly | `scripts/notify-users.js` |
 | `update-stats.yml` | Daily 23:45 Cairo | `scripts/generate-stats.js` |
 | `aggregate-all-time.yml` | Fridays 19:00 Cairo | `scripts/aggregate-all-time.js` |

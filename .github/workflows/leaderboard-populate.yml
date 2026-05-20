@@ -1,9 +1,10 @@
 name: Populate Round Leaderboard
 
 on:
-  # Runs every 30 minutes. Script computes active roundKey and isFinal internally.
-  schedule:
-    - cron: '*/30 * * * *'
+  # Triggered every 30 minutes by the Deno Deploy cron in deno-scheduler/,
+  # which dispatches this workflow via the GitHub REST API. GitHub's own
+  # schedule: cron is intentionally not used — Deno Cron fires on time, while
+  # GitHub scheduled crons are best-effort and often delayed under load.
   workflow_dispatch:
     inputs:
       round_key:
