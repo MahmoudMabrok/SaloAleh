@@ -27,11 +27,16 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -312,49 +317,59 @@ fun MohamedLoversScreen(
             )
 
             Box(modifier = Modifier.align(Alignment.TopEnd).padding(end = 14.dp, top = 36.dp)) {
-                IconButton(onClick = {
-                    analyticsManager.logAction("open_info_sheet", mapOf("source" to "icon"))
-                    infoSheetOpen = true
-                }) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = infoCd,
-                        tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
-                    )
+                TopBarTooltip(text = "معلومات عن الجولة وكيفية اللعب") {
+                    IconButton(onClick = {
+                        analyticsManager.logAction("open_info_sheet", mapOf("source" to "icon"))
+                        infoSheetOpen = true
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = infoCd,
+                            tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
+                        )
+                    }
                 }
             }
             Box(modifier = Modifier.align(Alignment.TopStart).padding(start = 14.dp, top = 36.dp)) {
                 Row {
-                    IconButton(onClick = onOpenAchievements) {
-                        Icon(
-                            imageVector = Icons.Default.EmojiEvents,
-                            contentDescription = "الإنجازات",
-                            tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
-                        )
+                    TopBarTooltip(text = "إنجازاتك وترتيبك في الجولات السابقة") {
+                        IconButton(onClick = onOpenAchievements) {
+                            Icon(
+                                imageVector = Icons.Default.EmojiEvents,
+                                contentDescription = "الإنجازات",
+                                tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
+                            )
+                        }
                     }
-                    IconButton(onClick = onOpenHadithList) {
-                        Icon(
-                            imageVector = Icons.Default.AutoStories,
-                            contentDescription = "الأحاديث",
-                            tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
-                        )
+                    TopBarTooltip(text = "أحاديث عن فضل الصلاة على النبي") {
+                        IconButton(onClick = onOpenHadithList) {
+                            Icon(
+                                imageVector = Icons.Default.AutoStories,
+                                contentDescription = "الأحاديث",
+                                tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
+                            )
+                        }
                     }
-                    IconButton(onClick = onOpenTenDays) {
-                        Icon(
-                            imageVector = Icons.Default.WbSunny,
-                            contentDescription = "عشر ذي الحجة",
-                            tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
-                        )
+                    TopBarTooltip(text = "أعمال وفضائل عشر ذي الحجة") {
+                        IconButton(onClick = onOpenTenDays) {
+                            Icon(
+                                imageVector = Icons.Default.WbSunny,
+                                contentDescription = "عشر ذي الحجة",
+                                tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
+                            )
+                        }
                     }
-                    IconButton(onClick = {
-                        analyticsManager.logAction("open_settings")
-                        onOpenSettings()
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "الإعدادات",
-                            tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
-                        )
+                    TopBarTooltip(text = "الإعدادات والإشعارات") {
+                        IconButton(onClick = {
+                            analyticsManager.logAction("open_settings")
+                            onOpenSettings()
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "الإعدادات",
+                                tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
+                            )
+                        }
                     }
                 }
             }
@@ -437,5 +452,26 @@ private fun GraceWarningDialog(onDismiss: () -> Unit) {
                 )
             }
         },
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TopBarTooltip(
+    text: String,
+    content: @Composable () -> Unit,
+) {
+    TooltipBox(
+        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+        tooltip = {
+            PlainTooltip(
+                containerColor = MohamedLoversPalette.DeepBlue,
+                contentColor = MohamedLoversPalette.GoldGlow,
+            ) {
+                Text(text = text, fontSize = 13.sp)
+            }
+        },
+        state = rememberTooltipState(),
+        content = content,
     )
 }
