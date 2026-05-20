@@ -149,6 +149,24 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         }
     }
 
+    override suspend fun incrementExternalCount(
+        roundKey: String,
+        uid: String,
+        count: Int,
+    ): Result<Unit> {
+        log.d { "incrementExternalCount[$roundKey/$uid] count=$count" }
+        return runCatching {
+            Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(
+                mapOf(TOTAL_EXTERNAL_KEY to ServerValue.increment(count.toDouble()))
+            )
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "incrementExternalCount[$roundKey/$uid] ok" } },
+                onFailure = { log.e(it) { "incrementExternalCount[$roundKey/$uid] failed" } },
+            )
+        }
+    }
+
     override suspend fun resetPlayerScore(roundKey: String, uid: String): Result<Unit> {
         log.d { "resetPlayerScore[$roundKey/$uid]" }
         return runCatching {
@@ -232,6 +250,20 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         }
     }
 
+    override suspend fun setSupporter(roundKey: String, uid: String, supporter: Boolean): Result<Unit> {
+        log.d { "setSupporter[$roundKey/$uid] supporter=$supporter" }
+        return runCatching {
+            Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(
+                mapOf(IS_SUPPORTER_KEY to supporter)
+            )
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "setSupporter[$roundKey/$uid] ok" } },
+                onFailure = { log.e(it) { "setSupporter[$roundKey/$uid] failed" } },
+            )
+        }
+    }
+
     private fun playersPath(roundKey: String) = "$ROOT_PATH/$roundKey/$PLAYERS_PATH"
     private fun leaderboardPath(roundKey: String, daily: Boolean = false): String {
         val node = if (daily) DAILY_LEADERBOARD_PATH else LEADERBOARD_PATH
@@ -246,7 +278,8 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         val countryCode = map[COUNTRY_CODE_KEY] as? String ?: ""
         val rankChange = map[RANK_CHANGE_KEY] as? String ?: ""
         val scoreMasked = map[SCORE_MASKED_KEY] as? Boolean ?: false
-        return FirebaseLeaderboardEntry(rank = rank, uid = uid, score = score, countryCode = countryCode, rankChange = rankChange, scoreMasked = scoreMasked)
+        val isSupporter = map[IS_SUPPORTER_KEY] as? Boolean ?: false
+        return FirebaseLeaderboardEntry(rank = rank, uid = uid, score = score, countryCode = countryCode, rankChange = rankChange, scoreMasked = scoreMasked, isSupporter = isSupporter)
     }
 
     private fun dev.gitlive.firebase.database.DataSnapshot.toPlayer(): MohamedLoversPlayer? {
@@ -273,12 +306,14 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         const val SCORE_KEY = "score"
         const val RANK_KEY = "rank"
         const val TOTAL_COUNT_KEY = "totalCount"
+        const val TOTAL_EXTERNAL_KEY = "totalExternal"
         const val IS_WINNER_KEY = "isWinner"
         const val WINNER_CODE_KEY = "winnerCode"
         const val COUNTRY_CODE_KEY = "countryCode"
         const val RANK_CHANGE_KEY = "rankChange"
         const val UPDATED_AT_KEY = "updatedAt"
         const val SCORE_MASKED_KEY = "scoreMasked"
+        const val IS_SUPPORTER_KEY = "isSupporter"
         const val ROUND_TOTAL_PATH = "roundTotal"
         const val ROUND_PLAYER_COUNT_PATH = "roundPlayerCount"
         const val ALL_TIME_TOTAL_PATH = "allTimeTotal"

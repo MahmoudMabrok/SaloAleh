@@ -56,6 +56,25 @@ class MohamedLoversRepository(
     suspend fun setScoreMasked(roundKey: String, uid: String, masked: Boolean): Result<Unit> =
         firebaseClient.setScoreMasked(roundKey, uid, masked)
 
+    suspend fun setSupporter(supporter: Boolean): Result<Unit> {
+        val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
+        val roundKey = networkTimeProvider.getCompetitionWindow().roundKey
+            ?: return Result.failure(IllegalStateException("No active round"))
+        return firebaseClient.setSupporter(roundKey, uid, supporter)
+    }
+
+    suspend fun setScoreMasked(masked: Boolean): Result<Unit> {
+        val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
+        val roundKey = networkTimeProvider.getCompetitionWindow().roundKey
+            ?: return Result.failure(IllegalStateException("No active round"))
+        return firebaseClient.setScoreMasked(roundKey, uid, masked)
+    }
+
+    suspend fun incrementExternalCount(roundKey: String, count: Int): Result<Unit> {
+        val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
+        return firebaseClient.incrementExternalCount(roundKey, uid, count)
+    }
+
     suspend fun flushPendingSession(countryCode: String): Result<Unit> {
         val allPending = sessionStore.getAllPendingRounds()
         if (allPending.isEmpty()) return Result.success(Unit)

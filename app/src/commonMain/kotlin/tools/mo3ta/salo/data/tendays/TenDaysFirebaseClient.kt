@@ -37,6 +37,28 @@ class TenDaysFirebaseClient(private val sessionStore: MohamedLoversSessionStore)
                 emit(Result.failure(e))
             }
 
+    fun observePlayerCount(periodKey: String): Flow<Result<Int>> =
+        Firebase.database.reference("$ROOT/$periodKey/playerCount")
+            .valueEvents
+            .map { snapshot ->
+                runCatching { snapshot.value<Int?>() ?: 0 }
+            }
+            .catch { e ->
+                log.e(e) { "observePlayerCount error" }
+                emit(Result.failure(e))
+            }
+
+    fun observeSelfRank(periodKey: String, uid: String): Flow<Result<Int>> =
+        Firebase.database.reference("$ROOT/$periodKey/players/$uid/rank")
+            .valueEvents
+            .map { snapshot ->
+                runCatching { snapshot.value<Int?>() ?: 0 }
+            }
+            .catch { e ->
+                log.e(e) { "observeSelfRank error" }
+                emit(Result.failure(e))
+            }
+
     suspend fun syncScore(
         periodKey: String,
         uid: String,

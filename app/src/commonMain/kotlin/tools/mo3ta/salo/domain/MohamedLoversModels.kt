@@ -32,6 +32,7 @@ data class FirebaseLeaderboardEntry(
     val countryCode: String = "",
     val rankChange: String = "",
     val scoreMasked: Boolean = false,
+    val isSupporter: Boolean = false,
 )
 
 data class FirebaseLeaderboard(

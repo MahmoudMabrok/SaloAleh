@@ -9,6 +9,10 @@
           ".read": true,
           ".write": false
         },
+        "playerCount": {
+          ".read": true,
+          ".write": false
+        },
         "players": {
           ".indexOn": ["totalScore"],
           "$uid": {

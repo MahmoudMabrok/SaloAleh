@@ -32,4 +32,5 @@ data class TenDaysUiState(
     val isActive: Boolean = true,
     val periodKey: String = "",
     val currentUid: String = "",
+    val playerCount: Int = 0,
 )

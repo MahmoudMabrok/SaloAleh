@@ -102,6 +102,7 @@ async function main() {
         countryCode: typeof data.countryCode === 'string' ? data.countryCode : 'NA',
         yesterdayTotalScore: typeof data.yesterdayTotalScore === 'number' ? data.yesterdayTotalScore : 0,
         scoreMasked: data.scoreMasked === true,
+        isSupporter: data.isSupporter === true,
       });
     }
   });
@@ -127,6 +128,7 @@ async function main() {
       countryCode: player.countryCode,
     };
     if (player.scoreMasked) entry.scoreMasked = true;
+    if (player.isSupporter) entry.isSupporter = true;
     leaderboard[String(i + 1)] = entry;
   });
 
@@ -146,6 +148,7 @@ async function main() {
       countryCode: player.countryCode,
     };
     if (player.scoreMasked) entry.scoreMasked = true;
+    if (player.isSupporter) entry.isSupporter = true;
     dailyLeaderboard[String(i + 1)] = entry;
   });
 
@@ -287,7 +290,10 @@ async function populateTenDaysLeaderboard(db) {
     const playersSnap = await db.ref(`${root}/${periodKey}/players`).orderByChild('totalScore').get();
     if (!playersSnap.exists()) {
       console.log('No ten-days players found.');
-      await db.ref(`${root}/${periodKey}/leaderboard`).set({});
+      await Promise.all([
+        db.ref(`${root}/${periodKey}/leaderboard`).set({}),
+        db.ref(`${root}/${periodKey}/playerCount`).set(0),
+      ]);
       continue;
     }
 
@@ -332,6 +338,7 @@ async function populateTenDaysLeaderboard(db) {
     await Promise.all([
       db.ref('/').update(rankUpdates),
       db.ref(`${root}/${periodKey}/leaderboard`).set(leaderboard),
+      db.ref(`${root}/${periodKey}/playerCount`).set(allPlayers.length),
     ]);
     console.log(`Wrote ${top10.length} ten-days leaderboard entries (${allPlayers.length} total players).`);
 

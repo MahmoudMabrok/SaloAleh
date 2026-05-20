@@ -31,7 +31,9 @@ import tools.mo3ta.salo.ui.ReviewDialog
 import tools.mo3ta.salo.ui.openStorePage
 import tools.mo3ta.salo.ui.settings.ExtensionQrScreen
 import tools.mo3ta.salo.data.billing.BillingManager
+import tools.mo3ta.salo.data.billing.PremiumFeature
 import tools.mo3ta.salo.data.billing.ProductRegistry
+import tools.mo3ta.salo.domain.MohamedLoversRepository
 import tools.mo3ta.salo.data.billing.SupportTier
 import tools.mo3ta.salo.ui.settings.PaywallScreen
 import tools.mo3ta.salo.ui.settings.PremiumPromoDialog
@@ -166,9 +168,13 @@ fun App(
         }
 
         var celebratedTier by remember { mutableStateOf<SupportTier?>(null) }
+        val repository = koinInject<MohamedLoversRepository>()
         LaunchedEffect(billingManager) {
             billingManager.purchaseEvents.collect { productId ->
                 val tier = ProductRegistry.tiers.firstOrNull { it.productId == productId } ?: return@collect
+                if (PremiumFeature.SUPPORTER_BADGE in tier.features) {
+                    repository.setSupporter(true)
+                }
                 showPaywall = false
                 celebratedTier = tier
             }

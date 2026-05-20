@@ -92,6 +92,8 @@ import tools.mo3ta.salo.presentation.MohamedLoversStatus
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
 import tools.mo3ta.salo.ui.components.DailyHadithDialog
 import tools.mo3ta.salo.ui.components.MohamedLoversArchShrine
+import tools.mo3ta.salo.ui.components.ManualSalawatSheet
+import tools.mo3ta.salo.ui.components.MohamedLoversFonts
 import tools.mo3ta.salo.ui.components.MohamedLoversCounter
 import tools.mo3ta.salo.ui.components.MohamedLoversHadithBanner
 import tools.mo3ta.salo.ui.components.MohamedLoversInfoSheet
@@ -309,12 +311,34 @@ fun MohamedLoversScreen(
                 onArchCenterPositioned = { archCenter = it },
                 modifier = Modifier.align(Alignment.Center),
             )
-            MohamedLoversCounter(
-                total = state.syncedTotal + state.sessionClicks,
-                pending = state.sessionClicks,
-                isFridayBonus = state.isFridayBonus,
+            Column(
                 modifier = Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.navigationBars).padding(bottom = 40.dp),
-            )
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                MohamedLoversCounter(
+                    total = state.syncedTotal + state.sessionClicks,
+                    pending = state.sessionClicks,
+                    isFridayBonus = state.isFridayBonus,
+                )
+                Spacer(Modifier.height(8.dp))
+                androidx.compose.material3.Surface(
+                    onClick = {
+                        analyticsManager.logAction("open_manual_salawat", emptyMap())
+                        viewModel.showManualSalawatSheet()
+                    },
+                    shape = RoundedCornerShape(20.dp),
+                    color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.08f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MohamedLoversPalette.GoldBase.copy(alpha = 0.3f)),
+                ) {
+                    Text(
+                        text = "📿 تسجيل صلوات خارجية",
+                        color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
+                        fontSize = 12.sp,
+                        fontFamily = MohamedLoversFonts.body,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                    )
+                }
+            }
             Box(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
@@ -394,6 +418,11 @@ fun MohamedLoversScreen(
                 )
             }
         }
+        ManualSalawatSheet(
+            isOpen = state.showManualSalawatSheet,
+            onDismiss = { viewModel.dismissManualSalawatSheet() },
+            onSubmit = { count -> viewModel.submitManualSalawat(count) },
+        )
         MohamedLoversInfoSheet(
             isOpen = infoSheetOpen,
             state = state,

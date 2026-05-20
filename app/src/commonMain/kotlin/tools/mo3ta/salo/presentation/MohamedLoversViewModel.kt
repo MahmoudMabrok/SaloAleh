@@ -194,6 +194,37 @@ class MohamedLoversViewModel(
         flushPendingSession()
     }
 
+    fun showManualSalawatSheet() {
+        _state.update { it.copy(showManualSalawatSheet = true) }
+    }
+
+    fun dismissManualSalawatSheet() {
+        _state.update { it.copy(showManualSalawatSheet = false) }
+    }
+
+    fun submitManualSalawat(count: Int) {
+        val roundKey = state.value.roundKey ?: return
+        if (count <= 0) return
+        repository.registerLocalTap(roundKey, count)
+        val pending = repository.getPendingSession(roundKey)
+        val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
+        dailyGoalStore.recordTap(today, count)
+        _state.update {
+            it.copy(
+                sessionClicks = pending.clickCount,
+                showManualSalawatSheet = false,
+                isSubmittingManualSalawat = true,
+                dailyGoalProgress = dailyGoalStore.todayProgress(today),
+            )
+        }
+        applyLeaderboard()
+        flushPendingSession()
+        viewModelScope.launch {
+            repository.incrementExternalCount(roundKey, count)
+            _state.update { it.copy(isSubmittingManualSalawat = false) }
+        }
+    }
+
     fun resetCurrentRoundScore() {
         val roundKey = state.value.roundKey ?: return
         repository.clearAllPendingRounds()
@@ -363,6 +394,7 @@ class MohamedLoversViewModel(
                 isCurrentUser = isCurrentUser,
                 rankChange = entry.rankChange,
                 scoreMasked = entry.scoreMasked,
+                isSupporter = entry.isSupporter,
             )
         }.sortedByDescending { it.totalCount }
             .mapIndexed { index, entry -> entry.copy(rank = index + 1) }
