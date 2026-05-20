@@ -417,7 +417,7 @@ private fun LeaderboardCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "${selfEntry.displayedRank}${if (isPremium) "⭐ " else ""}${selfEntry.displayTag}",
+                    text = "${selfEntry.displayedRank}${selfEntry.displayTag}",
                     style = bodyStyle().copy(fontWeight = FontWeight.W700),
                     color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.95f),
                 )
@@ -441,10 +441,7 @@ private fun LeaderboardCard(
             )
         } else {
             topPlayers.forEach { entry ->
-                LeaderboardRow(
-                    entry = if (entry.isCurrentUser && isPremium) entry.copy(displayTag = "⭐ ${entry.displayTag}") else entry,
-                    pinned = false,
-                )
+                LeaderboardRow(entry = entry, pinned = false)
             }
         }
     }
@@ -463,12 +460,17 @@ private fun LeaderboardRow(entry: MohamedLoversLeaderboardEntry, pinned: Boolean
         entry.isCurrentUser -> MohamedLoversPalette.GoldBase.copy(alpha = 0.1f)
         else -> Color.Transparent
     }
+    val rowModifier = Modifier
+        .fillMaxWidth()
+        .clip(RoundedCornerShape(10.dp))
+        .background(backgroundColor)
+        .then(
+            if (entry.isSupporter) Modifier.border(1.dp, MohamedLoversPalette.GoldHighlight.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
+            else Modifier
+        )
+        .padding(horizontal = 10.dp, vertical = 8.dp)
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .background(backgroundColor)
-            .padding(horizontal = 10.dp, vertical = 8.dp),
+        modifier = rowModifier,
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -487,6 +489,9 @@ private fun LeaderboardRow(entry: MohamedLoversLeaderboardEntry, pinned: Boolean
                     color = rankColor,
                 )
             }
+            if (entry.isSupporter) {
+                Text(text = "⭐", fontSize = 12.sp)
+            }
             Text(
                 text = entry.displayTag,
                 style = bodyStyle().copy(
@@ -496,11 +501,7 @@ private fun LeaderboardRow(entry: MohamedLoversLeaderboardEntry, pinned: Boolean
             )
         }
         if (entry.scoreMasked && !entry.isCurrentUser) {
-            Text(
-                text = "مخفي 🔒",
-                style = bodyStyle().copy(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic),
-                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.4f),
-            )
+            MaskedScore(entry.totalCount)
         } else {
             val isFriday = Clock.System.now()
                 .toLocalDateTime(TimeZone.of("Africa/Cairo"))
@@ -523,15 +524,14 @@ private fun LeaderboardRow(entry: MohamedLoversLeaderboardEntry, pinned: Boolean
 @Composable
 private fun MaskedScore(score: Int) {
     val str = score.toString()
-    val keep = if (str.length >= 4) 2 else 1
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
-            text = str.take(keep),
+            text = str.take(1),
             style = bodyStyle(),
             color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
         )
         Text(
-            text = str.drop(keep),
+            text = str.drop(1),
             modifier = Modifier.blur(6.dp),
             style = bodyStyle(),
             color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.5f),

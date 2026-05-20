@@ -1,13 +1,43 @@
 package tools.mo3ta.salo.ui
 
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.convert
 import kotlinx.cinterop.reinterpret
 import kotlinx.cinterop.usePinned
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.daysUntil
+import kotlinx.datetime.todayIn
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+import platform.AVFAudio.AVAudioPlayer
+import platform.AVFAudio.AVAudioSession
+import platform.AVFAudio.AVAudioSessionCategoryPlayback
+import platform.AVFAudio.setActive
 import platform.CoreFoundation.CFDataCreate
 import platform.CoreFoundation.kCFAllocatorDefault
 import platform.CoreGraphics.CGColorRenderingIntent
@@ -15,6 +45,7 @@ import platform.CoreGraphics.CGColorSpaceCreateDeviceRGB
 import platform.CoreGraphics.CGDataProviderCreateWithCFData
 import platform.CoreGraphics.CGImageAlphaInfo
 import platform.CoreGraphics.CGImageCreate
+import platform.Foundation.NSBundle
 import platform.Foundation.NSURL
 import platform.UIKit.UIActivityViewController
 import platform.UIKit.UIAlertAction
@@ -28,6 +59,8 @@ import platform.UserNotifications.UNAuthorizationStatusAuthorized
 import platform.UserNotifications.UNAuthorizationStatusEphemeral
 import platform.UserNotifications.UNAuthorizationStatusProvisional
 import platform.UserNotifications.UNUserNotificationCenter
+import tools.mo3ta.salo.data.tendays.TenDaysStore
+import tools.mo3ta.salo.ui.tendays.TenDaysPalette
 
 actual fun launchQrScanner(onResult: (String?) -> Unit) {
     showPlatformToast("ماسح QR متاح على أندرويد فقط حاليًا")
@@ -145,7 +178,132 @@ actual fun FloatingBubbleButton(roundKey: String?) {}
 actual fun BubbleFeaturePromo(roundKey: String?) {}
 
 @Composable
-actual fun TakbeerOverlayButton(autoRemind: Boolean, intervalMinutes: Int, repeatCount: Int) {}
+actual fun TakbeerOverlayButton(autoRemind: Boolean, intervalMinutes: Int, repeatCount: Int) {
+    val isActive by remember { IosTakbeerScheduler.isRunning }
+    val label = if (isActive) "إيقاف التكبير" else "تشغيل التكبير"
+    val containerColor = if (isActive) Color(0xFFE53935) else TenDaysPalette.Gold
+
+    Button(
+        onClick = {
+            if (isActive) {
+                IosTakbeerScheduler.stop()
+            } else {
+                IosTakbeerScheduler.start(autoRemind, intervalMinutes, repeatCount)
+            }
+        },
+        modifier = Modifier.fillMaxWidth(),
+        colors = ButtonDefaults.buttonColors(containerColor = containerColor),
+        shape = RoundedCornerShape(12.dp),
+    ) {
+        Text(label, color = Color.Black, fontWeight = FontWeight.Bold)
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+private object IosTakbeerScheduler : KoinComponent {
+    private val store: TenDaysStore by inject()
+    var isRunning = mutableStateOf(false)
+    private var scope: CoroutineScope? = null
+    private var player: AVAudioPlayer? = null
+
+    private fun currentDay(): Int {
+        val cairoTz = TimeZone.of("Africa/Cairo")
+        val today = Clock.System.todayIn(cairoTz)
+        val startDate = LocalDate.parse("2026-05-18")
+        return (startDate.daysUntil(today) + 1).coerceIn(1, 9)
+    }
+
+    private fun configureAudioSession() {
+        try {
+            val session = AVAudioSession.sharedInstance()
+            session.setCategory(AVAudioSessionCategoryPlayback, null)
+            session.setActive(true, null)
+        } catch (_: Exception) {}
+    }
+
+    private suspend fun playOnce() {
+        val url = NSBundle.mainBundle.URLForResource("takbeer", withExtension = "mp3") ?: return
+        val p = AVAudioPlayer(contentsOfURL = url, error = null)
+        player = p
+        p.play()
+        while (p.isPlaying()) {
+            delay(200)
+        }
+        store.incrementTakbeerSound(currentDay())
+        player = null
+    }
+
+    fun start(autoRemind: Boolean, intervalMinutes: Int, repeatCount: Int) {
+        stop()
+        configureAudioSession()
+        isRunning.value = true
+        val intervalMs = intervalMinutes * 60 * 1000L
+        scope = CoroutineScope(SupervisorJob() + Dispatchers.Main).also { s ->
+            s.launch {
+                do {
+                    repeat(repeatCount) { playOnce() }
+                    if (autoRemind) delay(intervalMs)
+                } while (autoRemind && isRunning.value)
+                stop()
+            }
+        }
+    }
+
+    fun stop() {
+        player?.stop()
+        player = null
+        scope?.cancel()
+        scope = null
+        isRunning.value = false
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+private object IosTakbeerPlayer {
+    var player: AVAudioPlayer? = null
+    var isPlaying = mutableStateOf(false)
+
+    fun toggle() {
+        if (isPlaying.value) {
+            stop()
+        } else {
+            start()
+        }
+    }
+
+    fun start() {
+        val url = NSBundle.mainBundle.URLForResource("takbeer", withExtension = "mp3") ?: return
+        try {
+            val session = AVAudioSession.sharedInstance()
+            session.setCategory(AVAudioSessionCategoryPlayback, null)
+            session.setActive(true, null)
+        } catch (_: Exception) {}
+        val p = AVAudioPlayer(contentsOfURL = url, error = null)
+        p.numberOfLoops = -1
+        p.play()
+        player = p
+        isPlaying.value = true
+    }
+
+    fun stop() {
+        player?.stop()
+        player = null
+        isPlaying.value = false
+    }
+}
 
 @Composable
-actual fun TakbeerSessionButton() {}
+actual fun TakbeerSessionButton() {
+    val isActive by remember { IosTakbeerPlayer.isPlaying }
+    val label = if (isActive) "إيقاف جلسة التكبير" else "ابدأ جلسة التكبير"
+    val containerColor = if (isActive) Color(0xFFE53935) else TenDaysPalette.Gold
+
+    Button(
+        onClick = { IosTakbeerPlayer.toggle() },
+        modifier = Modifier.fillMaxWidth(),
+        colors = ButtonDefaults.buttonColors(containerColor = containerColor),
+        shape = RoundedCornerShape(12.dp),
+    ) {
+        Text(label, color = Color.Black, fontWeight = FontWeight.Bold)
+    }
+}

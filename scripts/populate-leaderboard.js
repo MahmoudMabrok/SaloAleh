@@ -102,6 +102,7 @@ async function main() {
         countryCode: typeof data.countryCode === 'string' ? data.countryCode : 'NA',
         yesterdayTotalScore: typeof data.yesterdayTotalScore === 'number' ? data.yesterdayTotalScore : 0,
         scoreMasked: data.scoreMasked === true,
+        isSupporter: data.isSupporter === true,
       });
     }
   });
@@ -127,6 +128,7 @@ async function main() {
       countryCode: player.countryCode,
     };
     if (player.scoreMasked) entry.scoreMasked = true;
+    if (player.isSupporter) entry.isSupporter = true;
     leaderboard[String(i + 1)] = entry;
   });
 
@@ -146,6 +148,7 @@ async function main() {
       countryCode: player.countryCode,
     };
     if (player.scoreMasked) entry.scoreMasked = true;
+    if (player.isSupporter) entry.isSupporter = true;
     dailyLeaderboard[String(i + 1)] = entry;
   });
 

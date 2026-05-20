@@ -17,6 +17,8 @@ interface MohamedLoversFirebaseApi {
     suspend fun writeUserActivity(uid: String, installDate: String, lastOpenDate: String): Result<Unit>
     suspend fun writeFcmToken(uid: String, token: String): Result<Unit>
     suspend fun fetchUserAchievements(uid: String): Result<Map<String, UserAchievement>>
+    suspend fun incrementExternalCount(roundKey: String, uid: String, count: Int): Result<Unit>
     suspend fun resetPlayerScore(roundKey: String, uid: String): Result<Unit>
     suspend fun setScoreMasked(roundKey: String, uid: String, masked: Boolean): Result<Unit>
+    suspend fun setSupporter(roundKey: String, uid: String, supporter: Boolean): Result<Unit>
 }

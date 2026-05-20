@@ -30,6 +30,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,8 +41,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
-import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.BillingAnalytics
 import tools.mo3ta.salo.data.billing.BillingManager
@@ -49,7 +50,7 @@ import tools.mo3ta.salo.data.billing.PremiumFeature
 import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.billing.ProductRegistry
 import tools.mo3ta.salo.data.billing.SupportTier
-import tools.mo3ta.salo.presentation.MohamedLoversViewModel
+import tools.mo3ta.salo.domain.MohamedLoversRepository
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,7 +59,8 @@ fun PaywallScreen(onBack: () -> Unit) {
     val billingManager: BillingManager = koinInject()
     val premiumStore: PremiumStore = koinInject()
     val analyticsManager: AnalyticsManager = koinInject()
-    val viewModel: MohamedLoversViewModel = koinViewModel()
+    val repository: MohamedLoversRepository = koinInject()
+    val scope = rememberCoroutineScope()
 
     val isPremium = premiumStore.hasFeature(PremiumFeature.SCORE_MASK)
     var scoreMasked by remember { mutableStateOf(premiumStore.isScoreMasked) }
@@ -150,7 +152,7 @@ fun PaywallScreen(onBack: () -> Unit) {
                         onCheckedChange = { checked ->
                             scoreMasked = checked
                             premiumStore.isScoreMasked = checked
-                            viewModel.setScoreMasked(checked)
+                            scope.launch { repository.setScoreMasked(checked) }
                             analyticsManager.logAction(
                                 BillingAnalytics.SCORE_MASK_TOGGLED,
                                 mapOf(BillingAnalytics.PARAM_ENABLED to checked.toString()),

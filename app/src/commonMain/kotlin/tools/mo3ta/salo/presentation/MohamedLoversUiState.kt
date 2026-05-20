@@ -9,6 +9,7 @@ data class MohamedLoversLeaderboardEntry(
     val isCurrentUser: Boolean,
     val rankChange: String = "",
     val scoreMasked: Boolean = false,
+    val isSupporter: Boolean = false,
 ){
     val displayedRank = if (rank > 0) "#$rank " else ""
 }
@@ -58,6 +59,10 @@ data class MohamedLoversUiState(
 
     // Streak grace dialog
     val showGraceWarning: Boolean = false,
+
+    // Manual salawat import
+    val showManualSalawatSheet: Boolean = false,
+    val isSubmittingManualSalawat: Boolean = false,
 
     // Daily goal
     val dailyGoalTarget: Int = 0,
