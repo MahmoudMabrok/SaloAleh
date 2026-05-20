@@ -27,6 +27,10 @@ make android                                          # build + install + launch
 ./gradlew :app:linkDebugFrameworkIosSimulatorArm64    # must run before Xcode build
 make ios                                              # framework + xcodebuild + simctl
 
+# Desktop (Compose JVM)
+make desktop                                          # run from source
+make desktop-package                                  # native installer for current OS
+
 # Tests
 ./gradlew allTests                                    # all targets (commonTest + iosX64 + iosSimArm64 + JVM)
 ./gradlew testDebugUnitTest                           # Android JVM unit tests only
@@ -103,6 +107,10 @@ All workflows use secrets: `FIREBASE_SERVICE_ACCOUNT`, `FIREBASE_DATABASE_URL`.
 ## Chrome extension
 
 `chrome-extension/` — floating window dhikr counter that syncs via phone UUID. Not part of KMP build.
+
+## Desktop app
+
+`:desktop` — standalone Compose Multiplatform JVM app (Kotlin/JVM, not KMP). Tap counter that generates a signed `saloaleh-submit` QR for the mobile scanner; counter auto-clears once the QR is shown. QR/HMAC/round-key logic is duplicated locally to keep the module decoupled. Build instructions for all platforms: `desktop/README.md`.
 
 ## Conventions
 
