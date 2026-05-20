@@ -53,6 +53,8 @@ import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import tools.mo3ta.salo.data.billing.PremiumFeature
+import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.generated.resources.Res
@@ -92,6 +94,7 @@ fun MohamedLoversScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     val analyticsManager: AnalyticsManager = koinInject()
     val settingsStore: NotificationSettingsStore = koinInject()
+    val premiumStore: PremiumStore = koinInject()
     var showRankChip by remember { mutableStateOf(settingsStore.showRankChip) }
 
     val codeCopiedLabel = stringResource(Res.string.mohamed_lovers_code_copied)
@@ -370,6 +373,7 @@ fun MohamedLoversScreen(
                 copyToClipboard(code)
                 showPlatformToast(codeCopiedLabel)
             },
+            isPremium = premiumStore.hasFeature(PremiumFeature.SUPPORTER_BADGE),
         )
         if (state.showRoundRecap) {
             RoundRecapSheet(

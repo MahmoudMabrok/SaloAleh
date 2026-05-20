@@ -3,6 +3,7 @@ package tools.mo3ta.salo.di
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.bind
 import org.koin.dsl.module
+import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.engagement.DailyGoalStore
 import tools.mo3ta.salo.data.engagement.EngagementStore
 import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseApi
@@ -27,6 +28,7 @@ val appModule = module {
     single { EngagementStore(get()) }
     single { DailyGoalStore(get()) }
     single { NotificationSettingsStore(get()) }
+    single { PremiumStore(get()) }
     single { DailyHadithStore(get()) }
     single { MohamedLoversRepository(get(), get(), get(), get()) }
     single { createHttpClient() }

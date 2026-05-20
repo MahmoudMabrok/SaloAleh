@@ -20,6 +20,8 @@ import org.koin.android.ext.android.inject
 import tools.mo3ta.salo.data.engagement.EngagementStore
 import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseClient
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
+import tools.mo3ta.salo.data.billing.AndroidBillingManager
+import tools.mo3ta.salo.data.billing.BillingManager
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.notification.NotificationChannels
 import tools.mo3ta.salo.notification.NotificationScheduler
@@ -30,6 +32,7 @@ class MainActivity : ComponentActivity() {
     private val notificationSettingsStore: NotificationSettingsStore by inject()
     private val sessionStore: MohamedLoversSessionStore by inject()
     private val firebaseClient: MohamedLoversFirebaseClient by inject()
+    private val billingManager: BillingManager by inject()
 
     private val notifPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -50,6 +53,9 @@ class MainActivity : ComponentActivity() {
         }
 
         syncNotificationSchedule()
+
+        (billingManager as? AndroidBillingManager)?.setActivity(this)
+        billingManager.initialize()
 
         val hasNotifPerm = NotificationManagerCompat.from(this).areNotificationsEnabled()
         if (hasNotifPerm) {

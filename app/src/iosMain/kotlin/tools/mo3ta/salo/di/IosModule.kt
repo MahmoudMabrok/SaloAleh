@@ -6,6 +6,8 @@ import org.koin.dsl.module
 import platform.Foundation.NSUserDefaults
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.NoOpAnalyticsManager
+import tools.mo3ta.salo.data.billing.BillingManager
+import tools.mo3ta.salo.data.billing.NoOpBillingManager
 import tools.mo3ta.salo.data.country.CountryCodeProvider
 import tools.mo3ta.salo.data.country.IosCountryCodeProvider
 import tools.mo3ta.salo.data.time.IosNetworkTimeProvider
@@ -15,5 +17,6 @@ val iosModule = module {
     single<AnalyticsManager> { NoOpAnalyticsManager() }
     single<NetworkTimeProvider> { IosNetworkTimeProvider() }
     single<CountryCodeProvider> { IosCountryCodeProvider() }
+    single<BillingManager> { NoOpBillingManager() }
     single<Settings> { NSUserDefaultsSettings(NSUserDefaults.standardUserDefaults) }
 }

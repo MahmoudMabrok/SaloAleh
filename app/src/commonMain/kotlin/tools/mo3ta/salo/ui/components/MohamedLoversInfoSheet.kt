@@ -91,6 +91,7 @@ internal fun MohamedLoversInfoSheet(
     state: MohamedLoversUiState,
     onDismiss: () -> Unit,
     onCopyWinnerCode: (String) -> Unit,
+    isPremium: Boolean = false,
 ) {
     if (!isOpen) return
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
@@ -137,6 +138,7 @@ internal fun MohamedLoversInfoSheet(
                 selfEntry = state.selfEntry,
                 selfInTop = state.selfInTop,
                 isDaily = state.isUsingDailyLeaderboard,
+                isPremium = isPremium,
             )
             if (state.isWinner) {
                 WinnerCard(winnerCode = state.winnerCode, onCopyWinnerCode = onCopyWinnerCode)
@@ -381,6 +383,7 @@ private fun LeaderboardCard(
     selfEntry: MohamedLoversLeaderboardEntry?,
     selfInTop: Boolean,
     isDaily: Boolean,
+    isPremium: Boolean = false,
 ) {
     SheetCard {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -414,7 +417,7 @@ private fun LeaderboardCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "${selfEntry.displayedRank}${selfEntry.displayTag}",
+                    text = "${selfEntry.displayedRank}${if (isPremium) "⭐ " else ""}${selfEntry.displayTag}",
                     style = bodyStyle().copy(fontWeight = FontWeight.W700),
                     color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.95f),
                 )
@@ -437,7 +440,12 @@ private fun LeaderboardCard(
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.65f),
             )
         } else {
-            topPlayers.forEach { entry -> LeaderboardRow(entry = entry, pinned = false) }
+            topPlayers.forEach { entry ->
+                LeaderboardRow(
+                    entry = if (entry.isCurrentUser && isPremium) entry.copy(displayTag = "⭐ ${entry.displayTag}") else entry,
+                    pinned = false,
+                )
+            }
         }
     }
 }
@@ -487,19 +495,27 @@ private fun LeaderboardRow(entry: MohamedLoversLeaderboardEntry, pinned: Boolean
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.92f),
             )
         }
-        val isFriday = Clock.System.now()
-            .toLocalDateTime(TimeZone.of("Africa/Cairo"))
-            .dayOfWeek == kotlinx.datetime.DayOfWeek.FRIDAY
-        if (entry.isCurrentUser || !isFriday) {
+        if (entry.scoreMasked && !entry.isCurrentUser) {
             Text(
-                text = entry.totalCount.toString(),
-                style = bodyStyle().copy(
-                    fontWeight = if (entry.isCurrentUser) FontWeight.W700 else FontWeight.W400,
-                ),
-                color = MohamedLoversPalette.GoldGlow.copy(alpha = if (entry.isCurrentUser) 0.85f else 0.7f),
+                text = "مخفي 🔒",
+                style = bodyStyle().copy(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.4f),
             )
         } else {
-            MaskedScore(entry.totalCount)
+            val isFriday = Clock.System.now()
+                .toLocalDateTime(TimeZone.of("Africa/Cairo"))
+                .dayOfWeek == kotlinx.datetime.DayOfWeek.FRIDAY
+            if (entry.isCurrentUser || !isFriday) {
+                Text(
+                    text = entry.totalCount.toString(),
+                    style = bodyStyle().copy(
+                        fontWeight = if (entry.isCurrentUser) FontWeight.W700 else FontWeight.W400,
+                    ),
+                    color = MohamedLoversPalette.GoldGlow.copy(alpha = if (entry.isCurrentUser) 0.85f else 0.7f),
+                )
+            } else {
+                MaskedScore(entry.totalCount)
+            }
         }
     }
 }

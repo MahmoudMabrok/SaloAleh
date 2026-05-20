@@ -1,0 +1,68 @@
+<h2>Paywall Screen Layout</h2>
+<p class="subtitle">How should the "Support the App" purchase screen look? (Arabic RTL, dark theme)</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Full-Screen Paywall</h3>
+      <p>Dedicated screen with hero illustration, feature list, and prominent purchase button at the bottom. Accessible from Settings. Feels like a proper "support" page.</p>
+      <div class="mockup" style="margin-top:12px">
+        <div class="mockup-body" style="background:#0f0f1a;color:white;text-align:right;direction:rtl;padding:24px;border-radius:8px">
+          <div style="text-align:center;font-size:40px;margin-bottom:16px">🌟</div>
+          <h3 style="text-align:center;color:#ffd700;margin:0 0 8px">ادعم التطبيق</h3>
+          <p style="text-align:center;color:#aaa;font-size:13px;margin:0 0 24px">ساهم في تطوير التطبيق واحصل على مزايا حصرية</p>
+
+          <div style="background:#1a1a2e;border-radius:12px;padding:16px;margin-bottom:12px;border:1px solid #333">
+            <div style="display:flex;align-items:center;gap:12px;justify-content:flex-end">
+              <div>
+                <div style="font-weight:bold;color:#ffd700">إخفاء النتيجة</div>
+                <div style="font-size:12px;color:#888">اخفِ نتيجتك من لوحة المتصدرين</div>
+              </div>
+              <div style="font-size:24px">🔒</div>
+            </div>
+          </div>
+
+          <div style="background:#1a1a2e;border-radius:12px;padding:16px;margin-bottom:24px;border:1px solid #333">
+            <div style="display:flex;align-items:center;gap:12px;justify-content:flex-end">
+              <div>
+                <div style="font-weight:bold;color:#ffd700">شارة الداعم</div>
+                <div style="font-size:12px;color:#888">شارة مميزة بجانب اسمك</div>
+              </div>
+              <div style="font-size:24px">⭐</div>
+            </div>
+          </div>
+
+          <button style="width:100%;padding:16px;background:linear-gradient(135deg,#ffd700,#ff8c00);border:none;border-radius:12px;color:#0f0f1a;font-weight:bold;font-size:16px;cursor:pointer">
+            ادعم الآن — $2.99
+          </button>
+          <p style="text-align:center;color:#555;font-size:11px;margin-top:8px">استعادة المشتريات</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Bottom Sheet Paywall</h3>
+      <p>Modal bottom sheet that slides up from any screen. Compact, less disruptive. Shows features briefly with a single CTA button. Good for contextual triggers (e.g. tapping "hide score" shows sheet).</p>
+      <div class="mockup" style="margin-top:12px">
+        <div class="mockup-body" style="background:#16213e;color:white;text-align:right;direction:rtl;padding:24px;border-radius:0 0 12px 12px;border-top:3px solid #ffd700">
+          <div style="width:40px;height:4px;background:#444;border-radius:2px;margin:0 auto 16px"></div>
+          <h3 style="text-align:center;color:#ffd700;margin:0 0 16px">🌟 ادعم التطبيق</h3>
+
+          <div style="display:flex;gap:8px;margin-bottom:16px;justify-content:flex-end">
+            <span style="background:#1a1a2e;padding:8px 14px;border-radius:20px;font-size:13px;border:1px solid #ffd70044">🔒 إخفاء النتيجة</span>
+            <span style="background:#1a1a2e;padding:8px 14px;border-radius:20px;font-size:13px;border:1px solid #ffd70044">⭐ شارة الداعم</span>
+          </div>
+
+          <button style="width:100%;padding:14px;background:linear-gradient(135deg,#ffd700,#ff8c00);border:none;border-radius:10px;color:#0f0f1a;font-weight:bold;font-size:15px;cursor:pointer">
+            ادعم — $2.99
+          </button>
+          <p style="text-align:center;color:#555;font-size:11px;margin-top:8px">استعادة المشتريات</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

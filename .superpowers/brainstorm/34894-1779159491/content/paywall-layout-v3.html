@@ -1,0 +1,155 @@
+<h2>Paywall Screen Layout — Updated</h2>
+<p class="subtitle">3 premium features: score masking (your score hidden), supporter badge, view others' scores</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Full-Screen Paywall</h3>
+      <p>Dedicated "Support" screen from Settings. Hero + feature list + CTA.</p>
+      <div class="mockup" style="margin-top:12px">
+        <div class="mockup-body" style="background:#0f0f1a;color:white;text-align:right;direction:rtl;padding:24px;border-radius:8px">
+          <div style="text-align:center;font-size:40px;margin-bottom:12px">🌟</div>
+          <h3 style="text-align:center;color:#ffd700;margin:0 0 4px">ادعم التطبيق</h3>
+          <p style="text-align:center;color:#aaa;font-size:13px;margin:0 0 20px">ساهم في تطوير التطبيق واحصل على مزايا حصرية</p>
+
+          <div style="background:#1a1a2e;border-radius:12px;padding:14px 16px;margin-bottom:10px;border:1px solid #333">
+            <div style="display:flex;align-items:center;gap:12px;justify-content:flex-end">
+              <div>
+                <div style="font-weight:bold;color:#ffd700;font-size:14px">إخفاء النتيجة</div>
+                <div style="font-size:12px;color:#888">اخفِ نتيجتك من الآخرين في المتصدرين</div>
+              </div>
+              <div style="font-size:22px">🔒</div>
+            </div>
+          </div>
+
+          <div style="background:#1a1a2e;border-radius:12px;padding:14px 16px;margin-bottom:10px;border:1px solid #333">
+            <div style="display:flex;align-items:center;gap:12px;justify-content:flex-end">
+              <div>
+                <div style="font-weight:bold;color:#ffd700;font-size:14px">شارة الداعم</div>
+                <div style="font-size:12px;color:#888">شارة مميزة بجانب اسمك في المتصدرين</div>
+              </div>
+              <div style="font-size:22px">⭐</div>
+            </div>
+          </div>
+
+          <div style="background:#1a1a2e;border-radius:12px;padding:14px 16px;margin-bottom:20px;border:1px solid #333">
+            <div style="display:flex;align-items:center;gap:12px;justify-content:flex-end">
+              <div>
+                <div style="font-weight:bold;color:#ffd700;font-size:14px">كشف النتائج</div>
+                <div style="font-size:12px;color:#888">اطلع على نتائج جميع المتسابقين</div>
+              </div>
+              <div style="font-size:22px">👁️</div>
+            </div>
+          </div>
+
+          <button style="width:100%;padding:16px;background:linear-gradient(135deg,#ffd700,#ff8c00);border:none;border-radius:12px;color:#0f0f1a;font-weight:bold;font-size:16px;cursor:pointer">
+            ادعم الآن — $2.99
+          </button>
+          <p style="text-align:center;color:#555;font-size:11px;margin-top:8px">استعادة المشتريات</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Bottom Sheet Paywall</h3>
+      <p>Compact modal. Triggers contextually (e.g. tap hidden score → sheet appears).</p>
+      <div class="mockup" style="margin-top:12px">
+        <div class="mockup-body" style="background:#16213e;color:white;text-align:right;direction:rtl;padding:24px;border-radius:0 0 12px 12px;border-top:3px solid #ffd700">
+          <div style="width:40px;height:4px;background:#444;border-radius:2px;margin:0 auto 16px"></div>
+          <h3 style="text-align:center;color:#ffd700;margin:0 0 16px">🌟 ادعم التطبيق</h3>
+
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;justify-content:flex-end">
+            <span style="background:#1a1a2e;padding:8px 14px;border-radius:20px;font-size:13px;border:1px solid #ffd70044">🔒 إخفاء النتيجة</span>
+            <span style="background:#1a1a2e;padding:8px 14px;border-radius:20px;font-size:13px;border:1px solid #ffd70044">⭐ شارة الداعم</span>
+            <span style="background:#1a1a2e;padding:8px 14px;border-radius:20px;font-size:13px;border:1px solid #ffd70044">👁️ كشف النتائج</span>
+          </div>
+
+          <button style="width:100%;padding:14px;background:linear-gradient(135deg,#ffd700,#ff8c00);border:none;border-radius:10px;color:#0f0f1a;font-weight:bold;font-size:15px;cursor:pointer">
+            ادعم — $2.99
+          </button>
+          <p style="text-align:center;color:#555;font-size:11px;margin-top:8px">استعادة المشتريات</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2 style="margin-top:32px">Leaderboard: Free vs Premium View</h2>
+<p class="subtitle">Free: others' scores hidden, your score visible. Premium: see all scores + your score masked from others + badge.</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Free User View</div>
+    <div class="mockup-body" style="background:#0f0f1a;color:white;text-align:right;direction:rtl;padding:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#1a1a2e;border-radius:8px;margin-bottom:6px;border-left:3px solid #ffd700">
+        <span style="color:#666;font-size:12px">•••</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="color:white;font-size:14px">🇪🇬 متسابق</span>
+          <span style="color:#ffd700;font-weight:bold">#1</span>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#ffd70015;border-radius:8px;margin-bottom:6px;border-left:3px solid #c0c0c0">
+        <span style="color:#4caf50;font-size:14px;font-weight:bold">9,230</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="color:white;font-size:14px">🇸🇦 أنت</span>
+          <span style="color:#c0c0c0;font-weight:bold">#2</span>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#1a1a2e;border-radius:8px;margin-bottom:6px;border-left:3px solid #cd7f32">
+        <span style="color:#666;font-size:12px">•••</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="color:white;font-size:14px">🇰🇼 متسابق</span>
+          <span style="color:#cd7f32;font-weight:bold">#3</span>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#1a1a2e;border-radius:8px;margin-bottom:6px">
+        <span style="color:#666;font-size:12px">•••</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="color:white;font-size:14px">🇯🇴 متسابق</span>
+          <span style="color:#aaa;font-weight:bold">#4</span>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:12px">
+        <span style="color:#ffd700;font-size:12px;cursor:pointer;border-bottom:1px dashed #ffd700">👁️ اكشف النتائج — ادعم التطبيق</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">Premium User View</div>
+    <div class="mockup-body" style="background:#0f0f1a;color:white;text-align:right;direction:rtl;padding:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#1a1a2e;border-radius:8px;margin-bottom:6px;border-left:3px solid #ffd700">
+        <span style="color:#ffd700;font-size:14px;font-weight:bold">12,450</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="color:white;font-size:14px">🇪🇬 متسابق</span>
+          <span style="color:#ffd700;font-weight:bold">#1</span>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#ffd70015;border-radius:8px;margin-bottom:6px;border-left:3px solid #c0c0c0">
+        <span style="color:#666;font-size:12px;font-style:italic">مخفي 🔒</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="color:white;font-size:14px">⭐ 🇸🇦 أنت</span>
+          <span style="color:#c0c0c0;font-weight:bold">#2</span>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#1a1a2e;border-radius:8px;margin-bottom:6px;border-left:3px solid #cd7f32">
+        <span style="color:#ffd700;font-size:14px;font-weight:bold">7,810</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="color:white;font-size:14px">🇰🇼 متسابق</span>
+          <span style="color:#cd7f32;font-weight:bold">#3</span>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#1a1a2e;border-radius:8px;margin-bottom:6px">
+        <span style="color:#ffd700;font-size:14px;font-weight:bold">5,120</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="color:white;font-size:14px">🇯🇴 متسابق</span>
+          <span style="color:#aaa;font-weight:bold">#4</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
