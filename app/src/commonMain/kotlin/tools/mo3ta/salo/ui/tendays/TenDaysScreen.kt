@@ -142,6 +142,13 @@ fun TenDaysScreen(
             )
             Spacer(Modifier.height(8.dp))
             TakbeerSessionButton()
+            Text(
+                text = "تشغيل صوت التكبير بشكل متواصل في الخلفية حتى توقفه",
+                fontSize = 11.sp,
+                color = TenDaysPalette.TextSecondary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+            )
             Spacer(Modifier.height(14.dp))
             MiniLeaderboard(state)
             Spacer(Modifier.height(24.dp))
