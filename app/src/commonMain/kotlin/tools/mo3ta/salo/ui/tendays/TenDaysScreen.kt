@@ -687,6 +687,16 @@ private fun MiniLeaderboard(state: TenDaysUiState) {
             )
         }
 
+        if (state.playerCount > 0) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = "عدد المشاركين في المنافسة: ${state.playerCount}",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.W500,
+                color = TenDaysPalette.GoldDim,
+            )
+        }
+
         Spacer(Modifier.height(10.dp))
 
         if (state.leaderboard.isEmpty()) {
@@ -714,7 +724,11 @@ private fun MiniLeaderboard(state: TenDaysUiState) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "#${state.selfRank}  أنت",
+                        text = buildString {
+                            append("#${state.selfRank}")
+                            if (state.playerCount > 0) append(" من ${state.playerCount}")
+                            append("  أنت")
+                        },
                         fontSize = 13.sp,
                         fontWeight = FontWeight.W700,
                         color = TenDaysPalette.TextPrimary,

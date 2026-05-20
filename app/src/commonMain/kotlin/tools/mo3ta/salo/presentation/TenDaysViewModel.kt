@@ -35,6 +35,8 @@ class TenDaysViewModel(
     init {
         loadState()
         observeLeaderboard()
+        observePlayerCount()
+        observeSelfRank()
     }
 
     fun onDhikrTap(dhikr: DhikrType) {
@@ -164,8 +166,32 @@ class TenDaysViewModel(
             _state.update { it.copy(currentUid = uid) }
             firebaseClient.observeLeaderboard(periodKey).collectLatest { result ->
                 result.onSuccess { entries ->
-                    val selfRank = entries.indexOfFirst { it.uid == uid } + 1
-                    _state.update { it.copy(leaderboard = entries.take(10), selfRank = selfRank) }
+                    _state.update { it.copy(leaderboard = entries.take(10)) }
+                }
+            }
+        }
+    }
+
+    private fun observeSelfRank() {
+        viewModelScope.launch {
+            val periodKey = _state.value.periodKey
+            if (periodKey.isBlank()) return@launch
+            val uid = sessionStore.getOrCreateUid()
+            firebaseClient.observeSelfRank(periodKey, uid).collectLatest { result ->
+                result.onSuccess { rank ->
+                    _state.update { it.copy(selfRank = rank) }
+                }
+            }
+        }
+    }
+
+    private fun observePlayerCount() {
+        viewModelScope.launch {
+            val periodKey = _state.value.periodKey
+            if (periodKey.isBlank()) return@launch
+            firebaseClient.observePlayerCount(periodKey).collectLatest { result ->
+                result.onSuccess { count ->
+                    _state.update { it.copy(playerCount = count) }
                 }
             }
         }

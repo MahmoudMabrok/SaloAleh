@@ -287,7 +287,10 @@ async function populateTenDaysLeaderboard(db) {
     const playersSnap = await db.ref(`${root}/${periodKey}/players`).orderByChild('totalScore').get();
     if (!playersSnap.exists()) {
       console.log('No ten-days players found.');
-      await db.ref(`${root}/${periodKey}/leaderboard`).set({});
+      await Promise.all([
+        db.ref(`${root}/${periodKey}/leaderboard`).set({}),
+        db.ref(`${root}/${periodKey}/playerCount`).set(0),
+      ]);
       continue;
     }
 
@@ -332,6 +335,7 @@ async function populateTenDaysLeaderboard(db) {
     await Promise.all([
       db.ref('/').update(rankUpdates),
       db.ref(`${root}/${periodKey}/leaderboard`).set(leaderboard),
+      db.ref(`${root}/${periodKey}/playerCount`).set(allPlayers.length),
     ]);
     console.log(`Wrote ${top10.length} ten-days leaderboard entries (${allPlayers.length} total players).`);
 
