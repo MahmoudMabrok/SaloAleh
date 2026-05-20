@@ -73,28 +73,13 @@ OS you want to support:
 
 ## Building all platforms via CI
 
-`jpackage` cannot cross-compile, so use a GitHub Actions matrix that runs the
-build once per OS:
+`jpackage` cannot cross-compile, so [`.github/workflows/desktop-build.yml`](../.github/workflows/desktop-build.yml)
+runs the build once per OS in a matrix (`ubuntu-latest`, `macos-latest`,
+`windows-latest`) and uploads each installer as a workflow artifact
+(`saloaleh-desktop-linux` / `-macos` / `-windows`).
 
-```yaml
-jobs:
-  desktop:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-      - run: ./gradlew :desktop:packageDistributionForCurrentOS
-      - uses: actions/upload-artifact@v4
-        with:
-          name: saloaleh-desktop-${{ matrix.os }}
-          path: desktop/build/compose/binaries/main/
-```
+It triggers on pull requests to `main` that touch `desktop/**`, and can be
+run on demand via the **Actions → Desktop Build → Run workflow** button.
 
 ## Versioning
 
