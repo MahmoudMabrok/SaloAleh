@@ -22,3 +22,5 @@ iosApp/Pods/
 iosApp/iosApp.xcworkspace/
 GoogleService-Info.plist
 .worktrees/
+
+**node_modules**
