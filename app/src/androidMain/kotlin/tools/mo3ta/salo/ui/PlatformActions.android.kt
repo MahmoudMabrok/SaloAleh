@@ -352,6 +352,33 @@ actual fun BubbleFeaturePromo(roundKey: String?) {
 }
 
 @Composable
+actual fun TakbeerSessionButton() {
+    val context = LocalContext.current
+    val isActive by TakbeerSessionService.isRunning.collectAsState()
+
+    val label = if (isActive) "إيقاف جلسة التكبير" else "ابدأ جلسة التكبير"
+    val containerColor = if (isActive) Color(0xFFE53935) else TenDaysPalette.Gold
+
+    Button(
+        onClick = {
+            if (isActive) {
+                context.stopService(Intent(context, TakbeerSessionService::class.java))
+            } else {
+                ContextCompat.startForegroundService(
+                    context,
+                    Intent(context, TakbeerSessionService::class.java),
+                )
+            }
+        },
+        modifier = Modifier.fillMaxWidth(),
+        colors = ButtonDefaults.buttonColors(containerColor = containerColor),
+        shape = RoundedCornerShape(12.dp),
+    ) {
+        Text(label, color = Color.Black, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
 actual fun TakbeerOverlayButton(autoRemind: Boolean, intervalMinutes: Int, repeatCount: Int) {
     val context = LocalContext.current
     val isActive by TakbeerOverlayService.isRunning.collectAsState()

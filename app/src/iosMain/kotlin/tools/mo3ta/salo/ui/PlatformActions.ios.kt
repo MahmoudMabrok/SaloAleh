@@ -146,3 +146,6 @@ actual fun BubbleFeaturePromo(roundKey: String?) {}
 
 @Composable
 actual fun TakbeerOverlayButton(autoRemind: Boolean, intervalMinutes: Int, repeatCount: Int) {}
+
+@Composable
+actual fun TakbeerSessionButton() {}

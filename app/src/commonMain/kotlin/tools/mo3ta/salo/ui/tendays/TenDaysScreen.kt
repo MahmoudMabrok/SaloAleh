@@ -61,6 +61,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.data.tendays.DhikrType
 import tools.mo3ta.salo.ui.TakbeerOverlayButton
+import tools.mo3ta.salo.ui.TakbeerSessionButton
 import tools.mo3ta.salo.presentation.TenDaysDayState
 import tools.mo3ta.salo.presentation.TenDaysUiState
 import tools.mo3ta.salo.presentation.TenDaysViewModel
@@ -138,6 +139,15 @@ fun TenDaysScreen(
                 autoRemind = state.autoPlayTakbeer,
                 intervalMinutes = state.takbeerIntervalMinutes,
                 repeatCount = state.takbeerRepeatCount,
+            )
+            Spacer(Modifier.height(8.dp))
+            TakbeerSessionButton()
+            Text(
+                text = "تشغيل صوت التكبير بشكل متواصل في الخلفية حتى توقفه",
+                fontSize = 11.sp,
+                color = TenDaysPalette.TextSecondary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
             )
             Spacer(Modifier.height(14.dp))
             MiniLeaderboard(state)
