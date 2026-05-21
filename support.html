@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الدعم — صلوا عليه</title>
+  <meta name="description" content="صفحة الدعم والتواصل لتطبيق صلوا عليه">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:   #080910;
+      --deep:  #0c0f1c;
+      --card:  #111526;
+      --rim:   #191f35;
+      --gold:  #c8953c;
+      --shine: #e5b65a;
+      --glow:  rgba(200,149,60,.13);
+      --cream: #eedec4;
+      --dim:   rgba(238,222,196,.48);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--ink);
+      color: var(--cream);
+      font-family: 'Cairo', sans-serif;
+      font-weight: 400;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    a { color: var(--gold); text-decoration: none; transition: color .2s; }
+    a:hover { color: var(--shine); }
+
+    /* ─── NAV ─────────────────────────────────────────────────── */
+    nav {
+      padding: 1.25rem clamp(1.5rem, 6vw, 6rem);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(8,9,16,.85);
+      border-bottom: 1px solid rgba(200,149,60,.06);
+    }
+
+    .nav-brand {
+      font-family: 'Amiri', serif;
+      font-size: 1.6rem;
+      color: var(--gold);
+      text-decoration: none;
+    }
+
+    /* ─── MAIN ────────────────────────────────────────────────── */
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 4rem 1.5rem 3rem;
+      flex: 1;
+    }
+
+    h1 {
+      font-family: 'Amiri', serif;
+      font-size: 2.4rem;
+      color: var(--gold);
+      margin-bottom: .5rem;
+    }
+
+    .subtitle {
+      color: var(--dim);
+      font-size: 1.05rem;
+      margin-bottom: 3rem;
+      line-height: 1.9;
+    }
+
+    h2 {
+      font-size: 1.2rem;
+      color: var(--cream);
+      margin-bottom: 1rem;
+      padding-bottom: .5rem;
+      border-bottom: 1px solid rgba(200,149,60,.12);
+    }
+
+    .section {
+      margin-bottom: 2.5rem;
+    }
+
+    .section p, .section li {
+      color: var(--dim);
+      line-height: 2;
+      font-size: .95rem;
+    }
+
+    .section ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .section li {
+      padding: .6rem 0;
+      border-bottom: 1px solid rgba(200,149,60,.04);
+      display: flex;
+      align-items: flex-start;
+      gap: .6rem;
+    }
+
+    .section li::before {
+      content: '◆';
+      color: var(--gold);
+      font-size: .55rem;
+      margin-top: .65rem;
+      flex-shrink: 0;
+    }
+
+    .contact-card {
+      background: var(--card);
+      border: 1px solid var(--rim);
+      border-radius: 8px;
+      padding: 2rem;
+      margin-top: 1rem;
+    }
+
+    .contact-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: .8rem 0;
+      border-bottom: 1px solid rgba(200,149,60,.06);
+    }
+
+    .contact-row:last-child { border-bottom: none; }
+
+    .contact-label {
+      color: var(--dim);
+      font-size: .85rem;
+      min-width: 100px;
+    }
+
+    .contact-value {
+      color: var(--cream);
+      font-size: .95rem;
+    }
+
+    .contact-value a { direction: ltr; unicode-bidi: embed; }
+
+    .faq-item {
+      background: var(--card);
+      border: 1px solid var(--rim);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .faq-q {
+      color: var(--cream);
+      font-weight: 600;
+      font-size: .95rem;
+      margin-bottom: .5rem;
+    }
+
+    .faq-a {
+      color: var(--dim);
+      font-size: .9rem;
+      line-height: 2;
+    }
+
+    /* ─── FOOTER ──────────────────────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 2rem 1.5rem;
+      border-top: 1px solid rgba(200,149,60,.06);
+      color: var(--dim);
+      font-size: .8rem;
+    }
+
+    @media (max-width: 480px) {
+      h1 { font-size: 1.8rem; }
+      .container { padding: 2.5rem 1rem 2rem; }
+      .contact-row { flex-direction: column; gap: .3rem; }
+      .contact-label { min-width: auto; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="landing.html" class="nav-brand">صلوا عليه</a>
+  </nav>
+
+  <div class="container">
+    <h1>الدعم والمساعدة</h1>
+    <p class="subtitle">نسعد بتواصلكم معنا لأي استفسار أو ملاحظة بخصوص تطبيق «صلوا عليه»</p>
+
+    <div class="section">
+      <h2>عن التطبيق</h2>
+      <p>
+        تطبيق «صلوا عليه» هو منافسة أسبوعية للصلاة على النبي ﷺ.
+        يمكنك المشاركة مع المسلمين حول العالم في إرسال الصلاة على النبي ﷺ
+        ومتابعة ترتيبك في لوحة المتصدرين، وكسب الإنجازات كل أسبوع.
+      </p>
+    </div>
+
+    <div class="section">
+      <h2>الأسئلة الشائعة</h2>
+
+      <div class="faq-item">
+        <div class="faq-q">كيف يتم حساب النقاط؟</div>
+        <div class="faq-a">كل ضغطة على زر الصلاة على النبي ﷺ تُحتسب نقطة واحدة. يتم تجميع النقاط خلال الجولة الأسبوعية التي تبدأ وتنتهي كل جمعة.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">متى تبدأ الجولة الجديدة؟</div>
+        <div class="faq-a">تبدأ كل جولة عند منتصف ليل الجمعة بتوقيت القاهرة، وتستمر حتى منتصف ليل الجمعة التالية.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">هل أحتاج إلى إنشاء حساب؟</div>
+        <div class="faq-a">لا، التطبيق يعمل تلقائيًا بدون تسجيل دخول. يتم التعرف على جهازك بمعرّف فريد مجهول الهوية.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">هل بياناتي آمنة؟</div>
+        <div class="faq-a">نعم. لا نجمع أي بيانات شخصية. المعلومات المحفوظة هي عدد الصلوات ومعرّف الجهاز فقط.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">التطبيق لا يعمل أو يظهر خطأ</div>
+        <div class="faq-a">تأكد من اتصالك بالإنترنت وأن لديك آخر إصدار من التطبيق. إذا استمرت المشكلة، تواصل معنا عبر البريد الإلكتروني أدناه.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>تواصل معنا</h2>
+      <div class="contact-card">
+        <div class="contact-row">
+          <span class="contact-label">البريد الإلكتروني</span>
+          <span class="contact-value"><a href="mailto:mahmoudmabrok3579@gmail.com">mahmoudmabrok3579@gmail.com</a></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>معلومات إضافية</h2>
+      <ul>
+        <li>التطبيق مجاني بالكامل</li>
+        <li>متوفر على Android و iOS</li>
+        <li>لا يتطلب تسجيل دخول أو بيانات شخصية</li>
+        <li>نرحب بملاحظاتكم واقتراحاتكم لتحسين التطبيق</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>
+    صلوا عليه — جميع الحقوق محفوظة &copy; 2025
+  </footer>
+
+</body>
+</html>

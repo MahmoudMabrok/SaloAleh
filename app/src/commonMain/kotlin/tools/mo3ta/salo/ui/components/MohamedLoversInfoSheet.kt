@@ -467,6 +467,10 @@ private fun LeaderboardRow(entry: MohamedLoversLeaderboardEntry, pinned: Boolean
         .fillMaxWidth()
         .clip(RoundedCornerShape(10.dp))
         .background(backgroundColor)
+        .then(
+            if (entry.isSupporter) Modifier.border(1.dp, MohamedLoversPalette.GoldHighlight.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
+            else Modifier
+        )
         .padding(horizontal = 10.dp, vertical = 8.dp)
     Row(
         modifier = rowModifier,
