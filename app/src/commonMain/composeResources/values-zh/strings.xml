@@ -170,6 +170,8 @@
     <string name="paywall_hide_score_subtitle">在排行榜上对他人隐藏你的分数</string>
     <string name="paywall_supporter_badge_title">支持者徽章</string>
     <string name="paywall_supporter_badge_subtitle">排行榜上你名字旁的特别徽章</string>
+    <string name="paywall_friday_scores_title">查看周五分数</string>
+    <string name="paywall_friday_scores_subtitle">在比赛期间查看其他玩家的分数</string>
     <string name="paywall_score_hidden_description">你的分数已对其他参与者隐藏</string>
     <string name="paywall_hide_score_plus_badge">隐藏分数 + 支持者徽章</string>
     <string name="paywall_support_now_price">立即支持 — %1$s</string>

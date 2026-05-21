@@ -600,14 +600,14 @@ private fun LeaderboardCard(
             )
         } else {
             topPlayers.forEach { entry ->
-                LeaderboardRow(entry = entry, pinned = false, onSupporterClick = onSupporterClick)
+                LeaderboardRow(entry = entry, pinned = false, isPremium = isPremium, onSupporterClick = onSupporterClick)
             }
         }
     }
 }
 
 @Composable
-private fun LeaderboardRow(entry: MohamedLoversLeaderboardEntry, pinned: Boolean, onSupporterClick: () -> Unit = {}) {
+private fun LeaderboardRow(entry: MohamedLoversLeaderboardEntry, pinned: Boolean, isPremium: Boolean = false, onSupporterClick: () -> Unit = {}) {
     val rankColor = when (entry.rank) {
         1 -> MohamedLoversPalette.GoldHighlight
         2 -> MohamedLoversPalette.RankSilver
@@ -675,7 +675,7 @@ private fun LeaderboardRow(entry: MohamedLoversLeaderboardEntry, pinned: Boolean
             val isFriday = Clock.System.now()
                 .toLocalDateTime(TimeZone.of("Africa/Cairo"))
                 .dayOfWeek == kotlinx.datetime.DayOfWeek.FRIDAY
-            if (entry.isCurrentUser || !isFriday) {
+            if (entry.isCurrentUser || !isFriday || isPremium) {
                 Text(
                     text = entry.totalCount.toString(),
                     style = bodyStyle().copy(

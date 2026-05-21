@@ -125,6 +125,8 @@ fun PaywallScreen(onBack: () -> Unit) {
             FeatureCard(icon = "🔒", title = stringResource(Res.string.paywall_hide_score_title), subtitle = stringResource(Res.string.paywall_hide_score_subtitle))
             Spacer(Modifier.height(10.dp))
             FeatureCard(icon = "⭐", title = stringResource(Res.string.paywall_supporter_badge_title), subtitle = stringResource(Res.string.paywall_supporter_badge_subtitle))
+            Spacer(Modifier.height(10.dp))
+            FeatureCard(icon = "👁️", title = stringResource(Res.string.paywall_friday_scores_title), subtitle = stringResource(Res.string.paywall_friday_scores_subtitle))
             Spacer(Modifier.height(28.dp))
 
             if (isPremium) {

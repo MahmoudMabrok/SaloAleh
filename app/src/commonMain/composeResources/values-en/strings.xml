@@ -170,6 +170,8 @@
     <string name="paywall_hide_score_subtitle">Hide your score from others on the leaderboard</string>
     <string name="paywall_supporter_badge_title">Supporter Badge</string>
     <string name="paywall_supporter_badge_subtitle">A special badge next to your name on the leaderboard</string>
+    <string name="paywall_friday_scores_title">Reveal Friday Scores</string>
+    <string name="paywall_friday_scores_subtitle">See other players\' scores during the competition</string>
     <string name="paywall_score_hidden_description">Your score is hidden from other participants</string>
     <string name="paywall_hide_score_plus_badge">Hide Score + Supporter Badge</string>
     <string name="paywall_support_now_price">Support Now — %1$s</string>

@@ -18,8 +18,8 @@ object ProductRegistry {
 
     val tiers: List<SupportTier> = listOf(
         SupportTier(SUPPORT_BASIC, "صدقة جارية", "$0.99", "☕", setOf(PremiumFeature.SUPPORTER_BADGE)),
-        SupportTier(SUPPORT_PREMIUM, "نصرة الحبيب ﷺ", "$1.99", "🌟", setOf(PremiumFeature.SCORE_MASK, PremiumFeature.SUPPORTER_BADGE)),
-        SupportTier(SUPPORT_GENEROUS, "سبّاق إلى الخيرات", "$4.99", "💎", setOf(PremiumFeature.SCORE_MASK, PremiumFeature.SUPPORTER_BADGE)),
+        SupportTier(SUPPORT_PREMIUM, "نصرة الحبيب ﷺ", "$1.99", "🌟", setOf(PremiumFeature.SCORE_MASK, PremiumFeature.SUPPORTER_BADGE, PremiumFeature.FRIDAY_SCORES)),
+        SupportTier(SUPPORT_GENEROUS, "سبّاق إلى الخيرات", "$4.99", "💎", setOf(PremiumFeature.SCORE_MASK, PremiumFeature.SUPPORTER_BADGE, PremiumFeature.FRIDAY_SCORES)),
     )
 
     private val productFeatures: Map<String, Set<PremiumFeature>> =

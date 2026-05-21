@@ -496,7 +496,7 @@ fun MohamedLoversScreen(
                 copyToClipboard(code)
                 showPlatformToast(codeCopiedLabel)
             },
-            isPremium = premiumStore.hasFeature(PremiumFeature.SUPPORTER_BADGE),
+            isPremium = premiumStore.hasFeature(PremiumFeature.FRIDAY_SCORES),
             onOpenPaywall = {
                 infoSheetOpen = false
                 onOpenPaywall()
