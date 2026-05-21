@@ -23,6 +23,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import org.jetbrains.compose.resources.stringResource
+import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.*
 
 @Composable
 fun TenDaysPromoDialog(
@@ -43,14 +46,14 @@ fun TenDaysPromoDialog(
             )
             Spacer(Modifier.height(12.dp))
             Text(
-                text = "عشر ذي الحجة",
+                text = stringResource(Res.string.tendays_title),
                 color = Color.White,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "أفضل أيام الدنيا!\nسجّل أعمالك اليومية من تكبير وصيام وصدقة وذكر\nونافس المسلمين في الخير",
+                text = stringResource(Res.string.tendays_promo_description),
                 color = Color.White.copy(alpha = 0.85f),
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
@@ -63,11 +66,11 @@ fun TenDaysPromoDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = TenDaysPalette.Gold),
                 shape = RoundedCornerShape(12.dp),
             ) {
-                Text("ابدأ الآن", color = Color.Black, fontWeight = FontWeight.Bold)
+                Text(stringResource(Res.string.tendays_promo_start), color = Color.Black, fontWeight = FontWeight.Bold)
             }
             Spacer(Modifier.height(8.dp))
             TextButton(onClick = onDismiss) {
-                Text("لاحقًا", color = Color.White.copy(alpha = 0.6f))
+                Text(stringResource(Res.string.tendays_promo_later), color = Color.White.copy(alpha = 0.6f))
             }
         }
     }

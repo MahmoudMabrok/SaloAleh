@@ -21,6 +21,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import org.jetbrains.compose.resources.stringResource
+import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.*
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 
 @Composable
@@ -42,14 +45,14 @@ fun BubbleFeaturePromoDialog(
                 fontSize = 48.sp,
             )
             Text(
-                text = "ميزة جديدة: فقاعة الصلوات",
+                text = stringResource(Res.string.bubble_promo_title),
                 color = Color.White,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
             )
             Text(
-                text = "الآن تقدر تصلّي على النبي ﷺ وأنت تستخدم أي تطبيق!\n\n• فقاعة صغيرة تظهر فوق التطبيقات\n• اضغط عليها لعدّ صلواتك\n• تذكير كل ١٠ دقائق بالصلاة على النبي ﷺ",
+                text = stringResource(Res.string.bubble_promo_description),
                 color = Color.White.copy(alpha = 0.8f),
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
@@ -62,10 +65,10 @@ fun BubbleFeaturePromoDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = MohamedLoversPalette.Gold),
                 shape = RoundedCornerShape(12.dp),
             ) {
-                Text("جربها الآن", color = Color.Black, fontWeight = FontWeight.Bold)
+                Text(stringResource(Res.string.bubble_promo_try_now), color = Color.Black, fontWeight = FontWeight.Bold)
             }
             TextButton(onClick = onDismiss) {
-                Text("لاحقاً", color = Color.White.copy(alpha = 0.6f), fontSize = 13.sp)
+                Text(stringResource(Res.string.bubble_promo_later), color = Color.White.copy(alpha = 0.6f), fontSize = 13.sp)
             }
         }
     }

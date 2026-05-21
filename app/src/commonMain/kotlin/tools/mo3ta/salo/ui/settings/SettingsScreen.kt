@@ -42,7 +42,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
+import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.*
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.data.billing.BillingManager
 import tools.mo3ta.salo.data.billing.PremiumStore
@@ -82,6 +85,9 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
     val billingManager: BillingManager = koinInject()
     val premiumStore: PremiumStore = koinInject()
     val supporterTier = premiumStore.highestTier
+    val enableNotifToast = stringResource(Res.string.settings_enable_notifications_toast)
+    val enableExactAlarmToast = stringResource(Res.string.settings_enable_exact_alarm_toast)
+
     LaunchedEffect(Unit){
         analyticsManager.logView("SettingsScreen")
     }
@@ -103,7 +109,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
             TopAppBar(
                 title = {
                     Text(
-                        text = "الإعدادات",
+                        text = stringResource(Res.string.settings_title),
                         color = MohamedLoversPalette.GoldGlow,
                         fontWeight = FontWeight.Bold,
                     )
@@ -112,7 +118,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "رجوع",
+                            contentDescription = stringResource(Res.string.mohamed_lovers_back_cd),
                             tint = MohamedLoversPalette.GoldGlow,
                         )
                     }
@@ -131,7 +137,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
                 .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
             Text(
-                text = "الإشعارات",
+                text = stringResource(Res.string.settings_notifications_header),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -140,7 +146,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
 
             if (!notifPermGranted) {
                 SettingLinkRow(
-                    label = "الإشعارات معطّلة — اضغط للتفعيل",
+                    label = stringResource(Res.string.settings_notifications_disabled),
                     labelColor = Color(0xFFFF6B6B),
                     onClick = { openNotificationSettings() },
                 )
@@ -148,26 +154,26 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
 
             if (!exactAlarmGranted) {
                 SettingLinkRow(
-                    label = "التوقيت الدقيق للإشعارات غير مفعّل — اضغط للتفعيل",
+                    label = stringResource(Res.string.settings_exact_alarm_disabled),
                     labelColor = Color(0xFFFFC857),
                     onClick = { requestExactAlarmPermission() },
                 )
             }
 
             SettingToggleRow(
-                label = "تذكير يومي",
-                subtitle = "مرة واحدة يوميًا",
+                label = stringResource(Res.string.settings_daily_reminder),
+                subtitle = stringResource(Res.string.settings_daily_reminder_subtitle),
                 checked = dailyEnabled,
                 onToggle = { checked ->
                     if (checked && !notifPermGranted) {
-                        showPlatformToast("فعّل إشعارات التطبيق أولاً")
+                        showPlatformToast(enableNotifToast)
                         openNotificationSettings()
                     } else {
                         dailyEnabled = checked
                         store.dailyEnabled = checked
                         NotificationScheduler.apply(checked, store.fridayEnabled)
                         if (checked && !exactAlarmGranted) {
-                            showPlatformToast("فعّل التوقيت الدقيق ليصل التذكير في موعده بالضبط")
+                            showPlatformToast(enableExactAlarmToast)
                             requestExactAlarmPermission()
                         }
                     }
@@ -175,19 +181,19 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
             )
 
             SettingToggleRow(
-                label = "إشعارات الجمعة",
-                subtitle = "كل ساعة من 9ص – 5م",
+                label = stringResource(Res.string.settings_friday_notifications),
+                subtitle = stringResource(Res.string.settings_friday_notifications_subtitle),
                 checked = fridayEnabled,
                 onToggle = { checked ->
                     if (checked && !notifPermGranted) {
-                        showPlatformToast("فعّل إشعارات التطبيق أولاً")
+                        showPlatformToast(enableNotifToast)
                         openNotificationSettings()
                     } else {
                         fridayEnabled = checked
                         store.fridayEnabled = checked
                         NotificationScheduler.apply(store.dailyEnabled, checked)
                         if (checked && !exactAlarmGranted) {
-                            showPlatformToast("فعّل التوقيت الدقيق ليصل التذكير في موعده بالضبط")
+                            showPlatformToast(enableExactAlarmToast)
                             requestExactAlarmPermission()
                         }
                     }
@@ -195,7 +201,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
             )
 
             Text(
-                text = "المحتوى",
+                text = stringResource(Res.string.settings_content_header),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -203,8 +209,8 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
             )
 
             SettingToggleRow(
-                label = "حديث عند الفتح",
-                subtitle = "عرض حديث في فضل الصلاة على النبي ﷺ",
+                label = stringResource(Res.string.settings_hadith_on_open),
+                subtitle = stringResource(Res.string.settings_hadith_on_open_subtitle),
                 checked = hadithOnStartup,
                 onToggle = { checked ->
                     hadithOnStartup = checked
@@ -213,8 +219,8 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
             )
 
             SettingToggleRow(
-                label = "عرض ترتيبك",
-                subtitle = "إظهار مرتبتك في المسابقة على الشاشة الرئيسية",
+                label = stringResource(Res.string.settings_show_rank),
+                subtitle = stringResource(Res.string.settings_show_rank_subtitle),
                 checked = showRankChip,
                 onToggle = { checked ->
                     showRankChip = checked
@@ -223,8 +229,8 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
             )
 
             SettingToggleRow(
-                label = "لوحة المتصدرين اليومية",
-                subtitle = "ترتيب بناءً على صلوات اليوم فقط",
+                label = stringResource(Res.string.settings_daily_leaderboard),
+                subtitle = stringResource(Res.string.settings_daily_leaderboard_subtitle),
                 checked = useDailyLeaderboard,
                 onToggle = { checked ->
                     useDailyLeaderboard = checked
@@ -241,7 +247,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
 //            )
 
             Text(
-                text = "المزامنة",
+                text = stringResource(Res.string.settings_sync_header),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -251,18 +257,18 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
             val uriHandler = LocalUriHandler.current
 
             SettingLinkRow(
-                label = "مزامنة من إضافة المتصفح",
+                label = stringResource(Res.string.settings_sync_from_extension),
                 onClick = onOpenExtensionQr,
             )
 
             SettingLinkRow(
-                label = "حمّل إضافة كروم",
+                label = stringResource(Res.string.settings_download_chrome_extension),
                 onClick = { uriHandler.openUri("https://mahmoudmabrok.github.io/SaloAleh/landing.html#extension") },
             )
 
             if (billingManager.isEnabled) {
                 Text(
-                    text = "الدعم",
+                    text = stringResource(Res.string.settings_support_header),
                     color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -272,7 +278,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
                     SupporterStatusCard(tier = supporterTier, onClick = onOpenPaywall)
                 } else {
                     SettingLinkRow(
-                        label = "🌟 ادعم التطبيق",
+                        label = stringResource(Res.string.settings_support_app),
                         labelColor = MohamedLoversPalette.GoldGlow,
                         onClick = onOpenPaywall,
                     )
@@ -280,7 +286,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
             }
 
             Text(
-                text = "عن التطبيق",
+                text = stringResource(Res.string.settings_about_header),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -288,21 +294,21 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
             )
 
             SettingLinkRow(
-                label = "دليل التطبيق",
+                label = stringResource(Res.string.settings_app_guide),
                 onClick = onOpenOnboarding,
             )
             SettingLinkRow(
-                label = "سياسة الخصوصية",
+                label = stringResource(Res.string.settings_privacy_policy),
                 onClick = { uriHandler.openUri("https://mahmoudmabrok.github.io/MyDataCenter/policy/salo.html") },
             )
 
             SettingLinkRow(
-                label = "مشاركة التطبيق",
+                label = stringResource(Res.string.settings_share_app),
                 onClick = { shareText(getStoreUrl()) },
             )
 
             SettingLinkRow(
-                label = "فتح صفحة المتجر",
+                label = stringResource(Res.string.settings_open_store_page),
                 onClick = { openStorePage() },
             )
 
@@ -313,7 +319,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "إصدار التطبيق",
+                    text = stringResource(Res.string.settings_app_version),
                     color = Color.White,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium,
@@ -374,13 +380,13 @@ private fun SupporterStatusCard(tier: SupportTier, onClick: () -> Unit) {
         Text(text = tier.emoji, fontSize = 24.sp)
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "أنت داعم — ${tier.label}",
+                text = stringResource(Res.string.settings_supporter_status, tier.label),
                 color = MohamedLoversPalette.GoldGlow,
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
             )
             Text(
-                text = "اضغط لإدارة المزايا",
+                text = stringResource(Res.string.settings_manage_features),
                 color = Color.White.copy(alpha = 0.55f),
                 fontSize = 12.sp,
             )

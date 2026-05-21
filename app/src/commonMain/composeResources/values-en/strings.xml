@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Lovers of Muhammad</string>
+
+    <!-- Counter -->
+    <string name="mohamed_lovers_counter_tag">Prayers upon the Prophet &#xFDFA;</string>
+    <string name="mohamed_lovers_friday_bonus_label">Friday bonus &#xD7; 2</string>
+    <string name="mohamed_lovers_counter_pending">Session: %1$d</string>
+    <string name="mohamed_lovers_counter_hint">Tap to send blessings upon the Prophet &#xFDFA;</string>
+
+    <!-- Arch Shrine -->
+    <string name="mohamed_lovers_shrine_label">The Noble Chamber &#xFDFA;</string>
+    <string name="mohamed_lovers_shrine_sub">O Allah, send blessings and peace upon him</string>
+
+    <!-- Hadith Banner -->
+    <string name="mohamed_lovers_hadith_isnad">Abu Hurayrah (may Allah be pleased with him) narrated that the Prophet &#xFDFA; said</string>
+    <string name="mohamed_lovers_hadith_quote">&#x00AB;No one sends greetings upon me except that Allah returns my soul so that I may return his greeting&#x00BB;</string>
+
+    <!-- Info Sheet -->
+    <string name="mohamed_lovers_info_sheet_title">Lovers of Muhammad &#xFDFA;</string>
+    <string name="mohamed_lovers_status_title">Status</string>
+    <string name="mohamed_lovers_status_waiting_network">Syncing time from network&#x2026;</string>
+    <string name="mohamed_lovers_status_firebase_off">Service connection unavailable</string>
+    <string name="mohamed_lovers_status_open">Connected</string>
+    <string name="mohamed_lovers_network_time">Time: %1$s</string>
+    <string name="mohamed_lovers_round_end_label">Round ends: %1$s</string>
+    <string name="mohamed_lovers_country_label">Country: %1$s</string>
+    <string name="mohamed_lovers_self_tag_label">ID: %1$s</string>
+    <string name="mohamed_lovers_stats_title">Statistics</string>
+    <string name="mohamed_lovers_competition_title">&#x1F3C6; Competition</string>
+    <string name="mohamed_lovers_countdown_day">day</string>
+    <string name="mohamed_lovers_countdown_hour">hr</string>
+    <string name="mohamed_lovers_countdown_minute">min</string>
+    <string name="mohamed_lovers_countdown_second">sec</string>
+    <string name="mohamed_lovers_ornament_divider">&#x25C6;</string>
+    <string name="mohamed_lovers_rank_number">#%1$d</string>
+    <string name="mohamed_lovers_round_total_label">Prayers upon the Prophet this round</string>
+    <string name="mohamed_lovers_round_player_count_label">Players this round: %1$d</string>
+    <string name="mohamed_lovers_all_time_total_label">Total prayers upon the Prophet all time</string>
+    <string name="mohamed_lovers_leaderboard_title">Leaderboard</string>
+    <string name="mohamed_lovers_leaderboard_refresh_note">Updated every 30 minutes</string>
+    <string name="mohamed_lovers_leaderboard_weekly">Weekly</string>
+    <string name="mohamed_lovers_leaderboard_daily">Daily</string>
+    <string name="mohamed_lovers_rank_pending_top">You are on your way to the top</string>
+    <string name="mohamed_lovers_leaderboard_empty">No participants yet</string>
+    <string name="mohamed_lovers_winner_title">You are the winner!</string>
+    <string name="mohamed_lovers_winner_placeholder">To be announced soon</string>
+    <string name="mohamed_lovers_banner">Every Friday prayers are doubled &#x2014; don\'t miss Friday!</string>
+
+    <!-- Main Screen Top Bar -->
+    <string name="main_screen_rank_chip_label">Your rank </string>
+    <string name="main_screen_rank_chip_tooltip">You can control this from Settings</string>
+    <string name="main_screen_bubble_tooltip">Send blessings on the Prophet ﷺ while browsing</string>
+    <string name="main_screen_manual_salawat_button">📿 Log external salawat</string>
+    <string name="main_screen_tooltip_settings">Settings and notifications</string>
+    <string name="main_screen_cd_settings">Settings</string>
+    <string name="main_screen_tooltip_achievements">Your achievements and rank in previous rounds</string>
+    <string name="main_screen_cd_achievements">Achievements</string>
+    <string name="main_screen_tooltip_hadith">Hadiths on the virtue of sending blessings upon the Prophet</string>
+    <string name="main_screen_cd_hadith">Hadiths</string>
+    <string name="main_screen_tooltip_ten_days">Deeds and virtues of the ten days of Dhul-Hijjah</string>
+    <string name="main_screen_cd_ten_days">Ten Days of Dhul-Hijjah</string>
+    <string name="main_screen_tooltip_takbeer">Group takbeer session</string>
+    <string name="main_screen_cd_takbeer">Takbeer session</string>
+    <string name="main_screen_tooltip_info">Round info and how to play</string>
+
+    <!-- Info Sheet Supporter -->
+    <string name="info_sheet_supporter_label">⭐ Supporter</string>
+
+    <!-- Screen / Platform Actions -->
+    <string name="mohamed_lovers_code_copied">Code copied</string>
+    <string name="mohamed_lovers_connection_error">Connection error, please try again later</string>
+    <string name="mohamed_lovers_prayer_text">O Allah, send blessings upon Muhammad and his family</string>
+    <string name="mohamed_lovers_reward_text">May Allah bless you</string>
+    <string name="mohamed_lovers_blocked_waiting_network">Syncing time&#x2026;</string>
+    <string name="mohamed_lovers_blocked_firebase_off">Connection unavailable</string>
+    <string name="mohamed_lovers_back_cd">Back</string>
+    <string name="mohamed_lovers_info_cd">Info</string>
+    <string name="mohamed_lovers_share_rank">Share my rank</string>
+
+    <!-- Round Recap Sheet -->
+    <string name="recap_title">Round over!</string>
+    <string name="recap_rank_label">You ranked #%1$d out of %2$d participants</string>
+    <string name="recap_personal_best">&#x1F396; Your best rank ever!</string>
+    <string name="recap_taps_up">+%1$d prayers more than last week</string>
+    <string name="recap_taps_down">%1$d prayers fewer than last week</string>
+    <string name="recap_cta">Start new round</string>
+
+    <!-- Streak Grace Dialog -->
+    <string name="grace_warning_title">We saved your streak</string>
+    <string name="grace_warning">You missed one day, so the weekly grace was used to keep your streak alive. Open the app tomorrow to keep going.</string>
+    <string name="grace_warning_cta">Got it</string>
+
+    <!-- Daily Goal -->
+    <string name="daily_goal_completed">Well done! Today\'s goal is complete &#x1F389;</string>
+    <string name="daily_goal_progress">%1$d / %2$d prayers</string>
+
+    <!-- Achievements Screen -->
+    <string name="achievements_title">My Achievements</string>
+    <string name="achievements_back_cd">Back</string>
+    <string name="achievements_stat_badges">Badges</string>
+    <string name="achievements_stat_rounds">Rounds</string>
+    <string name="achievements_stat_best_rank">Best Rank</string>
+    <string name="achievements_section_streak_badges">Streak Badges</string>
+    <string name="achievements_section_rank_badges">Rank Badges</string>
+    <string name="achievements_section_round_history">Round Achievements</string>
+    <string name="achievements_medal_info_cd">Medal information</string>
+    <string name="achievements_badge_streak_7_title">Dedication</string>
+    <string name="achievements_badge_streak_7_how">Open the app 7 consecutive days without a break</string>
+    <string name="achievements_badge_streak_30_title">The Devoted</string>
+    <string name="achievements_badge_streak_30_how">Open the app 30 consecutive days without a break</string>
+    <string name="achievements_badge_rank_title">Rank %1$d</string>
+    <string name="achievements_badge_rank_how">Achieve rank %1$d in any competitive round</string>
+    <string name="achievements_badge_how_label">How to earn it:</string>
+    <string name="achievements_badge_repeatable">Can be earned more than once</string>
+    <string name="achievements_dialog_ok">OK</string>
+    <string name="achievements_medal_info_title">Rank Badges</string>
+    <string name="achievements_medal_info_body">Medals are added every Friday when the weekly competition ends.\n\nKeep participating every week and achieve the highest rank!</string>
+    <string name="achievements_empty_history">You haven\'t participated in any round yet\nKeep participating!</string>
+    <string name="achievements_streak_complete">Complete</string>
+    <string name="achievements_streak_progress">%1$d / %2$d</string>
+    <string name="achievements_round_rank">Rank %1$d</string>
+    <string name="achievements_round_label">Round:</string>
+    <string name="achievements_prayer_count_label">Prayer count</string>
+    <string name="achievements_copy_winner_code_cd">Copy winner code</string>
+
+    <!-- Achievement Celebration Dialog -->
+    <string name="achievement_celebration_streak_7_title">A week of devotion!</string>
+    <string name="achievement_celebration_streak_7_subtitle">You earned the "Dedication" badge for opening the app 7 consecutive days. You are among the faithful.</string>
+    <string name="achievement_celebration_streak_30_title">A month of faithfulness!</string>
+    <string name="achievement_celebration_streak_30_subtitle">You earned the "Devoted" badge for opening the app 30 consecutive days. May God bless you.</string>
+    <string name="achievement_celebration_rank_title">Rank %1$d in the leaderboard!</string>
+    <string name="achievement_celebration_rank_subtitle">You reached the top 10 in round %1$s. May God bless you.</string>
+    <string name="achievement_celebration_dismiss">Great! Thanks</string>
+
+    <!-- Takbeer Session Screen -->
+    <string name="takbeer_back_cd">Back</string>
+    <string name="takbeer_session_title">Group Takbeer Session</string>
+    <string name="takbeer_session_subtitle">Take turns saying takbeer in a circle — listen until your turn</string>
+    <string name="takbeer_people_count_label">Number of participants</string>
+    <string name="takbeer_people_count_hint">Including you — from 2 to 10</string>
+    <string name="takbeer_start_session">Start session</string>
+    <string name="takbeer_how_it_works_title">How does the session work?</string>
+    <string name="takbeer_how_step_1">Set the number of participants in the circle.</string>
+    <string name="takbeer_how_step_2">The takbeer rotates among participants one by one.</string>
+    <string name="takbeer_how_step_3">When it\'s your turn (U) the audio stops and "Your turn" appears — say the takbeer aloud.</string>
+    <string name="takbeer_how_step_4">Press "Done" to pass the turn and continue the circle.</string>
+    <string name="takbeer_your_turn_instruction">Say the takbeer aloud, then press "Done" to pass the turn</string>
+    <string name="takbeer_done_next_turn">Done — next turn</string>
+    <string name="takbeer_listen_wait">Listen to the others… get ready, your turn is coming</string>
+    <string name="takbeer_stop_session">End session</string>
+    <string name="takbeer_round_number">Round %1$d</string>
+    <string name="takbeer_your_turn">Your turn</string>
+    <string name="takbeer_label">Takbeer</string>
+    <string name="takbeer_participant_number">Participant %1$d</string>
+
+    <!-- Takbeer Announcement Dialog -->
+    <string name="takbeer_announcement_title">Group Takbeer Session</string>
+    <string name="takbeer_announcement_body">Take turns saying takbeer with your friends!\nSet the number of participants and start\nEach person says it aloud and presses "Done"</string>
+    <string name="takbeer_announcement_cta">Start session</string>
+    <string name="takbeer_announcement_dismiss">Later</string>
+
+    <!-- Paywall Screen -->
+    <string name="paywall_supporter_settings_title">Supporter Settings</string>
+    <string name="paywall_support_app_title">Support the App</string>
+    <string name="paywall_you_are_supporter">You\'re a Supporter! ✅</string>
+    <string name="paywall_thanks_subtitle">Thanks for your support — here are your exclusive feature settings</string>
+    <string name="paywall_contribute_subtitle">Help develop the app and get exclusive features</string>
+    <string name="paywall_hide_score_title">Hide Score</string>
+    <string name="paywall_hide_score_subtitle">Hide your score from others on the leaderboard</string>
+    <string name="paywall_supporter_badge_title">Supporter Badge</string>
+    <string name="paywall_supporter_badge_subtitle">A special badge next to your name on the leaderboard</string>
+    <string name="paywall_score_hidden_description">Your score is hidden from other participants</string>
+    <string name="paywall_hide_score_plus_badge">Hide Score + Supporter Badge</string>
+    <string name="paywall_support_now_price">Support Now — %1$s</string>
+    <string name="paywall_support_now">Support Now</string>
+    <string name="paywall_restore_purchases">Restore Purchases</string>
+
+    <!-- Premium Promo Dialog -->
+    <string name="premium_promo_description">Help spread prayers upon the Prophet ﷺ\nand get exclusive features like hiding your score and a supporter badge</string>
+    <string name="premium_promo_later">Later</string>
+
+    <!-- Purchase Success Dialog -->
+    <string name="purchase_success_title">May Allah reward you!</string>
+    <string name="purchase_success_activated">"%1$s" activated — may Allah bless your support</string>
+    <string name="purchase_success_dismiss">Great! Thanks</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_notifications_header">Notifications</string>
+    <string name="settings_notifications_disabled">Notifications disabled — tap to enable</string>
+    <string name="settings_exact_alarm_disabled">Exact alarm timing not enabled — tap to enable</string>
+    <string name="settings_daily_reminder">Daily reminder</string>
+    <string name="settings_daily_reminder_subtitle">Once a day</string>
+    <string name="settings_enable_notifications_toast">Enable app notifications first</string>
+    <string name="settings_enable_exact_alarm_toast">Enable exact timing for reminders to arrive on time</string>
+    <string name="settings_friday_notifications">Friday notifications</string>
+    <string name="settings_friday_notifications_subtitle">Hourly from 9 AM – 5 PM</string>
+    <string name="settings_content_header">Content</string>
+    <string name="settings_hadith_on_open">Hadith on open</string>
+    <string name="settings_hadith_on_open_subtitle">Show a hadith about the virtue of sending blessings upon the Prophet ﷺ</string>
+    <string name="settings_show_rank">Show your rank</string>
+    <string name="settings_show_rank_subtitle">Display your competition rank on the main screen</string>
+    <string name="settings_daily_leaderboard">Daily leaderboard</string>
+    <string name="settings_daily_leaderboard_subtitle">Ranking based on today\'s prayers only</string>
+    <string name="settings_sync_header">Sync</string>
+    <string name="settings_sync_from_extension">Sync from browser extension</string>
+    <string name="settings_download_chrome_extension">Download Chrome extension</string>
+    <string name="settings_support_header">Support</string>
+    <string name="settings_support_app">🌟 Support the app</string>
+    <string name="settings_about_header">About the app</string>
+    <string name="settings_app_guide">App guide</string>
+    <string name="settings_privacy_policy">Privacy policy</string>
+    <string name="settings_share_app">Share the app</string>
+    <string name="settings_open_store_page">Open store page</string>
+    <string name="settings_app_version">App version</string>
+    <string name="settings_supporter_status">You are a supporter — %1$s</string>
+    <string name="settings_manage_features">Tap to manage features</string>
+
+    <!-- Extension QR Screen -->
+    <string name="extension_qr_title">Sync data</string>
+    <string name="extension_qr_warning_title">Warning</string>
+    <string name="extension_qr_warning_message">Any invalid code will reset your score in the current round.</string>
+    <string name="extension_qr_scan_instruction">Scan the code from the browser extension only.</string>
+    <string name="extension_qr_sync_now">Sync now</string>
+    <string name="extension_qr_success_toast">Added %1$d prayers from the extension ✓</string>
+    <string name="extension_qr_cheat_toast">⚠️ %1$s — your score has been reset</string>
+    <string name="extension_qr_error_toast">⚠️ %1$s</string>
+
+    <!-- Bubble Feature Promo Dialog -->
+    <string name="bubble_promo_title">New Feature: Prayer Bubble</string>
+    <string name="bubble_promo_description">Now you can send blessings upon the Prophet ﷺ while using any app!\n\n• A small bubble appears over other apps\n• Tap it to count your prayers\n• A reminder every 10 minutes to pray upon the Prophet ﷺ</string>
+    <string name="bubble_promo_try_now">Try It Now</string>
+    <string name="bubble_promo_later">Later</string>
+
+    <!-- Daily Leaderboard Promo Dialog -->
+    <string name="daily_leaderboard_promo_title">New Feature: Daily Ranking</string>
+    <string name="daily_leaderboard_promo_description">Now you can track your daily ranking among those who pray upon the Prophet ﷺ\n\nFollow your progress day by day and compete with fellow lovers!</string>
+    <string name="daily_leaderboard_promo_hint">You can switch between weekly and daily ranking from Settings</string>
+    <string name="daily_leaderboard_promo_dismiss">Got It</string>
+
+    <!-- FCM Permission Reminder Dialog -->
+    <string name="fcm_reminder_title">Don\'t Miss the Results of Muhammad\'s ﷺ Lovers</string>
+    <string name="fcm_reminder_description">Enable notifications to receive competition results and your ranking among the lovers as soon as they are published.</string>
+    <string name="fcm_reminder_enable">Enable Notifications</string>
+    <string name="fcm_reminder_later">Later</string>
+
+    <!-- Notification Rationale Dialog -->
+    <string name="notif_rationale_title">Welcome to Your Prayers Upon the Prophet ﷺ</string>
+    <string name="notif_rationale_description">• Daily reminder to pray upon Prophet Muhammad ﷺ\n• Special Friday alerts every hour\n• Muhammad\'s Lovers notifications — follow competition results\n\nEnable notifications from Settings to receive these features.</string>
+    <string name="notif_rationale_open_settings">Open Settings</string>
+    <string name="notif_rationale_later">Later</string>
+
+    <!-- Overlay Permission Rationale Dialog -->
+    <string name="overlay_rationale_title">Pray Upon the Prophet ﷺ Anytime</string>
+    <string name="overlay_rationale_description">To run the prayer bubble over other apps, we need the "Display over other apps" permission.\n\nThis permission lets you count your prayers even while using other apps.</string>
+    <string name="overlay_rationale_open_settings">Open Settings</string>
+    <string name="overlay_rationale_later">Later</string>
+
+    <!-- Review Dialog -->
+    <string name="review_title">Rate the App</string>
+    <string name="review_description">If you like the app, help us with your rating on the store.\nYour rating helps spread goodness and reach more people.</string>
+    <string name="review_rate_now">Rate Now</string>
+    <string name="review_later">Later</string>
+
+    <!-- Manual Salawat Sheet -->
+    <string name="manual_salawat_title">📿 Log External Prayers</string>
+    <string name="manual_salawat_subtitle">Prayed upon the Prophet ﷺ silently, on your fingers, or with a tasbih?\nLog what you prayed — don\'t stop praying just because you\'re away from the app</string>
+    <string name="manual_salawat_other_count">Other count:</string>
+    <string name="manual_salawat_enter_count">Enter count</string>
+    <string name="manual_salawat_witness">I testify that this count is true and accurate, and that Allah is aware of my intention</string>
+    <string name="manual_salawat_submit">✦ Log Prayers ✦</string>
+
+    <!-- Share Card -->
+    <string name="share_card_out_of_participants">out of %1$d participants</string>
+    <string name="share_card_rank_label">RANK</string>
+    <string name="share_card_my_prayers_this_week">My prayers this week</string>
+    <string name="share_card_round_total">Round total</string>
+
+    <!-- Daily Hadith Dialog -->
+    <string name="daily_hadith_header">Virtue of Praying Upon the Prophet ﷺ</string>
+    <string name="daily_hadith_dismiss">OK</string>
+
+    <!-- Onboarding Screen -->
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_start">Start Now ✨</string>
+    <string name="onboarding_welcome_title">Welcome to\nLovers of Muhammad ﷺ</string>
+    <string name="onboarding_welcome_subtitle">Make sending blessings upon the Prophet ﷺ a daily habit</string>
+    <string name="onboarding_welcome_body">An app that brings together lovers of the Prophet ﷺ in a weekly prayer-counting competition, with a global leaderboard.</string>
+    <string name="onboarding_rounds_title">Weekly Rounds</string>
+    <string name="onboarding_rounds_subtitle">Starts every Friday and ends after a week</string>
+    <string name="onboarding_rounds_body">Every week a new round — collect the most blessings and compete with lovers worldwide.\n\nOn Friday your count is doubled x2, so don\'t miss it!</string>
+    <string name="onboarding_achievements_title">Achievements &amp; Ranks</string>
+    <string name="onboarding_achievements_subtitle">Earn honorary ranks and collect badges</string>
+    <string name="onboarding_achievements_body">Top 10 participants in each round earn an honorary rank badge.\n\nMaintain your weekly streak to earn golden streak badges.</string>
+    <string name="onboarding_pray_title">Send Blessings upon the Prophet ﷺ</string>
+
+    <!-- Hadith List Screen -->
+    <string name="hadith_list_screen_title">Virtues of Blessing the Prophet ﷺ</string>
+    <string name="hadith_list_text_count">%1$d hadiths &amp; narrations</string>
+    <string name="hadith_list_media_count">%1$d clips &amp; playlists</string>
+    <string name="hadith_list_tab_texts">Texts</string>
+    <string name="hadith_list_tab_media">Media</string>
+    <string name="hadith_list_empty">No content available</string>
+    <string name="hadith_list_media_type_video">Video</string>
+    <string name="hadith_list_media_type_playlist">Playlist</string>
+    <string name="hadith_list_media_type_channel">Channel</string>
+    <string name="hadith_list_open_cd">Open</string>
+    <string name="hadith_list_share">Share</string>
+    <string name="hadith_list_copy">Copy</string>
+    <string name="hadith_list_copied">Copied</string>
+
+    <!-- Ten Days Screen -->
+    <string name="tendays_title">Ten Days of Dhul Hijjah</string>
+    <string name="tendays_day_of_total">Day %1$d of %2$d</string>
+    <string name="tendays_total_score">Your total score</string>
+    <string name="tendays_baqiyat_title">Everlasting good deeds</string>
+    <string name="tendays_baqiyat_points">+1 per dhikr</string>
+    <string name="tendays_fasting_title">Fasting</string>
+    <string name="tendays_fasting_points">+100 points</string>
+    <string name="tendays_takbeer_title">Takbeer</string>
+    <string name="tendays_takbeer_points">+10 points</string>
+    <string name="tendays_takbeer_button">Takbeer</string>
+    <string name="tendays_auto_play">Auto-play</string>
+    <string name="tendays_every">Every</string>
+    <string name="tendays_repeat_count_label">Repeat count</string>
+    <string name="tendays_interval_1">1 minute</string>
+    <string name="tendays_interval_5">5 minutes</string>
+    <string name="tendays_interval_10">10 minutes</string>
+    <string name="tendays_interval_30">30 minutes</string>
+    <string name="tendays_interval_60">60 minutes</string>
+    <string name="tendays_interval_other">%1$d min</string>
+    <string name="tendays_repeat_once">Once</string>
+    <string name="tendays_repeat_twice">Twice</string>
+    <string name="tendays_repeat_three">3 times</string>
+    <string name="tendays_repeat_other">%1$d times</string>
+    <string name="tendays_sadaqah_title">Charity</string>
+    <string name="tendays_sadaqah_points">+150 points</string>
+    <string name="tendays_leaderboard_title">Leaderboard</string>
+    <string name="tendays_refresh_hourly">Updated every hour</string>
+    <string name="tendays_player_count">Competition participants: %1$d</string>
+    <string name="tendays_no_data_yet">No data yet</string>
+    <string name="tendays_self_rank_full">#%1$d of %2$d  You</string>
+    <string name="tendays_self_rank_only">#%1$d  You</string>
+    <string name="tendays_you_label">You</string>
+    <string name="tendays_leaderboard_encourage">Do more good deeds to enter the leaderboard</string>
+    <string name="tendays_group_takbeer_session">Group Takbeer Session</string>
+    <string name="tendays_group_takbeer_hint">Take turns in a circle -- listen until it is your turn</string>
+
+    <!-- Ten Days Promo Dialog -->
+    <string name="tendays_promo_description">The best days of the year!\nLog your daily deeds -- takbeer, fasting, charity, and dhikr\nCompete with fellow Muslims in doing good</string>
+    <string name="tendays_promo_start">Start now</string>
+    <string name="tendays_promo_later">Later</string>
+</resources>

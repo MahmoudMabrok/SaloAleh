@@ -20,6 +20,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import org.jetbrains.compose.resources.stringResource
+import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.*
 import tools.mo3ta.salo.data.billing.SupportTier
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 
@@ -39,14 +42,14 @@ fun PurchaseSuccessDialog(
         ) {
             Text(text = tier.emoji, fontSize = 56.sp)
             Text(
-                text = "جزاك الله خيرًا!",
+                text = stringResource(Res.string.purchase_success_title),
                 color = MohamedLoversPalette.Gold,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
             )
             Text(
-                text = "تم تفعيل «${tier.label}» — بارك الله في دعمك ونفع بك",
+                text = stringResource(Res.string.purchase_success_activated, tier.label),
                 color = Color.White.copy(alpha = 0.85f),
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
@@ -65,7 +68,7 @@ fun PurchaseSuccessDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = MohamedLoversPalette.Gold),
                 shape = RoundedCornerShape(12.dp),
             ) {
-                Text("رائع! شكراً", color = Color.Black, fontWeight = FontWeight.Bold)
+                Text(stringResource(Res.string.purchase_success_dismiss), color = Color.Black, fontWeight = FontWeight.Bold)
             }
         }
     }

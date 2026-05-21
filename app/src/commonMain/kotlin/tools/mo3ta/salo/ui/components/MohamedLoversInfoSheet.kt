@@ -93,6 +93,7 @@ import tools.mo3ta.salo.generated.resources.mohamed_lovers_rank_pending_top
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_winner_placeholder
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_winner_title
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_share_rank
+import tools.mo3ta.salo.generated.resources.info_sheet_supporter_label
 import tools.mo3ta.salo.presentation.MohamedLoversLeaderboardEntry
 import tools.mo3ta.salo.presentation.MohamedLoversUiState
 import tools.mo3ta.salo.ui.settings.PremiumPromoDialog
@@ -623,7 +624,7 @@ private fun LeaderboardRow(entry: MohamedLoversLeaderboardEntry, pinned: Boolean
             }
             if (entry.isSupporter) {
                 Text(
-                    text = "⭐ داعم",
+                    text = stringResource(Res.string.info_sheet_supporter_label),
                     fontSize = 10.sp,
                     fontWeight = FontWeight.W600,
                     color = MohamedLoversPalette.GoldHighlight,

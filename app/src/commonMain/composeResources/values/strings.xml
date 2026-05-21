@@ -47,6 +47,26 @@
     <string name="mohamed_lovers_winner_placeholder">سيُعلَن عنه قريباً</string>
     <string name="mohamed_lovers_banner">كل جمعة تُضاعَف الصلوات — لا تفوِّت فرصة الجمعة!</string>
 
+    <!-- Main Screen Top Bar -->
+    <string name="main_screen_rank_chip_label">ترتيبك </string>
+    <string name="main_screen_rank_chip_tooltip">يمكنك التحكم في هذا من الإعدادات</string>
+    <string name="main_screen_bubble_tooltip">صلّ على النبي ﷺ وأنت تتصفح</string>
+    <string name="main_screen_manual_salawat_button">📿 تسجيل صلوات خارجية</string>
+    <string name="main_screen_tooltip_settings">الإعدادات والإشعارات</string>
+    <string name="main_screen_cd_settings">الإعدادات</string>
+    <string name="main_screen_tooltip_achievements">إنجازاتك وترتيبك في الجولات السابقة</string>
+    <string name="main_screen_cd_achievements">الإنجازات</string>
+    <string name="main_screen_tooltip_hadith">أحاديث عن فضل الصلاة على النبي</string>
+    <string name="main_screen_cd_hadith">الأحاديث</string>
+    <string name="main_screen_tooltip_ten_days">أعمال وفضائل عشر ذي الحجة</string>
+    <string name="main_screen_cd_ten_days">عشر ذي الحجة</string>
+    <string name="main_screen_tooltip_takbeer">جلسة تكبير جماعية</string>
+    <string name="main_screen_cd_takbeer">جلسة تكبير</string>
+    <string name="main_screen_tooltip_info">معلومات عن الجولة وكيفية اللعب</string>
+
+    <!-- Info Sheet Supporter -->
+    <string name="info_sheet_supporter_label">⭐ داعم</string>
+
     <!-- Screen / Platform Actions -->
     <string name="mohamed_lovers_code_copied">تم نسخ الكود</string>
     <string name="mohamed_lovers_connection_error">خطأ في الاتصال، يُرجى المحاولة لاحقاً</string>
@@ -74,4 +94,262 @@
     <!-- Daily Goal -->
     <string name="daily_goal_completed">أحسنت! هدف اليوم اكتمل 🎉</string>
     <string name="daily_goal_progress">%1$d / %2$d صلاة</string>
+
+    <!-- Achievements Screen -->
+    <string name="achievements_title">إنجازاتي</string>
+    <string name="achievements_back_cd">رجوع</string>
+    <string name="achievements_stat_badges">شارات</string>
+    <string name="achievements_stat_rounds">جولات</string>
+    <string name="achievements_stat_best_rank">أفضل مركز</string>
+    <string name="achievements_section_streak_badges">شارات الأيام</string>
+    <string name="achievements_section_rank_badges">شارات المراكز</string>
+    <string name="achievements_section_round_history">إنجازات الجولات</string>
+    <string name="achievements_medal_info_cd">معلومات الميداليات</string>
+    <string name="achievements_badge_streak_7_title">المداومة</string>
+    <string name="achievements_badge_streak_7_how">افتح التطبيق 7 أيام متتالية دون انقطاع</string>
+    <string name="achievements_badge_streak_30_title">المحب</string>
+    <string name="achievements_badge_streak_30_how">افتح التطبيق 30 يوماً متتالياً دون انقطاع</string>
+    <string name="achievements_badge_rank_title">المركز %1$d</string>
+    <string name="achievements_badge_rank_how">احصل على المركز %1$d في أي جولة تنافسية</string>
+    <string name="achievements_badge_how_label">كيف تحصل عليها:</string>
+    <string name="achievements_badge_repeatable">يمكن الحصول عليها أكثر من مرة</string>
+    <string name="achievements_dialog_ok">حسناً</string>
+    <string name="achievements_medal_info_title">شارات المراكز</string>
+    <string name="achievements_medal_info_body">تُضاف الميداليات كل جمعة عند انتهاء المسابقة الأسبوعية.\n\nاستمر في المشاركة كل أسبوع وحقق أعلى مركز!</string>
+    <string name="achievements_empty_history">لم تشارك في أي جولة بعد\nاستمر في المشاركة!</string>
+    <string name="achievements_streak_complete">مكتملة</string>
+    <string name="achievements_streak_progress">%1$d / %2$d</string>
+    <string name="achievements_round_rank">المركز %1$d</string>
+    <string name="achievements_round_label">الجولة:</string>
+    <string name="achievements_prayer_count_label">عدد الصلوات</string>
+    <string name="achievements_copy_winner_code_cd">نسخ كود الفائز</string>
+
+    <!-- Achievement Celebration Dialog -->
+    <string name="achievement_celebration_streak_7_title">أسبوع من المحبة!</string>
+    <string name="achievement_celebration_streak_7_subtitle">فتحت شارة «المداومة» لفتح التطبيق 7 أيام متتالية. أنت من أهل الوفاء ﷺ</string>
+    <string name="achievement_celebration_streak_30_title">شهر من الوفاء!</string>
+    <string name="achievement_celebration_streak_30_subtitle">فتحت شارة «المحب» لفتح التطبيق 30 يوماً متتالياً. بارك الله فيك.</string>
+    <string name="achievement_celebration_rank_title">المركز %1$d في الترتيب!</string>
+    <string name="achievement_celebration_rank_subtitle">وصلت إلى قائمة أفضل 10 محبين في جولة %1$s. بارك الله فيك ﷺ</string>
+    <string name="achievement_celebration_dismiss">رائع! شكراً</string>
+
+    <!-- Takbeer Session Screen -->
+    <string name="takbeer_back_cd">رجوع</string>
+    <string name="takbeer_session_title">جلسة التكبير الجماعي</string>
+    <string name="takbeer_session_subtitle">كبّروا بالتناوب في حلقة — استمع حتى يأتي دورك</string>
+    <string name="takbeer_people_count_label">عدد المشاركين</string>
+    <string name="takbeer_people_count_hint">بما فيهم أنت — من ٢ إلى ١٠</string>
+    <string name="takbeer_start_session">ابدأ الجلسة</string>
+    <string name="takbeer_how_it_works_title">كيف تعمل الجلسة؟</string>
+    <string name="takbeer_how_step_1">اضبط عدد المشاركين في الحلقة.</string>
+    <string name="takbeer_how_step_2">يتنقّل التكبير بين المشاركين واحدًا تلو الآخر.</string>
+    <string name="takbeer_how_step_3">عند وصول دورك (U) يتوقف الصوت ويظهر «دورك» — كبّر بصوتك.</string>
+    <string name="takbeer_how_step_4">اضغط «تم» لتمرير الدور وإكمال الحلقة.</string>
+    <string name="takbeer_your_turn_instruction">كبّر الآن بصوتك، ثم اضغط «تم» لتمرير الدور</string>
+    <string name="takbeer_done_next_turn">تم — الدور التالي</string>
+    <string name="takbeer_listen_wait">أنصت للمكبّرين... استعد، دورك قادم</string>
+    <string name="takbeer_stop_session">إنهاء الجلسة</string>
+    <string name="takbeer_round_number">الجولة %1$d</string>
+    <string name="takbeer_your_turn">دورك</string>
+    <string name="takbeer_label">التكبير</string>
+    <string name="takbeer_participant_number">المشارك %1$d</string>
+
+    <!-- Takbeer Announcement Dialog -->
+    <string name="takbeer_announcement_title">جلسة تكبير جماعية</string>
+    <string name="takbeer_announcement_body">كبّر مع أصحابك بالدور!\nحدد عدد المكبرين وابدأ الجلسة\nكل واحد يكبّر بصوته ويضغط «تم»</string>
+    <string name="takbeer_announcement_cta">ابدأ جلسة</string>
+    <string name="takbeer_announcement_dismiss">لاحقًا</string>
+
+    <!-- Paywall Screen -->
+    <string name="paywall_supporter_settings_title">إعدادات الداعم</string>
+    <string name="paywall_support_app_title">ادعم التطبيق</string>
+    <string name="paywall_you_are_supporter">أنت داعم! ✅</string>
+    <string name="paywall_thanks_subtitle">شكرًا لدعمك — إليك إعدادات المزايا الحصرية</string>
+    <string name="paywall_contribute_subtitle">ساهم في تطوير التطبيق واحصل على مزايا حصرية</string>
+    <string name="paywall_hide_score_title">إخفاء النتيجة</string>
+    <string name="paywall_hide_score_subtitle">اخفِ نتيجتك من الآخرين في المتصدرين</string>
+    <string name="paywall_supporter_badge_title">شارة الداعم</string>
+    <string name="paywall_supporter_badge_subtitle">شارة مميزة بجانب اسمك في المتصدرين</string>
+    <string name="paywall_score_hidden_description">نتيجتك مخفية عن المتسابقين الآخرين</string>
+    <string name="paywall_hide_score_plus_badge">إخفاء النتيجة + شارة الداعم</string>
+    <string name="paywall_support_now_price">ادعم الآن — %1$s</string>
+    <string name="paywall_support_now">ادعم الآن</string>
+    <string name="paywall_restore_purchases">استعادة المشتريات</string>
+
+    <!-- Premium Promo Dialog -->
+    <string name="premium_promo_description">ساهم في نشر الصلاة على النبي ﷺ\nواحصل على مزايا حصرية كإخفاء نتيجتك وشارة الداعم</string>
+    <string name="premium_promo_later">لاحقًا</string>
+
+    <!-- Purchase Success Dialog -->
+    <string name="purchase_success_title">جزاك الله خيرًا!</string>
+    <string name="purchase_success_activated">تم تفعيل «%1$s» — بارك الله في دعمك ونفع بك</string>
+    <string name="purchase_success_dismiss">رائع! شكراً</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">الإعدادات</string>
+    <string name="settings_notifications_header">الإشعارات</string>
+    <string name="settings_notifications_disabled">الإشعارات معطّلة — اضغط للتفعيل</string>
+    <string name="settings_exact_alarm_disabled">التوقيت الدقيق للإشعارات غير مفعّل — اضغط للتفعيل</string>
+    <string name="settings_daily_reminder">تذكير يومي</string>
+    <string name="settings_daily_reminder_subtitle">مرة واحدة يوميًا</string>
+    <string name="settings_enable_notifications_toast">فعّل إشعارات التطبيق أولاً</string>
+    <string name="settings_enable_exact_alarm_toast">فعّل التوقيت الدقيق ليصل التذكير في موعده بالضبط</string>
+    <string name="settings_friday_notifications">إشعارات الجمعة</string>
+    <string name="settings_friday_notifications_subtitle">كل ساعة من 9ص – 5م</string>
+    <string name="settings_content_header">المحتوى</string>
+    <string name="settings_hadith_on_open">حديث عند الفتح</string>
+    <string name="settings_hadith_on_open_subtitle">عرض حديث في فضل الصلاة على النبي ﷺ</string>
+    <string name="settings_show_rank">عرض ترتيبك</string>
+    <string name="settings_show_rank_subtitle">إظهار مرتبتك في المسابقة على الشاشة الرئيسية</string>
+    <string name="settings_daily_leaderboard">لوحة المتصدرين اليومية</string>
+    <string name="settings_daily_leaderboard_subtitle">ترتيب بناءً على صلوات اليوم فقط</string>
+    <string name="settings_sync_header">المزامنة</string>
+    <string name="settings_sync_from_extension">مزامنة من إضافة المتصفح</string>
+    <string name="settings_download_chrome_extension">حمّل إضافة كروم</string>
+    <string name="settings_support_header">الدعم</string>
+    <string name="settings_support_app">🌟 ادعم التطبيق</string>
+    <string name="settings_about_header">عن التطبيق</string>
+    <string name="settings_app_guide">دليل التطبيق</string>
+    <string name="settings_privacy_policy">سياسة الخصوصية</string>
+    <string name="settings_share_app">مشاركة التطبيق</string>
+    <string name="settings_open_store_page">فتح صفحة المتجر</string>
+    <string name="settings_app_version">إصدار التطبيق</string>
+    <string name="settings_supporter_status">أنت داعم — %1$s</string>
+    <string name="settings_manage_features">اضغط لإدارة المزايا</string>
+
+    <!-- Extension QR Screen -->
+    <string name="extension_qr_title">مزامنة البيانات</string>
+    <string name="extension_qr_warning_title">تنبيه</string>
+    <string name="extension_qr_warning_message">أي رمز غير صحيح سيؤدي لتصفير نقاطك في الجولة الحالية.</string>
+    <string name="extension_qr_scan_instruction">امسح الرمز من إضافة المتصفح فقط.</string>
+    <string name="extension_qr_sync_now">مزامنة الآن</string>
+    <string name="extension_qr_success_toast">تمت إضافة %1$d صلاة من الإضافة ✓</string>
+    <string name="extension_qr_cheat_toast">⚠️ %1$s — تم تصفير نقاطك</string>
+    <string name="extension_qr_error_toast">⚠️ %1$s</string>
+
+    <!-- Bubble Feature Promo Dialog -->
+    <string name="bubble_promo_title">ميزة جديدة: فقاعة الصلوات</string>
+    <string name="bubble_promo_description">الآن تقدر تصلّي على النبي ﷺ وأنت تستخدم أي تطبيق!\n\n• فقاعة صغيرة تظهر فوق التطبيقات\n• اضغط عليها لعدّ صلواتك\n• تذكير كل ١٠ دقائق بالصلاة على النبي ﷺ</string>
+    <string name="bubble_promo_try_now">جربها الآن</string>
+    <string name="bubble_promo_later">لاحقاً</string>
+
+    <!-- Daily Leaderboard Promo Dialog -->
+    <string name="daily_leaderboard_promo_title">ميزة جديدة: الترتيب اليومي</string>
+    <string name="daily_leaderboard_promo_description">الآن يمكنك متابعة ترتيبك اليومي بين المصلّين على النبي ﷺ\n\nتابع تقدّمك يومًا بيوم وتنافس مع المحبين!</string>
+    <string name="daily_leaderboard_promo_hint">يمكنك التبديل بين الترتيب الأسبوعي واليومي من الإعدادات</string>
+    <string name="daily_leaderboard_promo_dismiss">فهمت</string>
+
+    <!-- FCM Permission Reminder Dialog -->
+    <string name="fcm_reminder_title">لا تفوتك نتائج محبّي محمد ﷺ</string>
+    <string name="fcm_reminder_description">فعّل الإشعارات لتصلك نتائج المسابقة وترتيبك بين المحبين فور صدورها.</string>
+    <string name="fcm_reminder_enable">تفعيل الإشعارات</string>
+    <string name="fcm_reminder_later">لاحقاً</string>
+
+    <!-- Notification Rationale Dialog -->
+    <string name="notif_rationale_title">مرحباً في صلاتك على النبي ﷺ</string>
+    <string name="notif_rationale_description">• تذكير يومي بالصلاة على النبي محمد ﷺ\n• تنبيهات خاصة يوم الجمعة كل ساعة\n• إشعارات محبّي محمد — تابع نتائج المسابقة\n\nفعّل الإشعارات من الإعدادات لتصلك هذه الميزات.</string>
+    <string name="notif_rationale_open_settings">افتح الإعدادات</string>
+    <string name="notif_rationale_later">لاحقاً</string>
+
+    <!-- Overlay Permission Rationale Dialog -->
+    <string name="overlay_rationale_title">الصلاة على النبي ﷺ في أي وقت</string>
+    <string name="overlay_rationale_description">لتشغيل فقاعة الصلوات فوق التطبيقات الأخرى، نحتاج إذن \"الظهور فوق التطبيقات\".\n\nهذا الإذن يتيح لك عدّ صلواتك حتى أثناء استخدام تطبيقات أخرى.</string>
+    <string name="overlay_rationale_open_settings">افتح الإعدادات</string>
+    <string name="overlay_rationale_later">لاحقاً</string>
+
+    <!-- Review Dialog -->
+    <string name="review_title">قيّم التطبيق</string>
+    <string name="review_description">إذا أعجبك التطبيق، ساعدنا بتقييمك على المتجر.\nتقييمك يساعد في نشر الخير ووصول التطبيق لأكبر عدد.</string>
+    <string name="review_rate_now">قيّم الآن</string>
+    <string name="review_later">لاحقاً</string>
+
+    <!-- Manual Salawat Sheet -->
+    <string name="manual_salawat_title">📿 تسجيل صلوات خارجية</string>
+    <string name="manual_salawat_subtitle">صلّيت على النبي ﷺ بصمت أو على أصابعك أو بالمسبحة؟\nسجّل ما صلّيت — لا تتوقف عن الصلاة لأنك بعيد عن التطبيق</string>
+    <string name="manual_salawat_other_count">عدد آخر:</string>
+    <string name="manual_salawat_enter_count">أدخل العدد</string>
+    <string name="manual_salawat_witness">أشهد أن هذا العدد صحيح وحقيقي، وأن الله مطّلع على نيّتي</string>
+    <string name="manual_salawat_submit">✦ تسجيل الصلوات ✦</string>
+
+    <!-- Share Card -->
+    <string name="share_card_out_of_participants">من أصل %1$d مشارك</string>
+    <string name="share_card_rank_label">RANK</string>
+    <string name="share_card_my_prayers_this_week">صلاتي هذا الأسبوع</string>
+    <string name="share_card_round_total">مجموع الجولة</string>
+
+    <!-- Daily Hadith Dialog -->
+    <string name="daily_hadith_header">فضل الصلاة على النبي ﷺ</string>
+    <string name="daily_hadith_dismiss">حسنًا</string>
+
+    <!-- Onboarding Screen -->
+    <string name="onboarding_skip">تخطّي</string>
+    <string name="onboarding_next">التالي</string>
+    <string name="onboarding_start">ابدأ الآن ✨</string>
+    <string name="onboarding_welcome_title">أهلًا بك في\nمحبو محمد ﷺ</string>
+    <string name="onboarding_welcome_subtitle">اجعل الصلاة على النبي ﷺ عادة يومية</string>
+    <string name="onboarding_welcome_body">تطبيق يجمع محبّي النبي ﷺ في مسابقة أسبوعية لعدّ الصلوات، مع لوحة المتصدرين حول العالم.</string>
+    <string name="onboarding_rounds_title">جولات أسبوعية</string>
+    <string name="onboarding_rounds_subtitle">تبدأ كل جمعة وتنتهي بعد أسبوع</string>
+    <string name="onboarding_rounds_body">كل أسبوع جولة جديدة — اجمع أكبر عدد من الصلوات وتسابق مع المحبين حول العالم.\n\nيوم الجمعة يُضاعَف عدّك × ٢ فلا تفوِّت الفرصة!</string>
+    <string name="onboarding_achievements_title">الإنجازات والمراتب</string>
+    <string name="onboarding_achievements_subtitle">حقّق مراتب شرفية واجمع الشارات</string>
+    <string name="onboarding_achievements_body">أفضل ١٠ مشاركين في كل جولة ينالون شارة مرتبة شرفية.\n\nحافظ على سلسلتك الأسبوعية لتحصل على شارات السلسلة الذهبية.</string>
+    <string name="onboarding_pray_title">صلِّ على النبي ﷺ</string>
+
+    <!-- Hadith List Screen -->
+    <string name="hadith_list_screen_title">فضل الصلاة على النبي ﷺ</string>
+    <string name="hadith_list_text_count">%1$d حديث وأثر</string>
+    <string name="hadith_list_media_count">%1$d مقطع وقائمة</string>
+    <string name="hadith_list_tab_texts">النصوص</string>
+    <string name="hadith_list_tab_media">الوسائط</string>
+    <string name="hadith_list_empty">لا يوجد محتوى</string>
+    <string name="hadith_list_media_type_video">فيديو</string>
+    <string name="hadith_list_media_type_playlist">قائمة</string>
+    <string name="hadith_list_media_type_channel">قناة</string>
+    <string name="hadith_list_open_cd">فتح</string>
+    <string name="hadith_list_share">مشاركة</string>
+    <string name="hadith_list_copy">نسخ</string>
+    <string name="hadith_list_copied">تم النسخ</string>
+
+    <!-- Ten Days Screen -->
+    <string name="tendays_title">عشر ذي الحجة</string>
+    <string name="tendays_day_of_total">اليوم %1$d من %2$d</string>
+    <string name="tendays_total_score">مجموع نقاطك</string>
+    <string name="tendays_baqiyat_title">الباقيات الصالحات</string>
+    <string name="tendays_baqiyat_points">+١ لكل ذكر</string>
+    <string name="tendays_fasting_title">الصيام</string>
+    <string name="tendays_fasting_points">+١٠٠ نقطة</string>
+    <string name="tendays_takbeer_title">التكبير</string>
+    <string name="tendays_takbeer_points">+١٠ نقاط</string>
+    <string name="tendays_takbeer_button">كبّر</string>
+    <string name="tendays_auto_play">تشغيل تلقائي</string>
+    <string name="tendays_every">كل</string>
+    <string name="tendays_repeat_count_label">عدد مرات التشغيل</string>
+    <string name="tendays_interval_1">١ دقيقة</string>
+    <string name="tendays_interval_5">٥ دقائق</string>
+    <string name="tendays_interval_10">١٠ دقائق</string>
+    <string name="tendays_interval_30">٣٠ دقيقة</string>
+    <string name="tendays_interval_60">٦٠ دقيقة</string>
+    <string name="tendays_interval_other">%1$d د</string>
+    <string name="tendays_repeat_once">مرة</string>
+    <string name="tendays_repeat_twice">مرتين</string>
+    <string name="tendays_repeat_three">٣ مرات</string>
+    <string name="tendays_repeat_other">%1$d مرات</string>
+    <string name="tendays_sadaqah_title">الصدقة</string>
+    <string name="tendays_sadaqah_points">+١٥٠ نقطة</string>
+    <string name="tendays_leaderboard_title">المتصدرين</string>
+    <string name="tendays_refresh_hourly">تحديث كل ساعة</string>
+    <string name="tendays_player_count">عدد المشاركين في المنافسة: %1$d</string>
+    <string name="tendays_no_data_yet">لا يوجد بيانات بعد</string>
+    <string name="tendays_self_rank_full">#%1$d من %2$d  أنت</string>
+    <string name="tendays_self_rank_only">#%1$d  أنت</string>
+    <string name="tendays_you_label">أنت</string>
+    <string name="tendays_leaderboard_encourage">ادخل قائمة المتصدرين بمزيد من العبادات</string>
+    <string name="tendays_group_takbeer_session">جلسة التكبير الجماعي</string>
+    <string name="tendays_group_takbeer_hint">كبّروا بالتناوب في حلقة — استمع حتى يأتي دورك</string>
+
+    <!-- Ten Days Promo Dialog -->
+    <string name="tendays_promo_description">أفضل أيام الدنيا!\nسجّل أعمالك اليومية من تكبير وصيام وصدقة وذكر\nونافس المسلمين في الخير</string>
+    <string name="tendays_promo_start">ابدأ الآن</string>
+    <string name="tendays_promo_later">لاحقًا</string>
 </resources>

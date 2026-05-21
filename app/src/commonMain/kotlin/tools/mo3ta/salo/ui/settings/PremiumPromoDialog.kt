@@ -20,6 +20,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import org.jetbrains.compose.resources.stringResource
+import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.*
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 
 @Composable
@@ -38,14 +41,14 @@ fun PremiumPromoDialog(
             Text(text = "🌟", fontSize = 48.sp)
             Spacer(Modifier.height(12.dp))
             Text(
-                text = "ادعم التطبيق",
+                text = stringResource(Res.string.paywall_support_app_title),
                 color = MohamedLoversPalette.GoldGlow,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "ساهم في نشر الصلاة على النبي ﷺ\nواحصل على مزايا حصرية كإخفاء نتيجتك وشارة الداعم",
+                text = stringResource(Res.string.premium_promo_description),
                 color = Color.White.copy(alpha = 0.85f),
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
@@ -65,11 +68,11 @@ fun PremiumPromoDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = MohamedLoversPalette.GoldGlow),
                 shape = RoundedCornerShape(12.dp),
             ) {
-                Text("ادعم الآن", color = Color.Black, fontWeight = FontWeight.Bold)
+                Text(stringResource(Res.string.paywall_support_now), color = Color.Black, fontWeight = FontWeight.Bold)
             }
             Spacer(Modifier.height(8.dp))
             TextButton(onClick = onDismiss) {
-                Text("لاحقًا", color = Color.White.copy(alpha = 0.6f))
+                Text(stringResource(Res.string.premium_promo_later), color = Color.White.copy(alpha = 0.6f))
             }
         }
     }

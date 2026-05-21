@@ -20,6 +20,9 @@ import androidx.compose.ui.unit.sp
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
+import org.jetbrains.compose.resources.stringResource
+import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.*
 
 private val SCCream      = Color(0xFFFAF3E0)
 private val SCCreamLight = Color(0xFFFFF8E0)
@@ -53,7 +56,7 @@ fun ShareCard(data: ShareCardData) {
             if (data.roundPlayerCount > 0) {
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    text = "من أصل ${data.roundPlayerCount} مشارك",
+                    text = stringResource(Res.string.share_card_out_of_participants, data.roundPlayerCount),
                     style = TextStyle(fontSize = 14.sp, color = SCGoldDark.copy(alpha = 0.6f), textAlign = TextAlign.Center),
                 )
             }
@@ -141,7 +144,7 @@ private fun RankMedallion(rank: Int) {
                     text = "#$rank",
                     style = TextStyle(fontSize = 36.sp, fontWeight = FontWeight.Black, color = SCGoldDark, lineHeight = 36.sp),
                 )
-                Text("RANK", style = TextStyle(fontSize = 10.sp, color = SCGold, letterSpacing = 1.sp))
+                Text(stringResource(Res.string.share_card_rank_label), style = TextStyle(fontSize = 10.sp, color = SCGold, letterSpacing = 1.sp))
             }
         }
     }
@@ -160,9 +163,9 @@ private fun GoldHRule() {
 @Composable
 private fun ShareScoreRow(userScore: Int, roundTotal: Int) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-        ScoreCol(value = userScore.scFormat(), label = "صلاتي هذا الأسبوع", emphasis = true)
+        ScoreCol(value = userScore.scFormat(), label = stringResource(Res.string.share_card_my_prayers_this_week), emphasis = true)
         Box(modifier = Modifier.width(1.dp).height(48.dp).background(SCGoldFaint))
-        ScoreCol(value = roundTotal.scFormat(), label = "مجموع الجولة", emphasis = false)
+        ScoreCol(value = roundTotal.scFormat(), label = stringResource(Res.string.share_card_round_total), emphasis = false)
     }
 }
 

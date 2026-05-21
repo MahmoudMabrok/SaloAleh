@@ -20,6 +20,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import org.jetbrains.compose.resources.stringResource
+import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.*
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 
 @Composable
@@ -41,14 +44,14 @@ fun TakbeerAnnouncementDialog(
             )
             Spacer(Modifier.height(12.dp))
             Text(
-                text = "جلسة تكبير جماعية",
+                text = stringResource(Res.string.takbeer_announcement_title),
                 color = Color.White,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "كبّر مع أصحابك بالدور!\nحدد عدد المكبرين وابدأ الجلسة\nكل واحد يكبّر بصوته ويضغط «تم»",
+                text = stringResource(Res.string.takbeer_announcement_body),
                 color = Color.White.copy(alpha = 0.85f),
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
@@ -63,11 +66,11 @@ fun TakbeerAnnouncementDialog(
                 ),
                 shape = RoundedCornerShape(12.dp),
             ) {
-                Text("ابدأ جلسة", color = Color.Black, fontWeight = FontWeight.Bold)
+                Text(stringResource(Res.string.takbeer_announcement_cta), color = Color.Black, fontWeight = FontWeight.Bold)
             }
             Spacer(Modifier.height(8.dp))
             TextButton(onClick = onDismiss) {
-                Text("لاحقًا", color = Color.White.copy(alpha = 0.6f))
+                Text(stringResource(Res.string.takbeer_announcement_dismiss), color = Color.White.copy(alpha = 0.6f))
             }
         }
     }

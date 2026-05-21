@@ -27,8 +27,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.*
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.data.qr.QrVerifyResult
 import tools.mo3ta.salo.data.qr.verifyExtensionQr
@@ -45,6 +48,10 @@ fun ExtensionQrScreen(onBack: () -> Unit) {
     val viewModel: MohamedLoversViewModel = koinViewModel()
     val analyticsManager: AnalyticsManager = koinInject()
 
+    val extensionSuccessFormat = stringResource(Res.string.extension_qr_success_toast)
+    val extensionCheatFormat = stringResource(Res.string.extension_qr_cheat_toast)
+    val extensionErrorFormat = stringResource(Res.string.extension_qr_error_toast)
+
     LaunchedEffect(Unit) {
         analyticsManager.logView("ExtensionQrScreen")
     }
@@ -55,7 +62,7 @@ fun ExtensionQrScreen(onBack: () -> Unit) {
             TopAppBar(
                 title = {
                     Text(
-                        text = "مزامنة البيانات",
+                        text = stringResource(Res.string.extension_qr_title),
                         color = MohamedLoversPalette.GoldGlow,
                         fontWeight = FontWeight.Bold,
                     )
@@ -64,7 +71,7 @@ fun ExtensionQrScreen(onBack: () -> Unit) {
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "رجوع",
+                            contentDescription = stringResource(Res.string.mohamed_lovers_back_cd),
                             tint = MohamedLoversPalette.GoldGlow,
                         )
                     }
@@ -90,7 +97,7 @@ fun ExtensionQrScreen(onBack: () -> Unit) {
             Spacer(Modifier.height(16.dp))
 
             Text(
-                text = "تنبيه",
+                text = stringResource(Res.string.extension_qr_warning_title),
                 color = Color(0xFFFF6B6B),
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
@@ -100,7 +107,7 @@ fun ExtensionQrScreen(onBack: () -> Unit) {
             Spacer(Modifier.height(16.dp))
 
             Text(
-                text = "أي رمز غير صحيح سيؤدي لتصفير نقاطك في الجولة الحالية.",
+                text = stringResource(Res.string.extension_qr_warning_message),
                 color = Color.White,
                 fontSize = 15.sp,
                 textAlign = TextAlign.Center,
@@ -110,7 +117,7 @@ fun ExtensionQrScreen(onBack: () -> Unit) {
             Spacer(Modifier.height(12.dp))
 
             Text(
-                text = "امسح الرمز من إضافة المتصفح فقط.",
+                text = stringResource(Res.string.extension_qr_scan_instruction),
                 color = Color.White.copy(alpha = 0.7f),
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
@@ -129,14 +136,14 @@ fun ExtensionQrScreen(onBack: () -> Unit) {
                             is QrVerifyResult.Success -> {
                                 viewModel.applyExtensionScore(result.round, result.count)
                                 sessionStore.saveLastAppliedQrTs(nowMs)
-                                showPlatformToast("تمت إضافة ${result.count} صلاة من الإضافة ✓")
+                                showPlatformToast(extensionSuccessFormat.replace("%1\$d", result.count.toString()))
                             }
                             is QrVerifyResult.Error -> {
                                 if (result.isCheat) {
                                     viewModel.resetCurrentRoundScore()
-                                    showPlatformToast("⚠️ ${result.message} — تم تصفير نقاطك")
+                                    showPlatformToast(extensionCheatFormat.replace("%1\$s", result.message))
                                 } else {
-                                    showPlatformToast("⚠️ ${result.message}")
+                                    showPlatformToast(extensionErrorFormat.replace("%1\$s", result.message))
                                 }
                             }
                         }
@@ -150,7 +157,7 @@ fun ExtensionQrScreen(onBack: () -> Unit) {
                 ),
             ) {
                 Text(
-                    text = "مزامنة الآن",
+                    text = stringResource(Res.string.extension_qr_sync_now),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(vertical = 8.dp),

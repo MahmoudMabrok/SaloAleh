@@ -60,8 +60,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.*
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.presentation.TakbeerPhase
 import tools.mo3ta.salo.presentation.TakbeerSessionUiState
@@ -114,7 +117,7 @@ fun TakbeerSessionScreen(
             IconButton(onClick = onBack) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "رجوع",
+                    contentDescription = stringResource(Res.string.takbeer_back_cd),
                     tint = TenDaysPalette.TextPrimary,
                 )
             }
@@ -139,14 +142,14 @@ private fun Header() {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            text = "جلسة التكبير الجماعي",
+            text = stringResource(Res.string.takbeer_session_title),
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
             color = TenDaysPalette.Gold,
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            text = "كبّروا بالتناوب في حلقة — استمع حتى يأتي دورك",
+            text = stringResource(Res.string.takbeer_session_subtitle),
             fontSize = 13.sp,
             color = TenDaysPalette.TextSecondary,
             textAlign = TextAlign.Center,
@@ -169,14 +172,14 @@ private fun SetupContent(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                text = "عدد المشاركين",
+                text = stringResource(Res.string.takbeer_people_count_label),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = TenDaysPalette.TextPrimary,
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "بما فيهم أنت — من ٢ إلى ١٠",
+                text = stringResource(Res.string.takbeer_people_count_hint),
                 fontSize = 12.sp,
                 color = TenDaysPalette.TextSecondary,
             )
@@ -227,7 +230,7 @@ private fun SetupContent(
             ),
             shape = RoundedCornerShape(12.dp),
         ) {
-            Text("ابدأ الجلسة", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Text(stringResource(Res.string.takbeer_start_session), color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 15.sp)
         }
 
         Spacer(Modifier.height(18.dp))
@@ -261,17 +264,17 @@ private fun HowItWorksCard() {
             .padding(16.dp),
     ) {
         Text(
-            text = "كيف تعمل الجلسة؟",
+            text = stringResource(Res.string.takbeer_how_it_works_title),
             fontSize = 15.sp,
             fontWeight = FontWeight.Bold,
             color = TenDaysPalette.TextPrimary,
         )
         Spacer(Modifier.height(10.dp))
         listOf(
-            "اضبط عدد المشاركين في الحلقة.",
-            "يتنقّل التكبير بين المشاركين واحدًا تلو الآخر.",
-            "عند وصول دورك (U) يتوقف الصوت ويظهر «دورك» — كبّر بصوتك.",
-            "اضغط «تم» لتمرير الدور وإكمال الحلقة.",
+            stringResource(Res.string.takbeer_how_step_1),
+            stringResource(Res.string.takbeer_how_step_2),
+            stringResource(Res.string.takbeer_how_step_3),
+            stringResource(Res.string.takbeer_how_step_4),
         ).forEach { line ->
             Row(modifier = Modifier.padding(vertical = 3.dp)) {
                 Text("•", color = TenDaysPalette.Gold, fontSize = 13.sp)
@@ -305,7 +308,7 @@ private fun RunningContent(
 
         if (state.isUserTurn) {
             Text(
-                text = "كبّر الآن بصوتك، ثم اضغط «تم» لتمرير الدور",
+                text = stringResource(Res.string.takbeer_your_turn_instruction),
                 fontSize = 13.sp,
                 color = UserAccentLight,
                 textAlign = TextAlign.Center,
@@ -322,7 +325,7 @@ private fun RunningContent(
                 shape = RoundedCornerShape(12.dp),
             ) {
                 Text(
-                    text = "تم — الدور التالي",
+                    text = stringResource(Res.string.takbeer_done_next_turn),
                     color = Color(0xFF06283D),
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
@@ -330,7 +333,7 @@ private fun RunningContent(
             }
         } else {
             Text(
-                text = "أنصت للمكبّرين... استعد، دورك قادم",
+                text = stringResource(Res.string.takbeer_listen_wait),
                 fontSize = 13.sp,
                 color = TenDaysPalette.TextSecondary,
                 textAlign = TextAlign.Center,
@@ -349,7 +352,7 @@ private fun RunningContent(
             colors = ButtonDefaults.buttonColors(containerColor = StopRed),
             shape = RoundedCornerShape(12.dp),
         ) {
-            Text("إنهاء الجلسة", color = Color.White, fontWeight = FontWeight.Bold)
+            Text(stringResource(Res.string.takbeer_stop_session), color = Color.White, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -364,7 +367,7 @@ private fun RoundBanner(round: Int) {
             .padding(horizontal = 18.dp, vertical = 6.dp),
     ) {
         Text(
-            text = "الجولة $round",
+            text = stringResource(Res.string.takbeer_round_number, round),
             fontSize = 13.sp,
             fontWeight = FontWeight.Bold,
             color = TenDaysPalette.Gold,
@@ -478,7 +481,7 @@ private fun RingCenter(state: TakbeerSessionUiState, pulse: Float) {
     Box(contentAlignment = Alignment.Center) {
         if (state.isUserTurn) {
             Text(
-                text = "دورك",
+                text = stringResource(Res.string.takbeer_your_turn),
                 color = UserAccentLight,
                 fontSize = 34.sp,
                 fontWeight = FontWeight.Bold,
@@ -486,10 +489,10 @@ private fun RingCenter(state: TakbeerSessionUiState, pulse: Float) {
             )
         } else {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("التكبير", color = TenDaysPalette.Gold, fontSize = 13.sp)
+                Text(stringResource(Res.string.takbeer_label), color = TenDaysPalette.Gold, fontSize = 13.sp)
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    text = "المشارك ${state.currentTurn + 1}",
+                    text = stringResource(Res.string.takbeer_participant_number, state.currentTurn + 1),
                     color = TenDaysPalette.TextPrimary,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
