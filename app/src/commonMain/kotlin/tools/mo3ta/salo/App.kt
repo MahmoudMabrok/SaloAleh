@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.LayoutDirection
 import com.russhwolf.settings.Settings
 import kotlinx.datetime.Clock
@@ -50,7 +51,11 @@ fun App(
     engagementData: EngagementData? = null,
     onNotificationPermissionRequest: (() -> Unit)? = null,
 ) {
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+    val layoutDirection = when (Locale.current.language) {
+        "en", "zh" -> LayoutDirection.Ltr
+        else -> LayoutDirection.Rtl
+    }
+    CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
         var showRationale by remember {
             mutableStateOf(engagementData?.shouldRequestNotifPermission == true)
         }

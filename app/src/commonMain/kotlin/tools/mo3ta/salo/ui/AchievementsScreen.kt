@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
@@ -66,6 +67,33 @@ import tools.mo3ta.salo.generated.resources.badge_8th_place
 import tools.mo3ta.salo.generated.resources.badge_9th_place
 import tools.mo3ta.salo.generated.resources.badge_streak_30_day
 import tools.mo3ta.salo.generated.resources.badge_streak_7_day
+import tools.mo3ta.salo.generated.resources.achievements_back_cd
+import tools.mo3ta.salo.generated.resources.achievements_badge_how_label
+import tools.mo3ta.salo.generated.resources.achievements_badge_rank_how
+import tools.mo3ta.salo.generated.resources.achievements_badge_rank_title
+import tools.mo3ta.salo.generated.resources.achievements_badge_repeatable
+import tools.mo3ta.salo.generated.resources.achievements_badge_streak_30_how
+import tools.mo3ta.salo.generated.resources.achievements_badge_streak_30_title
+import tools.mo3ta.salo.generated.resources.achievements_badge_streak_7_how
+import tools.mo3ta.salo.generated.resources.achievements_badge_streak_7_title
+import tools.mo3ta.salo.generated.resources.achievements_copy_winner_code_cd
+import tools.mo3ta.salo.generated.resources.achievements_dialog_ok
+import tools.mo3ta.salo.generated.resources.achievements_empty_history
+import tools.mo3ta.salo.generated.resources.achievements_medal_info_body
+import tools.mo3ta.salo.generated.resources.achievements_medal_info_cd
+import tools.mo3ta.salo.generated.resources.achievements_medal_info_title
+import tools.mo3ta.salo.generated.resources.achievements_prayer_count_label
+import tools.mo3ta.salo.generated.resources.achievements_round_label
+import tools.mo3ta.salo.generated.resources.achievements_round_rank
+import tools.mo3ta.salo.generated.resources.achievements_section_rank_badges
+import tools.mo3ta.salo.generated.resources.achievements_section_round_history
+import tools.mo3ta.salo.generated.resources.achievements_section_streak_badges
+import tools.mo3ta.salo.generated.resources.achievements_stat_badges
+import tools.mo3ta.salo.generated.resources.achievements_stat_best_rank
+import tools.mo3ta.salo.generated.resources.achievements_stat_rounds
+import tools.mo3ta.salo.generated.resources.achievements_streak_complete
+import tools.mo3ta.salo.generated.resources.achievements_streak_progress
+import tools.mo3ta.salo.generated.resources.achievements_title
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_code_copied
 import tools.mo3ta.salo.presentation.AchievementsViewModel
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
@@ -81,8 +109,10 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 
 private data class BadgeSpec(
     val id: String,
-    val title: String,
-    val howToEarn: String,
+    val titleRes: StringResource,
+    val titleArgs: List<Any> = emptyList(),
+    val howToEarnRes: StringResource,
+    val howToEarnArgs: List<Any> = emptyList(),
     val canRepeat: Boolean,
     val drawable: DrawableResource,
     val emoji: String? = null,
@@ -105,22 +135,26 @@ private fun rankDrawable(rank: Int): DrawableResource = when (rank) {
 
 private val ALL_BADGES: List<BadgeSpec> = buildList {
     add(BadgeSpec(
-        id = "streak_7", emoji = "🏅", title = "المداومة",
-        howToEarn = "افتح التطبيق 7 أيام متتالية دون انقطاع",
+        id = "streak_7", emoji = "🏅",
+        titleRes = Res.string.achievements_badge_streak_7_title,
+        howToEarnRes = Res.string.achievements_badge_streak_7_how,
         canRepeat = false, streakTarget = 7,
         drawable = Res.drawable.badge_streak_7_day,
     ))
     add(BadgeSpec(
-        id = "streak_30", emoji = "🌟", title = "المحب",
-        howToEarn = "افتح التطبيق 30 يوماً متتالياً دون انقطاع",
+        id = "streak_30", emoji = "🌟",
+        titleRes = Res.string.achievements_badge_streak_30_title,
+        howToEarnRes = Res.string.achievements_badge_streak_30_how,
         canRepeat = false, streakTarget = 30,
         drawable = Res.drawable.badge_streak_30_day,
     ))
     for (rank in 1..10) {
         add(BadgeSpec(
             id = "rank_$rank", rankPosition = rank,
-            title = "المركز $rank",
-            howToEarn = "احصل على المركز $rank في أي جولة تنافسية",
+            titleRes = Res.string.achievements_badge_rank_title,
+            titleArgs = listOf(rank),
+            howToEarnRes = Res.string.achievements_badge_rank_how,
+            howToEarnArgs = listOf(rank),
             canRepeat = true,
             drawable = rankDrawable(rank),
         ))
@@ -187,10 +221,10 @@ fun AchievementsScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "رجوع", tint = Color.White)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.achievements_back_cd), tint = Color.White)
             }
             Text(
-                text = "إنجازاتي",
+                text = stringResource(Res.string.achievements_title),
                 color = MohamedLoversPalette.Gold,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
@@ -208,13 +242,13 @@ fun AchievementsScreen(
                 .padding(bottom = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            StatCard("🏅", earnedBadgesCount.toString(), "شارات", Modifier.weight(1f))
-            StatCard("🗓️", roundHistory.size.toString(), "جولات", Modifier.weight(1f))
-            StatCard("🥇", if (bestRank != null) "#$bestRank" else "—", "أفضل مركز", Modifier.weight(1f))
+            StatCard("🏅", earnedBadgesCount.toString(), stringResource(Res.string.achievements_stat_badges), Modifier.weight(1f))
+            StatCard("🗓️", roundHistory.size.toString(), stringResource(Res.string.achievements_stat_rounds), Modifier.weight(1f))
+            StatCard("🥇", if (bestRank != null) "#$bestRank" else "—", stringResource(Res.string.achievements_stat_best_rank), Modifier.weight(1f))
         }
 
         // ── Streak badges (horizontal row cards) ──
-        SectionLabel("شارات الأيام")
+        SectionLabel(stringResource(Res.string.achievements_section_streak_badges))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -241,7 +275,7 @@ fun AchievementsScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "شارات المراكز",
+                text = stringResource(Res.string.achievements_section_rank_badges),
                 color = Color.White.copy(alpha = 0.5f),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -254,7 +288,7 @@ fun AchievementsScreen(
             ) {
                 Icon(
                     Icons.Default.Info,
-                    contentDescription = "معلومات الميداليات",
+                    contentDescription = stringResource(Res.string.achievements_medal_info_cd),
                     tint = Color.White.copy(alpha = 0.35f),
                     modifier = Modifier.size(16.dp),
                 )
@@ -281,7 +315,7 @@ fun AchievementsScreen(
         // ── Round history timeline ──
         Spacer(Modifier.height(24.dp))
         HorizontalDivider(color = Color.White.copy(alpha = 0.08f), modifier = Modifier.padding(horizontal = 16.dp))
-        SectionLabel("إنجازات الجولات")
+        SectionLabel(stringResource(Res.string.achievements_section_round_history))
 
         if (roundHistory.isEmpty()) {
             Box(
@@ -289,7 +323,7 @@ fun AchievementsScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = "لم تشارك في أي جولة بعد\nاستمر في المشاركة! 🌟",
+                    text = stringResource(Res.string.achievements_empty_history),
                     color = Color.White.copy(alpha = 0.45f),
                     textAlign = TextAlign.Center,
                     fontSize = 14.sp,
@@ -322,6 +356,8 @@ fun AchievementsScreen(
 
     // ── Badge tap-to-explain dialog ──
     selectedSpec?.let { spec ->
+        val resolvedTitle = stringResource(spec.titleRes, *spec.titleArgs.toTypedArray())
+        val resolvedHowToEarn = stringResource(spec.howToEarnRes, *spec.howToEarnArgs.toTypedArray())
         AlertDialog(
             onDismissRequest = { selectedSpec = null },
             containerColor = MohamedLoversPalette.DeepBlue,
@@ -330,7 +366,7 @@ fun AchievementsScreen(
                 Text(
                     text = buildString {
                         spec.emoji?.let { append("$it  ") }
-                        append(spec.title)
+                        append(resolvedTitle)
                     },
                     color = MohamedLoversPalette.Gold,
                     fontWeight = FontWeight.Bold,
@@ -341,12 +377,12 @@ fun AchievementsScreen(
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("كيف تحصل عليها:", color = Color.White.copy(alpha = 0.55f), fontSize = 13.sp)
-                    Text(spec.howToEarn, color = Color.White, fontSize = 15.sp, lineHeight = 22.sp)
+                    Text(stringResource(Res.string.achievements_badge_how_label), color = Color.White.copy(alpha = 0.55f), fontSize = 13.sp)
+                    Text(resolvedHowToEarn, color = Color.White, fontSize = 15.sp, lineHeight = 22.sp)
                     if (spec.canRepeat) {
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "✨ يمكن الحصول عليها أكثر من مرة",
+                            "✨ " + stringResource(Res.string.achievements_badge_repeatable),
                             color = MohamedLoversPalette.Gold.copy(alpha = 0.8f),
                             fontSize = 12.sp,
                         )
@@ -355,7 +391,7 @@ fun AchievementsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { selectedSpec = null }) {
-                    Text("حسناً", color = MohamedLoversPalette.Gold, fontWeight = FontWeight.Bold)
+                    Text(stringResource(Res.string.achievements_dialog_ok), color = MohamedLoversPalette.Gold, fontWeight = FontWeight.Bold)
                 }
             },
         )
@@ -369,7 +405,7 @@ fun AchievementsScreen(
             shape = RoundedCornerShape(20.dp),
             title = {
                 Text(
-                    text = "🏅  شارات المراكز",
+                    text = "🏅  " + stringResource(Res.string.achievements_medal_info_title),
                     color = MohamedLoversPalette.Gold,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
@@ -379,7 +415,7 @@ fun AchievementsScreen(
             },
             text = {
                 Text(
-                    text = "تُضاف الميداليات كل جمعة عند انتهاء المسابقة الأسبوعية.\n\nاستمر في المشاركة كل أسبوع وحقق أعلى مركز! 🌟",
+                    text = stringResource(Res.string.achievements_medal_info_body),
                     color = Color.White,
                     fontSize = 15.sp,
                     lineHeight = 24.sp,
@@ -388,7 +424,7 @@ fun AchievementsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showMedalInfo = false }) {
-                    Text("حسناً", color = MohamedLoversPalette.Gold, fontWeight = FontWeight.Bold)
+                    Text(stringResource(Res.string.achievements_dialog_ok), color = MohamedLoversPalette.Gold, fontWeight = FontWeight.Bold)
                 }
             },
         )
@@ -405,6 +441,7 @@ private fun BadgeCard(
 ) {
     val achieved = item.count > 0
     val spec = item.spec
+    val title = stringResource(spec.titleRes, *spec.titleArgs.toTypedArray())
 
     Box(
         modifier = modifier
@@ -429,13 +466,13 @@ private fun BadgeCard(
         ) {
             Image(
                 painter = painterResource(spec.drawable),
-                contentDescription = spec.title,
+                contentDescription = title,
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.size(48.dp),
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = spec.title,
+                text = title,
                 color = if (achieved) MohamedLoversPalette.Gold else Color.White,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
@@ -474,6 +511,7 @@ private fun StreakBadgeCard(
 ) {
     val achieved = item.count > 0
     val spec = item.spec
+    val title = stringResource(spec.titleRes, *spec.titleArgs.toTypedArray())
     val target = spec.streakTarget ?: return
     val progress = if (achieved) target else currentStreak.coerceAtMost(target)
 
@@ -519,21 +557,21 @@ private fun StreakBadgeCard(
             }
             Image(
                 painter = painterResource(spec.drawable),
-                contentDescription = spec.title,
+                contentDescription = title,
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.size(26.dp).alpha(if (!achieved && progress == 0) 0.3f else 1f),
             )
         }
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = spec.title,
+                text = title,
                 color = if (achieved) MohamedLoversPalette.Gold else Color.White,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
             )
             Spacer(Modifier.height(2.dp))
             Text(
-                text = if (achieved) "✓ مكتملة" else "$progress / $target",
+                text = if (achieved) "✓ " + stringResource(Res.string.achievements_streak_complete) else stringResource(Res.string.achievements_streak_progress, progress, target),
                 color = MohamedLoversPalette.Gold.copy(alpha = if (achieved) 0.7f else 0.8f),
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Medium,
@@ -589,7 +627,7 @@ private fun RoundHistoryCard(achievement: Achievement.RankAchievement) {
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "المركز ${achievement.rank}",
+                    text = stringResource(Res.string.achievements_round_rank, achievement.rank),
                     color = MohamedLoversPalette.Gold,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
@@ -599,7 +637,7 @@ private fun RoundHistoryCard(achievement: Achievement.RankAchievement) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    Text("الجولة:", color = Color.White.copy(alpha = 0.35f), fontSize = 10.sp)
+                    Text(stringResource(Res.string.achievements_round_label), color = Color.White.copy(alpha = 0.35f), fontSize = 10.sp)
                     Text(achievement.roundKey, color = Color.White.copy(alpha = 0.55f), fontSize = 11.sp)
                 }
             }
@@ -607,7 +645,7 @@ private fun RoundHistoryCard(achievement: Achievement.RankAchievement) {
                 Column(horizontalAlignment = Alignment.End) {
                     if (achievement.score != null && achievement.score > 0) {
                         Text(
-                            text = "عدد الصلوات",
+                            text = stringResource(Res.string.achievements_prayer_count_label),
                             color = Color.White.copy(alpha = 0.35f),
                             fontSize = 9.sp,
                             letterSpacing = 0.3.sp,
@@ -630,7 +668,7 @@ private fun RoundHistoryCard(achievement: Achievement.RankAchievement) {
                         ) {
                             Icon(
                                 imageVector = Icons.Default.ContentCopy,
-                                contentDescription = "نسخ كود الفائز",
+                                contentDescription = stringResource(Res.string.achievements_copy_winner_code_cd),
                                 tint = MohamedLoversPalette.Gold,
                                 modifier = Modifier.size(17.dp),
                             )

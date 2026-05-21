@@ -21,6 +21,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import org.jetbrains.compose.resources.stringResource
+import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.*
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 
 @Composable
@@ -42,14 +45,14 @@ fun FcmPermissionReminderDialog(
                 fontSize = 48.sp,
             )
             Text(
-                text = "لا تفوتك نتائج محبّي محمد ﷺ",
+                text = stringResource(Res.string.fcm_reminder_title),
                 color = Color.White,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
             )
             Text(
-                text = "فعّل الإشعارات لتصلك نتائج المسابقة وترتيبك بين المحبين فور صدورها.",
+                text = stringResource(Res.string.fcm_reminder_description),
                 color = Color.White.copy(alpha = 0.8f),
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
@@ -62,10 +65,10 @@ fun FcmPermissionReminderDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = MohamedLoversPalette.Gold),
                 shape = RoundedCornerShape(12.dp),
             ) {
-                Text("تفعيل الإشعارات", color = Color.Black, fontWeight = FontWeight.Bold)
+                Text(stringResource(Res.string.fcm_reminder_enable), color = Color.Black, fontWeight = FontWeight.Bold)
             }
             TextButton(onClick = onDismiss) {
-                Text("لاحقاً", color = Color.White.copy(alpha = 0.6f), fontSize = 13.sp)
+                Text(stringResource(Res.string.fcm_reminder_later), color = Color.White.copy(alpha = 0.6f), fontSize = 13.sp)
             }
         }
     }

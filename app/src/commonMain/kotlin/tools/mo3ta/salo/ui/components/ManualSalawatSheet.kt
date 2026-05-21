@@ -45,6 +45,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.jetbrains.compose.resources.stringResource
+import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.*
 
 private val PRESET_COUNTS = listOf(33, 100, 300, 500, 1000)
 
@@ -90,7 +93,7 @@ internal fun ManualSalawatSheet(
 
             // Title
             Text(
-                text = "📿 تسجيل صلوات خارجية",
+                text = stringResource(Res.string.manual_salawat_title),
                 color = MohamedLoversPalette.GoldHighlight,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.W500,
@@ -101,7 +104,7 @@ internal fun ManualSalawatSheet(
 
             // Subtitle — why this feature exists
             Text(
-                text = "صلّيت على النبي ﷺ بصمت أو على أصابعك أو بالمسبحة؟\nسجّل ما صلّيت — لا تتوقف عن الصلاة لأنك بعيد عن التطبيق",
+                text = stringResource(Res.string.manual_salawat_subtitle),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.55f),
                 fontSize = 13.sp,
                 fontFamily = MohamedLoversFonts.body,
@@ -165,7 +168,7 @@ internal fun ManualSalawatSheet(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "عدد آخر:",
+                    text = stringResource(Res.string.manual_salawat_other_count),
                     color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.6f),
                     fontSize = 14.sp,
                     fontFamily = MohamedLoversFonts.body,
@@ -180,7 +183,7 @@ internal fun ManualSalawatSheet(
                     },
                     placeholder = {
                         Text(
-                            "أدخل العدد",
+                            stringResource(Res.string.manual_salawat_enter_count),
                             color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.3f),
                             fontSize = 14.sp,
                         )
@@ -293,7 +296,7 @@ internal fun ManualSalawatSheet(
                 }
                 Spacer(Modifier.width(10.dp))
                 Text(
-                    text = "أشهد أن هذا العدد صحيح وحقيقي، وأن الله مطّلع على نيّتي",
+                    text = stringResource(Res.string.manual_salawat_witness),
                     color = MohamedLoversPalette.GoldGlow,
                     fontSize = 14.sp,
                     fontFamily = MohamedLoversFonts.body,
@@ -328,7 +331,7 @@ internal fun ManualSalawatSheet(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = "✦ تسجيل الصلوات ✦",
+                    text = stringResource(Res.string.manual_salawat_submit),
                     color = if (canSubmit) MohamedLoversPalette.SkyTop else MohamedLoversPalette.GoldGlow.copy(alpha = 0.4f),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.W700,

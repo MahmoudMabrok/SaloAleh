@@ -20,8 +20,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import org.jetbrains.compose.resources.stringResource
 import tools.mo3ta.salo.domain.Achievement
 import tools.mo3ta.salo.domain.BadgeType
+import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.achievement_celebration_dismiss
+import tools.mo3ta.salo.generated.resources.achievement_celebration_rank_subtitle
+import tools.mo3ta.salo.generated.resources.achievement_celebration_rank_title
+import tools.mo3ta.salo.generated.resources.achievement_celebration_streak_30_subtitle
+import tools.mo3ta.salo.generated.resources.achievement_celebration_streak_30_title
+import tools.mo3ta.salo.generated.resources.achievement_celebration_streak_7_subtitle
+import tools.mo3ta.salo.generated.resources.achievement_celebration_streak_7_title
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 
 @Composable
@@ -33,13 +42,13 @@ fun AchievementCelebrationDialog(
         is Achievement.StreakBadge -> when (achievement.type) {
             BadgeType.STREAK_7 -> Triple(
                 "🏅",
-                "أسبوع من المحبة!",
-                "فتحت شارة «المداومة» لفتح التطبيق 7 أيام متتالية. أنت من أهل الوفاء ﷺ",
+                stringResource(Res.string.achievement_celebration_streak_7_title),
+                stringResource(Res.string.achievement_celebration_streak_7_subtitle),
             )
             BadgeType.STREAK_30 -> Triple(
                 "🌟",
-                "شهر من الوفاء!",
-                "فتحت شارة «المحب» لفتح التطبيق 30 يوماً متتالياً. بارك الله فيك.",
+                stringResource(Res.string.achievement_celebration_streak_30_title),
+                stringResource(Res.string.achievement_celebration_streak_30_subtitle),
             )
         }
         is Achievement.RankAchievement -> {
@@ -48,8 +57,8 @@ fun AchievementCelebrationDialog(
             }
             Triple(
                 rankEmoji,
-                "المركز ${achievement.rank} في الترتيب!",
-                "وصلت إلى قائمة أفضل 10 محبين في جولة ${achievement.roundKey}. بارك الله فيك ﷺ",
+                stringResource(Res.string.achievement_celebration_rank_title, achievement.rank),
+                stringResource(Res.string.achievement_celebration_rank_subtitle, achievement.roundKey),
             )
         }
     }
@@ -85,7 +94,7 @@ fun AchievementCelebrationDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = MohamedLoversPalette.Gold),
                 shape = RoundedCornerShape(12.dp),
             ) {
-                Text("رائع! شكراً", color = Color.Black, fontWeight = FontWeight.Bold)
+                Text(stringResource(Res.string.achievement_celebration_dismiss), color = Color.Black, fontWeight = FontWeight.Bold)
             }
         }
     }

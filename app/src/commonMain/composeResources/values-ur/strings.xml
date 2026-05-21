@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">محبانِ محمد</string>
+
+    <!-- Counter -->
+    <string name="mohamed_lovers_counter_tag">نبی ﷺ پر درود</string>
+    <string name="mohamed_lovers_friday_bonus_label">جمعہ کا بونس × 2</string>
+    <string name="mohamed_lovers_counter_pending">سیشن: %1$d</string>
+    <string name="mohamed_lovers_counter_hint">نبی ﷺ پر درود بھیجنے کے لیے ٹیپ کریں</string>
+
+    <!-- Arch Shrine -->
+    <string name="mohamed_lovers_shrine_label">حجرہ شریف ﷺ</string>
+    <string name="mohamed_lovers_shrine_sub">اللہم صلِ وسلِم وبارک علیہ</string>
+
+    <!-- Hadith Banner -->
+    <string name="mohamed_lovers_hadith_isnad">ابوہریرہ رضی اللہ عنہ سے روایت ہے کہ نبی ﷺ نے فرمایا</string>
+    <string name="mohamed_lovers_hadith_quote">«جو بھی مجھ پر سلام بھیجتا ہے اللہ میری روح لوٹا دیتا ہے تاکہ میں اس کا سلام لوٹاؤں»</string>
+
+    <!-- Info Sheet -->
+    <string name="mohamed_lovers_info_sheet_title">محبانِ محمد ﷺ</string>
+    <string name="mohamed_lovers_status_title">حالت</string>
+    <string name="mohamed_lovers_status_waiting_network">نیٹورک سے وقت مطابقت ہو رہی ہے…</string>
+    <string name="mohamed_lovers_status_firebase_off">سروس سے رابطہ دستیاب نہیں</string>
+    <string name="mohamed_lovers_status_open">متصل</string>
+    <string name="mohamed_lovers_network_time">وقت: %1$s</string>
+    <string name="mohamed_lovers_round_end_label">راؤنڈ کی انتہا: %1$s</string>
+    <string name="mohamed_lovers_country_label">ملک: %1$s</string>
+    <string name="mohamed_lovers_self_tag_label">شناخت: %1$s</string>
+    <string name="mohamed_lovers_stats_title">اعداد و شمار</string>
+    <string name="mohamed_lovers_competition_title">🏆 مقابلہ</string>
+    <string name="mohamed_lovers_countdown_day">دن</string>
+    <string name="mohamed_lovers_countdown_hour">گھنٹہ</string>
+    <string name="mohamed_lovers_countdown_minute">منٹ</string>
+    <string name="mohamed_lovers_countdown_second">سیکنڈ</string>
+    <string name="mohamed_lovers_ornament_divider">◆</string>
+    <string name="mohamed_lovers_rank_number">#%1$d</string>
+    <string name="mohamed_lovers_round_total_label">اس راؤنڈ میں نبی پر درود کی تعداد</string>
+    <string name="mohamed_lovers_round_player_count_label">راؤنڈ کے شرکاء: %1$d</string>
+    <string name="mohamed_lovers_all_time_total_label">کل درود کی مجموعی تعداد</string>
+    <string name="mohamed_lovers_leaderboard_title">صدر فہرست</string>
+    <string name="mohamed_lovers_leaderboard_refresh_note">ہر 30 منٹ میں اپڈیٹ ہوتا ہے</string>
+    <string name="mohamed_lovers_leaderboard_weekly">ہفتہ وار</string>
+    <string name="mohamed_lovers_leaderboard_daily">روزانہ</string>
+    <string name="mohamed_lovers_rank_pending_top">آپ صدر کی طرف بڑھ رہے ہیں</string>
+    <string name="mohamed_lovers_leaderboard_empty">ابھی کوئی شرکاء نہیں</string>
+    <string name="mohamed_lovers_winner_title">آپ فاتح ہیں!</string>
+    <string name="mohamed_lovers_winner_placeholder">جلد اعلان ہوگا</string>
+    <string name="mohamed_lovers_banner">ہر جمعہ درود دوگنا ہوتا ہے — جمعہ کا موقع مت گنوائیں!</string>
+
+    <!-- Main Screen Top Bar -->
+    <string name="main_screen_rank_chip_label">آپ کی رینک </string>
+    <string name="main_screen_rank_chip_tooltip">آپ اسے سیٹنگز سے کنٹرول کر سکتے ہیں</string>
+    <string name="main_screen_bubble_tooltip">براؤز کرتے وقت نبی ﷺ پر درود بھیجیں</string>
+    <string name="main_screen_manual_salawat_button">📿 بیرونی صلوات درج کریں</string>
+    <string name="main_screen_tooltip_settings">سیٹنگز اور نوٹیفیکیشنز</string>
+    <string name="main_screen_cd_settings">سیٹنگز</string>
+    <string name="main_screen_tooltip_achievements">پچھلے راؤنڈز میں آپ کی کامیابیاں اور رینک</string>
+    <string name="main_screen_cd_achievements">کامیابیاں</string>
+    <string name="main_screen_tooltip_hadith">نبی ﷺ پر درود بھیجنے کی فضیلت سے متعلق احادیث</string>
+    <string name="main_screen_cd_hadith">احادیث</string>
+    <string name="main_screen_tooltip_ten_days">ذوالحجہ کے دس دنوں کے اعمال اور فضائل</string>
+    <string name="main_screen_cd_ten_days">ذوالحجہ کے دس دن</string>
+    <string name="main_screen_tooltip_takbeer">اجتماعی تکبیر سیشن</string>
+    <string name="main_screen_cd_takbeer">تکبیر سیشن</string>
+    <string name="main_screen_tooltip_info">راؤنڈ کی معلومات اور کھیلنے کا طریقہ</string>
+
+    <!-- Info Sheet Supporter -->
+    <string name="info_sheet_supporter_label">⭐ سپورٹر</string>
+
+    <!-- Screen / Platform Actions -->
+    <string name="mohamed_lovers_code_copied">کوڈ کاپی ہو گیا</string>
+    <string name="mohamed_lovers_connection_error">رابطے میں خرابی، بعد میں دوبارہ کوشش کریں</string>
+    <string name="mohamed_lovers_prayer_text">اللّٰہم صلِ علی محمد وآلِ محمد</string>
+    <string name="mohamed_lovers_reward_text">صلی اللہ علیک</string>
+    <string name="mohamed_lovers_blocked_waiting_network">وقت مطابقت ہو رہا ہے…</string>
+    <string name="mohamed_lovers_blocked_firebase_off">رابطہ دستیاب نہیں</string>
+    <string name="mohamed_lovers_back_cd">واپس</string>
+    <string name="mohamed_lovers_info_cd">معلومات</string>
+    <string name="mohamed_lovers_share_rank">اپنی درجہ بندی شیئر کریں</string>
+
+    <!-- Round Recap Sheet -->
+    <string name="recap_title">راؤنڈ ختم!</string>
+    <string name="recap_rank_label">آپ کی پوزیشن #%1$d رہی %2$d شرکاء میں سے</string>
+    <string name="recap_personal_best">🏅 آپ کی بہترین درجہ بندی!</string>
+    <string name="recap_taps_up">+%1$d پچھلے ہفتے سے زیادہ درود</string>
+    <string name="recap_taps_down">%1$d پچھلے ہفتے سے کم درود</string>
+    <string name="recap_cta">نیا راؤنڈ شروع کریں</string>
+
+    <!-- Streak Grace Dialog -->
+    <string name="grace_warning_title">ہم نے آپ کی سلسلہ بچا لی</string>
+    <string name="grace_warning">آپ ایک دن چوکے، اس لیے ہفتاوار رعایت استعمال ہوئی تاکہ آپ کی سلسلہ برقرار رہے۔ کل ایپ کھولیں تاکہ سلسلہ جاری رہے۔</string>
+    <string name="grace_warning_cta">سمجھ آئیا</string>
+
+    <!-- Daily Goal -->
+    <string name="daily_goal_completed">شاباش! آج کا ہدف مکمل 🎉</string>
+    <string name="daily_goal_progress">%1$d / %2$d درود</string>
+
+    <!-- Achievements Screen -->
+    <string name="achievements_title">میری کامیابیاں</string>
+    <string name="achievements_back_cd">واپس</string>
+    <string name="achievements_stat_badges">بیجز</string>
+    <string name="achievements_stat_rounds">راؤنڈز</string>
+    <string name="achievements_stat_best_rank">بہترین درجہ</string>
+    <string name="achievements_section_streak_badges">سلسلہ بیجز</string>
+    <string name="achievements_section_rank_badges">درجہ بیجز</string>
+    <string name="achievements_section_round_history">راؤنڈ کامیابیاں</string>
+    <string name="achievements_medal_info_cd">تمغے کی معلومات</string>
+    <string name="achievements_badge_streak_7_title">مداومت</string>
+    <string name="achievements_badge_streak_7_how">ایپ کو مسلسل 7 دن بغیر کسی وقفے کے کھولیں</string>
+    <string name="achievements_badge_streak_30_title">محبت کرنے والا</string>
+    <string name="achievements_badge_streak_30_how">ایپ کو مسلسل 30 دن بغیر کسی وقفے کے کھولیں</string>
+    <string name="achievements_badge_rank_title">درجہ %1$d</string>
+    <string name="achievements_badge_rank_how">کسی بھی مقابلے کے راؤنڈ میں درجہ %1$d حاصل کریں</string>
+    <string name="achievements_badge_how_label">یہ کیسے حاصل کریں:</string>
+    <string name="achievements_badge_repeatable">ایک سے زیادہ بار حاصل کیا جا سکتا ہے</string>
+    <string name="achievements_dialog_ok">ٹھیک ہے</string>
+    <string name="achievements_medal_info_title">درجہ بیجز</string>
+    <string name="achievements_medal_info_body">ہر جمعہ ہفتہ وار مقابلہ ختم ہونے پر تمغے شامل کیے جاتے ہیں۔\n\nہر ہفتے شرکت جاری رکھیں اور اعلیٰ ترین درجہ حاصل کریں!</string>
+    <string name="achievements_empty_history">آپ نے ابھی تک کسی راؤنڈ میں حصہ نہیں لیا\nشرکت جاری رکھیں!</string>
+    <string name="achievements_streak_complete">مکمل</string>
+    <string name="achievements_streak_progress">%1$d / %2$d</string>
+    <string name="achievements_round_rank">درجہ %1$d</string>
+    <string name="achievements_round_label">راؤنڈ:</string>
+    <string name="achievements_prayer_count_label">صلوات کی تعداد</string>
+    <string name="achievements_copy_winner_code_cd">فاتح کا کوڈ کاپی کریں</string>
+
+    <!-- Achievement Celebration Dialog -->
+    <string name="achievement_celebration_streak_7_title">محبت کا ایک ہفتہ!</string>
+    <string name="achievement_celebration_streak_7_subtitle">آپ نے مسلسل 7 دن ایپ کھول کر «مداومت» کا بیج حاصل کیا۔ آپ وفاداروں میں سے ہیں ﷺ</string>
+    <string name="achievement_celebration_streak_30_title">وفاداری کا ایک مہینہ!</string>
+    <string name="achievement_celebration_streak_30_subtitle">آپ نے مسلسل 30 دن ایپ کھول کر «محبت کرنے والا» بیج حاصل کیا۔ اللہ آپ پر برکت نازل فرمائے۔</string>
+    <string name="achievement_celebration_rank_title">لیڈر بورڈ میں درجہ %1$d!</string>
+    <string name="achievement_celebration_rank_subtitle">آپ راؤنڈ %1$s میں سرفہرست 10 میں پہنچ گئے۔ اللہ آپ پر برکت نازل فرمائے ﷺ</string>
+    <string name="achievement_celebration_dismiss">شاندار! شکریہ</string>
+
+    <!-- Takbeer Session Screen -->
+    <string name="takbeer_back_cd">واپس</string>
+    <string name="takbeer_session_title">اجتماعی تکبیر سیشن</string>
+    <string name="takbeer_session_subtitle">حلقے میں باری باری تکبیر کہیں — اپنی باری تک سنیں</string>
+    <string name="takbeer_people_count_label">شرکاء کی تعداد</string>
+    <string name="takbeer_people_count_hint">آپ سمیت — 2 سے 10 تک</string>
+    <string name="takbeer_start_session">سیشن شروع کریں</string>
+    <string name="takbeer_how_it_works_title">سیشن کیسے کام کرتا ہے؟</string>
+    <string name="takbeer_how_step_1">حلقے میں شرکاء کی تعداد مقرر کریں۔</string>
+    <string name="takbeer_how_step_2">تکبیر شرکاء کے درمیان ایک ایک کرکے گھومتی ہے۔</string>
+    <string name="takbeer_how_step_3">جب آپ کی باری آئے (U) آواز رک جائے گی اور «آپ کی باری» ظاہر ہوگا — اپنی آواز سے تکبیر کہیں۔</string>
+    <string name="takbeer_how_step_4">باری آگے بڑھانے اور حلقہ جاری رکھنے کے لیے «ہو گیا» دبائیں۔</string>
+    <string name="takbeer_your_turn_instruction">اپنی آواز سے تکبیر کہیں، پھر باری آگے بڑھانے کے لیے «ہو گیا» دبائیں</string>
+    <string name="takbeer_done_next_turn">ہو گیا — اگلی باری</string>
+    <string name="takbeer_listen_wait">دوسروں کو سنیں... تیار رہیں، آپ کی باری آنے والی ہے</string>
+    <string name="takbeer_stop_session">سیشن ختم کریں</string>
+    <string name="takbeer_round_number">راؤنڈ %1$d</string>
+    <string name="takbeer_your_turn">آپ کی باری</string>
+    <string name="takbeer_label">تکبیر</string>
+    <string name="takbeer_participant_number">شریک %1$d</string>
+
+    <!-- Takbeer Announcement Dialog -->
+    <string name="takbeer_announcement_title">اجتماعی تکبیر سیشن</string>
+    <string name="takbeer_announcement_body">اپنے دوستوں کے ساتھ باری باری تکبیر کہیں!\nشرکاء کی تعداد مقرر کریں اور شروع کریں\nہر شخص اپنی آواز سے کہے اور «ہو گیا» دبائے</string>
+    <string name="takbeer_announcement_cta">سیشن شروع کریں</string>
+    <string name="takbeer_announcement_dismiss">بعد میں</string>
+
+    <!-- Paywall Screen -->
+    <string name="paywall_supporter_settings_title">سپورٹر کی ترتیبات</string>
+    <string name="paywall_support_app_title">ایپ کی مدد کریں</string>
+    <string name="paywall_you_are_supporter">آپ سپورٹر ہیں! ✅</string>
+    <string name="paywall_thanks_subtitle">آپ کی مدد کا شکریہ — یہ ہیں آپ کی خصوصی فیچر سیٹنگز</string>
+    <string name="paywall_contribute_subtitle">ایپ کی ترقی میں حصہ ڈالیں اور خصوصی فیچرز حاصل کریں</string>
+    <string name="paywall_hide_score_title">اسکور چھپائیں</string>
+    <string name="paywall_hide_score_subtitle">لیڈربورڈ پر دوسروں سے اپنا اسکور چھپائیں</string>
+    <string name="paywall_supporter_badge_title">سپورٹر بیج</string>
+    <string name="paywall_supporter_badge_subtitle">لیڈربورڈ پر آپ کے نام کے ساتھ ایک خاص بیج</string>
+    <string name="paywall_score_hidden_description">آپ کا اسکور دوسرے شرکاء سے چھپا ہوا ہے</string>
+    <string name="paywall_hide_score_plus_badge">اسکور چھپائیں + سپورٹر بیج</string>
+    <string name="paywall_support_now_price">ابھی مدد کریں — %1$s</string>
+    <string name="paywall_support_now">ابھی مدد کریں</string>
+    <string name="paywall_restore_purchases">خریداری بحال کریں</string>
+
+    <!-- Premium Promo Dialog -->
+    <string name="premium_promo_description">نبی ﷺ پر درود بھیجنے میں مدد کریں\nاور اپنا اسکور چھپانے اور سپورٹر بیج جیسے خصوصی فیچرز حاصل کریں</string>
+    <string name="premium_promo_later">بعد میں</string>
+
+    <!-- Purchase Success Dialog -->
+    <string name="purchase_success_title">جزاک اللہ خیرا!</string>
+    <string name="purchase_success_activated">«%1$s» فعال ہو گیا — اللہ آپ کی مدد میں برکت دے</string>
+    <string name="purchase_success_dismiss">بہت اچھا! شکریہ</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">ترتیبات</string>
+    <string name="settings_notifications_header">اطلاعات</string>
+    <string name="settings_notifications_disabled">اطلاعات غیر فعال ہیں — فعال کرنے کے لیے ٹیپ کریں</string>
+    <string name="settings_exact_alarm_disabled">درست وقت کی اطلاعات فعال نہیں — فعال کرنے کے لیے ٹیپ کریں</string>
+    <string name="settings_daily_reminder">روزانہ یاد دہانی</string>
+    <string name="settings_daily_reminder_subtitle">دن میں ایک بار</string>
+    <string name="settings_enable_notifications_toast">پہلے ایپ کی اطلاعات فعال کریں</string>
+    <string name="settings_enable_exact_alarm_toast">یاد دہانی بالکل وقت پر آنے کے لیے درست وقت فعال کریں</string>
+    <string name="settings_friday_notifications">جمعہ کی اطلاعات</string>
+    <string name="settings_friday_notifications_subtitle">صبح 9 بجے سے شام 5 بجے تک ہر گھنٹے</string>
+    <string name="settings_content_header">مواد</string>
+    <string name="settings_hadith_on_open">کھولنے پر حدیث</string>
+    <string name="settings_hadith_on_open_subtitle">نبی ﷺ پر درود بھیجنے کی فضیلت کے بارے میں حدیث دکھائیں</string>
+    <string name="settings_show_rank">اپنی درجہ بندی دکھائیں</string>
+    <string name="settings_show_rank_subtitle">مرکزی اسکرین پر مقابلے میں اپنی درجہ بندی دکھائیں</string>
+    <string name="settings_daily_leaderboard">روزانہ لیڈر بورڈ</string>
+    <string name="settings_daily_leaderboard_subtitle">صرف آج کی نمازوں کی بنیاد پر درجہ بندی</string>
+    <string name="settings_sync_header">مطابقت پذیری</string>
+    <string name="settings_sync_from_extension">براؤزر ایکسٹینشن سے مطابقت پذیری</string>
+    <string name="settings_download_chrome_extension">کروم ایکسٹینشن ڈاؤن لوڈ کریں</string>
+    <string name="settings_support_header">تعاون</string>
+    <string name="settings_support_app">🌟 ایپ کی مدد کریں</string>
+    <string name="settings_about_header">ایپ کے بارے میں</string>
+    <string name="settings_app_guide">ایپ گائیڈ</string>
+    <string name="settings_privacy_policy">رازداری کی پالیسی</string>
+    <string name="settings_share_app">ایپ شیئر کریں</string>
+    <string name="settings_open_store_page">اسٹور کا صفحہ کھولیں</string>
+    <string name="settings_app_version">ایپ ورژن</string>
+    <string name="settings_supporter_status">آپ معاون ہیں — %1$s</string>
+    <string name="settings_manage_features">خصوصیات کا انتظام کرنے کے لیے ٹیپ کریں</string>
+
+    <!-- Extension QR Screen -->
+    <string name="extension_qr_title">ڈیٹا کی مطابقت پذیری</string>
+    <string name="extension_qr_warning_title">تنبیہ</string>
+    <string name="extension_qr_warning_message">کوئی بھی غلط کوڈ موجودہ راؤنڈ میں آپ کے پوائنٹس صفر کر دے گا۔</string>
+    <string name="extension_qr_scan_instruction">صرف براؤزر ایکسٹینشن سے کوڈ اسکین کریں۔</string>
+    <string name="extension_qr_sync_now">ابھی مطابقت پذیر کریں</string>
+    <string name="extension_qr_success_toast">ایکسٹینشن سے %1$d نمازیں شامل کی گئیں ✓</string>
+    <string name="extension_qr_cheat_toast">⚠️ %1$s — آپ کے پوائنٹس صفر کر دیے گئے</string>
+    <string name="extension_qr_error_toast">⚠️ %1$s</string>
+
+    <!-- Bubble Feature Promo Dialog -->
+    <string name="bubble_promo_title">نئی خصوصیت: صلوات کا بلبلہ</string>
+    <string name="bubble_promo_description">اب آپ کسی بھی ایپ کے استعمال کے دوران نبی ﷺ پر درود بھیج سکتے ہیں!\n\n• ایک چھوٹا بلبلہ دوسری ایپس کے اوپر ظاہر ہوتا ہے\n• اپنی صلوات شمار کرنے کے لیے ٹیپ کریں\n• ہر ١٠ منٹ میں نبی ﷺ پر درود کی یاد دہانی</string>
+    <string name="bubble_promo_try_now">ابھی آزمائیں</string>
+    <string name="bubble_promo_later">بعد میں</string>
+
+    <!-- Daily Leaderboard Promo Dialog -->
+    <string name="daily_leaderboard_promo_title">نئی خصوصیت: روزانہ درجہ بندی</string>
+    <string name="daily_leaderboard_promo_description">اب آپ نبی ﷺ پر درود بھیجنے والوں میں اپنی روزانہ درجہ بندی دیکھ سکتے ہیں\n\nدن بدن اپنی پیشرفت دیکھیں اور محبین کے ساتھ مقابلہ کریں!</string>
+    <string name="daily_leaderboard_promo_hint">آپ ترتیبات سے ہفتہ وار اور روزانہ درجہ بندی کے درمیان تبدیل کر سکتے ہیں</string>
+    <string name="daily_leaderboard_promo_dismiss">سمجھ آ گئی</string>
+
+    <!-- FCM Permission Reminder Dialog -->
+    <string name="fcm_reminder_title">محمد ﷺ کے محبین کے نتائج سے محروم نہ رہیں</string>
+    <string name="fcm_reminder_description">مسابقت کے نتائج اور محبین میں اپنی درجہ بندی حاصل کرنے کے لیے اطلاعات فعال کریں۔</string>
+    <string name="fcm_reminder_enable">اطلاعات فعال کریں</string>
+    <string name="fcm_reminder_later">بعد میں</string>
+
+    <!-- Notification Rationale Dialog -->
+    <string name="notif_rationale_title">نبی ﷺ پر آپ کے درود میں خوش آمدید</string>
+    <string name="notif_rationale_description">• نبی محمد ﷺ پر روزانہ درود کی یاد دہانی\n• جمعہ کو ہر گھنٹے خصوصی الرٹس\n• محمد کے محبین کی اطلاعات — مسابقت کے نتائج دیکھیں\n\nان خصوصیات کو حاصل کرنے کے لیے ترتیبات سے اطلاعات فعال کریں۔</string>
+    <string name="notif_rationale_open_settings">ترتیبات کھولیں</string>
+    <string name="notif_rationale_later">بعد میں</string>
+
+    <!-- Overlay Permission Rationale Dialog -->
+    <string name="overlay_rationale_title">کسی بھی وقت نبی ﷺ پر درود بھیجیں</string>
+    <string name="overlay_rationale_description">دوسری ایپس کے اوپر صلوات کا بلبلہ چلانے کے لیے ہمیں \"دوسری ایپس کے اوپر ظاہر ہونا\" کی اجازت درکار ہے۔\n\nیہ اجازت آپ کو دوسری ایپس استعمال کرتے ہوئے بھی اپنی صلوات شمار کرنے دیتی ہے۔</string>
+    <string name="overlay_rationale_open_settings">ترتیبات کھولیں</string>
+    <string name="overlay_rationale_later">بعد میں</string>
+
+    <!-- Review Dialog -->
+    <string name="review_title">ایپ کی درجہ بندی کریں</string>
+    <string name="review_description">اگر آپ کو ایپ پسند آئی تو اسٹور پر اپنی درجہ بندی سے ہماری مدد کریں۔\nآپ کی درجہ بندی خیر پھیلانے اور زیادہ لوگوں تک پہنچنے میں مدد کرتی ہے۔</string>
+    <string name="review_rate_now">ابھی درجہ بندی کریں</string>
+    <string name="review_later">بعد میں</string>
+
+    <!-- Manual Salawat Sheet -->
+    <string name="manual_salawat_title">📿 بیرونی صلوات درج کریں</string>
+    <string name="manual_salawat_subtitle">نبی ﷺ پر خاموشی سے، انگلیوں پر، یا تسبیح سے درود بھیجا؟\nجو پڑھا اسے درج کریں — ایپ سے دور ہونے کی وجہ سے درود نہ چھوڑیں</string>
+    <string name="manual_salawat_other_count">دوسری تعداد:</string>
+    <string name="manual_salawat_enter_count">تعداد درج کریں</string>
+    <string name="manual_salawat_witness">میں گواہی دیتا ہوں کہ یہ تعداد درست اور حقیقی ہے، اور اللہ میری نیت سے باخبر ہے</string>
+    <string name="manual_salawat_submit">✦ صلوات درج کریں ✦</string>
+
+    <!-- Share Card -->
+    <string name="share_card_out_of_participants">%1$d شرکاء میں سے</string>
+    <string name="share_card_rank_label">RANK</string>
+    <string name="share_card_my_prayers_this_week">اس ہفتے میری صلوات</string>
+    <string name="share_card_round_total">راؤنڈ کا کل</string>
+
+    <!-- Daily Hadith Dialog -->
+    <string name="daily_hadith_header">نبی ﷺ پر درود کی فضیلت</string>
+    <string name="daily_hadith_dismiss">ٹھیک ہے</string>
+
+    <!-- Onboarding Screen -->
+    <string name="onboarding_skip">چھوڑ دیں</string>
+    <string name="onboarding_next">اگلا</string>
+    <string name="onboarding_start">ابھی شروع کریں ✨</string>
+    <string name="onboarding_welcome_title">خوش آمدید\nمحبانِ محمد ﷺ</string>
+    <string name="onboarding_welcome_subtitle">نبی ﷺ پر درود بھیجنا روزانہ کی عادت بنائیں</string>
+    <string name="onboarding_welcome_body">ایک ایپ جو نبی ﷺ کے محبین کو ہفتہ وار درود شماری مقابلے میں جمع کرتی ہے، عالمی لیڈربورڈ کے ساتھ۔</string>
+    <string name="onboarding_rounds_title">ہفتہ وار راؤنڈز</string>
+    <string name="onboarding_rounds_subtitle">ہر جمعہ شروع ہوتا ہے اور ایک ہفتے بعد ختم ہوتا ہے</string>
+    <string name="onboarding_rounds_body">ہر ہفتے ایک نیا راؤنڈ — زیادہ سے زیادہ درود جمع کریں اور دنیا بھر کے محبین سے مقابلہ کریں۔\n\nجمعہ کو آپ کی گنتی دوگنی × ٢ ہوتی ہے، موقع مت چھوڑیں!</string>
+    <string name="onboarding_achievements_title">کامیابیاں اور مراتب</string>
+    <string name="onboarding_achievements_subtitle">اعزازی مراتب حاصل کریں اور بیجز جمع کریں</string>
+    <string name="onboarding_achievements_body">ہر راؤنڈ میں ٹاپ ١٠ شرکاء کو اعزازی مرتبے کا بیج ملتا ہے۔\n\nاپنی ہفتہ وار سلسلہ برقرار رکھیں تاکہ سنہری سلسلے کے بیجز حاصل کریں۔</string>
+    <string name="onboarding_pray_title">نبی ﷺ پر درود بھیجیں</string>
+
+    <!-- Hadith List Screen -->
+    <string name="hadith_list_screen_title">نبی ﷺ پر درود کی فضیلت</string>
+    <string name="hadith_list_text_count">%1$d احادیث و آثار</string>
+    <string name="hadith_list_media_count">%1$d کلپس اور فہرستیں</string>
+    <string name="hadith_list_tab_texts">نصوص</string>
+    <string name="hadith_list_tab_media">میڈیا</string>
+    <string name="hadith_list_empty">کوئی مواد دستیاب نہیں</string>
+    <string name="hadith_list_media_type_video">ویڈیو</string>
+    <string name="hadith_list_media_type_playlist">فہرست</string>
+    <string name="hadith_list_media_type_channel">چینل</string>
+    <string name="hadith_list_open_cd">کھولیں</string>
+    <string name="hadith_list_share">شیئر کریں</string>
+    <string name="hadith_list_copy">کاپی</string>
+    <string name="hadith_list_copied">کاپی ہو گیا</string>
+
+    <!-- Ten Days Screen -->
+    <string name="tendays_title">ذوالحجہ کے دس دن</string>
+    <string name="tendays_day_of_total">دن %1$d از %2$d</string>
+    <string name="tendays_total_score">آپ کے کل پوائنٹس</string>
+    <string name="tendays_baqiyat_title">باقیات صالحات</string>
+    <string name="tendays_baqiyat_points">+١ فی ذکر</string>
+    <string name="tendays_fasting_title">روزہ</string>
+    <string name="tendays_fasting_points">+١٠٠ پوائنٹس</string>
+    <string name="tendays_takbeer_title">تکبیر</string>
+    <string name="tendays_takbeer_points">+١٠ پوائنٹس</string>
+    <string name="tendays_takbeer_button">تکبیر</string>
+    <string name="tendays_auto_play">خودکار چلائیں</string>
+    <string name="tendays_every">ہر</string>
+    <string name="tendays_repeat_count_label">دہرانے کی تعداد</string>
+    <string name="tendays_interval_1">١ منٹ</string>
+    <string name="tendays_interval_5">٥ منٹ</string>
+    <string name="tendays_interval_10">١٠ منٹ</string>
+    <string name="tendays_interval_30">٣٠ منٹ</string>
+    <string name="tendays_interval_60">٦٠ منٹ</string>
+    <string name="tendays_interval_other">%1$d منٹ</string>
+    <string name="tendays_repeat_once">ایک بار</string>
+    <string name="tendays_repeat_twice">دو بار</string>
+    <string name="tendays_repeat_three">٣ بار</string>
+    <string name="tendays_repeat_other">%1$d بار</string>
+    <string name="tendays_sadaqah_title">صدقہ</string>
+    <string name="tendays_sadaqah_points">+١٥٠ پوائنٹس</string>
+    <string name="tendays_leaderboard_title">سرفہرست</string>
+    <string name="tendays_refresh_hourly">ہر گھنٹے اپ ڈیٹ</string>
+    <string name="tendays_player_count">مقابلے میں شرکاء: %1$d</string>
+    <string name="tendays_no_data_yet">ابھی کوئی ڈیٹا نہیں</string>
+    <string name="tendays_self_rank_full">#%1$d از %2$d  آپ</string>
+    <string name="tendays_self_rank_only">#%1$d  آپ</string>
+    <string name="tendays_you_label">آپ</string>
+    <string name="tendays_leaderboard_encourage">مزید عبادات کر کے سرفہرست میں آئیں</string>
+    <string name="tendays_group_takbeer_session">اجتماعی تکبیر سیشن</string>
+    <string name="tendays_group_takbeer_hint">باری باری حلقے میں تکبیر کہیں — اپنی باری تک سنیں</string>
+
+    <!-- Ten Days Promo Dialog -->
+    <string name="tendays_promo_description">دنیا کے بہترین دن!\nتکبیر، روزہ، صدقہ اور ذکر — اپنے روزانہ اعمال درج کریں\nنیکی میں مسلمانوں سے مقابلہ کریں</string>
+    <string name="tendays_promo_start">ابھی شروع کریں</string>
+    <string name="tendays_promo_later">بعد میں</string>
+</resources>

@@ -42,7 +42,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
+import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.*
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.BillingAnalytics
 import tools.mo3ta.salo.data.billing.BillingManager
@@ -76,7 +79,7 @@ fun PaywallScreen(onBack: () -> Unit) {
             TopAppBar(
                 title = {
                     Text(
-                        text = if (isPremium) "إعدادات الداعم" else "ادعم التطبيق",
+                        text = if (isPremium) stringResource(Res.string.paywall_supporter_settings_title) else stringResource(Res.string.paywall_support_app_title),
                         color = MohamedLoversPalette.GoldGlow,
                         fontWeight = FontWeight.Bold,
                     )
@@ -85,7 +88,7 @@ fun PaywallScreen(onBack: () -> Unit) {
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "رجوع",
+                            contentDescription = stringResource(Res.string.mohamed_lovers_back_cd),
                             tint = MohamedLoversPalette.GoldGlow,
                         )
                     }
@@ -106,22 +109,22 @@ fun PaywallScreen(onBack: () -> Unit) {
             Text(text = "🌟", fontSize = 48.sp)
             Spacer(Modifier.height(12.dp))
             Text(
-                text = if (isPremium) "أنت داعم! ✅" else "ادعم التطبيق",
+                text = if (isPremium) stringResource(Res.string.paywall_you_are_supporter) else stringResource(Res.string.paywall_support_app_title),
                 color = MohamedLoversPalette.GoldGlow,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = if (isPremium) "شكرًا لدعمك — إليك إعدادات المزايا الحصرية" else "ساهم في تطوير التطبيق واحصل على مزايا حصرية",
+                text = if (isPremium) stringResource(Res.string.paywall_thanks_subtitle) else stringResource(Res.string.paywall_contribute_subtitle),
                 color = Color.White.copy(alpha = 0.6f),
                 fontSize = 14.sp,
             )
             Spacer(Modifier.height(28.dp))
 
-            FeatureCard(icon = "🔒", title = "إخفاء النتيجة", subtitle = "اخفِ نتيجتك من الآخرين في المتصدرين")
+            FeatureCard(icon = "🔒", title = stringResource(Res.string.paywall_hide_score_title), subtitle = stringResource(Res.string.paywall_hide_score_subtitle))
             Spacer(Modifier.height(10.dp))
-            FeatureCard(icon = "⭐", title = "شارة الداعم", subtitle = "شارة مميزة بجانب اسمك في المتصدرين")
+            FeatureCard(icon = "⭐", title = stringResource(Res.string.paywall_supporter_badge_title), subtitle = stringResource(Res.string.paywall_supporter_badge_subtitle))
             Spacer(Modifier.height(28.dp))
 
             if (isPremium) {
@@ -136,13 +139,13 @@ fun PaywallScreen(onBack: () -> Unit) {
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "إخفاء النتيجة",
+                            text = stringResource(Res.string.paywall_hide_score_title),
                             color = Color.White,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Medium,
                         )
                         Text(
-                            text = "نتيجتك مخفية عن المتسابقين الآخرين",
+                            text = stringResource(Res.string.paywall_score_hidden_description),
                             color = Color.White.copy(alpha = 0.5f),
                             fontSize = 12.sp,
                         )
@@ -196,7 +199,7 @@ fun PaywallScreen(onBack: () -> Unit) {
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = "ادعم الآن — $tierPrice",
+                        text = stringResource(Res.string.paywall_support_now_price, tierPrice),
                         color = Color(0xFF0f0f1a),
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
@@ -204,7 +207,7 @@ fun PaywallScreen(onBack: () -> Unit) {
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "استعادة المشتريات",
+                    text = stringResource(Res.string.paywall_restore_purchases),
                     color = Color.White.copy(alpha = 0.4f),
                     fontSize = 12.sp,
                     modifier = Modifier.clickable {
@@ -247,13 +250,13 @@ private fun SupportTierCard(
             )
             if (tier.features.contains(PremiumFeature.SCORE_MASK)) {
                 Text(
-                    text = "إخفاء النتيجة + شارة الداعم",
+                    text = stringResource(Res.string.paywall_hide_score_plus_badge),
                     color = Color.White.copy(alpha = 0.5f),
                     fontSize = 11.sp,
                 )
             } else {
                 Text(
-                    text = "شارة الداعم",
+                    text = stringResource(Res.string.paywall_supporter_badge_title),
                     color = Color.White.copy(alpha = 0.5f),
                     fontSize = 11.sp,
                 )

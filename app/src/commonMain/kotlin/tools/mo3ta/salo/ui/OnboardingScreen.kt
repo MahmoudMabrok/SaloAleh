@@ -40,13 +40,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.jetbrains.compose.resources.stringResource
+import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.*
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.components.MohamedLoversSkyBackground
 
 @Composable
 fun OnboardingScreen(onDone: () -> Unit) {
     var page by remember { mutableStateOf(0) }
-    val pages = remember { buildOnboardingPages() }
+    val pages = buildOnboardingPages()
 
     Box(modifier = Modifier.fillMaxSize()) {
         MohamedLoversSkyBackground()
@@ -66,7 +69,7 @@ fun OnboardingScreen(onDone: () -> Unit) {
                 if (page < pages.lastIndex) {
                     TextButton(onClick = onDone) {
                         Text(
-                            text = "تخطّي",
+                            text = stringResource(Res.string.onboarding_skip),
                             color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.55f),
                             fontSize = 14.sp,
                         )
@@ -105,7 +108,7 @@ fun OnboardingScreen(onDone: () -> Unit) {
                     .padding(horizontal = 8.dp),
             ) {
                 Text(
-                    text = if (page < pages.lastIndex) "التالي" else "ابدأ الآن ✨",
+                    text = if (page < pages.lastIndex) stringResource(Res.string.onboarding_next) else stringResource(Res.string.onboarding_start),
                     color = MohamedLoversPalette.SkyTop,
                     fontWeight = FontWeight.Bold,
                     fontSize = 17.sp,
@@ -218,31 +221,32 @@ private data class OnboardingPageData(
     val accentColor: Color,
 )
 
+@Composable
 private fun buildOnboardingPages() = listOf(
     OnboardingPageData(
         emoji = "🌙",
-        title = "أهلًا بك في\nمحبو محمد ﷺ",
-        subtitle = "اجعل الصلاة على النبي ﷺ عادة يومية",
-        body = "تطبيق يجمع محبّي النبي ﷺ في مسابقة أسبوعية لعدّ الصلوات، مع لوحة المتصدرين حول العالم.",
+        title = stringResource(Res.string.onboarding_welcome_title),
+        subtitle = stringResource(Res.string.onboarding_welcome_subtitle),
+        body = stringResource(Res.string.onboarding_welcome_body),
         accentColor = MohamedLoversPalette.GoldHighlight,
     ),
     OnboardingPageData(
         emoji = "⚡",
-        title = "جولات أسبوعية",
-        subtitle = "تبدأ كل جمعة وتنتهي بعد أسبوع",
-        body = "كل أسبوع جولة جديدة — اجمع أكبر عدد من الصلوات وتسابق مع المحبين حول العالم.\n\nيوم الجمعة يُضاعَف عدّك × ٢ فلا تفوِّت الفرصة!",
+        title = stringResource(Res.string.onboarding_rounds_title),
+        subtitle = stringResource(Res.string.onboarding_rounds_subtitle),
+        body = stringResource(Res.string.onboarding_rounds_body),
         accentColor = MohamedLoversPalette.AtmosphereViolet,
     ),
     OnboardingPageData(
         emoji = "🥇",
-        title = "الإنجازات والمراتب",
-        subtitle = "حقّق مراتب شرفية واجمع الشارات",
-        body = "أفضل ١٠ مشاركين في كل جولة ينالون شارة مرتبة شرفية.\n\nحافظ على سلسلتك الأسبوعية لتحصل على شارات السلسلة الذهبية.",
+        title = stringResource(Res.string.onboarding_achievements_title),
+        subtitle = stringResource(Res.string.onboarding_achievements_subtitle),
+        body = stringResource(Res.string.onboarding_achievements_body),
         accentColor = MohamedLoversPalette.GoldHighlight,
     ),
     OnboardingPageData(
         emoji = "🤲",
-        title = "صلِّ على النبي ﷺ",
+        title = stringResource(Res.string.onboarding_pray_title),
         subtitle = "«مَن صلَّى عليَّ صلاةً صلَّى اللهُ عليه بها عشرًا»",
         body = "",
         accentColor = MohamedLoversPalette.GoldHighlight,

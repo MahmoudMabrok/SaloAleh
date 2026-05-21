@@ -90,6 +90,21 @@ import tools.mo3ta.salo.generated.resources.mohamed_lovers_connection_error
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_info_cd
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_prayer_text
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_reward_text
+import tools.mo3ta.salo.generated.resources.main_screen_rank_chip_label
+import tools.mo3ta.salo.generated.resources.main_screen_rank_chip_tooltip
+import tools.mo3ta.salo.generated.resources.main_screen_bubble_tooltip
+import tools.mo3ta.salo.generated.resources.main_screen_manual_salawat_button
+import tools.mo3ta.salo.generated.resources.main_screen_tooltip_settings
+import tools.mo3ta.salo.generated.resources.main_screen_cd_settings
+import tools.mo3ta.salo.generated.resources.main_screen_tooltip_achievements
+import tools.mo3ta.salo.generated.resources.main_screen_cd_achievements
+import tools.mo3ta.salo.generated.resources.main_screen_tooltip_hadith
+import tools.mo3ta.salo.generated.resources.main_screen_cd_hadith
+import tools.mo3ta.salo.generated.resources.main_screen_tooltip_ten_days
+import tools.mo3ta.salo.generated.resources.main_screen_cd_ten_days
+import tools.mo3ta.salo.generated.resources.main_screen_tooltip_takbeer
+import tools.mo3ta.salo.generated.resources.main_screen_cd_takbeer
+import tools.mo3ta.salo.generated.resources.main_screen_tooltip_info
 import tools.mo3ta.salo.presentation.MohamedLoversError
 import tools.mo3ta.salo.presentation.MohamedLoversStatus
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
@@ -276,7 +291,7 @@ fun MohamedLoversScreen(
                             ) {
                                 Text(text = "$medal ", fontSize = 18.sp)
                                 Text(
-                                    text = "ترتيبك ",
+                                    text = stringResource(Res.string.main_screen_rank_chip_label),
                                     color = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.6f),
                                     fontSize = 14.sp,
                                     fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
@@ -310,7 +325,7 @@ fun MohamedLoversScreen(
                                     .clickable { showRankTooltip = false },
                             ) {
                                 Text(
-                                    text = "يمكنك التحكم في هذا من الإعدادات",
+                                    text = stringResource(Res.string.main_screen_rank_chip_tooltip),
                                     color = MohamedLoversPalette.GoldGlow,
                                     fontSize = 11.sp,
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
@@ -335,7 +350,7 @@ fun MohamedLoversScreen(
                                 .clickable { showBubbleTooltip = false },
                         ) {
                             Text(
-                                text = "صلّ على النبي ﷺ وأنت تتصفح",
+                                text = stringResource(Res.string.main_screen_bubble_tooltip),
                                 color = MohamedLoversPalette.GoldGlow,
                                 fontSize = 11.sp,
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
@@ -370,7 +385,7 @@ fun MohamedLoversScreen(
                     border = androidx.compose.foundation.BorderStroke(1.dp, MohamedLoversPalette.GoldBase.copy(alpha = 0.3f)),
                 ) {
                     Text(
-                        text = "📿 تسجيل صلوات خارجية",
+                        text = stringResource(Res.string.main_screen_manual_salawat_button),
                         color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
                         fontSize = 12.sp,
                         fontFamily = MohamedLoversFonts.body,
@@ -394,14 +409,14 @@ fun MohamedLoversScreen(
             )
 
             Box(modifier = Modifier.align(Alignment.TopEnd).padding(end = 14.dp, top = 36.dp)) {
-                TopBarTooltip(text = "الإعدادات والإشعارات", state = settingsTooltipState) {
+                TopBarTooltip(text = stringResource(Res.string.main_screen_tooltip_settings), state = settingsTooltipState) {
                     IconButton(onClick = {
                         analyticsManager.logAction("open_settings")
                         onOpenSettings()
                     }) {
                         Icon(
                             imageVector = Icons.Default.Settings,
-                            contentDescription = "الإعدادات",
+                            contentDescription = stringResource(Res.string.main_screen_cd_settings),
                             tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
                         )
                     }
@@ -409,45 +424,45 @@ fun MohamedLoversScreen(
             }
             Box(modifier = Modifier.align(Alignment.TopStart).padding(start = 14.dp, top = 36.dp)) {
                 Row {
-                    TopBarTooltip(text = "إنجازاتك وترتيبك في الجولات السابقة", state = achievementsTooltipState) {
+                    TopBarTooltip(text = stringResource(Res.string.main_screen_tooltip_achievements), state = achievementsTooltipState) {
                         IconButton(onClick = onOpenAchievements) {
                             Icon(
                                 imageVector = Icons.Default.EmojiEvents,
-                                contentDescription = "الإنجازات",
+                                contentDescription = stringResource(Res.string.main_screen_cd_achievements),
                                 tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
                             )
                         }
                     }
-                    TopBarTooltip(text = "أحاديث عن فضل الصلاة على النبي", state = hadithTooltipState) {
+                    TopBarTooltip(text = stringResource(Res.string.main_screen_tooltip_hadith), state = hadithTooltipState) {
                         IconButton(onClick = onOpenHadithList) {
                             Icon(
                                 imageVector = Icons.Default.AutoStories,
-                                contentDescription = "الأحاديث",
+                                contentDescription = stringResource(Res.string.main_screen_cd_hadith),
                                 tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
                             )
                         }
                     }
-                    TopBarTooltip(text = "أعمال وفضائل عشر ذي الحجة", state = tenDaysTooltipState) {
+                    TopBarTooltip(text = stringResource(Res.string.main_screen_tooltip_ten_days), state = tenDaysTooltipState) {
                         IconButton(onClick = onOpenTenDays) {
                             TenDaysEntryIcon(
                                 modifier = Modifier.size(24.dp),
-                                contentDescription = "عشر ذي الحجة",
+                                contentDescription = stringResource(Res.string.main_screen_cd_ten_days),
                             )
                         }
                     }
-                    TopBarTooltip(text = "جلسة تكبير جماعية", state = takbeerTooltipState) {
+                    TopBarTooltip(text = stringResource(Res.string.main_screen_tooltip_takbeer), state = takbeerTooltipState) {
                         IconButton(onClick = {
                             analyticsManager.logAction("open_takbeer_session", mapOf("source" to "top_bar"))
                             onOpenTakbeerSession()
                         }) {
                             Icon(
                                 imageVector = Icons.Default.Groups,
-                                contentDescription = "جلسة تكبير",
+                                contentDescription = stringResource(Res.string.main_screen_cd_takbeer),
                                 tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
                             )
                         }
                     }
-                    TopBarTooltip(text = "معلومات عن الجولة وكيفية اللعب", state = infoTooltipState) {
+                    TopBarTooltip(text = stringResource(Res.string.main_screen_tooltip_info), state = infoTooltipState) {
                         IconButton(onClick = {
                             analyticsManager.logAction("open_info_sheet", mapOf("source" to "icon"))
                             infoSheetOpen = true

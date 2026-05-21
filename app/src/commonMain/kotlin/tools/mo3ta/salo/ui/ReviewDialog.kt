@@ -21,6 +21,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import org.jetbrains.compose.resources.stringResource
+import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.*
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 
 @Composable
@@ -42,14 +45,14 @@ fun ReviewDialog(
                 fontSize = 48.sp,
             )
             Text(
-                text = "قيّم التطبيق",
+                text = stringResource(Res.string.review_title),
                 color = MohamedLoversPalette.Gold,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
             )
             Text(
-                text = "إذا أعجبك التطبيق، ساعدنا بتقييمك على المتجر.\nتقييمك يساعد في نشر الخير ووصول التطبيق لأكبر عدد.",
+                text = stringResource(Res.string.review_description),
                 color = Color.White.copy(alpha = 0.8f),
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
@@ -62,10 +65,10 @@ fun ReviewDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = MohamedLoversPalette.Gold),
                 shape = RoundedCornerShape(12.dp),
             ) {
-                Text("قيّم الآن", color = Color.Black, fontWeight = FontWeight.Bold)
+                Text(stringResource(Res.string.review_rate_now), color = Color.Black, fontWeight = FontWeight.Bold)
             }
             TextButton(onClick = onDismiss) {
-                Text("لاحقاً", color = Color.White.copy(alpha = 0.6f), fontSize = 13.sp)
+                Text(stringResource(Res.string.review_later), color = Color.White.copy(alpha = 0.6f), fontSize = 13.sp)
             }
         }
     }

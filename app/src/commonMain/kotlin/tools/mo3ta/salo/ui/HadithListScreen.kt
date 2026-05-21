@@ -56,8 +56,11 @@ import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.*
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.data.hadith.HadithItem
 import tools.mo3ta.salo.data.media.MediaItem
@@ -98,16 +101,16 @@ fun HadithListScreen(
                 title = {
                     Column {
                         Text(
-                            text = "فضل الصلاة على النبي ﷺ",
+                            text = stringResource(Res.string.hadith_list_screen_title),
                             color = HLGold,
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp,
                         )
                         Text(
                             text = if (selectedTab == 0)
-                                "${state.texts.size} حديث وأثر"
+                                stringResource(Res.string.hadith_list_text_count, state.texts.size)
                             else
-                                "${state.media.size} مقطع وقائمة",
+                                stringResource(Res.string.hadith_list_media_count, state.media.size),
                             color = HLMutedGold,
                             fontSize = 11.sp,
                         )
@@ -117,7 +120,7 @@ fun HadithListScreen(
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "رجوع",
+                            contentDescription = stringResource(Res.string.mohamed_lovers_back_cd),
                             tint = HLGold,
                         )
                     }
@@ -133,7 +136,7 @@ fun HadithListScreen(
         ) {
             // ── Tab bar ──────────────────────────────────────────────
             SegmentedTabBar(
-                tabs = listOf("النصوص", "الوسائط"),
+                tabs = listOf(stringResource(Res.string.hadith_list_tab_texts), stringResource(Res.string.hadith_list_tab_media)),
                 selected = selectedTab,
                 onSelect = { selectedTab = it },
                 modifier = Modifier
@@ -167,7 +170,7 @@ fun HadithListScreen(
 private fun TextTab(items: List<HadithItem>, isLoading: Boolean, loaded: Boolean) {
     when {
         isLoading -> LoadingState()
-        loaded && items.isEmpty() -> EmptyState(message = "لا يوجد محتوى")
+        loaded && items.isEmpty() -> EmptyState(message = stringResource(Res.string.hadith_list_empty))
         else -> LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -190,7 +193,7 @@ private fun MediaTab(items: List<MediaItem>, isLoading: Boolean, loaded: Boolean
     val uriHandler = LocalUriHandler.current
     when {
         isLoading -> LoadingState()
-        loaded && items.isEmpty() -> EmptyState(message = "لا يوجد محتوى")
+        loaded && items.isEmpty() -> EmptyState(message = stringResource(Res.string.hadith_list_empty))
         else -> LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -240,9 +243,9 @@ private fun MediaCard(item: MediaItem, onOpen: () -> Unit) {
     val shape = RoundedCornerShape(16.dp)
 
     val (typeLabel, typeBg) = when (item.type) {
-        MediaType.VIDEO    -> "فيديو" to TypeVideo
-        MediaType.PLAYLIST -> "قائمة" to TypePlaylist
-        MediaType.CHANNEL  -> "قناة"  to TypeChannel
+        MediaType.VIDEO    -> stringResource(Res.string.hadith_list_media_type_video) to TypeVideo
+        MediaType.PLAYLIST -> stringResource(Res.string.hadith_list_media_type_playlist) to TypePlaylist
+        MediaType.CHANNEL  -> stringResource(Res.string.hadith_list_media_type_channel) to TypeChannel
     }
 
     Box(
@@ -337,7 +340,7 @@ private fun MediaCard(item: MediaItem, onOpen: () -> Unit) {
             // External link icon
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                contentDescription = "فتح",
+                contentDescription = stringResource(Res.string.hadith_list_open_cd),
                 tint = HLGold.copy(alpha = 0.5f),
                 modifier = Modifier.size(18.dp),
             )
@@ -450,7 +453,7 @@ private fun HadithListItem(item: HadithItem, index: Int) {
                 CopyActionButton(text = shareContent, modifier = Modifier.weight(1f))
                 ActionButton(
                     icon = { Icon(Icons.Default.Share, contentDescription = null, tint = HLGold, modifier = Modifier.size(15.dp)) },
-                    label = "مشاركة",
+                    label = stringResource(Res.string.hadith_list_share),
                     onClick = { shareText(shareContent) },
                     modifier = Modifier.weight(1f),
                 )
@@ -555,7 +558,7 @@ private fun CopyActionButton(text: String, modifier: Modifier = Modifier) {
                 )
             }
             Text(
-                text = if (copied) "تم النسخ" else "نسخ",
+                text = if (copied) stringResource(Res.string.hadith_list_copied) else stringResource(Res.string.hadith_list_copy),
                 color = HLGold,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,

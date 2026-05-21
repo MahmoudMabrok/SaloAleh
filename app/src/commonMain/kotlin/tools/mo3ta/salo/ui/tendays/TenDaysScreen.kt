@@ -59,8 +59,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.*
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.data.tendays.DhikrType
 import tools.mo3ta.salo.ui.TakbeerOverlayButton
@@ -104,7 +107,7 @@ fun TenDaysScreen(
             IconButton(onClick = onBack) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "رجوع",
+                    contentDescription = stringResource(Res.string.mohamed_lovers_back_cd),
                     tint = TenDaysPalette.TextPrimary,
                 )
             }
@@ -155,10 +158,10 @@ fun TenDaysScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = TenDaysPalette.Gold),
                 shape = RoundedCornerShape(12.dp),
             ) {
-                Text("جلسة التكبير الجماعي", color = Color.Black, fontWeight = FontWeight.Bold)
+                Text(stringResource(Res.string.tendays_group_takbeer_session), color = Color.Black, fontWeight = FontWeight.Bold)
             }
             Text(
-                text = "كبّروا بالتناوب في حلقة — استمع حتى يأتي دورك",
+                text = stringResource(Res.string.tendays_group_takbeer_hint),
                 fontSize = 11.sp,
                 color = TenDaysPalette.TextSecondary,
                 textAlign = TextAlign.Center,
@@ -178,13 +181,13 @@ private fun TenDaysHeader(state: TenDaysUiState) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            text = "عشر ذي الحجة",
+            text = stringResource(Res.string.tendays_title),
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
             color = TenDaysPalette.Gold,
         )
         Text(
-            text = "اليوم ${state.currentDay} من ${state.totalDays}",
+            text = stringResource(Res.string.tendays_day_of_total, state.currentDay, state.totalDays),
             fontSize = 14.sp,
             color = TenDaysPalette.TextSecondary,
         )
@@ -210,7 +213,7 @@ private fun ScoreBanner(totalScore: Int) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "مجموع نقاطك",
+                text = stringResource(Res.string.tendays_total_score),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.Black,
@@ -286,13 +289,13 @@ private fun BaqiyatSection(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "الباقيات الصالحات",
+                text = stringResource(Res.string.tendays_baqiyat_title),
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
                 color = TenDaysPalette.TextPrimary,
             )
             Text(
-                text = "+١ لكل ذكر",
+                text = stringResource(Res.string.tendays_baqiyat_points),
                 fontSize = 11.sp,
                 color = TenDaysPalette.Gold,
             )
@@ -384,13 +387,13 @@ private fun FastingRow(isFasting: Boolean, onToggle: () -> Unit) {
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "الصيام",
+                    text = stringResource(Res.string.tendays_fasting_title),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = TenDaysPalette.TextPrimary,
                 )
                 Spacer(Modifier.width(8.dp))
-                Text(text = "+١٠٠ نقطة", fontSize = 11.sp, color = TenDaysPalette.Gold)
+                Text(text = stringResource(Res.string.tendays_fasting_points), fontSize = 11.sp, color = TenDaysPalette.Gold)
             }
             Checkbox(
                 checked = isFasting,
@@ -409,20 +412,22 @@ private fun FastingRow(isFasting: Boolean, onToggle: () -> Unit) {
 private val INTERVAL_OPTIONS = listOf(1, 5, 10, 30, 60)
 private val REPEAT_OPTIONS = listOf(1, 2, 3)
 
+@Composable
 private fun intervalLabel(minutes: Int): String = when (minutes) {
-    1 -> "١ دقيقة"
-    5 -> "٥ دقائق"
-    10 -> "١٠ دقائق"
-    30 -> "٣٠ دقيقة"
-    60 -> "٦٠ دقيقة"
-    else -> "$minutes د"
+    1 -> stringResource(Res.string.tendays_interval_1)
+    5 -> stringResource(Res.string.tendays_interval_5)
+    10 -> stringResource(Res.string.tendays_interval_10)
+    30 -> stringResource(Res.string.tendays_interval_30)
+    60 -> stringResource(Res.string.tendays_interval_60)
+    else -> stringResource(Res.string.tendays_interval_other, minutes)
 }
 
+@Composable
 private fun repeatLabel(count: Int): String = when (count) {
-    1 -> "مرة"
-    2 -> "مرتين"
-    3 -> "٣ مرات"
-    else -> "$count مرات"
+    1 -> stringResource(Res.string.tendays_repeat_once)
+    2 -> stringResource(Res.string.tendays_repeat_twice)
+    3 -> stringResource(Res.string.tendays_repeat_three)
+    else -> stringResource(Res.string.tendays_repeat_other, count)
 }
 
 @Composable
@@ -455,13 +460,13 @@ private fun TakbeerRow(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "التكبير",
+                    text = stringResource(Res.string.tendays_takbeer_title),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = TenDaysPalette.TextPrimary,
                 )
                 Spacer(Modifier.width(8.dp))
-                Text(text = "+١٠ نقاط", fontSize = 11.sp, color = TenDaysPalette.Gold)
+                Text(text = stringResource(Res.string.tendays_takbeer_points), fontSize = 11.sp, color = TenDaysPalette.Gold)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -490,7 +495,7 @@ private fun TakbeerRow(
                     shape = RoundedCornerShape(8.dp),
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
                 ) {
-                    Text("كبّر", color = if (cooldown) Color.Black.copy(alpha = 0.4f) else Color.Black, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    Text(stringResource(Res.string.tendays_takbeer_button), color = if (cooldown) Color.Black.copy(alpha = 0.4f) else Color.Black, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 }
             }
         }
@@ -513,7 +518,7 @@ private fun TakbeerRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "تشغيل تلقائي",
+                text = stringResource(Res.string.tendays_auto_play),
                 fontSize = 12.sp,
                 color = TenDaysPalette.TextSecondary,
             )
@@ -535,7 +540,7 @@ private fun TakbeerRow(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "كل",
+                    text = stringResource(Res.string.tendays_every),
                     fontSize = 12.sp,
                     color = TenDaysPalette.TextSecondary,
                 )
@@ -579,7 +584,7 @@ private fun TakbeerRow(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "عدد مرات التشغيل",
+                    text = stringResource(Res.string.tendays_repeat_count_label),
                     fontSize = 12.sp,
                     color = TenDaysPalette.TextSecondary,
                 )
@@ -621,7 +626,7 @@ private fun TakbeerRow(
 
 @Composable
 private fun SadaqahRow(isSadaqah: Boolean, onToggle: () -> Unit) {
-    ActionRow(title = "الصدقة", pointsLabel = "+١٥٠ نقطة") {
+    ActionRow(title = stringResource(Res.string.tendays_sadaqah_title), pointsLabel = stringResource(Res.string.tendays_sadaqah_points)) {
         Switch(
             checked = isSadaqah,
             onCheckedChange = { if (!isSadaqah) onToggle() },
@@ -678,14 +683,14 @@ private fun MiniLeaderboard(state: TenDaysUiState) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "المتصدرين",
+                text = stringResource(Res.string.tendays_leaderboard_title),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.W500,
                 color = TenDaysPalette.TextPrimary,
             )
             Spacer(Modifier.width(8.dp))
             Text(
-                text = "يومي",
+                text = stringResource(Res.string.mohamed_lovers_leaderboard_daily),
                 fontSize = 10.sp,
                 color = TenDaysPalette.GoldDim,
                 modifier = Modifier
@@ -696,7 +701,7 @@ private fun MiniLeaderboard(state: TenDaysUiState) {
             )
             Spacer(Modifier.weight(1f))
             Text(
-                text = "تحديث كل ساعة",
+                text = stringResource(Res.string.tendays_refresh_hourly),
                 fontSize = 11.sp,
                 color = TenDaysPalette.TextSecondary,
             )
@@ -705,7 +710,7 @@ private fun MiniLeaderboard(state: TenDaysUiState) {
         if (state.playerCount > 0) {
             Spacer(Modifier.height(6.dp))
             Text(
-                text = "عدد المشاركين في المنافسة: ${state.playerCount}",
+                text = stringResource(Res.string.tendays_player_count, state.playerCount),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.W500,
                 color = TenDaysPalette.GoldDim,
@@ -716,7 +721,7 @@ private fun MiniLeaderboard(state: TenDaysUiState) {
 
         if (state.leaderboard.isEmpty()) {
             Text(
-                text = "لا يوجد بيانات بعد",
+                text = stringResource(Res.string.tendays_no_data_yet),
                 fontSize = 12.sp,
                 color = TenDaysPalette.TextSecondary,
                 modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
@@ -739,13 +744,13 @@ private fun MiniLeaderboard(state: TenDaysUiState) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = buildString {
-                            if (state.selfRank > 0) {
-                                append("#${state.selfRank}")
-                                if (state.playerCount > 0) append(" من ${state.playerCount}")
-                                append("  ")
-                            }
-                            append("أنت")
+                        text = when {
+                            state.selfRank > 0 && state.playerCount > 0 ->
+                                stringResource(Res.string.tendays_self_rank_full, state.selfRank, state.playerCount)
+                            state.selfRank > 0 ->
+                                stringResource(Res.string.tendays_self_rank_only, state.selfRank)
+                            else ->
+                                stringResource(Res.string.tendays_you_label)
                         },
                         fontSize = 13.sp,
                         fontWeight = FontWeight.W700,
@@ -759,7 +764,7 @@ private fun MiniLeaderboard(state: TenDaysUiState) {
                     )
                 }
                 Text(
-                    text = "ادخل قائمة المتصدرين بمزيد من العبادات",
+                    text = stringResource(Res.string.tendays_leaderboard_encourage),
                     fontSize = 11.sp,
                     color = TenDaysPalette.TextSecondary,
                 )

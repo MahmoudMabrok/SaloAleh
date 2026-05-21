@@ -35,7 +35,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
+import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.*
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
 import tools.mo3ta.salo.data.hadith.HadithItem
 
@@ -118,7 +121,7 @@ private fun HadithCard(
             )
             Spacer(Modifier.height(5.dp))
             Text(
-                text = "فضل الصلاة على النبي ﷺ",
+                text = stringResource(Res.string.daily_hadith_header),
                 color = Gold.copy(alpha = 0.9f),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -223,7 +226,7 @@ private fun HadithCard(
                     contentColor = DeepNavy,
                 ),
             ) {
-                Text(text = "حسنًا", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(text = stringResource(Res.string.daily_hadith_dismiss), fontWeight = FontWeight.Bold, fontSize = 14.sp)
             }
         }
     }

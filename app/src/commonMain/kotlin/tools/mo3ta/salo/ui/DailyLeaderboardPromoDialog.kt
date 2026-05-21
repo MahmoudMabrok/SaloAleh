@@ -20,6 +20,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import org.jetbrains.compose.resources.stringResource
+import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.*
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 
 @Composable
@@ -35,21 +38,21 @@ fun DailyLeaderboardPromoDialog(onDismiss: () -> Unit) {
         ) {
             Text(text = "📊", fontSize = 48.sp)
             Text(
-                text = "ميزة جديدة: الترتيب اليومي",
+                text = stringResource(Res.string.daily_leaderboard_promo_title),
                 color = Color.White,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
             )
             Text(
-                text = "الآن يمكنك متابعة ترتيبك اليومي بين المصلّين على النبي ﷺ\n\nتابع تقدّمك يومًا بيوم وتنافس مع المحبين!",
+                text = stringResource(Res.string.daily_leaderboard_promo_description),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
                 fontSize = 14.sp,
                 lineHeight = 22.sp,
                 textAlign = TextAlign.Center,
             )
             Text(
-                text = "يمكنك التبديل بين الترتيب الأسبوعي واليومي من الإعدادات",
+                text = stringResource(Res.string.daily_leaderboard_promo_hint),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.55f),
                 fontSize = 12.sp,
                 lineHeight = 18.sp,
@@ -66,7 +69,7 @@ fun DailyLeaderboardPromoDialog(onDismiss: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
-                    text = "فهمت",
+                    text = stringResource(Res.string.daily_leaderboard_promo_dismiss),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(vertical = 4.dp),

@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">爱穆罕默德</string>
+
+    <!-- Counter -->
+    <string name="mohamed_lovers_counter_tag">为先知 ﷺ 祝福</string>
+    <string name="mohamed_lovers_friday_bonus_label">主麻加倍 × 2</string>
+    <string name="mohamed_lovers_counter_pending">本次: %1$d</string>
+    <string name="mohamed_lovers_counter_hint">点击为先知 ﷺ 祝福</string>
+
+    <!-- Arch Shrine -->
+    <string name="mohamed_lovers_shrine_label">尊贵的室 ﷺ</string>
+    <string name="mohamed_lovers_shrine_sub">主啊，请赐福与平安于他</string>
+
+    <!-- Hadith Banner -->
+    <string name="mohamed_lovers_hadith_isnad">据艾布·赫勒拉（愿真主喜悦他）传述，先知 ﷺ 说</string>
+    <string name="mohamed_lovers_hadith_quote">«凡向我问安者，真主必归还我的灵魂，以便我回复他的问候»</string>
+
+    <!-- Info Sheet -->
+    <string name="mohamed_lovers_info_sheet_title">爱穆罕默德 ﷺ</string>
+    <string name="mohamed_lovers_status_title">状态</string>
+    <string name="mohamed_lovers_status_waiting_network">正在同步网络时间…</string>
+    <string name="mohamed_lovers_status_firebase_off">服务连接不可用</string>
+    <string name="mohamed_lovers_status_open">已连接</string>
+    <string name="mohamed_lovers_network_time">时间: %1$s</string>
+    <string name="mohamed_lovers_round_end_label">回合结束: %1$s</string>
+    <string name="mohamed_lovers_country_label">国家: %1$s</string>
+    <string name="mohamed_lovers_self_tag_label">ID: %1$s</string>
+    <string name="mohamed_lovers_stats_title">统计</string>
+    <string name="mohamed_lovers_competition_title">🏆 竞赛</string>
+    <string name="mohamed_lovers_countdown_day">天</string>
+    <string name="mohamed_lovers_countdown_hour">时</string>
+    <string name="mohamed_lovers_countdown_minute">分</string>
+    <string name="mohamed_lovers_countdown_second">秒</string>
+    <string name="mohamed_lovers_ornament_divider">◆</string>
+    <string name="mohamed_lovers_rank_number">#%1$d</string>
+    <string name="mohamed_lovers_round_total_label">本回合为先知祝福数</string>
+    <string name="mohamed_lovers_round_player_count_label">本回合参与者: %1$d</string>
+    <string name="mohamed_lovers_all_time_total_label">历史祝福总数</string>
+    <string name="mohamed_lovers_leaderboard_title">排行榜</string>
+    <string name="mohamed_lovers_leaderboard_refresh_note">每30分钟更新</string>
+    <string name="mohamed_lovers_leaderboard_weekly">每周</string>
+    <string name="mohamed_lovers_leaderboard_daily">每日</string>
+    <string name="mohamed_lovers_rank_pending_top">您正在迈向榜首</string>
+    <string name="mohamed_lovers_leaderboard_empty">暂无参与者</string>
+    <string name="mohamed_lovers_winner_title">您是冠军！</string>
+    <string name="mohamed_lovers_winner_placeholder">即将公布</string>
+    <string name="mohamed_lovers_banner">每周五祝福加倍 — 不要错过周五！</string>
+
+    <!-- Main Screen Top Bar -->
+    <string name="main_screen_rank_chip_label">你的排名 </string>
+    <string name="main_screen_rank_chip_tooltip">你可以在设置中控制此选项</string>
+    <string name="main_screen_bubble_tooltip">浏览时为先知 ﷺ 祝福</string>
+    <string name="main_screen_manual_salawat_button">📿 记录外部祝福</string>
+    <string name="main_screen_tooltip_settings">设置和通知</string>
+    <string name="main_screen_cd_settings">设置</string>
+    <string name="main_screen_tooltip_achievements">你在往期轮次中的成就和排名</string>
+    <string name="main_screen_cd_achievements">成就</string>
+    <string name="main_screen_tooltip_hadith">关于祝福先知之美德的圣训</string>
+    <string name="main_screen_cd_hadith">圣训</string>
+    <string name="main_screen_tooltip_ten_days">伊历十二月前十天的善功与美德</string>
+    <string name="main_screen_cd_ten_days">伊历十二月前十天</string>
+    <string name="main_screen_tooltip_takbeer">集体念大赞词</string>
+    <string name="main_screen_cd_takbeer">念大赞词</string>
+    <string name="main_screen_tooltip_info">轮次信息和玩法说明</string>
+
+    <!-- Info Sheet Supporter -->
+    <string name="info_sheet_supporter_label">⭐ 支持者</string>
+
+    <!-- Screen / Platform Actions -->
+    <string name="mohamed_lovers_code_copied">代码已复制</string>
+    <string name="mohamed_lovers_connection_error">连接错误，请稍后重试</string>
+    <string name="mohamed_lovers_prayer_text">主啊，请赐福于穆罕默德及其家族</string>
+    <string name="mohamed_lovers_reward_text">愿真主赐福于你</string>
+    <string name="mohamed_lovers_blocked_waiting_network">正在同步时间…</string>
+    <string name="mohamed_lovers_blocked_firebase_off">连接不可用</string>
+    <string name="mohamed_lovers_back_cd">返回</string>
+    <string name="mohamed_lovers_info_cd">信息</string>
+    <string name="mohamed_lovers_share_rank">分享我的排名</string>
+
+    <!-- Round Recap Sheet -->
+    <string name="recap_title">回合结束！</string>
+    <string name="recap_rank_label">您在 %2$d 位参与者中排名第 #%1$d</string>
+    <string name="recap_personal_best">🏅 您的最佳排名！</string>
+    <string name="recap_taps_up">+%1$d 比上周多</string>
+    <string name="recap_taps_down">%1$d 比上周少</string>
+    <string name="recap_cta">开始新回合</string>
+
+    <!-- Streak Grace Dialog -->
+    <string name="grace_warning_title">我们保住了您的连续记录</string>
+    <string name="grace_warning">您错过了一天，已使用每周容许机会保持连续记录。明天请打开应用以保持继续。</string>
+    <string name="grace_warning_cta">明白了</string>
+
+    <!-- Daily Goal -->
+    <string name="daily_goal_completed">做得好！今天的目标已完成 🎉</string>
+    <string name="daily_goal_progress">%1$d / %2$d 祝福</string>
+
+    <!-- Achievements Screen -->
+    <string name="achievements_title">我的成就</string>
+    <string name="achievements_back_cd">返回</string>
+    <string name="achievements_stat_badges">徽章</string>
+    <string name="achievements_stat_rounds">轮次</string>
+    <string name="achievements_stat_best_rank">最佳排名</string>
+    <string name="achievements_section_streak_badges">连续天数徽章</string>
+    <string name="achievements_section_rank_badges">排名徽章</string>
+    <string name="achievements_section_round_history">轮次成就</string>
+    <string name="achievements_medal_info_cd">奖牌信息</string>
+    <string name="achievements_badge_streak_7_title">坚持不懈</string>
+    <string name="achievements_badge_streak_7_how">连续7天不间断打开应用</string>
+    <string name="achievements_badge_streak_30_title">挚爱者</string>
+    <string name="achievements_badge_streak_30_how">连续30天不间断打开应用</string>
+    <string name="achievements_badge_rank_title">第%1$d名</string>
+    <string name="achievements_badge_rank_how">在任意竞赛轮次中获得第%1$d名</string>
+    <string name="achievements_badge_how_label">如何获得：</string>
+    <string name="achievements_badge_repeatable">可多次获得</string>
+    <string name="achievements_dialog_ok">好的</string>
+    <string name="achievements_medal_info_title">排名徽章</string>
+    <string name="achievements_medal_info_body">每周五每周竞赛结束时会添加奖牌。\n\n每周坚持参与，争取最高排名！</string>
+    <string name="achievements_empty_history">您还没有参加过任何轮次\n继续参与吧！</string>
+    <string name="achievements_streak_complete">已完成</string>
+    <string name="achievements_streak_progress">%1$d / %2$d</string>
+    <string name="achievements_round_rank">第%1$d名</string>
+    <string name="achievements_round_label">轮次：</string>
+    <string name="achievements_prayer_count_label">祈祷次数</string>
+    <string name="achievements_copy_winner_code_cd">复制获奖代码</string>
+
+    <!-- Achievement Celebration Dialog -->
+    <string name="achievement_celebration_streak_7_title">一周的热爱！</string>
+    <string name="achievement_celebration_streak_7_subtitle">您连续7天打开应用，获得了"坚持不懈"徽章。您是忠诚的信众。</string>
+    <string name="achievement_celebration_streak_30_title">一个月的忠诚！</string>
+    <string name="achievement_celebration_streak_30_subtitle">您连续30天打开应用，获得了"挚爱者"徽章。愿真主赐福于您。</string>
+    <string name="achievement_celebration_rank_title">排行榜第%1$d名！</string>
+    <string name="achievement_celebration_rank_subtitle">您在第%1$s轮中进入了前10名。愿真主赐福于您。</string>
+    <string name="achievement_celebration_dismiss">太好了！谢谢</string>
+
+    <!-- Takbeer Session Screen -->
+    <string name="takbeer_back_cd">返回</string>
+    <string name="takbeer_session_title">集体念大赞词</string>
+    <string name="takbeer_session_subtitle">轮流在圈中念大赞词——听到轮到你为止</string>
+    <string name="takbeer_people_count_label">参与人数</string>
+    <string name="takbeer_people_count_hint">包括你在内——2到10人</string>
+    <string name="takbeer_start_session">开始</string>
+    <string name="takbeer_how_it_works_title">如何进行？</string>
+    <string name="takbeer_how_step_1">设置圈中参与人数。</string>
+    <string name="takbeer_how_step_2">大赞词在参与者之间逐一轮转。</string>
+    <string name="takbeer_how_step_3">轮到你时(U)音频停止并显示"轮到你"——请大声念诵。</string>
+    <string name="takbeer_how_step_4">按"完成"传递回合并继续。</string>
+    <string name="takbeer_your_turn_instruction">请大声念大赞词，然后按"完成"传递回合</string>
+    <string name="takbeer_done_next_turn">完成——下一轮</string>
+    <string name="takbeer_listen_wait">聆听他人……准备好，轮到你了</string>
+    <string name="takbeer_stop_session">结束</string>
+    <string name="takbeer_round_number">第 %1$d 轮</string>
+    <string name="takbeer_your_turn">轮到你</string>
+    <string name="takbeer_label">大赞词</string>
+    <string name="takbeer_participant_number">参与者 %1$d</string>
+
+    <!-- Takbeer Announcement Dialog -->
+    <string name="takbeer_announcement_title">集体念大赞词</string>
+    <string name="takbeer_announcement_body">和朋友们轮流念大赞词！\n设置参与人数并开始\n每人大声念诵后按"完成"</string>
+    <string name="takbeer_announcement_cta">开始</string>
+    <string name="takbeer_announcement_dismiss">稍后</string>
+
+    <!-- Paywall Screen -->
+    <string name="paywall_supporter_settings_title">支持者设置</string>
+    <string name="paywall_support_app_title">支持应用</string>
+    <string name="paywall_you_are_supporter">你已是支持者! ✅</string>
+    <string name="paywall_thanks_subtitle">感谢您的支持——以下是您的专属功能设置</string>
+    <string name="paywall_contribute_subtitle">帮助开发应用并获得专属功能</string>
+    <string name="paywall_hide_score_title">隐藏分数</string>
+    <string name="paywall_hide_score_subtitle">在排行榜上对他人隐藏你的分数</string>
+    <string name="paywall_supporter_badge_title">支持者徽章</string>
+    <string name="paywall_supporter_badge_subtitle">排行榜上你名字旁的特别徽章</string>
+    <string name="paywall_score_hidden_description">你的分数已对其他参与者隐藏</string>
+    <string name="paywall_hide_score_plus_badge">隐藏分数 + 支持者徽章</string>
+    <string name="paywall_support_now_price">立即支持 — %1$s</string>
+    <string name="paywall_support_now">立即支持</string>
+    <string name="paywall_restore_purchases">恢复购买</string>
+
+    <!-- Premium Promo Dialog -->
+    <string name="premium_promo_description">帮助传播对先知 ﷺ 的祝福\n并获得隐藏分数和支持者徽章等专属功能</string>
+    <string name="premium_promo_later">稍后</string>
+
+    <!-- Purchase Success Dialog -->
+    <string name="purchase_success_title">愿真主回赐你!</string>
+    <string name="purchase_success_activated">已激活「%1$s」——愿真主祝福你的支持</string>
+    <string name="purchase_success_dismiss">太好了！谢谢</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">设置</string>
+    <string name="settings_notifications_header">通知</string>
+    <string name="settings_notifications_disabled">通知已禁用 - 点击启用</string>
+    <string name="settings_exact_alarm_disabled">精确闹钟未启用 - 点击启用</string>
+    <string name="settings_daily_reminder">每日提醒</string>
+    <string name="settings_daily_reminder_subtitle">每天一次</string>
+    <string name="settings_enable_notifications_toast">请先启用应用通知</string>
+    <string name="settings_enable_exact_alarm_toast">启用精确定时以确保提醒准时送达</string>
+    <string name="settings_friday_notifications">周五通知</string>
+    <string name="settings_friday_notifications_subtitle">每小时一次，上午9点至下午5点</string>
+    <string name="settings_content_header">内容</string>
+    <string name="settings_hadith_on_open">打开时显示圣训</string>
+    <string name="settings_hadith_on_open_subtitle">显示关于祝福先知 ﷺ 的美德的圣训</string>
+    <string name="settings_show_rank">显示你的排名</string>
+    <string name="settings_show_rank_subtitle">在主屏幕上显示你的竞赛排名</string>
+    <string name="settings_daily_leaderboard">每日排行榜</string>
+    <string name="settings_daily_leaderboard_subtitle">仅基于今日祈祷的排名</string>
+    <string name="settings_sync_header">同步</string>
+    <string name="settings_sync_from_extension">从浏览器扩展同步</string>
+    <string name="settings_download_chrome_extension">下载Chrome扩展</string>
+    <string name="settings_support_header">支持</string>
+    <string name="settings_support_app">🌟 支持此应用</string>
+    <string name="settings_about_header">关于应用</string>
+    <string name="settings_app_guide">应用指南</string>
+    <string name="settings_privacy_policy">隐私政策</string>
+    <string name="settings_share_app">分享应用</string>
+    <string name="settings_open_store_page">打开商店页面</string>
+    <string name="settings_app_version">应用版本</string>
+    <string name="settings_supporter_status">你是支持者 - %1$s</string>
+    <string name="settings_manage_features">点击管理功能</string>
+
+    <!-- Extension QR Screen -->
+    <string name="extension_qr_title">同步数据</string>
+    <string name="extension_qr_warning_title">警告</string>
+    <string name="extension_qr_warning_message">任何无效代码将重置你当前轮次的分数。</string>
+    <string name="extension_qr_scan_instruction">请仅从浏览器扩展扫描代码。</string>
+    <string name="extension_qr_sync_now">立即同步</string>
+    <string name="extension_qr_success_toast">已从扩展添加 %1$d 次祈祷 ✓</string>
+    <string name="extension_qr_cheat_toast">⚠️ %1$s - 你的分数已被重置</string>
+    <string name="extension_qr_error_toast">⚠️ %1$s</string>
+
+    <!-- Bubble Feature Promo Dialog -->
+    <string name="bubble_promo_title">新功能：祈祷气泡</string>
+    <string name="bubble_promo_description">现在您可以在使用任何应用时为先知 ﷺ 祈祷！\n\n• 一个小气泡显示在其他应用上方\n• 点击它来计算您的祈祷\n• 每10分钟提醒为先知 ﷺ 祈祷</string>
+    <string name="bubble_promo_try_now">立即试用</string>
+    <string name="bubble_promo_later">以后再说</string>
+
+    <!-- Daily Leaderboard Promo Dialog -->
+    <string name="daily_leaderboard_promo_title">新功能：每日排名</string>
+    <string name="daily_leaderboard_promo_description">现在您可以在每日为先知 ﷺ 祈祷的人中追踪您的排名\n\n每天跟踪您的进度，与爱好者们一起竞争！</string>
+    <string name="daily_leaderboard_promo_hint">您可以在设置中切换每周和每日排名</string>
+    <string name="daily_leaderboard_promo_dismiss">知道了</string>
+
+    <!-- FCM Permission Reminder Dialog -->
+    <string name="fcm_reminder_title">不要错过先知穆罕默德 ﷺ 爱好者的竞赛结果</string>
+    <string name="fcm_reminder_description">启用通知以便在竞赛结果和排名公布后立即收到。</string>
+    <string name="fcm_reminder_enable">启用通知</string>
+    <string name="fcm_reminder_later">以后再说</string>
+
+    <!-- Notification Rationale Dialog -->
+    <string name="notif_rationale_title">欢迎来到您对先知 ﷺ 的祈祷</string>
+    <string name="notif_rationale_description">• 每日提醒为先知穆罕默德 ﷺ 祈祷\n• 每周五每小时特别提醒\n• 穆罕默德爱好者通知 - 跟踪竞赛结果\n\n请在设置中启用通知以接收这些功能。</string>
+    <string name="notif_rationale_open_settings">打开设置</string>
+    <string name="notif_rationale_later">以后再说</string>
+
+    <!-- Overlay Permission Rationale Dialog -->
+    <string name="overlay_rationale_title">随时为先知 ﷺ 祈祷</string>
+    <string name="overlay_rationale_description">要在其他应用上方运行祈祷气泡，我们需要"显示在其他应用上方"权限。\n\n此权限允许您在使用其他应用时也能计算祈祷次数。</string>
+    <string name="overlay_rationale_open_settings">打开设置</string>
+    <string name="overlay_rationale_later">以后再说</string>
+
+    <!-- Review Dialog -->
+    <string name="review_title">为应用评分</string>
+    <string name="review_description">如果您喜欢这个应用，请在商店中给我们评分。\n您的评分有助于传播善意并让更多人看到。</string>
+    <string name="review_rate_now">立即评分</string>
+    <string name="review_later">以后再说</string>
+
+    <!-- Manual Salawat Sheet -->
+    <string name="manual_salawat_title">📿 记录外部祈祷</string>
+    <string name="manual_salawat_subtitle">默默地、用手指或用念珠为先知 ﷺ 祈祷了？\n记录您的祈祷 - 不要因为不在应用中就停止祈祷</string>
+    <string name="manual_salawat_other_count">其他数量：</string>
+    <string name="manual_salawat_enter_count">输入数量</string>
+    <string name="manual_salawat_witness">我证明这个数量是真实准确的，真主了解我的意图</string>
+    <string name="manual_salawat_submit">✦ 记录祈祷 ✦</string>
+
+    <!-- Share Card -->
+    <string name="share_card_out_of_participants">共 %1$d 位参与者</string>
+    <string name="share_card_rank_label">排名</string>
+    <string name="share_card_my_prayers_this_week">本周我的祈祷</string>
+    <string name="share_card_round_total">本轮总计</string>
+
+    <!-- Daily Hadith Dialog -->
+    <string name="daily_hadith_header">为先知 ﷺ 祈祷的美德</string>
+    <string name="daily_hadith_dismiss">好的</string>
+
+    <!-- Onboarding Screen -->
+    <string name="onboarding_skip">跳过</string>
+    <string name="onboarding_next">下一步</string>
+    <string name="onboarding_start">立即开始 ✨</string>
+    <string name="onboarding_welcome_title">欢迎来到\n穆罕默德ﷺ的爱者</string>
+    <string name="onboarding_welcome_subtitle">让每日赞颂先知ﷺ成为习惯</string>
+    <string name="onboarding_welcome_body">一款汇聚先知ﷺ爱者的应用，通过每周赞颂计数比赛和全球排行榜。</string>
+    <string name="onboarding_rounds_title">每周轮次</string>
+    <string name="onboarding_rounds_subtitle">每周五开始，一周后结束</string>
+    <string name="onboarding_rounds_body">每周新一轮——收集最多的赞颂，与全球爱者竞赛。\n\n周五计数翻倍 ×2，不要错过！</string>
+    <string name="onboarding_achievements_title">成就与排名</string>
+    <string name="onboarding_achievements_subtitle">获得荣誉排名并收集徽章</string>
+    <string name="onboarding_achievements_body">每轮前10名参与者获得荣誉排名徽章。\n\n保持每周连续记录以获得金色连续徽章。</string>
+    <string name="onboarding_pray_title">赞颂先知ﷺ</string>
+
+    <!-- Hadith List Screen -->
+    <string name="hadith_list_screen_title">赞颂先知ﷺ的美德</string>
+    <string name="hadith_list_text_count">%1$d 圣训与传述</string>
+    <string name="hadith_list_media_count">%1$d 视频与播放列表</string>
+    <string name="hadith_list_tab_texts">文本</string>
+    <string name="hadith_list_tab_media">媒体</string>
+    <string name="hadith_list_empty">暂无内容</string>
+    <string name="hadith_list_media_type_video">视频</string>
+    <string name="hadith_list_media_type_playlist">播放列表</string>
+    <string name="hadith_list_media_type_channel">频道</string>
+    <string name="hadith_list_open_cd">打开</string>
+    <string name="hadith_list_share">分享</string>
+    <string name="hadith_list_copy">复制</string>
+    <string name="hadith_list_copied">已复制</string>
+
+    <!-- Ten Days Screen -->
+    <string name="tendays_title">伊历十二月前十天</string>
+    <string name="tendays_day_of_total">第 %1$d 天，共 %2$d 天</string>
+    <string name="tendays_total_score">你的总分</string>
+    <string name="tendays_baqiyat_title">永恒的善功</string>
+    <string name="tendays_baqiyat_points">每次念诵 +1</string>
+    <string name="tendays_fasting_title">斋戒</string>
+    <string name="tendays_fasting_points">+100 分</string>
+    <string name="tendays_takbeer_title">大赞词</string>
+    <string name="tendays_takbeer_points">+10 分</string>
+    <string name="tendays_takbeer_button">念大赞词</string>
+    <string name="tendays_auto_play">自动播放</string>
+    <string name="tendays_every">每</string>
+    <string name="tendays_repeat_count_label">播放次数</string>
+    <string name="tendays_interval_1">1 分钟</string>
+    <string name="tendays_interval_5">5 分钟</string>
+    <string name="tendays_interval_10">10 分钟</string>
+    <string name="tendays_interval_30">30 分钟</string>
+    <string name="tendays_interval_60">60 分钟</string>
+    <string name="tendays_interval_other">%1$d 分钟</string>
+    <string name="tendays_repeat_once">1 次</string>
+    <string name="tendays_repeat_twice">2 次</string>
+    <string name="tendays_repeat_three">3 次</string>
+    <string name="tendays_repeat_other">%1$d 次</string>
+    <string name="tendays_sadaqah_title">施舍</string>
+    <string name="tendays_sadaqah_points">+150 分</string>
+    <string name="tendays_leaderboard_title">排行榜</string>
+    <string name="tendays_refresh_hourly">每小时更新</string>
+    <string name="tendays_player_count">竞赛参与人数：%1$d</string>
+    <string name="tendays_no_data_yet">暂无数据</string>
+    <string name="tendays_self_rank_full">#%1$d / %2$d  你</string>
+    <string name="tendays_self_rank_only">#%1$d  你</string>
+    <string name="tendays_you_label">你</string>
+    <string name="tendays_leaderboard_encourage">多做善功，进入排行榜</string>
+    <string name="tendays_group_takbeer_session">集体大赞词环节</string>
+    <string name="tendays_group_takbeer_hint">轮流念诵——聆听直到轮到你</string>
+
+    <!-- Ten Days Promo Dialog -->
+    <string name="tendays_promo_description">一年中最美好的日子！\n记录你每天的功修——大赞词、斋戒、施舍与念诵\n与穆斯林同胞比赛行善</string>
+    <string name="tendays_promo_start">立即开始</string>
+    <string name="tendays_promo_later">以后再说</string>
+</resources>
