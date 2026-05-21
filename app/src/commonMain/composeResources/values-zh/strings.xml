@@ -352,4 +352,7 @@
     <string name="tendays_promo_description">一年中最美好的日子！\n记录你每天的功修——大赞词、斋戒、施舍与念诵\n与穆斯林同胞比赛行善</string>
     <string name="tendays_promo_start">立即开始</string>
     <string name="tendays_promo_later">以后再说</string>
+
+    <!-- Info Sheet Notification Warning -->
+    <string name="info_sheet_notif_disabled">通知已关闭 — 为什么这很重要？</string>
 </resources>

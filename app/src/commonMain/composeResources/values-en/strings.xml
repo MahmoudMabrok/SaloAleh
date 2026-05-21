@@ -352,4 +352,7 @@
     <string name="tendays_promo_description">The best days of the year!\nLog your daily deeds -- takbeer, fasting, charity, and dhikr\nCompete with fellow Muslims in doing good</string>
     <string name="tendays_promo_start">Start now</string>
     <string name="tendays_promo_later">Later</string>
+
+    <!-- Info Sheet Notification Warning -->
+    <string name="info_sheet_notif_disabled">Notifications disabled — why does this matter?</string>
 </resources>

@@ -352,4 +352,7 @@
     <string name="tendays_promo_description">أفضل أيام الدنيا!\nسجّل أعمالك اليومية من تكبير وصيام وصدقة وذكر\nونافس المسلمين في الخير</string>
     <string name="tendays_promo_start">ابدأ الآن</string>
     <string name="tendays_promo_later">لاحقًا</string>
+
+    <!-- Info Sheet Notification Warning -->
+    <string name="info_sheet_notif_disabled">الإشعارات معطّلة — لماذا هذا مهم؟</string>
 </resources>

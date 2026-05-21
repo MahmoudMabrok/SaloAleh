@@ -352,4 +352,7 @@
     <string name="tendays_promo_description">دنیا کے بہترین دن!\nتکبیر، روزہ، صدقہ اور ذکر — اپنے روزانہ اعمال درج کریں\nنیکی میں مسلمانوں سے مقابلہ کریں</string>
     <string name="tendays_promo_start">ابھی شروع کریں</string>
     <string name="tendays_promo_later">بعد میں</string>
+
+    <!-- Info Sheet Notification Warning -->
+    <string name="info_sheet_notif_disabled">اطلاعات غیر فعال — یہ کیوں اہم ہے؟</string>
 </resources>

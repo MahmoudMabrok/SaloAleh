@@ -34,6 +34,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,6 +55,8 @@ import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -94,8 +97,15 @@ import tools.mo3ta.salo.generated.resources.mohamed_lovers_winner_placeholder
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_winner_title
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_share_rank
 import tools.mo3ta.salo.generated.resources.info_sheet_supporter_label
+import tools.mo3ta.salo.generated.resources.info_sheet_notif_disabled
+import tools.mo3ta.salo.generated.resources.notif_rationale_title
+import tools.mo3ta.salo.generated.resources.notif_rationale_description
+import tools.mo3ta.salo.generated.resources.notif_rationale_open_settings
+import tools.mo3ta.salo.generated.resources.notif_rationale_later
 import tools.mo3ta.salo.presentation.MohamedLoversLeaderboardEntry
 import tools.mo3ta.salo.presentation.MohamedLoversUiState
+import tools.mo3ta.salo.ui.areNotificationsEnabled
+import tools.mo3ta.salo.ui.openNotificationSettings
 import tools.mo3ta.salo.ui.settings.PremiumPromoDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -111,6 +121,8 @@ internal fun MohamedLoversInfoSheet(
     if (!isOpen) return
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     var showSupporterInfo by remember { mutableStateOf(false) }
+    var notificationsEnabled by remember(isOpen) { mutableStateOf(areNotificationsEnabled()) }
+    var showNotifBenefits by remember { mutableStateOf(false) }
 
     if (showSupporterInfo) {
         PremiumPromoDialog(
@@ -120,6 +132,17 @@ internal fun MohamedLoversInfoSheet(
                 onOpenPaywall()
             },
             onDismiss = { showSupporterInfo = false },
+        )
+    }
+
+    if (showNotifBenefits) {
+        NotificationBenefitsDialog(
+            onEnable = {
+                showNotifBenefits = false
+                openNotificationSettings()
+                notificationsEnabled = areNotificationsEnabled()
+            },
+            onDismiss = { showNotifBenefits = false },
         )
     }
 
@@ -157,6 +180,9 @@ internal fun MohamedLoversInfoSheet(
                 ),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.95f),
             )
+            if (!notificationsEnabled) {
+                NotificationWarningRow(onClick = { showNotifBenefits = true })
+            }
             CompetitionCard(
                 roundEndLabel = state.roundEndLabel,
                 roundPlayerCount = state.roundPlayerCount,
@@ -765,6 +791,81 @@ private fun SheetCard(content: @Composable ColumnScope.() -> Unit) {
         verticalArrangement = Arrangement.spacedBy(6.dp),
         content = content,
     )
+}
+
+@Composable
+private fun NotificationWarningRow(onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0x33FF6B00))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text("⚠️", fontSize = 18.sp)
+        Text(
+            text = stringResource(Res.string.info_sheet_notif_disabled),
+            color = Color(0xFFFFAB40),
+            fontSize = 13.sp,
+            fontWeight = FontWeight.W500,
+        )
+    }
+}
+
+@Composable
+private fun NotificationBenefitsDialog(
+    onEnable: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MohamedLoversPalette.DeepBlue, RoundedCornerShape(20.dp))
+                .padding(28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text("🔔", fontSize = 48.sp)
+            Text(
+                text = stringResource(Res.string.notif_rationale_title),
+                color = Color.White,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                text = stringResource(Res.string.notif_rationale_description),
+                color = Color.White.copy(alpha = 0.8f),
+                fontSize = 14.sp,
+                textAlign = TextAlign.Center,
+                lineHeight = 22.sp,
+            )
+            Spacer(Modifier.height(4.dp))
+            Button(
+                onClick = onEnable,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = MohamedLoversPalette.Gold),
+                shape = RoundedCornerShape(12.dp),
+            ) {
+                Text(
+                    stringResource(Res.string.notif_rationale_open_settings),
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+            TextButton(onClick = onDismiss) {
+                Text(
+                    stringResource(Res.string.notif_rationale_later),
+                    color = Color.White.copy(alpha = 0.6f),
+                    fontSize = 13.sp,
+                )
+            }
+        }
+    }
 }
 
 private fun Long.formatCount(): String {
