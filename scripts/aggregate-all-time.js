@@ -71,12 +71,39 @@ async function main() {
     process.exit(0);
   }
 
-  // At 19:00 Cairo on Friday, cairoRoundKey() returns NEXT Friday, so the
-  // just-closed round is included in the sum automatically.
+  // Compute actual (non-doubled) scores for the closed round first,
+  // so we can use the corrected roundTotal in the allTimeTotal sum.
+  const playersSnap = await db.ref(`mohamed_lovers/${closedRound}/players`).get();
+  const players = [];
+  let correctedRoundTotal = 0;
+
+  if (playersSnap.exists()) {
+    playersSnap.forEach(child => {
+      const data = child.val();
+      const uid = data?.uid;
+      const totalCount = typeof data?.totalCount === 'number' ? data.totalCount : 0;
+      const yesterdayTotal = typeof data?.yesterdayTotalScore === 'number' ? data.yesterdayTotalScore : 0;
+      // Friday taps are doubled — actual = pre-Friday + (Friday portion / 2)
+      const fridayPortion = Math.max(0, totalCount - yesterdayTotal);
+      const actualScore = yesterdayTotal + Math.floor(fridayPortion / 2);
+      if (typeof uid === 'string' && actualScore > 0) {
+        players.push({ uid, score: actualScore, updatedAt: data.updatedAt || 0 });
+        correctedRoundTotal += actualScore;
+      }
+    });
+    console.log(`Closed round actual total: ${correctedRoundTotal} (raw roundTotal had Friday 2x)`);
+  }
+
+  // Sum allTimeTotal across all past rounds, using corrected total for the closed round.
   let allTimeTotal = 0;
   rootSnapshot.forEach(child => {
     const key = child.key;
     if (!ROUND_KEY_RE.test(key) || key === currentRound) return;
+    if (key === closedRound) {
+      allTimeTotal += correctedRoundTotal;
+      console.log(`  ${key}: roundTotal=${correctedRoundTotal} (Friday-corrected)`);
+      return;
+    }
     const roundTotal = child.val()?.roundTotal;
     if (typeof roundTotal === 'number') {
       allTimeTotal += roundTotal;
@@ -89,23 +116,10 @@ async function main() {
   await db.ref('mohamed_lovers/allTimeTotal').set(allTimeTotal);
   console.log(`allTimeTotal written: ${allTimeTotal}`);
 
-  // Write round-history records for every player who participated in the closed round.
-  // Top-5 finishers also receive a unique randomly generated winnerCode.
-  const playersSnap = await db.ref(`mohamed_lovers/${closedRound}/players`).get();
-  if (!playersSnap.exists()) {
+  if (!playersSnap.exists() || players.length === 0) {
     console.log(`No players found for ${closedRound} — no history written.`);
     process.exit(0);
   }
-
-  const players = [];
-  playersSnap.forEach(child => {
-    const data = child.val();
-    const uid = data?.uid;
-    const score = typeof data?.totalCount === 'number' ? data.totalCount : 0;
-    if (typeof uid === 'string' && score > 0) {
-      players.push({ uid, score, updatedAt: data.updatedAt || 0 });
-    }
-  });
 
 
   players.sort((a, b) => b.score - a.score || b.updatedAt - a.updatedAt);

@@ -1,14 +1,11 @@
-package tools.mo3ta.salo.ui.tendays
+package tools.mo3ta.salo.ui.takbeer
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -23,9 +20,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 
 @Composable
-fun TenDaysPromoDialog(
+fun TakbeerAnnouncementDialog(
     onOpen: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -37,20 +35,20 @@ fun TenDaysPromoDialog(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            TenDaysEntryIcon(
-                modifier = Modifier.size(54.dp),
-                numberFontSize = 20.sp,
+            Text(
+                text = "🔊",
+                fontSize = 48.sp,
             )
             Spacer(Modifier.height(12.dp))
             Text(
-                text = "عشر ذي الحجة",
+                text = "جلسة تكبير جماعية",
                 color = Color.White,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "أفضل أيام الدنيا!\nسجّل أعمالك اليومية من تكبير وصيام وصدقة وذكر\nونافس المسلمين في الخير",
+                text = "كبّر مع أصحابك بالدور!\nحدد عدد المكبرين وابدأ الجلسة\nكل واحد يكبّر بصوته ويضغط «تم»",
                 color = Color.White.copy(alpha = 0.85f),
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
@@ -60,10 +58,12 @@ fun TenDaysPromoDialog(
             Button(
                 onClick = onOpen,
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = TenDaysPalette.Gold),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MohamedLoversPalette.GoldHighlight,
+                ),
                 shape = RoundedCornerShape(12.dp),
             ) {
-                Text("ابدأ الآن", color = Color.Black, fontWeight = FontWeight.Bold)
+                Text("ابدأ جلسة", color = Color.Black, fontWeight = FontWeight.Bold)
             }
             Spacer(Modifier.height(8.dp))
             TextButton(onClick = onDismiss) {

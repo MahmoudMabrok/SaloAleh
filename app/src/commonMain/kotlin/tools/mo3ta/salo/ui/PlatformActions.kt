@@ -28,6 +28,3 @@ expect fun BubbleFeaturePromo(roundKey: String?)
 
 @Composable
 expect fun TakbeerOverlayButton(autoRemind: Boolean, intervalMinutes: Int, repeatCount: Int)
-
-@Composable
-expect fun TakbeerSessionButton()

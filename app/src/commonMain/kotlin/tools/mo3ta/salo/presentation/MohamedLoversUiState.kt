@@ -1,5 +1,6 @@
 package tools.mo3ta.salo.presentation
 
+import kotlinx.datetime.Instant
 import tools.mo3ta.salo.domain.Achievement
 
 data class MohamedLoversLeaderboardEntry(
@@ -32,6 +33,7 @@ data class MohamedLoversUiState(
     val isFridayBonus: Boolean = false,
     val roundKey: String? = null,
     val roundEndLabel: String = "",
+    val roundEndInstant: Instant? = null,
     val networkTimeLabel: String = "",
     val canCount: Boolean = false,
     val syncedTotal: Int = 0,

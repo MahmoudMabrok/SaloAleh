@@ -58,15 +58,6 @@
                 android:value="floating takbeer overlay for Dhul Hijjah" />
         </service>
 
-        <service
-            android:name=".ui.TakbeerSessionService"
-            android:foregroundServiceType="specialUse"
-            android:exported="false">
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="continuous takbeer playback for Dhul Hijjah" />
-        </service>
-
         <receiver
             android:name=".notification.NotificationAlarmReceiver"
             android:exported="false" />

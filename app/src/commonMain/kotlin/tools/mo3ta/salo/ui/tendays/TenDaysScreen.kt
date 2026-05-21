@@ -1,5 +1,6 @@
 package tools.mo3ta.salo.ui.tendays
 
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -58,10 +59,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.data.tendays.DhikrType
 import tools.mo3ta.salo.ui.TakbeerOverlayButton
-import tools.mo3ta.salo.ui.TakbeerSessionButton
 import tools.mo3ta.salo.presentation.TenDaysDayState
 import tools.mo3ta.salo.presentation.TenDaysUiState
 import tools.mo3ta.salo.presentation.TenDaysViewModel
@@ -69,9 +71,15 @@ import tools.mo3ta.salo.presentation.TenDaysViewModel
 @Composable
 fun TenDaysScreen(
     onBack: () -> Unit = {},
+    onOpenTakbeerSession: () -> Unit = {},
     viewModel: TenDaysViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val analyticsManager: AnalyticsManager = koinInject()
+
+    LaunchedEffect(Unit) {
+        analyticsManager.logView("TenDaysScreen")
+    }
 
     Box(
         modifier = Modifier
@@ -141,9 +149,16 @@ fun TenDaysScreen(
                 repeatCount = state.takbeerRepeatCount,
             )
             Spacer(Modifier.height(8.dp))
-            TakbeerSessionButton()
+            Button(
+                onClick = onOpenTakbeerSession,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = TenDaysPalette.Gold),
+                shape = RoundedCornerShape(12.dp),
+            ) {
+                Text("جلسة التكبير الجماعي", color = Color.Black, fontWeight = FontWeight.Bold)
+            }
             Text(
-                text = "تشغيل صوت التكبير بشكل متواصل في الخلفية حتى توقفه",
+                text = "كبّروا بالتناوب في حلقة — استمع حتى يأتي دورك",
                 fontSize = 11.sp,
                 color = TenDaysPalette.TextSecondary,
                 textAlign = TextAlign.Center,

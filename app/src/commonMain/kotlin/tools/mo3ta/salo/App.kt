@@ -39,6 +39,9 @@ import tools.mo3ta.salo.ui.settings.PaywallScreen
 import tools.mo3ta.salo.ui.settings.PremiumPromoDialog
 import tools.mo3ta.salo.ui.settings.PurchaseSuccessDialog
 import tools.mo3ta.salo.ui.settings.SettingsScreen
+import tools.mo3ta.salo.analytics.AnalyticsManager
+import tools.mo3ta.salo.ui.takbeer.TakbeerAnnouncementDialog
+import tools.mo3ta.salo.ui.takbeer.TakbeerSessionScreen
 import tools.mo3ta.salo.ui.tendays.TenDaysPromoDialog
 import tools.mo3ta.salo.ui.tendays.TenDaysScreen
 
@@ -63,12 +66,14 @@ fun App(
         var showHadithList by remember { mutableStateOf(false) }
         var showOnboarding by remember { mutableStateOf(false) }
         var showTenDays by remember { mutableStateOf(false) }
+        var showTakbeerSession by remember { mutableStateOf(false) }
         var showExtensionQr by remember { mutableStateOf(false) }
         var showPaywall by remember { mutableStateOf(false) }
 
-        PlatformBackHandler(enabled = showPaywall || showTenDays || showExtensionQr || showHadithList || showAchievements || showSettings || showOnboarding) {
+        PlatformBackHandler(enabled = showPaywall || showTakbeerSession || showTenDays || showExtensionQr || showHadithList || showAchievements || showSettings || showOnboarding) {
             when {
                 showPaywall -> showPaywall = false
+                showTakbeerSession -> showTakbeerSession = false
                 showTenDays -> showTenDays = false
                 showExtensionQr -> showExtensionQr = false
                 showHadithList -> showHadithList = false
@@ -76,6 +81,12 @@ fun App(
                 showOnboarding -> showOnboarding = false
                 showSettings -> showSettings = false
             }
+        }
+
+        val settings = koinInject<Settings>()
+        val analyticsManager = koinInject<AnalyticsManager>()
+        var takbeerAnnouncementDone by remember {
+            mutableStateOf(settings.getBoolean("takbeer_announcement_shown", false))
         }
 
         when {
@@ -90,12 +101,19 @@ fun App(
             )
             showAchievements -> AchievementsScreen(onBack = { showAchievements = false })
             showHadithList -> HadithListScreen(onBack = { showHadithList = false })
-            showTenDays -> TenDaysScreen(onBack = { showTenDays = false })
+            showTakbeerSession -> TakbeerSessionScreen(onBack = { showTakbeerSession = false })
+            showTenDays -> TenDaysScreen(
+                onBack = { showTenDays = false },
+                onOpenTakbeerSession = { showTakbeerSession = true },
+            )
             else -> MohamedLoversScreen(
                 onOpenAchievements = { showAchievements = true },
                 onOpenSettings = { showSettings = true },
                 onOpenHadithList = { showHadithList = true },
                 onOpenTenDays = { showTenDays = true },
+                onOpenTakbeerSession = { showTakbeerSession = true },
+                onOpenPaywall = { showPaywall = true },
+                announcementsDone = takbeerAnnouncementDone,
             )
         }
 
@@ -129,7 +147,22 @@ fun App(
             )
         }
 
-        val settings = koinInject<Settings>()
+        if (!takbeerAnnouncementDone) {
+            TakbeerAnnouncementDialog(
+                onOpen = {
+                    settings.putBoolean("takbeer_announcement_shown", true)
+                    takbeerAnnouncementDone = true
+                    showTakbeerSession = true
+                    analyticsManager.logAction("takbeer_announcement_opened", emptyMap())
+                },
+                onDismiss = {
+                    settings.putBoolean("takbeer_announcement_shown", true)
+                    takbeerAnnouncementDone = true
+                    analyticsManager.logAction("takbeer_announcement_dismissed", emptyMap())
+                },
+            )
+        }
+
         var showTenDaysPromo by remember {
             val shown = settings.getBoolean("ten_days_promo_shown", false)
             mutableStateOf(!shown)

@@ -1,9 +1,7 @@
 name: Aggregate All-Time Total
 
 on:
-  # Runs once per week on Fridays at 17:00 UTC (19:00 Cairo).
-  schedule:
-    - cron: '0 17 * * 5'
+  # Triggered by Deno Deploy cron every Friday at 16:00 UTC (18:00 Cairo).
   workflow_dispatch:
     inputs:
       closed_round:

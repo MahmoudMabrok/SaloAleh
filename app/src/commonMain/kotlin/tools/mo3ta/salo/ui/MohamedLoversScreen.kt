@@ -29,9 +29,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -43,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.TooltipState
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
@@ -68,7 +69,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -102,13 +105,18 @@ import tools.mo3ta.salo.ui.components.MohamedLoversPrayerOverlay
 import tools.mo3ta.salo.ui.components.MohamedLoversSkyBackground
 import tools.mo3ta.salo.ui.AchievementCelebrationDialog
 import tools.mo3ta.salo.ui.components.RoundRecapSheet
+import tools.mo3ta.salo.ui.tendays.TenDaysEntryIcon
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MohamedLoversScreen(
     onOpenAchievements: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
     onOpenHadithList: () -> Unit = {},
     onOpenTenDays: () -> Unit = {},
+    onOpenTakbeerSession: () -> Unit = {},
+    onOpenPaywall: () -> Unit = {},
+    announcementsDone: Boolean = true,
     viewModel: MohamedLoversViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -155,6 +163,37 @@ fun MohamedLoversScreen(
 
     LaunchedEffect(Unit){
         analyticsManager.logView("Mohamed_lovers")
+    }
+
+    val settingsTooltipState = rememberTooltipState(isPersistent = true)
+    val achievementsTooltipState = rememberTooltipState(isPersistent = true)
+    val hadithTooltipState = rememberTooltipState(isPersistent = true)
+    val tenDaysTooltipState = rememberTooltipState(isPersistent = true)
+    val takbeerTooltipState = rememberTooltipState(isPersistent = true)
+    val infoTooltipState = rememberTooltipState(isPersistent = true)
+
+    LaunchedEffect(announcementsDone) {
+        if (!announcementsDone) return@LaunchedEffect
+        if (settingsStore.topBarTooltipsShown) return@LaunchedEffect
+        delay(1500)
+        val tooltipStates = listOf(
+            achievementsTooltipState,
+            hadithTooltipState,
+            tenDaysTooltipState,
+            takbeerTooltipState,
+            infoTooltipState,
+            settingsTooltipState,
+        )
+        for (s in tooltipStates) {
+            coroutineScope {
+                launch { s.show() }
+                delay(3000)
+                s.dismiss()
+            }
+            delay(400)
+        }
+        settingsStore.topBarTooltipsShown = true
+        analyticsManager.logAction("first_open_tooltips_shown", emptyMap())
     }
 
     var archCenter by remember { mutableStateOf<Offset?>(null) }
@@ -355,7 +394,7 @@ fun MohamedLoversScreen(
             )
 
             Box(modifier = Modifier.align(Alignment.TopEnd).padding(end = 14.dp, top = 36.dp)) {
-                TopBarTooltip(text = "الإعدادات والإشعارات") {
+                TopBarTooltip(text = "الإعدادات والإشعارات", state = settingsTooltipState) {
                     IconButton(onClick = {
                         analyticsManager.logAction("open_settings")
                         onOpenSettings()
@@ -370,7 +409,7 @@ fun MohamedLoversScreen(
             }
             Box(modifier = Modifier.align(Alignment.TopStart).padding(start = 14.dp, top = 36.dp)) {
                 Row {
-                    TopBarTooltip(text = "إنجازاتك وترتيبك في الجولات السابقة") {
+                    TopBarTooltip(text = "إنجازاتك وترتيبك في الجولات السابقة", state = achievementsTooltipState) {
                         IconButton(onClick = onOpenAchievements) {
                             Icon(
                                 imageVector = Icons.Default.EmojiEvents,
@@ -379,7 +418,7 @@ fun MohamedLoversScreen(
                             )
                         }
                     }
-                    TopBarTooltip(text = "أحاديث عن فضل الصلاة على النبي") {
+                    TopBarTooltip(text = "أحاديث عن فضل الصلاة على النبي", state = hadithTooltipState) {
                         IconButton(onClick = onOpenHadithList) {
                             Icon(
                                 imageVector = Icons.Default.AutoStories,
@@ -388,16 +427,27 @@ fun MohamedLoversScreen(
                             )
                         }
                     }
-                    TopBarTooltip(text = "أعمال وفضائل عشر ذي الحجة", autoShow = true) {
+                    TopBarTooltip(text = "أعمال وفضائل عشر ذي الحجة", state = tenDaysTooltipState) {
                         IconButton(onClick = onOpenTenDays) {
-                            Icon(
-                                imageVector = Icons.Default.CalendarMonth,
+                            TenDaysEntryIcon(
+                                modifier = Modifier.size(24.dp),
                                 contentDescription = "عشر ذي الحجة",
+                            )
+                        }
+                    }
+                    TopBarTooltip(text = "جلسة تكبير جماعية", state = takbeerTooltipState) {
+                        IconButton(onClick = {
+                            analyticsManager.logAction("open_takbeer_session", mapOf("source" to "top_bar"))
+                            onOpenTakbeerSession()
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Groups,
+                                contentDescription = "جلسة تكبير",
                                 tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
                             )
                         }
                     }
-                    TopBarTooltip(text = "معلومات عن الجولة وكيفية اللعب") {
+                    TopBarTooltip(text = "معلومات عن الجولة وكيفية اللعب", state = infoTooltipState) {
                         IconButton(onClick = {
                             analyticsManager.logAction("open_info_sheet", mapOf("source" to "icon"))
                             infoSheetOpen = true
@@ -432,6 +482,10 @@ fun MohamedLoversScreen(
                 showPlatformToast(codeCopiedLabel)
             },
             isPremium = premiumStore.hasFeature(PremiumFeature.SUPPORTER_BADGE),
+            onOpenPaywall = {
+                infoSheetOpen = false
+                onOpenPaywall()
+            },
         )
         if (state.showRoundRecap) {
             RoundRecapSheet(
@@ -502,16 +556,9 @@ private fun GraceWarningDialog(onDismiss: () -> Unit) {
 @Composable
 private fun TopBarTooltip(
     text: String,
-    autoShow: Boolean = false,
+    state: TooltipState = rememberTooltipState(),
     content: @Composable () -> Unit,
 ) {
-    val state = rememberTooltipState()
-    if (autoShow) {
-        LaunchedEffect(Unit) {
-            delay(800)
-            state.show()
-        }
-    }
     val density = LocalDensity.current
     val belowProvider = remember(density) {
         val spacing = with(density) { 4.dp.roundToPx() }

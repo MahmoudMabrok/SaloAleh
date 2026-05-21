@@ -25,18 +25,19 @@
 
 const OWNER = "MahmoudMabrok";
 const REPO = "SaloAleh";
-const WORKFLOW_FILE = "leaderboard-populate.yml";
 const REF = "main";
 
-let lastRunAt: string | null = null;
-let lastResult: string | null = null;
+const cronStatus: Record<string, { lastRunAt: string | null; lastResult: string | null }> = {
+  leaderboard: { lastRunAt: null, lastResult: null },
+  aggregate: { lastRunAt: null, lastResult: null },
+};
 
-async function dispatchWorkflow(): Promise<void> {
+async function dispatchWorkflow(workflowFile: string, key: string): Promise<void> {
   const token = Deno.env.get("GITHUB_TOKEN");
   if (!token) throw new Error("GITHUB_TOKEN env var is not set");
 
   const url =
-    `https://api.github.com/repos/${OWNER}/${REPO}/actions/workflows/${WORKFLOW_FILE}/dispatches`;
+    `https://api.github.com/repos/${OWNER}/${REPO}/actions/workflows/${workflowFile}/dispatches`;
 
   const res = await fetch(url, {
     method: "POST",
@@ -49,27 +50,30 @@ async function dispatchWorkflow(): Promise<void> {
     body: JSON.stringify({ ref: REF }),
   });
 
-  lastRunAt = new Date().toISOString();
+  cronStatus[key].lastRunAt = new Date().toISOString();
 
-  // GitHub returns 204 No Content on a successful workflow dispatch.
   if (res.status !== 204) {
-    lastResult = `FAILED ${res.status} ${res.statusText}: ${await res.text()}`;
-    // Throwing lets Deno Cron apply the backoffSchedule retries below.
-    throw new Error(lastResult);
+    cronStatus[key].lastResult = `FAILED ${res.status} ${res.statusText}: ${await res.text()}`;
+    throw new Error(cronStatus[key].lastResult!);
   }
 
-  lastResult = "OK";
-  console.log(`[${lastRunAt}] Dispatched ${WORKFLOW_FILE} on ${REF}`);
+  cronStatus[key].lastResult = "OK";
+  console.log(`[${cronStatus[key].lastRunAt}] Dispatched ${workflowFile} on ${REF}`);
 }
 
-// UTC schedule — runs at :00 and :30 every hour. populate-leaderboard.js
-// derives the Cairo round key itself, so the scheduler timezone is irrelevant.
-// backoffSchedule retries a failed dispatch after 1s, 5s, then 30s.
 Deno.cron(
   "trigger-leaderboard-populate",
   "*/30 * * * *",
   { backoffSchedule: [1_000, 5_000, 30_000] },
-  dispatchWorkflow,
+  () => dispatchWorkflow("leaderboard-populate.yml", "leaderboard"),
+);
+
+// Friday 16:00 UTC = 18:00 Cairo — aggregate round totals after the round closes.
+Deno.cron(
+  "trigger-aggregate-all-time",
+  "0 16 * * 5",
+  { backoffSchedule: [1_000, 5_000, 30_000] },
+  () => dispatchWorkflow("aggregate-all-time.yml", "aggregate"),
 );
 
 // Minimal health endpoint so the deployment is verifiable from a browser.
@@ -77,11 +81,19 @@ Deno.serve((req) => {
   const { pathname } = new URL(req.url);
   if (pathname === "/" || pathname === "/health") {
     return Response.json({
-      service: "saloaleh-leaderboard-scheduler",
-      schedule: "*/30 * * * * (UTC)",
-      target: `${OWNER}/${REPO} → ${WORKFLOW_FILE}`,
-      lastRunAt,
-      lastResult,
+      service: "saloaleh-scheduler",
+      crons: {
+        leaderboard: {
+          schedule: "*/30 * * * * (UTC)",
+          workflow: "leaderboard-populate.yml",
+          ...cronStatus.leaderboard,
+        },
+        aggregate: {
+          schedule: "0 16 * * 5 (UTC) — Friday 18:00 Cairo",
+          workflow: "aggregate-all-time.yml",
+          ...cronStatus.aggregate,
+        },
+      },
     });
   }
   return new Response("Not found", { status: 404 });

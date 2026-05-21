@@ -69,7 +69,7 @@ class FloatingBubbleView(context: Context) : LinearLayout(context) {
         }
 
         val card = TextView(context).apply {
-            text = "الله أكبر، الله أكبر، الله أكبر، لا إله إلا الله،\nوالله أكبر، الله أكبر، الله أكبر، ولله الحمد"
+            text = "اللهم صل علي محمد وال محمد"
             textDirection = TEXT_DIRECTION_RTL
             gravity = Gravity.CENTER
             setTextColor(Color.WHITE)

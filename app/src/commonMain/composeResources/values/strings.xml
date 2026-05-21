@@ -28,6 +28,10 @@
     <string name="mohamed_lovers_self_tag_label">المعرف: %1$s</string>
     <string name="mohamed_lovers_stats_title">الإحصائيات</string>
     <string name="mohamed_lovers_competition_title">🏆 المسابقة</string>
+    <string name="mohamed_lovers_countdown_day">يوم</string>
+    <string name="mohamed_lovers_countdown_hour">ساعة</string>
+    <string name="mohamed_lovers_countdown_minute">دقيقة</string>
+    <string name="mohamed_lovers_countdown_second">ثانية</string>
     <string name="mohamed_lovers_ornament_divider">◆</string>
     <string name="mohamed_lovers_rank_number">#%1$d</string>
     <string name="mohamed_lovers_round_total_label"> عدد الصلوات علي النبي  هذه الجولة</string>

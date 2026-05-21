@@ -37,6 +37,10 @@ class NotificationSettingsStore(private val settings: Settings) {
         get() = settings.getBoolean(KEY_DAILY_LB_PROMO_SHOWN, false)
         set(v) = settings.putBoolean(KEY_DAILY_LB_PROMO_SHOWN, v)
 
+    var topBarTooltipsShown: Boolean
+        get() = settings.getBoolean(KEY_TOP_BAR_TOOLTIPS_SHOWN, false)
+        set(v) = settings.putBoolean(KEY_TOP_BAR_TOOLTIPS_SHOWN, v)
+
     private companion object {
         const val KEY_DAILY_ENABLED = "notif_daily_enabled"
         const val KEY_FRIDAY_ENABLED = "notif_friday_enabled"
@@ -45,5 +49,6 @@ class NotificationSettingsStore(private val settings: Settings) {
         const val KEY_BUBBLE_TOOLTIP_SHOWN = "bubble_tooltip_shown"
         const val KEY_USE_DAILY_LEADERBOARD = "use_daily_leaderboard"
         const val KEY_DAILY_LB_PROMO_SHOWN = "daily_lb_promo_shown"
+        const val KEY_TOP_BAR_TOOLTIPS_SHOWN = "top_bar_tooltips_shown"
     }
 }

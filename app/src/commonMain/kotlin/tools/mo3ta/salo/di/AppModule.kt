@@ -17,9 +17,12 @@ import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.domain.MohamedLoversRepository
 import tools.mo3ta.salo.data.tendays.TenDaysStore
 import tools.mo3ta.salo.data.tendays.TenDaysFirebaseClient
+import tools.mo3ta.salo.audio.TakbeerSoundPlayer
+import tools.mo3ta.salo.audio.createTakbeerSoundPlayer
 import tools.mo3ta.salo.presentation.AchievementsViewModel
 import tools.mo3ta.salo.presentation.HadithListViewModel
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
+import tools.mo3ta.salo.presentation.TakbeerSessionViewModel
 import tools.mo3ta.salo.presentation.TenDaysViewModel
 
 val appModule = module {
@@ -40,4 +43,6 @@ val appModule = module {
     single { TenDaysStore(get()) }
     single { TenDaysFirebaseClient(get()) }
     viewModel { TenDaysViewModel(get(), get(), get()) }
+    single<TakbeerSoundPlayer> { createTakbeerSoundPlayer() }
+    viewModel { TakbeerSessionViewModel(get()) }
 }

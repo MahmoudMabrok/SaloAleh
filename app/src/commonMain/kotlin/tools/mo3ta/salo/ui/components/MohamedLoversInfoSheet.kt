@@ -2,6 +2,7 @@ package tools.mo3ta.salo.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
@@ -61,13 +62,21 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.CompositionLocalProvider
 import kotlin.math.roundToInt
 import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.coroutines.delay
 import tools.mo3ta.salo.ui.shareBitmap
 import org.jetbrains.compose.resources.stringResource
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_banner
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_competition_title
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_day
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_hour
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_minute
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_second
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_info_sheet_title
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_ornament_divider
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_rank_number
@@ -86,6 +95,7 @@ import tools.mo3ta.salo.generated.resources.mohamed_lovers_winner_title
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_share_rank
 import tools.mo3ta.salo.presentation.MohamedLoversLeaderboardEntry
 import tools.mo3ta.salo.presentation.MohamedLoversUiState
+import tools.mo3ta.salo.ui.settings.PremiumPromoDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,9 +105,22 @@ internal fun MohamedLoversInfoSheet(
     onDismiss: () -> Unit,
     onCopyWinnerCode: (String) -> Unit,
     isPremium: Boolean = false,
+    onOpenPaywall: () -> Unit = {},
 ) {
     if (!isOpen) return
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
+    var showSupporterInfo by remember { mutableStateOf(false) }
+
+    if (showSupporterInfo) {
+        PremiumPromoDialog(
+            onOpen = {
+                showSupporterInfo = false
+                onDismiss()
+                onOpenPaywall()
+            },
+            onDismiss = { showSupporterInfo = false },
+        )
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -133,7 +156,11 @@ internal fun MohamedLoversInfoSheet(
                 ),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.95f),
             )
-            CompetitionCard(roundEndLabel = state.roundEndLabel, roundPlayerCount = state.roundPlayerCount)
+            CompetitionCard(
+                roundEndLabel = state.roundEndLabel,
+                roundPlayerCount = state.roundPlayerCount,
+                roundEndInstant = state.roundEndInstant,
+            )
             TotalsCard(roundTotal = state.roundTotal, allTimeTotal = state.allTimeTotal)
             ShareButton(state = state)
             LeaderboardCard(
@@ -142,6 +169,7 @@ internal fun MohamedLoversInfoSheet(
                 selfInTop = state.selfInTop,
                 isDaily = state.isUsingDailyLeaderboard,
                 isPremium = isPremium,
+                onSupporterClick = { showSupporterInfo = true },
             )
             if (state.isWinner) {
                 WinnerCard(winnerCode = state.winnerCode, onCopyWinnerCode = onCopyWinnerCode)
@@ -217,7 +245,7 @@ private fun ShareButton(state: MohamedLoversUiState) {
 }
 
 @Composable
-private fun CompetitionCard(roundEndLabel: String, roundPlayerCount: Int) {
+private fun CompetitionCard(roundEndLabel: String, roundPlayerCount: Int, roundEndInstant: Instant?) {
     val dotAlpha by rememberInfiniteTransition().animateFloat(
         initialValue = 1f,
         targetValue = 0.25f,
@@ -264,6 +292,9 @@ private fun CompetitionCard(roundEndLabel: String, roundPlayerCount: Int) {
                 }
             }
         }
+        if (roundEndInstant != null) {
+            CountdownRow(roundEndInstant)
+        }
         if (roundEndLabel.isNotBlank()) {
             Text(
                 text = stringResource(Res.string.mohamed_lovers_round_end_label, roundEndLabel),
@@ -271,6 +302,103 @@ private fun CompetitionCard(roundEndLabel: String, roundPlayerCount: Int) {
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.55f),
             )
         }
+    }
+}
+
+@Composable
+private fun CountdownRow(roundEnd: Instant) {
+    var remainingSeconds by remember { mutableStateOf(0L) }
+
+    LaunchedEffect(roundEnd) {
+        while (true) {
+            val diff = (roundEnd - Clock.System.now()).inWholeSeconds
+            remainingSeconds = if (diff > 0) diff else 0
+            delay(1000)
+        }
+    }
+
+    val days = (remainingSeconds / 86400).toInt()
+    val hours = ((remainingSeconds % 86400) / 3600).toInt()
+    val minutes = ((remainingSeconds % 3600) / 60).toInt()
+    val seconds = (remainingSeconds % 60).toInt()
+
+    val weekSeconds = 7 * 24 * 3600L
+    val elapsed = weekSeconds - remainingSeconds.coerceAtMost(weekSeconds)
+    val progress = (elapsed.toFloat() / weekSeconds).coerceIn(0f, 1f)
+
+    val animatedProgress = remember { Animatable(0f) }
+    LaunchedEffect(progress) {
+        animatedProgress.animateTo(progress, animationSpec = tween(600, easing = CubicBezierEasing(0.16f, 1f, 0.3f, 1f)))
+    }
+
+    val glowAlpha by rememberInfiniteTransition().animateFloat(
+        initialValue = 0.4f,
+        targetValue = 0.8f,
+        animationSpec = infiniteRepeatable(animation = tween(2000), repeatMode = RepeatMode.Reverse),
+    )
+
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(3.dp)
+                .clip(RoundedCornerShape(99.dp))
+                .background(MohamedLoversPalette.GoldBase.copy(alpha = 0.1f)),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(animatedProgress.value)
+                    .height(3.dp)
+                    .clip(RoundedCornerShape(99.dp))
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(MohamedLoversPalette.GoldBase, MohamedLoversPalette.GoldHighlight),
+                        ),
+                    ),
+            )
+        }
+
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.Bottom,
+            ) {
+                CountdownUnit(days, stringResource(Res.string.mohamed_lovers_countdown_day))
+                CountdownUnit(hours, stringResource(Res.string.mohamed_lovers_countdown_hour))
+                CountdownUnit(minutes, stringResource(Res.string.mohamed_lovers_countdown_minute))
+                CountdownUnit(seconds, stringResource(Res.string.mohamed_lovers_countdown_second), glowAlpha)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CountdownUnit(value: Int, label: String, glowAlpha: Float = 0f) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = value.toString(),
+            style = TextStyle(
+                fontFamily = MohamedLoversFonts.display,
+                fontSize = 26.sp,
+                fontWeight = FontWeight.W700,
+            ),
+            color = MohamedLoversPalette.GoldHighlight,
+            modifier = if (glowAlpha > 0f) {
+                Modifier.graphicsLayer { alpha = 0.6f + glowAlpha * 0.4f }
+            } else Modifier,
+        )
+        Text(
+            text = label,
+            style = TextStyle(
+                fontFamily = MohamedLoversFonts.arabic,
+                fontSize = 10.sp,
+            ),
+            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.45f),
+        )
     }
 }
 
@@ -387,6 +515,7 @@ private fun LeaderboardCard(
     selfInTop: Boolean,
     isDaily: Boolean,
     isPremium: Boolean = false,
+    onSupporterClick: () -> Unit = {},
 ) {
     SheetCard {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -444,14 +573,14 @@ private fun LeaderboardCard(
             )
         } else {
             topPlayers.forEach { entry ->
-                LeaderboardRow(entry = entry, pinned = false)
+                LeaderboardRow(entry = entry, pinned = false, onSupporterClick = onSupporterClick)
             }
         }
     }
 }
 
 @Composable
-private fun LeaderboardRow(entry: MohamedLoversLeaderboardEntry, pinned: Boolean) {
+private fun LeaderboardRow(entry: MohamedLoversLeaderboardEntry, pinned: Boolean, onSupporterClick: () -> Unit = {}) {
     val rankColor = when (entry.rank) {
         1 -> MohamedLoversPalette.GoldHighlight
         2 -> MohamedLoversPalette.RankSilver
@@ -494,13 +623,14 @@ private fun LeaderboardRow(entry: MohamedLoversLeaderboardEntry, pinned: Boolean
             }
             if (entry.isSupporter) {
                 Text(
-                    text = "داعم",
+                    text = "⭐ داعم",
                     fontSize = 10.sp,
                     fontWeight = FontWeight.W600,
                     color = MohamedLoversPalette.GoldHighlight,
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
                         .background(MohamedLoversPalette.GoldHighlight.copy(alpha = 0.2f))
+                        .clickable { onSupporterClick() }
                         .padding(horizontal = 6.dp, vertical = 2.dp),
                 )
             }

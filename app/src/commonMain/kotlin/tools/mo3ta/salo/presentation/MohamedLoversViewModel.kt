@@ -106,6 +106,7 @@ class MohamedLoversViewModel(
                     isFridayBonus = bootstrap.competitionWindow.isFridayBonus,
                     roundKey = bootstrap.competitionWindow.roundKey,
                     roundEndLabel = bootstrap.competitionWindow.roundEnd?.formatDisplay().orEmpty(),
+                    roundEndInstant = bootstrap.competitionWindow.roundEnd,
                     networkTimeLabel = bootstrap.competitionWindow.networkNow?.formatDisplay().orEmpty(),
                     status = resolveStatus(bootstrap.firebaseConfigured, bootstrap.competitionWindow),
                     canCount = bootstrap.competitionWindow.networkNow != null,
