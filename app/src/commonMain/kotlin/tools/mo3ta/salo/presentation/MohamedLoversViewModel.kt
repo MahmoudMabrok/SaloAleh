@@ -17,6 +17,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
+import tools.mo3ta.salo.data.time.computeFinalMinutesTick
 import tools.mo3ta.salo.data.engagement.DailyGoalStore
 import tools.mo3ta.salo.data.engagement.EngagementStore
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
@@ -133,20 +134,15 @@ class MohamedLoversViewModel(
         finalMinutesJob = viewModelScope.launch {
             while (isActive) {
                 val remaining = (roundEnd - Clock.System.now()).inWholeSeconds
-                if (remaining <= 0) {
-                    flushPendingSession()
+                val tick = computeFinalMinutesTick(remaining)
+                if (tick.shouldFlush) flushPendingSession()
+                if (tick.showNewRound) {
                     _state.update { it.copy(showNewRoundCountdown = true) }
                     delay(3_000)
                     refresh()
                     break
                 }
-                if (remaining <= 600) {
-                    flushPendingSession()
-                }
-                val tick = if (remaining <= 600) 60_000L else {
-                    ((remaining - 600) * 1000).coerceAtMost(60_000L)
-                }
-                delay(tick)
+                delay(tick.nextDelayMillis)
             }
         }
     }
