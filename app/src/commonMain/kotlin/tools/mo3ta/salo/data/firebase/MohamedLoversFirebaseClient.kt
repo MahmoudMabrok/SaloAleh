@@ -288,6 +288,7 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         return MohamedLoversPlayer(
             uid = uid,
             totalCount = (map[TOTAL_COUNT_KEY] as? Number)?.toInt() ?: 0,
+            totalExternal = (map[TOTAL_EXTERNAL_KEY] as? Number)?.toInt() ?: 0,
             rank = (map[RANK_KEY] as? Number)?.toInt() ?: 0,
             isWinner = map[IS_WINNER_KEY] as? Boolean ?: false,
             winnerCode = map[WINNER_CODE_KEY] as? String ?: "",

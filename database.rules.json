@@ -134,6 +134,9 @@
             "scoreMasked": {
               ".validate": "newData.isBoolean()"
             },
+            "totalExternal": {
+              ".validate": "newData.isNumber() && newData.val() >= (data.exists() ? data.val() : 0)"
+            },
 
             "$other": { ".validate": false }
           }
