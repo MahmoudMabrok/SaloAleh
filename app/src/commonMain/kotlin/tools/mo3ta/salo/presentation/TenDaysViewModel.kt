@@ -16,6 +16,8 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.daysUntil
 import kotlinx.datetime.todayIn
 import tools.mo3ta.salo.data.tendays.DhikrType
+import tools.mo3ta.salo.analytics.AnalyticsManager
+import tools.mo3ta.salo.analytics.TenDaysAnalytics
 import tools.mo3ta.salo.data.tendays.TenDaysFirebaseClient
 import tools.mo3ta.salo.data.tendays.TenDaysStore
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
@@ -24,6 +26,7 @@ class TenDaysViewModel(
     private val store: TenDaysStore,
     private val firebaseClient: TenDaysFirebaseClient,
     private val sessionStore: MohamedLoversSessionStore,
+    private val analyticsManager: AnalyticsManager,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(TenDaysUiState())
@@ -58,6 +61,7 @@ class TenDaysViewModel(
         store.incrementTakbeerSound(day)
         refreshDay(day)
         debouncedSync()
+        analyticsManager.logAction(TenDaysAnalytics.TAKBEER_SOUND_PLAYED, mapOf(TenDaysAnalytics.PARAM_DAY to day.toString()))
     }
 
     fun onFastingToggle() {
@@ -66,6 +70,7 @@ class TenDaysViewModel(
             store.setFasting(day, true)
             refreshDay(day)
             debouncedSync()
+            analyticsManager.logAction(TenDaysAnalytics.FASTING_TOGGLED, mapOf(TenDaysAnalytics.PARAM_DAY to day.toString()))
         }
     }
 
@@ -75,6 +80,7 @@ class TenDaysViewModel(
             store.setSadaqah(day, true)
             refreshDay(day)
             debouncedSync()
+            analyticsManager.logAction(TenDaysAnalytics.SADAQAH_TOGGLED, mapOf(TenDaysAnalytics.PARAM_DAY to day.toString()))
         }
     }
 

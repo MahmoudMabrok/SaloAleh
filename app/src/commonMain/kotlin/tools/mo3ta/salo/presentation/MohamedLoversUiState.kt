@@ -52,6 +52,10 @@ data class MohamedLoversUiState(
     val allTimeTotal: Long = 0L,
     val showHadithDialog: Boolean = false,
 
+    // Winners podium (shown once per completed round, before recap)
+    val showWinnersDialog: Boolean = false,
+    val winnersTop3: List<MohamedLoversLeaderboardEntry> = emptyList(),
+
     // Round recap (shown once per completed round)
     val showRoundRecap: Boolean = false,
     val recapRank: Int = 0,
@@ -70,4 +74,7 @@ data class MohamedLoversUiState(
     val dailyGoalTarget: Int = 0,
     val dailyGoalProgress: Int = 0,
     val dailyGoalJustCompleted: Boolean = false,
+
+    // New round transition
+    val showNewRoundCountdown: Boolean = false,
 )

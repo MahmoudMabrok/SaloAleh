@@ -150,6 +150,16 @@ actual fun openStorePage() {
         .onFailure { ctx.startActivity(webIntent) }
 }
 
+actual fun setAppLocale(languageTag: String) {
+    val ctx = AndroidAppContext.get()
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val localeManager = ctx.getSystemService(android.app.LocaleManager::class.java)
+        localeManager.applicationLocales = android.os.LocaleList.forLanguageTags(languageTag)
+    } else {
+        AndroidAppContext.getActivity()?.recreate()
+    }
+}
+
 actual fun shareBitmap(imageBitmap: ImageBitmap) {
     val context = AndroidAppContext.get()
     val androidBitmap = imageBitmap.asAndroidBitmap()

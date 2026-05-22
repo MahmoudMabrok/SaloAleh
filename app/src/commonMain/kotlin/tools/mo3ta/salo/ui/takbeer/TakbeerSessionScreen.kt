@@ -66,6 +66,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.*
 import tools.mo3ta.salo.analytics.AnalyticsManager
+import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.presentation.TakbeerPhase
 import tools.mo3ta.salo.presentation.TakbeerSessionUiState
 import tools.mo3ta.salo.presentation.TakbeerSessionViewModel
@@ -219,7 +220,7 @@ private fun SetupContent(
         val analyticsManager: AnalyticsManager = koinInject()
         Button(
             onClick = {
-                analyticsManager.logAction("takbeer_session_start", mapOf("people" to state.peopleCountInput))
+                analyticsManager.logAction(AppAnalytics.TAKBEER_SESSION_START, mapOf(AppAnalytics.PARAM_PEOPLE to state.peopleCountInput))
                 viewModel.startSession()
             },
             enabled = state.canStart,
@@ -317,7 +318,7 @@ private fun RunningContent(
             Spacer(Modifier.height(10.dp))
             Button(
                 onClick = {
-                    analyticsManager.logAction("takbeer_user_done", mapOf("round" to "${state.roundsCompleted + 1}"))
+                    analyticsManager.logAction(AppAnalytics.TAKBEER_USER_DONE, mapOf(AppAnalytics.PARAM_ROUND to "${state.roundsCompleted + 1}"))
                     viewModel.onUserDone()
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -345,7 +346,7 @@ private fun RunningContent(
 
         Button(
             onClick = {
-                analyticsManager.logAction("takbeer_session_stop", mapOf("rounds_completed" to "${state.roundsCompleted}"))
+                analyticsManager.logAction(AppAnalytics.TAKBEER_SESSION_STOP, mapOf(AppAnalytics.PARAM_ROUNDS_COMPLETED to "${state.roundsCompleted}"))
                 viewModel.stopSession()
             },
             modifier = Modifier.fillMaxWidth(),

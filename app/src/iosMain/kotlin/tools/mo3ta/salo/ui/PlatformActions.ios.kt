@@ -111,6 +111,12 @@ actual fun openNotificationSettings() {
 
 actual fun requestExactAlarmPermission() = Unit
 
+actual fun setAppLocale(languageTag: String) {
+    platform.Foundation.NSUserDefaults.standardUserDefaults.setObject(listOf(languageTag), forKey = "AppleLanguages")
+    platform.Foundation.NSUserDefaults.standardUserDefaults.synchronize()
+    platform.posix.exit(0)
+}
+
 actual fun openStorePage() {
     val url = NSURL(string = getStoreUrl()) ?: return
     UIApplication.sharedApplication.openURL(url)

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -47,6 +48,7 @@ class MohamedLoversViewModel(
     private var achievementsFetchedFromRtdb = false
     private var currentWindow: MohamedLoversCompetitionWindow = MohamedLoversCompetitionWindow()
     private var inFlightFlush = 0
+    private var finalMinutesJob: Job? = null
 
     init {
         _state.update {
@@ -117,6 +119,35 @@ class MohamedLoversViewModel(
 
             flushPendingSession()
             connectToLeaderboardIfPossible()
+            startFinalMinutesTimer()
+        }
+    }
+
+    fun dismissNewRoundCountdown() {
+        _state.update { it.copy(showNewRoundCountdown = false) }
+    }
+
+    private fun startFinalMinutesTimer() {
+        finalMinutesJob?.cancel()
+        val roundEnd = _state.value.roundEndInstant ?: return
+        finalMinutesJob = viewModelScope.launch {
+            while (isActive) {
+                val remaining = (roundEnd - Clock.System.now()).inWholeSeconds
+                if (remaining <= 0) {
+                    flushPendingSession()
+                    _state.update { it.copy(showNewRoundCountdown = true) }
+                    delay(3_000)
+                    refresh()
+                    break
+                }
+                if (remaining <= 600) {
+                    flushPendingSession()
+                }
+                val tick = if (remaining <= 600) 60_000L else {
+                    ((remaining - 600) * 1000).coerceAtMost(60_000L)
+                }
+                delay(tick)
+            }
         }
     }
 
@@ -236,6 +267,7 @@ class MohamedLoversViewModel(
         }
     }
 
+    fun dismissWinnersDialog() = _state.update { it.copy(showWinnersDialog = false) }
     fun dismissRoundRecap() = _state.update { it.copy(showRoundRecap = false) }
     fun dismissGraceWarning() {
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
@@ -336,6 +368,24 @@ class MohamedLoversViewModel(
                         remoteLeaderboard = leaderboard
                         applyLeaderboard()
                         if (leaderboard.isFinal) {
+                            // Winners podium — shown once per completed round, visible to all users
+                            val winnersRound = repository.getWinnersShownRound()
+                            if (winnersRound != roundKey && leaderboard.entries.size >= 3) {
+                                repository.markWinnersShown(roundKey)
+                                val top3 = leaderboard.entries
+                                    .sortedByDescending { it.score }
+                                    .take(3)
+                                    .mapIndexed { i, e ->
+                                        MohamedLoversLeaderboardEntry(
+                                            rank = i + 1,
+                                            displayTag = buildMohamedLoversDisplayTag(e.uid, e.countryCode),
+                                            totalCount = e.score,
+                                            isCurrentUser = e.uid == uid,
+                                        )
+                                    }
+                                _state.update { it.copy(showWinnersDialog = true, winnersTop3 = top3) }
+                            }
+
                             val match = leaderboard.entries.firstOrNull { it.uid == uid }
                             if (match != null) {
                                 val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
@@ -349,6 +399,7 @@ class MohamedLoversViewModel(
                                 if (achievement != null) {
                                     _state.update { it.copy(newlyEarnedRankAchievement = achievement) }
                                 }
+
                                 // Round recap — shown once per completed round
                                 val recapRound = repository.getRecapShownRound()
                                 if (recapRound != roundKey) {

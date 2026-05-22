@@ -78,6 +78,12 @@
     <string name="mohamed_lovers_info_cd">معلومات</string>
     <string name="mohamed_lovers_share_rank">مشاركة ترتيبي</string>
 
+    <!-- Winners Dialog -->
+    <string name="winners_title">نتائج المسابقة</string>
+    <string name="winners_subtitle">أفضل ٣ مصلّين هذا الأسبوع</string>
+    <string name="winners_barakah">بارك الله فيكم وتقبّل صلاتكم على النبي ﷺ</string>
+    <string name="winners_cta">ما شاء الله — متابعة</string>
+
     <!-- Round Recap Sheet -->
     <string name="recap_title">انتهت الجولة!</string>
     <string name="recap_rank_label">جئت في المرتبة #%1$d من %2$d مشاركاً</string>
@@ -85,6 +91,11 @@
     <string name="recap_taps_up">+%1$d صلاة عن الأسبوع الماضي</string>
     <string name="recap_taps_down">%1$d صلاة عن الأسبوع الماضي</string>
     <string name="recap_cta">ابدأ الجولة الجديدة</string>
+
+    <!-- New Round Countdown -->
+    <string name="new_round_title">انتهت الجولة!</string>
+    <string name="new_round_subtitle">الجولة الجديدة تبدأ بعد</string>
+    <string name="new_round_cta">حسنًا</string>
 
     <!-- Streak Grace Dialog -->
     <string name="grace_warning_title">حافظنا على سلسلتك</string>
@@ -357,4 +368,11 @@
 
     <!-- Info Sheet Notification Warning -->
     <string name="info_sheet_notif_disabled">الإشعارات معطّلة — لماذا هذا مهم؟</string>
+
+    <!-- Language -->
+    <string name="settings_language_header">اللغة</string>
+    <string name="settings_language_ar">العربية</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_language_ur">اردو</string>
+    <string name="settings_language_zh">中文</string>
 </resources>

@@ -102,6 +102,9 @@ class MohamedLoversSessionStore(private val settings: Settings) {
     fun markRecapShown(roundKey: String) = settings.putString(KEY_RECAP_SHOWN_ROUND, roundKey)
     fun getRecapShownRound(): String? = settings.getStringOrNull(KEY_RECAP_SHOWN_ROUND)
 
+    fun markWinnersShown(roundKey: String) = settings.putString(KEY_WINNERS_SHOWN_ROUND, roundKey)
+    fun getWinnersShownRound(): String? = settings.getStringOrNull(KEY_WINNERS_SHOWN_ROUND)
+
     fun getPersonalBestRank(): Int = settings.getInt(KEY_PERSONAL_BEST_RANK, Int.MAX_VALUE)
     fun updatePersonalBestRank(rank: Int) {
         if (rank < getPersonalBestRank()) settings.putInt(KEY_PERSONAL_BEST_RANK, rank)
@@ -146,5 +149,6 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         const val KEY_FCM_TOKEN = "fcm_token"
         const val KEY_FCM_TOKEN_SYNCED = "fcm_token_synced"
         const val KEY_LAST_QR_TS = "last_applied_qr_ts"
+        const val KEY_WINNERS_SHOWN_ROUND = "winners_shown_round"
     }
 }

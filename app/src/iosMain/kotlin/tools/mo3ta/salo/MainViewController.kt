@@ -13,6 +13,7 @@ import platform.UserNotifications.UNUserNotificationCenter
 import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseClient
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
+import tools.mo3ta.salo.data.language.LanguageStore
 import tools.mo3ta.salo.di.appModule
 import tools.mo3ta.salo.di.iosModule
 import tools.mo3ta.salo.notification.NotificationScheduler
@@ -20,6 +21,11 @@ import tools.mo3ta.salo.notification.NotificationScheduler
 fun MainViewController() = ComposeUIViewController(
     configure = {
         val koin = startKoin { modules(appModule, iosModule) }.koin
+        val languageStore = koin.get<LanguageStore>()
+        val lang = languageStore.language
+        platform.Foundation.NSUserDefaults.standardUserDefaults.setObject(listOf(lang), forKey = "AppleLanguages")
+        platform.Foundation.NSUserDefaults.standardUserDefaults.synchronize()
+
         val store = koin.get<NotificationSettingsStore>()
 
         syncFcmTokenIfNeeded(koin.get(), koin.get())

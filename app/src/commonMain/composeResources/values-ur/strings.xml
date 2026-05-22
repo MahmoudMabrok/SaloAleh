@@ -78,6 +78,12 @@
     <string name="mohamed_lovers_info_cd">معلومات</string>
     <string name="mohamed_lovers_share_rank">اپنی درجہ بندی شیئر کریں</string>
 
+    <!-- Winners Dialog -->
+    <string name="winners_title">مقابلے کے نتائج</string>
+    <string name="winners_subtitle">اس ہفتے کے بہترین ٣ مصلّی</string>
+    <string name="winners_barakah">اللہ آپ کو برکت دے اور نبی ﷺ پر آپ کا درود قبول فرمائے</string>
+    <string name="winners_cta">ما شاء اللہ — جاری رکھیں</string>
+
     <!-- Round Recap Sheet -->
     <string name="recap_title">راؤنڈ ختم!</string>
     <string name="recap_rank_label">آپ کی پوزیشن #%1$d رہی %2$d شرکاء میں سے</string>
@@ -357,4 +363,11 @@
 
     <!-- Info Sheet Notification Warning -->
     <string name="info_sheet_notif_disabled">اطلاعات غیر فعال — یہ کیوں اہم ہے؟</string>
+
+    <!-- Language -->
+    <string name="settings_language_header">زبان</string>
+    <string name="settings_language_ar">العربية</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_language_ur">اردو</string>
+    <string name="settings_language_zh">中文</string>
 </resources>

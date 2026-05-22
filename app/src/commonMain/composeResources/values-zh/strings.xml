@@ -78,6 +78,12 @@
     <string name="mohamed_lovers_info_cd">信息</string>
     <string name="mohamed_lovers_share_rank">分享我的排名</string>
 
+    <!-- Winners Dialog -->
+    <string name="winners_title">比赛结果</string>
+    <string name="winners_subtitle">本周前三名</string>
+    <string name="winners_barakah">愿真主赐福你们，接受你们对先知ﷺ的祝福</string>
+    <string name="winners_cta">真棒 — 继续</string>
+
     <!-- Round Recap Sheet -->
     <string name="recap_title">回合结束！</string>
     <string name="recap_rank_label">您在 %2$d 位参与者中排名第 #%1$d</string>
@@ -357,4 +363,11 @@
 
     <!-- Info Sheet Notification Warning -->
     <string name="info_sheet_notif_disabled">通知已关闭 — 为什么这很重要？</string>
+
+    <!-- Language -->
+    <string name="settings_language_header">语言</string>
+    <string name="settings_language_ar">العربية</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_language_ur">اردو</string>
+    <string name="settings_language_zh">中文</string>
 </resources>

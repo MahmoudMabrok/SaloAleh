@@ -32,6 +32,7 @@ import tools.mo3ta.salo.ui.ReviewDialog
 import tools.mo3ta.salo.ui.openStorePage
 import tools.mo3ta.salo.ui.settings.ExtensionQrScreen
 import tools.mo3ta.salo.data.billing.BillingManager
+import tools.mo3ta.salo.data.language.LanguageStore
 import tools.mo3ta.salo.data.billing.PremiumFeature
 import tools.mo3ta.salo.data.billing.ProductRegistry
 import tools.mo3ta.salo.domain.MohamedLoversRepository
@@ -41,6 +42,7 @@ import tools.mo3ta.salo.ui.settings.PremiumPromoDialog
 import tools.mo3ta.salo.ui.settings.PurchaseSuccessDialog
 import tools.mo3ta.salo.ui.settings.SettingsScreen
 import tools.mo3ta.salo.analytics.AnalyticsManager
+import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.ui.takbeer.TakbeerAnnouncementDialog
 import tools.mo3ta.salo.ui.takbeer.TakbeerSessionScreen
 import tools.mo3ta.salo.ui.tendays.TenDaysPromoDialog
@@ -51,7 +53,9 @@ fun App(
     engagementData: EngagementData? = null,
     onNotificationPermissionRequest: (() -> Unit)? = null,
 ) {
-    val layoutDirection = when (Locale.current.language) {
+    val languageStore = koinInject<LanguageStore>()
+    val storedLang = languageStore.language
+    val layoutDirection = when (storedLang) {
         "en", "zh" -> LayoutDirection.Ltr
         else -> LayoutDirection.Rtl
     }
@@ -158,12 +162,12 @@ fun App(
                     settings.putBoolean("takbeer_announcement_shown", true)
                     takbeerAnnouncementDone = true
                     showTakbeerSession = true
-                    analyticsManager.logAction("takbeer_announcement_opened", emptyMap())
+                    analyticsManager.logAction(AppAnalytics.TAKBEER_ANNOUNCEMENT_OPENED)
                 },
                 onDismiss = {
                     settings.putBoolean("takbeer_announcement_shown", true)
                     takbeerAnnouncementDone = true
-                    analyticsManager.logAction("takbeer_announcement_dismissed", emptyMap())
+                    analyticsManager.logAction(AppAnalytics.TAKBEER_ANNOUNCEMENT_DISMISSED)
                 },
             )
         }

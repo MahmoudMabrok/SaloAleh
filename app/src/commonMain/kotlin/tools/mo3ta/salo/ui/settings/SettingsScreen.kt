@@ -5,6 +5,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -17,6 +19,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -47,7 +51,9 @@ import org.koin.compose.koinInject
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.*
 import tools.mo3ta.salo.analytics.AnalyticsManager
+import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.data.billing.BillingManager
+import tools.mo3ta.salo.data.language.LanguageStore
 import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.billing.SupportTier
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
@@ -63,6 +69,7 @@ import tools.mo3ta.salo.ui.getStoreUrl
 import tools.mo3ta.salo.ui.openNotificationSettings
 import tools.mo3ta.salo.ui.openStorePage
 import tools.mo3ta.salo.ui.requestExactAlarmPermission
+import tools.mo3ta.salo.ui.setAppLocale
 import tools.mo3ta.salo.ui.shareText
 import tools.mo3ta.salo.ui.showPlatformToast
 
@@ -81,6 +88,8 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
     var exactAlarmGranted by remember { mutableStateOf(canScheduleExactAlarms()) }
     val lifecycleOwner = LocalLifecycleOwner.current
 
+    val languageStore: LanguageStore = koinInject()
+    var selectedLanguage by remember { mutableStateOf(languageStore.language) }
     val analyticsManager: AnalyticsManager = koinInject()
     val billingManager: BillingManager = koinInject()
     val premiumStore: PremiumStore = koinInject()
@@ -136,6 +145,26 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
+            Text(
+                text = stringResource(Res.string.settings_language_header),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(vertical = 8.dp),
+            )
+
+            LanguageChipRow(
+                selectedLanguage = selectedLanguage,
+                onLanguageSelected = { lang ->
+                    if (lang != selectedLanguage) {
+                        selectedLanguage = lang
+                        languageStore.language = lang
+                        analyticsManager.logAction(AppAnalytics.LANGUAGE_CHANGED, mapOf(AppAnalytics.PARAM_LANG to lang))
+                        setAppLocale(lang)
+                    }
+                },
+            )
+
             Text(
                 text = stringResource(Res.string.settings_notifications_header),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
@@ -395,6 +424,43 @@ private fun SupporterStatusCard(tier: SupportTier, onClick: () -> Unit) {
             text = "✅",
             fontSize = 18.sp,
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun LanguageChipRow(
+    selectedLanguage: String,
+    onLanguageSelected: (String) -> Unit,
+) {
+    val languages = listOf(
+        "ar" to stringResource(Res.string.settings_language_ar),
+        "en" to stringResource(Res.string.settings_language_en),
+        "ur" to stringResource(Res.string.settings_language_ur),
+        "zh" to stringResource(Res.string.settings_language_zh),
+    )
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+    ) {
+        languages.forEach { (tag, label) ->
+            FilterChip(
+                selected = selectedLanguage == tag,
+                onClick = { onLanguageSelected(tag) },
+                label = { Text(label, fontSize = 14.sp) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MohamedLoversPalette.GoldGlow.copy(alpha = 0.2f),
+                    selectedLabelColor = MohamedLoversPalette.GoldGlow,
+                    labelColor = Color.White.copy(alpha = 0.7f),
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    borderColor = Color.White.copy(alpha = 0.2f),
+                    selectedBorderColor = MohamedLoversPalette.GoldGlow.copy(alpha = 0.5f),
+                    enabled = true,
+                    selected = selectedLanguage == tag,
+                ),
+            )
+        }
     }
 }
 

@@ -11,6 +11,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -49,6 +50,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.runtime.Composable
@@ -79,6 +82,7 @@ import tools.mo3ta.salo.data.billing.PremiumFeature
 import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
 import tools.mo3ta.salo.analytics.AnalyticsManager
+import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.grace_warning
 import tools.mo3ta.salo.generated.resources.grace_warning_cta
@@ -105,6 +109,13 @@ import tools.mo3ta.salo.generated.resources.main_screen_cd_ten_days
 import tools.mo3ta.salo.generated.resources.main_screen_tooltip_takbeer
 import tools.mo3ta.salo.generated.resources.main_screen_cd_takbeer
 import tools.mo3ta.salo.generated.resources.main_screen_tooltip_info
+import tools.mo3ta.salo.generated.resources.new_round_title
+import tools.mo3ta.salo.generated.resources.new_round_subtitle
+import tools.mo3ta.salo.generated.resources.new_round_cta
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_day
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_hour
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_minute
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_second
 import tools.mo3ta.salo.presentation.MohamedLoversError
 import tools.mo3ta.salo.presentation.MohamedLoversStatus
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
@@ -208,7 +219,7 @@ fun MohamedLoversScreen(
             delay(400)
         }
         settingsStore.topBarTooltipsShown = true
-        analyticsManager.logAction("first_open_tooltips_shown", emptyMap())
+        analyticsManager.logAction(AppAnalytics.FIRST_OPEN_TOOLTIPS_SHOWN)
     }
 
     var archCenter by remember { mutableStateOf<Offset?>(null) }
@@ -261,10 +272,7 @@ fun MohamedLoversScreen(
             onBlessing = { isLit = true },
             onTap = {
                 if (tapsEnabled) viewModel.onCountClick()
-                analyticsManager.logAction(
-                    "mohamed_lovers_sky_tap",
-                    emptyMap(),
-                )
+                analyticsManager.logAction(AppAnalytics.MOHAMED_LOVERS_SKY_TAP)
             },
             modifier = Modifier.fillMaxSize(),
         )
@@ -281,7 +289,7 @@ fun MohamedLoversScreen(
                             shape = RoundedCornerShape(20.dp),
                             color = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.13f),
                             modifier = Modifier.clickable {
-                                analyticsManager.logAction("open_info_sheet", mapOf("source" to "rank_chip"))
+                                analyticsManager.logAction(AppAnalytics.OPEN_INFO_SHEET, mapOf(AppAnalytics.PARAM_SOURCE to "rank_chip"))
                                 infoSheetOpen = true
                             },
                         ) {
@@ -377,7 +385,7 @@ fun MohamedLoversScreen(
                 Spacer(Modifier.height(8.dp))
                 androidx.compose.material3.Surface(
                     onClick = {
-                        analyticsManager.logAction("open_manual_salawat", emptyMap())
+                        analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_SALAWAT)
                         viewModel.showManualSalawatSheet()
                     },
                     shape = RoundedCornerShape(20.dp),
@@ -411,7 +419,7 @@ fun MohamedLoversScreen(
             Box(modifier = Modifier.align(Alignment.TopEnd).padding(end = 14.dp, top = 36.dp)) {
                 TopBarTooltip(text = stringResource(Res.string.main_screen_tooltip_settings), state = settingsTooltipState) {
                     IconButton(onClick = {
-                        analyticsManager.logAction("open_settings")
+                        analyticsManager.logAction(AppAnalytics.OPEN_SETTINGS)
                         onOpenSettings()
                     }) {
                         Icon(
@@ -452,7 +460,7 @@ fun MohamedLoversScreen(
                     }
                     TopBarTooltip(text = stringResource(Res.string.main_screen_tooltip_takbeer), state = takbeerTooltipState) {
                         IconButton(onClick = {
-                            analyticsManager.logAction("open_takbeer_session", mapOf("source" to "top_bar"))
+                            analyticsManager.logAction(AppAnalytics.OPEN_TAKBEER_SESSION, mapOf(AppAnalytics.PARAM_SOURCE to "top_bar"))
                             onOpenTakbeerSession()
                         }) {
                             Icon(
@@ -464,7 +472,7 @@ fun MohamedLoversScreen(
                     }
                     TopBarTooltip(text = stringResource(Res.string.main_screen_tooltip_info), state = infoTooltipState) {
                         IconButton(onClick = {
-                            analyticsManager.logAction("open_info_sheet", mapOf("source" to "icon"))
+                            analyticsManager.logAction(AppAnalytics.OPEN_INFO_SHEET, mapOf(AppAnalytics.PARAM_SOURCE to "icon"))
                             infoSheetOpen = true
                         }) {
                             Icon(
@@ -502,7 +510,13 @@ fun MohamedLoversScreen(
                 onOpenPaywall()
             },
         )
-        if (state.showRoundRecap) {
+        if (state.showWinnersDialog && state.winnersTop3.size >= 3) {
+            WinnersDialog(
+                top3 = state.winnersTop3,
+                onDismiss = { viewModel.dismissWinnersDialog() },
+            )
+        }
+        if (state.showRoundRecap && !state.showWinnersDialog) {
             RoundRecapSheet(
                 rank = state.recapRank,
                 totalPlayers = state.recapTotalPlayers,
@@ -528,6 +542,12 @@ fun MohamedLoversScreen(
         BubbleFeaturePromo(roundKey = state.roundKey)
         if (state.showDailyLeaderboardPromo) {
             DailyLeaderboardPromoDialog(onDismiss = { viewModel.dismissDailyLeaderboardPromo() })
+        }
+        if (state.showNewRoundCountdown) {
+            NewRoundCountdownOverlay(
+                roundEndInstant = state.roundEndInstant,
+                onDismiss = { viewModel.dismissNewRoundCountdown() },
+            )
         }
     }
 }
@@ -565,6 +585,103 @@ private fun GraceWarningDialog(onDismiss: () -> Unit) {
             }
         },
     )
+}
+
+@Composable
+private fun NewRoundCountdownOverlay(
+    roundEndInstant: kotlinx.datetime.Instant?,
+    onDismiss: () -> Unit,
+) {
+    var remainingSeconds by remember { mutableStateOf(0L) }
+
+    if (roundEndInstant != null) {
+        LaunchedEffect(roundEndInstant) {
+            while (true) {
+                val diff = (roundEndInstant - kotlinx.datetime.Clock.System.now()).inWholeSeconds
+                remainingSeconds = if (diff > 0) diff else 0
+                delay(1000)
+            }
+        }
+    }
+
+    val days = (remainingSeconds / 86400).toInt()
+    val hours = ((remainingSeconds % 86400) / 3600).toInt()
+    val minutes = ((remainingSeconds % 3600) / 60).toInt()
+    val seconds = (remainingSeconds % 60).toInt()
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = MohamedLoversPalette.DeepBlue,
+        shape = RoundedCornerShape(20.dp),
+        title = {
+            Text(
+                text = stringResource(Res.string.new_round_title),
+                color = MohamedLoversPalette.GoldHighlight,
+                fontSize = 22.sp,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        text = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    text = stringResource(Res.string.new_round_subtitle),
+                    color = MohamedLoversPalette.GoldGlow,
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center,
+                )
+                Spacer(Modifier.height(16.dp))
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        CountdownCell(days, stringResource(Res.string.mohamed_lovers_countdown_day))
+                        CountdownCell(hours, stringResource(Res.string.mohamed_lovers_countdown_hour))
+                        CountdownCell(minutes, stringResource(Res.string.mohamed_lovers_countdown_minute))
+                        CountdownCell(seconds, stringResource(Res.string.mohamed_lovers_countdown_second))
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(
+                    text = stringResource(Res.string.new_round_cta),
+                    color = MohamedLoversPalette.GoldHighlight,
+                    fontSize = 16.sp,
+                )
+            }
+        },
+    )
+}
+
+@Composable
+private fun CountdownCell(value: Int, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Surface(
+            shape = RoundedCornerShape(10.dp),
+            color = MohamedLoversPalette.GoldBase.copy(alpha = 0.12f),
+        ) {
+            Text(
+                text = value.toString().padStart(2, '0'),
+                color = MohamedLoversPalette.GoldHighlight,
+                fontSize = 28.sp,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = label,
+            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
+            fontSize = 11.sp,
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

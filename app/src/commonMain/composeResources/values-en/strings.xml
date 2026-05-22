@@ -78,6 +78,12 @@
     <string name="mohamed_lovers_info_cd">Info</string>
     <string name="mohamed_lovers_share_rank">Share my rank</string>
 
+    <!-- Winners Dialog -->
+    <string name="winners_title">Competition Results</string>
+    <string name="winners_subtitle">Top 3 this week</string>
+    <string name="winners_barakah">May Allah bless you and accept your prayers upon the Prophet ﷺ</string>
+    <string name="winners_cta">Masha\'Allah — Continue</string>
+
     <!-- Round Recap Sheet -->
     <string name="recap_title">Round over!</string>
     <string name="recap_rank_label">You ranked #%1$d out of %2$d participants</string>
@@ -357,4 +363,11 @@
 
     <!-- Info Sheet Notification Warning -->
     <string name="info_sheet_notif_disabled">Notifications disabled — why does this matter?</string>
+
+    <!-- Language -->
+    <string name="settings_language_header">Language</string>
+    <string name="settings_language_ar">العربية</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_language_ur">اردو</string>
+    <string name="settings_language_zh">中文</string>
 </resources>

@@ -15,6 +15,8 @@ expect fun openStorePage()
 expect fun getAppVersion(): String
 expect fun shareBitmap(imageBitmap: ImageBitmap)
 
+expect fun setAppLocale(languageTag: String)
+
 expect fun launchQrScanner(onResult: (String?) -> Unit)
 
 @Composable

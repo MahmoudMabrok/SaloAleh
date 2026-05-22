@@ -10,6 +10,7 @@ import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseApi
 import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseClient
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
 import tools.mo3ta.salo.data.hadith.HadithListRepository
+import tools.mo3ta.salo.data.language.LanguageStore
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
 import tools.mo3ta.salo.data.remote.HadithRemoteDataSource
 import tools.mo3ta.salo.data.remote.createHttpClient
@@ -30,6 +31,7 @@ val appModule = module {
     single { MohamedLoversSessionStore(get()) }
     single { EngagementStore(get()) }
     single { DailyGoalStore(get()) }
+    single { LanguageStore(get()) }
     single { NotificationSettingsStore(get()) }
     single { PremiumStore(get()) }
     single { DailyHadithStore(get()) }
@@ -42,7 +44,7 @@ val appModule = module {
     viewModel { HadithListViewModel(get()) }
     single { TenDaysStore(get()) }
     single { TenDaysFirebaseClient(get()) }
-    viewModel { TenDaysViewModel(get(), get(), get()) }
+    viewModel { TenDaysViewModel(get(), get(), get(), get()) }
     single<TakbeerSoundPlayer> { createTakbeerSoundPlayer() }
     viewModel { TakbeerSessionViewModel(get()) }
 }
