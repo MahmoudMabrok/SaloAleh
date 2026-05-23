@@ -504,6 +504,7 @@ fun MohamedLoversScreen(
                 copyToClipboard(code)
                 showPlatformToast(codeCopiedLabel)
             },
+            onToggleLeaderboardType = { daily -> viewModel.setLeaderboardMode(daily) },
             isPremium = premiumStore.hasFeature(PremiumFeature.FRIDAY_SCORES),
             onOpenPaywall = {
                 infoSheetOpen = false
