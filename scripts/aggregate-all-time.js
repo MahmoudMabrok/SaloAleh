@@ -1,4 +1,4 @@
-// Runs once per week on Fridays at 19:00 Cairo (17:00 UTC). Sums all past
+// Runs once per week on Fridays after the 19:00 Cairo round close. Sums all past
 // rounds (including the one that just closed) into allTimeTotal, then writes
 // achievement records for every finisher so the app can surface them
 // to users who missed the live isFinal event. Top-5 finishers also receive
@@ -11,7 +11,7 @@ const databaseURL = process.env.FIREBASE_DATABASE_URL;
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount), databaseURL });
 
 // Returns today's Cairo date — the round that just closed.
-// Reliable only when called on Friday after 18:00 Cairo (matches this cron).
+// Reliable only when called on Friday after 19:00 Cairo (matches this cron).
 // Override by setting CLOSED_ROUND=YYYY-MM-DD env var or passing as first arg.
 function closedRoundKey() {
   const override = process.env.CLOSED_ROUND || process.argv[2];

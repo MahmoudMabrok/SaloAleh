@@ -69,10 +69,10 @@ Deno.cron(
   () => dispatchWorkflow("leaderboard-populate.yml", "leaderboard"),
 );
 
-// Friday 17:10 UTC — aggregate round totals after the 19:00 Cairo round close.
+// Friday 16:10 UTC = 19:10 Cairo (UTC+3) — aggregate round totals after the 19:00 Cairo round close.
 Deno.cron(
   "trigger-aggregate-all-time",
-  "10 17 * * 5",
+  "10 16 * * 5",
   { backoffSchedule: [1_000, 5_000, 30_000] },
   () => dispatchWorkflow("aggregate-all-time.yml", "aggregate"),
 );
@@ -97,7 +97,7 @@ Deno.serve((req) => {
           ...cronStatus.leaderboard,
         },
         aggregate: {
-          schedule: "10 17 * * 5 (UTC) — after Friday 19:00 Cairo",
+          schedule: "10 16 * * 5 (UTC) — Friday 19:10 Cairo (UTC+3)",
           workflow: "aggregate-all-time.yml",
           ...cronStatus.aggregate,
         },
