@@ -2,17 +2,18 @@
   "allTimeSalawat": 126899,
   "weekSalawat": 8660,
   "todaySalawat": 8660,
-  "activePlayers": 18,
-  "countriesCount": 6,
+  "activePlayers": 19,
+  "countriesCount": 7,
   "countries": [
     "AE",
     "EG",
     "IL",
+    "IT",
     "SA",
     "TR",
     "YE"
   ],
-  "topScore": 1859,
+  "topScore": 2026,
   "roundKey": "2026-05-29",
   "leaderboard": [
     {
@@ -86,5 +87,5 @@
       "uid": "405039430ae1e29f8d847a6d18a1dbad5ade88628382f830a0af1109b069cc4b"
     }
   ],
-  "updatedAt": "2026-05-23T09:19:35.943Z"
+  "updatedAt": "2026-05-23T09:37:27.837Z"
 }
