@@ -115,6 +115,7 @@ internal fun MohamedLoversInfoSheet(
     state: MohamedLoversUiState,
     onDismiss: () -> Unit,
     onCopyWinnerCode: (String) -> Unit,
+    onToggleLeaderboardType: (Boolean) -> Unit,
     isPremium: Boolean = false,
     onOpenPaywall: () -> Unit = {},
 ) {
@@ -195,6 +196,7 @@ internal fun MohamedLoversInfoSheet(
                 selfEntry = state.selfEntry,
                 selfInTop = state.selfInTop,
                 isDaily = state.isUsingDailyLeaderboard,
+                onToggleLeaderboardType = onToggleLeaderboardType,
                 isPremium = isPremium,
                 onSupporterClick = { showSupporterInfo = true },
             )
@@ -541,6 +543,7 @@ private fun LeaderboardCard(
     selfEntry: MohamedLoversLeaderboardEntry?,
     selfInTop: Boolean,
     isDaily: Boolean,
+    onToggleLeaderboardType: (Boolean) -> Unit,
     isPremium: Boolean = false,
     onSupporterClick: () -> Unit = {},
 ) {
@@ -551,8 +554,6 @@ private fun LeaderboardCard(
                 style = TextStyle(fontFamily = MohamedLoversFonts.display, fontSize = 14.sp, fontWeight = FontWeight.W500),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.95f),
             )
-            Spacer(Modifier.width(8.dp))
-            LeaderboardTypeBadge(isDaily)
             Spacer(Modifier.weight(1f))
             Text(
                 text = stringResource(Res.string.mohamed_lovers_leaderboard_refresh_note),
@@ -560,6 +561,7 @@ private fun LeaderboardCard(
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.45f),
             )
         }
+        LeaderboardTypeToggle(isDaily = isDaily, onToggle = onToggleLeaderboardType)
         if (selfEntry != null && !selfInTop) {
             Row(
                 modifier = Modifier
@@ -728,19 +730,58 @@ private fun RankChangeIndicator(rankChange: String) {
 }
 
 @Composable
-private fun LeaderboardTypeBadge(isDaily: Boolean) {
-    val label = stringResource(if (isDaily) Res.string.mohamed_lovers_leaderboard_daily else Res.string.mohamed_lovers_leaderboard_weekly)
-    val badgeColor = if (isDaily) Color(0xFF42A5F5) else MohamedLoversPalette.GoldGlow
-    Text(
-        text = label,
-        style = bodyStyle().copy(fontSize = 10.sp, fontWeight = FontWeight.W700),
-        color = badgeColor.copy(alpha = 0.85f),
+private fun LeaderboardTypeToggle(isDaily: Boolean, onToggle: (Boolean) -> Unit) {
+    Row(
         modifier = Modifier
+            .fillMaxWidth()
             .clip(RoundedCornerShape(999.dp))
-            .background(badgeColor.copy(alpha = 0.15f))
-            .border(1.dp, badgeColor.copy(alpha = 0.3f), RoundedCornerShape(999.dp))
-            .padding(horizontal = 10.dp, vertical = 3.dp),
-    )
+            .background(MohamedLoversPalette.GoldGlow.copy(alpha = 0.06f))
+            .border(1.dp, MohamedLoversPalette.GoldBase.copy(alpha = 0.25f), RoundedCornerShape(999.dp))
+            .padding(3.dp),
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        LeaderboardTypeOption(
+            label = stringResource(Res.string.mohamed_lovers_leaderboard_weekly),
+            selected = !isDaily,
+            selectedColor = MohamedLoversPalette.GoldGlow,
+            onClick = { if (isDaily) onToggle(false) },
+            modifier = Modifier.weight(1f),
+        )
+        LeaderboardTypeOption(
+            label = stringResource(Res.string.mohamed_lovers_leaderboard_daily),
+            selected = isDaily,
+            selectedColor = Color(0xFF42A5F5),
+            onClick = { if (!isDaily) onToggle(true) },
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun LeaderboardTypeOption(
+    label: String,
+    selected: Boolean,
+    selectedColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val background = if (selected) selectedColor.copy(alpha = 0.18f) else Color.Transparent
+    val textColor = if (selected) selectedColor.copy(alpha = 0.95f) else MohamedLoversPalette.GoldGlow.copy(alpha = 0.55f)
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(background)
+            .clickable(onClick = onClick)
+            .padding(vertical = 6.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            style = bodyStyle().copy(fontSize = 11.sp, fontWeight = if (selected) FontWeight.W700 else FontWeight.W500),
+            color = textColor,
+        )
+    }
 }
 
 @Composable
