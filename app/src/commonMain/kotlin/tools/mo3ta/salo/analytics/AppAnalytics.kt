@@ -13,6 +13,7 @@ object AppAnalytics {
     const val TAKBEER_SESSION_START = "takbeer_session_start"
     const val TAKBEER_USER_DONE = "takbeer_user_done"
     const val TAKBEER_SESSION_STOP = "takbeer_session_stop"
+    const val LEADERBOARD_USER_CLICK = "leaderboard_user_click"
 
     const val PARAM_SOURCE = "source"
     const val PARAM_LANG = "lang"

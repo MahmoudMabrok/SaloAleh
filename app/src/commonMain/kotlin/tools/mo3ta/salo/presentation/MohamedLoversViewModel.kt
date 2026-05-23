@@ -377,6 +377,7 @@ class MohamedLoversViewModel(
                                             displayTag = buildMohamedLoversDisplayTag(e.uid, e.countryCode),
                                             totalCount = e.score,
                                             isCurrentUser = e.uid == uid,
+                                            uid = e.uid,
                                         )
                                     }
                                 _state.update { it.copy(showWinnersDialog = true, winnersTop3 = top3) }
@@ -440,6 +441,7 @@ class MohamedLoversViewModel(
                 displayTag = buildMohamedLoversDisplayTag(entry.uid, entry.countryCode),
                 totalCount = if (isCurrentUser) selfProjectedTotal else entry.score,
                 isCurrentUser = isCurrentUser,
+                uid = entry.uid,
                 rankChange = entry.rankChange,
                 scoreMasked = entry.scoreMasked,
                 isSupporter = entry.isSupporter,
@@ -461,6 +463,7 @@ class MohamedLoversViewModel(
                 ),
                 totalCount = selfProjectedTotal,
                 isCurrentUser = true,
+                uid = uid,
             )
         }
 
