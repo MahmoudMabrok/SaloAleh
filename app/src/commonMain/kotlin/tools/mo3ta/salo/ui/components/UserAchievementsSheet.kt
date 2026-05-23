@@ -41,7 +41,6 @@ import tools.mo3ta.salo.domain.MohamedLoversRepository
 import tools.mo3ta.salo.domain.UserAchievement
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.achievements_empty_history
-import tools.mo3ta.salo.generated.resources.achievements_prayer_count_label
 import tools.mo3ta.salo.generated.resources.achievements_round_label
 import tools.mo3ta.salo.generated.resources.achievements_round_rank
 import tools.mo3ta.salo.generated.resources.user_achievements_sheet_title
@@ -211,22 +210,6 @@ private fun AchievementRow(roundKey: String, achievement: UserAchievement) {
                     text = roundKey,
                     color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
                     fontSize = 11.sp,
-                )
-            }
-        }
-        if (achievement.score != null && achievement.score > 0) {
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = stringResource(Res.string.achievements_prayer_count_label),
-                    color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.4f),
-                    fontSize = 9.sp,
-                    letterSpacing = 0.3.sp,
-                )
-                Text(
-                    text = "${achievement.score} 🤍",
-                    color = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.88f),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
                 )
             }
         }
