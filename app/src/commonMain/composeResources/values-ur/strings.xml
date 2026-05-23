@@ -129,6 +129,7 @@
     <string name="achievements_round_label">راؤنڈ:</string>
     <string name="achievements_prayer_count_label">صلوات کی تعداد</string>
     <string name="achievements_copy_winner_code_cd">فاتح کا کوڈ کاپی کریں</string>
+    <string name="user_achievements_sheet_title">راؤنڈ کامیابیاں</string>
 
     <!-- Achievement Celebration Dialog -->
     <string name="achievement_celebration_streak_7_title">محبت کا ایک ہفتہ!</string>

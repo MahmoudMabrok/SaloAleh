@@ -118,6 +118,7 @@ internal fun MohamedLoversInfoSheet(
     onToggleLeaderboardType: (Boolean) -> Unit,
     isPremium: Boolean = false,
     onOpenPaywall: () -> Unit = {},
+    onUserClick: (uid: String, displayTag: String) -> Unit = { _, _ -> },
 ) {
     if (!isOpen) return
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
@@ -199,6 +200,7 @@ internal fun MohamedLoversInfoSheet(
                 onToggleLeaderboardType = onToggleLeaderboardType,
                 isPremium = isPremium,
                 onSupporterClick = { showSupporterInfo = true },
+                onUserClick = onUserClick,
             )
             if (state.isWinner) {
                 WinnerCard(winnerCode = state.winnerCode, onCopyWinnerCode = onCopyWinnerCode)
@@ -546,6 +548,7 @@ private fun LeaderboardCard(
     onToggleLeaderboardType: (Boolean) -> Unit,
     isPremium: Boolean = false,
     onSupporterClick: () -> Unit = {},
+    onUserClick: (uid: String, displayTag: String) -> Unit = { _, _ -> },
 ) {
     SheetCard {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -573,6 +576,9 @@ private fun LeaderboardCard(
                         color = MohamedLoversPalette.GoldBase.copy(alpha = 0.4f),
                         shape = RoundedCornerShape(10.dp),
                     )
+                    .clickable(enabled = selfEntry.uid.isNotBlank()) {
+                        onUserClick(selfEntry.uid, selfEntry.displayTag)
+                    }
                     .padding(horizontal = 12.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
@@ -602,14 +608,26 @@ private fun LeaderboardCard(
             )
         } else {
             topPlayers.forEach { entry ->
-                LeaderboardRow(entry = entry, pinned = false, isPremium = isPremium, onSupporterClick = onSupporterClick)
+                LeaderboardRow(
+                    entry = entry,
+                    pinned = false,
+                    isPremium = isPremium,
+                    onSupporterClick = onSupporterClick,
+                    onUserClick = onUserClick,
+                )
             }
         }
     }
 }
 
 @Composable
-private fun LeaderboardRow(entry: MohamedLoversLeaderboardEntry, pinned: Boolean, isPremium: Boolean = false, onSupporterClick: () -> Unit = {}) {
+private fun LeaderboardRow(
+    entry: MohamedLoversLeaderboardEntry,
+    pinned: Boolean,
+    isPremium: Boolean = false,
+    onSupporterClick: () -> Unit = {},
+    onUserClick: (uid: String, displayTag: String) -> Unit = { _, _ -> },
+) {
     val rankColor = when (entry.rank) {
         1 -> MohamedLoversPalette.GoldHighlight
         2 -> MohamedLoversPalette.RankSilver
@@ -629,6 +647,9 @@ private fun LeaderboardRow(entry: MohamedLoversLeaderboardEntry, pinned: Boolean
             if (entry.isSupporter) Modifier.border(1.dp, MohamedLoversPalette.GoldHighlight.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
             else Modifier
         )
+        .clickable(enabled = entry.uid.isNotBlank()) {
+            onUserClick(entry.uid, entry.displayTag)
+        }
         .padding(horizontal = 10.dp, vertical = 8.dp)
     Row(
         modifier = rowModifier,

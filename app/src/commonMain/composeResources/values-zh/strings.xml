@@ -129,6 +129,7 @@
     <string name="achievements_round_label">轮次：</string>
     <string name="achievements_prayer_count_label">祈祷次数</string>
     <string name="achievements_copy_winner_code_cd">复制获奖代码</string>
+    <string name="user_achievements_sheet_title">轮次成就</string>
 
     <!-- Achievement Celebration Dialog -->
     <string name="achievement_celebration_streak_7_title">一周的热爱！</string>
