@@ -1,9 +1,9 @@
 {
-  "allTimeSalawat": 126899,
-  "weekSalawat": 8660,
-  "todaySalawat": 8660,
-  "activePlayers": 19,
-  "countriesCount": 7,
+  "allTimeSalawat": 136992,
+  "weekSalawat": 18753,
+  "todaySalawat": 18753,
+  "activePlayers": 26,
+  "countriesCount": 8,
   "countries": [
     "AE",
     "EG",
@@ -11,81 +11,82 @@
     "IT",
     "SA",
     "TR",
+    "US",
     "YE"
   ],
-  "topScore": 2026,
+  "topScore": 4200,
   "roundKey": "2026-05-29",
   "leaderboard": [
     {
       "countryCode": "EG",
       "rank": 1,
       "rankChange": "same",
-      "score": 1859,
-      "uid": "b404902c252709675cb3f9f65edbf13a648af2fc9127e4d4a6fa09efe1b5a9e3"
+      "score": 4200,
+      "uid": "08a867f71960b712aea4daf4aab49b33eebec129f522461401bba17634f8522c"
     },
     {
       "countryCode": "EG",
       "rank": 2,
       "rankChange": "same",
-      "score": 1534,
-      "uid": "08a867f71960b712aea4daf4aab49b33eebec129f522461401bba17634f8522c"
-    },
-    {
-      "countryCode": "EG",
-      "rank": 3,
-      "rankChange": "same",
-      "score": 1529,
+      "score": 4159,
       "uid": "22209706044a8b6889d6411a541c3b8c0c735d123ea7c7c83ca0e379a7d5b334"
     },
     {
-      "countryCode": "SA",
+      "countryCode": "AE",
+      "rank": 3,
+      "rankChange": "same",
+      "score": 2209,
+      "uid": "405039430ae1e29f8d847a6d18a1dbad5ade88628382f830a0af1109b069cc4b"
+    },
+    {
+      "countryCode": "EG",
       "rank": 4,
+      "rankChange": "same",
+      "score": 2026,
+      "uid": "b404902c252709675cb3f9f65edbf13a648af2fc9127e4d4a6fa09efe1b5a9e3"
+    },
+    {
+      "countryCode": "SA",
+      "rank": 5,
       "rankChange": "same",
       "score": 1061,
       "uid": "092d20eeafb6b68719e19fcd41f072811d333b4f561862f7b13734d0d633db00"
     },
     {
+      "countryCode": "EG",
+      "rank": 6,
+      "rankChange": "same",
+      "score": 1012,
+      "uid": "cf0116cf9c1bf2ef2965b238768139059a0088bbb734739297ac650ede2fd00b"
+    },
+    {
       "countryCode": "IL",
-      "rank": 5,
+      "rank": 7,
       "rankChange": "same",
       "score": 1006,
       "uid": "51f49b54afea679ca71e28b49b0d9cd0848e3372178623cae783a1486d705657"
     },
     {
       "countryCode": "EG",
-      "rank": 6,
+      "rank": 8,
       "rankChange": "same",
-      "score": 781,
+      "score": 807,
       "uid": "abcc7116e7de1a8159c3d983d094084f83b6b26bc33873b1fc8d92a56cbf823b"
     },
     {
       "countryCode": "EG",
-      "rank": 7,
+      "rank": 9,
       "rankChange": "same",
-      "score": 246,
-      "uid": "cf0116cf9c1bf2ef2965b238768139059a0088bbb734739297ac650ede2fd00b"
-    },
-    {
-      "countryCode": "EG",
-      "rank": 8,
-      "rankChange": "same",
-      "score": 189,
+      "score": 517,
       "uid": "d37ab9ff8d45a9931d24389990545bdb773791e2873b2d23534c26bdcef8f48a"
     },
     {
-      "countryCode": "YE",
-      "rank": 9,
-      "rankChange": "same",
-      "score": 146,
-      "uid": "dc15faac3fac4c3dab245646567c6589e17df3e558286372724a3baa3a66ea5a"
-    },
-    {
-      "countryCode": "AE",
+      "countryCode": "EG",
       "rank": 10,
       "rankChange": "same",
-      "score": 116,
-      "uid": "405039430ae1e29f8d847a6d18a1dbad5ade88628382f830a0af1109b069cc4b"
+      "score": 509,
+      "uid": "8bdc595987b7d0e4b7fdae70c2f8533502d234f56bb03e1f9fd20dce30019951"
     }
   ],
-  "updatedAt": "2026-05-23T09:37:27.837Z"
+  "updatedAt": "2026-05-23T20:45:26.644Z"
 }
