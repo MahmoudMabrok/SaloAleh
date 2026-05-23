@@ -14,7 +14,7 @@
  *   Resolve round context
  *       │  cairoRoundKey()  → next Friday's date in Cairo time (YYYY-MM-DD)
  *       │  cairoToday()     → today's date in Cairo time
- *       │  isRoundFinal()   → true if current round has closed (Friday ≥ 18:00 Cairo)
+ *       │  isRoundFinal()   → true if current round has closed (Friday ≥ 19:00 Cairo)
  *       │
  *       ▼
  *   Load all users from RTDB  →  mohamed_lovers/users/
@@ -86,11 +86,11 @@ const databaseURL = process.env.FIREBASE_DATABASE_URL;
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount), databaseURL });
 
 /**
- * Returns the round key (YYYY-MM-DD) for the upcoming Friday at 18:00 Cairo time.
+ * Returns the round key (YYYY-MM-DD) for the upcoming Friday at 19:00 Cairo time.
  *
  * Mirrors `CompetitionWindowUtils.kt` on the client. A round "ends" on Friday
- * at 18:00 Africa/Cairo. If today is Friday before 18:00, this Friday is still
- * the active round; if it's Friday at or after 18:00, the next Friday is returned.
+ * at 19:00 Africa/Cairo. If today is Friday before 19:00, this Friday is still
+ * the active round; if it's Friday at or after 19:00, the next Friday is returned.
  *
  * @returns {string} ISO date string of the next round-closing Friday (e.g. "2026-05-08")
  */
@@ -103,7 +103,7 @@ function cairoRoundKey() {
   const hourStr = new Intl.DateTimeFormat('en-US', { timeZone: zone, hour: 'numeric', hour12: false }).format(now);
   const cairoHour = parseInt(hourStr, 10);
   let daysToFriday = (5 - jsDow + 7) % 7;
-  if (daysToFriday === 0 && cairoHour >= 18) daysToFriday = 7;
+  if (daysToFriday === 0 && cairoHour >= 19) daysToFriday = 7;
   const fridayDate = new Date(now.getTime() + daysToFriday * 86400000);
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit',
@@ -124,7 +124,7 @@ function cairoToday() {
 /**
  * Returns true if the given round has already closed.
  *
- * A round is final when Cairo local time is past Friday 18:00 on the round's date,
+ * A round is final when Cairo local time is past Friday 19:00 on the round's date,
  * or any date after the round's Friday.
  *
  * @param {string} roundKey - ISO date string of the round's Friday (e.g. "2026-05-08")
@@ -139,7 +139,7 @@ function isRoundFinal(roundKey) {
   const cairoDate = `${parts.year}-${parts.month}-${parts.day}`;
   const cairoHour = parseInt(parts.hour, 10);
   if (cairoDate > roundKey) return true;
-  if (cairoDate === roundKey && cairoHour >= 18) return true;
+  if (cairoDate === roundKey && cairoHour >= 19) return true;
   return false;
 }
 

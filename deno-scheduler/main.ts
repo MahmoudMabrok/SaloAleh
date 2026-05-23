@@ -30,6 +30,7 @@ const REF = "main";
 const cronStatus: Record<string, { lastRunAt: string | null; lastResult: string | null }> = {
   leaderboard: { lastRunAt: null, lastResult: null },
   aggregate: { lastRunAt: null, lastResult: null },
+  "update-stats": { lastRunAt: null, lastResult: null },
 };
 
 async function dispatchWorkflow(workflowFile: string, key: string): Promise<void> {
@@ -68,12 +69,19 @@ Deno.cron(
   () => dispatchWorkflow("leaderboard-populate.yml", "leaderboard"),
 );
 
-// Friday 16:00 UTC = 18:00 Cairo — aggregate round totals after the round closes.
+// Friday 17:10 UTC — aggregate round totals after the 19:00 Cairo round close.
 Deno.cron(
   "trigger-aggregate-all-time",
-  "0 16 * * 5",
+  "10 17 * * 5",
   { backoffSchedule: [1_000, 5_000, 30_000] },
   () => dispatchWorkflow("aggregate-all-time.yml", "aggregate"),
+);
+
+Deno.cron(
+  "update-stats",
+  "45 20 * * *",
+  { backoffSchedule: [1_000, 5_000, 30_000] },
+  () => dispatchWorkflow("update-stats.yml", "update-stats"),
 );
 
 // Minimal health endpoint so the deployment is verifiable from a browser.
@@ -89,9 +97,14 @@ Deno.serve((req) => {
           ...cronStatus.leaderboard,
         },
         aggregate: {
-          schedule: "0 16 * * 5 (UTC) — Friday 18:00 Cairo",
+          schedule: "10 17 * * 5 (UTC) — after Friday 19:00 Cairo",
           workflow: "aggregate-all-time.yml",
           ...cronStatus.aggregate,
+        },
+        "update-stats": {
+          schedule: "45 21 * * * (UTC) — daily 23:45 Cairo",
+          workflow: "update-stats.yml",
+          ...cronStatus["update-stats"],
         },
       },
     });

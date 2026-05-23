@@ -8,7 +8,7 @@ const explicitRoundKey = process.env.ROUND_KEY || '';
 
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount), databaseURL });
 
-// Mirrors CompetitionWindowUtils.kt: roundKey = date of next Friday 18:00 Cairo.
+// Mirrors CompetitionWindowUtils.kt: roundKey = date of next Friday 19:00 Cairo.
 // If now IS past that boundary, round already closed — advance to following Friday.
 function cairoRoundKey() {
   const now = new Date();
@@ -22,8 +22,8 @@ function cairoRoundKey() {
   const cairoHour = parseInt(hourStr, 10);
 
   let daysToFriday = (5 - jsDow + 7) % 7;
-  // If today is Friday and round has already closed (>= 18:00 Cairo), next round is 7 days away
-  if (daysToFriday === 0 && cairoHour >= 18) daysToFriday = 7;
+  // If today is Friday and round has already closed (>= 19:00 Cairo), next round is 7 days away
+  if (daysToFriday === 0 && cairoHour >= 19) daysToFriday = 7;
 
   const fridayDate = new Date(now.getTime() + daysToFriday * 86400000);
   return new Intl.DateTimeFormat('en-CA', {
@@ -32,7 +32,7 @@ function cairoRoundKey() {
   }).format(fridayDate);
 }
 
-// Round is final when we are at or past Friday 18:00 Cairo for that roundKey date.
+// Round is final when we are at or past Friday 19:00 Cairo for that roundKey date.
 function isRoundFinal(roundKey) {
   const now = new Date();
   const zone = 'Africa/Cairo';
@@ -45,7 +45,7 @@ function isRoundFinal(roundKey) {
   const cairoDate = `${parts.year}-${parts.month}-${parts.day}`;
   const cairoHour = parseInt(parts.hour, 10);
   if (cairoDate > roundKey) return true;
-  if (cairoDate === roundKey && cairoHour >= 18) return true;
+  if (cairoDate === roundKey && cairoHour >= 19) return true;
   return false;
 }
 

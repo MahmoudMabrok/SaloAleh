@@ -11,7 +11,7 @@ import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import tools.mo3ta.salo.domain.MohamedLoversCompetitionWindow
 
-internal const val ROUND_BOUNDARY_HOUR = 18
+internal const val ROUND_BOUNDARY_HOUR = 19
 private val cairoZone = TimeZone.of("Africa/Cairo")
 
 internal fun buildCompetitionWindow(networkNow: Instant): MohamedLoversCompetitionWindow {

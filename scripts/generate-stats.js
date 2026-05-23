@@ -20,7 +20,7 @@ function cairoRoundKey() {
   const hourStr = new Intl.DateTimeFormat('en-US', { timeZone: zone, hour: 'numeric', hour12: false }).format(now);
   const cairoHour = parseInt(hourStr, 10);
   let daysToFriday = (5 - jsDow + 7) % 7;
-  if (daysToFriday === 0 && cairoHour >= 18) daysToFriday = 7;
+  if (daysToFriday === 0 && cairoHour >= 19) daysToFriday = 7;
   const fridayDate = new Date(now.getTime() + daysToFriday * 86400000);
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit',

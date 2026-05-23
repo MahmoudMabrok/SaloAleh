@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: '0 7 * * 0,1,2,3,4,6'    # 9 AM Cairo, non-Friday
     - cron: '0 17 * * 0,1,2,3,4,6'   # 7 PM Cairo, non-Friday
-    - cron: '0 8-15 * * 5'            # Friday 10 AM–5 PM Cairo, hourly
+    - cron: '0 8-16 * * 5'            # Friday hourly until 19:00 Cairo boundary
   workflow_dispatch:
     inputs:
       rival_threshold:

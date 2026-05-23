@@ -28,25 +28,6 @@ function closedRoundKey() {
   }).format(new Date());
 }
 
-// Mirrors cairoRoundKey() in populate-leaderboard.js — the *current* (next)
-// round. At 19:00 Cairo on Friday this returns NEXT Friday's date.
-function cairoRoundKey() {
-  const now = new Date();
-  const zone = 'Africa/Cairo';
-  const weekdayStr = new Intl.DateTimeFormat('en-US', { timeZone: zone, weekday: 'short' }).format(now);
-  const dayMap = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
-  const jsDow = dayMap[weekdayStr];
-  const hourStr = new Intl.DateTimeFormat('en-US', { timeZone: zone, hour: 'numeric', hour12: false }).format(now);
-  const cairoHour = parseInt(hourStr, 10);
-  let daysToFriday = (5 - jsDow + 7) % 7;
-  if (daysToFriday === 0 && cairoHour >= 18) daysToFriday = 7;
-  const fridayDate = new Date(now.getTime() + daysToFriday * 86400000);
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: zone,
-    year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(fridayDate);
-}
-
 function generateWinnerCode() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let code = '';
@@ -56,12 +37,9 @@ function generateWinnerCode() {
   return code;
 }
 
-const ROUND_KEY_RE = /^\d{4}-\d{2}-\d{2}$/;
-
 async function main() {
-  const currentRound = cairoRoundKey();
   const closedRound = closedRoundKey();
-  console.log(`Closed round: ${closedRound} | Next round: ${currentRound}`);
+  console.log(`Closed round: ${closedRound}`);
 
   const db = admin.database();
   const rootSnapshot = await db.ref('mohamed_lovers').get();
@@ -83,38 +61,28 @@ async function main() {
       const uid = data?.uid;
       const totalCount = typeof data?.totalCount === 'number' ? data.totalCount : 0;
       const yesterdayTotal = typeof data?.yesterdayTotalScore === 'number' ? data.yesterdayTotalScore : 0;
-      // Friday taps are doubled — actual = pre-Friday + (Friday portion / 2)
       const fridayPortion = Math.max(0, totalCount - yesterdayTotal);
       const actualScore = yesterdayTotal + Math.floor(fridayPortion / 2);
       if (typeof uid === 'string' && actualScore > 0) {
-        players.push({ uid, score: actualScore, updatedAt: data.updatedAt || 0 });
+        players.push({
+          uid,
+          score: actualScore,
+          updatedAt: data.updatedAt || 0,
+          countryCode: typeof data.countryCode === 'string' ? data.countryCode : 'NA',
+          scoreMasked: data.scoreMasked === true,
+          isSupporter: data.isSupporter === true,
+          yesterdayTotalScore: yesterdayTotal,
+        });
         correctedRoundTotal += actualScore;
       }
     });
     console.log(`Closed round actual total: ${correctedRoundTotal} (raw roundTotal had Friday 2x)`);
   }
 
-  // Sum allTimeTotal across all past rounds, using corrected total for the closed round.
-  let allTimeTotal = 0;
-  rootSnapshot.forEach(child => {
-    const key = child.key;
-    if (!ROUND_KEY_RE.test(key) || key === currentRound) return;
-    if (key === closedRound) {
-      allTimeTotal += correctedRoundTotal;
-      console.log(`  ${key}: roundTotal=${correctedRoundTotal} (Friday-corrected)`);
-      return;
-    }
-    const roundTotal = child.val()?.roundTotal;
-    if (typeof roundTotal === 'number') {
-      allTimeTotal += roundTotal;
-      console.log(`  ${key}: roundTotal=${roundTotal}`);
-    } else {
-      console.log(`  ${key}: no roundTotal — skipped`);
-    }
-  });
-
+  const previousTotal = rootSnapshot.child('allTimeTotal').val() || 0;
+  const allTimeTotal = previousTotal + correctedRoundTotal;
   await db.ref('mohamed_lovers/allTimeTotal').set(allTimeTotal);
-  console.log(`allTimeTotal written: ${allTimeTotal}`);
+  console.log(`allTimeTotal: ${previousTotal} + ${correctedRoundTotal} (closed round) = ${allTimeTotal}`);
 
   if (!playersSnap.exists() || players.length === 0) {
     console.log(`No players found for ${closedRound} — no history written.`);
@@ -144,6 +112,46 @@ async function main() {
     await db.ref('/').update(writes);
     console.log(`Wrote ${Object.keys(writes).length} achievement entries.`);
   }
+
+  // Close the round: write final leaderboards with isFinal: true.
+  const top10 = players.slice(0, 10);
+  const leaderboard = { isFinal: true };
+  top10.forEach((player, i) => {
+    const entry = {
+      rank: i + 1,
+      uid: player.uid,
+      score: player.score,
+      countryCode: player.countryCode,
+    };
+    if (player.scoreMasked) entry.scoreMasked = true;
+    if (player.isSupporter) entry.isSupporter = true;
+    leaderboard[String(i + 1)] = entry;
+  });
+
+  const dailyPlayers = [...players].map(p => ({
+    ...p,
+    dailyScore: Math.max(0, p.score - (p.yesterdayTotalScore || 0)),
+  }));
+  dailyPlayers.sort((a, b) => b.dailyScore - a.dailyScore || b.updatedAt - a.updatedAt);
+  const dailyTop10 = dailyPlayers.slice(0, 10);
+  const dailyLeaderboard = { isFinal: true };
+  dailyTop10.forEach((player, i) => {
+    const entry = {
+      rank: i + 1,
+      uid: player.uid,
+      score: player.dailyScore,
+      countryCode: player.countryCode,
+    };
+    if (player.scoreMasked) entry.scoreMasked = true;
+    if (player.isSupporter) entry.isSupporter = true;
+    dailyLeaderboard[String(i + 1)] = entry;
+  });
+
+  await Promise.all([
+    db.ref(`mohamed_lovers/${closedRound}/leaderboard`).set(leaderboard),
+    db.ref(`mohamed_lovers/${closedRound}/dailyLeaderboard`).set(dailyLeaderboard),
+  ]);
+  console.log(`Round ${closedRound} closed: wrote final leaderboard (${top10.length} entries) + daily (${dailyTop10.length} entries) with isFinal=true`);
 
   process.exit(0);
 }
