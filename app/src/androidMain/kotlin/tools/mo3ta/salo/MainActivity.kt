@@ -79,9 +79,7 @@ class MainActivity : ComponentActivity() {
         } else {
             engagementStore.saveFcmPermDenied(today)
         }
-        if (!sessionStore.isFcmTokenSynced()) {
-            fetchAndSendFcmToken()
-        }
+        ensureFcmTokenSynced()
 
         val daysSinceDenied = engagementStore.fcmPermDeniedDaysAgo(today)
         val shouldReshowFcmAlert = !hasNotifPerm && daysSinceDenied >= 3
@@ -101,8 +99,15 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun fetchAndSendFcmToken() {
+    // Validates the FCM token at app start. After an Android Auto Backup restore,
+    // the saved token is stale (it belongs to the previous device) while
+    // isFcmTokenSynced is true — without this check the app would never push
+    // the new device's token to Firebase and notifications would silently fail.
+    private fun ensureFcmTokenSynced() {
         FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+            val alreadyInSync =
+                sessionStore.getSavedFcmToken() == token && sessionStore.isFcmTokenSynced()
+            if (alreadyInSync) return@addOnSuccessListener
             sessionStore.saveLocalFcmToken(token)
             sessionStore.setFcmTokenSynced(false)
             CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
@@ -127,9 +132,7 @@ class MainActivity : ComponentActivity() {
             engagementStore.clearFcmPermDenied()
             FirebaseMessaging.getInstance().subscribeToTopic("general")
         }
-        if (!sessionStore.isFcmTokenSynced()) {
-            fetchAndSendFcmToken()
-        }
+        ensureFcmTokenSynced()
     }
 
     private fun syncNotificationSchedule() {
