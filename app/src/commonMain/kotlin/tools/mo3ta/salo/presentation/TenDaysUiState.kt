@@ -30,6 +30,8 @@ data class TenDaysUiState(
     val takbeerIntervalMinutes: Int = 10,
     val takbeerRepeatCount: Int = 1,
     val isActive: Boolean = true,
+    val periodEnded: Boolean = false,
+    val daysCompleted: Int = 0,
     val periodKey: String = "",
     val currentUid: String = "",
     val playerCount: Int = 0,

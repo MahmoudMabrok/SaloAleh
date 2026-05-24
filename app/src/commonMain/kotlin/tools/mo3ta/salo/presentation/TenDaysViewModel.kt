@@ -107,7 +107,9 @@ class TenDaysViewModel(
         val periodKey = computePeriodKey()
         val today = Clock.System.todayIn(cairoTz)
         val startDate = LocalDate.parse(periodKey)
-        val currentDay = (startDate.daysUntil(today) + 1).coerceIn(1, 9)
+        val rawDay = startDate.daysUntil(today) + 1
+        val currentDay = rawDay.coerceIn(1, 9)
+        val periodEnded = rawDay > 9
 
         val days = (1..9).map { day ->
             TenDaysDayState(
@@ -122,6 +124,8 @@ class TenDaysViewModel(
 
         val totalScore = days.sumOf { it.dayScore }
 
+        val daysCompleted = days.count { it.dayScore > 0 }
+
         _state.value = TenDaysUiState(
             currentDay = currentDay,
             days = days,
@@ -130,6 +134,8 @@ class TenDaysViewModel(
             takbeerIntervalMinutes = store.getTakbeerIntervalMinutes(),
             takbeerRepeatCount = store.getTakbeerRepeatCount(),
             periodKey = periodKey,
+            periodEnded = periodEnded,
+            daysCompleted = daysCompleted,
         )
     }
 
