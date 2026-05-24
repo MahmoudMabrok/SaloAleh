@@ -25,7 +25,6 @@ import tools.mo3ta.salo.data.notification.NotificationSettingsStore
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.domain.DailyBadge
 import tools.mo3ta.salo.domain.FirebaseLeaderboard
-import tools.mo3ta.salo.domain.MOHAMED_LOVERS_FRIDAY_MULTIPLIER
 import tools.mo3ta.salo.domain.MohamedLoversCompetitionWindow
 import tools.mo3ta.salo.domain.MohamedLoversPlayer
 import tools.mo3ta.salo.domain.MohamedLoversRepository
@@ -56,6 +55,7 @@ class MohamedLoversViewModel(
     private var lastProjectedRank: Int = 0
     private var overtakeCooldownUntil: Long = 0L
     private var rankMovementShown: Boolean = false
+    private var sawLeaderboardLive: Boolean = false
 
     init {
         _state.update {
@@ -112,7 +112,6 @@ class MohamedLoversViewModel(
                     isRefreshing = false,
                     countryCode = bootstrap.countryCode,
                     firebaseConfigured = bootstrap.firebaseConfigured,
-                    isFridayBonus = bootstrap.competitionWindow.isFridayBonus,
                     roundKey = bootstrap.competitionWindow.roundKey,
                     roundEndLabel = bootstrap.competitionWindow.roundEnd?.formatDisplay().orEmpty(),
                     roundEndInstant = bootstrap.competitionWindow.roundEnd,
@@ -158,11 +157,10 @@ class MohamedLoversViewModel(
         val roundKey = current.roundKey ?: return
         if (!current.canCount) return
 
-        val delta = if (current.isFridayBonus) MOHAMED_LOVERS_FRIDAY_MULTIPLIER else 1
-        val pending = repository.registerLocalTap(roundKey, delta)
+        val pending = repository.registerLocalTap(roundKey, 1)
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
         val wasComplete = dailyGoalStore.isGoalComplete(today)
-        dailyGoalStore.recordTap(today, delta)
+        dailyGoalStore.recordTap(today, 1)
         val isNowComplete = dailyGoalStore.isGoalComplete(today)
         val todayStr = today.toString()
         val rawTaps = dailyGoalStore.todayProgress(today)
@@ -287,8 +285,6 @@ class MohamedLoversViewModel(
     fun onRoundEndBannerClick() = _state.update { it.copy(showRoundEndResults = true) }
 
     fun dismissRoundEndResults() {
-        val roundKey = state.value.roundKey
-        if (roundKey != null) repository.markRoundEndViewed(roundKey)
         _state.update { it.copy(showRoundEndBanner = false, showRoundEndResults = false) }
     }
     fun dismissGraceWarning() {
@@ -387,14 +383,17 @@ class MohamedLoversViewModel(
             }
 
             leaderboardJob?.cancel()
+            sawLeaderboardLive = false
             leaderboardJob = launch {
                 repository.observeLeaderboard(roundKey, settingsStore.useDailyLeaderboard).collectLatest { result ->
                     result.onSuccess { leaderboard ->
                         remoteLeaderboard = leaderboard
                         applyLeaderboard()
-                        if (leaderboard.isFinal) {
-                            val viewedRound = repository.getRoundEndViewedRound()
-                            val alreadyViewed = viewedRound == roundKey
+                        if (!leaderboard.isFinal) {
+                            sawLeaderboardLive = true
+                        }
+                        if (leaderboard.isFinal && sawLeaderboardLive) {
+                            sawLeaderboardLive = false
 
                             // Build winners top 3
                             val top3 = if (leaderboard.entries.size >= 3) {
@@ -441,19 +440,16 @@ class MohamedLoversViewModel(
                                 }
                             }
 
-                            // Show banner once per round (mark viewed only on explicit dismiss)
-                            if (!alreadyViewed) {
-                                _state.update {
-                                    it.copy(
-                                        showRoundEndBanner = true,
-                                        winnersTop3 = top3,
-                                        recapRank = recapRank,
-                                        recapTotalPlayers = recapPlayers,
-                                        recapIsPersonalBest = isPersonalBest,
-                                        recapTapsDelta = tapsDelta,
-                                        roundEndAchievement = achievement,
-                                    )
-                                }
+                            _state.update {
+                                it.copy(
+                                    showRoundEndBanner = true,
+                                    winnersTop3 = top3,
+                                    recapRank = recapRank,
+                                    recapTotalPlayers = recapPlayers,
+                                    recapIsPersonalBest = isPersonalBest,
+                                    recapTapsDelta = tapsDelta,
+                                    roundEndAchievement = achievement,
+                                )
                             }
                         }
                     }.onFailure { t -> _state.update { it.copy(error = t.toLoversError()) } }

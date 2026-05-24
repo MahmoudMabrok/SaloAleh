@@ -102,8 +102,6 @@ class MohamedLoversRepository(
 
     fun refreshNetworkTime() = networkTimeProvider.prime()
 
-    fun markRoundEndViewed(roundKey: String) = sessionStore.markRoundEndViewed(roundKey)
-    fun getRoundEndViewedRound(): String? = sessionStore.getRoundEndViewedRound()
     fun getPersonalBestRank(): Int = sessionStore.getPersonalBestRank()
     fun updatePersonalBestRank(rank: Int) = sessionStore.updatePersonalBestRank(rank)
     fun getLastRoundTaps(): Int = sessionStore.getLastRoundTaps()

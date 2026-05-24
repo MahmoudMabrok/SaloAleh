@@ -99,9 +99,6 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         return s
     }
 
-    fun markRoundEndViewed(roundKey: String) = settings.putString(KEY_ROUND_END_VIEWED, roundKey)
-    fun getRoundEndViewedRound(): String? = settings.getStringOrNull(KEY_ROUND_END_VIEWED)
-
     fun getPersonalBestRank(): Int = settings.getInt(KEY_PERSONAL_BEST_RANK, Int.MAX_VALUE)
     fun updatePersonalBestRank(rank: Int) {
         if (rank < getPersonalBestRank()) settings.putInt(KEY_PERSONAL_BEST_RANK, rank)
@@ -159,7 +156,6 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         const val KEY_FCM_TOKEN = "fcm_token"
         const val KEY_FCM_TOKEN_SYNCED = "fcm_token_synced"
         const val KEY_LAST_QR_TS = "last_applied_qr_ts"
-        const val KEY_ROUND_END_VIEWED = "round_end_viewed"
         const val KEY_LAST_MILESTONE_DATE = "last_milestone_date"
         const val KEY_LAST_MILESTONE_LEVEL = "last_milestone_level"
         const val KEY_LAST_KNOWN_RANK = "last_known_rank"
