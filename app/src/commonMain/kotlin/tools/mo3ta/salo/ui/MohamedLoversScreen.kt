@@ -391,7 +391,6 @@ fun MohamedLoversScreen(
                 MohamedLoversCounter(
                     total = state.syncedTotal + state.sessionClicks,
                     pending = state.sessionClicks,
-                    isFridayBonus = state.isFridayBonus,
                 )
                 Spacer(Modifier.height(8.dp))
                 androidx.compose.material3.Surface(

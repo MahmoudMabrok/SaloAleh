@@ -20,7 +20,6 @@ data class MohamedLoversPendingSession(
 
 data class MohamedLoversCompetitionWindow(
     val networkNow: Instant? = null,
-    val isFridayBonus: Boolean = false,
     val roundKey: String? = null,
     val roundEnd: Instant? = null,
     val message: String? = null,
@@ -50,7 +49,6 @@ data class MohamedLoversBootstrap(
 )
 
 const val MOHAMED_LOVERS_TOP_LIMIT = 10
-const val MOHAMED_LOVERS_FRIDAY_MULTIPLIER = 2
 const val MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE = "NA"
 
 fun buildMohamedLoversDisplayTag(uid: String, countryCode: String): String {

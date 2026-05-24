@@ -49,40 +49,35 @@ async function main() {
     process.exit(0);
   }
 
-  // Compute actual (non-doubled) scores for the closed round first,
-  // so we can use the corrected roundTotal in the allTimeTotal sum.
   const playersSnap = await db.ref(`mohamed_lovers/${closedRound}/players`).get();
   const players = [];
-  let correctedRoundTotal = 0;
+  let roundTotal = 0;
 
   if (playersSnap.exists()) {
     playersSnap.forEach(child => {
       const data = child.val();
       const uid = data?.uid;
       const totalCount = typeof data?.totalCount === 'number' ? data.totalCount : 0;
-      const yesterdayTotal = typeof data?.yesterdayTotalScore === 'number' ? data.yesterdayTotalScore : 0;
-      const fridayPortion = Math.max(0, totalCount - yesterdayTotal);
-      const actualScore = yesterdayTotal + Math.floor(fridayPortion / 2);
-      if (typeof uid === 'string' && actualScore > 0) {
+      if (typeof uid === 'string' && totalCount > 0) {
         players.push({
           uid,
-          score: actualScore,
+          score: totalCount,
           updatedAt: data.updatedAt || 0,
           countryCode: typeof data.countryCode === 'string' ? data.countryCode : 'NA',
           scoreMasked: data.scoreMasked === true,
           isSupporter: data.isSupporter === true,
-          yesterdayTotalScore: yesterdayTotal,
+          yesterdayTotalScore: typeof data?.yesterdayTotalScore === 'number' ? data.yesterdayTotalScore : 0,
         });
-        correctedRoundTotal += actualScore;
+        roundTotal += totalCount;
       }
     });
-    console.log(`Closed round actual total: ${correctedRoundTotal} (raw roundTotal had Friday 2x)`);
+    console.log(`Closed round total: ${roundTotal}`);
   }
 
   const previousTotal = rootSnapshot.child('allTimeTotal').val() || 0;
-  const allTimeTotal = previousTotal + correctedRoundTotal;
+  const allTimeTotal = previousTotal + roundTotal;
   await db.ref('mohamed_lovers/allTimeTotal').set(allTimeTotal);
-  console.log(`allTimeTotal: ${previousTotal} + ${correctedRoundTotal} (closed round) = ${allTimeTotal}`);
+  console.log(`allTimeTotal: ${previousTotal} + ${roundTotal} (closed round) = ${allTimeTotal}`);
 
   if (!playersSnap.exists() || players.length === 0) {
     console.log(`No players found for ${closedRound} — no history written.`);

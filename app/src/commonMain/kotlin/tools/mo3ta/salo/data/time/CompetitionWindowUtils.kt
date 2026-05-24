@@ -16,11 +16,9 @@ private val cairoZone = TimeZone.of("Africa/Cairo")
 
 internal fun buildCompetitionWindow(networkNow: Instant): MohamedLoversCompetitionWindow {
     val localNow = networkNow.toLocalDateTime(cairoZone)
-    val isFridayBonus = localNow.dayOfWeek == DayOfWeek.FRIDAY && localNow.hour < ROUND_BOUNDARY_HOUR
     val roundEnd = nextRoundBoundary(localNow)
     return MohamedLoversCompetitionWindow(
         networkNow = networkNow,
-        isFridayBonus = isFridayBonus,
         roundKey = roundEnd.toLocalDateTime(cairoZone).date.toString(),
         roundEnd = roundEnd,
         message = null,

@@ -24,13 +24,10 @@ import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_counter_hint
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_counter_pending
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_counter_tag
-import tools.mo3ta.salo.generated.resources.mohamed_lovers_friday_bonus_label
-
 @Composable
 internal fun MohamedLoversCounter(
     total: Int,
     pending: Int,
-    isFridayBonus: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val easeOutExpo = remember { CubicBezierEasing(0.16f, 1f, 0.3f, 1f) }
@@ -71,17 +68,6 @@ internal fun MohamedLoversCounter(
             ),
             color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.5f),
         )
-        if (isFridayBonus) {
-            Text(
-                text = stringResource(Res.string.mohamed_lovers_friday_bonus_label),
-                style = TextStyle(
-                    fontFamily = MohamedLoversFonts.arabic,
-                    fontWeight = FontWeight.W700,
-                    fontSize = 11.sp,
-                ),
-                color = MohamedLoversPalette.GoldHighlight,
-            )
-        }
         if (pending > 0) {
             Spacer(Modifier.height(4.dp))
             Text(

@@ -32,7 +32,6 @@ data class MohamedLoversUiState(
     val selfDisplayTag: String = "",
     val status: MohamedLoversStatus = MohamedLoversStatus.WaitingNetwork,
     val firebaseConfigured: Boolean = true,
-    val isFridayBonus: Boolean = false,
     val roundKey: String? = null,
     val roundEndLabel: String = "",
     val roundEndInstant: Instant? = null,

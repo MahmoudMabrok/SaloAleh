@@ -74,7 +74,6 @@ import kotlinx.coroutines.delay
 import tools.mo3ta.salo.ui.shareBitmap
 import org.jetbrains.compose.resources.stringResource
 import tools.mo3ta.salo.generated.resources.Res
-import tools.mo3ta.salo.generated.resources.mohamed_lovers_banner
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_competition_title
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_day
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_hour
@@ -205,7 +204,6 @@ internal fun MohamedLoversInfoSheet(
             if (state.isWinner) {
                 WinnerCard(winnerCode = state.winnerCode, onCopyWinnerCode = onCopyWinnerCode)
             }
-            FridayNoteCard()
             Spacer(Modifier.height(8.dp))
         }
     }
@@ -827,17 +825,6 @@ private fun WinnerCard(winnerCode: String, onCopyWinnerCode: (String) -> Unit) {
                 Icon(imageVector = Icons.Default.ContentCopy, contentDescription = null, tint = MohamedLoversPalette.GoldBase)
             }
         }
-    }
-}
-
-@Composable
-private fun FridayNoteCard() {
-    SheetCard {
-        Text(
-            text = stringResource(Res.string.mohamed_lovers_banner),
-            style = bodyStyle(),
-            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.78f),
-        )
     }
 }
 
