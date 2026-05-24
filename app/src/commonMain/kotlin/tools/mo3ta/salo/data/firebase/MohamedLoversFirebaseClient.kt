@@ -264,6 +264,20 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         }
     }
 
+    override suspend fun writeDailyBadge(roundKey: String, uid: String, badgeKey: String?): Result<Unit> {
+        log.d { "writeDailyBadge[$roundKey/$uid] badge=$badgeKey" }
+        return runCatching {
+            Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(
+                mapOf(DAILY_BADGE_KEY to badgeKey)
+            )
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "writeDailyBadge[$roundKey/$uid] ok" } },
+                onFailure = { log.e(it) { "writeDailyBadge[$roundKey/$uid] failed" } },
+            )
+        }
+    }
+
     private fun playersPath(roundKey: String) = "$ROOT_PATH/$roundKey/$PLAYERS_PATH"
     private fun leaderboardPath(roundKey: String, daily: Boolean = false): String {
         val node = if (daily) DAILY_LEADERBOARD_PATH else LEADERBOARD_PATH
@@ -279,7 +293,8 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         val rankChange = map[RANK_CHANGE_KEY] as? String ?: ""
         val scoreMasked = map[SCORE_MASKED_KEY] as? Boolean ?: false
         val isSupporter = map[IS_SUPPORTER_KEY] as? Boolean ?: false
-        return FirebaseLeaderboardEntry(rank = rank, uid = uid, score = score, countryCode = countryCode, rankChange = rankChange, scoreMasked = scoreMasked, isSupporter = isSupporter)
+        val dailyBadge = map[DAILY_BADGE_KEY] as? String
+        return FirebaseLeaderboardEntry(rank = rank, uid = uid, score = score, countryCode = countryCode, rankChange = rankChange, scoreMasked = scoreMasked, isSupporter = isSupporter, dailyBadge = dailyBadge)
     }
 
     private fun dev.gitlive.firebase.database.DataSnapshot.toPlayer(): MohamedLoversPlayer? {
@@ -315,6 +330,7 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         const val UPDATED_AT_KEY = "updatedAt"
         const val SCORE_MASKED_KEY = "scoreMasked"
         const val IS_SUPPORTER_KEY = "isSupporter"
+        const val DAILY_BADGE_KEY = "dailyBadge"
         const val ROUND_TOTAL_PATH = "roundTotal"
         const val ROUND_PLAYER_COUNT_PATH = "roundPlayerCount"
         const val ALL_TIME_TOTAL_PATH = "allTimeTotal"

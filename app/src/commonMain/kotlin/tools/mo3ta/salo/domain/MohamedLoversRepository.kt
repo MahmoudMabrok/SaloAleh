@@ -63,6 +63,11 @@ class MohamedLoversRepository(
         return firebaseClient.setSupporter(roundKey, uid, supporter)
     }
 
+    suspend fun writeDailyBadge(roundKey: String, badgeKey: String?): Result<Unit> {
+        val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
+        return firebaseClient.writeDailyBadge(roundKey, uid, badgeKey)
+    }
+
     suspend fun setScoreMasked(masked: Boolean): Result<Unit> {
         val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
         val roundKey = networkTimeProvider.getCompetitionWindow().roundKey
