@@ -134,6 +134,9 @@ import tools.mo3ta.salo.ui.components.RoundEndBanner
 import tools.mo3ta.salo.ui.components.OvertakeOverlay
 import tools.mo3ta.salo.ui.components.MilestoneCelebration
 import tools.mo3ta.salo.ui.components.RankMovementBanner
+import tools.mo3ta.salo.ui.AchievementCelebrationDialog
+import tools.mo3ta.salo.ui.components.RoundRecapSheet
+import tools.mo3ta.salo.ui.components.UserAchievementsSheet
 import tools.mo3ta.salo.ui.tendays.TenDaysEntryIcon
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -230,6 +233,7 @@ fun MohamedLoversScreen(
     var infoSheetOpen by remember { mutableStateOf(false) }
     var showRankTooltip by remember { mutableStateOf(false) }
     var showBubbleTooltip by remember { mutableStateOf(false) }
+    var selectedUserAchievements by remember { mutableStateOf<Pair<String, String>?>(null) }
 
     LaunchedEffect(isLit) {
         if (isLit) { delay(1600); isLit = false }
@@ -511,12 +515,24 @@ fun MohamedLoversScreen(
                 copyToClipboard(code)
                 showPlatformToast(codeCopiedLabel)
             },
+            onToggleLeaderboardType = { daily -> viewModel.setLeaderboardMode(daily) },
             isPremium = premiumStore.hasFeature(PremiumFeature.FRIDAY_SCORES),
             onOpenPaywall = {
                 infoSheetOpen = false
                 onOpenPaywall()
             },
+            onUserClick = { uid, tag ->
+                analyticsManager.logAction(AppAnalytics.LEADERBOARD_USER_CLICK)
+                selectedUserAchievements = uid to tag
+            },
         )
+        selectedUserAchievements?.let { (uid, tag) ->
+            UserAchievementsSheet(
+                uid = uid,
+                displayTag = tag,
+                onDismiss = { selectedUserAchievements = null },
+            )
+        }
         if (state.showRoundEndResults) {
             RoundEndResultsScreen(
                 winnersTop3 = state.winnersTop3,

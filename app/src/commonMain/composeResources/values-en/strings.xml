@@ -133,6 +133,7 @@
     <string name="achievements_round_label">Round:</string>
     <string name="achievements_prayer_count_label">Prayer count</string>
     <string name="achievements_copy_winner_code_cd">Copy winner code</string>
+    <string name="user_achievements_sheet_title">Round Achievements</string>
 
     <!-- Achievement Celebration Dialog -->
     <string name="achievement_celebration_streak_7_title">A week of devotion!</string>

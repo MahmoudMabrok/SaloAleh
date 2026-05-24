@@ -1,13 +1,18 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample backup rules file; uncomment and customize as necessary.
-   See https://developer.android.com/guide/topics/data/autobackup
-   for details.
-   Note: This file is ignored for devices older than API 31
-   See https://developer.android.com/about/versions/12/backup-restore
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android Auto Backup rules — applied on API 23-30 (superseded by
+  data_extraction_rules.xml on API 31+).
+  https://developer.android.com/guide/topics/data/autobackup
+
+  Empty <full-backup-content/> means: back up every SharedPreferences file,
+  internal file, and database by default. We rely on the default so that
+  ml_session (device UUID, alias, install date, streak, achievements,
+  notification settings, premium status) survives a device migration.
+
+  ml_session also stores the FCM token, which is device-specific and goes
+  stale after restore. MainActivity.ensureFcmTokenSynced() detects the
+  mismatch on app start and re-registers the fresh token with Firebase, so
+  excluding the key here is not necessary (and not supported — backup
+  rules can only filter by file path, not by SharedPreferences key).
 -->
-<full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
-</full-backup-content>
+<full-backup-content/>

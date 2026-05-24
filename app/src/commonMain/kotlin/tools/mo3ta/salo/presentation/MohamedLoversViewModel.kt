@@ -407,6 +407,7 @@ class MohamedLoversViewModel(
                                             displayTag = buildMohamedLoversDisplayTag(e.uid, e.countryCode),
                                             totalCount = e.score,
                                             isCurrentUser = e.uid == uid,
+                                            uid = e.uid,
                                         )
                                     }
                             } else emptyList()
@@ -474,6 +475,7 @@ class MohamedLoversViewModel(
                 displayTag = buildMohamedLoversDisplayTag(entry.uid, entry.countryCode),
                 totalCount = if (isCurrentUser) selfProjectedTotal else entry.score,
                 isCurrentUser = isCurrentUser,
+                uid = entry.uid,
                 rankChange = entry.rankChange,
                 scoreMasked = entry.scoreMasked,
                 isSupporter = entry.isSupporter,
@@ -497,6 +499,7 @@ class MohamedLoversViewModel(
                 totalCount = selfProjectedTotal,
                 isCurrentUser = true,
                 dailyBadge = state.value.currentDailyBadge,
+                uid = uid,
             )
         }
 

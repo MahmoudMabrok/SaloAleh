@@ -138,6 +138,7 @@
     <string name="achievements_round_label">الجولة:</string>
     <string name="achievements_prayer_count_label">عدد الصلوات</string>
     <string name="achievements_copy_winner_code_cd">نسخ كود الفائز</string>
+    <string name="user_achievements_sheet_title">إنجازات الجولات</string>
 
     <!-- Achievement Celebration Dialog -->
     <string name="achievement_celebration_streak_7_title">أسبوع من المحبة!</string>
