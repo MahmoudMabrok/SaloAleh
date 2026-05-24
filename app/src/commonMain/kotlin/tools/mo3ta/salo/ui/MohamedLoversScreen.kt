@@ -582,7 +582,7 @@ fun MohamedLoversScreen(
             oldRank = state.rankMovementOldRank,
             newRank = state.rankMovementNewRank,
             onDismiss = viewModel::dismissRankMovement,
-            modifier = Modifier.align(Alignment.TopCenter).padding(top = 48.dp),
+            modifier = Modifier.align(Alignment.Center),
         )
     }
 }
