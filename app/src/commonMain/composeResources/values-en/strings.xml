@@ -84,6 +84,10 @@
     <string name="winners_barakah">May Allah bless you and accept your prayers upon the Prophet ﷺ</string>
     <string name="winners_cta">Masha\'Allah — Continue</string>
 
+    <!-- Round End Banner -->
+    <string name="round_end_banner_title">Round ended!</string>
+    <string name="round_end_banner_subtitle">Tap to see your rank and achievements</string>
+
     <!-- Round Recap Sheet -->
     <string name="recap_title">Round over!</string>
     <string name="recap_rank_label">You ranked #%1$d out of %2$d participants</string>
@@ -370,4 +374,21 @@
     <string name="settings_language_en">English</string>
     <string name="settings_language_ur">اردو</string>
     <string name="settings_language_zh">中文</string>
+
+    <!-- Motivation: Overtake alerts -->
+    <string name="overtake_alert">⬆ You passed lover #%d!</string>
+
+    <!-- Motivation: Daily milestones -->
+    <string name="milestone_today">%d salawat today!</string>
+    <string name="badge_sprout_title">Beginner</string>
+    <string name="badge_heart_title">Lover of the Prophet ﷺ</string>
+    <string name="badge_tasbih_title">Frequent in Salawat</string>
+    <string name="badge_dome_title">Companion of Dhikr</string>
+    <string name="badge_crescent_title">Among the Devoted</string>
+    <string name="badge_crown_title">Champion of Salawat</string>
+
+    <!-- Motivation: Rank movement -->
+    <string name="rank_climbed">⬆ You climbed %d ranks</string>
+    <string name="rank_dropped">⬇ You dropped %d ranks</string>
+    <string name="since_last_visit">Since last visit</string>
 </resources>

@@ -1,0 +1,10 @@
+
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>Daily rank 200</title>
+  <circle cx="64" cy="64" r="58" fill="#E0F2FE"/>
+  <circle cx="64" cy="64" r="52" fill="white" stroke="#38BDF8" stroke-width="6"/>
+
+  <path d="M64 91S34 73 34 51C34 40 42 33 52 33C58 33 62 37 64 41C66 37 70 33 76 33C86 33 94 40 94 51C94 73 64 91 64 91Z" fill="#38BDF8"/>
+  <path d="M54 49C58 44 62 46 64 51" stroke="white" stroke-width="5" stroke-linecap="round"/>
+
+</svg>
