@@ -668,6 +668,12 @@ private fun LeaderboardRow(entry: MohamedLoversLeaderboardEntry, pinned: Boolean
                 ),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.92f),
             )
+            if (entry.dailyBadge != null) {
+                DailyBadgeIcon(
+                    badgeKey = entry.dailyBadge,
+                    size = 22.dp,
+                )
+            }
         }
         if (entry.scoreMasked && !entry.isCurrentUser) {
             MaskedScore(entry.totalCount)
