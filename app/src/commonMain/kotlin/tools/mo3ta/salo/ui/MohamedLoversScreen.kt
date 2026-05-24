@@ -129,8 +129,11 @@ import tools.mo3ta.salo.ui.components.MohamedLoversInfoSheet
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.components.MohamedLoversPrayerOverlay
 import tools.mo3ta.salo.ui.components.MohamedLoversSkyBackground
-import tools.mo3ta.salo.ui.AchievementCelebrationDialog
-import tools.mo3ta.salo.ui.components.RoundRecapSheet
+import tools.mo3ta.salo.ui.RoundEndResultsScreen
+import tools.mo3ta.salo.ui.components.RoundEndBanner
+import tools.mo3ta.salo.ui.components.OvertakeOverlay
+import tools.mo3ta.salo.ui.components.MilestoneCelebration
+import tools.mo3ta.salo.ui.components.RankMovementBanner
 import tools.mo3ta.salo.ui.tendays.TenDaysEntryIcon
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -279,6 +282,10 @@ fun MohamedLoversScreen(
         Box(modifier = Modifier.fillMaxSize()) {
             Column (Modifier.align(Alignment.TopCenter).padding(top = 96.dp)){
                 MohamedLoversHadithBanner()
+                if (state.showRoundEndBanner && !state.showRoundEndResults) {
+                    Spacer(Modifier.height(8.dp))
+                    RoundEndBanner(onClick = { viewModel.onRoundEndBannerClick() })
+                }
                 // Rank chip + first-time tooltip
                 if (rankChipVisible) {
                     val rank = currentUserEntry!!.rank
@@ -510,19 +517,15 @@ fun MohamedLoversScreen(
                 onOpenPaywall()
             },
         )
-        if (state.showWinnersDialog && state.winnersTop3.size >= 3) {
-            WinnersDialog(
-                top3 = state.winnersTop3,
-                onDismiss = { viewModel.dismissWinnersDialog() },
-            )
-        }
-        if (state.showRoundRecap && !state.showWinnersDialog) {
-            RoundRecapSheet(
-                rank = state.recapRank,
-                totalPlayers = state.recapTotalPlayers,
+        if (state.showRoundEndResults) {
+            RoundEndResultsScreen(
+                winnersTop3 = state.winnersTop3,
+                recapRank = state.recapRank,
+                recapTotalPlayers = state.recapTotalPlayers,
                 isPersonalBest = state.recapIsPersonalBest,
                 tapsDelta = state.recapTapsDelta,
-                onDismiss = { viewModel.dismissRoundRecap() },
+                achievement = state.roundEndAchievement,
+                onDismiss = { viewModel.dismissRoundEndResults() },
             )
         }
         if (state.showHadithDialog) {
@@ -532,12 +535,6 @@ fun MohamedLoversScreen(
         }
         if (state.showGraceWarning) {
             GraceWarningDialog(onDismiss = { viewModel.dismissGraceWarning() })
-        }
-        state.newlyEarnedRankAchievement?.let { achievement ->
-            AchievementCelebrationDialog(
-                achievement = achievement,
-                onDismiss = { viewModel.dismissNewlyEarnedAchievement() },
-            )
         }
         BubbleFeaturePromo(roundKey = state.roundKey)
         if (state.showDailyLeaderboardPromo) {
@@ -549,6 +546,29 @@ fun MohamedLoversScreen(
                 onDismiss = { viewModel.dismissNewRoundCountdown() },
             )
         }
+
+        // Overtake alert
+        OvertakeOverlay(
+            overtakeRank = state.overtakeRank,
+            onDismiss = viewModel::dismissOvertake,
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 60.dp),
+        )
+
+        // Daily milestone celebration
+        MilestoneCelebration(
+            threshold = state.milestoneThreshold,
+            badgeKey = state.milestoneBadgeKey,
+            onDismiss = viewModel::dismissMilestone,
+        )
+
+        // Rank movement summary
+        RankMovementBanner(
+            delta = state.rankMovementDelta,
+            oldRank = state.rankMovementOldRank,
+            newRank = state.rankMovementNewRank,
+            onDismiss = viewModel::dismissRankMovement,
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 48.dp),
+        )
     }
 }
 
