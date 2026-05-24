@@ -1,0 +1,11 @@
+
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>Daily rank 2000</title>
+  <circle cx="64" cy="64" r="58" fill="#E0E7FF"/>
+  <circle cx="64" cy="64" r="52" fill="white" stroke="#6366F1" stroke-width="6"/>
+
+  <path d="M80 34C63 37 50 52 50 70C50 84 58 95 70 101C48 99 31 81 31 59C31 39 47 24 66 24C72 24 77 28 80 34Z" fill="#6366F1"/>
+  <path d="M88 45L91 53L99 56L91 59L88 67L85 59L77 56L85 53L88 45Z" fill="#6366F1"/>
+  <path d="M98 78L100 83L105 85L100 87L98 92L96 87L91 85L96 83L98 78Z" fill="#6366F1"/>
+
+</svg>

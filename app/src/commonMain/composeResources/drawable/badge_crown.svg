@@ -1,0 +1,14 @@
+
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>Daily rank 5000</title>
+  <circle cx="64" cy="64" r="58" fill="#FEE2E2"/>
+  <circle cx="64" cy="64" r="52" fill="white" stroke="#EF4444" stroke-width="6"/>
+
+  <path d="M32 78L39 43L55 64L64 38L73 64L89 43L96 78H32Z" fill="#EF4444"/>
+  <rect x="34" y="78" width="60" height="13" rx="5" fill="#EF4444"/>
+  <circle cx="39" cy="43" r="5" fill="#EF4444"/>
+  <circle cx="64" cy="38" r="5" fill="#EF4444"/>
+  <circle cx="89" cy="43" r="5" fill="#EF4444"/>
+  <path d="M49 75H79" stroke="white" stroke-width="5" stroke-linecap="round"/>
+
+</svg>

@@ -137,6 +137,9 @@
             "totalExternal": {
               ".validate": "newData.isNumber() && newData.val() >= (data.exists() ? data.val() : 0)"
             },
+            "dailyBadge": {
+              ".validate": "newData.isString() && (newData.val() === 'sprout' || newData.val() === 'heart' || newData.val() === 'tasbih' || newData.val() === 'dome' || newData.val() === 'crescent' || newData.val() === 'crown')"
+            },
 
             "$other": { ".validate": false }
           }

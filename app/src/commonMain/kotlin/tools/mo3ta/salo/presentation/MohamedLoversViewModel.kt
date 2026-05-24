@@ -22,6 +22,8 @@ import tools.mo3ta.salo.data.engagement.DailyGoalStore
 import tools.mo3ta.salo.data.engagement.EngagementStore
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
+import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
+import tools.mo3ta.salo.domain.DailyBadge
 import tools.mo3ta.salo.domain.FirebaseLeaderboard
 import tools.mo3ta.salo.domain.MOHAMED_LOVERS_FRIDAY_MULTIPLIER
 import tools.mo3ta.salo.domain.MohamedLoversCompetitionWindow
@@ -35,6 +37,7 @@ class MohamedLoversViewModel(
     private val hadithStore: DailyHadithStore,
     private val dailyGoalStore: DailyGoalStore,
     private val settingsStore: NotificationSettingsStore,
+    private val sessionStore: MohamedLoversSessionStore,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MohamedLoversUiState())
@@ -50,6 +53,9 @@ class MohamedLoversViewModel(
     private var currentWindow: MohamedLoversCompetitionWindow = MohamedLoversCompetitionWindow()
     private var inFlightFlush = 0
     private var finalMinutesJob: Job? = null
+    private var lastProjectedRank: Int = 0
+    private var overtakeCooldownUntil: Long = 0L
+    private var rankMovementShown: Boolean = false
 
     init {
         _state.update {
@@ -158,12 +164,27 @@ class MohamedLoversViewModel(
         val wasComplete = dailyGoalStore.isGoalComplete(today)
         dailyGoalStore.recordTap(today, delta)
         val isNowComplete = dailyGoalStore.isGoalComplete(today)
+        val todayStr = today.toString()
+        val rawTaps = dailyGoalStore.todayProgress(today)
+        val badge = DailyBadge.fromTapCount(rawTaps)
+        val lastMilestone = sessionStore.getLastMilestoneLevel(todayStr)
+        var milestoneThreshold: Int? = null
+        var milestoneBadgeKey: String? = null
+        if (badge != null && badge.threshold > lastMilestone) {
+            milestoneThreshold = badge.threshold
+            milestoneBadgeKey = badge.key
+            sessionStore.saveLastMilestoneLevel(todayStr, badge.threshold)
+            viewModelScope.launch { repository.writeDailyBadge(roundKey, badge.key) }
+        }
         _state.update {
             it.copy(
                 sessionClicks = pending.clickCount,
                 error = null,
-                dailyGoalProgress = dailyGoalStore.todayProgress(today),
+                dailyGoalProgress = rawTaps,
                 dailyGoalJustCompleted = !wasComplete && isNowComplete,
+                milestoneThreshold = milestoneThreshold ?: it.milestoneThreshold,
+                milestoneBadgeKey = milestoneBadgeKey ?: it.milestoneBadgeKey,
+                currentDailyBadge = badge?.key ?: it.currentDailyBadge,
             )
         }
         applyLeaderboard()
@@ -263,15 +284,23 @@ class MohamedLoversViewModel(
         }
     }
 
-    fun dismissWinnersDialog() = _state.update { it.copy(showWinnersDialog = false) }
-    fun dismissRoundRecap() = _state.update { it.copy(showRoundRecap = false) }
+    fun onRoundEndBannerClick() = _state.update { it.copy(showRoundEndResults = true) }
+
+    fun dismissRoundEndResults() {
+        val roundKey = state.value.roundKey
+        if (roundKey != null) repository.markRoundEndViewed(roundKey)
+        _state.update { it.copy(showRoundEndBanner = false, showRoundEndResults = false) }
+    }
     fun dismissGraceWarning() {
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
         engagementStore.markGraceWarningShown(today)
         _state.update { it.copy(showGraceWarning = false) }
     }
     fun dismissDailyGoalCompleted() = _state.update { it.copy(dailyGoalJustCompleted = false) }
-    fun dismissNewlyEarnedAchievement() = _state.update { it.copy(newlyEarnedRankAchievement = null) }
+    fun dismissOvertake() = _state.update { it.copy(overtakeRank = null) }
+    fun dismissMilestone() = _state.update { it.copy(milestoneThreshold = null, milestoneBadgeKey = null) }
+    fun dismissRankMovement() = _state.update { it.copy(rankMovementDelta = null) }
+
     fun dismissDailyLeaderboardPromo() {
         settingsStore.dailyLeaderboardPromoShown = true
         _state.update { it.copy(showDailyLeaderboardPromo = false) }
@@ -344,7 +373,7 @@ class MohamedLoversViewModel(
                                 )?.takeIf { achievement.rank in 1..10 }
                             }
                             .firstOrNull()
-                            ?.let { earned -> _state.update { it.copy(newlyEarnedRankAchievement = earned) } }
+                            ?.let { earned -> _state.update { it.copy(roundEndAchievement = earned) } }
                     }
                 }
             }
@@ -364,11 +393,12 @@ class MohamedLoversViewModel(
                         remoteLeaderboard = leaderboard
                         applyLeaderboard()
                         if (leaderboard.isFinal) {
-                            // Winners podium — shown once per completed round, visible to all users
-                            val winnersRound = repository.getWinnersShownRound()
-                            if (winnersRound != roundKey && leaderboard.entries.size >= 3) {
-                                repository.markWinnersShown(roundKey)
-                                val top3 = leaderboard.entries
+                            val viewedRound = repository.getRoundEndViewedRound()
+                            val alreadyViewed = viewedRound == roundKey
+
+                            // Build winners top 3
+                            val top3 = if (leaderboard.entries.size >= 3) {
+                                leaderboard.entries
                                     .sortedByDescending { it.score }
                                     .take(3)
                                     .mapIndexed { i, e ->
@@ -380,45 +410,49 @@ class MohamedLoversViewModel(
                                             uid = e.uid,
                                         )
                                     }
-                                _state.update { it.copy(showWinnersDialog = true, winnersTop3 = top3) }
-                            }
+                            } else emptyList()
 
+                            // Persist achievement + recap stats (always, regardless of viewed)
                             val match = leaderboard.entries.firstOrNull { it.uid == uid }
+                            var achievement: tools.mo3ta.salo.domain.Achievement.RankAchievement? = null
+                            var recapRank = 0
+                            var recapPlayers = state.value.roundPlayerCount
+                            var isPersonalBest = false
+                            var tapsDelta = 0
+
                             if (match != null) {
                                 val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
-                                val achievement = engagementStore.checkAndSaveRankAchievement(
+                                achievement = engagementStore.checkAndSaveRankAchievement(
                                     roundKey = roundKey,
                                     rank = match.rank,
                                     today = today,
                                     score = match.score,
                                     winnerCode = remoteSelfPlayer?.winnerCode.orEmpty(),
                                 )
-                                if (achievement != null) {
-                                    _state.update { it.copy(newlyEarnedRankAchievement = achievement) }
-                                }
-
-                                // Round recap — shown once per completed round
-                                val recapRound = repository.getRecapShownRound()
-                                if (recapRound != roundKey) {
-                                    val rank = match.rank
+                                recapRank = match.rank
+                                if (recapRank > 0) {
                                     val syncedTaps = state.value.syncedTotal
                                     val lastTaps = repository.getLastRoundTaps()
                                     val prevBest = repository.getPersonalBestRank()
-                                    val isPersonalBest = rank in 1..10 && rank < prevBest
-                                    if (rank > 0) {
-                                        repository.updatePersonalBestRank(rank)
-                                        repository.saveLastRoundTaps(syncedTaps)
-                                        repository.markRecapShown(roundKey)
-                                        _state.update {
-                                            it.copy(
-                                                showRoundRecap = true,
-                                                recapRank = rank,
-                                                recapTotalPlayers = it.roundPlayerCount,
-                                                recapIsPersonalBest = isPersonalBest,
-                                                recapTapsDelta = maxOf(0, syncedTaps - lastTaps),
-                                            )
-                                        }
-                                    }
+                                    isPersonalBest = recapRank in 1..10 && recapRank < prevBest
+                                    tapsDelta = maxOf(0, syncedTaps - lastTaps)
+                                    repository.updatePersonalBestRank(recapRank)
+                                    repository.saveLastRoundTaps(syncedTaps)
+                                }
+                            }
+
+                            // Show banner once per round (mark viewed only on explicit dismiss)
+                            if (!alreadyViewed) {
+                                _state.update {
+                                    it.copy(
+                                        showRoundEndBanner = true,
+                                        winnersTop3 = top3,
+                                        recapRank = recapRank,
+                                        recapTotalPlayers = recapPlayers,
+                                        recapIsPersonalBest = isPersonalBest,
+                                        recapTapsDelta = tapsDelta,
+                                        roundEndAchievement = achievement,
+                                    )
                                 }
                             }
                         }
@@ -445,6 +479,7 @@ class MohamedLoversViewModel(
                 rankChange = entry.rankChange,
                 scoreMasked = entry.scoreMasked,
                 isSupporter = entry.isSupporter,
+                dailyBadge = entry.dailyBadge,
             )
         }.sortedByDescending { it.totalCount }
             .mapIndexed { index, entry -> entry.copy(rank = index + 1) }
@@ -463,9 +498,41 @@ class MohamedLoversViewModel(
                 ),
                 totalCount = selfProjectedTotal,
                 isCurrentUser = true,
+                dailyBadge = state.value.currentDailyBadge,
                 uid = uid,
             )
         }
+
+        val currentRank = when {
+            selfInTop -> topEntries.firstOrNull { it.isCurrentUser }?.rank ?: 0
+            else -> remoteSelfPlayer?.rank ?: 0
+        }
+
+        // Overtake detection
+        var overtakeRank: Int? = null
+        if (lastProjectedRank > 0 && currentRank in 1 until lastProjectedRank) {
+            val now = Clock.System.now().toEpochMilliseconds()
+            if (now >= overtakeCooldownUntil) {
+                overtakeRank = lastProjectedRank
+                overtakeCooldownUntil = now + 5_000L
+            }
+        }
+        if (currentRank > 0) lastProjectedRank = currentRank
+
+        // Rank movement summary (once per app session)
+        var rankDelta: Int? = null
+        var oldRank = 0
+        var newRank = 0
+        if (!rankMovementShown && currentRank > 0) {
+            val storedRank = sessionStore.getLastKnownRank()
+            if (storedRank > 0 && storedRank != currentRank) {
+                rankDelta = storedRank - currentRank
+                oldRank = storedRank
+                newRank = currentRank
+                rankMovementShown = true
+            }
+        }
+        if (currentRank > 0) sessionStore.saveLastKnownRank(currentRank)
 
         _state.update {
             it.copy(
@@ -475,6 +542,10 @@ class MohamedLoversViewModel(
                 topPlayers = topEntries,
                 selfEntry = selfEntry,
                 selfInTop = selfInTop,
+                overtakeRank = overtakeRank ?: it.overtakeRank,
+                rankMovementDelta = rankDelta ?: it.rankMovementDelta,
+                rankMovementOldRank = if (rankDelta != null) oldRank else it.rankMovementOldRank,
+                rankMovementNewRank = if (rankDelta != null) newRank else it.rankMovementNewRank,
             )
         }
     }

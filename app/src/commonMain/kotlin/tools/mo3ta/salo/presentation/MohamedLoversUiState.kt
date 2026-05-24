@@ -12,6 +12,7 @@ data class MohamedLoversLeaderboardEntry(
     val rankChange: String = "",
     val scoreMasked: Boolean = false,
     val isSupporter: Boolean = false,
+    val dailyBadge: String? = null,
 ){
     val displayedRank = if (rank > 0) "#$rank " else ""
 }
@@ -47,22 +48,20 @@ data class MohamedLoversUiState(
     val isUsingDailyLeaderboard: Boolean = false,
     val showDailyLeaderboardPromo: Boolean = false,
     val error: MohamedLoversError? = null,
-    val newlyEarnedRankAchievement: Achievement.RankAchievement? = null,
     val roundTotal: Int = 0,
     val roundPlayerCount: Int = 0,
     val allTimeTotal: Long = 0L,
     val showHadithDialog: Boolean = false,
 
-    // Winners podium (shown once per completed round, before recap)
-    val showWinnersDialog: Boolean = false,
+    // Round end results (banner + full-screen, shown once per completed round)
+    val showRoundEndBanner: Boolean = false,
+    val showRoundEndResults: Boolean = false,
     val winnersTop3: List<MohamedLoversLeaderboardEntry> = emptyList(),
-
-    // Round recap (shown once per completed round)
-    val showRoundRecap: Boolean = false,
     val recapRank: Int = 0,
     val recapTotalPlayers: Int = 0,
     val recapIsPersonalBest: Boolean = false,
     val recapTapsDelta: Int = 0,
+    val roundEndAchievement: Achievement.RankAchievement? = null,
 
     // Streak grace dialog
     val showGraceWarning: Boolean = false,
@@ -78,4 +77,17 @@ data class MohamedLoversUiState(
 
     // New round transition
     val showNewRoundCountdown: Boolean = false,
+
+    // Motivation: overtake alerts
+    val overtakeRank: Int? = null,
+
+    // Motivation: daily milestone celebration
+    val milestoneThreshold: Int? = null,
+    val milestoneBadgeKey: String? = null,
+    val currentDailyBadge: String? = null,
+
+    // Motivation: rank movement summary
+    val rankMovementDelta: Int? = null,
+    val rankMovementOldRank: Int = 0,
+    val rankMovementNewRank: Int = 0,
 )

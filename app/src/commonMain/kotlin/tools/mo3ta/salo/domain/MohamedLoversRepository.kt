@@ -63,6 +63,11 @@ class MohamedLoversRepository(
         return firebaseClient.setSupporter(roundKey, uid, supporter)
     }
 
+    suspend fun writeDailyBadge(roundKey: String, badgeKey: String?): Result<Unit> {
+        val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
+        return firebaseClient.writeDailyBadge(roundKey, uid, badgeKey)
+    }
+
     suspend fun setScoreMasked(masked: Boolean): Result<Unit> {
         val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
         val roundKey = networkTimeProvider.getCompetitionWindow().roundKey
@@ -97,13 +102,8 @@ class MohamedLoversRepository(
 
     fun refreshNetworkTime() = networkTimeProvider.prime()
 
-    // Recap
-    fun markRecapShown(roundKey: String) = sessionStore.markRecapShown(roundKey)
-    fun getRecapShownRound(): String? = sessionStore.getRecapShownRound()
-
-    // Winners
-    fun markWinnersShown(roundKey: String) = sessionStore.markWinnersShown(roundKey)
-    fun getWinnersShownRound(): String? = sessionStore.getWinnersShownRound()
+    fun markRoundEndViewed(roundKey: String) = sessionStore.markRoundEndViewed(roundKey)
+    fun getRoundEndViewedRound(): String? = sessionStore.getRoundEndViewedRound()
     fun getPersonalBestRank(): Int = sessionStore.getPersonalBestRank()
     fun updatePersonalBestRank(rank: Int) = sessionStore.updatePersonalBestRank(rank)
     fun getLastRoundTaps(): Int = sessionStore.getLastRoundTaps()

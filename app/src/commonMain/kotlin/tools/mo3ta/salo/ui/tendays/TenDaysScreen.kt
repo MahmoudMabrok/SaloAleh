@@ -114,63 +114,182 @@ fun TenDaysScreen(
 
             TenDaysHeader(state)
             Spacer(Modifier.height(12.dp))
-            ScoreBanner(state.totalScore)
-            Spacer(Modifier.height(12.dp))
-            DaySelector(
-                currentDay = state.currentDay,
-                days = state.days,
-                onDaySelected = viewModel::onDaySelected,
-            )
-            Spacer(Modifier.height(14.dp))
 
-            val currentDayState = state.days.getOrNull(state.currentDay - 1)
-                ?: TenDaysDayState(day = state.currentDay)
+            if (state.periodEnded) {
+                CongratsBanner(
+                    daysCompleted = state.daysCompleted,
+                    totalScore = state.totalScore,
+                    selfRank = state.selfRank,
+                    playerCount = state.playerCount,
+                )
+                Spacer(Modifier.height(14.dp))
 
-            BaqiyatSection(dayState = currentDayState, onDhikrTap = viewModel::onDhikrTap)
-            Spacer(Modifier.height(10.dp))
-            FastingRow(
-                isFasting = currentDayState.isFasting,
-                onToggle = viewModel::onFastingToggle,
-            )
-            Spacer(Modifier.height(10.dp))
-            TakbeerRow(
-                count = currentDayState.takbeerCount,
-                onTap = viewModel::onTakbeerTap,
-                autoPlay = state.autoPlayTakbeer,
-                onAutoPlayToggle = viewModel::onAutoPlayToggle,
-                intervalMinutes = state.takbeerIntervalMinutes,
-                onIntervalChanged = viewModel::onTakbeerIntervalChanged,
-                repeatCount = state.takbeerRepeatCount,
-                onRepeatChanged = viewModel::onTakbeerRepeatChanged,
-            )
-            Spacer(Modifier.height(10.dp))
-            SadaqahRow(isSadaqah = currentDayState.isSadaqah, onToggle = viewModel::onSadaqahToggle)
-            Spacer(Modifier.height(10.dp))
-            TakbeerOverlayButton(
-                autoRemind = state.autoPlayTakbeer,
-                intervalMinutes = state.takbeerIntervalMinutes,
-                repeatCount = state.takbeerRepeatCount,
-            )
-            Spacer(Modifier.height(8.dp))
-            Button(
-                onClick = onOpenTakbeerSession,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = TenDaysPalette.Gold),
-                shape = RoundedCornerShape(12.dp),
-            ) {
-                Text(stringResource(Res.string.tendays_group_takbeer_session), color = Color.Black, fontWeight = FontWeight.Bold)
+                val currentDayState = state.days.getOrNull(state.currentDay - 1)
+                    ?: TenDaysDayState(day = state.currentDay)
+
+                TakbeerRow(
+                    count = currentDayState.takbeerCount,
+                    onTap = viewModel::onTakbeerTap,
+                    autoPlay = state.autoPlayTakbeer,
+                    onAutoPlayToggle = viewModel::onAutoPlayToggle,
+                    intervalMinutes = state.takbeerIntervalMinutes,
+                    onIntervalChanged = viewModel::onTakbeerIntervalChanged,
+                    repeatCount = state.takbeerRepeatCount,
+                    onRepeatChanged = viewModel::onTakbeerRepeatChanged,
+                )
+                Spacer(Modifier.height(10.dp))
+                TakbeerOverlayButton(
+                    autoRemind = state.autoPlayTakbeer,
+                    intervalMinutes = state.takbeerIntervalMinutes,
+                    repeatCount = state.takbeerRepeatCount,
+                )
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = onOpenTakbeerSession,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = TenDaysPalette.Gold),
+                    shape = RoundedCornerShape(12.dp),
+                ) {
+                    Text(stringResource(Res.string.tendays_group_takbeer_session), color = Color.Black, fontWeight = FontWeight.Bold)
+                }
+                Text(
+                    text = stringResource(Res.string.tendays_group_takbeer_hint),
+                    fontSize = 11.sp,
+                    color = TenDaysPalette.TextSecondary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                )
+                Spacer(Modifier.height(24.dp))
+            } else {
+                ScoreBanner(state.totalScore)
+                Spacer(Modifier.height(12.dp))
+                DaySelector(
+                    currentDay = state.currentDay,
+                    days = state.days,
+                    onDaySelected = viewModel::onDaySelected,
+                )
+                Spacer(Modifier.height(14.dp))
+
+                val currentDayState = state.days.getOrNull(state.currentDay - 1)
+                    ?: TenDaysDayState(day = state.currentDay)
+
+                BaqiyatSection(dayState = currentDayState, onDhikrTap = viewModel::onDhikrTap)
+                Spacer(Modifier.height(10.dp))
+                FastingRow(
+                    isFasting = currentDayState.isFasting,
+                    onToggle = viewModel::onFastingToggle,
+                )
+                Spacer(Modifier.height(10.dp))
+                TakbeerRow(
+                    count = currentDayState.takbeerCount,
+                    onTap = viewModel::onTakbeerTap,
+                    autoPlay = state.autoPlayTakbeer,
+                    onAutoPlayToggle = viewModel::onAutoPlayToggle,
+                    intervalMinutes = state.takbeerIntervalMinutes,
+                    onIntervalChanged = viewModel::onTakbeerIntervalChanged,
+                    repeatCount = state.takbeerRepeatCount,
+                    onRepeatChanged = viewModel::onTakbeerRepeatChanged,
+                )
+                Spacer(Modifier.height(10.dp))
+                SadaqahRow(isSadaqah = currentDayState.isSadaqah, onToggle = viewModel::onSadaqahToggle)
+                Spacer(Modifier.height(10.dp))
+                TakbeerOverlayButton(
+                    autoRemind = state.autoPlayTakbeer,
+                    intervalMinutes = state.takbeerIntervalMinutes,
+                    repeatCount = state.takbeerRepeatCount,
+                )
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = onOpenTakbeerSession,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = TenDaysPalette.Gold),
+                    shape = RoundedCornerShape(12.dp),
+                ) {
+                    Text(stringResource(Res.string.tendays_group_takbeer_session), color = Color.Black, fontWeight = FontWeight.Bold)
+                }
+                Text(
+                    text = stringResource(Res.string.tendays_group_takbeer_hint),
+                    fontSize = 11.sp,
+                    color = TenDaysPalette.TextSecondary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                )
+                Spacer(Modifier.height(14.dp))
+                MiniLeaderboard(state)
+                Spacer(Modifier.height(24.dp))
             }
-            Text(
-                text = stringResource(Res.string.tendays_group_takbeer_hint),
-                fontSize = 11.sp,
-                color = TenDaysPalette.TextSecondary,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-            )
-            Spacer(Modifier.height(14.dp))
-            MiniLeaderboard(state)
-            Spacer(Modifier.height(24.dp))
         }
+    }
+}
+
+@Composable
+private fun CongratsBanner(
+    daysCompleted: Int,
+    totalScore: Int,
+    selfRank: Int,
+    playerCount: Int,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(
+                        TenDaysPalette.Gold.copy(alpha = 0.2f),
+                        TenDaysPalette.Green.copy(alpha = 0.15f),
+                    )
+                )
+            )
+            .border(1.dp, TenDaysPalette.Gold.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
+            .padding(20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = stringResource(Res.string.tendays_congrats_title),
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold,
+            color = TenDaysPalette.Gold,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = stringResource(Res.string.tendays_congrats_subtitle, daysCompleted),
+            fontSize = 14.sp,
+            color = TenDaysPalette.TextSecondary,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(14.dp))
+        Text(
+            text = stringResource(Res.string.tendays_congrats_score),
+            fontSize = 13.sp,
+            color = TenDaysPalette.TextSecondary,
+        )
+        Text(
+            text = "$totalScore",
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            color = TenDaysPalette.Gold,
+        )
+        if (selfRank > 0) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = if (playerCount > 0)
+                    stringResource(Res.string.tendays_self_rank_full, selfRank, playerCount)
+                else
+                    stringResource(Res.string.tendays_congrats_rank, selfRank),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.W600,
+                color = TenDaysPalette.Green,
+            )
+        }
+        Spacer(Modifier.height(10.dp))
+        Text(
+            text = stringResource(Res.string.tendays_congrats_keep_takbeer),
+            fontSize = 13.sp,
+            color = TenDaysPalette.TextSecondary,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
@@ -186,11 +305,13 @@ private fun TenDaysHeader(state: TenDaysUiState) {
             fontWeight = FontWeight.Bold,
             color = TenDaysPalette.Gold,
         )
-        Text(
-            text = stringResource(Res.string.tendays_day_of_total, state.currentDay, state.totalDays),
-            fontSize = 14.sp,
-            color = TenDaysPalette.TextSecondary,
-        )
+        if (!state.periodEnded) {
+            Text(
+                text = stringResource(Res.string.tendays_day_of_total, state.currentDay, state.totalDays),
+                fontSize = 14.sp,
+                color = TenDaysPalette.TextSecondary,
+            )
+        }
     }
 }
 
