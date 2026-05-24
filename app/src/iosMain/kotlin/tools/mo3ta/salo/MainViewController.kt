@@ -5,8 +5,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
+import org.koin.mp.KoinPlatformTools
 import platform.UserNotifications.UNAuthorizationOptionAlert
 import platform.UserNotifications.UNAuthorizationOptionBadge
 import platform.UserNotifications.UNAuthorizationOptionSound
@@ -21,7 +21,7 @@ import tools.mo3ta.salo.notification.NotificationScheduler
 
 fun MainViewController() = ComposeUIViewController(
     configure = {
-        val koin = GlobalContext.getOrNull()
+        val koin = KoinPlatformTools.defaultContext().getOrNull()
             ?: startKoin { modules(appModule, iosModule) }.koin
         val languageStore = koin.get<LanguageStore>()
         val lang = languageStore.language
