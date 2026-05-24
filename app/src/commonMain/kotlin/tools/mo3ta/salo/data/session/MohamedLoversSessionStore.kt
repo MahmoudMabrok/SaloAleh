@@ -99,11 +99,8 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         return s
     }
 
-    fun markRecapShown(roundKey: String) = settings.putString(KEY_RECAP_SHOWN_ROUND, roundKey)
-    fun getRecapShownRound(): String? = settings.getStringOrNull(KEY_RECAP_SHOWN_ROUND)
-
-    fun markWinnersShown(roundKey: String) = settings.putString(KEY_WINNERS_SHOWN_ROUND, roundKey)
-    fun getWinnersShownRound(): String? = settings.getStringOrNull(KEY_WINNERS_SHOWN_ROUND)
+    fun markRoundEndViewed(roundKey: String) = settings.putString(KEY_ROUND_END_VIEWED, roundKey)
+    fun getRoundEndViewedRound(): String? = settings.getStringOrNull(KEY_ROUND_END_VIEWED)
 
     fun getPersonalBestRank(): Int = settings.getInt(KEY_PERSONAL_BEST_RANK, Int.MAX_VALUE)
     fun updatePersonalBestRank(rank: Int) {
@@ -115,6 +112,20 @@ class MohamedLoversSessionStore(private val settings: Settings) {
 
     fun getLastAppliedQrTs(): Long = settings.getLong(KEY_LAST_QR_TS, 0L)
     fun saveLastAppliedQrTs(ts: Long) = settings.putLong(KEY_LAST_QR_TS, ts)
+
+    fun getLastMilestoneLevel(today: String): Int {
+        if (settings.getStringOrNull(KEY_LAST_MILESTONE_DATE) != today) return 0
+        return settings.getInt(KEY_LAST_MILESTONE_LEVEL, 0)
+    }
+
+    fun saveLastMilestoneLevel(today: String, threshold: Int) {
+        settings.putString(KEY_LAST_MILESTONE_DATE, today)
+        settings.putInt(KEY_LAST_MILESTONE_LEVEL, threshold)
+    }
+
+    fun getLastKnownRank(): Int = settings.getInt(KEY_LAST_KNOWN_RANK, 0)
+
+    fun saveLastKnownRank(rank: Int) = settings.putInt(KEY_LAST_KNOWN_RANK, rank)
 
     fun getSavedFcmToken(): String? = settings.getStringOrNull(KEY_FCM_TOKEN)
     fun saveLocalFcmToken(token: String) = settings.putString(KEY_FCM_TOKEN, token)
@@ -143,12 +154,14 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         const val KEY_PENDING_ROUNDS_INDEX = "pending_rounds_index"
         const val ALIAS_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
         const val KEY_INSTALL_DATE = "install_date"
-        const val KEY_RECAP_SHOWN_ROUND = "recap_shown_round"
         const val KEY_PERSONAL_BEST_RANK = "personal_best_rank"
         const val KEY_LAST_ROUND_TAPS = "last_round_taps"
         const val KEY_FCM_TOKEN = "fcm_token"
         const val KEY_FCM_TOKEN_SYNCED = "fcm_token_synced"
         const val KEY_LAST_QR_TS = "last_applied_qr_ts"
-        const val KEY_WINNERS_SHOWN_ROUND = "winners_shown_round"
+        const val KEY_ROUND_END_VIEWED = "round_end_viewed"
+        const val KEY_LAST_MILESTONE_DATE = "last_milestone_date"
+        const val KEY_LAST_MILESTONE_LEVEL = "last_milestone_level"
+        const val KEY_LAST_KNOWN_RANK = "last_known_rank"
     }
 }
