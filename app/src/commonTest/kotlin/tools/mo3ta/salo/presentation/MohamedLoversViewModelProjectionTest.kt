@@ -62,6 +62,7 @@ class MohamedLoversViewModelProjectionTest {
             hadithStore = DailyHadithStore(MapSettings()),
             dailyGoalStore = DailyGoalStore(MapSettings()),
             settingsStore = NotificationSettingsStore(MapSettings()),
+            sessionStore = sessionStore,
         )
     }
 

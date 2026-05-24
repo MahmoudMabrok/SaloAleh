@@ -58,4 +58,7 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
 
     override suspend fun setSupporter(roundKey: String, uid: String, supporter: Boolean): Result<Unit> =
         Result.success(Unit)
+
+    override suspend fun writeDailyBadge(roundKey: String, uid: String, badgeKey: String?): Result<Unit> =
+        Result.success(Unit)
 }
