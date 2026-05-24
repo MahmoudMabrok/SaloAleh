@@ -105,6 +105,28 @@ async function main() {
     console.log(`Updated yesterdayTotalScore for ${Object.keys(yesterdayTotalScoreUpdates).length} player(s).`);
   }
 
+  // Clear dailyBadge for all players (midnight reset)
+  const badgeUpdates = {};
+  if (playersSnap.exists()) {
+    playersSnap.forEach((child) => {
+      if (child.val().dailyBadge) {
+        badgeUpdates[`mohamed_lovers/${roundKey}/players/${child.key}/dailyBadge`] = null;
+      }
+    });
+  }
+  // Also clear from leaderboard entries
+  if (leaderboardSnap.exists()) {
+    leaderboardSnap.forEach((child) => {
+      if (child.val().dailyBadge) {
+        badgeUpdates[`mohamed_lovers/${roundKey}/leaderboard/${child.key}/dailyBadge`] = null;
+      }
+    });
+  }
+  if (Object.keys(badgeUpdates).length > 0) {
+    await db.ref('/').update(badgeUpdates);
+    console.log(`Cleared ${Object.keys(badgeUpdates).length} dailyBadge fields`);
+  }
+
   if (!fs.existsSync(statsDir)) fs.mkdirSync(statsDir);
   const outPath = path.join(statsDir, `${dateStr}.json`);
   fs.writeFileSync(outPath, JSON.stringify(stats, null, 2));
