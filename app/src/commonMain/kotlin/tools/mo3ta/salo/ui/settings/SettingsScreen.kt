@@ -83,7 +83,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
     var fridayEnabled by remember { mutableStateOf(store.fridayEnabled) }
     var hadithOnStartup by remember { mutableStateOf(hadithStore.showOnStartup) }
     var showRankChip by remember { mutableStateOf(store.showRankChip) }
-    var useDailyLeaderboard by remember { mutableStateOf(store.useDailyLeaderboard) }
+
     var notifPermGranted by remember { mutableStateOf(areNotificationsEnabled()) }
     var exactAlarmGranted by remember { mutableStateOf(canScheduleExactAlarms()) }
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -254,16 +254,6 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
                 onToggle = { checked ->
                     showRankChip = checked
                     store.showRankChip = checked
-                },
-            )
-
-            SettingToggleRow(
-                label = stringResource(Res.string.settings_daily_leaderboard),
-                subtitle = stringResource(Res.string.settings_daily_leaderboard_subtitle),
-                checked = useDailyLeaderboard,
-                onToggle = { checked ->
-                    useDailyLeaderboard = checked
-                    viewModel.setLeaderboardMode(checked)
                 },
             )
 
