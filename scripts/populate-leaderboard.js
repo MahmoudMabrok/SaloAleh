@@ -103,6 +103,7 @@ async function main() {
         yesterdayTotalScore: typeof data.yesterdayTotalScore === 'number' ? data.yesterdayTotalScore : 0,
         scoreMasked: data.scoreMasked === true,
         isSupporter: data.isSupporter === true,
+        dailyBadge: typeof data.dailyBadge === 'string' ? data.dailyBadge : null,
       });
     }
   });
@@ -129,6 +130,7 @@ async function main() {
     };
     if (player.scoreMasked) entry.scoreMasked = true;
     if (player.isSupporter) entry.isSupporter = true;
+    if (player.dailyBadge) entry.dailyBadge = player.dailyBadge;
     leaderboard[String(i + 1)] = entry;
   });
 
@@ -149,6 +151,7 @@ async function main() {
     };
     if (player.scoreMasked) entry.scoreMasked = true;
     if (player.isSupporter) entry.isSupporter = true;
+    if (player.dailyBadge) entry.dailyBadge = player.dailyBadge;
     dailyLeaderboard[String(i + 1)] = entry;
   });
 
