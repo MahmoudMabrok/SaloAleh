@@ -377,10 +377,10 @@
     <string name="settings_language_zh">中文</string>
 
     <!-- Motivation: Overtake alerts -->
-    <string name="overtake_alert">⬆ You passed lover #%d!</string>
+    <string name="overtake_alert">⬆ You passed lover #%1$d!</string>
 
     <!-- Motivation: Daily milestones -->
-    <string name="milestone_today">%d salawat today!</string>
+    <string name="milestone_today">%1$d salawat today!</string>
     <string name="badge_sprout_title">Beginner</string>
     <string name="badge_heart_title">Lover of the Prophet ﷺ</string>
     <string name="badge_tasbih_title">Frequent in Salawat</string>
@@ -389,7 +389,7 @@
     <string name="badge_crown_title">Champion of Salawat</string>
 
     <!-- Motivation: Rank movement -->
-    <string name="rank_climbed">⬆ You climbed %d ranks</string>
-    <string name="rank_dropped">⬇ You dropped %d ranks</string>
+    <string name="rank_climbed">⬆ You climbed %1$d ranks</string>
+    <string name="rank_dropped">⬇ You dropped %1$d ranks</string>
     <string name="since_last_visit">Since last visit</string>
 </resources>

@@ -387,10 +387,10 @@
     <string name="settings_language_zh">中文</string>
 
     <!-- Motivation: Overtake alerts -->
-    <string name="overtake_alert">⬆ تجاوزت المحب #%d!</string>
+    <string name="overtake_alert">⬆ تجاوزت المحب #%1$d!</string>
 
     <!-- Motivation: Daily milestones -->
-    <string name="milestone_today">%d صلاة اليوم!</string>
+    <string name="milestone_today">%1$d صلاة اليوم!</string>
     <string name="badge_sprout_title">مبتدئ الذكر</string>
     <string name="badge_heart_title">محب النبي ﷺ</string>
     <string name="badge_tasbih_title">كثير الصلاة</string>
@@ -399,7 +399,7 @@
     <string name="badge_crown_title">فارس الصلاة</string>
 
     <!-- Motivation: Rank movement -->
-    <string name="rank_climbed">⬆ صعدت %d مراكز</string>
-    <string name="rank_dropped">⬇ نزلت %d مراكز</string>
+    <string name="rank_climbed">⬆ صعدت %1$d مراكز</string>
+    <string name="rank_dropped">⬇ نزلت %1$d مراكز</string>
     <string name="since_last_visit">منذ آخر زيارة</string>
 </resources>
