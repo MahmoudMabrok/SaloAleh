@@ -1,8 +1,6 @@
 name: Update Landing Page Stats
 
 on:
-  schedule:
-    - cron: '45 20 * * *'  # 23:45 Cairo daily (UTC+3)
   workflow_dispatch:
 
 permissions:
