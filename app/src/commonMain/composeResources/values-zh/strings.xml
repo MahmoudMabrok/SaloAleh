@@ -378,4 +378,18 @@
     <string name="settings_language_en">English</string>
     <string name="settings_language_ur">اردو</string>
     <string name="settings_language_zh">中文</string>
+
+    <!-- Daily badges -->
+    <string name="badge_sprout_title">初学者</string>
+    <string name="badge_heart_title">爱圣者 ﷺ</string>
+    <string name="badge_tasbih_title">勤念者</string>
+    <string name="badge_dome_title">赞念伙伴</string>
+    <string name="badge_crescent_title">虔诚之列</string>
+    <string name="badge_crown_title">赞圣之冠</string>
+    <string name="badge_sprout_desc">一天内发送 %1$d 次赞圣</string>
+    <string name="badge_heart_desc">一天内发送 %1$d 次赞圣</string>
+    <string name="badge_tasbih_desc">一天内发送 %1$d 次赞圣</string>
+    <string name="badge_dome_desc">一天内发送 %1$d 次赞圣</string>
+    <string name="badge_crescent_desc">一天内发送 %1$d 次赞圣</string>
+    <string name="badge_crown_desc">一天内发送 %1$d 次赞圣</string>
 </resources>

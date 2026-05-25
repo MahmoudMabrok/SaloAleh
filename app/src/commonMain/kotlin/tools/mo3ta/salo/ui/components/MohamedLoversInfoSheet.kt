@@ -118,7 +118,7 @@ internal fun MohamedLoversInfoSheet(
     isPremium: Boolean = false,
     onOpenPaywall: () -> Unit = {},
     onUserClick: (uid: String, displayTag: String) -> Unit = { _, _ -> },
-    onBadgeClick: () -> Unit = {},
+    onBadgeClick: (String) -> Unit = {},
 ) {
     if (!isOpen) return
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
@@ -549,7 +549,7 @@ private fun LeaderboardCard(
     isPremium: Boolean = false,
     onSupporterClick: () -> Unit = {},
     onUserClick: (uid: String, displayTag: String) -> Unit = { _, _ -> },
-    onBadgeClick: () -> Unit = {},
+    onBadgeClick: (String) -> Unit = {},
 ) {
     SheetCard {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -597,7 +597,7 @@ private fun LeaderboardCard(
                         DailyBadgeIcon(
                             badgeKey = selfEntry.dailyBadge,
                             size = 18.dp,
-                            modifier = Modifier.clickable { onBadgeClick() },
+                            modifier = Modifier.clickable { onBadgeClick(selfEntry.dailyBadge) },
                         )
                     }
                 }
@@ -641,7 +641,7 @@ private fun LeaderboardRow(
     isPremium: Boolean = false,
     onSupporterClick: () -> Unit = {},
     onUserClick: (uid: String, displayTag: String) -> Unit = { _, _ -> },
-    onBadgeClick: () -> Unit = {},
+    onBadgeClick: (String) -> Unit = {},
 ) {
     val rankColor = when (entry.rank) {
         1 -> MohamedLoversPalette.GoldHighlight
@@ -710,7 +710,7 @@ private fun LeaderboardRow(
                 DailyBadgeIcon(
                     badgeKey = entry.dailyBadge,
                     size = 18.dp,
-                    modifier = Modifier.clickable { onBadgeClick() },
+                    modifier = Modifier.clickable { onBadgeClick(entry.dailyBadge) },
                 )
             }
         }

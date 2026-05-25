@@ -387,6 +387,12 @@
     <string name="badge_dome_title">Companion of Dhikr</string>
     <string name="badge_crescent_title">Among the Devoted</string>
     <string name="badge_crown_title">Champion of Salawat</string>
+    <string name="badge_sprout_desc">Send %1$d salawat in a single day</string>
+    <string name="badge_heart_desc">Send %1$d salawat in a single day</string>
+    <string name="badge_tasbih_desc">Send %1$d salawat in a single day</string>
+    <string name="badge_dome_desc">Send %1$d salawat in a single day</string>
+    <string name="badge_crescent_desc">Send %1$d salawat in a single day</string>
+    <string name="badge_crown_desc">Send %1$d salawat in a single day</string>
 
     <!-- Daily rank strip -->
     <string name="daily_rank_strip_today_label">salawat today</string>

@@ -132,6 +132,8 @@ import tools.mo3ta.salo.ui.RoundEndResultsScreen
 import tools.mo3ta.salo.ui.components.RoundEndBanner
 import tools.mo3ta.salo.ui.components.OvertakeOverlay
 import tools.mo3ta.salo.ui.components.MilestoneCelebration
+import tools.mo3ta.salo.domain.DailyBadge
+import tools.mo3ta.salo.ui.components.DailyBadgeInfoDialog
 import tools.mo3ta.salo.ui.components.DailyBadgeTiersSheet
 import tools.mo3ta.salo.ui.components.DailyRankStrip
 import tools.mo3ta.salo.ui.components.RankMovementBanner
@@ -233,6 +235,7 @@ fun MohamedLoversScreen(
     var isLit by remember { mutableStateOf(false) }
     var infoSheetOpen by remember { mutableStateOf(false) }
     var badgeTiersSheetOpen by remember { mutableStateOf(false) }
+    var badgeDialogKey by remember { mutableStateOf<String?>(null) }
     var showRankTooltip by remember { mutableStateOf(false) }
     var showBubbleTooltip by remember { mutableStateOf(false) }
     var selectedUserAchievements by remember { mutableStateOf<Pair<String, String>?>(null) }
@@ -494,12 +497,20 @@ fun MohamedLoversScreen(
                 infoSheetOpen = false
                 onOpenPaywall()
             },
-            onBadgeClick = { badgeTiersSheetOpen = true },
+            onBadgeClick = { key -> badgeDialogKey = key },
             onUserClick = { uid, tag ->
                 analyticsManager.logAction(AppAnalytics.LEADERBOARD_USER_CLICK)
                 selectedUserAchievements = uid to tag
             },
         )
+        badgeDialogKey?.let { key ->
+            DailyBadge.fromKey(key)?.let { badge ->
+                DailyBadgeInfoDialog(
+                    badge = badge,
+                    onDismiss = { badgeDialogKey = null },
+                )
+            }
+        }
         if (badgeTiersSheetOpen) {
             DailyBadgeTiersSheet(
                 todayTaps = state.dailyGoalProgress,

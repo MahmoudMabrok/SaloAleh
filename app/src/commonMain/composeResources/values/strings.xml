@@ -397,6 +397,12 @@
     <string name="badge_dome_title">رفيق الذكر</string>
     <string name="badge_crescent_title">من المكثرين</string>
     <string name="badge_crown_title">فارس الصلاة</string>
+    <string name="badge_sprout_desc">صلِّ على النبي ﷺ %1$d مرة في اليوم</string>
+    <string name="badge_heart_desc">صلِّ على النبي ﷺ %1$d مرة في اليوم</string>
+    <string name="badge_tasbih_desc">صلِّ على النبي ﷺ %1$d مرة في اليوم</string>
+    <string name="badge_dome_desc">صلِّ على النبي ﷺ %1$d مرة في اليوم</string>
+    <string name="badge_crescent_desc">صلِّ على النبي ﷺ %1$d مرة في اليوم</string>
+    <string name="badge_crown_desc">صلِّ على النبي ﷺ %1$d مرة في اليوم</string>
 
     <!-- Daily rank strip -->
     <string name="daily_rank_strip_today_label">صلاة اليوم</string>

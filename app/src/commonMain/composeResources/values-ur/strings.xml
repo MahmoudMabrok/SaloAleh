@@ -378,4 +378,18 @@
     <string name="settings_language_en">English</string>
     <string name="settings_language_ur">اردو</string>
     <string name="settings_language_zh">中文</string>
+
+    <!-- Daily badges -->
+    <string name="badge_sprout_title">ذکر کی ابتدا</string>
+    <string name="badge_heart_title">نبی ﷺ سے محبت</string>
+    <string name="badge_tasbih_title">کثرتِ درود</string>
+    <string name="badge_dome_title">ذکر کا ساتھی</string>
+    <string name="badge_crescent_title">مداومین میں سے</string>
+    <string name="badge_crown_title">درود کا شہسوار</string>
+    <string name="badge_sprout_desc">ایک دن میں %1$d درود بھیجیں</string>
+    <string name="badge_heart_desc">ایک دن میں %1$d درود بھیجیں</string>
+    <string name="badge_tasbih_desc">ایک دن میں %1$d درود بھیجیں</string>
+    <string name="badge_dome_desc">ایک دن میں %1$d درود بھیجیں</string>
+    <string name="badge_crescent_desc">ایک دن میں %1$d درود بھیجیں</string>
+    <string name="badge_crown_desc">ایک دن میں %1$d درود بھیجیں</string>
 </resources>

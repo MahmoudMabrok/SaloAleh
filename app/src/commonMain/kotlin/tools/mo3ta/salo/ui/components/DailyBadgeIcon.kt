@@ -1,11 +1,21 @@
 package tools.mo3ta.salo.ui.components
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -22,6 +32,12 @@ import tools.mo3ta.salo.generated.resources.badge_tasbih_title
 import tools.mo3ta.salo.generated.resources.badge_dome_title
 import tools.mo3ta.salo.generated.resources.badge_crescent_title
 import tools.mo3ta.salo.generated.resources.badge_crown_title
+import tools.mo3ta.salo.generated.resources.badge_sprout_desc
+import tools.mo3ta.salo.generated.resources.badge_heart_desc
+import tools.mo3ta.salo.generated.resources.badge_tasbih_desc
+import tools.mo3ta.salo.generated.resources.badge_dome_desc
+import tools.mo3ta.salo.generated.resources.badge_crescent_desc
+import tools.mo3ta.salo.generated.resources.badge_crown_desc
 import tools.mo3ta.salo.domain.DailyBadge
 
 fun badgeDrawableResource(badge: DailyBadge): DrawableResource? = when (badge) {
@@ -44,6 +60,16 @@ fun badgeTitleString(badge: DailyBadge): String = when (badge) {
 }
 
 @Composable
+fun badgeDescriptionString(badge: DailyBadge): String = when (badge) {
+    DailyBadge.SPROUT -> stringResource(Res.string.badge_sprout_desc, badge.threshold)
+    DailyBadge.HEART -> stringResource(Res.string.badge_heart_desc, badge.threshold)
+    DailyBadge.TASBIH -> stringResource(Res.string.badge_tasbih_desc, badge.threshold)
+    DailyBadge.DOME -> stringResource(Res.string.badge_dome_desc, badge.threshold)
+    DailyBadge.CRESCENT -> stringResource(Res.string.badge_crescent_desc, badge.threshold)
+    DailyBadge.CROWN -> stringResource(Res.string.badge_crown_desc, badge.threshold)
+}
+
+@Composable
 fun DailyBadgeIcon(
     badgeKey: String?,
     size: Dp = 22.dp,
@@ -55,5 +81,51 @@ fun DailyBadgeIcon(
         painter = painterResource(res),
         contentDescription = badgeTitleString(badge),
         modifier = modifier.size(size),
+    )
+}
+
+@Composable
+fun DailyBadgeInfoDialog(
+    badge: DailyBadge,
+    onDismiss: () -> Unit,
+) {
+    val res = badgeDrawableResource(badge)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = MohamedLoversPalette.SkyTop,
+        shape = RoundedCornerShape(20.dp),
+        title = null,
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                if (res != null) {
+                    Image(
+                        painter = painterResource(res),
+                        contentDescription = null,
+                        modifier = Modifier.size(56.dp),
+                    )
+                    Spacer(Modifier.height(12.dp))
+                }
+                Text(
+                    text = badgeTitleString(badge),
+                    color = MohamedLoversPalette.GoldGlow,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = badgeDescriptionString(badge),
+                    color = MohamedLoversPalette.GoldBase.copy(alpha = 0.7f),
+                    fontSize = 14.sp,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(
+                    text = "حسنًا",
+                    color = MohamedLoversPalette.GoldHighlight,
+                )
+            }
+        },
     )
 }
