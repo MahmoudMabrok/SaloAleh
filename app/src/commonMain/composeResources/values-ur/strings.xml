@@ -169,10 +169,16 @@
 
     <!-- Paywall Screen -->
     <string name="paywall_supporter_settings_title">سپورٹر کی ترتیبات</string>
-    <string name="paywall_support_app_title">ایپ کی مدد کریں</string>
-    <string name="paywall_you_are_supporter">آپ سپورٹر ہیں! ✅</string>
-    <string name="paywall_thanks_subtitle">آپ کی مدد کا شکریہ — یہ ہیں آپ کی خصوصی فیچر سیٹنگز</string>
-    <string name="paywall_contribute_subtitle">ایپ کی ترقی میں حصہ ڈالیں اور خصوصی فیچرز حاصل کریں</string>
+    <string name="paywall_support_app_title">ثواب میں شریک ہوں</string>
+    <string name="paywall_you_are_supporter">آپ ثواب میں شریک ہیں ✅</string>
+    <string name="paywall_thanks_subtitle">جزاک اللہ خیرا — آپ کی مدد ہر نمازی کے لیے صدقہ جاریہ ہے</string>
+    <string name="paywall_contribute_subtitle">آپ کی مدد صدقہ جاریہ ہے — نبی ﷺ پر ہر درود کے اجر میں شریک ہوں</string>
+    <string name="paywall_sadaqa_jariyah_title">صدقہ جاریہ</string>
+    <string name="paywall_sadaqa_jariyah_subtitle">آپ کی مدد ایپ کو چلاتی ہے اور ہر نمازی تک ثواب پہنچاتی ہے</string>
+    <string name="paywall_continuous_reward_title">مسلسل ثواب</string>
+    <string name="paywall_continuous_reward_subtitle">ایپ سے بھیجا گیا ہر درود آپ کے اجر میں شامل ہے</string>
+    <string name="paywall_small_perks_title">اضافی سہولتیں</string>
+    <string name="paywall_small_perks_subtitle">اسکور چھپائیں، سپورٹر بیج، اور جمعہ کے اسکور دیکھیں</string>
     <string name="paywall_hide_score_title">اسکور چھپائیں</string>
     <string name="paywall_hide_score_subtitle">لیڈربورڈ پر دوسروں سے اپنا اسکور چھپائیں</string>
     <string name="paywall_supporter_badge_title">سپورٹر بیج</string>
@@ -186,11 +192,11 @@
     <string name="paywall_restore_purchases">خریداری بحال کریں</string>
     <string name="paywall_period_monthly">ماہانہ</string>
     <string name="paywall_period_yearly">سالانہ</string>
-    <string name="paywall_subscribe_now_price">ابھی سبسکرائب کریں — %1$s</string>
-    <string name="paywall_recurring_note">بار بار کی رکنیت — کسی بھی وقت منسوخ کریں 🤲</string>
+    <string name="paywall_subscribe_now_price">ثواب میں شریک ہوں — %1$s</string>
+    <string name="paywall_recurring_note">صدقہ جاریہ — کسی بھی وقت منسوخ کریں 🤲</string>
 
     <!-- Premium Promo Dialog -->
-    <string name="premium_promo_description">نبی ﷺ پر درود بھیجنے میں مدد کریں\nاور اپنا اسکور چھپانے اور سپورٹر بیج جیسے خصوصی فیچرز حاصل کریں</string>
+    <string name="premium_promo_description">ایپ کی مدد صدقہ جاریہ ہے\nنبی ﷺ پر ہر درود کے ثواب میں شریک ہوں — اضافی سہولتوں کے ساتھ</string>
     <string name="premium_promo_later">بعد میں</string>
 
     <!-- Purchase Success Dialog -->
@@ -220,7 +226,7 @@
     <string name="settings_sync_from_extension">براؤزر ایکسٹینشن سے مطابقت پذیری</string>
     <string name="settings_download_chrome_extension">کروم ایکسٹینشن ڈاؤن لوڈ کریں</string>
     <string name="settings_support_header">تعاون</string>
-    <string name="settings_support_app">🌟 ایپ کی مدد کریں</string>
+    <string name="settings_support_app">🤲 ثواب میں شریک ہوں</string>
     <string name="settings_about_header">ایپ کے بارے میں</string>
     <string name="settings_app_guide">ایپ گائیڈ</string>
     <string name="settings_privacy_policy">رازداری کی پالیسی</string>

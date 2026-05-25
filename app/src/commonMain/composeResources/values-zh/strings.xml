@@ -169,10 +169,16 @@
 
     <!-- Paywall Screen -->
     <string name="paywall_supporter_settings_title">支持者设置</string>
-    <string name="paywall_support_app_title">支持应用</string>
-    <string name="paywall_you_are_supporter">你已是支持者! ✅</string>
-    <string name="paywall_thanks_subtitle">感谢您的支持——以下是您的专属功能设置</string>
-    <string name="paywall_contribute_subtitle">帮助开发应用并获得专属功能</string>
+    <string name="paywall_support_app_title">分享回赐</string>
+    <string name="paywall_you_are_supporter">你正在分享回赐 ✅</string>
+    <string name="paywall_thanks_subtitle">愿真主回赐你——你的支持是惠及每位礼拜者的持续善行</string>
+    <string name="paywall_contribute_subtitle">你的支持是持续善行——分享对先知 ﷺ 每次赞颂的回赐</string>
+    <string name="paywall_sadaqa_jariyah_title">持续善行</string>
+    <string name="paywall_sadaqa_jariyah_subtitle">你的支持让应用运行，回赐惠及每位礼拜者</string>
+    <string name="paywall_continuous_reward_title">持续回赐</string>
+    <string name="paywall_continuous_reward_subtitle">通过此应用发出的每次赞颂，你都将获得一份回赐</string>
+    <string name="paywall_small_perks_title">额外福利</string>
+    <string name="paywall_small_perks_subtitle">隐藏分数、支持者徽章和查看周五分数</string>
     <string name="paywall_hide_score_title">隐藏分数</string>
     <string name="paywall_hide_score_subtitle">在排行榜上对他人隐藏你的分数</string>
     <string name="paywall_supporter_badge_title">支持者徽章</string>
@@ -186,11 +192,11 @@
     <string name="paywall_restore_purchases">恢复购买</string>
     <string name="paywall_period_monthly">月度</string>
     <string name="paywall_period_yearly">年度</string>
-    <string name="paywall_subscribe_now_price">立即订阅 — %1$s</string>
-    <string name="paywall_recurring_note">自动续订 — 随时可取消 🤲</string>
+    <string name="paywall_subscribe_now_price">分享回赐 — %1$s</string>
+    <string name="paywall_recurring_note">持续善行 — 随时可取消 🤲</string>
 
     <!-- Premium Promo Dialog -->
-    <string name="premium_promo_description">帮助传播对先知 ﷺ 的祝福\n并获得隐藏分数和支持者徽章等专属功能</string>
+    <string name="premium_promo_description">支持此应用作为持续善行\n分享对先知 ﷺ 每次赞颂的回赐——附带小福利</string>
     <string name="premium_promo_later">稍后</string>
 
     <!-- Purchase Success Dialog -->
@@ -220,7 +226,7 @@
     <string name="settings_sync_from_extension">从浏览器扩展同步</string>
     <string name="settings_download_chrome_extension">下载Chrome扩展</string>
     <string name="settings_support_header">支持</string>
-    <string name="settings_support_app">🌟 支持此应用</string>
+    <string name="settings_support_app">🤲 分享回赐</string>
     <string name="settings_about_header">关于应用</string>
     <string name="settings_app_guide">应用指南</string>
     <string name="settings_privacy_policy">隐私政策</string>

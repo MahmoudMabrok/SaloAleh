@@ -112,7 +112,7 @@ fun PaywallScreen(onBack: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(Modifier.height(16.dp))
-            Text(text = "🌟", fontSize = 48.sp)
+            Text(text = "🤲", fontSize = 48.sp)
             Spacer(Modifier.height(12.dp))
             Text(
                 text = if (isPremium) stringResource(Res.string.paywall_you_are_supporter) else stringResource(Res.string.paywall_support_app_title),
@@ -128,11 +128,11 @@ fun PaywallScreen(onBack: () -> Unit) {
             )
             Spacer(Modifier.height(28.dp))
 
-            FeatureCard(icon = "🔒", title = stringResource(Res.string.paywall_hide_score_title), subtitle = stringResource(Res.string.paywall_hide_score_subtitle))
+            FeatureCard(icon = "🤲", title = stringResource(Res.string.paywall_sadaqa_jariyah_title), subtitle = stringResource(Res.string.paywall_sadaqa_jariyah_subtitle))
             Spacer(Modifier.height(10.dp))
-            FeatureCard(icon = "⭐", title = stringResource(Res.string.paywall_supporter_badge_title), subtitle = stringResource(Res.string.paywall_supporter_badge_subtitle))
+            FeatureCard(icon = "📿", title = stringResource(Res.string.paywall_continuous_reward_title), subtitle = stringResource(Res.string.paywall_continuous_reward_subtitle))
             Spacer(Modifier.height(10.dp))
-            FeatureCard(icon = "👁️", title = stringResource(Res.string.paywall_friday_scores_title), subtitle = stringResource(Res.string.paywall_friday_scores_subtitle))
+            FeatureCard(icon = "✨", title = stringResource(Res.string.paywall_small_perks_title), subtitle = stringResource(Res.string.paywall_small_perks_subtitle))
             Spacer(Modifier.height(28.dp))
 
             if (isPremium) {

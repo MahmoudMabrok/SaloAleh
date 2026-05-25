@@ -173,10 +173,16 @@
 
     <!-- Paywall Screen -->
     <string name="paywall_supporter_settings_title">Supporter Settings</string>
-    <string name="paywall_support_app_title">Support the App</string>
-    <string name="paywall_you_are_supporter">You\'re a Supporter! ✅</string>
-    <string name="paywall_thanks_subtitle">Thanks for your support — here are your exclusive feature settings</string>
-    <string name="paywall_contribute_subtitle">Help develop the app and get exclusive features</string>
+    <string name="paywall_support_app_title">Share in the Reward</string>
+    <string name="paywall_you_are_supporter">You Share in the Reward ✅</string>
+    <string name="paywall_thanks_subtitle">May Allah reward you — your support is ongoing charity for every worshipper</string>
+    <string name="paywall_contribute_subtitle">Your support is ongoing charity — share in every salawat on the Prophet ﷺ</string>
+    <string name="paywall_sadaqa_jariyah_title">Ongoing Charity</string>
+    <string name="paywall_sadaqa_jariyah_subtitle">Your support keeps the app running and earns reward for every worshipper</string>
+    <string name="paywall_continuous_reward_title">Continuous Reward</string>
+    <string name="paywall_continuous_reward_subtitle">Every salawat raised through the app earns you a share of its reward</string>
+    <string name="paywall_small_perks_title">Small Perks</string>
+    <string name="paywall_small_perks_subtitle">Hide score, supporter badge, and reveal Friday scores</string>
     <string name="paywall_hide_score_title">Hide Score</string>
     <string name="paywall_hide_score_subtitle">Hide your score from others on the leaderboard</string>
     <string name="paywall_supporter_badge_title">Supporter Badge</string>
@@ -190,11 +196,11 @@
     <string name="paywall_restore_purchases">Restore Purchases</string>
     <string name="paywall_period_monthly">Monthly</string>
     <string name="paywall_period_yearly">Yearly</string>
-    <string name="paywall_subscribe_now_price">Subscribe Now — %1$s</string>
-    <string name="paywall_recurring_note">Recurring subscription — cancel anytime 🤲</string>
+    <string name="paywall_subscribe_now_price">Share in the Reward — %1$s</string>
+    <string name="paywall_recurring_note">Ongoing charity — cancel anytime 🤲</string>
 
     <!-- Premium Promo Dialog -->
-    <string name="premium_promo_description">Help spread prayers upon the Prophet ﷺ\nand get exclusive features like hiding your score and a supporter badge</string>
+    <string name="premium_promo_description">Support the app as ongoing charity\nand share in the reward of every salawat on the Prophet ﷺ — plus small perks</string>
     <string name="premium_promo_later">Later</string>
 
     <!-- Purchase Success Dialog -->
@@ -224,7 +230,7 @@
     <string name="settings_sync_from_extension">Sync from browser extension</string>
     <string name="settings_download_chrome_extension">Download Chrome extension</string>
     <string name="settings_support_header">Support</string>
-    <string name="settings_support_app">🌟 Support the app</string>
+    <string name="settings_support_app">🤲 Share in the Reward</string>
     <string name="settings_about_header">About the app</string>
     <string name="settings_app_guide">App guide</string>
     <string name="settings_privacy_policy">Privacy policy</string>
