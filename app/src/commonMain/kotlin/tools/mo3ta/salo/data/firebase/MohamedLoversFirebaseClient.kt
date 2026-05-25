@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.onEach
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.domain.FirebaseLeaderboard
 import tools.mo3ta.salo.domain.FirebaseLeaderboardEntry
+import tools.mo3ta.salo.domain.MOHAMED_LOVERS_TOP_LIMIT
 import tools.mo3ta.salo.domain.MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE
 import tools.mo3ta.salo.domain.MohamedLoversPlayer
 import tools.mo3ta.salo.domain.UserAchievement
@@ -276,6 +277,32 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
                 onFailure = { log.e(it) { "writeDailyBadge[$roundKey/$uid] failed" } },
             )
         }
+    }
+
+    override suspend fun fetchLiveLeaderboard(roundKey: String): Result<FirebaseLeaderboard> = runCatching {
+        val snapshot = Firebase.database.reference(playersPath(roundKey))
+            .valueEvents
+            .first()
+        val players = snapshot.children
+            .mapNotNull { it.toPlayer() }
+            .sortedByDescending { it.totalCount }
+            .take(MOHAMED_LOVERS_TOP_LIMIT)
+        val entries = players.mapIndexed { index, player ->
+            FirebaseLeaderboardEntry(
+                rank = index + 1,
+                uid = player.uid,
+                score = player.totalCount,
+                countryCode = player.countryCode,
+                scoreMasked = false,
+                isSupporter = false,
+            )
+        }
+        FirebaseLeaderboard(entries = entries, isFinal = false)
+    }.also { result ->
+        result.fold(
+            onSuccess = { log.d { "fetchLiveLeaderboard[$roundKey]: ${it.entries.size} entries" } },
+            onFailure = { log.e(it) { "fetchLiveLeaderboard[$roundKey] error" } },
+        )
     }
 
     private fun playersPath(roundKey: String) = "$ROOT_PATH/$roundKey/$PLAYERS_PATH"

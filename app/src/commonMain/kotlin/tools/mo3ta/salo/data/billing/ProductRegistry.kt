@@ -32,26 +32,37 @@ object ProductRegistry {
     @Deprecated("Use tier-specific IDs", replaceWith = ReplaceWith("SUPPORT_PREMIUM"))
     const val SUPPORT_APP_PREMIUM = SUPPORT_PREMIUM
 
+    private val basicFeatures: Set<PremiumFeature> = setOf(
+        PremiumFeature.SUPPORTER_BADGE,
+        PremiumFeature.FRIDAY_SCORES,
+        PremiumFeature.OTHERS_ACHIEVEMENTS,
+    )
+
+    private val premiumFeatures: Set<PremiumFeature> = basicFeatures + setOf(
+        PremiumFeature.LIVE_LEADERBOARD,
+        PremiumFeature.SCORE_MASK,
+    )
+
     val oneTimeTiers: List<SupportTier> = listOf(
-        SupportTier(SUPPORT_BASIC, "صدقة جارية", "$0.99", "☕", setOf(PremiumFeature.SUPPORTER_BADGE)),
-        SupportTier(SUPPORT_PREMIUM, "نصرة الحبيب ﷺ", "$1.99", "🌟", setOf(PremiumFeature.SCORE_MASK, PremiumFeature.SUPPORTER_BADGE, PremiumFeature.FRIDAY_SCORES)),
-        SupportTier(SUPPORT_GENEROUS, "سبّاق إلى الخيرات", "$4.99", "💎", setOf(PremiumFeature.SCORE_MASK, PremiumFeature.SUPPORTER_BADGE, PremiumFeature.FRIDAY_SCORES)),
+        SupportTier(SUPPORT_BASIC, "صدقة جارية", "$0.99", "☕", basicFeatures),
+        SupportTier(SUPPORT_PREMIUM, "نصرة الحبيب ﷺ", "$1.99", "🌟", premiumFeatures),
+        SupportTier(SUPPORT_GENEROUS, "سبّاق إلى الخيرات", "$4.99", "💎", premiumFeatures),
     )
 
     val subscriptionTiers: List<SupportTier> = listOf(
         SupportTier(
             SUB_MONTHLY_BASIC, "داعم شهري", "$0.99", "🌙",
-            setOf(PremiumFeature.SUPPORTER_BADGE),
+            basicFeatures,
             ProductType.SUBSCRIPTION, SubscriptionPeriod.MONTHLY,
         ),
         SupportTier(
             SUB_MONTHLY_PREMIUM, "داعم مميز شهري", "$2.99", "⭐",
-            setOf(PremiumFeature.SCORE_MASK, PremiumFeature.SUPPORTER_BADGE, PremiumFeature.FRIDAY_SCORES),
+            premiumFeatures,
             ProductType.SUBSCRIPTION, SubscriptionPeriod.MONTHLY,
         ),
         SupportTier(
             SUB_YEARLY_PREMIUM, "داعم مميز سنوي", "$24.99", "💎",
-            setOf(PremiumFeature.SCORE_MASK, PremiumFeature.SUPPORTER_BADGE, PremiumFeature.FRIDAY_SCORES),
+            premiumFeatures,
             ProductType.SUBSCRIPTION, SubscriptionPeriod.YEARLY,
         ),
     )

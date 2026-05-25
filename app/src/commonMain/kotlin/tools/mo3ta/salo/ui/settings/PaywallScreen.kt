@@ -57,6 +57,12 @@ import tools.mo3ta.salo.data.billing.SupportTier
 import tools.mo3ta.salo.domain.MohamedLoversRepository
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 
+private val ScreenBg = Color(0xFF0f0f1a)
+private val CardBg = Color(0xFF1a1a2e)
+private val CardBorder = Color(0xFF333333)
+private val VerseCardBg = Color(0xFF1a1a2e)
+private val HadithCardBg = Color(0xFF16213e)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PaywallScreen(onBack: () -> Unit) {
@@ -80,7 +86,7 @@ fun PaywallScreen(onBack: () -> Unit) {
     }
 
     Scaffold(
-        containerColor = Color(0xFF0f0f1a),
+        containerColor = ScreenBg,
         topBar = {
             TopAppBar(
                 title = {
@@ -99,7 +105,7 @@ fun PaywallScreen(onBack: () -> Unit) {
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF16213e)),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = HadithCardBg),
             )
         },
     ) { padding ->
@@ -111,37 +117,76 @@ fun PaywallScreen(onBack: () -> Unit) {
                 .padding(horizontal = 20.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(Modifier.height(16.dp))
-            Text(text = "🤲", fontSize = 48.sp)
+            // Bismillah + header
             Spacer(Modifier.height(12.dp))
             Text(
-                text = if (isPremium) stringResource(Res.string.paywall_you_are_supporter) else stringResource(Res.string.paywall_support_app_title),
+                text = stringResource(Res.string.paywall_bismillah),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = if (isPremium) stringResource(Res.string.paywall_you_are_supporter) else stringResource(Res.string.paywall_spiritual_title),
                 color = MohamedLoversPalette.GoldGlow,
-                fontSize = 22.sp,
+                fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = if (isPremium) stringResource(Res.string.paywall_thanks_subtitle) else stringResource(Res.string.paywall_contribute_subtitle),
+                text = if (isPremium) stringResource(Res.string.paywall_thanks_subtitle) else stringResource(Res.string.paywall_spiritual_subtitle),
                 color = Color.White.copy(alpha = 0.6f),
                 fontSize = 14.sp,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(24.dp))
+
+            // Quranic verse card
+            QuranVerseCard()
+            Spacer(Modifier.height(12.dp))
+
+            // Hadith card
+            HadithCard()
+            Spacer(Modifier.height(24.dp))
+
+            // Spiritual rewards section
+            Text(
+                text = stringResource(Res.string.paywall_rewards_header),
+                color = MohamedLoversPalette.GoldGlow,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Start,
+            )
+            Spacer(Modifier.height(12.dp))
+
+            RewardItem(
+                icon = "🤲",
+                title = stringResource(Res.string.paywall_reward_salawat_title),
+                subtitle = stringResource(Res.string.paywall_reward_salawat_subtitle),
+            )
+            Spacer(Modifier.height(8.dp))
+            RewardItem(
+                icon = "📿",
+                title = stringResource(Res.string.paywall_reward_sadaqa_title),
+                subtitle = stringResource(Res.string.paywall_reward_sadaqa_subtitle),
+            )
+            Spacer(Modifier.height(8.dp))
+            RewardItem(
+                icon = "🕌",
+                title = stringResource(Res.string.paywall_reward_spread_title),
+                subtitle = stringResource(Res.string.paywall_reward_spread_subtitle),
             )
             Spacer(Modifier.height(28.dp))
 
-            FeatureCard(icon = "🤲", title = stringResource(Res.string.paywall_sadaqa_jariyah_title), subtitle = stringResource(Res.string.paywall_sadaqa_jariyah_subtitle))
-            Spacer(Modifier.height(10.dp))
-            FeatureCard(icon = "📿", title = stringResource(Res.string.paywall_continuous_reward_title), subtitle = stringResource(Res.string.paywall_continuous_reward_subtitle))
-            Spacer(Modifier.height(10.dp))
-            FeatureCard(icon = "✨", title = stringResource(Res.string.paywall_small_perks_title), subtitle = stringResource(Res.string.paywall_small_perks_subtitle))
-            Spacer(Modifier.height(28.dp))
-
             if (isPremium) {
+                // Score mask toggle for existing supporters
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFF1a1a2e))
-                        .border(1.dp, Color(0xFF333333), RoundedCornerShape(12.dp))
+                        .background(CardBg)
+                        .border(1.dp, CardBorder, RoundedCornerShape(12.dp))
                         .padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -172,22 +217,65 @@ fun PaywallScreen(onBack: () -> Unit) {
                     )
                 }
             } else {
+                // Tier selection
+                Text(
+                    text = stringResource(Res.string.paywall_choose_label),
+                    color = MohamedLoversPalette.GoldGlow,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Start,
+                )
+                Spacer(Modifier.height(12.dp))
+
+                // Basic tier card
+                SpiritualTierCard(
+                    emoji = "🌙",
+                    tierName = stringResource(Res.string.paywall_basic_tier_label),
+                    price = billingManager.getProductPrice(ProductRegistry.SUB_MONTHLY_BASIC)
+                        ?: ProductRegistry.subscriptionTiers.first().defaultPrice,
+                    features = listOf(
+                        "⭐" to stringResource(Res.string.paywall_supporter_badge_title),
+                        "👁️" to stringResource(Res.string.paywall_friday_scores_title),
+                        "🏆" to stringResource(Res.string.paywall_others_achievements_title),
+                    ),
+                    isSelected = selectedTier.features == ProductRegistry.subscriptionTiers.first().features,
+                    onClick = {
+                        selectedTier = visibleTiers.firstOrNull { !it.features.contains(PremiumFeature.SCORE_MASK) }
+                            ?: visibleTiers.first()
+                    },
+                )
+                Spacer(Modifier.height(10.dp))
+
+                // Premium tier card
+                SpiritualTierCard(
+                    emoji = "⭐",
+                    tierName = stringResource(Res.string.paywall_premium_tier_label),
+                    price = billingManager.getProductPrice(
+                        if (selectedPeriod == SubscriptionPeriod.MONTHLY) ProductRegistry.SUB_MONTHLY_PREMIUM
+                        else ProductRegistry.SUB_YEARLY_PREMIUM,
+                    ) ?: visibleTiers.last().defaultPrice,
+                    features = listOf(
+                        "📡" to stringResource(Res.string.paywall_live_leaderboard_title),
+                        "🔒" to stringResource(Res.string.paywall_hide_score_title),
+                        "⭐" to stringResource(Res.string.paywall_supporter_badge_title),
+                        "👁️" to stringResource(Res.string.paywall_friday_scores_title),
+                        "🏆" to stringResource(Res.string.paywall_others_achievements_title),
+                    ),
+                    isSelected = selectedTier.features.contains(PremiumFeature.SCORE_MASK),
+                    onClick = {
+                        selectedTier = visibleTiers.lastOrNull { it.features.contains(PremiumFeature.SCORE_MASK) }
+                            ?: visibleTiers.last()
+                    },
+                )
+                Spacer(Modifier.height(16.dp))
+
                 PeriodToggle(
                     selected = selectedPeriod,
                     onSelect = { selectedPeriod = it },
                 )
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(12.dp))
 
-                visibleTiers.forEach { tier ->
-                    SubscriptionTierCard(
-                        tier = tier,
-                        price = billingManager.getProductPrice(tier.productId) ?: tier.defaultPrice,
-                        isSelected = selectedTier == tier,
-                        onClick = { selectedTier = tier },
-                    )
-                    Spacer(Modifier.height(8.dp))
-                }
-                Spacer(Modifier.height(8.dp))
                 Text(
                     text = stringResource(Res.string.paywall_recurring_note),
                     color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
@@ -196,7 +284,10 @@ fun PaywallScreen(onBack: () -> Unit) {
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(16.dp))
-                val tierPrice = billingManager.getProductPrice(selectedTier.productId) ?: selectedTier.defaultPrice
+
+                // CTA button
+                val basicPrice = billingManager.getProductPrice(ProductRegistry.SUB_MONTHLY_BASIC)
+                    ?: ProductRegistry.subscriptionTiers.first().defaultPrice
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -216,13 +307,24 @@ fun PaywallScreen(onBack: () -> Unit) {
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = stringResource(Res.string.paywall_subscribe_now_price, tierPrice),
-                        color = Color(0xFF0f0f1a),
+                        text = stringResource(Res.string.paywall_support_now_from, basicPrice),
+                        color = ScreenBg,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                     )
                 }
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(16.dp))
+
+                // Bottom sadaqa note
+                Text(
+                    text = stringResource(Res.string.paywall_sadaqa_bottom_note),
+                    color = Color.White.copy(alpha = 0.4f),
+                    fontSize = 13.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(12.dp))
+
                 Text(
                     text = stringResource(Res.string.paywall_restore_purchases),
                     color = Color.White.copy(alpha = 0.4f),
@@ -238,6 +340,147 @@ fun PaywallScreen(onBack: () -> Unit) {
 }
 
 @Composable
+private fun QuranVerseCard() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(VerseCardBg)
+            .border(1.dp, MohamedLoversPalette.GoldGlow.copy(alpha = 0.2f), RoundedCornerShape(16.dp))
+            .padding(20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = stringResource(Res.string.paywall_quran_verse),
+            color = Color.White,
+            fontSize = 17.sp,
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.Center,
+            lineHeight = 28.sp,
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = stringResource(Res.string.paywall_quran_ref),
+            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.6f),
+            fontSize = 12.sp,
+        )
+    }
+}
+
+@Composable
+private fun HadithCard() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(HadithCardBg)
+            .border(1.dp, MohamedLoversPalette.GoldGlow.copy(alpha = 0.15f), RoundedCornerShape(16.dp))
+            .padding(20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = stringResource(Res.string.paywall_hadith_text),
+            color = Color.White.copy(alpha = 0.9f),
+            fontSize = 14.sp,
+            textAlign = TextAlign.Center,
+            lineHeight = 24.sp,
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = stringResource(Res.string.paywall_hadith_ref),
+            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.5f),
+            fontSize = 11.sp,
+        )
+    }
+}
+
+@Composable
+private fun RewardItem(icon: String, title: String, subtitle: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(CardBg)
+            .padding(14.dp),
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(text = icon, fontSize = 22.sp)
+        Column {
+            Text(
+                text = title,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+            )
+            Text(
+                text = subtitle,
+                color = Color.White.copy(alpha = 0.5f),
+                fontSize = 12.sp,
+                lineHeight = 18.sp,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SpiritualTierCard(
+    emoji: String,
+    tierName: String,
+    price: String,
+    features: List<Pair<String, String>>,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+) {
+    val borderColor = if (isSelected) MohamedLoversPalette.GoldGlow else CardBorder
+    val bgColor = if (isSelected) CardBg else Color(0xFF13132a)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(bgColor)
+            .border(if (isSelected) 2.dp else 1.dp, borderColor, RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(16.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text(text = emoji, fontSize = 24.sp)
+            Text(
+                text = tierName,
+                color = if (isSelected) MohamedLoversPalette.GoldGlow else Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = price,
+                color = if (isSelected) MohamedLoversPalette.GoldGlow else Color.White.copy(alpha = 0.7f),
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp,
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        features.forEach { (icon, label) ->
+            Row(
+                modifier = Modifier.padding(vertical = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(text = icon, fontSize = 14.sp)
+                Text(
+                    text = label,
+                    color = Color.White.copy(alpha = 0.6f),
+                    fontSize = 12.sp,
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun PeriodToggle(
     selected: SubscriptionPeriod,
     onSelect: (SubscriptionPeriod) -> Unit,
@@ -246,8 +489,8 @@ private fun PeriodToggle(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFF1a1a2e))
-            .border(1.dp, Color(0xFF333333), RoundedCornerShape(12.dp))
+            .background(CardBg)
+            .border(1.dp, CardBorder, RoundedCornerShape(12.dp))
             .padding(4.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
@@ -287,85 +530,5 @@ private fun PeriodTab(
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
             fontSize = 14.sp,
         )
-    }
-}
-
-@Composable
-private fun SubscriptionTierCard(
-    tier: SupportTier,
-    price: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-) {
-    val borderColor = if (isSelected) MohamedLoversPalette.GoldGlow else Color(0xFF333333)
-    val bgColor = if (isSelected) Color(0xFF1a1a2e) else Color(0xFF13132a)
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(bgColor)
-            .border(if (isSelected) 2.dp else 1.dp, borderColor, RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(text = tier.emoji, fontSize = 24.sp)
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = tier.label,
-                color = if (isSelected) MohamedLoversPalette.GoldGlow else Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 15.sp,
-            )
-            if (tier.features.contains(PremiumFeature.SCORE_MASK)) {
-                Text(
-                    text = stringResource(Res.string.paywall_hide_score_plus_badge),
-                    color = Color.White.copy(alpha = 0.5f),
-                    fontSize = 11.sp,
-                )
-            } else {
-                Text(
-                    text = stringResource(Res.string.paywall_supporter_badge_title),
-                    color = Color.White.copy(alpha = 0.5f),
-                    fontSize = 11.sp,
-                )
-            }
-        }
-        Text(
-            text = price,
-            color = if (isSelected) MohamedLoversPalette.GoldGlow else Color.White.copy(alpha = 0.7f),
-            fontWeight = FontWeight.Bold,
-            fontSize = 16.sp,
-        )
-    }
-}
-
-@Composable
-private fun FeatureCard(icon: String, title: String, subtitle: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFF1a1a2e))
-            .border(1.dp, Color(0xFF333333), RoundedCornerShape(12.dp))
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(text = icon, fontSize = 24.sp)
-        Column {
-            Text(
-                text = title,
-                color = MohamedLoversPalette.GoldGlow,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-            )
-            Text(
-                text = subtitle,
-                color = Color.White.copy(alpha = 0.5f),
-                fontSize = 12.sp,
-            )
-        }
     }
 }

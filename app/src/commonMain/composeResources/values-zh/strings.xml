@@ -193,7 +193,34 @@
     <string name="paywall_period_monthly">月度</string>
     <string name="paywall_period_yearly">年度</string>
     <string name="paywall_subscribe_now_price">分享回赐 — %1$s</string>
+    <string name="paywall_others_achievements_title">他人成就</string>
+    <string name="paywall_others_achievements_subtitle">查看排行榜上其他玩家的成就和排名</string>
+    <string name="paywall_live_leaderboard_title">实时排行榜</string>
+    <string name="paywall_live_leaderboard_subtitle">比赛期间排行榜实时更新</string>
+    <string name="paywall_basic_tier_label">支持者</string>
+    <string name="paywall_premium_tier_label">尊享版</string>
     <string name="paywall_recurring_note">持续善行 — 随时可取消 🤲</string>
+    <string name="leaderboard_live_button">实时更新 📡</string>
+    <string name="leaderboard_live_badge">实时</string>
+    <string name="paywall_bismillah">奉至仁至慈的安拉之名</string>
+    <string name="paywall_spiritual_title">持续善行</string>
+    <string name="paywall_spiritual_subtitle">支持应用，让它成为你善功的一部分</string>
+    <string name="paywall_quran_verse">「谁以善债借给安拉，安拉将加倍偿还他」</string>
+    <string name="paywall_quran_ref">黄牛章 — 第245节</string>
+    <string name="paywall_hadith_text">「人死后功过止息，唯三者除外：持续善行、有益知识、为其祈祷的义子」</string>
+    <string name="paywall_hadith_ref">穆斯林圣训</string>
+    <string name="paywall_rewards_header">你的支持带来的成果</string>
+    <string name="paywall_reward_salawat_title">对先知 ﷺ 每次赞颂的回赐</string>
+    <string name="paywall_reward_salawat_subtitle">因你的支持而赞颂先知的每位用户，你都将获得回赐</string>
+    <string name="paywall_reward_sadaqa_title">持续不断的善行</string>
+    <string name="paywall_reward_sadaqa_subtitle">你的支持让应用对所有人免费开放</string>
+    <string name="paywall_reward_spread_title">传播先知 ﷺ 的记念</string>
+    <string name="paywall_reward_spread_subtitle">帮助在全世界传播对先知的爱</string>
+    <string name="paywall_choose_label">选择适合你的</string>
+    <string name="paywall_basic_tier_desc">支持者徽章、周五分数、排行榜中他人成就</string>
+    <string name="paywall_premium_tier_desc">实时排行榜、隐藏分数、+ 所有支持者功能</string>
+    <string name="paywall_support_now_from">立即支持 — 最低 %1$s</string>
+    <string name="paywall_sadaqa_bottom_note">「不要轻视任何善行」\n每一笔金额无论多小，都有巨大的回赐</string>
 
     <!-- Premium Promo Dialog -->
     <string name="premium_promo_description">支持此应用作为持续善行\n分享对先知 ﷺ 每次赞颂的回赐——附带小福利</string>

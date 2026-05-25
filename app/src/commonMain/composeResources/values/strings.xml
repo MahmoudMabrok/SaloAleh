@@ -202,7 +202,34 @@
     <string name="paywall_period_monthly">شهري</string>
     <string name="paywall_period_yearly">سنوي</string>
     <string name="paywall_subscribe_now_price">شارك في الثواب — %1$s</string>
+    <string name="paywall_others_achievements_title">إنجازات المتسابقين</string>
+    <string name="paywall_others_achievements_subtitle">شاهد إنجازات ومراتب المتسابقين الآخرين من المتصدرين</string>
+    <string name="paywall_live_leaderboard_title">المتصدرين المباشر</string>
+    <string name="paywall_live_leaderboard_subtitle">تحديث فوري للمتصدرين أثناء المنافسة</string>
+    <string name="paywall_basic_tier_label">الداعم</string>
+    <string name="paywall_premium_tier_label">المميز</string>
     <string name="paywall_recurring_note">صدقة جارية متجددة — يمكنك الإلغاء في أي وقت 🤲</string>
+    <string name="leaderboard_live_button">تحديث مباشر 📡</string>
+    <string name="leaderboard_live_badge">مباشر</string>
+    <string name="paywall_bismillah">بسم الله الرحمن الرحيم</string>
+    <string name="paywall_spiritual_title">صدقة جارية</string>
+    <string name="paywall_spiritual_subtitle">ادعم التطبيق واجعله في ميزان حسناتك</string>
+    <string name="paywall_quran_verse">﴿ مَّن ذَا الَّذِي يُقْرِضُ اللَّهَ قَرْضًا حَسَنًا فَيُضَاعِفَهُ لَهُ أَضْعَافًا كَثِيرَةً ﴾</string>
+    <string name="paywall_quran_ref">سورة البقرة — آية ٢٤٥</string>
+    <string name="paywall_hadith_text">«إذا مات ابن آدم انقطع عمله إلا من ثلاث: صدقة جارية، أو علم يُنتفع به، أو ولد صالح يدعو له»</string>
+    <string name="paywall_hadith_ref">رواه مسلم</string>
+    <string name="paywall_rewards_header">ثمرات دعمك</string>
+    <string name="paywall_reward_salawat_title">أجر كل صلاة على النبي ﷺ</string>
+    <string name="paywall_reward_salawat_subtitle">كل مستخدم يصلّي على النبي بفضل دعمك، تنال أجره بإذن الله</string>
+    <string name="paywall_reward_sadaqa_title">صدقة جارية مستمرة</string>
+    <string name="paywall_reward_sadaqa_subtitle">دعمك يبقي التطبيق متاحاً للجميع مجاناً</string>
+    <string name="paywall_reward_spread_title">نشر ذكر النبي ﷺ</string>
+    <string name="paywall_reward_spread_subtitle">ساهم في نشر محبة الحبيب المصطفى حول العالم</string>
+    <string name="paywall_choose_label">اختر ما يناسبك</string>
+    <string name="paywall_basic_tier_desc">شارة الداعم، نتائج يوم الجمعة، إنجازات الآخرين من المتصدرين</string>
+    <string name="paywall_premium_tier_desc">المتصدرين مباشرة، إخفاء نتيجتك، + جميع مزايا الداعم</string>
+    <string name="paywall_support_now_from">ادعم الآن — ابدأ من %1$s</string>
+    <string name="paywall_sadaqa_bottom_note">«لا تحقرنّ من المعروف شيئاً»\nكل مبلغ مهما كان بسيطاً له أجر عظيم</string>
 
     <!-- Premium Promo Dialog -->
     <string name="premium_promo_description">ادعم التطبيق كصدقة جارية\nوشارك في ثواب كل صلاة على النبي ﷺ — مع مزايا بسيطة</string>

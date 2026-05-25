@@ -197,7 +197,34 @@
     <string name="paywall_period_monthly">Monthly</string>
     <string name="paywall_period_yearly">Yearly</string>
     <string name="paywall_subscribe_now_price">Share in the Reward — %1$s</string>
+    <string name="paywall_others_achievements_title">Others\' Achievements</string>
+    <string name="paywall_others_achievements_subtitle">See achievements and ranks of other players from the leaderboard</string>
+    <string name="paywall_live_leaderboard_title">Live Leaderboard</string>
+    <string name="paywall_live_leaderboard_subtitle">Real-time leaderboard updates during the competition</string>
+    <string name="paywall_basic_tier_label">Supporter</string>
+    <string name="paywall_premium_tier_label">Premium</string>
     <string name="paywall_recurring_note">Ongoing charity — cancel anytime 🤲</string>
+    <string name="leaderboard_live_button">Live Update 📡</string>
+    <string name="leaderboard_live_badge">LIVE</string>
+    <string name="paywall_bismillah">In the Name of Allah, the Most Gracious, the Most Merciful</string>
+    <string name="paywall_spiritual_title">Ongoing Charity</string>
+    <string name="paywall_spiritual_subtitle">Support the app and let it weigh in your good deeds</string>
+    <string name="paywall_quran_verse">\"Who is it that would loan Allah a goodly loan so He will multiply it for him many times over?\"</string>
+    <string name="paywall_quran_ref">Surah Al-Baqarah — Verse 245</string>
+    <string name="paywall_hadith_text">\"When a person dies, their deeds end except for three: ongoing charity, beneficial knowledge, or a righteous child who prays for them\"</string>
+    <string name="paywall_hadith_ref">Narrated by Muslim</string>
+    <string name="paywall_rewards_header">Fruits of Your Support</string>
+    <string name="paywall_reward_salawat_title">Reward for every Salawat on the Prophet ﷺ</string>
+    <string name="paywall_reward_salawat_subtitle">Every user who sends salawat thanks to your support — you share in the reward, by Allah\'s will</string>
+    <string name="paywall_reward_sadaqa_title">Continuous Ongoing Charity</string>
+    <string name="paywall_reward_sadaqa_subtitle">Your support keeps the app free for everyone</string>
+    <string name="paywall_reward_spread_title">Spreading the Prophet\'s ﷺ Remembrance</string>
+    <string name="paywall_reward_spread_subtitle">Help spread the love of the Chosen One worldwide</string>
+    <string name="paywall_choose_label">Choose what suits you</string>
+    <string name="paywall_basic_tier_desc">Supporter badge, Friday scores, others\' achievements from leaderboard</string>
+    <string name="paywall_premium_tier_desc">Live leaderboard, hide your score, + all Supporter features</string>
+    <string name="paywall_support_now_from">Support Now — starting from %1$s</string>
+    <string name="paywall_sadaqa_bottom_note">\"Do not belittle any act of kindness\"\nEvery amount, no matter how small, has great reward</string>
 
     <!-- Premium Promo Dialog -->
     <string name="premium_promo_description">Support the app as ongoing charity\nand share in the reward of every salawat on the Prophet ﷺ — plus small perks</string>

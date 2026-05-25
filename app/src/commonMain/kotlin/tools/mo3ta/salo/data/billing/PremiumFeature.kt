@@ -4,4 +4,6 @@ enum class PremiumFeature {
     SCORE_MASK,
     SUPPORTER_BADGE,
     FRIDAY_SCORES,
+    OTHERS_ACHIEVEMENTS,
+    LIVE_LEADERBOARD,
 }

@@ -193,7 +193,34 @@
     <string name="paywall_period_monthly">ماہانہ</string>
     <string name="paywall_period_yearly">سالانہ</string>
     <string name="paywall_subscribe_now_price">ثواب میں شریک ہوں — %1$s</string>
+    <string name="paywall_others_achievements_title">دوسروں کی کامیابیاں</string>
+    <string name="paywall_others_achievements_subtitle">لیڈربورڈ سے دوسرے کھلاڑیوں کی کامیابیاں اور مراتب دیکھیں</string>
+    <string name="paywall_live_leaderboard_title">براہِ راست لیڈربورڈ</string>
+    <string name="paywall_live_leaderboard_subtitle">مقابلے کے دوران لیڈربورڈ کی فوری اپ ڈیٹ</string>
+    <string name="paywall_basic_tier_label">داعم</string>
+    <string name="paywall_premium_tier_label">ممتاز</string>
     <string name="paywall_recurring_note">صدقہ جاریہ — کسی بھی وقت منسوخ کریں 🤲</string>
+    <string name="leaderboard_live_button">براہِ راست اپ ڈیٹ 📡</string>
+    <string name="leaderboard_live_badge">لائیو</string>
+    <string name="paywall_bismillah">بسم اللہ الرحمن الرحیم</string>
+    <string name="paywall_spiritual_title">صدقہ جاریہ</string>
+    <string name="paywall_spiritual_subtitle">ایپ کی مدد کریں اور اسے اپنے نیکیوں کے ترازو میں رکھیں</string>
+    <string name="paywall_quran_verse">﴿ کون ہے جو اللہ کو قرض حسنہ دے تاکہ وہ اسے کئی گنا بڑھا دے ﴾</string>
+    <string name="paywall_quran_ref">سورۃ البقرہ — آیت ٢٤٥</string>
+    <string name="paywall_hadith_text">«جب آدمی مر جاتا ہے تو اس کے عمل رک جاتے ہیں سوائے تین کے: صدقہ جاریہ، فائدہ مند علم، یا نیک اولاد جو دعا کرے»</string>
+    <string name="paywall_hadith_ref">روایت مسلم</string>
+    <string name="paywall_rewards_header">آپ کی مدد کے ثمرات</string>
+    <string name="paywall_reward_salawat_title">نبی ﷺ پر ہر درود کا اجر</string>
+    <string name="paywall_reward_salawat_subtitle">آپ کی مدد سے جو بھی درود پڑھے، اللہ کی مرضی سے آپ کو بھی اجر ملے گا</string>
+    <string name="paywall_reward_sadaqa_title">مسلسل صدقہ جاریہ</string>
+    <string name="paywall_reward_sadaqa_subtitle">آپ کی مدد ایپ کو سب کے لیے مفت رکھتی ہے</string>
+    <string name="paywall_reward_spread_title">نبی ﷺ کا ذکر پھیلانا</string>
+    <string name="paywall_reward_spread_subtitle">دنیا بھر میں حبیب مصطفی کی محبت پھیلانے میں حصہ لیں</string>
+    <string name="paywall_choose_label">اپنی پسند کا انتخاب کریں</string>
+    <string name="paywall_basic_tier_desc">سپورٹر بیج، جمعہ اسکور، لیڈربورڈ سے دوسروں کی کامیابیاں</string>
+    <string name="paywall_premium_tier_desc">براہ راست لیڈربورڈ، اسکور چھپائیں، + تمام سپورٹر سہولتیں</string>
+    <string name="paywall_support_now_from">ابھی مدد کریں — %1$s سے شروع</string>
+    <string name="paywall_sadaqa_bottom_note">«نیکی کے کسی کام کو حقیر نہ سمجھو»\nہر رقم چاہے چھوٹی ہو، اس کا عظیم اجر ہے</string>
 
     <!-- Premium Promo Dialog -->
     <string name="premium_promo_description">ایپ کی مدد صدقہ جاریہ ہے\nنبی ﷺ پر ہر درود کے ثواب میں شریک ہوں — اضافی سہولتوں کے ساتھ</string>

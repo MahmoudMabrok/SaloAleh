@@ -13,6 +13,7 @@ interface MohamedLoversFirebaseApi {
     suspend fun fetchRoundTotal(roundKey: String): Result<Int>
     suspend fun fetchAllTimeTotal(): Result<Long>
     fun observeLeaderboard(roundKey: String, daily: Boolean = false): Flow<Result<FirebaseLeaderboard>>
+    suspend fun fetchLiveLeaderboard(roundKey: String): Result<FirebaseLeaderboard>
     suspend fun incrementSession(roundKey: String, uid: String, delta: Int, countryCode: String): Result<Unit>
     suspend fun writeUserActivity(uid: String, installDate: String, lastOpenDate: String): Result<Unit>
     suspend fun writeFcmToken(uid: String, token: String): Result<Unit>

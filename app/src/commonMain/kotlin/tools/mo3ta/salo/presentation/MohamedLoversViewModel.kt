@@ -22,6 +22,8 @@ import tools.mo3ta.salo.data.engagement.DailyGoalStore
 import tools.mo3ta.salo.data.engagement.EngagementStore
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
+import tools.mo3ta.salo.data.billing.PremiumFeature
+import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.domain.DailyBadge
 import tools.mo3ta.salo.domain.FirebaseLeaderboard
@@ -37,6 +39,7 @@ class MohamedLoversViewModel(
     private val dailyGoalStore: DailyGoalStore,
     private val settingsStore: NotificationSettingsStore,
     private val sessionStore: MohamedLoversSessionStore,
+    private val premiumStore: PremiumStore,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MohamedLoversUiState())
@@ -63,6 +66,7 @@ class MohamedLoversViewModel(
                 showHadithDialog = hadithStore.showOnStartup,
                 isUsingDailyLeaderboard = settingsStore.useDailyLeaderboard,
                 showDailyLeaderboardPromo = !settingsStore.dailyLeaderboardPromoShown,
+                hasLiveLeaderboardAccess = premiumStore.hasFeature(PremiumFeature.LIVE_LEADERBOARD),
             )
         }
         refresh()
@@ -335,6 +339,26 @@ class MohamedLoversViewModel(
         }
     }
 
+    fun fetchLiveLeaderboard() {
+        val roundKey = state.value.roundKey ?: return
+        if (!premiumStore.hasFeature(PremiumFeature.LIVE_LEADERBOARD)) return
+        if (state.value.isLoadingLiveLeaderboard) return
+        _state.update { it.copy(isLoadingLiveLeaderboard = true) }
+        viewModelScope.launch {
+            repository.fetchLiveLeaderboard(roundKey).onSuccess { leaderboard ->
+                remoteLeaderboard = leaderboard
+                _state.update { it.copy(isLiveLeaderboard = true) }
+                applyLeaderboard()
+            }
+            delay(LIVE_COOLDOWN_MS)
+            _state.update { it.copy(isLoadingLiveLeaderboard = false) }
+        }
+    }
+
+    private companion object {
+        const val LIVE_COOLDOWN_MS = 30_000L
+    }
+
     fun clearError() = _state.update { it.copy(error = null) }
 
     private fun connectToLeaderboardIfPossible() {
@@ -404,6 +428,7 @@ class MohamedLoversViewModel(
                 repository.observeLeaderboard(roundKey, settingsStore.useDailyLeaderboard).collectLatest { result ->
                     result.onSuccess { leaderboard ->
                         remoteLeaderboard = leaderboard
+                        _state.update { it.copy(isLiveLeaderboard = false) }
                         applyLeaderboard()
                         if (!leaderboard.isFinal) {
                             sawLeaderboardLive = true
