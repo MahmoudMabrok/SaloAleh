@@ -115,6 +115,16 @@ import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_day
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_hour
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_minute
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_second
+import tools.mo3ta.salo.generated.resources.idle_banner_prefix
+import tools.mo3ta.salo.generated.resources.idle_minutes_one
+import tools.mo3ta.salo.generated.resources.idle_minutes_two
+import tools.mo3ta.salo.generated.resources.idle_minutes_plural
+import tools.mo3ta.salo.generated.resources.idle_hours_one
+import tools.mo3ta.salo.generated.resources.idle_hours_two
+import tools.mo3ta.salo.generated.resources.idle_hours_plural
+import tools.mo3ta.salo.generated.resources.idle_days_one
+import tools.mo3ta.salo.generated.resources.idle_days_two
+import tools.mo3ta.salo.generated.resources.idle_days_plural
 import tools.mo3ta.salo.presentation.MohamedLoversError
 import tools.mo3ta.salo.presentation.MohamedLoversStatus
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
@@ -385,6 +395,16 @@ fun MohamedLoversScreen(
                         fontSize = 12.sp,
                         fontFamily = MohamedLoversFonts.body,
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                    )
+                }
+                val elapsedMinutes = state.lastSalawatElapsedMinutes
+                if (elapsedMinutes != null && elapsedMinutes >= 1) {
+                    Spacer(Modifier.height(8.dp))
+                    IdleBanner(
+                        elapsedMinutes = elapsedMinutes,
+                        onClick = {
+                            if (tapsEnabled) viewModel.onCountClick()
+                        },
                     )
                 }
             }
@@ -774,4 +794,55 @@ private fun TopBarTooltip(
         state = state,
         content = content,
     )
+}
+
+@Composable
+private fun formatIdleDuration(totalMinutes: Long): String {
+    val prefix = stringResource(Res.string.idle_banner_prefix)
+    val unit = when {
+        totalMinutes < 60 -> {
+            val m = totalMinutes.toInt()
+            when (m) {
+                1 -> stringResource(Res.string.idle_minutes_one)
+                2 -> stringResource(Res.string.idle_minutes_two)
+                else -> stringResource(Res.string.idle_minutes_plural, m)
+            }
+        }
+        totalMinutes < 1440 -> {
+            val h = (totalMinutes / 60).toInt()
+            when (h) {
+                1 -> stringResource(Res.string.idle_hours_one)
+                2 -> stringResource(Res.string.idle_hours_two)
+                else -> stringResource(Res.string.idle_hours_plural, h)
+            }
+        }
+        else -> {
+            val d = (totalMinutes / 1440).toInt()
+            when (d) {
+                1 -> stringResource(Res.string.idle_days_one)
+                2 -> stringResource(Res.string.idle_days_two)
+                else -> stringResource(Res.string.idle_days_plural, d)
+            }
+        }
+    }
+    return "$prefix $unit"
+}
+
+@Composable
+private fun IdleBanner(elapsedMinutes: Long, onClick: () -> Unit) {
+    androidx.compose.material3.Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.10f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MohamedLoversPalette.GoldBase.copy(alpha = 0.25f)),
+    ) {
+        Text(
+            text = formatIdleDuration(elapsedMinutes),
+            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
+            fontSize = 13.sp,
+            fontFamily = MohamedLoversFonts.body,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+    }
 }
