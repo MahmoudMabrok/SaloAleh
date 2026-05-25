@@ -228,6 +228,11 @@ fun App(
                 celebratedTier = tier
             }
         }
+        LaunchedEffect(billingManager) {
+            billingManager.subscriptionDeactivated.collect {
+                repository.setSupporter(false)
+            }
+        }
         celebratedTier?.let { tier ->
             PurchaseSuccessDialog(
                 tier = tier,

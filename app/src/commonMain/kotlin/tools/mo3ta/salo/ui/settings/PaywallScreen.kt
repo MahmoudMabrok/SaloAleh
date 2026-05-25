@@ -52,6 +52,7 @@ import tools.mo3ta.salo.data.billing.BillingManager
 import tools.mo3ta.salo.data.billing.PremiumFeature
 import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.billing.ProductRegistry
+import tools.mo3ta.salo.data.billing.SubscriptionPeriod
 import tools.mo3ta.salo.data.billing.SupportTier
 import tools.mo3ta.salo.domain.MohamedLoversRepository
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
@@ -67,7 +68,12 @@ fun PaywallScreen(onBack: () -> Unit) {
 
     val isPremium = premiumStore.hasFeature(PremiumFeature.SCORE_MASK)
     var scoreMasked by remember { mutableStateOf(premiumStore.isScoreMasked) }
-    var selectedTier by remember { mutableStateOf(ProductRegistry.tiers[1]) }
+    var selectedPeriod by remember { mutableStateOf(SubscriptionPeriod.MONTHLY) }
+
+    val visibleTiers = remember(selectedPeriod) {
+        ProductRegistry.subscriptionTiers.filter { it.period == selectedPeriod }
+    }
+    var selectedTier by remember(selectedPeriod) { mutableStateOf(visibleTiers.lastOrNull() ?: visibleTiers.first()) }
 
     LaunchedEffect(Unit) {
         analyticsManager.logAction(BillingAnalytics.PAYWALL_VIEWED)
@@ -166,8 +172,14 @@ fun PaywallScreen(onBack: () -> Unit) {
                     )
                 }
             } else {
-                ProductRegistry.tiers.forEach { tier ->
-                    SupportTierCard(
+                PeriodToggle(
+                    selected = selectedPeriod,
+                    onSelect = { selectedPeriod = it },
+                )
+                Spacer(Modifier.height(16.dp))
+
+                visibleTiers.forEach { tier ->
+                    SubscriptionTierCard(
                         tier = tier,
                         price = billingManager.getProductPrice(tier.productId) ?: tier.defaultPrice,
                         isSelected = selectedTier == tier,
@@ -177,7 +189,7 @@ fun PaywallScreen(onBack: () -> Unit) {
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "كلما زاد دعمك، زاد أجرك في الآخرة بإذن الله 🤲",
+                    text = stringResource(Res.string.paywall_recurring_note),
                     color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
                     fontSize = 13.sp,
                     textAlign = TextAlign.Center,
@@ -193,15 +205,18 @@ fun PaywallScreen(onBack: () -> Unit) {
                         .background(Brush.horizontalGradient(listOf(Color(0xFFFFD700), Color(0xFFFF8C00))))
                         .clickable {
                             analyticsManager.logAction(
-                                BillingAnalytics.PURCHASE_STARTED,
-                                mapOf(BillingAnalytics.PARAM_PRODUCT_ID to selectedTier.productId),
+                                BillingAnalytics.SUBSCRIPTION_STARTED,
+                                mapOf(
+                                    BillingAnalytics.PARAM_PRODUCT_ID to selectedTier.productId,
+                                    BillingAnalytics.PARAM_PERIOD to (selectedTier.period?.name ?: ""),
+                                ),
                             )
                             billingManager.purchaseProduct(selectedTier.productId)
                         },
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = stringResource(Res.string.paywall_support_now_price, tierPrice),
+                        text = stringResource(Res.string.paywall_subscribe_now_price, tierPrice),
                         color = Color(0xFF0f0f1a),
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
@@ -223,7 +238,60 @@ fun PaywallScreen(onBack: () -> Unit) {
 }
 
 @Composable
-private fun SupportTierCard(
+private fun PeriodToggle(
+    selected: SubscriptionPeriod,
+    onSelect: (SubscriptionPeriod) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0xFF1a1a2e))
+            .border(1.dp, Color(0xFF333333), RoundedCornerShape(12.dp))
+            .padding(4.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+    ) {
+        PeriodTab(
+            label = stringResource(Res.string.paywall_period_monthly),
+            isSelected = selected == SubscriptionPeriod.MONTHLY,
+            modifier = Modifier.weight(1f),
+            onClick = { onSelect(SubscriptionPeriod.MONTHLY) },
+        )
+        PeriodTab(
+            label = stringResource(Res.string.paywall_period_yearly),
+            isSelected = selected == SubscriptionPeriod.YEARLY,
+            modifier = Modifier.weight(1f),
+            onClick = { onSelect(SubscriptionPeriod.YEARLY) },
+        )
+    }
+}
+
+@Composable
+private fun PeriodTab(
+    label: String,
+    isSelected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(if (isSelected) MohamedLoversPalette.GoldGlow.copy(alpha = 0.15f) else Color.Transparent)
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            color = if (isSelected) MohamedLoversPalette.GoldGlow else Color.White.copy(alpha = 0.5f),
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+            fontSize = 14.sp,
+        )
+    }
+}
+
+@Composable
+private fun SubscriptionTierCard(
     tier: SupportTier,
     price: String,
     isSelected: Boolean,

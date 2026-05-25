@@ -30,17 +30,30 @@ class AndroidBillingManager(
     private val _purchaseEvents = MutableSharedFlow<String>(extraBufferCapacity = 4)
     override val purchaseEvents: SharedFlow<String> = _purchaseEvents.asSharedFlow()
 
+    private val _subscriptionDeactivated = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    override val subscriptionDeactivated: SharedFlow<Unit> = _subscriptionDeactivated.asSharedFlow()
+
     private var currentActivity: Activity? = null
 
     override fun initialize() {
         billingClient.onPurchaseCompleted = { productIds ->
             for (productId in productIds) {
                 if (productId in ProductRegistry.allProductIds) {
-                    val wasAlreadyPurchased = premiumStore.isPurchased(productId)
-                    premiumStore.markPurchased(productId)
-                    log.d { "Purchase confirmed: $productId (new=${!wasAlreadyPurchased})" }
-                    if (!wasAlreadyPurchased) {
-                        _purchaseEvents.tryEmit(productId)
+                    val isSub = ProductRegistry.typeFor(productId) == ProductType.SUBSCRIPTION
+                    if (isSub) {
+                        val wasActive = premiumStore.isSubscriptionActive(productId)
+                        premiumStore.markSubscriptionActive(productId, true)
+                        log.d { "Subscription activated: $productId (new=${!wasActive})" }
+                        if (!wasActive) {
+                            _purchaseEvents.tryEmit(productId)
+                        }
+                    } else {
+                        val wasAlreadyPurchased = premiumStore.isPurchased(productId)
+                        premiumStore.markPurchased(productId)
+                        log.d { "Purchase confirmed: $productId (new=${!wasAlreadyPurchased})" }
+                        if (!wasAlreadyPurchased) {
+                            _purchaseEvents.tryEmit(productId)
+                        }
                     }
                 }
             }
@@ -51,6 +64,7 @@ class AndroidBillingManager(
                 if (connected) {
                     loadProductPrices()
                     restorePurchasesInternal()
+                    refreshSubscriptionState()
                 }
             }
         }
@@ -65,26 +79,46 @@ class AndroidBillingManager(
             log.w { "No activity set — cannot launch billing flow" }
             return
         }
-        billingClient.launchBillingFlow(activity, productId)
+        val isSub = ProductRegistry.typeFor(productId) == ProductType.SUBSCRIPTION
+        val productType = if (isSub) BillingClient.ProductType.SUBS else BillingClient.ProductType.INAPP
+        billingClient.launchBillingFlow(activity, productId, productType)
     }
 
     override fun restorePurchases() {
-        scope.launch { restorePurchasesInternal() }
+        scope.launch {
+            restorePurchasesInternal()
+            refreshSubscriptionState()
+        }
     }
 
     override fun isPurchased(productId: String): Boolean =
         premiumStore.isPurchased(productId)
 
+    override fun isSubscriptionActive(productId: String): Boolean =
+        premiumStore.isSubscriptionActive(productId)
+
     override fun getProductPrice(productId: String): String? =
         productPrices[productId]
 
     private suspend fun loadProductPrices() {
-        for (productId in ProductRegistry.allProductIds) {
-            val result = billingClient.queryProductDetails(productId)
+        for (productId in ProductRegistry.oneTimeProductIds) {
+            val result = billingClient.queryProductDetails(productId, BillingClient.ProductType.INAPP)
             val details = result.productDetailsList?.firstOrNull() ?: continue
             val price = details.oneTimePurchaseOfferDetails?.formattedPrice ?: continue
             productPrices[productId] = price
             log.d { "Price loaded: $productId = $price" }
+        }
+        for (productId in ProductRegistry.subscriptionProductIds) {
+            val result = billingClient.queryProductDetails(productId, BillingClient.ProductType.SUBS)
+            val details = result.productDetailsList?.firstOrNull() ?: continue
+            val price = details.subscriptionOfferDetails
+                ?.firstOrNull()
+                ?.pricingPhases
+                ?.pricingPhaseList
+                ?.firstOrNull()
+                ?.formattedPrice ?: continue
+            productPrices[productId] = price
+            log.d { "Sub price loaded: $productId = $price" }
         }
     }
 
@@ -92,11 +126,34 @@ class AndroidBillingManager(
         val result = billingClient.queryPurchases()
         for (purchase in result) {
             for (productId in purchase.products) {
-                if (productId in ProductRegistry.allProductIds) {
+                if (productId in ProductRegistry.oneTimeProductIds) {
                     premiumStore.markPurchased(productId)
                     log.d { "Restored purchase: $productId" }
                 }
             }
+        }
+    }
+
+    private suspend fun refreshSubscriptionState() {
+        val hadSupporterBadge = premiumStore.hasFeature(PremiumFeature.SUPPORTER_BADGE)
+        val activeSubIds = mutableSetOf<String>()
+        val subs = billingClient.querySubscriptions()
+        for (purchase in subs) {
+            for (productId in purchase.products) {
+                if (productId in ProductRegistry.subscriptionProductIds) {
+                    activeSubIds.add(productId)
+                }
+            }
+        }
+        for (productId in ProductRegistry.subscriptionProductIds) {
+            val isActive = productId in activeSubIds
+            premiumStore.markSubscriptionActive(productId, isActive)
+            log.d { "Sub state refreshed: $productId active=$isActive" }
+        }
+        val hasSupporterBadgeNow = premiumStore.hasFeature(PremiumFeature.SUPPORTER_BADGE)
+        if (hadSupporterBadge && !hasSupporterBadgeNow) {
+            _subscriptionDeactivated.tryEmit(Unit)
+            log.d { "Supporter badge lost — subscription expired" }
         }
     }
 }

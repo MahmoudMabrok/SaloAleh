@@ -50,7 +50,12 @@ class SaloBillingClient(context: Context) {
 
     private val client: BillingClient = BillingClient.newBuilder(context)
         .setListener(purchasesListener)
-        .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().build())
+        .enablePendingPurchases(
+            PendingPurchasesParams.newBuilder()
+                .enableOneTimeProducts()
+                .enablePrepaidPlans()
+                .build()
+        )
         .build()
 
     fun connect() {
@@ -59,7 +64,10 @@ class SaloBillingClient(context: Context) {
                 if (result.responseCode == BillingClient.BillingResponseCode.OK) {
                     _isConnected.value = true
                     log.d { "Billing connected" }
-                    scope.launch { processPendingPurchases() }
+                    scope.launch {
+                        processPendingPurchases()
+                        processPendingSubscriptions()
+                    }
                 } else {
                     log.w { "Billing setup failed: ${result.debugMessage}" }
                 }
@@ -77,13 +85,13 @@ class SaloBillingClient(context: Context) {
         _isConnected.value = false
     }
 
-    suspend fun queryProductDetails(productId: String): ProductDetailsResult {
+    suspend fun queryProductDetails(productId: String, productType: String = BillingClient.ProductType.INAPP): ProductDetailsResult {
         val params = QueryProductDetailsParams.newBuilder()
             .setProductList(
                 listOf(
                     QueryProductDetailsParams.Product.newBuilder()
                         .setProductId(productId)
-                        .setProductType(BillingClient.ProductType.INAPP)
+                        .setProductType(productType)
                         .build()
                 )
             )
@@ -91,21 +99,29 @@ class SaloBillingClient(context: Context) {
         return client.queryProductDetails(params)
     }
 
-    fun launchBillingFlow(activity: Activity, productId: String) {
+    fun launchBillingFlow(activity: Activity, productId: String, productType: String = BillingClient.ProductType.INAPP) {
         scope.launch {
-            val result = queryProductDetails(productId)
+            val result = queryProductDetails(productId, productType)
             val details = result.productDetailsList?.firstOrNull() ?: run {
                 log.w { "Product $productId not found" }
                 return@launch
             }
+
+            val paramsBuilder = BillingFlowParams.ProductDetailsParams.newBuilder()
+                .setProductDetails(details)
+
+            if (productType == BillingClient.ProductType.SUBS) {
+                val offerToken = details.subscriptionOfferDetails?.firstOrNull()?.offerToken
+                if (offerToken != null) {
+                    paramsBuilder.setOfferToken(offerToken)
+                } else {
+                    log.w { "No offer token for subscription $productId" }
+                    return@launch
+                }
+            }
+
             val flowParams = BillingFlowParams.newBuilder()
-                .setProductDetailsParamsList(
-                    listOf(
-                        BillingFlowParams.ProductDetailsParams.newBuilder()
-                            .setProductDetails(details)
-                            .build()
-                    )
-                )
+                .setProductDetailsParamsList(listOf(paramsBuilder.build()))
                 .build()
             client.launchBillingFlow(activity, flowParams)
         }
@@ -115,6 +131,15 @@ class SaloBillingClient(context: Context) {
         val result = client.queryPurchasesAsync(
             QueryPurchasesParams.newBuilder()
                 .setProductType(BillingClient.ProductType.INAPP)
+                .build()
+        )
+        return result.purchasesList
+    }
+
+    suspend fun querySubscriptions(): List<Purchase> {
+        val result = client.queryPurchasesAsync(
+            QueryPurchasesParams.newBuilder()
+                .setProductType(BillingClient.ProductType.SUBS)
                 .build()
         )
         return result.purchasesList
@@ -138,6 +163,17 @@ class SaloBillingClient(context: Context) {
         val result = client.queryPurchasesAsync(
             QueryPurchasesParams.newBuilder()
                 .setProductType(BillingClient.ProductType.INAPP)
+                .build()
+        )
+        for (purchase in result.purchasesList) {
+            handlePurchase(purchase)
+        }
+    }
+
+    private suspend fun processPendingSubscriptions() {
+        val result = client.queryPurchasesAsync(
+            QueryPurchasesParams.newBuilder()
+                .setProductType(BillingClient.ProductType.SUBS)
                 .build()
         )
         for (purchase in result.purchasesList) {
