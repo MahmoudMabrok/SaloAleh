@@ -188,6 +188,10 @@
     <string name="paywall_support_now_price">Support Now — %1$s</string>
     <string name="paywall_support_now">Support Now</string>
     <string name="paywall_restore_purchases">Restore Purchases</string>
+    <string name="paywall_period_monthly">Monthly</string>
+    <string name="paywall_period_yearly">Yearly</string>
+    <string name="paywall_subscribe_now_price">Subscribe Now — %1$s</string>
+    <string name="paywall_recurring_note">Recurring subscription — cancel anytime 🤲</string>
 
     <!-- Premium Promo Dialog -->
     <string name="premium_promo_description">Help spread prayers upon the Prophet ﷺ\nand get exclusive features like hiding your score and a supporter badge</string>
@@ -417,4 +421,14 @@
     <string name="idle_days_one">1 day</string>
     <string name="idle_days_two">2 days</string>
     <string name="idle_days_plural">%1$d days</string>
+
+    <!-- Subscription encouragement -->
+    <string name="milestone_congrats_header">Masha\'Allah! 🎉</string>
+    <string name="milestone_congrats_body">May Allah bless you! You reached %1$s salawat upon the Prophet ﷺ</string>
+    <string name="milestone_support_pitch">Support the app as ongoing charity, and share the reward with everyone who prays through it</string>
+    <string name="milestone_support_subtext">Every salawat raised through the app earns you a share of its reward</string>
+    <string name="milestone_support_cta">I want the reward 💚</string>
+    <string name="milestone_support_dismiss">Later</string>
+    <string name="leaderboard_join_supporters">Join supporters ⭐</string>
+    <string name="leaderboard_unlock_scores_hint">Support the app to see competitors\' scores 🔓</string>
 </resources>

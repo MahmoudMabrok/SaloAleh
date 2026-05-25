@@ -184,6 +184,10 @@
     <string name="paywall_support_now_price">立即支持 — %1$s</string>
     <string name="paywall_support_now">立即支持</string>
     <string name="paywall_restore_purchases">恢复购买</string>
+    <string name="paywall_period_monthly">月度</string>
+    <string name="paywall_period_yearly">年度</string>
+    <string name="paywall_subscribe_now_price">立即订阅 — %1$s</string>
+    <string name="paywall_recurring_note">自动续订 — 随时可取消 🤲</string>
 
     <!-- Premium Promo Dialog -->
     <string name="premium_promo_description">帮助传播对先知 ﷺ 的祝福\n并获得隐藏分数和支持者徽章等专属功能</string>
@@ -404,4 +408,14 @@
     <string name="idle_days_one">1 天</string>
     <string name="idle_days_two">2 天</string>
     <string name="idle_days_plural">%1$d 天</string>
+
+    <!-- Subscription encouragement -->
+    <string name="milestone_congrats_header">ما شاء الله！🎉</string>
+    <string name="milestone_congrats_body">愿真主赐福你！你已为先知ﷺ送上了 %1$s 次赞颂</string>
+    <string name="milestone_support_pitch">支持此应用作为持续的善行，与每一位通过它祈祷的人分享回赐</string>
+    <string name="milestone_support_subtext">通过此应用发出的每一次赞颂，你都将获得一份回赐</string>
+    <string name="milestone_support_cta">我想要回赐 💚</string>
+    <string name="milestone_support_dismiss">稍后</string>
+    <string name="leaderboard_join_supporters">加入支持者 ⭐</string>
+    <string name="leaderboard_unlock_scores_hint">支持应用以查看参赛者成绩 🔓</string>
 </resources>

@@ -97,6 +97,7 @@ import tools.mo3ta.salo.generated.resources.mohamed_lovers_winner_title
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_share_rank
 import tools.mo3ta.salo.generated.resources.info_sheet_supporter_label
 import tools.mo3ta.salo.generated.resources.info_sheet_notif_disabled
+import tools.mo3ta.salo.generated.resources.leaderboard_join_supporters
 import tools.mo3ta.salo.generated.resources.notif_rationale_title
 import tools.mo3ta.salo.generated.resources.notif_rationale_description
 import tools.mo3ta.salo.generated.resources.notif_rationale_open_settings
@@ -200,6 +201,10 @@ internal fun MohamedLoversInfoSheet(
                 onToggleLeaderboardType = onToggleLeaderboardType,
                 isPremium = isPremium,
                 onSupporterClick = { showSupporterInfo = true },
+                onOpenPaywall = {
+                    onDismiss()
+                    onOpenPaywall()
+                },
                 onUserClick = onUserClick,
                 onBadgeClick = onBadgeClick,
             )
@@ -548,6 +553,7 @@ private fun LeaderboardCard(
     onToggleLeaderboardType: (Boolean) -> Unit,
     isPremium: Boolean = false,
     onSupporterClick: () -> Unit = {},
+    onOpenPaywall: () -> Unit = {},
     onUserClick: (uid: String, displayTag: String) -> Unit = { _, _ -> },
     onBadgeClick: (String) -> Unit = {},
 ) {
@@ -628,6 +634,26 @@ private fun LeaderboardCard(
                     onSupporterClick = onSupporterClick,
                     onUserClick = onUserClick,
                     onBadgeClick = onBadgeClick,
+                )
+            }
+        }
+        if (!isPremium) {
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(MohamedLoversPalette.GoldHighlight.copy(alpha = 0.12f))
+                    .border(1.dp, MohamedLoversPalette.GoldHighlight.copy(alpha = 0.3f), RoundedCornerShape(10.dp))
+                    .clickable { onOpenPaywall() }
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(Res.string.leaderboard_join_supporters),
+                    style = bodyStyle().copy(fontWeight = FontWeight.W600),
+                    color = MohamedLoversPalette.GoldHighlight,
                 )
             }
         }

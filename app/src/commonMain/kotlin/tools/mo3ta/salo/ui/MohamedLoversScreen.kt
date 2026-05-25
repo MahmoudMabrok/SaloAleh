@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
@@ -429,11 +430,21 @@ fun MohamedLoversScreen(
                         analyticsManager.logAction(AppAnalytics.OPEN_SETTINGS)
                         onOpenSettings()
                     }) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = stringResource(Res.string.main_screen_cd_settings),
-                            tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
-                        )
+                        Box {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = stringResource(Res.string.main_screen_cd_settings),
+                                tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
+                            )
+                            if (premiumStore.highestTier == null) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .align(Alignment.TopEnd)
+                                        .background(MohamedLoversPalette.GoldHighlight, CircleShape),
+                                )
+                            }
+                        }
                     }
                 }
             }

@@ -193,6 +193,10 @@
     <string name="paywall_support_now_price">ادعم الآن — %1$s</string>
     <string name="paywall_support_now">ادعم الآن</string>
     <string name="paywall_restore_purchases">استعادة المشتريات</string>
+    <string name="paywall_period_monthly">شهري</string>
+    <string name="paywall_period_yearly">سنوي</string>
+    <string name="paywall_subscribe_now_price">اشترك الآن — %1$s</string>
+    <string name="paywall_recurring_note">اشتراك متجدد — يمكنك الإلغاء في أي وقت 🤲</string>
 
     <!-- Premium Promo Dialog -->
     <string name="premium_promo_description">ساهم في نشر الصلاة على النبي ﷺ\nواحصل على مزايا حصرية كإخفاء نتيجتك وشارة الداعم</string>
@@ -427,4 +431,14 @@
     <string name="idle_days_one">يوم</string>
     <string name="idle_days_two">يومين</string>
     <string name="idle_days_plural">%1$d أيام</string>
+
+    <!-- Subscription encouragement -->
+    <string name="milestone_congrats_header">ما شاء الله! 🎉</string>
+    <string name="milestone_congrats_body">بارك الله فيك! وصلت إلى %1$s صلاة على الحبيب ﷺ</string>
+    <string name="milestone_support_pitch">ادعم التطبيق كصدقة جارية، وشارك الثواب مع كل من يصلي على النبي ﷺ من خلاله</string>
+    <string name="milestone_support_subtext">كل صلاة تُرفع من خلال التطبيق لك نصيب من أجرها</string>
+    <string name="milestone_support_cta">أريد الأجر 💚</string>
+    <string name="milestone_support_dismiss">لاحقًا</string>
+    <string name="leaderboard_join_supporters">انضم للداعمين ⭐</string>
+    <string name="leaderboard_unlock_scores_hint">ادعم التطبيق لرؤية نتائج المتسابقين 🔓</string>
 </resources>

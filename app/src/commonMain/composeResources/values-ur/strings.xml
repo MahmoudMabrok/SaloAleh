@@ -184,6 +184,10 @@
     <string name="paywall_support_now_price">ابھی مدد کریں — %1$s</string>
     <string name="paywall_support_now">ابھی مدد کریں</string>
     <string name="paywall_restore_purchases">خریداری بحال کریں</string>
+    <string name="paywall_period_monthly">ماہانہ</string>
+    <string name="paywall_period_yearly">سالانہ</string>
+    <string name="paywall_subscribe_now_price">ابھی سبسکرائب کریں — %1$s</string>
+    <string name="paywall_recurring_note">بار بار کی رکنیت — کسی بھی وقت منسوخ کریں 🤲</string>
 
     <!-- Premium Promo Dialog -->
     <string name="premium_promo_description">نبی ﷺ پر درود بھیجنے میں مدد کریں\nاور اپنا اسکور چھپانے اور سپورٹر بیج جیسے خصوصی فیچرز حاصل کریں</string>
@@ -404,4 +408,14 @@
     <string name="idle_days_one">ایک دن سے</string>
     <string name="idle_days_two">دو دن سے</string>
     <string name="idle_days_plural">%1$d دن سے</string>
+
+    <!-- Subscription encouragement -->
+    <string name="milestone_congrats_header">ما شاء اللہ! 🎉</string>
+    <string name="milestone_congrats_body">اللہ آپ کو برکت دے! آپ نے حبیب ﷺ پر %1$s درود بھیجے</string>
+    <string name="milestone_support_pitch">ایپ کی مدد صدقہ جاریہ کے طور پر کریں، اور ہر نمازی کے ثواب میں شریک ہوں</string>
+    <string name="milestone_support_subtext">ایپ کے ذریعے بھیجا گیا ہر درود آپ کے اجر میں شامل ہے</string>
+    <string name="milestone_support_cta">مجھے اجر چاہیے 💚</string>
+    <string name="milestone_support_dismiss">بعد میں</string>
+    <string name="leaderboard_join_supporters">حامیوں میں شامل ہوں ⭐</string>
+    <string name="leaderboard_unlock_scores_hint">مقابلین کے اسکور دیکھنے کے لیے ایپ کی مدد کریں 🔓</string>
 </resources>

@@ -47,6 +47,13 @@ import tools.mo3ta.salo.ui.takbeer.TakbeerAnnouncementDialog
 import tools.mo3ta.salo.ui.takbeer.TakbeerSessionScreen
 import tools.mo3ta.salo.ui.tendays.TenDaysPromoDialog
 import tools.mo3ta.salo.ui.tendays.TenDaysScreen
+import tools.mo3ta.salo.ui.support.MilestoneSupportDialog
+import tools.mo3ta.salo.data.MilestoneTracker
+import tools.mo3ta.salo.data.billing.PremiumStore
+import tools.mo3ta.salo.analytics.BillingAnalytics
+import tools.mo3ta.salo.presentation.MohamedLoversViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun App(
@@ -226,6 +233,46 @@ fun App(
                 tier = tier,
                 onDismiss = { celebratedTier = null },
             )
+        }
+
+        val milestoneTracker = koinInject<MilestoneTracker>()
+        val premiumStore = koinInject<PremiumStore>()
+        val viewModel: MohamedLoversViewModel = koinViewModel()
+        val mlState by viewModel.state.collectAsStateWithLifecycle()
+        var milestonePending by remember { mutableStateOf<Int?>(null) }
+        val currentScore = mlState.syncedTotal + mlState.sessionClicks
+        LaunchedEffect(currentScore) {
+            if (premiumStore.highestTier != null) return@LaunchedEffect
+            val hit = milestoneTracker.checkMilestone(currentScore) ?: return@LaunchedEffect
+            milestonePending = hit
+        }
+        milestonePending?.let { milestone ->
+            MilestoneSupportDialog(
+                milestone = milestone,
+                onSupport = {
+                    milestoneTracker.markShown(milestone)
+                    milestonePending = null
+                    showPaywall = true
+                    analyticsManager.logAction(
+                        BillingAnalytics.MILESTONE_SUPPORT_CTA_TAPPED,
+                        mapOf(BillingAnalytics.PARAM_MILESTONE_VALUE to milestone.toString()),
+                    )
+                },
+                onDismiss = {
+                    milestoneTracker.markShown(milestone)
+                    milestonePending = null
+                    analyticsManager.logAction(
+                        BillingAnalytics.MILESTONE_SUPPORT_DISMISSED,
+                        mapOf(BillingAnalytics.PARAM_MILESTONE_VALUE to milestone.toString()),
+                    )
+                },
+            )
+            LaunchedEffect(milestone) {
+                analyticsManager.logAction(
+                    BillingAnalytics.MILESTONE_SUPPORT_SHOWN,
+                    mapOf(BillingAnalytics.PARAM_MILESTONE_VALUE to milestone.toString()),
+                )
+            }
         }
 
         val engagementStore = koinInject<EngagementStore>()
