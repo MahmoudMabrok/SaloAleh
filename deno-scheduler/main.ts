@@ -87,35 +87,32 @@ Deno.cron(
   () => dispatchWorkflow("update-stats.yml", "update-stats"),
 );
 
-// Retention notifications — non-Friday morning (9 AM Cairo)
-for (const day of [0, 1, 2, 3, 4, 6]) {
-  Deno.cron(
-    `notify-morning-d${day}`,
-    `0 7 * * ${day}`,
-    { backoffSchedule: [1_000, 5_000, 30_000] },
-    () => dispatchWorkflow("notify-users.yml", "notify-morning"),
-  );
-}
+// Retention notifications — non-Friday morning (9 AM Cairo = 07:00 UTC)
+Deno.cron("notify-morning-sun", "0 7 * * 0", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-morning"));
+Deno.cron("notify-morning-mon", "0 7 * * 1", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-morning"));
+Deno.cron("notify-morning-tue", "0 7 * * 2", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-morning"));
+Deno.cron("notify-morning-wed", "0 7 * * 3", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-morning"));
+Deno.cron("notify-morning-thu", "0 7 * * 4", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-morning"));
+Deno.cron("notify-morning-sat", "0 7 * * 6", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-morning"));
 
-// Retention notifications — non-Friday evening (7 PM Cairo)
-for (const day of [0, 1, 2, 3, 4, 6]) {
-  Deno.cron(
-    `notify-evening-d${day}`,
-    `0 17 * * ${day}`,
-    { backoffSchedule: [1_000, 5_000, 30_000] },
-    () => dispatchWorkflow("notify-users.yml", "notify-evening"),
-  );
-}
+// Retention notifications — non-Friday evening (7 PM Cairo = 17:00 UTC)
+Deno.cron("notify-evening-sun", "0 17 * * 0", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-evening"));
+Deno.cron("notify-evening-mon", "0 17 * * 1", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-evening"));
+Deno.cron("notify-evening-tue", "0 17 * * 2", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-evening"));
+Deno.cron("notify-evening-wed", "0 17 * * 3", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-evening"));
+Deno.cron("notify-evening-thu", "0 17 * * 4", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-evening"));
+Deno.cron("notify-evening-sat", "0 17 * * 6", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-evening"));
 
-// Retention notifications — Friday hourly (8 AM–4 PM UTC → covers until 19:00 Cairo)
-for (const hour of [8, 9, 10, 11, 12, 13, 14, 15, 16]) {
-  Deno.cron(
-    `notify-friday-h${hour}`,
-    `0 ${hour} * * 5`,
-    { backoffSchedule: [1_000, 5_000, 30_000] },
-    () => dispatchWorkflow("notify-users.yml", "notify-friday"),
-  );
-}
+// Retention notifications — Friday hourly (8–16 UTC → until 19:00 Cairo)
+Deno.cron("notify-fri-08", "0 8 * * 5", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-friday"));
+Deno.cron("notify-fri-09", "0 9 * * 5", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-friday"));
+Deno.cron("notify-fri-10", "0 10 * * 5", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-friday"));
+Deno.cron("notify-fri-11", "0 11 * * 5", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-friday"));
+Deno.cron("notify-fri-12", "0 12 * * 5", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-friday"));
+Deno.cron("notify-fri-13", "0 13 * * 5", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-friday"));
+Deno.cron("notify-fri-14", "0 14 * * 5", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-friday"));
+Deno.cron("notify-fri-15", "0 15 * * 5", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-friday"));
+Deno.cron("notify-fri-16", "0 16 * * 5", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-friday"));
 
 // Minimal health endpoint so the deployment is verifiable from a browser.
 Deno.serve((req) => {
