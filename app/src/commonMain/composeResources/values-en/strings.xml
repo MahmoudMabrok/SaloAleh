@@ -388,6 +388,13 @@
     <string name="badge_crescent_title">Among the Devoted</string>
     <string name="badge_crown_title">Champion of Salawat</string>
 
+    <!-- Daily rank strip -->
+    <string name="daily_rank_strip_today_label">salawat today</string>
+    <string name="daily_rank_strip_rank_of">#%1$d of %2$d</string>
+    <string name="daily_rank_strip_remaining">%1$s left for %2$s</string>
+    <string name="daily_badge_sheet_title">Daily Salawat Badges</string>
+    <string name="daily_badge_sheet_subtitle">Earn badges by sending salawat upon the Prophet ﷺ daily</string>
+
     <!-- Motivation: Rank movement -->
     <string name="rank_climbed">⬆ You climbed %1$d ranks</string>
     <string name="rank_dropped">⬇ You dropped %1$d ranks</string>

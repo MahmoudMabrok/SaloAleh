@@ -8,6 +8,11 @@ enum class DailyBadge(val key: String, val threshold: Int) {
     CRESCENT("crescent", 2000),
     CROWN("crown", 5000);
 
+    fun next(): DailyBadge? {
+        val idx = entries.indexOf(this)
+        return entries.getOrNull(idx + 1)
+    }
+
     companion object {
         fun fromTapCount(count: Int): DailyBadge? =
             entries.lastOrNull { count >= it.threshold }

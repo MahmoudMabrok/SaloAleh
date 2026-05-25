@@ -365,6 +365,13 @@
     <!-- Info Sheet Notification Warning -->
     <string name="info_sheet_notif_disabled">اطلاعات غیر فعال — یہ کیوں اہم ہے؟</string>
 
+    <!-- Daily rank strip -->
+    <string name="daily_rank_strip_today_label">آج کی صلوٰۃ</string>
+    <string name="daily_rank_strip_rank_of">#%1$d از %2$d</string>
+    <string name="daily_rank_strip_remaining">%2$s کے لیے %1$s باقی</string>
+    <string name="daily_badge_sheet_title">یومیہ صلوٰۃ کے بیجز</string>
+    <string name="daily_badge_sheet_subtitle">نبی ﷺ پر روزانہ درود بھیج کر بیجز حاصل کریں</string>
+
     <!-- Language -->
     <string name="settings_language_header">زبان</string>
     <string name="settings_language_ar">العربية</string>

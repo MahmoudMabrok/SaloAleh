@@ -94,7 +94,6 @@ import tools.mo3ta.salo.generated.resources.mohamed_lovers_connection_error
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_info_cd
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_prayer_text
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_reward_text
-import tools.mo3ta.salo.generated.resources.main_screen_rank_chip_label
 import tools.mo3ta.salo.generated.resources.main_screen_rank_chip_tooltip
 import tools.mo3ta.salo.generated.resources.main_screen_bubble_tooltip
 import tools.mo3ta.salo.generated.resources.main_screen_manual_salawat_button
@@ -133,6 +132,8 @@ import tools.mo3ta.salo.ui.RoundEndResultsScreen
 import tools.mo3ta.salo.ui.components.RoundEndBanner
 import tools.mo3ta.salo.ui.components.OvertakeOverlay
 import tools.mo3ta.salo.ui.components.MilestoneCelebration
+import tools.mo3ta.salo.ui.components.DailyBadgeTiersSheet
+import tools.mo3ta.salo.ui.components.DailyRankStrip
 import tools.mo3ta.salo.ui.components.RankMovementBanner
 import tools.mo3ta.salo.ui.AchievementCelebrationDialog
 import tools.mo3ta.salo.ui.components.RoundRecapSheet
@@ -231,6 +232,7 @@ fun MohamedLoversScreen(
     var archCenter by remember { mutableStateOf<Offset?>(null) }
     var isLit by remember { mutableStateOf(false) }
     var infoSheetOpen by remember { mutableStateOf(false) }
+    var badgeTiersSheetOpen by remember { mutableStateOf(false) }
     var showRankTooltip by remember { mutableStateOf(false) }
     var showBubbleTooltip by remember { mutableStateOf(false) }
     var selectedUserAchievements by remember { mutableStateOf<Pair<String, String>?>(null) }
@@ -292,64 +294,36 @@ fun MohamedLoversScreen(
                 }
                 // Rank chip + first-time tooltip
                 if (rankChipVisible) {
-                    val rank = currentUserEntry!!.rank
-                    val medal = when (rank) { 1 -> "🥇"; 2 -> "🥈"; 3 -> "🥉"; else -> "🏅" }
                     Spacer(Modifier.height(6.dp))
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    DailyRankStrip(
+                        rank = currentUserEntry!!.rank,
+                        totalPlayers = state.roundPlayerCount,
+                        todayTaps = state.dailyGoalProgress,
+                        currentBadgeKey = state.currentDailyBadge,
+                        onStripClick = {
+                            analyticsManager.logAction(AppAnalytics.OPEN_INFO_SHEET, mapOf(AppAnalytics.PARAM_SOURCE to "rank_strip"))
+                            infoSheetOpen = true
+                        },
+                        onInfoClick = { badgeTiersSheetOpen = true },
+                    )
+                    AnimatedVisibility(
+                        visible = showRankTooltip,
+                        enter = fadeIn(),
+                        exit = fadeOut(),
+                    ) {
                         Surface(
-                            shape = RoundedCornerShape(20.dp),
-                            color = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.13f),
-                            modifier = Modifier.clickable {
-                                analyticsManager.logAction(AppAnalytics.OPEN_INFO_SHEET, mapOf(AppAnalytics.PARAM_SOURCE to "rank_chip"))
-                                infoSheetOpen = true
-                            },
+                            shape = RoundedCornerShape(10.dp),
+                            color = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.15f),
+                            modifier = Modifier
+                                .padding(top = 4.dp)
+                                .clickable { showRankTooltip = false },
                         ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(text = "$medal ", fontSize = 18.sp)
-                                Text(
-                                    text = stringResource(Res.string.main_screen_rank_chip_label),
-                                    color = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.6f),
-                                    fontSize = 14.sp,
-                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
-                                )
-                                Text(
-                                    text = "$rank",
-                                    color = MohamedLoversPalette.GoldHighlight,
-                                    fontSize = 18.sp,
-                                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
-                                )
-                                if (state.roundPlayerCount > 0) {
-                                    Text(
-                                        text = " / ${state.roundPlayerCount}",
-                                        color = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.45f),
-                                        fontSize = 14.sp,
-                                        fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
-                                    )
-                                }
-                            }
-                        }
-                        AnimatedVisibility(
-                            visible = showRankTooltip,
-                            enter = fadeIn(),
-                            exit = fadeOut(),
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.15f),
-                                modifier = Modifier
-                                    .padding(top = 4.dp)
-                                    .clickable { showRankTooltip = false },
-                            ) {
-                                Text(
-                                    text = stringResource(Res.string.main_screen_rank_chip_tooltip),
-                                    color = MohamedLoversPalette.GoldGlow,
-                                    fontSize = 11.sp,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                )
-                            }
+                            Text(
+                                text = stringResource(Res.string.main_screen_rank_chip_tooltip),
+                                color = MohamedLoversPalette.GoldGlow,
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                            )
                         }
                     }
                 }
@@ -525,6 +499,13 @@ fun MohamedLoversScreen(
                 selectedUserAchievements = uid to tag
             },
         )
+        if (badgeTiersSheetOpen) {
+            DailyBadgeTiersSheet(
+                todayTaps = state.dailyGoalProgress,
+                currentBadgeKey = state.currentDailyBadge,
+                onDismiss = { badgeTiersSheetOpen = false },
+            )
+        }
         selectedUserAchievements?.let { (uid, tag) ->
             UserAchievementsSheet(
                 uid = uid,
