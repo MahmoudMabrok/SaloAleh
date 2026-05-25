@@ -27,7 +27,6 @@ import tools.mo3ta.salo.domain.DailyBadge
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.daily_rank_strip_today_label
 import tools.mo3ta.salo.generated.resources.daily_rank_strip_rank_of
-import tools.mo3ta.salo.generated.resources.daily_rank_strip_remaining
 
 @Composable
 fun DailyRankStrip(
@@ -41,8 +40,6 @@ fun DailyRankStrip(
 ) {
     val currentBadge = currentBadgeKey?.let { DailyBadge.fromKey(it) }
         ?: DailyBadge.fromTapCount(todayTaps)
-    val nextBadge = currentBadge?.next() ?: if (currentBadge == null) DailyBadge.SPROUT else null
-    val tapsToNext = nextBadge?.let { it.threshold - todayTaps }
 
     Row(
         modifier = modifier
@@ -110,18 +107,6 @@ fun DailyRankStrip(
                         color = MohamedLoversPalette.GoldWarm,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
-                    )
-                }
-                if (tapsToNext != null && tapsToNext > 0) {
-                    Text(
-                        text = " · ",
-                        color = MohamedLoversPalette.GoldBase.copy(alpha = 0.3f),
-                        fontSize = 11.sp,
-                    )
-                    Text(
-                        text = stringResource(Res.string.daily_rank_strip_remaining, formatCount(tapsToNext), badgeTitleString(nextBadge!!)),
-                        color = MohamedLoversPalette.GoldBase.copy(alpha = 0.5f),
-                        fontSize = 11.sp,
                     )
                 }
             }

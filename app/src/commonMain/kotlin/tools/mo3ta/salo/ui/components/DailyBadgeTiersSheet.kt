@@ -1,5 +1,6 @@
 package tools.mo3ta.salo.ui.components
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,9 +22,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import tools.mo3ta.salo.domain.DailyBadge
@@ -40,7 +44,6 @@ fun DailyBadgeTiersSheet(
 ) {
     val currentBadge = currentBadgeKey?.let { DailyBadge.fromKey(it) }
         ?: DailyBadge.fromTapCount(todayTaps)
-    val nextBadge = currentBadge?.next()
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -77,7 +80,20 @@ fun DailyBadgeTiersSheet(
                     for (col in 0..2) {
                         val badge = badges[row * 3 + col]
                         val isCurrent = badge == currentBadge
-                        val isLocked = currentBadge == null || badge.threshold > currentBadge.threshold
+                        val isEarned = currentBadge != null && badge.threshold <= currentBadge.threshold
+                        val isLocked = !isEarned && !isCurrent
+
+                        val prevThreshold = badge.ordinal.let { idx ->
+                            if (idx > 0) badges[idx - 1].threshold else 0
+                        }
+                        val badgeProgress = when {
+                            isEarned -> 1f
+                            todayTaps >= prevThreshold -> {
+                                ((todayTaps - prevThreshold).toFloat() /
+                                    (badge.threshold - prevThreshold).toFloat()).coerceIn(0f, 1f)
+                            }
+                            else -> 0f
+                        }
 
                         Column(
                             modifier = Modifier
@@ -96,13 +112,13 @@ fun DailyBadgeTiersSheet(
                                 .padding(vertical = 10.dp, horizontal = 4.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
-                            val alpha = if (isLocked && !isCurrent) 0.35f else 1f
+                            val alpha = if (isLocked) 0.35f else 1f
                             val res = badgeDrawableResource(badge)
                             if (res != null) {
-                                Image(
-                                    painter = painterResource(res),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(28.dp),
+                                BadgeWithProgress(
+                                    badgeRes = res,
+                                    progress = badgeProgress,
+                                    isEarned = isEarned,
                                     alpha = alpha,
                                 )
                             }
@@ -123,45 +139,57 @@ fun DailyBadgeTiersSheet(
                 }
                 if (row == 0) Spacer(Modifier.height(8.dp))
             }
+        }
+    }
+}
 
-            // Progress bar to next tier
-            if (currentBadge != null && nextBadge != null) {
-                val progress = (todayTaps - currentBadge.threshold).toFloat() /
-                    (nextBadge.threshold - currentBadge.threshold).toFloat()
-                Spacer(Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text(
-                        text = badgeTitleString(currentBadge),
-                        color = MohamedLoversPalette.GoldBase.copy(alpha = 0.7f),
-                        fontSize = 12.sp,
-                    )
-                    Text(
-                        text = "${formatBadgeCount(todayTaps - currentBadge.threshold)} / ${formatBadgeCount(nextBadge.threshold - currentBadge.threshold)}",
-                        color = MohamedLoversPalette.GoldBase.copy(alpha = 0.7f),
-                        fontSize = 12.sp,
-                    )
-                }
-                Spacer(Modifier.height(6.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(8.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(MohamedLoversPalette.GoldBase.copy(alpha = 0.12f)),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(progress.coerceIn(0f, 1f))
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(MohamedLoversPalette.GoldHighlight),
-                    )
-                }
+@Composable
+private fun BadgeWithProgress(
+    badgeRes: DrawableResource,
+    progress: Float,
+    isEarned: Boolean,
+    alpha: Float,
+) {
+    val trackColor = MohamedLoversPalette.GoldBase.copy(alpha = 0.15f)
+    val progressColor = if (isEarned)
+        MohamedLoversPalette.GoldHighlight
+    else
+        MohamedLoversPalette.GoldHighlight.copy(alpha = 0.7f)
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier.size(48.dp),
+    ) {
+        Canvas(modifier = Modifier.size(48.dp)) {
+            val strokeWidth = 3.dp.toPx()
+            val arcSize = size.width - strokeWidth
+            drawArc(
+                color = trackColor,
+                startAngle = -90f,
+                sweepAngle = 360f,
+                useCenter = false,
+                topLeft = androidx.compose.ui.geometry.Offset(strokeWidth / 2, strokeWidth / 2),
+                size = androidx.compose.ui.geometry.Size(arcSize, arcSize),
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+            )
+            if (progress > 0f) {
+                drawArc(
+                    color = progressColor,
+                    startAngle = -90f,
+                    sweepAngle = 360f * progress,
+                    useCenter = false,
+                    topLeft = androidx.compose.ui.geometry.Offset(strokeWidth / 2, strokeWidth / 2),
+                    size = androidx.compose.ui.geometry.Size(arcSize, arcSize),
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+                )
             }
         }
+        Image(
+            painter = painterResource(badgeRes),
+            contentDescription = null,
+            modifier = Modifier.size(26.dp),
+            alpha = alpha,
+        )
     }
 }
 

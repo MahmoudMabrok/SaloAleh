@@ -70,10 +70,12 @@ class MohamedLoversViewModel(
         if (engagementStore.shouldShowGraceWarning(today)) {
             _state.update { it.copy(showGraceWarning = true) }
         }
+        val todayProgress = dailyGoalStore.todayProgress(today)
         _state.update {
             it.copy(
                 dailyGoalTarget = dailyGoalStore.todayTarget(today),
-                dailyGoalProgress = dailyGoalStore.todayProgress(today),
+                dailyGoalProgress = todayProgress,
+                currentDailyBadge = DailyBadge.fromTapCount(todayProgress)?.key,
             )
         }
         viewModelScope.launch {

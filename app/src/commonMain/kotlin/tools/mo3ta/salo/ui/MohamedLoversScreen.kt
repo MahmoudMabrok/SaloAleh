@@ -494,6 +494,7 @@ fun MohamedLoversScreen(
                 infoSheetOpen = false
                 onOpenPaywall()
             },
+            onBadgeClick = { badgeTiersSheetOpen = true },
             onUserClick = { uid, tag ->
                 analyticsManager.logAction(AppAnalytics.LEADERBOARD_USER_CLICK)
                 selectedUserAchievements = uid to tag

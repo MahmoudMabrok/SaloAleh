@@ -118,6 +118,7 @@ internal fun MohamedLoversInfoSheet(
     isPremium: Boolean = false,
     onOpenPaywall: () -> Unit = {},
     onUserClick: (uid: String, displayTag: String) -> Unit = { _, _ -> },
+    onBadgeClick: () -> Unit = {},
 ) {
     if (!isOpen) return
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
@@ -200,6 +201,7 @@ internal fun MohamedLoversInfoSheet(
                 isPremium = isPremium,
                 onSupporterClick = { showSupporterInfo = true },
                 onUserClick = onUserClick,
+                onBadgeClick = onBadgeClick,
             )
             if (state.isWinner) {
                 WinnerCard(winnerCode = state.winnerCode, onCopyWinnerCode = onCopyWinnerCode)
@@ -547,6 +549,7 @@ private fun LeaderboardCard(
     isPremium: Boolean = false,
     onSupporterClick: () -> Unit = {},
     onUserClick: (uid: String, displayTag: String) -> Unit = { _, _ -> },
+    onBadgeClick: () -> Unit = {},
 ) {
     SheetCard {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -581,11 +584,23 @@ private fun LeaderboardCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = "${selfEntry.displayedRank}${selfEntry.displayTag}",
-                    style = bodyStyle().copy(fontWeight = FontWeight.W700),
-                    color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.95f),
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text(
+                        text = "${selfEntry.displayedRank}${selfEntry.displayTag}",
+                        style = bodyStyle().copy(fontWeight = FontWeight.W700),
+                        color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.95f),
+                    )
+                    if (selfEntry.dailyBadge != null) {
+                        DailyBadgeIcon(
+                            badgeKey = selfEntry.dailyBadge,
+                            size = 18.dp,
+                            modifier = Modifier.clickable { onBadgeClick() },
+                        )
+                    }
+                }
                 Text(
                     text = selfEntry.totalCount.toString(),
                     style = bodyStyle().copy(fontWeight = FontWeight.W700),
@@ -612,6 +627,7 @@ private fun LeaderboardCard(
                     isPremium = isPremium,
                     onSupporterClick = onSupporterClick,
                     onUserClick = onUserClick,
+                    onBadgeClick = onBadgeClick,
                 )
             }
         }
@@ -625,6 +641,7 @@ private fun LeaderboardRow(
     isPremium: Boolean = false,
     onSupporterClick: () -> Unit = {},
     onUserClick: (uid: String, displayTag: String) -> Unit = { _, _ -> },
+    onBadgeClick: () -> Unit = {},
 ) {
     val rankColor = when (entry.rank) {
         1 -> MohamedLoversPalette.GoldHighlight
@@ -689,6 +706,13 @@ private fun LeaderboardRow(
                 ),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.92f),
             )
+            if (entry.dailyBadge != null) {
+                DailyBadgeIcon(
+                    badgeKey = entry.dailyBadge,
+                    size = 18.dp,
+                    modifier = Modifier.clickable { onBadgeClick() },
+                )
+            }
         }
         if (entry.scoreMasked && !entry.isCurrentUser) {
             MaskedScore(entry.totalCount)
