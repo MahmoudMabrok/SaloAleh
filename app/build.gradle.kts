@@ -121,4 +121,8 @@ android {
             assets.srcDirs("src/main/assets")
         }
     }
+
+    lint {
+        error += "HardcodedText"
+    }
 }

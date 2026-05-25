@@ -112,6 +112,8 @@ All workflows use secrets: `FIREBASE_SERVICE_ACCOUNT`, `FIREBASE_DATABASE_URL`.
 - Device identity = SHA-256 of persisted UUID (no Firebase Auth)
 - `google-services.json` and `GoogleService-Info.plist` are gitignored — injected from secrets in CI
 - Never `git push` without explicit user request
+- **No hardcoded strings in UI**: All user-visible text must use `stringResource(Res.string.…)`. Never pass raw Arabic/English literals to `Text()` composables. Add new keys to `values/strings.xml` (Arabic default) and immediately add translations to `values-en/strings.xml`, `values-ur/strings.xml`, and `values-zh/strings.xml`.
+- **String resource workflow**: When adding a new string resource, always add it to all 4 locale files in one pass: `values/` (Arabic), `values-en/`, `values-ur/`, `values-zh/`. Check for duplicates before inserting.
 
 ## Agent skills
 
