@@ -93,15 +93,11 @@ Deno.cron("notify-morning", "0 7 * * *", { backoffSchedule: [1_000, 5_000, 30_00
 // Retention notifications — evening daily (17 UTC = 7 PM Cairo)
 Deno.cron("notify-evening", "0 17 * * *", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-evening"));
 
-// Retention notifications — Friday hourly (8–16 UTC → until 19:00 Cairo)
+// Retention notifications — Friday every 2h (8–16 UTC → until 19:00 Cairo)
 Deno.cron("notify-fri-08", "0 8 * * 5", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-friday"));
-Deno.cron("notify-fri-09", "0 9 * * 5", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-friday"));
 Deno.cron("notify-fri-10", "0 10 * * 5", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-friday"));
-Deno.cron("notify-fri-11", "0 11 * * 5", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-friday"));
 Deno.cron("notify-fri-12", "0 12 * * 5", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-friday"));
-Deno.cron("notify-fri-13", "0 13 * * 5", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-friday"));
 Deno.cron("notify-fri-14", "0 14 * * 5", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-friday"));
-Deno.cron("notify-fri-15", "0 15 * * 5", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-friday"));
 Deno.cron("notify-fri-16", "0 16 * * 5", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-friday"));
 
 // Minimal health endpoint so the deployment is verifiable from a browser.
@@ -137,7 +133,7 @@ Deno.serve((req) => {
           ...cronStatus["notify-evening"],
         },
         "notify-friday": {
-          schedule: "0 8-16 * * 5 (UTC) — Friday hourly until 19:00 Cairo",
+          schedule: "0 8,10,12,14,16 * * 5 (UTC) — Friday every 2h until 19:00 Cairo",
           workflow: "notify-users.yml",
           ...cronStatus["notify-friday"],
         },
