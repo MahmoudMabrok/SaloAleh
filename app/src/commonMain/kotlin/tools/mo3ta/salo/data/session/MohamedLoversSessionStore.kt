@@ -124,6 +124,9 @@ class MohamedLoversSessionStore(private val settings: Settings) {
 
     fun saveLastKnownRank(rank: Int) = settings.putInt(KEY_LAST_KNOWN_RANK, rank)
 
+    fun getLastSalawatTimestamp(): Long = settings.getLong(KEY_LAST_SALAWAT_TS, 0L)
+    fun saveLastSalawatTimestamp(ts: Long) = settings.putLong(KEY_LAST_SALAWAT_TS, ts)
+
     fun getSavedFcmToken(): String? = settings.getStringOrNull(KEY_FCM_TOKEN)
     fun saveLocalFcmToken(token: String) = settings.putString(KEY_FCM_TOKEN, token)
 
@@ -159,5 +162,6 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         const val KEY_LAST_MILESTONE_DATE = "last_milestone_date"
         const val KEY_LAST_MILESTONE_LEVEL = "last_milestone_level"
         const val KEY_LAST_KNOWN_RANK = "last_known_rank"
+        const val KEY_LAST_SALAWAT_TS = "last_salawat_ts"
     }
 }
