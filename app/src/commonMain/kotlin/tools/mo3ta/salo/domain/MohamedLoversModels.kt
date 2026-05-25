@@ -11,6 +11,7 @@ data class MohamedLoversPlayer(
     val winnerCode: String = "",
     val countryCode: String = "",
     val updatedAt: Long = 0L,
+    val yesterdayTotalScore: Int = 0,
 )
 
 data class MohamedLoversPendingSession(

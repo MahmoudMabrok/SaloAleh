@@ -67,6 +67,8 @@ kotlin {
             implementation(kotlin("test"))
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.multiplatform.settings.test)
+            @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
+            implementation(compose.uiTest)
         }
     }
 }
@@ -77,6 +79,7 @@ compose.resources {
 }
 
 android {
+    testOptions.unitTests.isIncludeAndroidResources = true
     namespace = "tools.mo3ta.salo"
     buildFeatures { buildConfig = true }
     compileSdk = 36
@@ -104,6 +107,7 @@ android {
     dependencies {
         implementation(libs.firebase.appcheck.playintegrity)
         implementation(libs.firebase.appcheck.debug)
+        testImplementation(libs.robolectric)
     }
 
     compileOptions {

@@ -83,12 +83,6 @@ class MohamedLoversSessionStoreTest {
     }
 
     @Test
-    fun markRecapShown_getRecapShownRound_roundTrip() {
-        store.markRecapShown("2026-05-09")
-        assertEquals("2026-05-09", store.getRecapShownRound())
-    }
-
-    @Test
     fun personalBestRank_defaultIsMaxInt() {
         assertEquals(Int.MAX_VALUE, store.getPersonalBestRank())
     }

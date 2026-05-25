@@ -309,6 +309,7 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
             winnerCode = map[WINNER_CODE_KEY] as? String ?: "",
             countryCode = map[COUNTRY_CODE_KEY] as? String ?: "",
             updatedAt = (map[UPDATED_AT_KEY] as? Number)?.toLong() ?: 0L,
+            yesterdayTotalScore = (map[YESTERDAY_TOTAL_SCORE_KEY] as? Number)?.toInt() ?: 0,
         )
     }
 
@@ -331,6 +332,7 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         const val SCORE_MASKED_KEY = "scoreMasked"
         const val IS_SUPPORTER_KEY = "isSupporter"
         const val DAILY_BADGE_KEY = "dailyBadge"
+        const val YESTERDAY_TOTAL_SCORE_KEY = "yesterdayTotalScore"
         const val ROUND_TOTAL_PATH = "roundTotal"
         const val ROUND_PLAYER_COUNT_PATH = "roundPlayerCount"
         const val ALL_TIME_TOTAL_PATH = "allTimeTotal"

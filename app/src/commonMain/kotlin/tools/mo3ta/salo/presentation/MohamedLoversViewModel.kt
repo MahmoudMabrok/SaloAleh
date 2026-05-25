@@ -79,8 +79,8 @@ class MohamedLoversViewModel(
         viewModelScope.launch {
             delay(90_000L)
             refresh()
-            delay(5*60_000L)
-            refresh()
+//            delay(5*60_000L)
+//            refresh()
         }
     }
 
@@ -460,16 +460,20 @@ class MohamedLoversViewModel(
 
     private fun applyLeaderboard() {
         val uid = authUid
+        val isDaily = state.value.isUsingDailyLeaderboard
         val selfRemoteTotal = remoteSelfPlayer?.totalCount ?: 0
         val pendingNet = (state.value.sessionClicks - inFlightFlush).coerceAtLeast(0)
         val selfProjectedTotal = selfRemoteTotal + pendingNet
+        val selfProjectedDaily = (selfRemoteTotal - (remoteSelfPlayer?.yesterdayTotalScore ?: 0)).coerceAtLeast(0) + pendingNet
+        val selfDisplayScore = if (isDaily) selfProjectedDaily else selfProjectedTotal
 
         val topEntries = remoteLeaderboard.entries.map { entry ->
             val isCurrentUser = entry.uid == uid
+            val score = if (isCurrentUser) selfDisplayScore else entry.score
             MohamedLoversLeaderboardEntry(
                 rank = 0,
                 displayTag = buildMohamedLoversDisplayTag(entry.uid, entry.countryCode),
-                totalCount = if (isCurrentUser) selfProjectedTotal else entry.score,
+                totalCount = score,
                 isCurrentUser = isCurrentUser,
                 uid = entry.uid,
                 rankChange = entry.rankChange,
@@ -483,7 +487,7 @@ class MohamedLoversViewModel(
         val selfInTop = uid != null && topEntries.any { it.isCurrentUser }
 
         val selfEntry = when {
-            uid == null || selfProjectedTotal <= 0 -> null
+            uid == null || selfDisplayScore <= 0 -> null
             selfInTop -> null
             else -> MohamedLoversLeaderboardEntry(
                 rank = remoteSelfPlayer?.rank ?: 0,
@@ -492,7 +496,7 @@ class MohamedLoversViewModel(
                     remoteSelfPlayer?.countryCode?.ifBlank { state.value.countryCode }
                         ?: state.value.countryCode,
                 ),
-                totalCount = selfProjectedTotal,
+                totalCount = selfDisplayScore,
                 isCurrentUser = true,
                 dailyBadge = state.value.currentDailyBadge,
                 uid = uid,
@@ -515,20 +519,20 @@ class MohamedLoversViewModel(
         }
         if (currentRank > 0) lastProjectedRank = currentRank
 
-        // Rank movement summary (once per app session)
+        val authoritativeRank = remoteSelfPlayer?.rank ?: 0
         var rankDelta: Int? = null
         var oldRank = 0
         var newRank = 0
-        if (!rankMovementShown && currentRank > 0) {
+        if (!rankMovementShown && authoritativeRank > 0) {
             val storedRank = sessionStore.getLastKnownRank()
-            if (storedRank > 0 && storedRank != currentRank) {
-                rankDelta = storedRank - currentRank
+            if (storedRank > 0 && storedRank != authoritativeRank) {
+                rankDelta = storedRank - authoritativeRank
                 oldRank = storedRank
-                newRank = currentRank
+                newRank = authoritativeRank
                 rankMovementShown = true
             }
         }
-        if (currentRank > 0) sessionStore.saveLastKnownRank(currentRank)
+        if (authoritativeRank > 0) sessionStore.saveLastKnownRank(authoritativeRank)
 
         _state.update {
             it.copy(
