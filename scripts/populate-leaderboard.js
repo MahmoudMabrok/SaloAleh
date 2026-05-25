@@ -49,6 +49,13 @@ function isRoundFinal(roundKey) {
   return false;
 }
 
+function cairoToday() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Cairo',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+}
+
 function buildOldRankMap(snap) {
   const map = {};
   if (!snap.exists()) return map;
@@ -261,6 +268,49 @@ async function main() {
       await db.ref('/').update(fcmUpdates);
       console.log(`Wrote ${Object.keys(fcmUpdates).length} lastDropOutNotifRound flag(s)`);
     }
+  }
+
+  // --- Idle >8h notification segment ---
+  const IDLE_THRESHOLD_MS = 8 * 60 * 60 * 1000; // 8 hours
+  const nowMs = Date.now();
+  const todayStr = cairoToday();
+
+  if (!isFinal) {
+    const idleCandidates = allPlayers.filter(p =>
+      p.updatedAt && p.score > 0 && (nowMs - p.updatedAt) > IDLE_THRESHOLD_MS
+    );
+    console.log(`\nIdle >8h check: ${idleCandidates.length} candidate(s) of ${allPlayers.length} total`);
+
+    if (idleCandidates.length > 0) {
+      const idleUpdates = {};
+      const idlePromises = idleCandidates.map(async p => {
+        const userSnap = await db.ref(`mohamed_lovers/users/${p.uid}`).get();
+        const user = userSnap.val();
+        if (!user?.fcmToken) { console.log(`  idle uid=${p.uid}: no FCM token — skip`); return; }
+        if (user.lastIdleNotifDate === todayStr) { console.log(`  idle uid=${p.uid}: already notified today — skip`); return; }
+        idleUpdates[`mohamed_lovers/users/${p.uid}/lastIdleNotifDate`] = todayStr;
+        return admin.messaging().send({
+          token: user.fcmToken,
+          notification: {
+            title: 'أين صلاتك على النبي ﷺ؟',
+            body: 'لم نرك منذ فترة — عُد وأحيِ ذكر الحبيب ﷺ',
+          },
+          data: {
+            title: 'أين صلاتك على النبي ﷺ؟',
+            body: 'لم نرك منذ فترة — عُد وأحيِ ذكر الحبيب ﷺ',
+          },
+        })
+          .then(msgId => console.log(`  idle uid=${p.uid}: sent msgId=${msgId}`))
+          .catch(e => console.error(`  idle uid=${p.uid}: send failed: ${e.message}`));
+      });
+      await Promise.all(idlePromises);
+      if (Object.keys(idleUpdates).length > 0) {
+        await db.ref('/').update(idleUpdates);
+        console.log(`Wrote ${Object.keys(idleUpdates).length} lastIdleNotifDate flag(s)`);
+      }
+    }
+  } else {
+    console.log('\nRound is final — skipping idle notifications');
   }
 
   // --- Ten Days of Dhul Hijjah leaderboard ---
