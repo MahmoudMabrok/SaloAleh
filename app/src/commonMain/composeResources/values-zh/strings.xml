@@ -392,4 +392,16 @@
     <string name="badge_dome_desc">一天内发送 %1$d 次赞圣</string>
     <string name="badge_crescent_desc">一天内发送 %1$d 次赞圣</string>
     <string name="badge_crown_desc">一天内发送 %1$d 次赞圣</string>
+
+    <!-- Idle salawat banner -->
+    <string name="idle_banner_prefix">距上次赞圣已过</string>
+    <string name="idle_minutes_one">1 分钟</string>
+    <string name="idle_minutes_two">2 分钟</string>
+    <string name="idle_minutes_plural">%1$d 分钟</string>
+    <string name="idle_hours_one">1 小时</string>
+    <string name="idle_hours_two">2 小时</string>
+    <string name="idle_hours_plural">%1$d 小时</string>
+    <string name="idle_days_one">1 天</string>
+    <string name="idle_days_two">2 天</string>
+    <string name="idle_days_plural">%1$d 天</string>
 </resources>

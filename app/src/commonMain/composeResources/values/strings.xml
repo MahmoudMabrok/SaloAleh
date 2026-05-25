@@ -415,4 +415,16 @@
     <string name="rank_climbed">⬆ صعدت %1$d مراكز</string>
     <string name="rank_dropped">⬇ نزلت %1$d مراكز</string>
     <string name="since_last_visit">منذ آخر زيارة</string>
+
+    <!-- Idle salawat banner -->
+    <string name="idle_banner_prefix">لم تصلِّ منذ</string>
+    <string name="idle_minutes_one">دقيقة</string>
+    <string name="idle_minutes_two">دقيقتين</string>
+    <string name="idle_minutes_plural">%1$d دقائق</string>
+    <string name="idle_hours_one">ساعة</string>
+    <string name="idle_hours_two">ساعتين</string>
+    <string name="idle_hours_plural">%1$d ساعات</string>
+    <string name="idle_days_one">يوم</string>
+    <string name="idle_days_two">يومين</string>
+    <string name="idle_days_plural">%1$d أيام</string>
 </resources>

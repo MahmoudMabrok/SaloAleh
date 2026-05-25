@@ -405,4 +405,16 @@
     <string name="rank_climbed">⬆ You climbed %1$d ranks</string>
     <string name="rank_dropped">⬇ You dropped %1$d ranks</string>
     <string name="since_last_visit">Since last visit</string>
+
+    <!-- Idle salawat banner -->
+    <string name="idle_banner_prefix">You haven\'t sent salawat for</string>
+    <string name="idle_minutes_one">1 minute</string>
+    <string name="idle_minutes_two">2 minutes</string>
+    <string name="idle_minutes_plural">%1$d minutes</string>
+    <string name="idle_hours_one">1 hour</string>
+    <string name="idle_hours_two">2 hours</string>
+    <string name="idle_hours_plural">%1$d hours</string>
+    <string name="idle_days_one">1 day</string>
+    <string name="idle_days_two">2 days</string>
+    <string name="idle_days_plural">%1$d days</string>
 </resources>
