@@ -84,6 +84,16 @@ class MohamedLoversViewModel(
 //            delay(5*60_000L)
 //            refresh()
         }
+        viewModelScope.launch {
+            while (isActive) {
+                val ts = sessionStore.getLastSalawatTimestamp()
+                val elapsed = if (ts > 0L) {
+                    (Clock.System.now().toEpochMilliseconds() - ts) / 60_000L
+                } else null
+                _state.update { it.copy(lastSalawatElapsedMinutes = elapsed) }
+                delay(60_000L)
+            }
+        }
     }
 
     fun dismissHadithDialog() = _state.update { it.copy(showHadithDialog = false) }
@@ -159,6 +169,7 @@ class MohamedLoversViewModel(
         val roundKey = current.roundKey ?: return
         if (!current.canCount) return
 
+        sessionStore.saveLastSalawatTimestamp(Clock.System.now().toEpochMilliseconds())
         val pending = repository.registerLocalTap(roundKey, 1)
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
         val wasComplete = dailyGoalStore.isGoalComplete(today)
@@ -185,6 +196,7 @@ class MohamedLoversViewModel(
                 milestoneThreshold = milestoneThreshold ?: it.milestoneThreshold,
                 milestoneBadgeKey = milestoneBadgeKey ?: it.milestoneBadgeKey,
                 currentDailyBadge = badge?.key ?: it.currentDailyBadge,
+                lastSalawatElapsedMinutes = 0L,
             )
         }
         applyLeaderboard()
@@ -264,6 +276,7 @@ class MohamedLoversViewModel(
                 showManualSalawatSheet = false,
                 isSubmittingManualSalawat = true,
                 dailyGoalProgress = dailyGoalStore.todayProgress(today),
+                lastSalawatElapsedMinutes = 0L,
             )
         }
         applyLeaderboard()
@@ -272,6 +285,7 @@ class MohamedLoversViewModel(
             repository.incrementExternalCount(roundKey, count)
             _state.update { it.copy(isSubmittingManualSalawat = false) }
         }
+        sessionStore.saveLastSalawatTimestamp(Clock.System.now().toEpochMilliseconds())
     }
 
     fun resetCurrentRoundScore() {

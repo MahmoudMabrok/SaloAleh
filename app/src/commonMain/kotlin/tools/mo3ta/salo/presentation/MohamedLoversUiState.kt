@@ -89,4 +89,7 @@ data class MohamedLoversUiState(
     val rankMovementDelta: Int? = null,
     val rankMovementOldRank: Int = 0,
     val rankMovementNewRank: Int = 0,
+
+    // Idle salawat tracking
+    val lastSalawatElapsedMinutes: Long? = null,
 )
