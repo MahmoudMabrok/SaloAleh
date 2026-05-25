@@ -98,6 +98,8 @@ import tools.mo3ta.salo.generated.resources.mohamed_lovers_share_rank
 import tools.mo3ta.salo.generated.resources.info_sheet_supporter_label
 import tools.mo3ta.salo.generated.resources.info_sheet_notif_disabled
 import tools.mo3ta.salo.generated.resources.leaderboard_join_supporters
+import tools.mo3ta.salo.generated.resources.leaderboard_live_badge
+import tools.mo3ta.salo.generated.resources.leaderboard_live_button
 import tools.mo3ta.salo.generated.resources.notif_rationale_title
 import tools.mo3ta.salo.generated.resources.notif_rationale_description
 import tools.mo3ta.salo.generated.resources.notif_rationale_open_settings
@@ -117,6 +119,7 @@ internal fun MohamedLoversInfoSheet(
     onCopyWinnerCode: (String) -> Unit,
     onToggleLeaderboardType: (Boolean) -> Unit,
     isPremium: Boolean = false,
+    onFetchLiveLeaderboard: () -> Unit = {},
     onOpenPaywall: () -> Unit = {},
     onUserClick: (uid: String, displayTag: String) -> Unit = { _, _ -> },
     onBadgeClick: (String) -> Unit = {},
@@ -200,6 +203,10 @@ internal fun MohamedLoversInfoSheet(
                 isDaily = state.isUsingDailyLeaderboard,
                 onToggleLeaderboardType = onToggleLeaderboardType,
                 isPremium = isPremium,
+                isLive = state.isLiveLeaderboard,
+                isLoadingLive = state.isLoadingLiveLeaderboard,
+                hasLiveAccess = state.hasLiveLeaderboardAccess,
+                onFetchLive = onFetchLiveLeaderboard,
                 onSupporterClick = { showSupporterInfo = true },
                 onOpenPaywall = {
                     onDismiss()
@@ -552,6 +559,10 @@ private fun LeaderboardCard(
     isDaily: Boolean,
     onToggleLeaderboardType: (Boolean) -> Unit,
     isPremium: Boolean = false,
+    isLive: Boolean = false,
+    isLoadingLive: Boolean = false,
+    hasLiveAccess: Boolean = false,
+    onFetchLive: () -> Unit = {},
     onSupporterClick: () -> Unit = {},
     onOpenPaywall: () -> Unit = {},
     onUserClick: (uid: String, displayTag: String) -> Unit = { _, _ -> },
@@ -564,12 +575,37 @@ private fun LeaderboardCard(
                 style = TextStyle(fontFamily = MohamedLoversFonts.display, fontSize = 14.sp, fontWeight = FontWeight.W500),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.95f),
             )
+            if (isLive) {
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = stringResource(Res.string.leaderboard_live_badge),
+                    style = bodyStyle().copy(fontSize = 10.sp, fontWeight = FontWeight.W700),
+                    color = Color.White,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color(0xFFE53935))
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                )
+            }
             Spacer(Modifier.weight(1f))
-            Text(
-                text = stringResource(Res.string.mohamed_lovers_leaderboard_refresh_note),
-                style = bodyStyle().copy(fontSize = 11.sp),
-                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.45f),
-            )
+            if (hasLiveAccess) {
+                Text(
+                    text = stringResource(Res.string.leaderboard_live_button),
+                    style = bodyStyle().copy(fontSize = 11.sp, fontWeight = FontWeight.W600),
+                    color = if (isLoadingLive) MohamedLoversPalette.GoldGlow.copy(alpha = 0.4f) else MohamedLoversPalette.GoldGlow,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MohamedLoversPalette.GoldGlow.copy(alpha = 0.12f))
+                        .clickable(enabled = !isLoadingLive) { onFetchLive() }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                )
+            } else {
+                Text(
+                    text = stringResource(Res.string.mohamed_lovers_leaderboard_refresh_note),
+                    style = bodyStyle().copy(fontSize = 11.sp),
+                    color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.45f),
+                )
+            }
         }
         LeaderboardTypeToggle(isDaily = isDaily, onToggle = onToggleLeaderboardType)
         if (selfEntry != null && !selfInTop) {

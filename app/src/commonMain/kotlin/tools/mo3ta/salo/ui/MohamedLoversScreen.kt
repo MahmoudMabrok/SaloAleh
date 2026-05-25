@@ -524,6 +524,7 @@ fun MohamedLoversScreen(
             },
             onToggleLeaderboardType = { daily -> viewModel.setLeaderboardMode(daily) },
             isPremium = premiumStore.hasFeature(PremiumFeature.FRIDAY_SCORES),
+            onFetchLiveLeaderboard = { viewModel.fetchLiveLeaderboard() },
             onOpenPaywall = {
                 infoSheetOpen = false
                 onOpenPaywall()

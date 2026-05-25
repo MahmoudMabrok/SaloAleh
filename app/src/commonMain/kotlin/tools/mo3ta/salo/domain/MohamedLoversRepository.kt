@@ -27,6 +27,9 @@ class MohamedLoversRepository(
     fun observeLeaderboard(roundKey: String, daily: Boolean = false): Flow<Result<FirebaseLeaderboard>> =
         firebaseClient.observeLeaderboard(roundKey, daily)
 
+    suspend fun fetchLiveLeaderboard(roundKey: String): Result<FirebaseLeaderboard> =
+        firebaseClient.fetchLiveLeaderboard(roundKey)
+
     suspend fun fetchRoundTotal(roundKey: String): Result<Int> =
         firebaseClient.fetchRoundTotal(roundKey)
 
