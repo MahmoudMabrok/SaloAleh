@@ -37,6 +37,9 @@ class AndroidBillingManager(
     private val _subscriptionDeactivated = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     override val subscriptionDeactivated: SharedFlow<Unit> = _subscriptionDeactivated.asSharedFlow()
 
+    private val _supporterRestored = MutableSharedFlow<Boolean>(extraBufferCapacity = 1)
+    override val supporterRestored: SharedFlow<Boolean> = _supporterRestored.asSharedFlow()
+
     private var currentActivity: Activity? = null
 
     override fun initialize() {
@@ -69,6 +72,7 @@ class AndroidBillingManager(
                     loadProductPrices()
                     restorePurchasesInternal()
                     refreshSubscriptionState()
+                    _supporterRestored.tryEmit(premiumStore.hasFeature(PremiumFeature.SUPPORTER_BADGE))
                 }
             }
         }
@@ -92,6 +96,7 @@ class AndroidBillingManager(
         scope.launch {
             restorePurchasesInternal()
             refreshSubscriptionState()
+            _supporterRestored.tryEmit(premiumStore.hasFeature(PremiumFeature.SUPPORTER_BADGE))
         }
     }
 

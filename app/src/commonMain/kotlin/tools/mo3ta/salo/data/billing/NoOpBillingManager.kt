@@ -11,6 +11,7 @@ class NoOpBillingManager : BillingManager {
     override val isEnabled: Boolean = false
     override val purchaseEvents: SharedFlow<String> = MutableSharedFlow<String>().asSharedFlow()
     override val subscriptionDeactivated: SharedFlow<Unit> = MutableSharedFlow<Unit>().asSharedFlow()
+    override val supporterRestored: SharedFlow<Boolean> = MutableSharedFlow<Boolean>().asSharedFlow()
     override val productPrices: StateFlow<Map<String, String>> = MutableStateFlow<Map<String, String>>(emptyMap()).asStateFlow()
     override fun initialize() = Unit
     override fun purchaseProduct(productId: String) = Unit
