@@ -61,9 +61,12 @@ class MohamedLoversRepository(
 
     suspend fun setSupporter(supporter: Boolean): Result<Unit> {
         val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
+        firebaseClient.writeSupporterStatus(uid, supporter)
         val roundKey = networkTimeProvider.getCompetitionWindow().roundKey
-            ?: return Result.failure(IllegalStateException("No active round"))
-        return firebaseClient.setSupporter(roundKey, uid, supporter)
+        if (roundKey != null) {
+            firebaseClient.setSupporter(roundKey, uid, supporter)
+        }
+        return Result.success(Unit)
     }
 
     suspend fun writeDailyBadge(roundKey: String, badgeKey: String?): Result<Unit> {

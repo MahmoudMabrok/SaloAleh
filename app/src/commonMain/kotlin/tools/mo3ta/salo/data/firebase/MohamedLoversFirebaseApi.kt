@@ -23,4 +23,5 @@ interface MohamedLoversFirebaseApi {
     suspend fun setScoreMasked(roundKey: String, uid: String, masked: Boolean): Result<Unit>
     suspend fun setSupporter(roundKey: String, uid: String, supporter: Boolean): Result<Unit>
     suspend fun writeDailyBadge(roundKey: String, uid: String, badgeKey: String?): Result<Unit>
+    suspend fun writeSupporterStatus(uid: String, supporter: Boolean): Result<Unit>
 }
