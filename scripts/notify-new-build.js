@@ -34,7 +34,12 @@ async function main() {
       admin.messaging().send({
         token: fcmToken,
         notification: { title, body },
-        data: { title, body },
+        data: {
+          title,
+          body,
+          notification_type: 'version_update',
+          new_version: version,
+        },
       })
         .then(msgId => console.log(`[notify-new-build] sent uid=${userSnap.key} msgId=${msgId}`))
         .catch(e => console.error(`[notify-new-build] failed uid=${userSnap.key}: ${e.message}`))

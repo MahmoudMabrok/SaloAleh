@@ -318,6 +318,13 @@
     <string name="review_rate_now">قيّم الآن</string>
     <string name="review_later">لاحقاً</string>
 
+    <!-- Version Update Dialog -->
+    <string name="version_update_title">تحديث جديد متاح</string>
+    <string name="version_update_version_label">الإصدار %1$s</string>
+    <string name="version_update_description">يوجد إصدار جديد من التطبيق. حدّث الآن لتحصل على أحدث التحسينات والميزات.</string>
+    <string name="version_update_update_now">حدّث الآن</string>
+    <string name="version_update_later">لاحقاً</string>
+
     <!-- Manual Salawat Sheet -->
     <string name="manual_salawat_title">📿 تسجيل صلوات خارجية</string>
     <string name="manual_salawat_subtitle">صلّيت على النبي ﷺ بصمت أو على أصابعك أو بالمسبحة؟\nسجّل ما صلّيت — لا تتوقف عن الصلاة لأنك بعيد عن التطبيق</string>
