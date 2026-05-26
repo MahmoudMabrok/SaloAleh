@@ -151,6 +151,7 @@ import tools.mo3ta.salo.ui.components.RankMovementBanner
 import tools.mo3ta.salo.ui.AchievementCelebrationDialog
 import tools.mo3ta.salo.ui.components.RoundRecapSheet
 import tools.mo3ta.salo.ui.components.UserAchievementsSheet
+import tools.mo3ta.salo.ui.settings.PremiumPromoDialog
 import tools.mo3ta.salo.ui.tendays.TenDaysEntryIcon
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -250,6 +251,7 @@ fun MohamedLoversScreen(
     var showRankTooltip by remember { mutableStateOf(false) }
     var showBubbleTooltip by remember { mutableStateOf(false) }
     var selectedUserAchievements by remember { mutableStateOf<Pair<String, String>?>(null) }
+    var showOthersAchievementsPromo by remember { mutableStateOf(false) }
 
     LaunchedEffect(isLit) {
         if (isLit) { delay(1600); isLit = false }
@@ -532,7 +534,12 @@ fun MohamedLoversScreen(
             onBadgeClick = { key -> badgeDialogKey = key },
             onUserClick = { uid, tag ->
                 analyticsManager.logAction(AppAnalytics.LEADERBOARD_USER_CLICK)
-                selectedUserAchievements = uid to tag
+                val isSelf = uid.isNotBlank() && uid == currentUserEntry?.uid
+                if (isSelf || premiumStore.hasFeature(PremiumFeature.OTHERS_ACHIEVEMENTS)) {
+                    selectedUserAchievements = uid to tag
+                } else {
+                    showOthersAchievementsPromo = true
+                }
             },
         )
         badgeDialogKey?.let { key ->
@@ -555,6 +562,15 @@ fun MohamedLoversScreen(
                 uid = uid,
                 displayTag = tag,
                 onDismiss = { selectedUserAchievements = null },
+            )
+        }
+        if (showOthersAchievementsPromo) {
+            PremiumPromoDialog(
+                onOpen = {
+                    showOthersAchievementsPromo = false
+                    onOpenPaywall()
+                },
+                onDismiss = { showOthersAchievementsPromo = false },
             )
         }
         if (state.showRoundEndResults) {
