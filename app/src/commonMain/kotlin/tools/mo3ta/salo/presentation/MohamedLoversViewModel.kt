@@ -347,7 +347,6 @@ class MohamedLoversViewModel(
         viewModelScope.launch {
             repository.fetchLiveLeaderboard(roundKey).onSuccess { leaderboard ->
                 remoteLeaderboard = leaderboard
-                _state.update { it.copy(isLiveLeaderboard = true) }
                 applyLeaderboard()
             }
             delay(LIVE_COOLDOWN_MS)
@@ -429,7 +428,6 @@ class MohamedLoversViewModel(
                 repository.observeLeaderboard(roundKey, settingsStore.useDailyLeaderboard).collectLatest { result ->
                     result.onSuccess { leaderboard ->
                         remoteLeaderboard = leaderboard
-                        _state.update { it.copy(isLiveLeaderboard = false) }
                         applyLeaderboard()
                         if (!leaderboard.isFinal) {
                             sawLeaderboardLive = true

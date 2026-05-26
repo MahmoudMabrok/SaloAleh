@@ -204,8 +204,7 @@
     <string name="paywall_basic_tier_label">Supporter</string>
     <string name="paywall_premium_tier_label">Premium</string>
     <string name="paywall_recurring_note">Ongoing charity — cancel anytime 🤲</string>
-    <string name="leaderboard_live_button">Live Update 📡</string>
-    <string name="leaderboard_live_badge">LIVE</string>
+    <string name="leaderboard_live_button">Sync Latest</string>
     <string name="paywall_bismillah">In the Name of Allah, the Most Gracious, the Most Merciful</string>
     <string name="paywall_spiritual_title">Ongoing Charity</string>
     <string name="paywall_spiritual_subtitle">Support the app and let it weigh in your good deeds</string>

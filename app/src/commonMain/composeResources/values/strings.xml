@@ -209,8 +209,7 @@
     <string name="paywall_basic_tier_label">الداعم</string>
     <string name="paywall_premium_tier_label">المميز</string>
     <string name="paywall_recurring_note">صدقة جارية متجددة — يمكنك الإلغاء في أي وقت 🤲</string>
-    <string name="leaderboard_live_button">تحديث مباشر 📡</string>
-    <string name="leaderboard_live_badge">مباشر</string>
+    <string name="leaderboard_live_button">مزامنة الأحدث</string>
     <string name="paywall_bismillah">بسم الله الرحمن الرحيم</string>
     <string name="paywall_spiritual_title">صدقة جارية</string>
     <string name="paywall_spiritual_subtitle">ادعم التطبيق واجعله في ميزان حسناتك</string>

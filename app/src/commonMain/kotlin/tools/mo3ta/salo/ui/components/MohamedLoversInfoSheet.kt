@@ -98,7 +98,6 @@ import tools.mo3ta.salo.generated.resources.mohamed_lovers_share_rank
 import tools.mo3ta.salo.generated.resources.info_sheet_supporter_label
 import tools.mo3ta.salo.generated.resources.info_sheet_notif_disabled
 import tools.mo3ta.salo.generated.resources.leaderboard_join_supporters
-import tools.mo3ta.salo.generated.resources.leaderboard_live_badge
 import tools.mo3ta.salo.generated.resources.leaderboard_live_button
 import tools.mo3ta.salo.generated.resources.notif_rationale_title
 import tools.mo3ta.salo.generated.resources.notif_rationale_description
@@ -203,7 +202,6 @@ internal fun MohamedLoversInfoSheet(
                 isDaily = state.isUsingDailyLeaderboard,
                 onToggleLeaderboardType = onToggleLeaderboardType,
                 isPremium = isPremium,
-                isLive = state.isLiveLeaderboard,
                 isLoadingLive = state.isLoadingLiveLeaderboard,
                 hasLiveAccess = state.hasLiveLeaderboardAccess,
                 onFetchLive = onFetchLiveLeaderboard,
@@ -559,7 +557,6 @@ private fun LeaderboardCard(
     isDaily: Boolean,
     onToggleLeaderboardType: (Boolean) -> Unit,
     isPremium: Boolean = false,
-    isLive: Boolean = false,
     isLoadingLive: Boolean = false,
     hasLiveAccess: Boolean = false,
     onFetchLive: () -> Unit = {},
@@ -575,18 +572,6 @@ private fun LeaderboardCard(
                 style = TextStyle(fontFamily = MohamedLoversFonts.display, fontSize = 14.sp, fontWeight = FontWeight.W500),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.95f),
             )
-            if (isLive) {
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    text = stringResource(Res.string.leaderboard_live_badge),
-                    style = bodyStyle().copy(fontSize = 10.sp, fontWeight = FontWeight.W700),
-                    color = Color.White,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(Color(0xFFE53935))
-                        .padding(horizontal = 6.dp, vertical = 2.dp),
-                )
-            }
             Spacer(Modifier.weight(1f))
             if (hasLiveAccess) {
                 Text(
