@@ -200,8 +200,7 @@
     <string name="paywall_basic_tier_label">支持者</string>
     <string name="paywall_premium_tier_label">尊享版</string>
     <string name="paywall_recurring_note">持续善行 — 随时可取消 🤲</string>
-    <string name="leaderboard_live_button">实时更新 📡</string>
-    <string name="leaderboard_live_badge">实时</string>
+    <string name="leaderboard_live_button">同步最新</string>
     <string name="paywall_bismillah">奉至仁至慈的安拉之名</string>
     <string name="paywall_spiritual_title">持续善行</string>
     <string name="paywall_spiritual_subtitle">支持应用，让它成为你善功的一部分</string>

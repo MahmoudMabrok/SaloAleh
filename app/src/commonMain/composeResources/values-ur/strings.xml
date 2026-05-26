@@ -200,8 +200,7 @@
     <string name="paywall_basic_tier_label">داعم</string>
     <string name="paywall_premium_tier_label">ممتاز</string>
     <string name="paywall_recurring_note">صدقہ جاریہ — کسی بھی وقت منسوخ کریں 🤲</string>
-    <string name="leaderboard_live_button">براہِ راست اپ ڈیٹ 📡</string>
-    <string name="leaderboard_live_badge">لائیو</string>
+    <string name="leaderboard_live_button">تازہ ترین کو سنک کریں</string>
     <string name="paywall_bismillah">بسم اللہ الرحمن الرحیم</string>
     <string name="paywall_spiritual_title">صدقہ جاریہ</string>
     <string name="paywall_spiritual_subtitle">ایپ کی مدد کریں اور اسے اپنے نیکیوں کے ترازو میں رکھیں</string>
