@@ -7,6 +7,7 @@ interface BillingManager {
     val isEnabled: Boolean
     val purchaseEvents: SharedFlow<String>
     val subscriptionDeactivated: SharedFlow<Unit>
+    val supporterRestored: SharedFlow<Boolean>
     val productPrices: StateFlow<Map<String, String>>
     fun initialize()
     fun purchaseProduct(productId: String)

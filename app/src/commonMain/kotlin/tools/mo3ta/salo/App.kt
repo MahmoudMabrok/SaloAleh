@@ -235,6 +235,11 @@ fun App(
                 repository.setSupporter(false)
             }
         }
+        LaunchedEffect(billingManager) {
+            billingManager.supporterRestored.collect { isSupporter ->
+                repository.setSupporter(isSupporter)
+            }
+        }
         celebratedTier?.let { tier ->
             PurchaseSuccessDialog(
                 tier = tier,

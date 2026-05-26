@@ -37,6 +37,9 @@ class AndroidBillingManager(
     private val _subscriptionDeactivated = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     override val subscriptionDeactivated: SharedFlow<Unit> = _subscriptionDeactivated.asSharedFlow()
 
+    private val _supporterRestored = MutableSharedFlow<Boolean>(extraBufferCapacity = 1)
+    override val supporterRestored: SharedFlow<Boolean> = _supporterRestored.asSharedFlow()
+
     private var currentActivity: Activity? = null
 
     override fun initialize() {
@@ -69,6 +72,7 @@ class AndroidBillingManager(
                     loadProductPrices()
                     restorePurchasesInternal()
                     refreshSubscriptionState()
+                    _supporterRestored.tryEmit(premiumStore.hasFeature(PremiumFeature.SUPPORTER_BADGE))
                 }
             }
         }
@@ -92,6 +96,7 @@ class AndroidBillingManager(
         scope.launch {
             restorePurchasesInternal()
             refreshSubscriptionState()
+            _supporterRestored.tryEmit(premiumStore.hasFeature(PremiumFeature.SUPPORTER_BADGE))
         }
     }
 
@@ -129,14 +134,25 @@ class AndroidBillingManager(
     }
 
     private suspend fun restorePurchasesInternal() {
+        val hadSupporterBadge = premiumStore.hasFeature(PremiumFeature.SUPPORTER_BADGE)
+        val activeOneTimeIds = mutableSetOf<String>()
         val result = billingClient.queryPurchases()
         for (purchase in result) {
             for (productId in purchase.products) {
                 if (productId in ProductRegistry.oneTimeProductIds) {
-                    premiumStore.markPurchased(productId)
-                    log.d { "Restored purchase: $productId" }
+                    activeOneTimeIds.add(productId)
                 }
             }
+        }
+        for (productId in ProductRegistry.oneTimeProductIds) {
+            val isActive = productId in activeOneTimeIds
+            premiumStore.markPurchased(productId, isActive)
+            log.d { "One-time state refreshed: $productId active=$isActive" }
+        }
+        val hasSupporterBadgeNow = premiumStore.hasFeature(PremiumFeature.SUPPORTER_BADGE)
+        if (hadSupporterBadge && !hasSupporterBadgeNow) {
+            _subscriptionDeactivated.tryEmit(Unit)
+            log.d { "Supporter badge lost — one-time purchases revoked" }
         }
     }
 
