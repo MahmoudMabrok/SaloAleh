@@ -129,14 +129,25 @@ class AndroidBillingManager(
     }
 
     private suspend fun restorePurchasesInternal() {
+        val hadSupporterBadge = premiumStore.hasFeature(PremiumFeature.SUPPORTER_BADGE)
+        val activeOneTimeIds = mutableSetOf<String>()
         val result = billingClient.queryPurchases()
         for (purchase in result) {
             for (productId in purchase.products) {
                 if (productId in ProductRegistry.oneTimeProductIds) {
-                    premiumStore.markPurchased(productId)
-                    log.d { "Restored purchase: $productId" }
+                    activeOneTimeIds.add(productId)
                 }
             }
+        }
+        for (productId in ProductRegistry.oneTimeProductIds) {
+            val isActive = productId in activeOneTimeIds
+            premiumStore.markPurchased(productId, isActive)
+            log.d { "One-time state refreshed: $productId active=$isActive" }
+        }
+        val hasSupporterBadgeNow = premiumStore.hasFeature(PremiumFeature.SUPPORTER_BADGE)
+        if (hadSupporterBadge && !hasSupporterBadgeNow) {
+            _subscriptionDeactivated.tryEmit(Unit)
+            log.d { "Supporter badge lost — one-time purchases revoked" }
         }
     }
 

@@ -3,8 +3,8 @@ package tools.mo3ta.salo.data.billing
 import com.russhwolf.settings.Settings
 
 class PremiumStore(private val settings: Settings) {
-    fun markPurchased(productId: String) {
-        settings.putBoolean("purchased_$productId", true)
+    fun markPurchased(productId: String, purchased: Boolean = true) {
+        settings.putBoolean("purchased_$productId", purchased)
     }
 
     fun isPurchased(productId: String): Boolean =
