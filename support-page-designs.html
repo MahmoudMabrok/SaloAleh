@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SaloAleh - Support Page Design Concepts</title>
+<style>
+  /* ===== RESET & BASE ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "SF Arabic", "Geeza Pro", "Noto Sans Arabic", "Tahoma", sans-serif;
+    background: #080810;
+    color: #fff;
+    min-height: 100vh;
+    direction: rtl;
+  }
+
+  /* ===== TAB BAR ===== */
+  .tab-bar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    background: #0d0d1a;
+    border-bottom: 1px solid #222;
+    padding: 0;
+    justify-content: center;
+    gap: 0;
+  }
+  .tab-btn {
+    flex: 1;
+    max-width: 260px;
+    padding: 16px 8px;
+    background: none;
+    border: none;
+    color: #888;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s;
+    text-align: center;
+  }
+  .tab-btn:hover { color: #FFD700; }
+  .tab-btn.active {
+    color: #FFD700;
+    border-bottom-color: #FFD700;
+    background: rgba(255, 215, 0, 0.05);
+  }
+  .tab-label-num {
+    display: block;
+    font-size: 11px;
+    color: #666;
+    margin-bottom: 4px;
+  }
+  .tab-btn.active .tab-label-num { color: #FF8C00; }
+
+  /* ===== PHONE FRAME ===== */
+  .design-container {
+    display: none;
+    justify-content: center;
+    padding: 40px 20px 60px;
+    min-height: calc(100vh - 60px);
+    align-items: flex-start;
+  }
+  .design-container.active { display: flex; }
+
+  .phone-frame {
+    width: 390px;
+    max-width: 100%;
+    min-height: 844px;
+    background: #0f0f1a;
+    border-radius: 44px;
+    border: 3px solid #2a2a3a;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 80px rgba(255, 215, 0, 0.06), 0 20px 60px rgba(0,0,0,0.6);
+  }
+  .phone-notch {
+    width: 126px;
+    height: 34px;
+    background: #0a0a14;
+    border-radius: 0 0 20px 20px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+  }
+  .phone-content {
+    padding: 0 20px 40px;
+    overflow-y: auto;
+    max-height: 810px;
+  }
+
+  /* ===== SHARED COMPONENTS ===== */
+  .gold-btn {
+    display: block;
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #FFD700, #FF8C00);
+    color: #0f0f1a;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .gold-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 24px rgba(255, 215, 0, 0.3);
+  }
+  .gold-btn-outline {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    border: 2px solid #FFD700;
+    border-radius: 14px;
+    background: transparent;
+    color: #FFD700;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .gold-btn-outline:hover {
+    background: rgba(255, 215, 0, 0.08);
+  }
+
+  /* ===== DESIGN 1: SPIRITUAL ===== */
+  .d1-header {
+    text-align: center;
+    padding: 24px 0 20px;
+  }
+  .d1-bismillah {
+    font-size: 22px;
+    color: #C6A35A;
+    margin-bottom: 12px;
+    letter-spacing: 1px;
+  }
+  .d1-title {
+    font-size: 26px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #FFD700, #FF8C00);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+  }
+  .d1-subtitle {
+    font-size: 14px;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.6;
+  }
+  .d1-verse-card {
+    position: relative;
+    margin: 20px 0;
+    padding: 24px 20px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(198, 163, 90, 0.12), rgba(255, 215, 0, 0.05));
+    border: 1px solid rgba(198, 163, 90, 0.25);
+    overflow: hidden;
+  }
+  .d1-verse-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(198, 163, 90, 0.03) 10px, rgba(198, 163, 90, 0.03) 20px),
+      repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(198, 163, 90, 0.03) 10px, rgba(198, 163, 90, 0.03) 20px);
+    pointer-events: none;
+  }
+  .d1-verse-text {
+    font-size: 17px;
+    color: #FFE9A5;
+    line-height: 2;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+  }
+  .d1-verse-ref {
+    font-size: 12px;
+    color: rgba(198, 163, 90, 0.7);
+    text-align: center;
+    margin-top: 10px;
+    position: relative;
+    z-index: 1;
+  }
+  .d1-hadith-card {
+    margin: 16px 0;
+    padding: 20px;
+    border-radius: 14px;
+    background: rgba(26, 26, 46, 0.8);
+    border: 1px solid rgba(198, 163, 90, 0.15);
+  }
+  .d1-hadith-text {
+    font-size: 14px;
+    color: rgba(255, 246, 210, 0.8);
+    line-height: 1.9;
+    text-align: center;
+  }
+  .d1-hadith-ref {
+    font-size: 11px;
+    color: rgba(198, 163, 90, 0.5);
+    text-align: center;
+    margin-top: 8px;
+  }
+  .d1-reward-section {
+    margin: 24px 0;
+    text-align: center;
+  }
+  .d1-reward-title {
+    font-size: 18px;
+    color: #FFD700;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+  .d1-reward-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: rgba(26, 26, 46, 0.6);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    border: 1px solid rgba(51, 51, 51, 0.5);
+  }
+  .d1-reward-icon {
+    font-size: 28px;
+    flex-shrink: 0;
+  }
+  .d1-reward-text {
+    text-align: start;
+  }
+  .d1-reward-text h4 {
+    font-size: 14px;
+    color: #FFF6D2;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .d1-reward-text p {
+    font-size: 12px;
+    color: rgba(255,255,255,0.45);
+    line-height: 1.5;
+  }
+  .d1-amount-section {
+    margin: 28px 0 16px;
+    text-align: center;
+  }
+  .d1-amount-label {
+    font-size: 13px;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 12px;
+  }
+  .d1-tier-card {
+    padding: 18px;
+    border-radius: 14px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .d1-tier-basic {
+    background: rgba(26, 26, 46, 0.7);
+    border: 1px solid rgba(198, 163, 90, 0.2);
+  }
+  .d1-tier-premium {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.08), rgba(255, 140, 0, 0.06));
+    border: 2px solid rgba(255, 215, 0, 0.35);
+  }
+  .d1-tier-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .d1-tier-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #FFF6D2;
+  }
+  .d1-tier-price {
+    font-size: 15px;
+    font-weight: 600;
+    color: #FFD700;
+  }
+  .d1-tier-desc {
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+    line-height: 1.6;
+  }
+  .d1-sadaqa-note {
+    text-align: center;
+    margin: 20px 0 8px;
+    font-size: 13px;
+    color: rgba(198, 163, 90, 0.6);
+    line-height: 1.7;
+  }
+  .d1-restore {
+    text-align: center;
+    font-size: 12px;
+    color: rgba(255,255,255,0.3);
+    margin-top: 12px;
+    cursor: pointer;
+  }
+
+  /* ===== DESIGN 2: SOCIAL PROOF ===== */
+  .d2-header {
+    text-align: center;
+    padding: 24px 0 16px;
+  }
+  .d2-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    background: rgba(255, 215, 0, 0.12);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    color: #FFD700;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+  .d2-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+  .d2-title span { color: #FFD700; }
+  .d2-subtitle {
+    font-size: 14px;
+    color: rgba(255,255,255,0.5);
+  }
+
+  .d2-counter-section {
+    margin: 20px 0;
+    padding: 24px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #16213e, #1a1a2e);
+    border: 1px solid rgba(255, 215, 0, 0.15);
+    text-align: center;
+  }
+  .d2-counter-number {
+    font-size: 48px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #FFD700, #FF8C00);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.2;
+  }
+  .d2-counter-label {
+    font-size: 15px;
+    color: rgba(255,255,255,0.6);
+    margin-top: 4px;
+  }
+  .d2-avatars {
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
+    direction: ltr;
+  }
+  .d2-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid #0f0f1a;
+    margin-left: -10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+  .d2-avatar:nth-child(1) { background: linear-gradient(135deg, #FFD700, #FF8C00); }
+  .d2-avatar:nth-child(2) { background: linear-gradient(135deg, #8A63D2, #284E96); }
+  .d2-avatar:nth-child(3) { background: linear-gradient(135deg, #0E3820, #284E96); }
+  .d2-avatar:nth-child(4) { background: linear-gradient(135deg, #C6A35A, #9D6A1C); }
+  .d2-avatar:nth-child(5) {
+    background: rgba(26, 26, 46, 0.9);
+    color: #FFD700;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .d2-goal-section {
+    margin: 20px 0;
+    padding: 18px;
+    border-radius: 14px;
+    background: rgba(26, 26, 46, 0.7);
+    border: 1px solid rgba(51, 51, 51, 0.5);
+  }
+  .d2-goal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .d2-goal-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #FFF6D2;
+  }
+  .d2-goal-count {
+    font-size: 13px;
+    color: #FFD700;
+    font-weight: 600;
+  }
+  .d2-progress-bar {
+    width: 100%;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .d2-progress-fill {
+    height: 100%;
+    width: 73%;
+    background: linear-gradient(90deg, #FFD700, #FF8C00);
+    border-radius: 5px;
+    transition: width 1.5s ease-out;
+  }
+  .d2-goal-desc {
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
+  }
+
+  .d2-activity-section {
+    margin: 20px 0;
+  }
+  .d2-activity-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 10px;
+  }
+  .d2-activity-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: rgba(26, 26, 46, 0.5);
+    border-radius: 10px;
+    margin-bottom: 6px;
+  }
+  .d2-activity-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #FFD700;
+    flex-shrink: 0;
+  }
+  .d2-activity-dot.green { background: #4CAF50; }
+  .d2-activity-text {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+    flex: 1;
+  }
+  .d2-activity-text span { color: #FFD700; font-weight: 600; }
+  .d2-activity-time {
+    font-size: 11px;
+    color: rgba(255,255,255,0.25);
+    flex-shrink: 0;
+  }
+
+  .d2-cta-section {
+    margin: 24px 0 16px;
+  }
+  .d2-join-text {
+    text-align: center;
+    font-size: 15px;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 14px;
+  }
+  .d2-join-text span { color: #FFD700; font-weight: 700; }
+  .d2-tier-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .d2-tier-card {
+    flex: 1;
+    padding: 14px 10px;
+    border-radius: 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .d2-tier-basic-card {
+    background: rgba(26, 26, 46, 0.7);
+    border: 1px solid rgba(51, 51, 51, 0.6);
+  }
+  .d2-tier-premium-card {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.08), rgba(255, 140, 0, 0.06));
+    border: 2px solid rgba(255, 215, 0, 0.35);
+    position: relative;
+  }
+  .d2-popular-badge {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 3px 12px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #FFD700, #FF8C00);
+    color: #0f0f1a;
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .d2-tier-emoji { font-size: 24px; margin-bottom: 6px; }
+  .d2-tier-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #FFF6D2;
+    margin-bottom: 4px;
+  }
+  .d2-tier-price {
+    font-size: 18px;
+    font-weight: 800;
+    color: #FFD700;
+    margin-bottom: 2px;
+  }
+  .d2-tier-period {
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
+  }
+  .d2-restore {
+    text-align: center;
+    font-size: 12px;
+    color: rgba(255,255,255,0.3);
+    margin-top: 12px;
+    cursor: pointer;
+  }
+
+  /* ===== DESIGN 3: COMPARISON TABLE ===== */
+  .d3-header {
+    text-align: center;
+    padding: 24px 0 20px;
+  }
+  .d3-emoji { font-size: 36px; margin-bottom: 8px; }
+  .d3-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 6px;
+  }
+  .d3-subtitle {
+    font-size: 13px;
+    color: rgba(255,255,255,0.45);
+    line-height: 1.6;
+  }
+  .d3-toggle {
+    display: flex;
+    margin: 20px 0;
+    padding: 4px;
+    border-radius: 12px;
+    background: #1a1a2e;
+    border: 1px solid #333;
+  }
+  .d3-toggle-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: rgba(255,255,255,0.5);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: center;
+  }
+  .d3-toggle-btn.active {
+    background: rgba(255, 215, 0, 0.15);
+    color: #FFD700;
+  }
+
+  .d3-table {
+    width: 100%;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(51, 51, 51, 0.5);
+    margin: 16px 0;
+  }
+  .d3-table-head {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr 1fr;
+    background: #16213e;
+    border-bottom: 1px solid rgba(51, 51, 51, 0.5);
+  }
+  .d3-th {
+    padding: 14px 10px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.5);
+  }
+  .d3-th:first-child {
+    text-align: start;
+    color: rgba(255,255,255,0.4);
+  }
+  .d3-th-premium {
+    position: relative;
+    color: #FFD700 !important;
+  }
+  .d3-th-premium::before {
+    content: 'الأكثر شعبية';
+    position: absolute;
+    top: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 2px 10px;
+    border-radius: 0 0 8px 8px;
+    background: linear-gradient(135deg, #FFD700, #FF8C00);
+    color: #0f0f1a;
+    font-size: 9px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .d3-table-body {
+    background: rgba(15, 15, 26, 0.9);
+  }
+  .d3-row {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr 1fr;
+    border-bottom: 1px solid rgba(51, 51, 51, 0.2);
+  }
+  .d3-row:last-child { border-bottom: none; }
+  .d3-cell {
+    padding: 13px 10px;
+    font-size: 13px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .d3-cell:first-child {
+    justify-content: flex-start;
+    color: rgba(255,255,255,0.7);
+  }
+  .d3-check {
+    color: #FFD700;
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .d3-cross {
+    color: rgba(255,255,255,0.15);
+    font-size: 16px;
+  }
+  .d3-cell-highlight {
+    background: rgba(255, 215, 0, 0.03);
+  }
+
+  .d3-pricing-row {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr 1fr;
+    background: #16213e;
+    border-top: 1px solid rgba(51, 51, 51, 0.5);
+  }
+  .d3-price-cell {
+    padding: 16px 10px;
+    text-align: center;
+  }
+  .d3-price-cell:first-child {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    font-size: 13px;
+    color: rgba(255,255,255,0.4);
+    font-weight: 600;
+  }
+  .d3-price-amount {
+    font-size: 20px;
+    font-weight: 800;
+    color: #FFD700;
+  }
+  .d3-price-period {
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
+    margin-top: 2px;
+  }
+  .d3-price-free {
+    font-size: 16px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.4);
+  }
+
+  .d3-btn-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 16px 0;
+  }
+  .d3-note {
+    text-align: center;
+    font-size: 12px;
+    color: rgba(255,255,255,0.3);
+    margin-top: 8px;
+    line-height: 1.6;
+  }
+  .d3-restore {
+    text-align: center;
+    font-size: 12px;
+    color: rgba(255,255,255,0.3);
+    margin-top: 12px;
+    cursor: pointer;
+  }
+
+  /* ===== DESIGN 4: GAMIFICATION ===== */
+  .d4-header {
+    text-align: center;
+    padding: 24px 0 12px;
+  }
+  .d4-level-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    border-radius: 24px;
+    background: rgba(26, 26, 46, 0.8);
+    border: 1px solid rgba(51, 51, 51, 0.6);
+    margin-bottom: 16px;
+  }
+  .d4-level-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #888;
+  }
+  .d4-level-text {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+  }
+  .d4-level-text span {
+    color: #fff;
+    font-weight: 700;
+  }
+  .d4-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 6px;
+  }
+  .d4-subtitle {
+    font-size: 14px;
+    color: rgba(255,255,255,0.45);
+  }
+
+  .d4-progress-section {
+    margin: 24px 0;
+    position: relative;
+  }
+  .d4-progress-track {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    padding: 0 10px;
+  }
+  .d4-progress-line {
+    position: absolute;
+    top: 50%;
+    left: 30px;
+    right: 30px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+    transform: translateY(-50%);
+    z-index: 0;
+  }
+  .d4-progress-line-fill {
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    width: 15%;
+    background: linear-gradient(90deg, #FFD700, #FF8C00);
+    border-radius: 2px;
+  }
+  .d4-step {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .d4-step-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    transition: all 0.3s;
+  }
+  .d4-step-current {
+    background: rgba(26, 26, 46, 0.9);
+    border: 2px solid #FFD700;
+    box-shadow: 0 0 16px rgba(255, 215, 0, 0.2);
+    animation: d4-pulse 2s ease-in-out infinite;
+  }
+  .d4-step-locked {
+    background: rgba(26, 26, 46, 0.5);
+    border: 2px solid rgba(51, 51, 51, 0.5);
+    filter: grayscale(0.8) opacity(0.5);
+  }
+  .d4-step-label {
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .d4-step-label-current { color: #FFD700; }
+  .d4-step-label-locked { color: rgba(255,255,255,0.3); }
+
+  @keyframes d4-pulse {
+    0%, 100% { box-shadow: 0 0 16px rgba(255, 215, 0, 0.2); }
+    50% { box-shadow: 0 0 28px rgba(255, 215, 0, 0.4); }
+  }
+
+  .d4-unlock-section {
+    margin: 28px 0 12px;
+  }
+  .d4-unlock-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #FFD700;
+    margin-bottom: 14px;
+    text-align: center;
+  }
+
+  .d4-tier-card {
+    border-radius: 16px;
+    margin-bottom: 14px;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+  .d4-tier-basic {
+    background: rgba(26, 26, 46, 0.7);
+    border: 1px solid rgba(198, 163, 90, 0.25);
+  }
+  .d4-tier-premium {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.06), rgba(255, 140, 0, 0.04));
+    border: 2px solid rgba(255, 215, 0, 0.35);
+  }
+  .d4-tier-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 16px 10px;
+  }
+  .d4-tier-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .d4-tier-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+  }
+  .d4-tier-icon-basic {
+    background: linear-gradient(135deg, rgba(198, 163, 90, 0.2), rgba(198, 163, 90, 0.1));
+  }
+  .d4-tier-icon-premium {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 140, 0, 0.15));
+  }
+  .d4-tier-text h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #FFF6D2;
+    margin-bottom: 2px;
+  }
+  .d4-tier-text p {
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+  }
+  .d4-tier-price-tag {
+    text-align: center;
+  }
+  .d4-tier-price-tag .price {
+    font-size: 18px;
+    font-weight: 800;
+    color: #FFD700;
+  }
+  .d4-tier-price-tag .period {
+    font-size: 10px;
+    color: rgba(255,255,255,0.35);
+  }
+
+  .d4-features-list {
+    padding: 0 16px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .d4-feature-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .d4-chip-unlocked {
+    background: rgba(255, 215, 0, 0.1);
+    color: #FFD700;
+    border: 1px solid rgba(255, 215, 0, 0.2);
+  }
+  .d4-chip-locked {
+    background: rgba(51, 51, 51, 0.3);
+    color: rgba(255,255,255,0.3);
+    border: 1px solid rgba(51, 51, 51, 0.3);
+  }
+  .d4-chip-icon { font-size: 12px; }
+
+  .d4-achievement-section {
+    margin: 20px 0;
+    padding: 16px;
+    border-radius: 14px;
+    background: rgba(26, 26, 46, 0.5);
+    border: 1px solid rgba(51, 51, 51, 0.3);
+  }
+  .d4-achievement-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  .d4-badges-row {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+  }
+  .d4-badge-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .d4-badge-circle {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+  .d4-badge-unlocked {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 140, 0, 0.1));
+    border: 2px solid rgba(255, 215, 0, 0.3);
+  }
+  .d4-badge-locked {
+    background: rgba(26, 26, 46, 0.5);
+    border: 2px solid rgba(51, 51, 51, 0.4);
+    filter: grayscale(1) opacity(0.4);
+  }
+  .d4-badge-label {
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .d4-badge-label-unlocked { color: #FFD700; }
+  .d4-badge-label-locked { color: rgba(255,255,255,0.25); }
+
+  .d4-cta-section { margin: 20px 0; }
+  .d4-cta-sublabel {
+    text-align: center;
+    font-size: 12px;
+    color: rgba(255,255,255,0.35);
+    margin-top: 10px;
+    line-height: 1.6;
+  }
+  .d4-restore {
+    text-align: center;
+    font-size: 12px;
+    color: rgba(255,255,255,0.3);
+    margin-top: 12px;
+    cursor: pointer;
+  }
+
+  /* ===== META INFO BAR ===== */
+  .meta-bar {
+    text-align: center;
+    padding: 20px;
+    color: rgba(255,255,255,0.2);
+    font-size: 11px;
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 440px) {
+    .phone-frame {
+      border-radius: 0;
+      border: none;
+      box-shadow: none;
+      min-height: 100vh;
+    }
+    .phone-notch { display: none; }
+    .phone-content { max-height: none; }
+    .design-container { padding: 0; }
+    .tab-btn { font-size: 12px; padding: 12px 4px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TAB BAR -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="showDesign(0)">
+    <span class="tab-label-num">01</span>
+    روحاني
+  </button>
+  <button class="tab-btn" onclick="showDesign(1)">
+    <span class="tab-label-num">02</span>
+    مجتمعي
+  </button>
+  <button class="tab-btn" onclick="showDesign(2)">
+    <span class="tab-label-num">03</span>
+    مقارنة
+  </button>
+  <button class="tab-btn" onclick="showDesign(3)">
+    <span class="tab-label-num">04</span>
+    تقدّم
+  </button>
+</div>
+
+<!-- ==================== DESIGN 1: SPIRITUAL / EMOTIONAL ==================== -->
+<div class="design-container active" id="design-0">
+  <div class="phone-frame">
+    <div class="phone-notch"></div>
+    <div class="phone-content">
+
+      <div class="d1-header">
+        <div class="d1-bismillah">بسم الله الرحمن الرحيم</div>
+        <div class="d1-title">صدقة جارية</div>
+        <div class="d1-subtitle">ادعم التطبيق واجعله في ميزان حسناتك</div>
+      </div>
+
+      <!-- Quranic Verse -->
+      <div class="d1-verse-card">
+        <div class="d1-verse-text">
+          ﴿ مَّن ذَا الَّذِي يُقْرِضُ اللَّهَ قَرْضًا حَسَنًا فَيُضَاعِفَهُ لَهُ أَضْعَافًا كَثِيرَةً ﴾
+        </div>
+        <div class="d1-verse-ref">سورة البقرة - آية ٢٤٥</div>
+      </div>
+
+      <!-- Hadith -->
+      <div class="d1-hadith-card">
+        <div class="d1-hadith-text">
+          «إذا مات ابن آدم انقطع عمله إلا من ثلاث: صدقة جارية، أو علم يُنتفع به، أو ولد صالح يدعو له»
+        </div>
+        <div class="d1-hadith-ref">رواه مسلم</div>
+      </div>
+
+      <!-- Spiritual Rewards -->
+      <div class="d1-reward-section">
+        <div class="d1-reward-title">ثمرات دعمك</div>
+
+        <div class="d1-reward-item">
+          <div class="d1-reward-icon">🤲</div>
+          <div class="d1-reward-text">
+            <h4>أجر كل صلاة على النبي ﷺ</h4>
+            <p>كل مستخدم يصلّي على النبي بفضل دعمك، تنال أجره بإذن الله</p>
+          </div>
+        </div>
+
+        <div class="d1-reward-item">
+          <div class="d1-reward-icon">📿</div>
+          <div class="d1-reward-text">
+            <h4>صدقة جارية مستمرة</h4>
+            <p>دعمك يبقي التطبيق متاحاً للجميع مجاناً</p>
+          </div>
+        </div>
+
+        <div class="d1-reward-item">
+          <div class="d1-reward-icon">🕌</div>
+          <div class="d1-reward-text">
+            <h4>نشر ذكر النبي ﷺ</h4>
+            <p>ساهم في نشر محبة الحبيب المصطفى حول العالم</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tiers -->
+      <div class="d1-amount-section">
+        <div class="d1-amount-label">اختر ما يناسبك</div>
+
+        <div class="d1-tier-card d1-tier-basic">
+          <div class="d1-tier-header">
+            <div class="d1-tier-name">🌙 الداعم</div>
+            <div class="d1-tier-price">$٠٫٩٩/شهرياً</div>
+          </div>
+          <div class="d1-tier-desc">شارة الداعم، نتائج يوم الجمعة، إنجازات الآخرين من المتصدرين</div>
+        </div>
+
+        <div class="d1-tier-card d1-tier-premium" style="margin-top: 10px;">
+          <div class="d1-tier-header">
+            <div class="d1-tier-name">⭐ المميز</div>
+            <div class="d1-tier-price">$٢٫٩٩/شهرياً</div>
+          </div>
+          <div class="d1-tier-desc">المتصدرين مباشرة، إخفاء نتيجتك، + جميع مزايا الداعم</div>
+        </div>
+      </div>
+
+      <button class="gold-btn">ادعم الآن - ابدأ من $٠٫٩٩</button>
+
+      <div class="d1-sadaqa-note">
+        «لا تحقرنّ من المعروف شيئاً»<br>
+        كل مبلغ مهما كان بسيطاً له أجر عظيم
+      </div>
+
+      <div class="d1-restore">استعادة المشتريات</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== DESIGN 2: SOCIAL PROOF ==================== -->
+<div class="design-container" id="design-1">
+  <div class="phone-frame">
+    <div class="phone-notch"></div>
+    <div class="phone-content">
+
+      <div class="d2-header">
+        <div class="d2-badge">مجتمع الداعمين</div>
+        <div class="d2-title">انضم إلى <span>الداعمين</span></div>
+        <div class="d2-subtitle">كن جزءاً من مجتمع يدعم نشر الصلاة على النبي ﷺ</div>
+      </div>
+
+      <!-- Supporter Counter -->
+      <div class="d2-counter-section">
+        <div class="d2-counter-number" id="d2-count">٢٬٨٤٧</div>
+        <div class="d2-counter-label">داعم حول العالم</div>
+        <div class="d2-avatars">
+          <div class="d2-avatar">م</div>
+          <div class="d2-avatar">ع</div>
+          <div class="d2-avatar">س</div>
+          <div class="d2-avatar">ف</div>
+          <div class="d2-avatar">+٢٨٤٣</div>
+        </div>
+      </div>
+
+      <!-- Community Goal -->
+      <div class="d2-goal-section">
+        <div class="d2-goal-header">
+          <div class="d2-goal-title">هدف المجتمع</div>
+          <div class="d2-goal-count">٢٬٨٤٧ / ٥٬٠٠٠</div>
+        </div>
+        <div class="d2-progress-bar">
+          <div class="d2-progress-fill" id="d2-progress"></div>
+        </div>
+        <div class="d2-goal-desc">عند ٥٬٠٠٠ داعم: ميزات جديدة لجميع المستخدمين مجاناً!</div>
+      </div>
+
+      <!-- Activity Feed -->
+      <div class="d2-activity-section">
+        <div class="d2-activity-title">آخر المنضمين</div>
+
+        <div class="d2-activity-item">
+          <div class="d2-activity-dot"></div>
+          <div class="d2-activity-text"><span>أحمد من مصر</span> انضم كداعم مميز</div>
+          <div class="d2-activity-time">منذ ٣ د</div>
+        </div>
+        <div class="d2-activity-item">
+          <div class="d2-activity-dot green"></div>
+          <div class="d2-activity-text"><span>فاطمة من السعودية</span> انضمت كداعمة</div>
+          <div class="d2-activity-time">منذ ١٢ د</div>
+        </div>
+        <div class="d2-activity-item">
+          <div class="d2-activity-dot"></div>
+          <div class="d2-activity-text"><span>محمد من الأردن</span> جدّد اشتراكه</div>
+          <div class="d2-activity-time">منذ ٢٧ د</div>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="d2-cta-section">
+        <div class="d2-join-text">انضم إلى <span>٢٬٨٤٧</span> داعم اليوم</div>
+
+        <div class="d2-tier-row">
+          <div class="d2-tier-card d2-tier-basic-card">
+            <div class="d2-tier-emoji">🌙</div>
+            <div class="d2-tier-name">الداعم</div>
+            <div class="d2-tier-price">$٠٫٩٩</div>
+            <div class="d2-tier-period">شهرياً</div>
+          </div>
+          <div class="d2-tier-card d2-tier-premium-card">
+            <div class="d2-popular-badge">الأكثر اختياراً</div>
+            <div class="d2-tier-emoji">⭐</div>
+            <div class="d2-tier-name">المميز</div>
+            <div class="d2-tier-price">$٢٫٩٩</div>
+            <div class="d2-tier-period">شهرياً</div>
+          </div>
+        </div>
+
+        <button class="gold-btn">انضم الآن</button>
+      </div>
+
+      <div class="d2-restore">استعادة المشتريات</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== DESIGN 3: COMPARISON TABLE ==================== -->
+<div class="design-container" id="design-2">
+  <div class="phone-frame">
+    <div class="phone-notch"></div>
+    <div class="phone-content">
+
+      <div class="d3-header">
+        <div class="d3-emoji">🌟</div>
+        <div class="d3-title">اختر خطتك</div>
+        <div class="d3-subtitle">قارن بين المزايا واختر ما يناسبك</div>
+      </div>
+
+      <!-- Period Toggle -->
+      <div class="d3-toggle">
+        <button class="d3-toggle-btn active" onclick="d3Toggle(this, 'monthly')">شهري</button>
+        <button class="d3-toggle-btn" onclick="d3Toggle(this, 'yearly')">سنوي (وفّر ٣٠٪)</button>
+      </div>
+
+      <!-- Comparison Table -->
+      <div class="d3-table">
+        <div class="d3-table-head">
+          <div class="d3-th">المزايا</div>
+          <div class="d3-th">الداعم 🌙</div>
+          <div class="d3-th d3-th-premium">المميز ⭐</div>
+        </div>
+        <div class="d3-table-body">
+          <div class="d3-row">
+            <div class="d3-cell">العدّاد والذكر</div>
+            <div class="d3-cell"><span class="d3-check">✓</span></div>
+            <div class="d3-cell d3-cell-highlight"><span class="d3-check">✓</span></div>
+          </div>
+          <div class="d3-row">
+            <div class="d3-cell">شارة الداعم</div>
+            <div class="d3-cell"><span class="d3-check">✓</span></div>
+            <div class="d3-cell d3-cell-highlight"><span class="d3-check">✓</span></div>
+          </div>
+          <div class="d3-row">
+            <div class="d3-cell">نتائج يوم الجمعة</div>
+            <div class="d3-cell"><span class="d3-check">✓</span></div>
+            <div class="d3-cell d3-cell-highlight"><span class="d3-check">✓</span></div>
+          </div>
+          <div class="d3-row">
+            <div class="d3-cell">إنجازات المتصدرين</div>
+            <div class="d3-cell"><span class="d3-check">✓</span></div>
+            <div class="d3-cell d3-cell-highlight"><span class="d3-check">✓</span></div>
+          </div>
+          <div class="d3-row">
+            <div class="d3-cell">المتصدرين مباشرة</div>
+            <div class="d3-cell"><span class="d3-cross">✕</span></div>
+            <div class="d3-cell d3-cell-highlight"><span class="d3-check">✓</span></div>
+          </div>
+          <div class="d3-row">
+            <div class="d3-cell">إخفاء النتيجة</div>
+            <div class="d3-cell"><span class="d3-cross">✕</span></div>
+            <div class="d3-cell d3-cell-highlight"><span class="d3-check">✓</span></div>
+          </div>
+        </div>
+        <div class="d3-pricing-row">
+          <div class="d3-price-cell">السعر</div>
+          <div class="d3-price-cell">
+            <div class="d3-price-amount" id="d3-basic-price">$٠٫٩٩</div>
+            <div class="d3-price-period" id="d3-basic-period">شهرياً</div>
+          </div>
+          <div class="d3-price-cell">
+            <div class="d3-price-amount" id="d3-premium-price">$٢٫٩٩</div>
+            <div class="d3-price-period" id="d3-premium-period">شهرياً</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="d3-btn-row">
+        <button class="gold-btn-outline">اشترك كداعم</button>
+        <button class="gold-btn">اشترك كمميز</button>
+      </div>
+
+      <div class="d3-note">
+        الاشتراك يتجدد تلقائياً ويمكن إلغاؤه في أي وقت<br>
+        جميع المزايا الأساسية متاحة مجاناً للجميع
+      </div>
+
+      <div class="d3-restore">استعادة المشتريات</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== DESIGN 4: GAMIFICATION ==================== -->
+<div class="design-container" id="design-3">
+  <div class="phone-frame">
+    <div class="phone-notch"></div>
+    <div class="phone-content">
+
+      <div class="d4-header">
+        <div class="d4-level-badge">
+          <div class="d4-level-dot"></div>
+          <div class="d4-level-text">مستواك الحالي: <span>زائر</span></div>
+        </div>
+        <div class="d4-title">ارتقِ بمستواك</div>
+        <div class="d4-subtitle">افتح مزايا جديدة مع كل مستوى</div>
+      </div>
+
+      <!-- Progress Steps -->
+      <div class="d4-progress-section">
+        <div class="d4-progress-track">
+          <div class="d4-progress-line">
+            <div class="d4-progress-line-fill"></div>
+          </div>
+          <div class="d4-step">
+            <div class="d4-step-circle d4-step-current">👤</div>
+            <div class="d4-step-label d4-step-label-current">زائر</div>
+          </div>
+          <div class="d4-step">
+            <div class="d4-step-circle d4-step-locked">🌙</div>
+            <div class="d4-step-label d4-step-label-locked">الداعم</div>
+          </div>
+          <div class="d4-step">
+            <div class="d4-step-circle d4-step-locked">⭐</div>
+            <div class="d4-step-label d4-step-label-locked">المميز</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Unlock Cards -->
+      <div class="d4-unlock-section">
+        <div class="d4-unlock-title">المزايا التي تنتظرك</div>
+
+        <!-- Basic Tier -->
+        <div class="d4-tier-card d4-tier-basic">
+          <div class="d4-tier-top">
+            <div class="d4-tier-info">
+              <div class="d4-tier-icon d4-tier-icon-basic">🌙</div>
+              <div class="d4-tier-text">
+                <h3>الداعم</h3>
+                <p>المستوى الأول</p>
+              </div>
+            </div>
+            <div class="d4-tier-price-tag">
+              <div class="price">$٠٫٩٩</div>
+              <div class="period">شهرياً</div>
+            </div>
+          </div>
+          <div class="d4-features-list">
+            <div class="d4-feature-chip d4-chip-unlocked">
+              <span class="d4-chip-icon">🔓</span>
+              شارة الداعم
+            </div>
+            <div class="d4-feature-chip d4-chip-unlocked">
+              <span class="d4-chip-icon">🔓</span>
+              نتائج الجمعة
+            </div>
+            <div class="d4-feature-chip d4-chip-unlocked">
+              <span class="d4-chip-icon">🔓</span>
+              إنجازات المتصدرين
+            </div>
+          </div>
+        </div>
+
+        <!-- Premium Tier -->
+        <div class="d4-tier-card d4-tier-premium">
+          <div class="d4-tier-top">
+            <div class="d4-tier-info">
+              <div class="d4-tier-icon d4-tier-icon-premium">⭐</div>
+              <div class="d4-tier-text">
+                <h3>المميز</h3>
+                <p>المستوى الأعلى</p>
+              </div>
+            </div>
+            <div class="d4-tier-price-tag">
+              <div class="price">$٢٫٩٩</div>
+              <div class="period">شهرياً</div>
+            </div>
+          </div>
+          <div class="d4-features-list">
+            <div class="d4-feature-chip d4-chip-unlocked">
+              <span class="d4-chip-icon">🔓</span>
+              كل مزايا الداعم
+            </div>
+            <div class="d4-feature-chip d4-chip-unlocked">
+              <span class="d4-chip-icon">🔓</span>
+              المتصدرين مباشرة
+            </div>
+            <div class="d4-feature-chip d4-chip-unlocked">
+              <span class="d4-chip-icon">🔓</span>
+              إخفاء النتيجة
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Badges / Achievements -->
+      <div class="d4-achievement-section">
+        <div class="d4-achievement-title">الشارات والإنجازات</div>
+        <div class="d4-badges-row">
+          <div class="d4-badge-item">
+            <div class="d4-badge-circle d4-badge-unlocked">👤</div>
+            <div class="d4-badge-label d4-badge-label-unlocked">زائر</div>
+          </div>
+          <div class="d4-badge-item">
+            <div class="d4-badge-circle d4-badge-locked">🌙</div>
+            <div class="d4-badge-label d4-badge-label-locked">داعم</div>
+          </div>
+          <div class="d4-badge-item">
+            <div class="d4-badge-circle d4-badge-locked">⭐</div>
+            <div class="d4-badge-label d4-badge-label-locked">مميز</div>
+          </div>
+          <div class="d4-badge-item">
+            <div class="d4-badge-circle d4-badge-locked">💎</div>
+            <div class="d4-badge-label d4-badge-label-locked">قريباً</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="d4-cta-section">
+        <button class="gold-btn">ارتقِ إلى الداعم - $٠٫٩٩/شهرياً</button>
+        <div class="d4-cta-sublabel">أو اختر المميز بـ $٢٫٩٩/شهرياً لجميع المزايا</div>
+      </div>
+
+      <div class="d4-restore">استعادة المشتريات</div>
+    </div>
+  </div>
+</div>
+
+<div class="meta-bar">
+  SaloAleh - Support Page Design Concepts - May 2026
+</div>
+
+<script>
+  // Tab switching
+  function showDesign(index) {
+    document.querySelectorAll('.design-container').forEach(function(el, i) {
+      el.classList.toggle('active', i === index);
+    });
+    document.querySelectorAll('.tab-btn').forEach(function(btn, i) {
+      btn.classList.toggle('active', i === index);
+    });
+  }
+
+  // Design 3: period toggle
+  function d3Toggle(btn, period) {
+    document.querySelectorAll('.d3-toggle-btn').forEach(function(b) {
+      b.classList.remove('active');
+    });
+    btn.classList.add('active');
+
+    var basicPrice = document.getElementById('d3-basic-price');
+    var basicPeriod = document.getElementById('d3-basic-period');
+    var premiumPrice = document.getElementById('d3-premium-price');
+    var premiumPeriod = document.getElementById('d3-premium-period');
+
+    if (period === 'yearly') {
+      basicPrice.textContent = '$٨٫٩٩';
+      basicPeriod.textContent = 'سنوياً';
+      premiumPrice.textContent = '$٢٤٫٩٩';
+      premiumPeriod.textContent = 'سنوياً';
+    } else {
+      basicPrice.textContent = '$٠٫٩٩';
+      basicPeriod.textContent = 'شهرياً';
+      premiumPrice.textContent = '$٢٫٩٩';
+      premiumPeriod.textContent = 'شهرياً';
+    }
+  }
+
+  // Animate the progress bar on Design 2
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        var fill = document.getElementById('d2-progress');
+        if (fill) {
+          fill.style.width = '0%';
+          setTimeout(function() { fill.style.width = '57%'; }, 100);
+        }
+      }
+    });
+  }, { threshold: 0.5 });
+
+  var goalSection = document.querySelector('.d2-goal-section');
+  if (goalSection) observer.observe(goalSection);
+
+  // Re-trigger animation when switching to tab 2
+  var origShowDesign = showDesign;
+  showDesign = function(index) {
+    origShowDesign(index);
+    if (index === 1) {
+      var fill = document.getElementById('d2-progress');
+      if (fill) {
+        fill.style.width = '0%';
+        setTimeout(function() { fill.style.width = '57%'; }, 200);
+      }
+    }
+  };
+</script>
+</body>
+</html>

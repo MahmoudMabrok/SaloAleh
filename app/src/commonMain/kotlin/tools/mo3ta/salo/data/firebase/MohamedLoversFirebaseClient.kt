@@ -279,6 +279,20 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         }
     }
 
+    override suspend fun writeSupporterStatus(uid: String, supporter: Boolean): Result<Unit> {
+        log.d { "writeSupporterStatus[$uid] supporter=$supporter" }
+        return runCatching {
+            Firebase.database.reference("$ROOT_PATH/$USERS_PATH/$uid").updateChildren(
+                mapOf(IS_SUPPORTER_KEY to supporter)
+            )
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "writeSupporterStatus[$uid] ok" } },
+                onFailure = { log.e(it) { "writeSupporterStatus[$uid] failed" } },
+            )
+        }
+    }
+
     override suspend fun fetchLiveLeaderboard(roundKey: String): Result<FirebaseLeaderboard> = runCatching {
         val snapshot = Firebase.database.reference(playersPath(roundKey))
             .valueEvents

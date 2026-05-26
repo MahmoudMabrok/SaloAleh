@@ -393,6 +393,7 @@ class MohamedLoversViewModel(
             _state.update { it.copy(selfDisplayTag = buildMohamedLoversDisplayTag(uid, it.countryCode)) }
             val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
             launch { repository.writeUserActivity(uid, today) }
+            launch { repository.setSupporter(premiumStore.hasFeature(PremiumFeature.SUPPORTER_BADGE)) }
 
             if (!achievementsFetchedFromRtdb) {
                 achievementsFetchedFromRtdb = true

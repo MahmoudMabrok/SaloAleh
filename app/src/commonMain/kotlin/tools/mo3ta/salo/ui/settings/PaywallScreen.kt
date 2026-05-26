@@ -27,6 +27,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -71,6 +72,8 @@ fun PaywallScreen(onBack: () -> Unit) {
     val analyticsManager: AnalyticsManager = koinInject()
     val repository: MohamedLoversRepository = koinInject()
     val scope = rememberCoroutineScope()
+
+    val prices by billingManager.productPrices.collectAsState()
 
     val isPremium = premiumStore.hasFeature(PremiumFeature.SCORE_MASK)
     var scoreMasked by remember { mutableStateOf(premiumStore.isScoreMasked) }
@@ -232,7 +235,7 @@ fun PaywallScreen(onBack: () -> Unit) {
                 SpiritualTierCard(
                     emoji = "🌙",
                     tierName = stringResource(Res.string.paywall_basic_tier_label),
-                    price = billingManager.getProductPrice(ProductRegistry.SUB_MONTHLY_BASIC)
+                    price = prices[ProductRegistry.SUB_MONTHLY_BASIC]
                         ?: ProductRegistry.subscriptionTiers.first().defaultPrice,
                     features = listOf(
                         "⭐" to stringResource(Res.string.paywall_supporter_badge_title),
@@ -251,10 +254,10 @@ fun PaywallScreen(onBack: () -> Unit) {
                 SpiritualTierCard(
                     emoji = "⭐",
                     tierName = stringResource(Res.string.paywall_premium_tier_label),
-                    price = billingManager.getProductPrice(
+                    price = prices[
                         if (selectedPeriod == SubscriptionPeriod.MONTHLY) ProductRegistry.SUB_MONTHLY_PREMIUM
-                        else ProductRegistry.SUB_YEARLY_PREMIUM,
-                    ) ?: visibleTiers.last().defaultPrice,
+                        else ProductRegistry.SUB_YEARLY_PREMIUM
+                    ] ?: visibleTiers.last().defaultPrice,
                     features = listOf(
                         "📡" to stringResource(Res.string.paywall_live_leaderboard_title),
                         "🔒" to stringResource(Res.string.paywall_hide_score_title),
@@ -286,7 +289,7 @@ fun PaywallScreen(onBack: () -> Unit) {
                 Spacer(Modifier.height(16.dp))
 
                 // CTA button
-                val basicPrice = billingManager.getProductPrice(ProductRegistry.SUB_MONTHLY_BASIC)
+                val basicPrice = prices[ProductRegistry.SUB_MONTHLY_BASIC]
                     ?: ProductRegistry.subscriptionTiers.first().defaultPrice
                 Box(
                     modifier = Modifier

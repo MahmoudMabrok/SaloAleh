@@ -11,8 +11,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import tools.mo3ta.salo.billing.SaloBillingClient
 
@@ -23,7 +26,8 @@ class AndroidBillingManager(
 
     private val log = Logger.withTag("AndroidBillingManager")
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    private val productPrices = mutableMapOf<String, String>()
+    private val _productPrices = MutableStateFlow<Map<String, String>>(emptyMap())
+    override val productPrices: StateFlow<Map<String, String>> = _productPrices.asStateFlow()
 
     override val isEnabled: Boolean = true
 
@@ -98,14 +102,15 @@ class AndroidBillingManager(
         premiumStore.isSubscriptionActive(productId)
 
     override fun getProductPrice(productId: String): String? =
-        productPrices[productId]
+        _productPrices.value[productId]
 
     private suspend fun loadProductPrices() {
+        val prices = _productPrices.value.toMutableMap()
         for (productId in ProductRegistry.oneTimeProductIds) {
             val result = billingClient.queryProductDetails(productId, BillingClient.ProductType.INAPP)
             val details = result.productDetailsList?.firstOrNull() ?: continue
             val price = details.oneTimePurchaseOfferDetails?.formattedPrice ?: continue
-            productPrices[productId] = price
+            prices[productId] = price
             log.d { "Price loaded: $productId = $price" }
         }
         for (productId in ProductRegistry.subscriptionProductIds) {
@@ -117,9 +122,10 @@ class AndroidBillingManager(
                 ?.pricingPhaseList
                 ?.firstOrNull()
                 ?.formattedPrice ?: continue
-            productPrices[productId] = price
+            prices[productId] = price
             log.d { "Sub price loaded: $productId = $price" }
         }
+        _productPrices.value = prices
     }
 
     private suspend fun restorePurchasesInternal() {
