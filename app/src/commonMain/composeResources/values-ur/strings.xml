@@ -309,6 +309,13 @@
     <string name="review_rate_now">ابھی درجہ بندی کریں</string>
     <string name="review_later">بعد میں</string>
 
+    <!-- Version Update Dialog -->
+    <string name="version_update_title">نیا اپڈیٹ دستیاب ہے</string>
+    <string name="version_update_version_label">ورژن %1$s</string>
+    <string name="version_update_description">ایپ کا نیا ورژن دستیاب ہے۔ تازہ ترین بہتری اور خصوصیات حاصل کرنے کے لیے ابھی اپڈیٹ کریں۔</string>
+    <string name="version_update_update_now">ابھی اپڈیٹ کریں</string>
+    <string name="version_update_later">بعد میں</string>
+
     <!-- Manual Salawat Sheet -->
     <string name="manual_salawat_title">📿 بیرونی صلوات درج کریں</string>
     <string name="manual_salawat_subtitle">نبی ﷺ پر خاموشی سے، انگلیوں پر، یا تسبیح سے درود بھیجا؟\nجو پڑھا اسے درج کریں — ایپ سے دور ہونے کی وجہ سے درود نہ چھوڑیں</string>

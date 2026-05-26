@@ -313,6 +313,13 @@
     <string name="review_rate_now">Rate Now</string>
     <string name="review_later">Later</string>
 
+    <!-- Version Update Dialog -->
+    <string name="version_update_title">New Update Available</string>
+    <string name="version_update_version_label">Version %1$s</string>
+    <string name="version_update_description">A new version of the app is available. Update now to get the latest improvements and features.</string>
+    <string name="version_update_update_now">Update Now</string>
+    <string name="version_update_later">Later</string>
+
     <!-- Manual Salawat Sheet -->
     <string name="manual_salawat_title">📿 Log External Prayers</string>
     <string name="manual_salawat_subtitle">Prayed upon the Prophet ﷺ silently, on your fingers, or with a tasbih?\nLog what you prayed — don\'t stop praying just because you\'re away from the app</string>

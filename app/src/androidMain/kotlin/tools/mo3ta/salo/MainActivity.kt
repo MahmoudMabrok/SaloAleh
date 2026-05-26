@@ -2,6 +2,7 @@ package tools.mo3ta.salo
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
@@ -89,14 +90,28 @@ class MainActivity : ComponentActivity() {
 
         val finalEngagementData = engagementData.copy(shouldReshowFcmAlert = shouldReshowFcmAlert)
 
+        val newVersionFromNotification = extractNewVersionFromIntent(intent)
+
         setContent {
             App(
                 engagementData = finalEngagementData,
                 onNotificationPermissionRequest = {
                     requestNotificationPermissionIfNeeded()
                 },
+                newVersionAvailable = newVersionFromNotification,
             )
         }
+    }
+
+    private fun extractNewVersionFromIntent(intent: Intent?): String? {
+        if (intent?.getStringExtra(EXTRA_NOTIFICATION_TYPE) != NOTIFICATION_TYPE_VERSION_UPDATE) return null
+        return intent.getStringExtra(EXTRA_NEW_VERSION) ?: ""
+    }
+
+    companion object {
+        const val EXTRA_NOTIFICATION_TYPE = "notification_type"
+        const val EXTRA_NEW_VERSION = "new_version"
+        const val NOTIFICATION_TYPE_VERSION_UPDATE = "version_update"
     }
 
     // Validates the FCM token at app start. After an Android Auto Backup restore,

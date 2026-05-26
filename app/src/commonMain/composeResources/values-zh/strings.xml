@@ -309,6 +309,13 @@
     <string name="review_rate_now">立即评分</string>
     <string name="review_later">以后再说</string>
 
+    <!-- Version Update Dialog -->
+    <string name="version_update_title">有新版本可用</string>
+    <string name="version_update_version_label">版本 %1$s</string>
+    <string name="version_update_description">应用的新版本已发布。立即更新以获取最新的改进和功能。</string>
+    <string name="version_update_update_now">立即更新</string>
+    <string name="version_update_later">以后再说</string>
+
     <!-- Manual Salawat Sheet -->
     <string name="manual_salawat_title">📿 记录外部祈祷</string>
     <string name="manual_salawat_subtitle">默默地、用手指或用念珠为先知 ﷺ 祈祷了？\n记录您的祈祷 - 不要因为不在应用中就停止祈祷</string>

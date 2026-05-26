@@ -42,9 +42,18 @@ class SaloFirebaseMessagingService : FirebaseMessagingService() {
         val body = message.data["body"] ?: message.notification?.body ?: return
         if (!NotificationManagerCompat.from(this).areNotificationsEnabled()) return
 
+        val launchIntent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+            message.data[MainActivity.EXTRA_NOTIFICATION_TYPE]?.let {
+                putExtra(MainActivity.EXTRA_NOTIFICATION_TYPE, it)
+            }
+            message.data[MainActivity.EXTRA_NEW_VERSION]?.let {
+                putExtra(MainActivity.EXTRA_NEW_VERSION, it)
+            }
+        }
         val pendingIntent = PendingIntent.getActivity(
             this, 0,
-            Intent(this, MainActivity::class.java).apply { flags = Intent.FLAG_ACTIVITY_CLEAR_TOP },
+            launchIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         NotificationManagerCompat.from(this).notify(

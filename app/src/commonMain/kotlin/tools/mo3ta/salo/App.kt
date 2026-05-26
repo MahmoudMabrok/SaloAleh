@@ -29,6 +29,7 @@ import tools.mo3ta.salo.ui.NotificationRationaleDialog
 import tools.mo3ta.salo.ui.OnboardingScreen
 import tools.mo3ta.salo.ui.PlatformBackHandler
 import tools.mo3ta.salo.ui.ReviewDialog
+import tools.mo3ta.salo.ui.VersionUpdateDialog
 import tools.mo3ta.salo.ui.openStorePage
 import tools.mo3ta.salo.ui.settings.ExtensionQrScreen
 import tools.mo3ta.salo.data.billing.BillingManager
@@ -59,6 +60,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun App(
     engagementData: EngagementData? = null,
     onNotificationPermissionRequest: (() -> Unit)? = null,
+    newVersionAvailable: String? = null,
 ) {
     val languageStore = koinInject<LanguageStore>()
     val storedLang = languageStore.language
@@ -300,6 +302,20 @@ fun App(
                     engagementStore.markReviewDialogShown(today)
                     showReview = false
                 },
+            )
+        }
+
+        var pendingVersionUpdate by remember(newVersionAvailable) {
+            mutableStateOf(newVersionAvailable)
+        }
+        pendingVersionUpdate?.let { version ->
+            VersionUpdateDialog(
+                version = version,
+                onUpdate = {
+                    pendingVersionUpdate = null
+                    openStorePage()
+                },
+                onDismiss = { pendingVersionUpdate = null },
             )
         }
     }
