@@ -318,7 +318,7 @@ fun MohamedLoversScreen(
                             analyticsManager.logAction(AppAnalytics.OPEN_INFO_SHEET, mapOf(AppAnalytics.PARAM_SOURCE to "rank_strip"))
                             infoSheetOpen = true
                         },
-                        onInfoClick = { badgeTiersSheetOpen = true },
+                        onBadgeClick = { badgeTiersSheetOpen = true },
                     )
                     AnimatedVisibility(
                         visible = showRankTooltip,

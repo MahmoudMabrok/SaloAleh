@@ -35,7 +35,7 @@ fun DailyRankStrip(
     todayTaps: Int,
     currentBadgeKey: String?,
     onStripClick: () -> Unit,
-    onInfoClick: () -> Unit,
+    onBadgeClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val currentBadge = currentBadgeKey?.let { DailyBadge.fromKey(it) }
@@ -61,7 +61,8 @@ fun DailyRankStrip(
                         .size(44.dp)
                         .clip(CircleShape)
                         .background(MohamedLoversPalette.GoldHighlight.copy(alpha = 0.1f))
-                        .border(1.5.dp, MohamedLoversPalette.GoldHighlight.copy(alpha = 0.3f), CircleShape),
+                        .border(1.5.dp, MohamedLoversPalette.GoldHighlight.copy(alpha = 0.3f), CircleShape)
+                        .clickable { onBadgeClick() },
                     contentAlignment = Alignment.Center,
                 ) {
                     Image(
@@ -89,45 +90,11 @@ fun DailyRankStrip(
                     fontSize = 11.sp,
                 )
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = stringResource(Res.string.daily_rank_strip_rank_of, rank, totalPlayers),
-                    color = MohamedLoversPalette.GoldHighlight,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-                if (currentBadge != null) {
-                    Text(
-                        text = " · ",
-                        color = MohamedLoversPalette.GoldBase.copy(alpha = 0.3f),
-                        fontSize = 11.sp,
-                    )
-                    Text(
-                        text = badgeTitleString(currentBadge),
-                        color = MohamedLoversPalette.GoldWarm,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
-            }
-        }
-
-        Spacer(Modifier.width(8.dp))
-
-        // Info button
-        Box(
-            modifier = Modifier
-                .size(24.dp)
-                .clip(CircleShape)
-                .background(MohamedLoversPalette.GoldHighlight.copy(alpha = 0.12f))
-                .border(1.dp, MohamedLoversPalette.GoldHighlight.copy(alpha = 0.25f), CircleShape)
-                .clickable { onInfoClick() },
-            contentAlignment = Alignment.Center,
-        ) {
             Text(
-                text = "ⓘ",
-                color = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.7f),
-                fontSize = 14.sp,
+                text = stringResource(Res.string.daily_rank_strip_rank_of, rank, totalPlayers),
+                color = MohamedLoversPalette.GoldHighlight,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
             )
         }
     }
