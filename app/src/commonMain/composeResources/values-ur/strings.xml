@@ -223,6 +223,7 @@
 
     <!-- Premium Promo Dialog -->
     <string name="premium_promo_description">ایپ کی مدد صدقہ جاریہ ہے\nنبی ﷺ پر ہر درود کے ثواب میں شریک ہوں — اضافی سہولتوں کے ساتھ</string>
+    <string name="premium_promo_others_achievements_note">📜 دوسرے مقابلہ کاروں کی کامیابیاں دیکھنا معاونین کی سہولت ہے</string>
     <string name="premium_promo_later">بعد میں</string>
 
     <!-- Purchase Success Dialog -->

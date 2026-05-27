@@ -227,6 +227,7 @@
 
     <!-- Premium Promo Dialog -->
     <string name="premium_promo_description">Support the app as ongoing charity\nand share in the reward of every salawat on the Prophet ﷺ — plus small perks</string>
+    <string name="premium_promo_others_achievements_note">📜 Viewing other competitors\' achievements is a supporter feature</string>
     <string name="premium_promo_later">Later</string>
 
     <!-- Purchase Success Dialog -->

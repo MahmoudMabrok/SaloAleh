@@ -112,6 +112,7 @@ import tools.mo3ta.salo.generated.resources.main_screen_tooltip_info
 import tools.mo3ta.salo.generated.resources.new_round_title
 import tools.mo3ta.salo.generated.resources.new_round_subtitle
 import tools.mo3ta.salo.generated.resources.new_round_cta
+import tools.mo3ta.salo.generated.resources.premium_promo_others_achievements_note
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_day
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_hour
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_minute
@@ -571,6 +572,7 @@ fun MohamedLoversScreen(
                     onOpenPaywall()
                 },
                 onDismiss = { showOthersAchievementsPromo = false },
+                featureNote = stringResource(Res.string.premium_promo_others_achievements_note),
             )
         }
         if (state.showRoundEndResults) {
