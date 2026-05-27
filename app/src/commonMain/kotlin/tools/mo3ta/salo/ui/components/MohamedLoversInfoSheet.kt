@@ -118,6 +118,7 @@ internal fun MohamedLoversInfoSheet(
     onCopyWinnerCode: (String) -> Unit,
     onToggleLeaderboardType: (Boolean) -> Unit,
     isPremium: Boolean = false,
+    hasLiveAccess: Boolean = false,
     onFetchLiveLeaderboard: () -> Unit = {},
     onOpenPaywall: () -> Unit = {},
     onUserClick: (uid: String, displayTag: String) -> Unit = { _, _ -> },
@@ -203,7 +204,7 @@ internal fun MohamedLoversInfoSheet(
                 onToggleLeaderboardType = onToggleLeaderboardType,
                 isPremium = isPremium,
                 isLoadingLive = state.isLoadingLiveLeaderboard,
-                hasLiveAccess = state.hasLiveLeaderboardAccess,
+                hasLiveAccess = hasLiveAccess,
                 onFetchLive = onFetchLiveLeaderboard,
                 onSupporterClick = { showSupporterInfo = true },
                 onOpenPaywall = {
