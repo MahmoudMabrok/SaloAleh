@@ -75,6 +75,9 @@
           "lastTenDaysInactiveNotif": {
             ".validate": "newData.isString()"
           },
+          "isSupporter": {
+            ".validate": "newData.isBoolean()"
+          },
           "achievements": {
             ".read": true,
             ".write": false,
@@ -139,6 +142,9 @@
             },
             "dailyBadge": {
               ".validate": "newData.isString() && (newData.val() === 'sprout' || newData.val() === 'heart' || newData.val() === 'tasbih' || newData.val() === 'dome' || newData.val() === 'crescent' || newData.val() === 'crown')"
+            },
+            "isSupporter": {
+              ".validate": "newData.isBoolean()"
             },
 
             "$other": { ".validate": false }
