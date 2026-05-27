@@ -29,6 +29,7 @@ import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 fun PremiumPromoDialog(
     onOpen: () -> Unit,
     onDismiss: () -> Unit,
+    featureNote: String? = null,
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Column(
@@ -54,6 +55,24 @@ fun PremiumPromoDialog(
                 textAlign = TextAlign.Center,
                 lineHeight = 22.sp,
             )
+            if (!featureNote.isNullOrBlank()) {
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = featureNote,
+                    color = MohamedLoversPalette.GoldHighlight,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.W600,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 20.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            MohamedLoversPalette.GoldHighlight.copy(alpha = 0.12f),
+                            RoundedCornerShape(10.dp),
+                        )
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                )
+            }
             Spacer(Modifier.height(8.dp))
             Text(
                 text = "كلما زاد دعمك، زاد أجرك في الآخرة بإذن الله 🤲",
