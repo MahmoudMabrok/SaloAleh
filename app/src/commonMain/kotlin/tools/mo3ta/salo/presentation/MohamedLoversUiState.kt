@@ -47,7 +47,6 @@ data class MohamedLoversUiState(
     val isUsingDailyLeaderboard: Boolean = false,
     val showDailyLeaderboardPromo: Boolean = false,
     val isLoadingLiveLeaderboard: Boolean = false,
-    val hasLiveLeaderboardAccess: Boolean = false,
     val error: MohamedLoversError? = null,
     val roundTotal: Int = 0,
     val roundPlayerCount: Int = 0,

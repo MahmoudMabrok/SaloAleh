@@ -66,7 +66,6 @@ class MohamedLoversViewModel(
                 showHadithDialog = hadithStore.showOnStartup,
                 isUsingDailyLeaderboard = settingsStore.useDailyLeaderboard,
                 showDailyLeaderboardPromo = !settingsStore.dailyLeaderboardPromoShown,
-                hasLiveLeaderboardAccess = premiumStore.hasFeature(PremiumFeature.LIVE_LEADERBOARD),
             )
         }
         refresh()
