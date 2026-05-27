@@ -24,4 +24,10 @@ interface MohamedLoversFirebaseApi {
     suspend fun setSupporter(roundKey: String, uid: String, supporter: Boolean): Result<Unit>
     suspend fun writeDailyBadge(roundKey: String, uid: String, badgeKey: String?): Result<Unit>
     suspend fun writeSupporterStatus(uid: String, supporter: Boolean): Result<Unit>
+    suspend fun writePurchaseMetadata(
+        uid: String,
+        productId: String,
+        productType: String,
+        purchaseDate: String,
+    ): Result<Unit>
 }

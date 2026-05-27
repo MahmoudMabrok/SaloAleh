@@ -85,6 +85,21 @@
               ".validate": "newData.hasChildren(['rank', 'score', 'date'])"
             }
           },
+          "purchases": {
+            "$productId": {
+              ".validate": "newData.hasChildren(['productId', 'productType', 'purchaseDate'])",
+              "productId": {
+                ".validate": "newData.isString() && newData.val() === $productId"
+              },
+              "productType": {
+                ".validate": "newData.isString() && (newData.val() === 'ONE_TIME' || newData.val() === 'SUBSCRIPTION')"
+              },
+              "purchaseDate": {
+                ".validate": "newData.isString() && newData.val().length == 10"
+              },
+              "$other": { ".validate": false }
+            }
+          },
           "$other": { ".validate": false }
         }
       },

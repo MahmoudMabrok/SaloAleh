@@ -223,6 +223,7 @@ fun App(
         LaunchedEffect(billingManager) {
             billingManager.purchaseEvents.collect { productId ->
                 val tier = ProductRegistry.tiers.firstOrNull { it.productId == productId } ?: return@collect
+                repository.recordPurchase(productId)
                 if (PremiumFeature.SUPPORTER_BADGE in tier.features) {
                     repository.setSupporter(true)
                 }

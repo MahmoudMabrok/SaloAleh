@@ -61,4 +61,29 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
 
     override suspend fun writeDailyBadge(roundKey: String, uid: String, badgeKey: String?): Result<Unit> =
         Result.success(Unit)
+
+    override suspend fun fetchLiveLeaderboard(roundKey: String): Result<FirebaseLeaderboard> =
+        Result.success(FirebaseLeaderboard(emptyList(), false))
+
+    override suspend fun writeSupporterStatus(uid: String, supporter: Boolean): Result<Unit> =
+        Result.success(Unit)
+
+    data class PurchaseCall(
+        val uid: String,
+        val productId: String,
+        val productType: String,
+        val purchaseDate: String,
+    )
+
+    val purchaseCalls = mutableListOf<PurchaseCall>()
+
+    override suspend fun writePurchaseMetadata(
+        uid: String,
+        productId: String,
+        productType: String,
+        purchaseDate: String,
+    ): Result<Unit> {
+        purchaseCalls.add(PurchaseCall(uid, productId, productType, purchaseDate))
+        return Result.success(Unit)
+    }
 }

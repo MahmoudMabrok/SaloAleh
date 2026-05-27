@@ -293,6 +293,30 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         }
     }
 
+    override suspend fun writePurchaseMetadata(
+        uid: String,
+        productId: String,
+        productType: String,
+        purchaseDate: String,
+    ): Result<Unit> {
+        log.d { "writePurchaseMetadata[$uid] product=$productId type=$productType date=$purchaseDate" }
+        return runCatching {
+            Firebase.database.reference("$ROOT_PATH/$USERS_PATH/$uid/$PURCHASES_PATH/$productId")
+                .updateChildren(
+                    mapOf(
+                        PRODUCT_ID_KEY to productId,
+                        PRODUCT_TYPE_KEY to productType,
+                        PURCHASE_DATE_KEY to purchaseDate,
+                    )
+                )
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "writePurchaseMetadata[$uid/$productId] ok" } },
+                onFailure = { log.e(it) { "writePurchaseMetadata[$uid/$productId] failed" } },
+            )
+        }
+    }
+
     override suspend fun fetchLiveLeaderboard(roundKey: String): Result<FirebaseLeaderboard> = runCatching {
         val snapshot = Firebase.database.reference(playersPath(roundKey))
             .valueEvents
@@ -379,5 +403,9 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         const val ALL_TIME_TOTAL_PATH = "allTimeTotal"
         const val USERS_PATH = "users"
         const val ACHIEVEMENTS_PATH = "achievements"
+        const val PURCHASES_PATH = "purchases"
+        const val PRODUCT_ID_KEY = "productId"
+        const val PRODUCT_TYPE_KEY = "productType"
+        const val PURCHASE_DATE_KEY = "purchaseDate"
     }
 }
