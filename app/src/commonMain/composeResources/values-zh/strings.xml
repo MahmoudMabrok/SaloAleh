@@ -223,6 +223,7 @@
 
     <!-- Premium Promo Dialog -->
     <string name="premium_promo_description">支持此应用作为持续善行\n分享对先知 ﷺ 每次赞颂的回赐——附带小福利</string>
+    <string name="premium_promo_others_achievements_note">📜 查看其他竞赛者的成就是支持者专享功能</string>
     <string name="premium_promo_later">稍后</string>
 
     <!-- Purchase Success Dialog -->

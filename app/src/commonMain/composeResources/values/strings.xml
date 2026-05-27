@@ -232,6 +232,7 @@
 
     <!-- Premium Promo Dialog -->
     <string name="premium_promo_description">ادعم التطبيق كصدقة جارية\nوشارك في ثواب كل صلاة على النبي ﷺ — مع مزايا بسيطة</string>
+    <string name="premium_promo_others_achievements_note">📜 عرض إنجازات المتسابقين متاح لداعمي التطبيق</string>
     <string name="premium_promo_later">لاحقًا</string>
 
     <!-- Purchase Success Dialog -->
