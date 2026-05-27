@@ -289,8 +289,7 @@ fun PaywallScreen(onBack: () -> Unit) {
                 Spacer(Modifier.height(16.dp))
 
                 // CTA button
-                val basicPrice = prices[ProductRegistry.SUB_MONTHLY_BASIC]
-                    ?: ProductRegistry.subscriptionTiers.first().defaultPrice
+                val selectedPrice = prices[selectedTier.productId] ?: selectedTier.defaultPrice
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -310,7 +309,7 @@ fun PaywallScreen(onBack: () -> Unit) {
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = stringResource(Res.string.paywall_support_now_from, basicPrice),
+                        text = stringResource(Res.string.paywall_support_now_price, selectedPrice),
                         color = ScreenBg,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
