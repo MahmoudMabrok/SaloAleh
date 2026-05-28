@@ -1,6 +1,10 @@
 package tools.mo3ta.salo.domain
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
+import tools.mo3ta.salo.data.billing.ProductRegistry
 import tools.mo3ta.salo.data.country.CountryCodeProvider
 import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseApi
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
@@ -58,6 +62,18 @@ class MohamedLoversRepository(
 
     suspend fun setScoreMasked(roundKey: String, uid: String, masked: Boolean): Result<Unit> =
         firebaseClient.setScoreMasked(roundKey, uid, masked)
+
+    suspend fun recordPurchase(productId: String): Result<Unit> {
+        val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
+        val productType = ProductRegistry.typeFor(productId).name
+        val purchaseDate = Clock.System.todayIn(TimeZone.of("Africa/Cairo")).toString()
+        return firebaseClient.writePurchaseMetadata(
+            uid = uid,
+            productId = productId,
+            productType = productType,
+            purchaseDate = purchaseDate,
+        )
+    }
 
     suspend fun setSupporter(supporter: Boolean): Result<Unit> {
         val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
