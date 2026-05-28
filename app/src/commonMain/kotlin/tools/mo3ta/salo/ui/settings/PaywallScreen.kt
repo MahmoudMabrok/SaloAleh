@@ -75,7 +75,8 @@ fun PaywallScreen(onBack: () -> Unit) {
 
     val prices by billingManager.productPrices.collectAsState()
 
-    val isPremium = premiumStore.hasFeature(PremiumFeature.SCORE_MASK)
+    val currentTier = premiumStore.highestTier
+    val isPremium = currentTier != null
     var scoreMasked by remember { mutableStateOf(premiumStore.isScoreMasked) }
     var selectedPeriod by remember { mutableStateOf(SubscriptionPeriod.MONTHLY) }
 
@@ -182,42 +183,45 @@ fun PaywallScreen(onBack: () -> Unit) {
             )
             Spacer(Modifier.height(28.dp))
 
-            if (isPremium) {
-                // Score mask toggle for existing supporters
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(CardBg)
-                        .border(1.dp, CardBorder, RoundedCornerShape(12.dp))
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(Res.string.paywall_hide_score_title),
-                            color = Color.White,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Medium,
-                        )
-                        Text(
-                            text = stringResource(Res.string.paywall_score_hidden_description),
-                            color = Color.White.copy(alpha = 0.5f),
-                            fontSize = 12.sp,
+            if (isPremium && currentTier != null) {
+                CurrentPlanCard(features = currentTier.features)
+                if (PremiumFeature.SCORE_MASK in currentTier.features) {
+                    Spacer(Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(CardBg)
+                            .border(1.dp, CardBorder, RoundedCornerShape(12.dp))
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(Res.string.paywall_hide_score_title),
+                                color = Color.White,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Medium,
+                            )
+                            Text(
+                                text = stringResource(Res.string.paywall_score_hidden_description),
+                                color = Color.White.copy(alpha = 0.5f),
+                                fontSize = 12.sp,
+                            )
+                        }
+                        Switch(
+                            checked = scoreMasked,
+                            onCheckedChange = { checked ->
+                                scoreMasked = checked
+                                premiumStore.isScoreMasked = checked
+                                scope.launch { repository.setScoreMasked(checked) }
+                                analyticsManager.logAction(
+                                    BillingAnalytics.SCORE_MASK_TOGGLED,
+                                    mapOf(BillingAnalytics.PARAM_ENABLED to checked.toString()),
+                                )
+                            },
                         )
                     }
-                    Switch(
-                        checked = scoreMasked,
-                        onCheckedChange = { checked ->
-                            scoreMasked = checked
-                            premiumStore.isScoreMasked = checked
-                            scope.launch { repository.setScoreMasked(checked) }
-                            analyticsManager.logAction(
-                                BillingAnalytics.SCORE_MASK_TOGGLED,
-                                mapOf(BillingAnalytics.PARAM_ENABLED to checked.toString()),
-                            )
-                        },
-                    )
                 }
             } else {
                 // Tier selection
@@ -339,6 +343,60 @@ fun PaywallScreen(onBack: () -> Unit) {
             }
         }
     }
+}
+
+@Composable
+private fun CurrentPlanCard(features: Set<PremiumFeature>) {
+    val orderedFeatures = PremiumFeature.entries.filter { it in features }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(CardBg)
+            .border(1.dp, MohamedLoversPalette.GoldGlow.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+            .padding(16.dp),
+    ) {
+        Text(
+            text = stringResource(Res.string.paywall_current_plan_features),
+            color = MohamedLoversPalette.GoldGlow,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        Spacer(Modifier.height(10.dp))
+        orderedFeatures.forEach { feature ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(text = feature.icon(), fontSize = 16.sp)
+                Text(
+                    text = feature.label(),
+                    color = Color.White,
+                    fontSize = 13.sp,
+                )
+            }
+        }
+    }
+}
+
+private fun PremiumFeature.icon(): String = when (this) {
+    PremiumFeature.SCORE_MASK -> "🔒"
+    PremiumFeature.SUPPORTER_BADGE -> "⭐"
+    PremiumFeature.FRIDAY_SCORES -> "👁️"
+    PremiumFeature.OTHERS_ACHIEVEMENTS -> "🏆"
+    PremiumFeature.LIVE_LEADERBOARD -> "📡"
+}
+
+@Composable
+private fun PremiumFeature.label(): String = when (this) {
+    PremiumFeature.SCORE_MASK -> stringResource(Res.string.paywall_hide_score_title)
+    PremiumFeature.SUPPORTER_BADGE -> stringResource(Res.string.paywall_supporter_badge_title)
+    PremiumFeature.FRIDAY_SCORES -> stringResource(Res.string.paywall_friday_scores_title)
+    PremiumFeature.OTHERS_ACHIEVEMENTS -> stringResource(Res.string.paywall_others_achievements_title)
+    PremiumFeature.LIVE_LEADERBOARD -> stringResource(Res.string.paywall_live_leaderboard_title)
 }
 
 @Composable
