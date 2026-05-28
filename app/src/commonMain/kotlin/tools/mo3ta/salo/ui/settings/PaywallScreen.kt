@@ -82,6 +82,8 @@ fun PaywallScreen(onBack: () -> Unit) {
     val visibleTiers = remember(selectedPeriod) {
         ProductRegistry.subscriptionTiers.filter { it.period == selectedPeriod }
     }
+    val basicTier = visibleTiers.firstOrNull { !it.features.contains(PremiumFeature.SCORE_MASK) }
+    val premiumTier = visibleTiers.firstOrNull { it.features.contains(PremiumFeature.SCORE_MASK) }
     var selectedTier by remember(selectedPeriod) { mutableStateOf(visibleTiers.lastOrNull() ?: visibleTiers.first()) }
 
     LaunchedEffect(Unit) {
@@ -231,46 +233,38 @@ fun PaywallScreen(onBack: () -> Unit) {
                 )
                 Spacer(Modifier.height(12.dp))
 
-                // Basic tier card
-                SpiritualTierCard(
-                    emoji = "🌙",
-                    tierName = stringResource(Res.string.paywall_basic_tier_label),
-                    price = prices[ProductRegistry.SUB_MONTHLY_BASIC]
-                        ?: ProductRegistry.subscriptionTiers.first().defaultPrice,
-                    features = listOf(
-                        "⭐" to stringResource(Res.string.paywall_supporter_badge_title),
-                        "👁️" to stringResource(Res.string.paywall_friday_scores_title),
-                        "🏆" to stringResource(Res.string.paywall_others_achievements_title),
-                    ),
-                    isSelected = selectedTier.features == ProductRegistry.subscriptionTiers.first().features,
-                    onClick = {
-                        selectedTier = visibleTiers.firstOrNull { !it.features.contains(PremiumFeature.SCORE_MASK) }
-                            ?: visibleTiers.first()
-                    },
-                )
-                Spacer(Modifier.height(10.dp))
+                if (basicTier != null) {
+                    SpiritualTierCard(
+                        emoji = "🌙",
+                        tierName = stringResource(Res.string.paywall_basic_tier_label),
+                        price = prices[basicTier.productId] ?: basicTier.defaultPrice,
+                        features = listOf(
+                            "⭐" to stringResource(Res.string.paywall_supporter_badge_title),
+                            "👁️" to stringResource(Res.string.paywall_friday_scores_title),
+                            "🏆" to stringResource(Res.string.paywall_others_achievements_title),
+                        ),
+                        isSelected = !selectedTier.features.contains(PremiumFeature.SCORE_MASK),
+                        onClick = { selectedTier = basicTier },
+                    )
+                    Spacer(Modifier.height(10.dp))
+                }
 
-                // Premium tier card
-                SpiritualTierCard(
-                    emoji = "⭐",
-                    tierName = stringResource(Res.string.paywall_premium_tier_label),
-                    price = prices[
-                        if (selectedPeriod == SubscriptionPeriod.MONTHLY) ProductRegistry.SUB_MONTHLY_PREMIUM
-                        else ProductRegistry.SUB_YEARLY_PREMIUM
-                    ] ?: visibleTiers.last().defaultPrice,
-                    features = listOf(
-                        "📡" to stringResource(Res.string.paywall_live_leaderboard_title),
-                        "🔒" to stringResource(Res.string.paywall_hide_score_title),
-                        "⭐" to stringResource(Res.string.paywall_supporter_badge_title),
-                        "👁️" to stringResource(Res.string.paywall_friday_scores_title),
-                        "🏆" to stringResource(Res.string.paywall_others_achievements_title),
-                    ),
-                    isSelected = selectedTier.features.contains(PremiumFeature.SCORE_MASK),
-                    onClick = {
-                        selectedTier = visibleTiers.lastOrNull { it.features.contains(PremiumFeature.SCORE_MASK) }
-                            ?: visibleTiers.last()
-                    },
-                )
+                if (premiumTier != null) {
+                    SpiritualTierCard(
+                        emoji = if (selectedPeriod == SubscriptionPeriod.YEARLY) "💎" else "⭐",
+                        tierName = stringResource(Res.string.paywall_premium_tier_label),
+                        price = prices[premiumTier.productId] ?: premiumTier.defaultPrice,
+                        features = listOf(
+                            "📡" to stringResource(Res.string.paywall_live_leaderboard_title),
+                            "🔒" to stringResource(Res.string.paywall_hide_score_title),
+                            "⭐" to stringResource(Res.string.paywall_supporter_badge_title),
+                            "👁️" to stringResource(Res.string.paywall_friday_scores_title),
+                            "🏆" to stringResource(Res.string.paywall_others_achievements_title),
+                        ),
+                        isSelected = selectedTier.features.contains(PremiumFeature.SCORE_MASK),
+                        onClick = { selectedTier = premiumTier },
+                    )
+                }
                 Spacer(Modifier.height(16.dp))
 
                 PeriodToggle(
