@@ -276,27 +276,24 @@ jobs:
             --notes "$NOTES" \
             --target "${{ github.ref_name }}"
 
-  notify-new-build:
-    name: Notify users — new build available
+  schedule-build-notification:
+    name: Schedule delayed build notification
     runs-on: ubuntu-latest
     needs: [deploy-android]
     if: needs.deploy-android.result == 'success' && github.event.inputs.track == 'production'
 
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install firebase-admin
-        run: npm install firebase-admin
-        working-directory: scripts
-
-      - name: Notify users of new build
-        run: node scripts/notify-new-build.js
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
-          NEW_BUILD_VERSION: ${{ github.event.inputs.version_name }}
-          GOOGLE_PLAY_TRACK: ${{ github.event.inputs.track }}
+      - name: Schedule notification via Deno scheduler
+        run: |
+          set -e
+          HTTP_STATUS=$(curl -s -o /tmp/response.json -w "%{http_code}" \
+            -X POST "${{ secrets.DENO_SCHEDULER_URL }}/schedule-notify" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.DENO_SCHEDULER_TOKEN }}" \
+            -d '{"version": "${{ github.event.inputs.version_name }}", "delay_hours": 2}')
+          echo "Response: $(cat /tmp/response.json)"
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "::error::Deno scheduler returned HTTP $HTTP_STATUS — notification NOT scheduled. Trigger notify-new-build.yml manually."
+            exit 1
+          fi
+          echo "Notification scheduled — will fire in 2 hours"

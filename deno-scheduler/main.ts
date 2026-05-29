@@ -26,6 +26,7 @@
 const OWNER = "MahmoudMabrok";
 const REPO = "SaloAleh";
 const REF = "main";
+const DEFAULT_NOTIFY_DELAY_HOURS = 2;
 
 const cronStatus: Record<string, { lastRunAt: string | null; lastResult: string | null }> = {
   leaderboard: { lastRunAt: null, lastResult: null },
@@ -35,6 +36,65 @@ const cronStatus: Record<string, { lastRunAt: string | null; lastResult: string 
   "notify-evening": { lastRunAt: null, lastResult: null },
   "notify-friday": { lastRunAt: null, lastResult: null },
 };
+
+const pendingNotifyBuild: { version: string; scheduledAt: string; firesAt: string } | null = null;
+let lastNotifyBuild: { version: string; dispatchedAt: string; result: string } | null = null;
+
+interface NotifyBuildMessage {
+  type: "notify-new-build";
+  version: string;
+}
+
+const kv = await Deno.openKv();
+
+kv.listenQueue(async (msg: unknown) => {
+  const message = msg as NotifyBuildMessage;
+  if (message.type !== "notify-new-build") return;
+
+  try {
+    await dispatchWorkflowWithInputs("notify-new-build.yml", { version: message.version });
+    lastNotifyBuild = {
+      version: message.version,
+      dispatchedAt: new Date().toISOString(),
+      result: "OK",
+    };
+    console.log(`[kv-queue] Dispatched notify-new-build.yml for v${message.version}`);
+  } catch (e) {
+    lastNotifyBuild = {
+      version: message.version,
+      dispatchedAt: new Date().toISOString(),
+      result: `FAILED: ${(e as Error).message}`,
+    };
+    console.error(`[kv-queue] Failed notify-new-build dispatch: ${(e as Error).message}`);
+    throw e;
+  }
+});
+
+async function dispatchWorkflowWithInputs(
+  workflowFile: string,
+  inputs: Record<string, string>,
+): Promise<void> {
+  const token = Deno.env.get("GITHUB_TOKEN");
+  if (!token) throw new Error("GITHUB_TOKEN env var is not set");
+
+  const url =
+    `https://api.github.com/repos/${OWNER}/${REPO}/actions/workflows/${workflowFile}/dispatches`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${token}`,
+      "X-GitHub-Api-Version": "2022-11-28",
+      "User-Agent": `${OWNER}-${REPO}-deno-cron`,
+    },
+    body: JSON.stringify({ ref: REF, inputs }),
+  });
+
+  if (res.status !== 204) {
+    throw new Error(`${res.status} ${res.statusText}: ${await res.text()}`);
+  }
+}
 
 async function dispatchWorkflow(workflowFile: string, key: string): Promise<void> {
   const token = Deno.env.get("GITHUB_TOKEN");
@@ -100,9 +160,9 @@ Deno.cron("notify-fri-12", "0 12 * * 5", { backoffSchedule: [1_000, 5_000, 30_00
 Deno.cron("notify-fri-14", "0 14 * * 5", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-friday"));
 Deno.cron("notify-fri-16", "0 16 * * 5", { backoffSchedule: [1_000, 5_000, 30_000] }, () => dispatchWorkflow("notify-users.yml", "notify-friday"));
 
-// Minimal health endpoint so the deployment is verifiable from a browser.
-Deno.serve((req) => {
+Deno.serve(async (req) => {
   const { pathname } = new URL(req.url);
+
   if (pathname === "/" || pathname === "/health") {
     return Response.json({
       service: "saloaleh-scheduler",
@@ -138,7 +198,50 @@ Deno.serve((req) => {
           ...cronStatus["notify-friday"],
         },
       },
+      "notify-build": {
+        pending: pendingNotifyBuild,
+        last: lastNotifyBuild,
+      },
     });
   }
+
+  if (req.method === "POST" && pathname === "/schedule-notify") {
+    const authToken = Deno.env.get("SCHEDULER_AUTH_TOKEN");
+    const provided = req.headers.get("Authorization")?.replace("Bearer ", "");
+    if (!authToken || provided !== authToken) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    let body: { version?: string; delay_hours?: number };
+    try {
+      body = await req.json();
+    } catch {
+      return Response.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+
+    const version = body.version;
+    if (!version) {
+      return Response.json({ error: "Missing 'version' field" }, { status: 400 });
+    }
+
+    const delayHours = body.delay_hours ?? DEFAULT_NOTIFY_DELAY_HOURS;
+    const delayMs = delayHours * 60 * 60 * 1000;
+
+    const message: NotifyBuildMessage = { type: "notify-new-build", version };
+    await kv.enqueue(message, { delay: delayMs, backoffSchedule: [60_000, 300_000, 900_000] });
+
+    const now = new Date();
+    const firesAt = new Date(now.getTime() + delayMs);
+
+    console.log(`[schedule-notify] Queued notify-new-build v${version} — fires at ${firesAt.toISOString()}`);
+
+    return Response.json({
+      scheduled: true,
+      version,
+      delay_hours: delayHours,
+      fires_at: firesAt.toISOString(),
+    });
+  }
+
   return new Response("Not found", { status: 404 });
 });

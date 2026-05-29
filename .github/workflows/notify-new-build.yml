@@ -1,0 +1,35 @@
+name: Notify New Build
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version that was released (e.g. 1.3.0)'
+        required: true
+
+jobs:
+  notify:
+    name: Send new-build FCM notifications
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install firebase-admin
+        run: npm install firebase-admin
+        working-directory: scripts
+
+      - name: Notify users of new build
+        run: node scripts/notify-new-build.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          NEW_BUILD_VERSION: ${{ github.event.inputs.version }}
+          GOOGLE_PLAY_TRACK: production
