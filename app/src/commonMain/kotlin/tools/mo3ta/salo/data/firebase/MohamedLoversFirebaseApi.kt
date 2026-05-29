@@ -30,4 +30,5 @@ interface MohamedLoversFirebaseApi {
         productType: String,
         purchaseDate: String,
     ): Result<Unit>
+    suspend fun writeNickname(roundKey: String, uid: String, nickname: String): Result<Unit>
 }

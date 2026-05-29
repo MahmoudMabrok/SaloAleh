@@ -134,6 +134,13 @@ class MohamedLoversRepository(
     suspend fun fetchUserAchievements(uid: String): Result<Map<String, UserAchievement>> =
         firebaseClient.fetchUserAchievements(uid)
 
+    suspend fun writeNickname(nickname: String): Result<Unit> {
+        val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
+        val roundKey = networkTimeProvider.getCompetitionWindow().roundKey
+            ?: return Result.failure(IllegalStateException("No active round"))
+        return firebaseClient.writeNickname(roundKey, uid, nickname)
+    }
+
     suspend fun writeUserActivity(uid: String, today: kotlinx.datetime.LocalDate): Result<Unit> {
         val installDate = sessionStore.getOrSetInstallDate(today)
         val lastOpenDate = today.toString()

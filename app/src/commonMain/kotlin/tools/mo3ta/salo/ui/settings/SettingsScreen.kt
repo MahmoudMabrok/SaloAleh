@@ -13,6 +13,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -24,6 +26,8 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -58,6 +62,7 @@ import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.billing.SupportTier
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
+import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.notification.NotificationScheduler
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
 import org.koin.compose.viewmodel.koinViewModel
@@ -78,11 +83,14 @@ import tools.mo3ta.salo.ui.showPlatformToast
 fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpenExtensionQr: () -> Unit = {}, onOpenPaywall: () -> Unit = {}) {
     val store: NotificationSettingsStore = koinInject()
     val hadithStore: DailyHadithStore = koinInject()
+    val sessionStore: MohamedLoversSessionStore = koinInject()
     val viewModel: MohamedLoversViewModel = koinViewModel()
     var dailyEnabled by remember { mutableStateOf(store.dailyEnabled) }
     var fridayEnabled by remember { mutableStateOf(store.fridayEnabled) }
     var hadithOnStartup by remember { mutableStateOf(hadithStore.showOnStartup) }
     var showRankChip by remember { mutableStateOf(store.showRankChip) }
+    var nicknameText by remember { mutableStateOf(sessionStore.getNickname().orEmpty()) }
+    var nicknameEnabled by remember { mutableStateOf(sessionStore.isNicknameEnabled) }
 
     var notifPermGranted by remember { mutableStateOf(areNotificationsEnabled()) }
     var exactAlarmGranted by remember { mutableStateOf(canScheduleExactAlarms()) }
@@ -254,6 +262,53 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
                 onToggle = { checked ->
                     showRankChip = checked
                     store.showRankChip = checked
+                },
+            )
+
+            Text(
+                text = stringResource(Res.string.settings_nickname_header),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 24.dp, bottom = 8.dp),
+            )
+
+            OutlinedTextField(
+                value = nicknameText,
+                onValueChange = { value ->
+                    if (value.length <= 20) {
+                        nicknameText = value
+                        viewModel.updateNicknameLocal(value.ifBlank { null })
+                    }
+                },
+                label = { Text(stringResource(Res.string.settings_nickname_label)) },
+                placeholder = { Text(stringResource(Res.string.settings_nickname_placeholder)) },
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    focusedBorderColor = MohamedLoversPalette.GoldGlow,
+                    unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
+                    focusedLabelColor = MohamedLoversPalette.GoldGlow,
+                    unfocusedLabelColor = Color.White.copy(alpha = 0.5f),
+                    cursorColor = MohamedLoversPalette.GoldGlow,
+                    focusedPlaceholderColor = Color.White.copy(alpha = 0.3f),
+                    unfocusedPlaceholderColor = Color.White.copy(alpha = 0.3f),
+                ),
+                modifier = Modifier.fillMaxWidth().onFocusChanged { state ->
+                    if (!state.isFocused) viewModel.commitNickname()
+                },
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            SettingToggleRow(
+                label = stringResource(Res.string.settings_nickname_show),
+                subtitle = stringResource(Res.string.settings_nickname_show_subtitle),
+                checked = nicknameEnabled,
+                onToggle = { checked ->
+                    nicknameEnabled = checked
+                    viewModel.setNicknameEnabled(checked)
                 },
             )
 

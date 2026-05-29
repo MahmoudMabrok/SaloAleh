@@ -482,4 +482,14 @@
     <string name="milestone_support_dismiss">لاحقًا</string>
     <string name="leaderboard_join_supporters">انضم للداعمين ⭐</string>
     <string name="leaderboard_unlock_scores_hint">ادعم التطبيق لرؤية نتائج المتسابقين 🔓</string>
+
+    <string name="settings_nickname_header">الاسم</string>
+    <string name="settings_nickname_label">اسمك</string>
+    <string name="settings_nickname_placeholder">مثال: محب الرسول</string>
+    <string name="settings_nickname_show">عرض الاسم</string>
+    <string name="settings_nickname_show_subtitle">إظهار اسمك بدلاً من الرمز في لوحة المتصدرين</string>
+    <string name="nickname_announcement_title">اختر اسمك!</string>
+    <string name="nickname_announcement_body">الآن يمكنك اختيار اسم يظهر في لوحة المتصدرين بدلاً من الرمز العشوائي. اذهب للإعدادات لتختار اسمك.</string>
+    <string name="nickname_announcement_cta">اختر اسمي</string>
+    <string name="nickname_announcement_dismiss">لاحقًا</string>
 </resources>

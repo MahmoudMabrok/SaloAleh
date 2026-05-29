@@ -472,4 +472,14 @@
     <string name="milestone_support_dismiss">Later</string>
     <string name="leaderboard_join_supporters">Join supporters ⭐</string>
     <string name="leaderboard_unlock_scores_hint">Support the app to see competitors\' scores 🔓</string>
+
+    <string name="settings_nickname_header">Name</string>
+    <string name="settings_nickname_label">Your name</string>
+    <string name="settings_nickname_placeholder">e.g. Lover of the Prophet</string>
+    <string name="settings_nickname_show">Show name</string>
+    <string name="settings_nickname_show_subtitle">Display your name instead of the code on the leaderboard</string>
+    <string name="nickname_announcement_title">Choose your name!</string>
+    <string name="nickname_announcement_body">You can now choose a name to show on the leaderboard instead of the random code. Go to settings to pick your name.</string>
+    <string name="nickname_announcement_cta">Choose my name</string>
+    <string name="nickname_announcement_dismiss">Later</string>
 </resources>

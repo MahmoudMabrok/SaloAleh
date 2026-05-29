@@ -44,6 +44,7 @@ import tools.mo3ta.salo.ui.settings.PurchaseSuccessDialog
 import tools.mo3ta.salo.ui.settings.SettingsScreen
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
+import tools.mo3ta.salo.ui.NicknameAnnouncementDialog
 import tools.mo3ta.salo.ui.takbeer.TakbeerAnnouncementDialog
 import tools.mo3ta.salo.ui.takbeer.TakbeerSessionScreen
 import tools.mo3ta.salo.ui.tendays.TenDaysPromoDialog
@@ -106,6 +107,10 @@ fun App(
         var takbeerAnnouncementDone by remember {
             mutableStateOf(settings.getBoolean("takbeer_announcement_shown", false))
         }
+        val sessionStoreApp = koinInject<MohamedLoversSessionStore>()
+        var nicknameAnnouncementDone by remember {
+            mutableStateOf(sessionStoreApp.isNicknameAnnouncementShown)
+        }
 
         when {
             showPaywall -> PaywallScreen(onBack = { showPaywall = false })
@@ -131,7 +136,7 @@ fun App(
                 onOpenTenDays = { showTenDays = true },
                 onOpenTakbeerSession = { showTakbeerSession = true },
                 onOpenPaywall = { showPaywall = true },
-                announcementsDone = takbeerAnnouncementDone,
+                announcementsDone = takbeerAnnouncementDone && nicknameAnnouncementDone,
             )
         }
 
@@ -177,6 +182,22 @@ fun App(
                     settings.putBoolean("takbeer_announcement_shown", true)
                     takbeerAnnouncementDone = true
                     analyticsManager.logAction(AppAnalytics.TAKBEER_ANNOUNCEMENT_DISMISSED)
+                },
+            )
+        }
+
+        if (takbeerAnnouncementDone && !nicknameAnnouncementDone) {
+            NicknameAnnouncementDialog(
+                onOpenSettings = {
+                    sessionStoreApp.isNicknameAnnouncementShown = true
+                    nicknameAnnouncementDone = true
+                    showSettings = true
+                    analyticsManager.logAction(AppAnalytics.NICKNAME_ANNOUNCEMENT_OPENED)
+                },
+                onDismiss = {
+                    sessionStoreApp.isNicknameAnnouncementShown = true
+                    nicknameAnnouncementDone = true
+                    analyticsManager.logAction(AppAnalytics.NICKNAME_ANNOUNCEMENT_DISMISSED)
                 },
             )
         }

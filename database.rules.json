@@ -161,6 +161,9 @@
             "isSupporter": {
               ".validate": "newData.isBoolean()"
             },
+            "nickname": {
+              ".validate": "newData.isString() && newData.val().length <= 20"
+            },
 
             "$other": { ".validate": false }
           }

@@ -133,15 +133,16 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
     ): Result<Unit> {
         log.d { "incrementSession[$roundKey/$uid] delta=$delta country=$countryCode" }
         val safeCode = countryCode.takeIf { it.length >= 2 } ?: MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE
+        val nickname = sessionStore.getNickname()?.takeIf { sessionStore.isNicknameEnabled }
+        val fields = mutableMapOf<String, Any>(
+            UID_KEY to uid,
+            COUNTRY_CODE_KEY to safeCode,
+            TOTAL_COUNT_KEY to ServerValue.increment(delta.toDouble()),
+            UPDATED_AT_KEY to ServerValue.TIMESTAMP,
+        )
+        if (nickname != null) fields[NICKNAME_KEY] = nickname
         return runCatching {
-            Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(
-                mapOf(
-                    UID_KEY to uid,
-                    COUNTRY_CODE_KEY to safeCode,
-                    TOTAL_COUNT_KEY to ServerValue.increment(delta.toDouble()),
-                    UPDATED_AT_KEY to ServerValue.TIMESTAMP,
-                )
-            )
+            Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(fields)
         }.also { result ->
             result.fold(
                 onSuccess = { log.d { "incrementSession[$roundKey/$uid] ok" } },
@@ -317,6 +318,21 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         }
     }
 
+    override suspend fun writeNickname(roundKey: String, uid: String, nickname: String): Result<Unit> {
+        log.d { "writeNickname[$roundKey/$uid] nickname=$nickname" }
+        val value = nickname.ifBlank { "" }
+        return runCatching {
+            Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(
+                mapOf(NICKNAME_KEY to value)
+            )
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "writeNickname[$roundKey/$uid] ok" } },
+                onFailure = { log.e(it) { "writeNickname[$roundKey/$uid] failed" } },
+            )
+        }
+    }
+
     override suspend fun fetchLiveLeaderboard(roundKey: String): Result<FirebaseLeaderboard> = runCatching {
         val snapshot = Firebase.database.reference(playersPath(roundKey))
             .valueEvents
@@ -333,6 +349,7 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
                 countryCode = player.countryCode,
                 scoreMasked = false,
                 isSupporter = false,
+                nickname = player.nickname,
             )
         }
         FirebaseLeaderboard(entries = entries, isFinal = false)
@@ -359,7 +376,8 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         val scoreMasked = map[SCORE_MASKED_KEY] as? Boolean ?: false
         val isSupporter = map[IS_SUPPORTER_KEY] as? Boolean ?: false
         val dailyBadge = map[DAILY_BADGE_KEY] as? String
-        return FirebaseLeaderboardEntry(rank = rank, uid = uid, score = score, countryCode = countryCode, rankChange = rankChange, scoreMasked = scoreMasked, isSupporter = isSupporter, dailyBadge = dailyBadge)
+        val nickname = map[NICKNAME_KEY] as? String ?: ""
+        return FirebaseLeaderboardEntry(rank = rank, uid = uid, score = score, countryCode = countryCode, rankChange = rankChange, scoreMasked = scoreMasked, isSupporter = isSupporter, dailyBadge = dailyBadge, nickname = nickname)
     }
 
     private fun dev.gitlive.firebase.database.DataSnapshot.toPlayer(): MohamedLoversPlayer? {
@@ -375,6 +393,7 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
             countryCode = map[COUNTRY_CODE_KEY] as? String ?: "",
             updatedAt = (map[UPDATED_AT_KEY] as? Number)?.toLong() ?: 0L,
             yesterdayTotalScore = (map[YESTERDAY_TOTAL_SCORE_KEY] as? Number)?.toInt() ?: 0,
+            nickname = map[NICKNAME_KEY] as? String ?: "",
         )
     }
 
@@ -397,6 +416,7 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         const val SCORE_MASKED_KEY = "scoreMasked"
         const val IS_SUPPORTER_KEY = "isSupporter"
         const val DAILY_BADGE_KEY = "dailyBadge"
+        const val NICKNAME_KEY = "nickname"
         const val YESTERDAY_TOTAL_SCORE_KEY = "yesterdayTotalScore"
         const val ROUND_TOTAL_PATH = "roundTotal"
         const val ROUND_PLAYER_COUNT_PATH = "roundPlayerCount"

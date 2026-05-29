@@ -127,6 +127,20 @@ class MohamedLoversSessionStore(private val settings: Settings) {
     fun getLastSalawatTimestamp(): Long = settings.getLong(KEY_LAST_SALAWAT_TS, 0L)
     fun saveLastSalawatTimestamp(ts: Long) = settings.putLong(KEY_LAST_SALAWAT_TS, ts)
 
+    fun getNickname(): String? = settings.getStringOrNull(KEY_NICKNAME)?.takeIf { it.isNotBlank() }
+    fun setNickname(name: String?) {
+        if (name.isNullOrBlank()) settings.remove(KEY_NICKNAME)
+        else settings.putString(KEY_NICKNAME, name.trim().take(MAX_NICKNAME_LENGTH))
+    }
+
+    var isNicknameEnabled: Boolean
+        get() = settings.getBoolean(KEY_NICKNAME_ENABLED, false)
+        set(v) = settings.putBoolean(KEY_NICKNAME_ENABLED, v)
+
+    var isNicknameAnnouncementShown: Boolean
+        get() = settings.getBoolean(KEY_NICKNAME_ANNOUNCEMENT_SHOWN, false)
+        set(v) = settings.putBoolean(KEY_NICKNAME_ANNOUNCEMENT_SHOWN, v)
+
     fun getSavedFcmToken(): String? = settings.getStringOrNull(KEY_FCM_TOKEN)
     fun saveLocalFcmToken(token: String) = settings.putString(KEY_FCM_TOKEN, token)
 
@@ -163,5 +177,9 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         const val KEY_LAST_MILESTONE_LEVEL = "last_milestone_level"
         const val KEY_LAST_KNOWN_RANK = "last_known_rank"
         const val KEY_LAST_SALAWAT_TS = "last_salawat_ts"
+        const val KEY_NICKNAME = "user_nickname"
+        const val KEY_NICKNAME_ENABLED = "nickname_enabled"
+        const val KEY_NICKNAME_ANNOUNCEMENT_SHOWN = "nickname_announcement_shown"
+        const val MAX_NICKNAME_LENGTH = 20
     }
 }

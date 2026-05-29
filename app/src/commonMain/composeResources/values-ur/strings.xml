@@ -459,4 +459,14 @@
     <string name="milestone_support_dismiss">بعد میں</string>
     <string name="leaderboard_join_supporters">حامیوں میں شامل ہوں ⭐</string>
     <string name="leaderboard_unlock_scores_hint">مقابلین کے اسکور دیکھنے کے لیے ایپ کی مدد کریں 🔓</string>
+
+    <string name="settings_nickname_header">نام</string>
+    <string name="settings_nickname_label">آپ کا نام</string>
+    <string name="settings_nickname_placeholder">مثلاً: محبِ رسول</string>
+    <string name="settings_nickname_show">نام دکھائیں</string>
+    <string name="settings_nickname_show_subtitle">لیڈربورڈ پر کوڈ کی بجائے اپنا نام ظاہر کریں</string>
+    <string name="nickname_announcement_title">اپنا نام چنیں!</string>
+    <string name="nickname_announcement_body">اب آپ لیڈربورڈ پر بے ترتیب کوڈ کی بجائے اپنا نام دکھا سکتے ہیں۔ سیٹنگز میں جائیں اور اپنا نام چنیں۔</string>
+    <string name="nickname_announcement_cta">میرا نام چنیں</string>
+    <string name="nickname_announcement_dismiss">بعد میں</string>
 </resources>

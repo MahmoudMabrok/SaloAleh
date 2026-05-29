@@ -314,6 +314,28 @@ class MohamedLoversViewModel(
     fun dismissDailyGoalCompleted() = _state.update { it.copy(dailyGoalJustCompleted = false) }
     fun dismissOvertake() = _state.update { it.copy(overtakeRank = null) }
     fun dismissMilestone() = _state.update { it.copy(milestoneThreshold = null, milestoneBadgeKey = null) }
+    fun updateNicknameLocal(name: String?) {
+        sessionStore.setNickname(name)
+        val nick = name?.takeIf { sessionStore.isNicknameEnabled }.orEmpty()
+        val uid = authUid ?: return
+        _state.update { it.copy(selfDisplayTag = buildMohamedLoversDisplayTag(uid, it.countryCode, nick)) }
+        applyLeaderboard()
+    }
+
+    fun commitNickname() {
+        val nick = sessionStore.getNickname()?.takeIf { sessionStore.isNicknameEnabled }.orEmpty()
+        viewModelScope.launch { repository.writeNickname(nick) }
+    }
+
+    fun setNicknameEnabled(enabled: Boolean) {
+        sessionStore.isNicknameEnabled = enabled
+        val nick = sessionStore.getNickname()?.takeIf { enabled }.orEmpty()
+        val uid = authUid ?: return
+        _state.update { it.copy(selfDisplayTag = buildMohamedLoversDisplayTag(uid, it.countryCode, nick)) }
+        viewModelScope.launch { repository.writeNickname(nick) }
+        applyLeaderboard()
+    }
+
     fun dismissRankMovement() = _state.update { it.copy(rankMovementDelta = null) }
 
     fun dismissDailyLeaderboardPromo() {
@@ -388,7 +410,8 @@ class MohamedLoversViewModel(
             }
 
             authUid = uid
-            _state.update { it.copy(selfDisplayTag = buildMohamedLoversDisplayTag(uid, it.countryCode)) }
+            val selfNickname = sessionStore.getNickname()?.takeIf { sessionStore.isNicknameEnabled }.orEmpty()
+            _state.update { it.copy(selfDisplayTag = buildMohamedLoversDisplayTag(uid, it.countryCode, selfNickname)) }
             val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
             launch { repository.writeUserActivity(uid, today) }
             launch { repository.setSupporter(premiumStore.hasFeature(PremiumFeature.SUPPORTER_BADGE)) }
@@ -506,12 +529,14 @@ class MohamedLoversViewModel(
         val selfProjectedDaily = (selfRemoteTotal - (remoteSelfPlayer?.yesterdayTotalScore ?: 0)).coerceAtLeast(0) + pendingNet
         val selfDisplayScore = if (isDaily) selfProjectedDaily else selfProjectedTotal
 
+        val selfNickname = sessionStore.getNickname()?.takeIf { sessionStore.isNicknameEnabled }.orEmpty()
         val topEntries = remoteLeaderboard.entries.map { entry ->
             val isCurrentUser = entry.uid == uid
             val score = if (isCurrentUser) selfDisplayScore else entry.score
+            val nick = if (isCurrentUser) selfNickname else entry.nickname
             MohamedLoversLeaderboardEntry(
                 rank = 0,
-                displayTag = buildMohamedLoversDisplayTag(entry.uid, entry.countryCode),
+                displayTag = buildMohamedLoversDisplayTag(entry.uid, entry.countryCode, nick),
                 totalCount = score,
                 isCurrentUser = isCurrentUser,
                 uid = entry.uid,
@@ -534,6 +559,7 @@ class MohamedLoversViewModel(
                     uid,
                     remoteSelfPlayer?.countryCode?.ifBlank { state.value.countryCode }
                         ?: state.value.countryCode,
+                    selfNickname,
                 ),
                 totalCount = selfDisplayScore,
                 isCurrentUser = true,

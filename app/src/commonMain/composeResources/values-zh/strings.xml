@@ -459,4 +459,14 @@
     <string name="milestone_support_dismiss">稍后</string>
     <string name="leaderboard_join_supporters">加入支持者 ⭐</string>
     <string name="leaderboard_unlock_scores_hint">支持应用以查看参赛者成绩 🔓</string>
+
+    <string name="settings_nickname_header">名字</string>
+    <string name="settings_nickname_label">你的名字</string>
+    <string name="settings_nickname_placeholder">例如：爱先知的人</string>
+    <string name="settings_nickname_show">显示名字</string>
+    <string name="settings_nickname_show_subtitle">在排行榜上显示你的名字而不是代码</string>
+    <string name="nickname_announcement_title">选择你的名字！</string>
+    <string name="nickname_announcement_body">现在你可以选择一个名字显示在排行榜上，代替随机代码。前往设置选择你的名字。</string>
+    <string name="nickname_announcement_cta">选择我的名字</string>
+    <string name="nickname_announcement_dismiss">稍后</string>
 </resources>

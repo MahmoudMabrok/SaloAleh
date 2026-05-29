@@ -12,6 +12,7 @@ data class MohamedLoversPlayer(
     val countryCode: String = "",
     val updatedAt: Long = 0L,
     val yesterdayTotalScore: Int = 0,
+    val nickname: String = "",
 )
 
 data class MohamedLoversPendingSession(
@@ -35,6 +36,7 @@ data class FirebaseLeaderboardEntry(
     val scoreMasked: Boolean = false,
     val isSupporter: Boolean = false,
     val dailyBadge: String? = null,
+    val nickname: String = "",
 )
 
 data class FirebaseLeaderboard(
@@ -52,8 +54,9 @@ data class MohamedLoversBootstrap(
 const val MOHAMED_LOVERS_TOP_LIMIT = 10
 const val MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE = "NA"
 
-fun buildMohamedLoversDisplayTag(uid: String, countryCode: String): String {
-    val tag = uid.takeLast(6).uppercase().ifBlank { "------" }
+fun buildMohamedLoversDisplayTag(uid: String, countryCode: String, nickname: String = ""): String {
     val country = countryCode.uppercase().ifBlank { MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE }
+    if (nickname.isNotBlank()) return "$country • $nickname"
+    val tag = uid.takeLast(6).uppercase().ifBlank { "------" }
     return "$country • $tag"
 }

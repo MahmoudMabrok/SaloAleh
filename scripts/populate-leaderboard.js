@@ -111,6 +111,7 @@ async function main() {
         scoreMasked: data.scoreMasked === true,
         isSupporter: data.isSupporter === true,
         dailyBadge: typeof data.dailyBadge === 'string' ? data.dailyBadge : null,
+        nickname: typeof data.nickname === 'string' ? data.nickname : '',
       });
     }
   });
@@ -138,6 +139,7 @@ async function main() {
     if (player.scoreMasked) entry.scoreMasked = true;
     if (player.isSupporter) entry.isSupporter = true;
     if (player.dailyBadge) entry.dailyBadge = player.dailyBadge;
+    if (player.nickname) entry.nickname = player.nickname;
     leaderboard[String(i + 1)] = entry;
   });
 
@@ -159,6 +161,7 @@ async function main() {
     if (player.scoreMasked) entry.scoreMasked = true;
     if (player.isSupporter) entry.isSupporter = true;
     if (player.dailyBadge) entry.dailyBadge = player.dailyBadge;
+    if (player.nickname) entry.nickname = player.nickname;
     dailyLeaderboard[String(i + 1)] = entry;
   });
 
