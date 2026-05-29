@@ -89,35 +89,27 @@ async function sendDueBuildNotification(db) {
     return;
   }
 
-  console.log(`[build-notif] v${version} is due — broadcasting then clearing node`);
-
-  const usersSnap = await db.ref('mohamed_lovers/users').get();
   const title = 'تحديث جديد قادم 🎉';
   const body = version
     ? `الإصدار ${version} في الطريق إليك — قد يستغرق ظهوره بعض الوقت، تحقق من المتجر قريباً`
     : 'إصدار جديد من التطبيق في الطريق إليك — قد يستغرق ظهوره بعض الوقت، تحقق من المتجر قريباً';
 
-  const sendPromises = [];
-  let tokenCount = 0;
-  usersSnap.forEach(userSnap => {
-    const { fcmToken } = userSnap.val() || {};
-    if (!fcmToken) return;
-    tokenCount++;
-    sendPromises.push(
-      admin.messaging().send({
-        token: fcmToken,
-        notification: { title, body },
-        data: { title, body, notification_type: 'version_update', new_version: version },
-      })
-        .then(msgId => console.log(`  build-notif uid=${userSnap.key}: sent msgId=${msgId}`))
-        .catch(e => console.error(`  build-notif uid=${userSnap.key}: send failed: ${e.message}`))
-    );
-  });
+  // Single fan-out via the "general" FCM topic — both Android and iOS subscribe
+  // on launch once notifications are granted, so one send reaches everyone
+  // (no need to read users or loop over per-device tokens).
+  try {
+    const msgId = await admin.messaging().send({
+      topic: 'general',
+      notification: { title, body },
+      data: { title, body, notification_type: 'version_update', new_version: version },
+    });
+    console.log(`[build-notif] v${version} broadcast to topic "general" msgId=${msgId}`);
+  } catch (e) {
+    // Leave the node in place so the next run retries instead of silently dropping it.
+    console.error(`[build-notif] topic send failed: ${e.message} — leaving node for retry`);
+    return;
+  }
 
-  console.log(`[build-notif] sending to ${tokenCount} user(s)`);
-  await Promise.all(sendPromises);
-
-  // Clear the node only after sends are attempted, so a crash mid-run retries next time.
   await ref.remove();
   console.log('[build-notif] done — node cleared');
 }
