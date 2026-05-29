@@ -26,7 +26,6 @@
 const OWNER = "MahmoudMabrok";
 const REPO = "SaloAleh";
 const REF = "main";
-const DEFAULT_NOTIFY_DELAY_HOURS = 2;
 
 const cronStatus: Record<string, { lastRunAt: string | null; lastResult: string | null }> = {
   leaderboard: { lastRunAt: null, lastResult: null },
@@ -36,97 +35,6 @@ const cronStatus: Record<string, { lastRunAt: string | null; lastResult: string 
   "notify-evening": { lastRunAt: null, lastResult: null },
   "notify-friday": { lastRunAt: null, lastResult: null },
 };
-
-let pendingNotifyBuild: { version: string; scheduledAt: string; firesAt: string } | null = null;
-let lastNotifyBuild: { version: string; dispatchedAt: string; result: string } | null = null;
-
-interface NotifyBuildMessage {
-  type: "notify-new-build";
-  version: string;
-}
-
-// Deno KV gives us a *durable* delayed queue, but it is not available on every
-// Deno Deploy runtime (the project may not have KV provisioned, or the runtime
-// may not expose `Deno.openKv`). When KV is missing we fall back to an in-isolate
-// `setTimeout`; the isolate is kept alive by the `Deno.cron` jobs below, so a
-// short (hours-long) timer fires reliably in practice. The fallback is best-effort
-// — a redeploy of this service mid-delay would drop a pending timer — which is an
-// acceptable trade-off for a "new build available" nudge.
-async function openKvSafe(): Promise<Deno.Kv | null> {
-  if (typeof Deno.openKv !== "function") return null;
-  try {
-    return await Deno.openKv();
-  } catch (e) {
-    console.error(`[kv] Deno.openKv() failed, falling back to timer: ${(e as Error).message}`);
-    return null;
-  }
-}
-
-const kv = await openKvSafe();
-
-function recordNotifyResult(version: string, error?: Error): void {
-  lastNotifyBuild = {
-    version,
-    dispatchedAt: new Date().toISOString(),
-    result: error ? `FAILED: ${error.message}` : "OK",
-  };
-  if (pendingNotifyBuild?.version === version) pendingNotifyBuild = null;
-}
-
-// Best-effort timer fallback used when Deno KV is unavailable.
-function scheduleNotifyViaTimer(version: string, delayMs: number): void {
-  setTimeout(async () => {
-    try {
-      await dispatchWorkflowWithInputs("notify-new-build.yml", { version });
-      recordNotifyResult(version);
-      console.log(`[timer] Dispatched notify-new-build.yml for v${version}`);
-    } catch (e) {
-      recordNotifyResult(version, e as Error);
-      console.error(`[timer] Failed notify-new-build dispatch: ${(e as Error).message}`);
-    }
-  }, delayMs);
-}
-
-kv?.listenQueue(async (msg: unknown) => {
-  const message = msg as NotifyBuildMessage;
-  if (message.type !== "notify-new-build") return;
-
-  try {
-    await dispatchWorkflowWithInputs("notify-new-build.yml", { version: message.version });
-    recordNotifyResult(message.version);
-    console.log(`[kv-queue] Dispatched notify-new-build.yml for v${message.version}`);
-  } catch (e) {
-    recordNotifyResult(message.version, e as Error);
-    console.error(`[kv-queue] Failed notify-new-build dispatch: ${(e as Error).message}`);
-    throw e;
-  }
-});
-
-async function dispatchWorkflowWithInputs(
-  workflowFile: string,
-  inputs: Record<string, string>,
-): Promise<void> {
-  const token = Deno.env.get("GITHUB_TOKEN");
-  if (!token) throw new Error("GITHUB_TOKEN env var is not set");
-
-  const url =
-    `https://api.github.com/repos/${OWNER}/${REPO}/actions/workflows/${workflowFile}/dispatches`;
-
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      Accept: "application/vnd.github+json",
-      Authorization: `Bearer ${token}`,
-      "X-GitHub-Api-Version": "2022-11-28",
-      "User-Agent": `${OWNER}-${REPO}-deno-cron`,
-    },
-    body: JSON.stringify({ ref: REF, inputs }),
-  });
-
-  if (res.status !== 204) {
-    throw new Error(`${res.status} ${res.statusText}: ${await res.text()}`);
-  }
-}
 
 async function dispatchWorkflow(workflowFile: string, key: string): Promise<void> {
   const token = Deno.env.get("GITHUB_TOKEN");
@@ -230,58 +138,6 @@ Deno.serve(async (req) => {
           ...cronStatus["notify-friday"],
         },
       },
-      "notify-build": {
-        pending: pendingNotifyBuild,
-        last: lastNotifyBuild,
-      },
-    });
-  }
-
-  if (req.method === "POST" && pathname === "/schedule-notify") {
-    const authToken = Deno.env.get("SCHEDULER_AUTH_TOKEN");
-    const provided = req.headers.get("Authorization")?.replace("Bearer ", "");
-    if (!authToken || provided !== authToken) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    let body: { version?: string; delay_hours?: number };
-    try {
-      body = await req.json();
-    } catch {
-      return Response.json({ error: "Invalid JSON body" }, { status: 400 });
-    }
-
-    const version = body.version;
-    if (!version) {
-      return Response.json({ error: "Missing 'version' field" }, { status: 400 });
-    }
-
-    const delayHours = body.delay_hours ?? DEFAULT_NOTIFY_DELAY_HOURS;
-    const delayMs = delayHours * 60 * 60 * 1000;
-
-    const now = new Date();
-    const firesAt = new Date(now.getTime() + delayMs).toISOString();
-
-    let mechanism: "kv-queue" | "timer";
-    if (kv) {
-      const message: NotifyBuildMessage = { type: "notify-new-build", version };
-      await kv.enqueue(message, { delay: delayMs, backoffSchedule: [60_000, 300_000, 900_000] });
-      mechanism = "kv-queue";
-    } else {
-      scheduleNotifyViaTimer(version, delayMs);
-      mechanism = "timer";
-    }
-
-    pendingNotifyBuild = { version, scheduledAt: now.toISOString(), firesAt };
-
-    console.log(`[schedule-notify] Scheduled notify-new-build v${version} via ${mechanism} — fires at ${firesAt}`);
-
-    return Response.json({
-      scheduled: true,
-      version,
-      delay_hours: delayHours,
-      fires_at: firesAt,
-      mechanism,
     });
   }
 

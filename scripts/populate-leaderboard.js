@@ -74,12 +74,64 @@ function computeRankChange(uid, newRank, oldRankMap) {
   return newRank < oldRank ? 'up' : 'down';
 }
 
+// Delayed new-build notification: deploy.yml writes a scheduledBuildNotification
+// node (with firesAt) after a production release; we broadcast once that time
+// has passed, then delete the node so it fires exactly once.
+async function sendDueBuildNotification(db) {
+  const ref = db.ref('mohamed_lovers/scheduledBuildNotification');
+  const snap = await ref.get();
+  if (!snap.exists()) return;
+
+  const { version = '', firesAt = 0 } = snap.val() || {};
+  const now = Date.now();
+  if (typeof firesAt !== 'number' || now < firesAt) {
+    console.log(`[build-notif] scheduled v${version} not due yet (fires at ${new Date(firesAt).toISOString()}) — skipping`);
+    return;
+  }
+
+  console.log(`[build-notif] v${version} is due — broadcasting then clearing node`);
+
+  const usersSnap = await db.ref('mohamed_lovers/users').get();
+  const title = 'تحديث جديد قادم 🎉';
+  const body = version
+    ? `الإصدار ${version} في الطريق إليك — قد يستغرق ظهوره بعض الوقت، تحقق من المتجر قريباً`
+    : 'إصدار جديد من التطبيق في الطريق إليك — قد يستغرق ظهوره بعض الوقت، تحقق من المتجر قريباً';
+
+  const sendPromises = [];
+  let tokenCount = 0;
+  usersSnap.forEach(userSnap => {
+    const { fcmToken } = userSnap.val() || {};
+    if (!fcmToken) return;
+    tokenCount++;
+    sendPromises.push(
+      admin.messaging().send({
+        token: fcmToken,
+        notification: { title, body },
+        data: { title, body, notification_type: 'version_update', new_version: version },
+      })
+        .then(msgId => console.log(`  build-notif uid=${userSnap.key}: sent msgId=${msgId}`))
+        .catch(e => console.error(`  build-notif uid=${userSnap.key}: send failed: ${e.message}`))
+    );
+  });
+
+  console.log(`[build-notif] sending to ${tokenCount} user(s)`);
+  await Promise.all(sendPromises);
+
+  // Clear the node only after sends are attempted, so a crash mid-run retries next time.
+  await ref.remove();
+  console.log('[build-notif] done — node cleared');
+}
+
 async function main() {
   const roundKey = explicitRoundKey || cairoRoundKey();
   const isFinal = isRoundFinal(roundKey);
   console.log(`Round key: ${roundKey} | isFinal: ${isFinal}`);
 
   const db = admin.database();
+
+  // Deliver any delayed new-build notification whose scheduled time has passed.
+  await sendDueBuildNotification(db);
+
   const playersRef = db.ref(`mohamed_lovers/${roundKey}/players`);
 
   // Single ordered query — ascending by totalCount; we reverse for ranking.
