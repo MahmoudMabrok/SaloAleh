@@ -17,7 +17,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: pip install google-auth google-auth-httplib2
+        run: pip install google-auth google-auth-httplib2 requests
 
       - name: Write SA key
         run: echo "$FIREBASE_SA_JSON" > /tmp/sa-key.json
