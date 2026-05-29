@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
+import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.billing.ProductRegistry
 import tools.mo3ta.salo.data.country.CountryCodeProvider
 import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseApi
@@ -15,6 +16,7 @@ class MohamedLoversRepository(
     private val networkTimeProvider: NetworkTimeProvider,
     private val sessionStore: MohamedLoversSessionStore,
     private val countryCodeProvider: CountryCodeProvider,
+    private val premiumStore: PremiumStore,
 ) {
     suspend fun bootstrap(): MohamedLoversBootstrap {
         val window = networkTimeProvider.getCompetitionWindow()
@@ -94,6 +96,8 @@ class MohamedLoversRepository(
         val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
         val roundKey = networkTimeProvider.getCompetitionWindow().roundKey
             ?: return Result.failure(IllegalStateException("No active round"))
+        // Bind the local mask flag to this round so it is cleared once the next round starts.
+        premiumStore.scoreMaskedRoundKey = if (masked) roundKey else null
         return firebaseClient.setScoreMasked(roundKey, uid, masked)
     }
 

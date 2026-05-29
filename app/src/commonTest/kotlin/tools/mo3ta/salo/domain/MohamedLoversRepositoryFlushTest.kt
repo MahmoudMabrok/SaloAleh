@@ -5,6 +5,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.country.CountryCodeProvider
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.data.time.NetworkTimeProvider
@@ -25,7 +26,8 @@ class MohamedLoversRepositoryFlushTest {
         val countryCode = object : CountryCodeProvider {
             override fun get() = "EG"
         }
-        return MohamedLoversRepository(firebaseApi, networkTime, sessionStore, countryCode) to firebaseApi
+        val premiumStore = PremiumStore(MapSettings())
+        return MohamedLoversRepository(firebaseApi, networkTime, sessionStore, countryCode, premiumStore) to firebaseApi
     }
 
     @Test
