@@ -23,8 +23,16 @@ except ImportError:
 
 KEY = os.environ.get("SALO_SA_KEY", os.path.expanduser("~/.config/salo-analytics/sa-key.json"))
 SCOPE = "https://www.googleapis.com/auth/analytics.readonly"
+APP_ID = "tools.mo3ta.salo"
 DAYS = sys.argv[1] if len(sys.argv) > 1 else "28d"
 DAYS = DAYS.rstrip("d")
+
+APP_FILTER = {
+    "filter": {
+        "fieldName": "streamName",
+        "stringFilter": {"matchType": "EXACT", "value": "Salo"},
+    }
+}
 
 
 def token():
@@ -41,8 +49,12 @@ def api(url, tok, body=None):
     req.add_header("Authorization", f"Bearer {tok}")
     if data:
         req.add_header("Content-Type", "application/json")
-    with urllib.request.urlopen(req, context=_SSL) as r:
-        return json.load(r)
+    try:
+        with urllib.request.urlopen(req, context=_SSL) as r:
+            return json.load(r)
+    except urllib.error.HTTPError as e:
+        print(f"HTTP {e.code}: {e.read().decode()}", file=sys.stderr)
+        raise
 
 
 def discover_property(tok):
@@ -59,6 +71,7 @@ def report(tok, prop, dimensions, metrics, label, limit=25):
         "dateRanges": [{"startDate": f"{DAYS}daysAgo", "endDate": "today"}],
         "dimensions": [{"name": d} for d in dimensions],
         "metrics": [{"name": m} for m in metrics],
+        "dimensionFilter": APP_FILTER,
         "limit": limit,
         "orderBys": [{"metric": {"metricName": metrics[0]}, "desc": True}],
     }

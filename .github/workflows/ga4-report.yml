@@ -1,0 +1,35 @@
+name: GA4 Analytics Report
+
+on:
+  schedule:
+    - cron: '0 20 * * *'
+  workflow_dispatch:
+
+jobs:
+  ga4-report:
+    name: Run GA4 analytics report
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install google-auth google-auth-httplib2
+
+      - name: Write SA key
+        run: echo "$FIREBASE_SA_JSON" > /tmp/sa-key.json
+        env:
+          FIREBASE_SA_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      - name: Run GA4 report
+        run: python3 scripts/ga4-report.py 28d
+        env:
+          SALO_SA_KEY: /tmp/sa-key.json
+          GA4_PROPERTY: ${{ secrets.GA4_PROPERTY_ID }}
+
+      - name: Cleanup
+        if: always()
+        run: rm -f /tmp/sa-key.json
