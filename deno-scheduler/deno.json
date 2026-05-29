@@ -1,5 +1,5 @@
 {
   "tasks": {
-    "dev": "deno run --unstable-kv --allow-net --allow-env=GITHUB_TOKEN main.ts"
+    "dev": "deno run --allow-net --allow-env=GITHUB_TOKEN main.ts"
   }
 }

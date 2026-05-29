@@ -74,12 +74,56 @@ function computeRankChange(uid, newRank, oldRankMap) {
   return newRank < oldRank ? 'up' : 'down';
 }
 
+// Delayed new-build notification: deploy.yml writes a scheduledBuildNotification
+// node (with firesAt) after a production release; we broadcast once that time
+// has passed, then delete the node so it fires exactly once.
+async function sendDueBuildNotification(db) {
+  const ref = db.ref('mohamed_lovers/scheduledBuildNotification');
+  const snap = await ref.get();
+  if (!snap.exists()) return;
+
+  const { version = '', firesAt = 0 } = snap.val() || {};
+  const now = Date.now();
+  if (typeof firesAt !== 'number' || now < firesAt) {
+    console.log(`[build-notif] scheduled v${version} not due yet (fires at ${new Date(firesAt).toISOString()}) — skipping`);
+    return;
+  }
+
+  const title = 'تحديث جديد قادم 🎉';
+  const body = version
+    ? `الإصدار ${version} في الطريق إليك — قد يستغرق ظهوره بعض الوقت، تحقق من المتجر قريباً`
+    : 'إصدار جديد من التطبيق في الطريق إليك — قد يستغرق ظهوره بعض الوقت، تحقق من المتجر قريباً';
+
+  // Single fan-out via the "general" FCM topic — both Android and iOS subscribe
+  // on launch once notifications are granted, so one send reaches everyone
+  // (no need to read users or loop over per-device tokens).
+  try {
+    const msgId = await admin.messaging().send({
+      topic: 'general',
+      notification: { title, body },
+      data: { title, body, notification_type: 'version_update', new_version: version },
+    });
+    console.log(`[build-notif] v${version} broadcast to topic "general" msgId=${msgId}`);
+  } catch (e) {
+    // Leave the node in place so the next run retries instead of silently dropping it.
+    console.error(`[build-notif] topic send failed: ${e.message} — leaving node for retry`);
+    return;
+  }
+
+  await ref.remove();
+  console.log('[build-notif] done — node cleared');
+}
+
 async function main() {
   const roundKey = explicitRoundKey || cairoRoundKey();
   const isFinal = isRoundFinal(roundKey);
   console.log(`Round key: ${roundKey} | isFinal: ${isFinal}`);
 
   const db = admin.database();
+
+  // Deliver any delayed new-build notification whose scheduled time has passed.
+  await sendDueBuildNotification(db);
+
   const playersRef = db.ref(`mohamed_lovers/${roundKey}/players`);
 
   // Single ordered query — ascending by totalCount; we reverse for ranking.
