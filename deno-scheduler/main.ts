@@ -45,9 +45,9 @@ interface NotifyBuildMessage {
   version: string;
 }
 
-const kv = await Deno.openKv();
+const kv = typeof Deno.openKv === "function" ? await Deno.openKv() : null;
 
-kv.listenQueue(async (msg: unknown) => {
+kv?.listenQueue(async (msg: unknown) => {
   const message = msg as NotifyBuildMessage;
   if (message.type !== "notify-new-build") return;
 
@@ -226,6 +226,10 @@ Deno.serve(async (req) => {
 
     const delayHours = body.delay_hours ?? DEFAULT_NOTIFY_DELAY_HOURS;
     const delayMs = delayHours * 60 * 60 * 1000;
+
+    if (!kv) {
+      return Response.json({ error: "Deno KV not available — delayed notifications disabled" }, { status: 503 });
+    }
 
     const message: NotifyBuildMessage = { type: "notify-new-build", version };
     await kv.enqueue(message, { delay: delayMs, backoffSchedule: [60_000, 300_000, 900_000] });
