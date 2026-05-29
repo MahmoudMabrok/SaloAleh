@@ -9,6 +9,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.Instant
+import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.country.CountryCodeProvider
 import tools.mo3ta.salo.data.engagement.DailyGoalStore
 import tools.mo3ta.salo.data.engagement.EngagementStore
@@ -55,7 +56,8 @@ class MohamedLoversViewModelProjectionTest {
         val countryCode = object : CountryCodeProvider {
             override fun get() = "EG"
         }
-        val repo = MohamedLoversRepository(fake, networkTime, sessionStore, countryCode)
+        val premiumStore = PremiumStore(MapSettings())
+        val repo = MohamedLoversRepository(fake, networkTime, sessionStore, countryCode, premiumStore)
         return MohamedLoversViewModel(
             repository = repo,
             engagementStore = EngagementStore(MapSettings()),
@@ -63,6 +65,7 @@ class MohamedLoversViewModelProjectionTest {
             dailyGoalStore = DailyGoalStore(MapSettings()),
             settingsStore = NotificationSettingsStore(MapSettings()),
             sessionStore = sessionStore,
+            premiumStore = premiumStore,
         )
     }
 

@@ -37,7 +37,7 @@ val appModule = module {
     single { PremiumStore(get()) }
     single { MilestoneTracker(get()) }
     single { DailyHadithStore(get()) }
-    single { MohamedLoversRepository(get(), get(), get(), get()) }
+    single { MohamedLoversRepository(get(), get(), get(), get(), get()) }
     single { createHttpClient() }
     single { HadithRemoteDataSource(get()) }
     single { HadithListRepository(get()) }

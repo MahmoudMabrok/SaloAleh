@@ -121,6 +121,9 @@ class MohamedLoversViewModel(
             val bootstrap = repository.bootstrap()
             currentWindow = bootstrap.competitionWindow
 
+            // Score masking is scoped to a single round — clear it once a new round has started.
+            bootstrap.competitionWindow.roundKey?.let { premiumStore.clearScoreMaskOnNewRound(it) }
+
             _state.update {
                 it.copy(
                     isLoading = false,
