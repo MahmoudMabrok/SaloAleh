@@ -37,7 +37,7 @@ const cronStatus: Record<string, { lastRunAt: string | null; lastResult: string 
   "notify-friday": { lastRunAt: null, lastResult: null },
 };
 
-const pendingNotifyBuild: { version: string; scheduledAt: string; firesAt: string } | null = null;
+let pendingNotifyBuild: { version: string; scheduledAt: string; firesAt: string } | null = null;
 let lastNotifyBuild: { version: string; dispatchedAt: string; result: string } | null = null;
 
 interface NotifyBuildMessage {
@@ -45,7 +45,47 @@ interface NotifyBuildMessage {
   version: string;
 }
 
-const kv = typeof Deno.openKv === "function" ? await Deno.openKv() : null;
+// Deno KV gives us a *durable* delayed queue, but it is not available on every
+// Deno Deploy runtime (the project may not have KV provisioned, or the runtime
+// may not expose `Deno.openKv`). When KV is missing we fall back to an in-isolate
+// `setTimeout`; the isolate is kept alive by the `Deno.cron` jobs below, so a
+// short (hours-long) timer fires reliably in practice. The fallback is best-effort
+// — a redeploy of this service mid-delay would drop a pending timer — which is an
+// acceptable trade-off for a "new build available" nudge.
+async function openKvSafe(): Promise<Deno.Kv | null> {
+  if (typeof Deno.openKv !== "function") return null;
+  try {
+    return await Deno.openKv();
+  } catch (e) {
+    console.error(`[kv] Deno.openKv() failed, falling back to timer: ${(e as Error).message}`);
+    return null;
+  }
+}
+
+const kv = await openKvSafe();
+
+function recordNotifyResult(version: string, error?: Error): void {
+  lastNotifyBuild = {
+    version,
+    dispatchedAt: new Date().toISOString(),
+    result: error ? `FAILED: ${error.message}` : "OK",
+  };
+  if (pendingNotifyBuild?.version === version) pendingNotifyBuild = null;
+}
+
+// Best-effort timer fallback used when Deno KV is unavailable.
+function scheduleNotifyViaTimer(version: string, delayMs: number): void {
+  setTimeout(async () => {
+    try {
+      await dispatchWorkflowWithInputs("notify-new-build.yml", { version });
+      recordNotifyResult(version);
+      console.log(`[timer] Dispatched notify-new-build.yml for v${version}`);
+    } catch (e) {
+      recordNotifyResult(version, e as Error);
+      console.error(`[timer] Failed notify-new-build dispatch: ${(e as Error).message}`);
+    }
+  }, delayMs);
+}
 
 kv?.listenQueue(async (msg: unknown) => {
   const message = msg as NotifyBuildMessage;
@@ -53,18 +93,10 @@ kv?.listenQueue(async (msg: unknown) => {
 
   try {
     await dispatchWorkflowWithInputs("notify-new-build.yml", { version: message.version });
-    lastNotifyBuild = {
-      version: message.version,
-      dispatchedAt: new Date().toISOString(),
-      result: "OK",
-    };
+    recordNotifyResult(message.version);
     console.log(`[kv-queue] Dispatched notify-new-build.yml for v${message.version}`);
   } catch (e) {
-    lastNotifyBuild = {
-      version: message.version,
-      dispatchedAt: new Date().toISOString(),
-      result: `FAILED: ${(e as Error).message}`,
-    };
+    recordNotifyResult(message.version, e as Error);
     console.error(`[kv-queue] Failed notify-new-build dispatch: ${(e as Error).message}`);
     throw e;
   }
@@ -227,23 +259,29 @@ Deno.serve(async (req) => {
     const delayHours = body.delay_hours ?? DEFAULT_NOTIFY_DELAY_HOURS;
     const delayMs = delayHours * 60 * 60 * 1000;
 
-    if (!kv) {
-      return Response.json({ error: "Deno KV not available — delayed notifications disabled" }, { status: 503 });
+    const now = new Date();
+    const firesAt = new Date(now.getTime() + delayMs).toISOString();
+
+    let mechanism: "kv-queue" | "timer";
+    if (kv) {
+      const message: NotifyBuildMessage = { type: "notify-new-build", version };
+      await kv.enqueue(message, { delay: delayMs, backoffSchedule: [60_000, 300_000, 900_000] });
+      mechanism = "kv-queue";
+    } else {
+      scheduleNotifyViaTimer(version, delayMs);
+      mechanism = "timer";
     }
 
-    const message: NotifyBuildMessage = { type: "notify-new-build", version };
-    await kv.enqueue(message, { delay: delayMs, backoffSchedule: [60_000, 300_000, 900_000] });
+    pendingNotifyBuild = { version, scheduledAt: now.toISOString(), firesAt };
 
-    const now = new Date();
-    const firesAt = new Date(now.getTime() + delayMs);
-
-    console.log(`[schedule-notify] Queued notify-new-build v${version} — fires at ${firesAt.toISOString()}`);
+    console.log(`[schedule-notify] Scheduled notify-new-build v${version} via ${mechanism} — fires at ${firesAt}`);
 
     return Response.json({
       scheduled: true,
       version,
       delay_hours: delayHours,
-      fires_at: firesAt.toISOString(),
+      fires_at: firesAt,
+      mechanism,
     });
   }
 
