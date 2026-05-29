@@ -1,0 +1,65 @@
+name: Deploy GitHub Pages
+
+# Publishes the landing page + live stats to GitHub Pages.
+#
+# Runs only when JSON files change:
+#   * push to main touching any *.json  (manual edits to stats/, stats.json, …)
+#   * workflow_run after "Update Landing Page Stats" — the stats bot commits
+#     with [skip ci], so the push-paths trigger above never fires for those
+#     automated commits; this catches them.
+#   * workflow_dispatch for manual redeploys.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**.json'
+  workflow_run:
+    workflows: ["Update Landing Page Stats"]
+    types: [completed]
+  workflow_dispatch:
+
+# Allow the workflow to deploy to Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Single concurrent deployment; newer runs cancel queued (not in-progress) ones.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          # Landing page is served at both / and /landing.html
+          # (support.html links back to landing.html).
+          cp landing.html _site/index.html
+          cp landing.html _site/landing.html
+          cp support.html _site/support.html
+          cp stats.json _site/stats.json
+          cp -r stats _site/stats
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: Deploy to Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
