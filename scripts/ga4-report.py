@@ -77,14 +77,18 @@ def report(tok, prop, dimensions, metrics, label, limit=25):
     }
     d = api(f"https://analyticsdata.googleapis.com/v1beta/{prop}:runReport", tok, body)
     print(f"\n=== {label} (last {DAYS}d) ===")
+    header_dims = "  " + " | ".join(dimensions).ljust(45) if dimensions else "  " + " ".ljust(45)
+    header_mets = " ".join(f"{m:>12}" for m in metrics)
+    print(header_dims + header_mets)
+    print("  " + "-" * (45 + 13 * len(metrics)))
     rows = d.get("rows", [])
     if not rows:
         print("  (no data)")
         return
     for row in rows:
         dims = " | ".join(v["value"] for v in row.get("dimensionValues", []))
-        mets = " ".join(f"{m['value']}" for m in row.get("metricValues", []))
-        print(f"  {dims:<45} {mets}")
+        mets = " ".join(f"{m['value']:>12}" for m in row.get("metricValues", []))
+        print(f"  {dims:<45}{mets}")
 
 
 def main():
