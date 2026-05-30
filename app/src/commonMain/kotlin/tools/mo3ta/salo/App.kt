@@ -108,6 +108,7 @@ fun App(
             mutableStateOf(settings.getBoolean("takbeer_announcement_shown", false))
         }
         val sessionStoreApp = koinInject<MohamedLoversSessionStore>()
+        LaunchedEffect(Unit) { analyticsManager.setUserId(sessionStoreApp.getOrCreateUid()) }
         var nicknameAnnouncementDone by remember {
             mutableStateOf(sessionStoreApp.isNicknameAnnouncementShown)
         }

@@ -94,6 +94,38 @@ def report(tok, prop, dimensions, metrics, label, limit=25):
         out("| " + " | ".join(cells) + " |")
 
 
+def screen_views(tok, prop):
+    body = {
+        "dateRanges": [{"startDate": f"{DAYS}daysAgo", "endDate": "today"}],
+        "dimensions": [{"name": "eventName"}],
+        "metrics": [{"name": "eventCount"}],
+        "dimensionFilter": {
+            "andGroup": {
+                "expressions": [
+                    APP_FILTER,
+                    {"filter": {"fieldName": "eventName", "stringFilter": {"matchType": "BEGINS_WITH", "value": "salo_screen_view_"}}},
+                ]
+            }
+        },
+        "limit": 25,
+        "orderBys": [{"metric": {"metricName": "eventCount"}, "desc": True}],
+    }
+    d = api(f"https://analyticsdata.googleapis.com/v1beta/{prop}:runReport", tok, body)
+    rows = d.get("rows", [])
+
+    out(f"\n### SCREEN VIEWS (last {DAYS}d)")
+    out()
+    out("| screen | views |")
+    out("| --- | ---: |")
+    if not rows:
+        out("| *(no data)* | |")
+        return
+    for row in rows:
+        name = row["dimensionValues"][0]["value"].replace("salo_screen_view_", "")
+        count = row["metricValues"][0]["value"]
+        out(f"| {name} | {count} |")
+
+
 def main():
     tok = token()
     prop = os.environ.get("GA4_PROPERTY", "529874204")
@@ -103,7 +135,7 @@ def main():
 
     report(tok, prop, [], ["activeUsers", "newUsers", "sessions", "screenPageViews", "eventCount"], "TOTALS")
     report(tok, prop, ["eventName"], ["eventCount"], "TOP EVENTS")
-    report(tok, prop, ["unifiedScreenName"], ["screenPageViews"], "SCREEN VIEWS")
+    screen_views(tok, prop)
     report(tok, prop, ["country"], ["activeUsers"], "USERS BY COUNTRY")
     report(tok, prop, ["deviceCategory", "operatingSystem"], ["activeUsers"], "PLATFORM")
     report(tok, prop, ["date"], ["activeUsers", "newUsers"], "DAILY ACTIVE", limit=60)

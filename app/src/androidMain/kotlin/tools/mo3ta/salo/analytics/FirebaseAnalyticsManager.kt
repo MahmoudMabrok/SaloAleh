@@ -7,6 +7,10 @@ import com.google.firebase.analytics.logEvent
 class FirebaseAnalyticsManager(private val context: Context) : AnalyticsManager {
     private val analytics: FirebaseAnalytics by lazy { FirebaseAnalytics.getInstance(context) }
 
+    override fun setUserId(uid: String) {
+        analytics.setUserId(uid)
+    }
+
     override fun logAction(name: String, params: Map<String, String>) {
         analytics.logEvent("salo_$name") {
             params.forEach { (key, value) -> param(key, value) }
