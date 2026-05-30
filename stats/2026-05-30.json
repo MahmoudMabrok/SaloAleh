@@ -1,0 +1,106 @@
+{
+  "allTimeSalawat": 223158,
+  "weekSalawat": 12905,
+  "todaySalawat": 10375,
+  "activePlayers": 22,
+  "countriesCount": 7,
+  "countries": [
+    "AE",
+    "EG",
+    "IT",
+    "SA",
+    "SD",
+    "TR",
+    "US"
+  ],
+  "topScore": 4036,
+  "roundKey": "2026-06-05",
+  "leaderboard": [
+    {
+      "countryCode": "EG",
+      "dailyBadge": "crescent",
+      "nickname": "محب الرسول",
+      "rank": 1,
+      "rankChange": "same",
+      "score": 4036,
+      "uid": "a731b07fe01a90258f06998c1489aaf37fd46c735b78606435d00f0c08250c63"
+    },
+    {
+      "countryCode": "AE",
+      "dailyBadge": "dome",
+      "nickname": "ن.ص",
+      "rank": 2,
+      "rankChange": "same",
+      "score": 2305,
+      "uid": "405039430ae1e29f8d847a6d18a1dbad5ade88628382f830a0af1109b069cc4b"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "nickname": "يونس",
+      "rank": 3,
+      "rankChange": "same",
+      "score": 1659,
+      "uid": "5a4b1d0ed314c539aefe3fedeb07054b2acf361dd98189761e80e047fbf80305"
+    },
+    {
+      "countryCode": "SA",
+      "nickname": "M.A.L",
+      "rank": 4,
+      "rankChange": "same",
+      "score": 1005,
+      "uid": "092d20eeafb6b68719e19fcd41f072811d333b4f561862f7b13734d0d633db00"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "tasbih",
+      "rank": 5,
+      "rankChange": "same",
+      "score": 800,
+      "uid": "08a867f71960b712aea4daf4aab49b33eebec129f522461401bba17634f8522c"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "tasbih",
+      "nickname": "م.م",
+      "rank": 6,
+      "rankChange": "same",
+      "score": 710,
+      "uid": "cf0116cf9c1bf2ef2965b238768139059a0088bbb734739297ac650ede2fd00b"
+    },
+    {
+      "countryCode": "EG",
+      "isSupporter": true,
+      "rank": 7,
+      "rankChange": "same",
+      "score": 708,
+      "uid": "abcc7116e7de1a8159c3d983d094084f83b6b26bc33873b1fc8d92a56cbf823b"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "tasbih",
+      "rank": 8,
+      "rankChange": "same",
+      "score": 638,
+      "uid": "a6edef5b54050a0eeff694c23ec03d8ff1e6110d49bf2452f2bc7a9c52f706ba"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "heart",
+      "isSupporter": true,
+      "rank": 9,
+      "rankChange": "same",
+      "score": 413,
+      "uid": "d37ab9ff8d45a9931d24389990545bdb773791e2873b2d23534c26bdcef8f48a"
+    },
+    {
+      "countryCode": "IT",
+      "dailyBadge": "heart",
+      "rank": 10,
+      "rankChange": "same",
+      "score": 308,
+      "uid": "c6c592d1a439dcda8abf90bfe57de7416d6903f4541e99f4045f42e8e548c30b"
+    }
+  ],
+  "updatedAt": "2026-05-30T20:46:09.764Z"
+}
