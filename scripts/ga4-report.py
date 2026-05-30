@@ -23,9 +23,9 @@ except ImportError:
 
 KEY = os.environ.get("SALO_SA_KEY", os.path.expanduser("~/.config/salo-analytics/sa-key.json"))
 SCOPE = "https://www.googleapis.com/auth/analytics.readonly"
-APP_ID = "tools.mo3ta.salo"
 DAYS = sys.argv[1] if len(sys.argv) > 1 else "28d"
 DAYS = DAYS.rstrip("d")
+SUMMARY_FILE = os.environ.get("GITHUB_STEP_SUMMARY")
 
 APP_FILTER = {
     "filter": {
@@ -33,6 +33,14 @@ APP_FILTER = {
         "stringFilter": {"matchType": "EXACT", "value": "Salo"},
     }
 }
+
+md_lines = []
+
+
+def out(text=""):
+    print(text)
+    if SUMMARY_FILE:
+        md_lines.append(text)
 
 
 def token():
@@ -57,15 +65,6 @@ def api(url, tok, body=None):
         raise
 
 
-def discover_property(tok):
-    d = api("https://analyticsadmin.googleapis.com/v1beta/accountSummaries?pageSize=200", tok)
-    props = []
-    for a in d.get("accountSummaries", []):
-        for p in a.get("propertySummaries", []):
-            props.append((p.get("displayName"), p.get("property")))
-    return props
-
-
 def report(tok, prop, dimensions, metrics, label, limit=25):
     body = {
         "dateRanges": [{"startDate": f"{DAYS}daysAgo", "endDate": "today"}],
@@ -76,19 +75,23 @@ def report(tok, prop, dimensions, metrics, label, limit=25):
         "orderBys": [{"metric": {"metricName": metrics[0]}, "desc": True}],
     }
     d = api(f"https://analyticsdata.googleapis.com/v1beta/{prop}:runReport", tok, body)
-    print(f"\n=== {label} (last {DAYS}d) ===")
-    header_dims = "  " + " | ".join(dimensions).ljust(45) if dimensions else "  " + " ".ljust(45)
-    header_mets = " ".join(f"{m:>12}" for m in metrics)
-    print(header_dims + header_mets)
-    print("  " + "-" * (45 + 13 * len(metrics)))
     rows = d.get("rows", [])
+
+    out(f"\n### {label} (last {DAYS}d)")
+    out()
+    dim_header = " | ".join(dimensions) if dimensions else ""
+    cols = [dim_header] + metrics if dim_header else metrics
+    out("| " + " | ".join(cols) + " |")
+    out("| " + " | ".join("---:" if i > 0 or not dim_header else "---" for i, _ in enumerate(cols)) + " |")
+
     if not rows:
-        print("  (no data)")
+        out("| " + " | ".join(["*(no data)*"] * len(cols)) + " |")
         return
     for row in rows:
-        dims = " | ".join(v["value"] for v in row.get("dimensionValues", []))
-        mets = " ".join(f"{m['value']:>12}" for m in row.get("metricValues", []))
-        print(f"  {dims:<45}{mets}")
+        dim_vals = " | ".join(v["value"] or "—" for v in row.get("dimensionValues", []))
+        met_vals = [m["value"] for m in row.get("metricValues", [])]
+        cells = [dim_vals] + met_vals if dim_header else met_vals
+        out("| " + " | ".join(cells) + " |")
 
 
 def main():
@@ -96,12 +99,18 @@ def main():
     prop = os.environ.get("GA4_PROPERTY", "529874204")
     prop = f"properties/{prop}"
 
+    out(f"# SaloAleh GA4 Report")
+
     report(tok, prop, [], ["activeUsers", "newUsers", "sessions", "screenPageViews", "eventCount"], "TOTALS")
     report(tok, prop, ["eventName"], ["eventCount"], "TOP EVENTS")
     report(tok, prop, ["unifiedScreenName"], ["screenPageViews"], "SCREEN VIEWS")
     report(tok, prop, ["country"], ["activeUsers"], "USERS BY COUNTRY")
     report(tok, prop, ["deviceCategory", "operatingSystem"], ["activeUsers"], "PLATFORM")
     report(tok, prop, ["date"], ["activeUsers", "newUsers"], "DAILY ACTIVE", limit=60)
+
+    if SUMMARY_FILE:
+        with open(SUMMARY_FILE, "a") as f:
+            f.write("\n".join(md_lines) + "\n")
 
 
 if __name__ == "__main__":
