@@ -78,6 +78,12 @@
           "isSupporter": {
             ".validate": "newData.isBoolean()"
           },
+          "reminderNotifsEnabled": {
+            ".validate": "newData.isBoolean()"
+          },
+          "leaderboardNotifsEnabled": {
+            ".validate": "newData.isBoolean()"
+          },
           "achievements": {
             ".read": true,
             ".write": false,

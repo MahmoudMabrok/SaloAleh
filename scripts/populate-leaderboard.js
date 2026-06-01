@@ -279,6 +279,7 @@ async function main() {
         const userSnap = await db.ref(`mohamed_lovers/users/${uid}`).get();
         const user = userSnap.val();
         if (!user?.fcmToken) { console.log(`  top3 uid=${uid}: no FCM token — skip`); return; }
+        if (user.leaderboardNotifsEnabled === false) { console.log(`  top3 uid=${uid}: leaderboard notifications disabled — skip`); return; }
         const msg = top3Messages[event];
         return admin.messaging().send({
           token: user.fcmToken,
@@ -300,6 +301,7 @@ async function main() {
       const userSnap = await db.ref(`mohamed_lovers/users/${uid}`).get();
       const user = userSnap.val();
       if (!user?.fcmToken) { console.log(`  uid=${uid}: no FCM token — skip`); return; }
+      if (user.leaderboardNotifsEnabled === false) { console.log(`  uid=${uid}: leaderboard notifications disabled — skip`); return; }
       if (user.lastDropOutNotifRound === roundKey) { console.log(`  uid=${uid}: already notified this round — skip`); return; }
       fcmUpdates[`mohamed_lovers/users/${uid}/lastDropOutNotifRound`] = roundKey;
       return admin.messaging().send({
@@ -334,6 +336,7 @@ async function main() {
         const userSnap = await db.ref(`mohamed_lovers/users/${p.uid}`).get();
         const user = userSnap.val();
         if (!user?.fcmToken) { console.log(`  idle uid=${p.uid}: no FCM token — skip`); return; }
+        if (user.leaderboardNotifsEnabled === false) { console.log(`  idle uid=${p.uid}: leaderboard notifications disabled — skip`); return; }
         if (user.lastIdleNotifDate === todayStr) { console.log(`  idle uid=${p.uid}: already notified today — skip`); return; }
         idleUpdates[`mohamed_lovers/users/${p.uid}/lastIdleNotifDate`] = todayStr;
         return admin.messaging().send({
@@ -474,6 +477,7 @@ async function populateTenDaysLeaderboard(db) {
         const userSnap = await db.ref(`mohamed_lovers/users/${uid}`).get();
         const user = userSnap.val();
         if (!user?.fcmToken) { console.log(`  ten-days top3 uid=${uid}: no FCM token — skip`); return; }
+        if (user.leaderboardNotifsEnabled === false) { console.log(`  ten-days top3 uid=${uid}: leaderboard notifications disabled — skip`); return; }
         const msg = top3Messages[event];
         return admin.messaging().send({
           token: user.fcmToken,
@@ -501,6 +505,7 @@ async function populateTenDaysLeaderboard(db) {
         const userSnap = await db.ref(`mohamed_lovers/users/${uid}`).get();
         const user = userSnap.val();
         if (!user?.fcmToken) { console.log(`  ten-days uid=${uid}: no FCM token — skip`); return; }
+        if (user.leaderboardNotifsEnabled === false) { console.log(`  ten-days uid=${uid}: leaderboard notifications disabled — skip`); return; }
         return admin.messaging().send({
           token: user.fcmToken,
           notification: { title: 'خرجت من قائمة العشر الأوائل 😔', body: 'مكانك في عشر ذي الحجة يستحق المنافسة — عُد وزِد من عملك الصالح!' },

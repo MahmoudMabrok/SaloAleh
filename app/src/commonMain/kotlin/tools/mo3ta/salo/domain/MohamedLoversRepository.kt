@@ -150,4 +150,11 @@ class MohamedLoversRepository(
         val lastOpenDate = today.toString()
         return firebaseClient.writeUserActivity(uid, installDate, lastOpenDate)
     }
+
+    /** Syncs the user's server-notification opt-in flags to RTDB so the cron scripts honour them. */
+    suspend fun writeNotificationPrefs(
+        uid: String,
+        remindersEnabled: Boolean,
+        leaderboardEnabled: Boolean,
+    ): Result<Unit> = firebaseClient.writeNotificationPrefs(uid, remindersEnabled, leaderboardEnabled)
 }

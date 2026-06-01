@@ -214,6 +214,27 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         }
     }
 
+    override suspend fun writeNotificationPrefs(
+        uid: String,
+        remindersEnabled: Boolean,
+        leaderboardEnabled: Boolean,
+    ): Result<Unit> {
+        log.d { "writeNotificationPrefs[$uid] reminders=$remindersEnabled leaderboard=$leaderboardEnabled" }
+        return runCatching {
+            Firebase.database.reference("$ROOT_PATH/$USERS_PATH/$uid").updateChildren(
+                mapOf(
+                    REMINDER_NOTIFS_ENABLED_KEY to remindersEnabled,
+                    LEADERBOARD_NOTIFS_ENABLED_KEY to leaderboardEnabled,
+                )
+            )
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "writeNotificationPrefs[$uid] ok" } },
+                onFailure = { log.e(it) { "writeNotificationPrefs[$uid] failed" } },
+            )
+        }
+    }
+
     override suspend fun fetchUserAchievements(uid: String): Result<Map<String, UserAchievement>> {
         log.d { "fetchUserAchievements[$uid]" }
         return runCatching {
@@ -422,6 +443,8 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
         const val ROUND_PLAYER_COUNT_PATH = "roundPlayerCount"
         const val ALL_TIME_TOTAL_PATH = "allTimeTotal"
         const val USERS_PATH = "users"
+        const val REMINDER_NOTIFS_ENABLED_KEY = "reminderNotifsEnabled"
+        const val LEADERBOARD_NOTIFS_ENABLED_KEY = "leaderboardNotifsEnabled"
         const val ACHIEVEMENTS_PATH = "achievements"
         const val PURCHASES_PATH = "purchases"
         const val PRODUCT_ID_KEY = "productId"
