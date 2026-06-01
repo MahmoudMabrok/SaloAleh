@@ -1,0 +1,106 @@
+{
+  "allTimeSalawat": 252140,
+  "weekSalawat": 41887,
+  "todaySalawat": 11674,
+  "activePlayers": 32,
+  "countriesCount": 8,
+  "countries": [
+    "AE",
+    "EG",
+    "GW",
+    "IT",
+    "SA",
+    "SD",
+    "TR",
+    "US"
+  ],
+  "topScore": 8913,
+  "roundKey": "2026-06-05",
+  "leaderboard": [
+    {
+      "countryCode": "EG",
+      "dailyBadge": "crescent",
+      "nickname": "يونس",
+      "rank": 1,
+      "rankChange": "same",
+      "score": 8913,
+      "uid": "5a4b1d0ed314c539aefe3fedeb07054b2acf361dd98189761e80e047fbf80305"
+    },
+    {
+      "countryCode": "AE",
+      "dailyBadge": "dome",
+      "nickname": "ن.ص",
+      "rank": 2,
+      "rankChange": "same",
+      "score": 7139,
+      "uid": "405039430ae1e29f8d847a6d18a1dbad5ade88628382f830a0af1109b069cc4b"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "nickname": "محب الرسول",
+      "rank": 3,
+      "rankChange": "same",
+      "score": 5596,
+      "uid": "a731b07fe01a90258f06998c1489aaf37fd46c735b78606435d00f0c08250c63"
+    },
+    {
+      "countryCode": "EG",
+      "nickname": "بدران بدوي",
+      "rank": 4,
+      "rankChange": "same",
+      "score": 5242,
+      "uid": "22209706044a8b6889d6411a541c3b8c0c735d123ea7c7c83ca0e379a7d5b334"
+    },
+    {
+      "countryCode": "EG",
+      "rank": 5,
+      "rankChange": "same",
+      "score": 2704,
+      "uid": "08a867f71960b712aea4daf4aab49b33eebec129f522461401bba17634f8522c"
+    },
+    {
+      "countryCode": "EG",
+      "isSupporter": true,
+      "rank": 6,
+      "rankChange": "same",
+      "score": 2700,
+      "uid": "d37ab9ff8d45a9931d24389990545bdb773791e2873b2d23534c26bdcef8f48a"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "tasbih",
+      "rank": 7,
+      "rankChange": "same",
+      "score": 2073,
+      "uid": "a6edef5b54050a0eeff694c23ec03d8ff1e6110d49bf2452f2bc7a9c52f706ba"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "tasbih",
+      "nickname": "م.م",
+      "rank": 8,
+      "rankChange": "same",
+      "score": 2013,
+      "uid": "cf0116cf9c1bf2ef2965b238768139059a0088bbb734739297ac650ede2fd00b"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "isSupporter": true,
+      "rank": 9,
+      "rankChange": "same",
+      "score": 1825,
+      "uid": "abcc7116e7de1a8159c3d983d094084f83b6b26bc33873b1fc8d92a56cbf823b"
+    },
+    {
+      "countryCode": "SA",
+      "nickname": "M.A.L",
+      "rank": 10,
+      "rankChange": "same",
+      "score": 1640,
+      "uid": "092d20eeafb6b68719e19fcd41f072811d333b4f561862f7b13734d0d633db00"
+    }
+  ],
+  "updatedAt": "2026-06-01T20:46:15.138Z"
+}
