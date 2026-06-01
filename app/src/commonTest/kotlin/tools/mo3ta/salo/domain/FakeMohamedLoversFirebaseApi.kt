@@ -44,6 +44,23 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
     override suspend fun writeFcmToken(uid: String, token: String): Result<Unit> =
         Result.success(Unit)
 
+    data class NotificationPrefsCall(
+        val uid: String,
+        val remindersEnabled: Boolean,
+        val leaderboardEnabled: Boolean,
+    )
+
+    val notificationPrefsCalls = mutableListOf<NotificationPrefsCall>()
+
+    override suspend fun writeNotificationPrefs(
+        uid: String,
+        remindersEnabled: Boolean,
+        leaderboardEnabled: Boolean,
+    ): Result<Unit> {
+        notificationPrefsCalls.add(NotificationPrefsCall(uid, remindersEnabled, leaderboardEnabled))
+        return Result.success(Unit)
+    }
+
     override suspend fun fetchUserAchievements(uid: String): Result<Map<String, UserAchievement>> =
         Result.success(emptyMap())
 

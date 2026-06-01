@@ -339,6 +339,29 @@ class MohamedLoversViewModel(
         applyLeaderboard()
     }
 
+    /** Persists the server-reminder opt-in locally and syncs it to RTDB for the cron scripts. */
+    fun setServerRemindersEnabled(enabled: Boolean) {
+        settingsStore.serverRemindersEnabled = enabled
+        syncNotificationPrefs()
+    }
+
+    /** Persists the leaderboard-notification opt-in locally and syncs it to RTDB for the cron scripts. */
+    fun setLeaderboardNotifsEnabled(enabled: Boolean) {
+        settingsStore.leaderboardNotifsEnabled = enabled
+        syncNotificationPrefs()
+    }
+
+    private fun syncNotificationPrefs() {
+        viewModelScope.launch {
+            val uid = repository.ensureAnonymousUser().getOrNull() ?: return@launch
+            repository.writeNotificationPrefs(
+                uid = uid,
+                remindersEnabled = settingsStore.serverRemindersEnabled,
+                leaderboardEnabled = settingsStore.leaderboardNotifsEnabled,
+            )
+        }
+    }
+
     fun dismissRankMovement() = _state.update { it.copy(rankMovementDelta = null) }
 
     fun dismissDailyLeaderboardPromo() {
@@ -417,6 +440,13 @@ class MohamedLoversViewModel(
             _state.update { it.copy(selfDisplayTag = buildMohamedLoversDisplayTag(uid, it.countryCode, selfNickname)) }
             val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
             launch { repository.writeUserActivity(uid, today) }
+            launch {
+                repository.writeNotificationPrefs(
+                    uid = uid,
+                    remindersEnabled = settingsStore.serverRemindersEnabled,
+                    leaderboardEnabled = settingsStore.leaderboardNotifsEnabled,
+                )
+            }
             launch { repository.setSupporter(premiumStore.hasFeature(PremiumFeature.SUPPORTER_BADGE)) }
 
             if (!achievementsFetchedFromRtdb) {

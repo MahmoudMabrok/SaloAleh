@@ -72,6 +72,8 @@
  *       installDate       string   — ISO date of first launch (written by client)
  *       lastOpenDate      string   — ISO date of last foreground open (written by client)
  *       lastRivalNotifDate string  — ISO date of last rival alert (written by this script)
+ *       reminderNotifsEnabled boolean — user opt-in for reminder notifications (written by client;
+ *                                        absent = opted in). When false, all segments are skipped.
  *     {roundKey}/
  *       leaderboard/10    object   — 10th-place entry { score: number }
  *       players/{uid}/
@@ -209,18 +211,26 @@ async function main() {
 
   const sendPromises = [];
   const updates = {};
-  const segmentCounts = { day1_lapsed: 0, midweek_inactive: 0, round_end: 0, streak_at_risk: 0, rival_alert: 0, no_token: 0, no_segment: 0 };
+  const segmentCounts = { day1_lapsed: 0, midweek_inactive: 0, round_end: 0, streak_at_risk: 0, rival_alert: 0, no_token: 0, no_segment: 0, opted_out: 0 };
 
   console.log('[notify-users] evaluating segments...');
 
   usersSnap.forEach(userSnap => {
     const uid = userSnap.key;
     const user = userSnap.val();
-    const { fcmToken, installDate, lastOpenDate, lastRivalNotifDate } = user || {};
+    const { fcmToken, installDate, lastOpenDate, lastRivalNotifDate, reminderNotifsEnabled } = user || {};
 
     if (!fcmToken) {
       console.log(`[notify-users] skip uid=${uid}: no FCM token`);
       segmentCounts.no_token++;
+      return;
+    }
+
+    // Respect the user's in-app opt-out for reminder notifications. Absent flag = opted in
+    // (preserves behaviour for users who installed before the setting existed).
+    if (reminderNotifsEnabled === false) {
+      console.log(`[notify-users] skip uid=${uid}: reminder notifications disabled by user`);
+      segmentCounts.opted_out++;
       return;
     }
 
@@ -391,6 +401,8 @@ async function notifyTenDaysUsers(db, today) {
       const uid = userSnap.key;
       const user = userSnap.val();
       if (!user?.fcmToken) return;
+      // Ten-days reminders are engagement nudges — honour the reminder opt-out.
+      if (user.reminderNotifsEnabled === false) return;
 
       // Check if user participates in ten-days.
       sendPromises.push(

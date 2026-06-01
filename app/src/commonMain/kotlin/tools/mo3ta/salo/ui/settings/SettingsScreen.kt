@@ -89,6 +89,8 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
     var fridayEnabled by remember { mutableStateOf(store.fridayEnabled) }
     var hadithOnStartup by remember { mutableStateOf(hadithStore.showOnStartup) }
     var showRankChip by remember { mutableStateOf(store.showRankChip) }
+    var serverRemindersEnabled by remember { mutableStateOf(store.serverRemindersEnabled) }
+    var leaderboardNotifsEnabled by remember { mutableStateOf(store.leaderboardNotifsEnabled) }
     var nicknameText by remember { mutableStateOf(sessionStore.getNickname().orEmpty()) }
     var nicknameEnabled by remember { mutableStateOf(sessionStore.isNicknameEnabled) }
 
@@ -234,6 +236,26 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
                             requestExactAlarmPermission()
                         }
                     }
+                },
+            )
+
+            SettingToggleRow(
+                label = stringResource(Res.string.settings_server_reminders),
+                subtitle = stringResource(Res.string.settings_server_reminders_subtitle),
+                checked = serverRemindersEnabled,
+                onToggle = { checked ->
+                    serverRemindersEnabled = checked
+                    viewModel.setServerRemindersEnabled(checked)
+                },
+            )
+
+            SettingToggleRow(
+                label = stringResource(Res.string.settings_leaderboard_notifs),
+                subtitle = stringResource(Res.string.settings_leaderboard_notifs_subtitle),
+                checked = leaderboardNotifsEnabled,
+                onToggle = { checked ->
+                    leaderboardNotifsEnabled = checked
+                    viewModel.setLeaderboardNotifsEnabled(checked)
                 },
             )
 

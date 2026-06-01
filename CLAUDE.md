@@ -61,6 +61,8 @@ mohamed_lovers/
 ├── allTimeTotal                          # aggregate across all rounds (read-only to client)
 ├── users/{uid}/                          # per-device user data
 │   ├── fcmToken, installDate, lastOpenDate, lastRivalNotifDate
+│   ├── reminderNotifsEnabled            # client opt-in for notify-users.js push (Settings; absent = on)
+│   ├── leaderboardNotifsEnabled         # client opt-in for populate-leaderboard.js push (Settings; absent = on)
 │   └── achievements/{roundKey}/          # rank, score, date
 └── {roundKey}/                           # e.g. "2026-05-16" (next Friday Cairo date)
     ├── roundTotal, roundPlayerCount      # server-computed aggregates

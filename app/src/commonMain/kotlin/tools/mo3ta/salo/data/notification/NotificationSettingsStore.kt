@@ -11,6 +11,24 @@ class NotificationSettingsStore(private val settings: Settings) {
         get() = settings.getBoolean(KEY_FRIDAY_ENABLED, true)
         set(v) = settings.putBoolean(KEY_FRIDAY_ENABLED, v)
 
+    /**
+     * Controls server-sent engagement/reminder push notifications (notify-users.js):
+     * day-1 lapsed, mid-week inactive, round-end recap, streak-at-risk, rival alerts,
+     * and the ten-days reminders. Synced to RTDB so the server script honours it.
+     */
+    var serverRemindersEnabled: Boolean
+        get() = settings.getBoolean(KEY_SERVER_REMINDERS_ENABLED, true)
+        set(v) = settings.putBoolean(KEY_SERVER_REMINDERS_ENABLED, v)
+
+    /**
+     * Controls server-sent leaderboard/competition push notifications
+     * (populate-leaderboard.js): top-3 changes, drop-out alerts, idle nudges, and the
+     * ten-days leaderboard notifications. Synced to RTDB so the server script honours it.
+     */
+    var leaderboardNotifsEnabled: Boolean
+        get() = settings.getBoolean(KEY_LEADERBOARD_NOTIFS_ENABLED, true)
+        set(v) = settings.putBoolean(KEY_LEADERBOARD_NOTIFS_ENABLED, v)
+
     /** Called on first-ever app open to opt new users out of notifications by default. */
     fun initializeToOff() {
         settings.putBoolean(KEY_DAILY_ENABLED, false)
@@ -44,6 +62,8 @@ class NotificationSettingsStore(private val settings: Settings) {
     private companion object {
         const val KEY_DAILY_ENABLED = "notif_daily_enabled"
         const val KEY_FRIDAY_ENABLED = "notif_friday_enabled"
+        const val KEY_SERVER_REMINDERS_ENABLED = "notif_server_reminders_enabled"
+        const val KEY_LEADERBOARD_NOTIFS_ENABLED = "notif_leaderboard_enabled"
         const val KEY_SHOW_RANK_CHIP = "show_rank_chip"
         const val KEY_RANK_CHIP_TOOLTIP_SHOWN = "rank_chip_tooltip_shown"
         const val KEY_BUBBLE_TOOLTIP_SHOWN = "bubble_tooltip_shown"

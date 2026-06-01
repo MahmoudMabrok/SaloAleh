@@ -243,6 +243,10 @@
     <string name="settings_enable_exact_alarm_toast">یاد دہانی بالکل وقت پر آنے کے لیے درست وقت فعال کریں</string>
     <string name="settings_friday_notifications">جمعہ کی اطلاعات</string>
     <string name="settings_friday_notifications_subtitle">صبح 9 بجے سے شام 5 بجے تک ہر گھنٹے</string>
+    <string name="settings_server_reminders">یاد دہانی کی اطلاعات</string>
+    <string name="settings_server_reminders_subtitle">راؤنڈ ختم ہونے سے پہلے واپس آ کر درود پڑھنے کی یاد دہانی</string>
+    <string name="settings_leaderboard_notifs">درجہ بندی کی اطلاعات</string>
+    <string name="settings_leaderboard_notifs_subtitle">سرفہرست میں آپ کی درجہ بندی بدلنے پر اطلاعات</string>
     <string name="settings_content_header">مواد</string>
     <string name="settings_hadith_on_open">کھولنے پر حدیث</string>
     <string name="settings_hadith_on_open_subtitle">نبی ﷺ پر درود بھیجنے کی فضیلت کے بارے میں حدیث دکھائیں</string>

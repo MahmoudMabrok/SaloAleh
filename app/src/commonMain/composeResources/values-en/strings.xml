@@ -247,6 +247,10 @@
     <string name="settings_enable_exact_alarm_toast">Enable exact timing for reminders to arrive on time</string>
     <string name="settings_friday_notifications">Friday notifications</string>
     <string name="settings_friday_notifications_subtitle">Hourly from 9 AM – 5 PM</string>
+    <string name="settings_server_reminders">Reminder notifications</string>
+    <string name="settings_server_reminders_subtitle">Nudges to come back and pray before the round ends</string>
+    <string name="settings_leaderboard_notifs">Leaderboard notifications</string>
+    <string name="settings_leaderboard_notifs_subtitle">Alerts when your rank among the top changes</string>
     <string name="settings_content_header">Content</string>
     <string name="settings_hadith_on_open">Hadith on open</string>
     <string name="settings_hadith_on_open_subtitle">Show a hadith about the virtue of sending blessings upon the Prophet ﷺ</string>
