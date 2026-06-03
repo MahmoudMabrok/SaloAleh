@@ -82,6 +82,8 @@ import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.data.billing.PremiumFeature
 import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
+import tools.mo3ta.salo.data.salawat.SalawatVariantStore
+import tools.mo3ta.salo.data.salawat.SalawatVariants
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.generated.resources.Res
@@ -93,7 +95,6 @@ import tools.mo3ta.salo.generated.resources.mohamed_lovers_blocked_waiting_netwo
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_code_copied
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_connection_error
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_info_cd
-import tools.mo3ta.salo.generated.resources.mohamed_lovers_prayer_text
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_reward_text
 import tools.mo3ta.salo.generated.resources.main_screen_rank_chip_tooltip
 import tools.mo3ta.salo.generated.resources.main_screen_bubble_tooltip
@@ -171,12 +172,13 @@ fun MohamedLoversScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     val analyticsManager: AnalyticsManager = koinInject()
     val settingsStore: NotificationSettingsStore = koinInject()
+    val salawatVariantStore: SalawatVariantStore = koinInject()
     val premiumStore: PremiumStore = koinInject()
     var showRankChip by remember { mutableStateOf(settingsStore.showRankChip) }
 
     val codeCopiedLabel = stringResource(Res.string.mohamed_lovers_code_copied)
     val connectionErrorLabel = stringResource(Res.string.mohamed_lovers_connection_error)
-    val prayerText = stringResource(Res.string.mohamed_lovers_prayer_text)
+    val prayerText = stringResource(SalawatVariants.textResIds[salawatVariantStore.variantIndex])
     val rewardText = stringResource(Res.string.mohamed_lovers_reward_text)
     val waitingNetworkLabel = stringResource(Res.string.mohamed_lovers_blocked_waiting_network)
     val firebaseOffLabel = stringResource(Res.string.mohamed_lovers_blocked_firebase_off)
