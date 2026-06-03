@@ -10,6 +10,7 @@ object AppAnalytics {
     const val OPEN_SETTINGS = "open_settings"
     const val OPEN_TAKBEER_SESSION = "open_takbeer_session"
     const val LANGUAGE_CHANGED = "language_changed"
+    const val SALAWAT_VARIANT_CHANGED = "salawat_variant_changed"
     const val TAKBEER_SESSION_START = "takbeer_session_start"
     const val TAKBEER_USER_DONE = "takbeer_user_done"
     const val TAKBEER_SESSION_STOP = "takbeer_session_stop"
@@ -19,6 +20,7 @@ object AppAnalytics {
 
     const val PARAM_SOURCE = "source"
     const val PARAM_LANG = "lang"
+    const val PARAM_VARIANT = "variant"
     const val PARAM_PEOPLE = "people"
     const val PARAM_ROUND = "round"
     const val PARAM_ROUNDS_COMPLETED = "rounds_completed"

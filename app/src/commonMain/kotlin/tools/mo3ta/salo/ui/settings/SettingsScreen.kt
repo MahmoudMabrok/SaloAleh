@@ -28,6 +28,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -58,6 +60,8 @@ import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.data.billing.BillingManager
 import tools.mo3ta.salo.data.language.LanguageStore
+import tools.mo3ta.salo.data.salawat.SalawatVariantStore
+import tools.mo3ta.salo.data.salawat.SalawatVariants
 import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.billing.SupportTier
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
@@ -100,6 +104,8 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
 
     val languageStore: LanguageStore = koinInject()
     var selectedLanguage by remember { mutableStateOf(languageStore.language) }
+    val salawatVariantStore: SalawatVariantStore = koinInject()
+    var selectedSalawatVariant by remember { mutableStateOf(salawatVariantStore.variantIndex) }
     val analyticsManager: AnalyticsManager = koinInject()
     val billingManager: BillingManager = koinInject()
     val premiumStore: PremiumStore = koinInject()
@@ -171,6 +177,28 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
                         languageStore.language = lang
                         analyticsManager.logAction(AppAnalytics.LANGUAGE_CHANGED, mapOf(AppAnalytics.PARAM_LANG to lang))
                         setAppLocale(lang)
+                    }
+                },
+            )
+
+            Text(
+                text = stringResource(Res.string.settings_salawat_variant_header),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(vertical = 8.dp),
+            )
+
+            SalawatVariantSelector(
+                selectedIndex = selectedSalawatVariant,
+                onSelected = { index ->
+                    if (index != selectedSalawatVariant) {
+                        selectedSalawatVariant = index
+                        salawatVariantStore.variantIndex = index
+                        analyticsManager.logAction(
+                            AppAnalytics.SALAWAT_VARIANT_CHANGED,
+                            mapOf(AppAnalytics.PARAM_VARIANT to (index + 1).toString()),
+                        )
                     }
                 },
             )
@@ -527,6 +555,56 @@ private fun LanguageChipRow(
                     selected = selectedLanguage == tag,
                 ),
             )
+        }
+    }
+}
+
+@Composable
+private fun SalawatVariantSelector(
+    selectedIndex: Int,
+    onSelected: (Int) -> Unit,
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+    ) {
+        SalawatVariants.textResIds.forEachIndexed { index, resId ->
+            val selected = index == selectedIndex
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(
+                        if (selected) MohamedLoversPalette.GoldGlow.copy(alpha = 0.12f)
+                        else Color.White.copy(alpha = 0.04f),
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = if (selected) MohamedLoversPalette.GoldGlow.copy(alpha = 0.5f)
+                        else Color.White.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(12.dp),
+                    )
+                    .clickable { onSelected(index) }
+                    .padding(horizontal = 12.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RadioButton(
+                    selected = selected,
+                    onClick = { onSelected(index) },
+                    colors = RadioButtonDefaults.colors(
+                        selectedColor = MohamedLoversPalette.GoldGlow,
+                        unselectedColor = Color.White.copy(alpha = 0.5f),
+                    ),
+                )
+                Spacer(modifier = Modifier.padding(4.dp))
+                Text(
+                    text = stringResource(resId),
+                    color = if (selected) Color.White else Color.White.copy(alpha = 0.75f),
+                    fontSize = 14.sp,
+                    lineHeight = 22.sp,
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
     }
 }
