@@ -481,4 +481,8 @@
     <string name="nickname_announcement_body">اب آپ لیڈربورڈ پر بے ترتیب کوڈ کی بجائے اپنا نام دکھا سکتے ہیں۔ سیٹنگز میں جائیں اور اپنا نام چنیں۔</string>
     <string name="nickname_announcement_cta">میرا نام چنیں</string>
     <string name="nickname_announcement_dismiss">بعد میں</string>
+    <string name="salawat_variant_announcement_title">درود کے نئے صیغے</string>
+    <string name="salawat_variant_announcement_body">اب آپ منتخب کر سکتے ہیں کہ آسمان پر ٹیپ کرنے پر کون سا درود ظاہر ہو، کئی مستند صیغوں میں سے۔ ترتیبات میں سے منتخب کریں۔</string>
+    <string name="salawat_variant_announcement_cta">صیغہ منتخب کریں</string>
+    <string name="salawat_variant_announcement_dismiss">ابھی نہیں</string>
 </resources>

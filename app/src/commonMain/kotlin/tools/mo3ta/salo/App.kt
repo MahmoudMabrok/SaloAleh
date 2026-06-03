@@ -45,6 +45,7 @@ import tools.mo3ta.salo.ui.settings.SettingsScreen
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.ui.NicknameAnnouncementDialog
+import tools.mo3ta.salo.ui.SalawatVariantAnnouncementDialog
 import tools.mo3ta.salo.ui.takbeer.TakbeerAnnouncementDialog
 import tools.mo3ta.salo.ui.takbeer.TakbeerSessionScreen
 import tools.mo3ta.salo.ui.tendays.TenDaysPromoDialog
@@ -112,6 +113,9 @@ fun App(
         var nicknameAnnouncementDone by remember {
             mutableStateOf(sessionStoreApp.isNicknameAnnouncementShown)
         }
+        var salawatVariantAnnouncementDone by remember {
+            mutableStateOf(settings.getBoolean("salawat_variant_announcement_shown", false))
+        }
 
         when {
             showPaywall -> PaywallScreen(onBack = { showPaywall = false })
@@ -137,7 +141,7 @@ fun App(
                 onOpenTenDays = { showTenDays = true },
                 onOpenTakbeerSession = { showTakbeerSession = true },
                 onOpenPaywall = { showPaywall = true },
-                announcementsDone = takbeerAnnouncementDone && nicknameAnnouncementDone,
+                announcementsDone = takbeerAnnouncementDone && nicknameAnnouncementDone && salawatVariantAnnouncementDone,
             )
         }
 
@@ -199,6 +203,22 @@ fun App(
                     sessionStoreApp.isNicknameAnnouncementShown = true
                     nicknameAnnouncementDone = true
                     analyticsManager.logAction(AppAnalytics.NICKNAME_ANNOUNCEMENT_DISMISSED)
+                },
+            )
+        }
+
+        if (takbeerAnnouncementDone && nicknameAnnouncementDone && !salawatVariantAnnouncementDone) {
+            SalawatVariantAnnouncementDialog(
+                onOpenSettings = {
+                    settings.putBoolean("salawat_variant_announcement_shown", true)
+                    salawatVariantAnnouncementDone = true
+                    showSettings = true
+                    analyticsManager.logAction(AppAnalytics.SALAWAT_VARIANT_ANNOUNCEMENT_OPENED)
+                },
+                onDismiss = {
+                    settings.putBoolean("salawat_variant_announcement_shown", true)
+                    salawatVariantAnnouncementDone = true
+                    analyticsManager.logAction(AppAnalytics.SALAWAT_VARIANT_ANNOUNCEMENT_DISMISSED)
                 },
             )
         }

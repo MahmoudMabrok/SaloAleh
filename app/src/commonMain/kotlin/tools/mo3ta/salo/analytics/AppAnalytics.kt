@@ -17,6 +17,8 @@ object AppAnalytics {
     const val LEADERBOARD_USER_CLICK = "leaderboard_user_click"
     const val NICKNAME_ANNOUNCEMENT_OPENED = "nickname_announcement_opened"
     const val NICKNAME_ANNOUNCEMENT_DISMISSED = "nickname_announcement_dismissed"
+    const val SALAWAT_VARIANT_ANNOUNCEMENT_OPENED = "salawat_variant_announcement_opened"
+    const val SALAWAT_VARIANT_ANNOUNCEMENT_DISMISSED = "salawat_variant_announcement_dismissed"
 
     const val PARAM_SOURCE = "source"
     const val PARAM_LANG = "lang"

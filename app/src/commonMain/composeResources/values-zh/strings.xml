@@ -481,4 +481,8 @@
     <string name="nickname_announcement_body">现在你可以选择一个名字显示在排行榜上，代替随机代码。前往设置选择你的名字。</string>
     <string name="nickname_announcement_cta">选择我的名字</string>
     <string name="nickname_announcement_dismiss">稍后</string>
+    <string name="salawat_variant_announcement_title">全新祝福语</string>
+    <string name="salawat_variant_announcement_body">现在你可以选择点击天空时显示的祝福语，从多种真实传述的版本中挑选。请在设置中选择。</string>
+    <string name="salawat_variant_announcement_cta">选择祝福语</string>
+    <string name="salawat_variant_announcement_dismiss">暂不</string>
 </resources>

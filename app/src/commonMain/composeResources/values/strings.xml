@@ -504,4 +504,8 @@
     <string name="nickname_announcement_body">الآن يمكنك اختيار اسم يظهر في لوحة المتصدرين بدلاً من الرمز العشوائي. اذهب للإعدادات لتختار اسمك.</string>
     <string name="nickname_announcement_cta">اختر اسمي</string>
     <string name="nickname_announcement_dismiss">لاحقًا</string>
+    <string name="salawat_variant_announcement_title">صيغ جديدة للصلاة على النبي ﷺ</string>
+    <string name="salawat_variant_announcement_body">يمكنك الآن اختيار صيغة الصلاة التي تظهر عند الضغط على السماء، من بين عدة صيغ ثابتة عن النبي ﷺ. اخترها من الإعدادات.</string>
+    <string name="salawat_variant_announcement_cta">اختيار الصيغة</string>
+    <string name="salawat_variant_announcement_dismiss">ليس الآن</string>
 </resources>

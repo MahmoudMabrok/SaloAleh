@@ -494,4 +494,8 @@
     <string name="nickname_announcement_body">You can now choose a name to show on the leaderboard instead of the random code. Go to settings to pick your name.</string>
     <string name="nickname_announcement_cta">Choose my name</string>
     <string name="nickname_announcement_dismiss">Later</string>
+    <string name="salawat_variant_announcement_title">New salawat wordings</string>
+    <string name="salawat_variant_announcement_body">You can now choose which salawat appears when you tap the sky, from several authentic forms. Pick yours in Settings.</string>
+    <string name="salawat_variant_announcement_cta">Choose wording</string>
+    <string name="salawat_variant_announcement_dismiss">Not now</string>
 </resources>
