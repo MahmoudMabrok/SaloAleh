@@ -39,6 +39,8 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 
 private const val FLIGHT_DURATION_MS = 2400
+private const val FLIGHT_DURATION_MAX_MS = 7000
+private const val FLIGHT_MS_PER_CHAR = 22
 private const val REWARD_DURATION_MS = 8000
 private const val REWARD_RISE_DP = 280f
 private const val RIPPLE_DURATION_MS = 600
@@ -47,6 +49,10 @@ private const val REWARD_ID_OFFSET = 100_000_000L
 
 private val FlightEasing = CubicBezierEasing(0.42f, 0f, 0.2f, 1f)
 private val RewardEasing = CubicBezierEasing(0.22f, 0.7f, 0.25f, 1f)
+
+/** Longer salawat fly up more slowly so the text stays readable. */
+private fun flightDurationFor(text: String): Int =
+    (FLIGHT_DURATION_MS + text.length * FLIGHT_MS_PER_CHAR).coerceAtMost(FLIGHT_DURATION_MAX_MS)
 
 @Composable
 internal fun MohamedLoversPrayerOverlay(
@@ -66,6 +72,7 @@ internal fun MohamedLoversPrayerOverlay(
     val lastEmitAt = remember { longArrayOf(0L) }
     var overlayOrigin by remember { mutableStateOf(Offset.Zero) }
     val scope = rememberCoroutineScope()
+    val flightDurationMs = remember(prayerText) { flightDurationFor(prayerText) }
 
     Box(
         modifier = modifier
@@ -109,6 +116,7 @@ internal fun MohamedLoversPrayerOverlay(
                     start = p.start - overlayOrigin,
                     end = p.end - overlayOrigin,
                     text = prayerText,
+                    durationMs = flightDurationMs,
                     onArrive = {
                         onBlessing()
                         rewards += RisingReward(id = p.id + REWARD_ID_OFFSET, at = p.end, text = rewardText)
@@ -154,10 +162,10 @@ private fun RippleView(origin: Offset, onEnd: () -> Unit) {
 }
 
 @Composable
-private fun FlyingPrayerView(start: Offset, end: Offset, text: String, onArrive: () -> Unit) {
+private fun FlyingPrayerView(start: Offset, end: Offset, text: String, durationMs: Int, onArrive: () -> Unit) {
     val t = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
-        t.animateTo(1f, tween(FLIGHT_DURATION_MS, easing = FlightEasing))
+        t.animateTo(1f, tween(durationMs, easing = FlightEasing))
         onArrive()
     }
     val x = start.x + (end.x - start.x) * t.value
