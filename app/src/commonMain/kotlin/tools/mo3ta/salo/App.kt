@@ -342,15 +342,20 @@ fun App(
         if (showReview) {
             ReviewDialog(
                 onGoToStore = {
+                    analyticsManager.logAction(AppAnalytics.REVIEW_DIALOG_GO_TO_STORE)
                     engagementStore.markReviewCompleted()
                     showReview = false
                     openStorePage()
                 },
                 onDismiss = {
+                    analyticsManager.logAction(AppAnalytics.REVIEW_DIALOG_DISMISSED)
                     engagementStore.markReviewDialogShown(today)
                     showReview = false
                 },
             )
+            LaunchedEffect(Unit) {
+                analyticsManager.logAction(AppAnalytics.REVIEW_DIALOG_SHOWN)
+            }
         }
 
         var pendingVersionUpdate by remember(newVersionAvailable) {

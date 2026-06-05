@@ -19,6 +19,9 @@ object AppAnalytics {
     const val NICKNAME_ANNOUNCEMENT_DISMISSED = "nickname_announcement_dismissed"
     const val SALAWAT_VARIANT_ANNOUNCEMENT_OPENED = "salawat_variant_announcement_opened"
     const val SALAWAT_VARIANT_ANNOUNCEMENT_DISMISSED = "salawat_variant_announcement_dismissed"
+    const val REVIEW_DIALOG_SHOWN = "review_dialog_shown"
+    const val REVIEW_DIALOG_GO_TO_STORE = "review_dialog_go_to_store"
+    const val REVIEW_DIALOG_DISMISSED = "review_dialog_dismissed"
 
     const val PARAM_SOURCE = "source"
     const val PARAM_LANG = "lang"
