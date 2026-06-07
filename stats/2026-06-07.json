@@ -1,0 +1,104 @@
+{
+  "allTimeSalawat": 327347,
+  "weekSalawat": 13885,
+  "todaySalawat": 5215,
+  "activePlayers": 21,
+  "countriesCount": 7,
+  "countries": [
+    "EG",
+    "GR",
+    "IQ",
+    "IT",
+    "SA",
+    "SO",
+    "ZA"
+  ],
+  "topScore": 7123,
+  "roundKey": "2026-06-12",
+  "leaderboard": [
+    {
+      "countryCode": "EG",
+      "dailyBadge": "crescent",
+      "nickname": "يونس",
+      "rank": 1,
+      "rankChange": "same",
+      "score": 7123,
+      "uid": "5a4b1d0ed314c539aefe3fedeb07054b2acf361dd98189761e80e047fbf80305"
+    },
+    {
+      "countryCode": "SA",
+      "dailyBadge": "heart",
+      "nickname": "M.A.L",
+      "rank": 2,
+      "rankChange": "same",
+      "score": 1560,
+      "uid": "092d20eeafb6b68719e19fcd41f072811d333b4f561862f7b13734d0d633db00"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "nickname": "مؤمن",
+      "rank": 3,
+      "rankChange": "same",
+      "score": 1303,
+      "uid": "15f80629103a36a697fb3b8dc71b9c035e1b452607a2ad1026102f4ce7e7da6f"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "sprout",
+      "nickname": "م.م",
+      "rank": 4,
+      "rankChange": "same",
+      "score": 1112,
+      "uid": "cf0116cf9c1bf2ef2965b238768139059a0088bbb734739297ac650ede2fd00b"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "tasbih",
+      "isSupporter": true,
+      "rank": 5,
+      "rankChange": "same",
+      "score": 812,
+      "uid": "d37ab9ff8d45a9931d24389990545bdb773791e2873b2d23534c26bdcef8f48a"
+    },
+    {
+      "countryCode": "IT",
+      "rank": 6,
+      "rankChange": "same",
+      "score": 620,
+      "uid": "c6c592d1a439dcda8abf90bfe57de7416d6903f4541e99f4045f42e8e548c30b"
+    },
+    {
+      "countryCode": "EG",
+      "nickname": "بدران بدوي",
+      "rank": 7,
+      "rankChange": "same",
+      "score": 373,
+      "uid": "22209706044a8b6889d6411a541c3b8c0c735d123ea7c7c83ca0e379a7d5b334"
+    },
+    {
+      "countryCode": "EG",
+      "rank": 8,
+      "rankChange": "same",
+      "score": 304,
+      "uid": "08a867f71960b712aea4daf4aab49b33eebec129f522461401bba17634f8522c"
+    },
+    {
+      "countryCode": "GR",
+      "nickname": "هشام",
+      "rank": 9,
+      "rankChange": "same",
+      "score": 178,
+      "uid": "859c7cc1f957fb35d6674564de7f1360b3841a4e09f811e6135b0b83090f42b6"
+    },
+    {
+      "countryCode": "EG",
+      "isSupporter": true,
+      "rank": 10,
+      "rankChange": "same",
+      "score": 167,
+      "uid": "abcc7116e7de1a8159c3d983d094084f83b6b26bc33873b1fc8d92a56cbf823b"
+    }
+  ],
+  "updatedAt": "2026-06-07T20:46:13.166Z"
+}
