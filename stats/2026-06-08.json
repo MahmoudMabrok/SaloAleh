@@ -1,0 +1,105 @@
+{
+  "allTimeSalawat": 343912,
+  "weekSalawat": 30450,
+  "todaySalawat": 16565,
+  "activePlayers": 25,
+  "countriesCount": 9,
+  "countries": [
+    "CI",
+    "EG",
+    "GR",
+    "IQ",
+    "IT",
+    "MR",
+    "SA",
+    "SO",
+    "ZA"
+  ],
+  "topScore": 12474,
+  "roundKey": "2026-06-12",
+  "leaderboard": [
+    {
+      "countryCode": "EG",
+      "dailyBadge": "crescent",
+      "nickname": "يونس",
+      "rank": 1,
+      "rankChange": "same",
+      "score": 11474,
+      "uid": "5a4b1d0ed314c539aefe3fedeb07054b2acf361dd98189761e80e047fbf80305"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "heart",
+      "nickname": "MF1979",
+      "rank": 2,
+      "rankChange": "same",
+      "score": 7325,
+      "uid": "a6edef5b54050a0eeff694c23ec03d8ff1e6110d49bf2452f2bc7a9c52f706ba"
+    },
+    {
+      "countryCode": "EG",
+      "nickname": "مؤمن",
+      "rank": 3,
+      "rankChange": "same",
+      "score": 3303,
+      "uid": "15f80629103a36a697fb3b8dc71b9c035e1b452607a2ad1026102f4ce7e7da6f"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "rank": 4,
+      "rankChange": "same",
+      "score": 1834,
+      "uid": "4f6e67806334548b70a077460da4ad7e7939d9489628a1e810a03cde3e945937"
+    },
+    {
+      "countryCode": "SA",
+      "nickname": "M.A.L",
+      "rank": 5,
+      "rankChange": "same",
+      "score": 1560,
+      "uid": "092d20eeafb6b68719e19fcd41f072811d333b4f561862f7b13734d0d633db00"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "heart",
+      "nickname": "م.م",
+      "rank": 6,
+      "rankChange": "same",
+      "score": 1463,
+      "uid": "cf0116cf9c1bf2ef2965b238768139059a0088bbb734739297ac650ede2fd00b"
+    },
+    {
+      "countryCode": "IT",
+      "dailyBadge": "tasbih",
+      "rank": 7,
+      "rankChange": "same",
+      "score": 1160,
+      "uid": "c6c592d1a439dcda8abf90bfe57de7416d6903f4541e99f4045f42e8e548c30b"
+    },
+    {
+      "countryCode": "EG",
+      "isSupporter": true,
+      "rank": 8,
+      "rankChange": "same",
+      "score": 812,
+      "uid": "d37ab9ff8d45a9931d24389990545bdb773791e2873b2d23534c26bdcef8f48a"
+    },
+    {
+      "countryCode": "EG",
+      "nickname": "بدران بدوي",
+      "rank": 9,
+      "rankChange": "same",
+      "score": 373,
+      "uid": "22209706044a8b6889d6411a541c3b8c0c735d123ea7c7c83ca0e379a7d5b334"
+    },
+    {
+      "countryCode": "EG",
+      "rank": 10,
+      "rankChange": "same",
+      "score": 304,
+      "uid": "08a867f71960b712aea4daf4aab49b33eebec129f522461401bba17634f8522c"
+    }
+  ],
+  "updatedAt": "2026-06-08T20:46:10.349Z"
+}
