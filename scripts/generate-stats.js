@@ -154,7 +154,7 @@ async function sendDailyTop3Notifications(db, dailyLeaderboardSnap) {
   for (let rank = 1; rank <= 3; rank++) {
     const entry = lb[String(rank)];
     if (!entry?.uid) break;
-    const name = entry.nickname || 'محب';
+    const name = entry.nickname || entry.uid.slice(-6).toUpperCase();
     nameParts.push(`${medals[rank - 1]} ${name}`);
   }
 
