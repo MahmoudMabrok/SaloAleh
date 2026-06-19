@@ -32,11 +32,12 @@ async function main() {
   const roundKey = cairoRoundKey();
   console.log(`Active round: ${roundKey}`);
 
-  const [allTimeTotalSnap, playersSnap, roundTotalSnap, leaderboardSnap] = await Promise.all([
+  const [allTimeTotalSnap, playersSnap, roundTotalSnap, leaderboardSnap, dailyLeaderboardSnap] = await Promise.all([
     db.ref('mohamed_lovers/allTimeTotal').get(),
     db.ref(`mohamed_lovers/${roundKey}/players`).get(),
     db.ref(`mohamed_lovers/${roundKey}/roundTotal`).get(),
     db.ref(`mohamed_lovers/${roundKey}/leaderboard`).get(),
+    db.ref(`mohamed_lovers/${roundKey}/dailyLeaderboard`).get(),
   ]);
 
   const weekSalawat    = roundTotalSnap.val()    || 0;
@@ -132,7 +133,56 @@ async function main() {
   fs.writeFileSync(outPath, JSON.stringify(stats, null, 2));
   console.log(`stats/${dateStr}.json written:`, stats);
 
+  await sendDailyTop3Notifications(db, dailyLeaderboardSnap);
+
   process.exit(0);
+}
+
+async function sendDailyTop3Notifications(db, dailyLeaderboardSnap) {
+  if (!dailyLeaderboardSnap.exists()) {
+    console.log('[daily-top3] no daily leaderboard data — skip');
+    return;
+  }
+  const lb = dailyLeaderboardSnap.val();
+  if (lb.isFinal) {
+    console.log('[daily-top3] round is final — skip');
+    return;
+  }
+
+  const messages = {
+    1: { title: 'أنت الأول اليوم 🥇', body: 'تصدّرت قائمة المصلّين على النبي ﷺ اليوم — بارك الله فيك وجزاك خيراً!' },
+    2: { title: 'أنت الثاني اليوم 🥈', body: 'حللت المرتبة الثانية بين المصلّين على النبي ﷺ اليوم — بارك الله فيك!' },
+    3: { title: 'أنت الثالث اليوم 🥉', body: 'نلت المرتبة الثالثة بين المصلّين على النبي ﷺ اليوم — بارك الله فيك!' },
+  };
+
+  const promises = [];
+  for (let rank = 1; rank <= 3; rank++) {
+    const entry = lb[String(rank)];
+    if (!entry?.uid) continue;
+    const uid = entry.uid;
+    promises.push((async () => {
+      const userSnap = await db.ref(`mohamed_lovers/users/${uid}`).get();
+      const user = userSnap.val();
+      if (!user?.fcmToken) {
+        console.log(`[daily-top3] rank=${rank} uid=${uid}: no FCM token — skip`);
+        return;
+      }
+      if (user.leaderboardNotifsEnabled === false) {
+        console.log(`[daily-top3] rank=${rank} uid=${uid}: leaderboard notifications disabled — skip`);
+        return;
+      }
+      const msg = messages[rank];
+      return admin.messaging().send({
+        token: user.fcmToken,
+        notification: { title: msg.title, body: msg.body },
+        data: { title: msg.title, body: msg.body },
+      })
+        .then(msgId => console.log(`[daily-top3] rank=${rank} uid=${uid}: sent msgId=${msgId}`))
+        .catch(e => console.error(`[daily-top3] rank=${rank} uid=${uid}: send failed: ${e.message}`));
+    })());
+  }
+  await Promise.all(promises);
+  console.log('[daily-top3] done');
 }
 
 main().catch(err => { console.error(err); process.exit(1); });
