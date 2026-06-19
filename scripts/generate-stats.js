@@ -167,7 +167,7 @@ async function sendDailyTop3Notifications(db, dailyLeaderboardSnap) {
   const body = `تهانينا للمتصدرين في الصلاة على النبي ﷺ اليوم: ${nameParts.join(' | ')}`;
 
   const msgId = await admin.messaging().send({
-    topic: 'general',
+    topic: 'leaderboard_notifs',
     notification: { title, body },
     data: { title, body, notification_type: 'daily_top3' },
   });

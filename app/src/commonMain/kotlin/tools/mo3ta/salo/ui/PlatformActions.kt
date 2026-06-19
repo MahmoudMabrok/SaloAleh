@@ -17,6 +17,8 @@ expect fun shareBitmap(imageBitmap: ImageBitmap)
 
 expect fun setAppLocale(languageTag: String)
 
+expect fun setLeaderboardTopicSubscription(enabled: Boolean)
+
 expect fun launchQrScanner(onResult: (String?) -> Unit)
 
 @Composable
