@@ -149,40 +149,29 @@ async function sendDailyTop3Notifications(db, dailyLeaderboardSnap) {
     return;
   }
 
-  const messages = {
-    1: { title: 'أنت الأول اليوم 🥇', body: 'تصدّرت قائمة المصلّين على النبي ﷺ اليوم — بارك الله فيك وجزاك خيراً!' },
-    2: { title: 'أنت الثاني اليوم 🥈', body: 'حللت المرتبة الثانية بين المصلّين على النبي ﷺ اليوم — بارك الله فيك!' },
-    3: { title: 'أنت الثالث اليوم 🥉', body: 'نلت المرتبة الثالثة بين المصلّين على النبي ﷺ اليوم — بارك الله فيك!' },
-  };
-
-  const promises = [];
+  const medals = ['🥇', '🥈', '🥉'];
+  const nameParts = [];
   for (let rank = 1; rank <= 3; rank++) {
     const entry = lb[String(rank)];
-    if (!entry?.uid) continue;
-    const uid = entry.uid;
-    promises.push((async () => {
-      const userSnap = await db.ref(`mohamed_lovers/users/${uid}`).get();
-      const user = userSnap.val();
-      if (!user?.fcmToken) {
-        console.log(`[daily-top3] rank=${rank} uid=${uid}: no FCM token — skip`);
-        return;
-      }
-      if (user.leaderboardNotifsEnabled === false) {
-        console.log(`[daily-top3] rank=${rank} uid=${uid}: leaderboard notifications disabled — skip`);
-        return;
-      }
-      const msg = messages[rank];
-      return admin.messaging().send({
-        token: user.fcmToken,
-        notification: { title: msg.title, body: msg.body },
-        data: { title: msg.title, body: msg.body },
-      })
-        .then(msgId => console.log(`[daily-top3] rank=${rank} uid=${uid}: sent msgId=${msgId}`))
-        .catch(e => console.error(`[daily-top3] rank=${rank} uid=${uid}: send failed: ${e.message}`));
-    })());
+    if (!entry?.uid) break;
+    const name = entry.nickname || 'محب';
+    nameParts.push(`${medals[rank - 1]} ${name}`);
   }
-  await Promise.all(promises);
-  console.log('[daily-top3] done');
+
+  if (nameParts.length === 0) {
+    console.log('[daily-top3] no entries — skip');
+    return;
+  }
+
+  const title = 'أبطال اليوم 🌟';
+  const body = `تهانينا للمتصدرين في الصلاة على النبي ﷺ اليوم: ${nameParts.join(' | ')}`;
+
+  const msgId = await admin.messaging().send({
+    topic: 'general',
+    notification: { title, body },
+    data: { title, body, notification_type: 'daily_top3' },
+  });
+  console.log(`[daily-top3] broadcast to topic "general" msgId=${msgId}`);
 }
 
 main().catch(err => { console.error(err); process.exit(1); });
