@@ -1,0 +1,74 @@
+{
+  "allTimeSalawat": 500752,
+  "weekSalawat": 4122,
+  "todaySalawat": 4122,
+  "activePlayers": 7,
+  "countriesCount": 4,
+  "countries": [
+    "DZ",
+    "EG",
+    "IT",
+    "SA"
+  ],
+  "topScore": 2001,
+  "roundKey": "2026-06-26",
+  "leaderboard": [
+    {
+      "countryCode": "DZ",
+      "nickname": "Saliha",
+      "rank": 1,
+      "rankChange": "same",
+      "score": 2001,
+      "uid": "95f710fac50b769650b5494354a21344bc4ac1bdfb9dd101925154b1ded0d7d5"
+    },
+    {
+      "countryCode": "SA",
+      "dailyBadge": "dome",
+      "nickname": "M.A.L",
+      "rank": 2,
+      "rankChange": "same",
+      "score": 920,
+      "uid": "092d20eeafb6b68719e19fcd41f072811d333b4f561862f7b13734d0d633db00"
+    },
+    {
+      "countryCode": "IT",
+      "dailyBadge": "tasbih",
+      "rank": 3,
+      "rankChange": "same",
+      "score": 370,
+      "uid": "c6c592d1a439dcda8abf90bfe57de7416d6903f4541e99f4045f42e8e548c30b"
+    },
+    {
+      "countryCode": "EG",
+      "nickname": "م.م",
+      "rank": 4,
+      "rankChange": "same",
+      "score": 328,
+      "uid": "cf0116cf9c1bf2ef2965b238768139059a0088bbb734739297ac650ede2fd00b"
+    },
+    {
+      "countryCode": "EG",
+      "nickname": "يونس",
+      "rank": 5,
+      "rankChange": "same",
+      "score": 301,
+      "uid": "5a4b1d0ed314c539aefe3fedeb07054b2acf361dd98189761e80e047fbf80305"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "heart",
+      "rank": 6,
+      "rankChange": "same",
+      "score": 201,
+      "uid": "d37ab9ff8d45a9931d24389990545bdb773791e2873b2d23534c26bdcef8f48a"
+    },
+    {
+      "countryCode": "EG",
+      "rank": 7,
+      "rankChange": "same",
+      "score": 1,
+      "uid": "08a867f71960b712aea4daf4aab49b33eebec129f522461401bba17634f8522c"
+    }
+  ],
+  "updatedAt": "2026-06-19T20:46:05.500Z"
+}
