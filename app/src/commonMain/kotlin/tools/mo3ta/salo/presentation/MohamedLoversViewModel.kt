@@ -31,6 +31,7 @@ import tools.mo3ta.salo.domain.MohamedLoversCompetitionWindow
 import tools.mo3ta.salo.domain.MohamedLoversPlayer
 import tools.mo3ta.salo.domain.MohamedLoversRepository
 import tools.mo3ta.salo.domain.buildMohamedLoversDisplayTag
+import tools.mo3ta.salo.ui.setLeaderboardTopicSubscription
 
 class MohamedLoversViewModel(
     private val repository: MohamedLoversRepository,
@@ -345,9 +346,10 @@ class MohamedLoversViewModel(
         syncNotificationPrefs()
     }
 
-    /** Persists the leaderboard-notification opt-in locally and syncs it to RTDB for the cron scripts. */
+    /** Persists the leaderboard-notification opt-in locally, syncs to RTDB, and subscribes/unsubscribes from the FCM topic. */
     fun setLeaderboardNotifsEnabled(enabled: Boolean) {
         settingsStore.leaderboardNotifsEnabled = enabled
+        setLeaderboardTopicSubscription(enabled)
         syncNotificationPrefs()
     }
 

@@ -32,11 +32,12 @@ async function main() {
   const roundKey = cairoRoundKey();
   console.log(`Active round: ${roundKey}`);
 
-  const [allTimeTotalSnap, playersSnap, roundTotalSnap, leaderboardSnap] = await Promise.all([
+  const [allTimeTotalSnap, playersSnap, roundTotalSnap, leaderboardSnap, dailyLeaderboardSnap] = await Promise.all([
     db.ref('mohamed_lovers/allTimeTotal').get(),
     db.ref(`mohamed_lovers/${roundKey}/players`).get(),
     db.ref(`mohamed_lovers/${roundKey}/roundTotal`).get(),
     db.ref(`mohamed_lovers/${roundKey}/leaderboard`).get(),
+    db.ref(`mohamed_lovers/${roundKey}/dailyLeaderboard`).get(),
   ]);
 
   const weekSalawat    = roundTotalSnap.val()    || 0;
@@ -132,7 +133,45 @@ async function main() {
   fs.writeFileSync(outPath, JSON.stringify(stats, null, 2));
   console.log(`stats/${dateStr}.json written:`, stats);
 
+  await sendDailyTop3Notifications(db, dailyLeaderboardSnap);
+
   process.exit(0);
+}
+
+async function sendDailyTop3Notifications(db, dailyLeaderboardSnap) {
+  if (!dailyLeaderboardSnap.exists()) {
+    console.log('[daily-top3] no daily leaderboard data — skip');
+    return;
+  }
+  const lb = dailyLeaderboardSnap.val();
+  if (lb.isFinal) {
+    console.log('[daily-top3] round is final — skip');
+    return;
+  }
+
+  const medals = ['🥇', '🥈', '🥉'];
+  const nameParts = [];
+  for (let rank = 1; rank <= 3; rank++) {
+    const entry = lb[String(rank)];
+    if (!entry?.uid) break;
+    const name = entry.nickname || entry.uid.slice(-6).toUpperCase();
+    nameParts.push(`${medals[rank - 1]} ${name}`);
+  }
+
+  if (nameParts.length === 0) {
+    console.log('[daily-top3] no entries — skip');
+    return;
+  }
+
+  const title = 'أبطال اليوم 🌟';
+  const body = `تهانينا للمتصدرين في الصلاة على النبي ﷺ اليوم: ${nameParts.join(' | ')}`;
+
+  const msgId = await admin.messaging().send({
+    topic: 'leaderboard_notifs',
+    notification: { title, body },
+    data: { title, body, notification_type: 'daily_top3' },
+  });
+  console.log(`[daily-top3] broadcast to topic "general" msgId=${msgId}`);
 }
 
 main().catch(err => { console.error(err); process.exit(1); });

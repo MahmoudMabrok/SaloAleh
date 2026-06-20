@@ -111,6 +111,8 @@ actual fun openNotificationSettings() {
 
 actual fun requestExactAlarmPermission() = Unit
 
+actual fun setLeaderboardTopicSubscription(enabled: Boolean) = Unit
+
 actual fun setAppLocale(languageTag: String) {
     platform.Foundation.NSUserDefaults.standardUserDefaults.setObject(listOf(languageTag), forKey = "AppleLanguages")
     platform.Foundation.NSUserDefaults.standardUserDefaults.synchronize()

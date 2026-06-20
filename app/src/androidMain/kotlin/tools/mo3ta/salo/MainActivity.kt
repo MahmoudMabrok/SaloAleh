@@ -77,6 +77,10 @@ class MainActivity : ComponentActivity() {
         if (hasNotifPerm) {
             engagementStore.clearFcmPermDenied()
             FirebaseMessaging.getInstance().subscribeToTopic("general")
+            if (notificationSettingsStore.leaderboardNotifsEnabled)
+                FirebaseMessaging.getInstance().subscribeToTopic("leaderboard_notifs")
+            else
+                FirebaseMessaging.getInstance().unsubscribeFromTopic("leaderboard_notifs")
         } else {
             engagementStore.saveFcmPermDenied(today)
         }
@@ -146,6 +150,10 @@ class MainActivity : ComponentActivity() {
         if (hasNotifPerm) {
             engagementStore.clearFcmPermDenied()
             FirebaseMessaging.getInstance().subscribeToTopic("general")
+            if (notificationSettingsStore.leaderboardNotifsEnabled)
+                FirebaseMessaging.getInstance().subscribeToTopic("leaderboard_notifs")
+            else
+                FirebaseMessaging.getInstance().unsubscribeFromTopic("leaderboard_notifs")
         }
         ensureFcmTokenSynced()
     }

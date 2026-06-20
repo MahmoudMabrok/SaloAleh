@@ -150,6 +150,12 @@ actual fun openStorePage() {
         .onFailure { ctx.startActivity(webIntent) }
 }
 
+actual fun setLeaderboardTopicSubscription(enabled: Boolean) {
+    val messaging = com.google.firebase.messaging.FirebaseMessaging.getInstance()
+    if (enabled) messaging.subscribeToTopic("leaderboard_notifs")
+    else messaging.unsubscribeFromTopic("leaderboard_notifs")
+}
+
 actual fun setAppLocale(languageTag: String) {
     val ctx = AndroidAppContext.get()
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
