@@ -4,6 +4,19 @@ on:
   schedule:
     - cron: '0 20 * * *'
   workflow_dispatch:
+    inputs:
+      days:
+        description: 'Number of days back (e.g. 7, 28). Ignored if start_date/end_date are set.'
+        required: false
+        default: ''
+      start_date:
+        description: 'Date range start YYYY-MM-DD (use with end_date for a custom range)'
+        required: false
+        default: ''
+      end_date:
+        description: 'Date range end YYYY-MM-DD (use with start_date for a custom range)'
+        required: false
+        default: ''
 
 jobs:
   ga4-report:
@@ -25,10 +38,21 @@ jobs:
           FIREBASE_SA_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
       - name: Run GA4 report
-        run: python3 scripts/ga4-report.py 28d
+        run: |
+          if [ -n "$INPUT_START" ] && [ -n "$INPUT_END" ]; then
+            ARGS="--start $INPUT_START --end $INPUT_END"
+          elif [ -n "$INPUT_DAYS" ]; then
+            ARGS="${INPUT_DAYS}d"
+          else
+            ARGS=""
+          fi
+          python3 scripts/ga4-report.py $ARGS
         env:
           SALO_SA_KEY: /tmp/sa-key.json
           GA4_PROPERTY: ${{ secrets.GA4_PROPERTY_ID }}
+          INPUT_DAYS: ${{ inputs.days }}
+          INPUT_START: ${{ inputs.start_date }}
+          INPUT_END: ${{ inputs.end_date }}
 
       - name: Cleanup
         if: always()
