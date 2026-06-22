@@ -5,15 +5,19 @@ Auth: Firebase Admin SDK service account key at $SALO_SA_KEY.
 The SA must be granted Viewer on the GA4 property (GA Admin -> Property Access).
 
 Usage:
-  python3 scripts/ga4-report.py            # default property 529874204, last 28 days
-  python3 scripts/ga4-report.py 280d       # last 280 days
+  python3 scripts/ga4-report.py                              # today only (default)
+  python3 scripts/ga4-report.py 7d                           # last 7 days
+  python3 scripts/ga4-report.py 28d                          # last 28 days
+  python3 scripts/ga4-report.py --start 2026-06-01 --end 2026-06-22  # date range
   GA4_PROPERTY=123456789 python3 scripts/ga4-report.py
 """
+import argparse
 import os
 import sys
 import json
 import ssl
 import urllib.request
+from datetime import date
 
 try:
     import certifi
@@ -23,8 +27,6 @@ except ImportError:
 
 KEY = os.environ.get("SALO_SA_KEY", os.path.expanduser("~/.config/salo-analytics/sa-key.json"))
 SCOPE = "https://www.googleapis.com/auth/analytics.readonly"
-DAYS = sys.argv[1] if len(sys.argv) > 1 else "28d"
-DAYS = DAYS.rstrip("d")
 SUMMARY_FILE = os.environ.get("GITHUB_STEP_SUMMARY")
 
 APP_FILTER = {
@@ -35,6 +37,28 @@ APP_FILTER = {
 }
 
 md_lines = []
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "days",
+        nargs="?",
+        help="e.g. 28d — last N days. Ignored if --start/--end are set.",
+    )
+    parser.add_argument("--start", dest="start_date", metavar="YYYY-MM-DD", help="date range start")
+    parser.add_argument("--end", dest="end_date", metavar="YYYY-MM-DD", help="date range end")
+    return parser.parse_args()
+
+
+def build_date_range(args):
+    if args.start_date and args.end_date:
+        return args.start_date, args.end_date, f"{args.start_date} → {args.end_date}"
+    if args.days:
+        n = args.days.rstrip("d")
+        return f"{n}daysAgo", "today", f"last {n}d"
+    today = date.today().isoformat()
+    return today, today, "today"
 
 
 def out(text=""):
@@ -65,9 +89,9 @@ def api(url, tok, body=None):
         raise
 
 
-def report(tok, prop, dimensions, metrics, label, limit=25):
+def report(tok, prop, dimensions, metrics, label, start_date, end_date, date_label, limit=25):
     body = {
-        "dateRanges": [{"startDate": f"{DAYS}daysAgo", "endDate": "today"}],
+        "dateRanges": [{"startDate": start_date, "endDate": end_date}],
         "dimensions": [{"name": d} for d in dimensions],
         "metrics": [{"name": m} for m in metrics],
         "dimensionFilter": APP_FILTER,
@@ -77,7 +101,7 @@ def report(tok, prop, dimensions, metrics, label, limit=25):
     d = api(f"https://analyticsdata.googleapis.com/v1beta/{prop}:runReport", tok, body)
     rows = d.get("rows", [])
 
-    out(f"\n### {label} (last {DAYS}d)")
+    out(f"\n### {label} ({date_label})")
     out()
     dim_header = " | ".join(dimensions) if dimensions else ""
     cols = [dim_header] + metrics if dim_header else metrics
@@ -94,9 +118,9 @@ def report(tok, prop, dimensions, metrics, label, limit=25):
         out("| " + " | ".join(cells) + " |")
 
 
-def screen_views(tok, prop):
+def screen_views(tok, prop, start_date, end_date, date_label):
     body = {
-        "dateRanges": [{"startDate": f"{DAYS}daysAgo", "endDate": "today"}],
+        "dateRanges": [{"startDate": start_date, "endDate": end_date}],
         "dimensions": [{"name": "eventName"}],
         "metrics": [{"name": "eventCount"}],
         "dimensionFilter": {
@@ -113,7 +137,7 @@ def screen_views(tok, prop):
     d = api(f"https://analyticsdata.googleapis.com/v1beta/{prop}:runReport", tok, body)
     rows = d.get("rows", [])
 
-    out(f"\n### SCREEN VIEWS (last {DAYS}d)")
+    out(f"\n### SCREEN VIEWS ({date_label})")
     out()
     out("| screen | views |")
     out("| --- | ---: |")
@@ -127,18 +151,22 @@ def screen_views(tok, prop):
 
 
 def main():
+    args = parse_args()
+    start_date, end_date, date_label = build_date_range(args)
+
     tok = token()
     prop = os.environ.get("GA4_PROPERTY", "529874204")
     prop = f"properties/{prop}"
 
     out(f"# SaloAleh GA4 Report")
 
-    report(tok, prop, [], ["activeUsers", "newUsers", "sessions", "screenPageViews", "eventCount"], "TOTALS")
-    report(tok, prop, ["eventName"], ["eventCount"], "TOP EVENTS")
-    screen_views(tok, prop)
-    report(tok, prop, ["country"], ["activeUsers"], "USERS BY COUNTRY")
-    report(tok, prop, ["deviceCategory", "operatingSystem"], ["activeUsers"], "PLATFORM")
-    report(tok, prop, ["date"], ["activeUsers", "newUsers"], "DAILY ACTIVE", limit=60)
+    kw = dict(start_date=start_date, end_date=end_date, date_label=date_label)
+    report(tok, prop, [], ["activeUsers", "newUsers", "sessions", "screenPageViews", "eventCount"], "TOTALS", **kw)
+    report(tok, prop, ["eventName"], ["eventCount"], "TOP EVENTS", **kw)
+    screen_views(tok, prop, **kw)
+    report(tok, prop, ["country"], ["activeUsers"], "USERS BY COUNTRY", **kw)
+    report(tok, prop, ["deviceCategory", "operatingSystem"], ["activeUsers"], "PLATFORM", **kw)
+    report(tok, prop, ["date"], ["activeUsers", "newUsers"], "DAILY ACTIVE", **kw, limit=60)
 
     if SUMMARY_FILE:
         with open(SUMMARY_FILE, "a") as f:
