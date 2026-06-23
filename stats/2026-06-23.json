@@ -1,0 +1,108 @@
+{
+  "allTimeSalawat": 532736,
+  "weekSalawat": 36106,
+  "todaySalawat": 36106,
+  "activePlayers": 30,
+  "countriesCount": 13,
+  "countries": [
+    "CI",
+    "DZ",
+    "EG",
+    "IT",
+    "LY",
+    "MA",
+    "ML",
+    "NE",
+    "SA",
+    "SD",
+    "SN",
+    "TN",
+    "YE"
+  ],
+  "topScore": 28700,
+  "roundKey": "2026-06-26",
+  "leaderboard": [
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "nickname": "يونس",
+      "rank": 1,
+      "rankChange": "same",
+      "score": 19367,
+      "uid": "5a4b1d0ed314c539aefe3fedeb07054b2acf361dd98189761e80e047fbf80305"
+    },
+    {
+      "countryCode": "DZ",
+      "nickname": "Saliha",
+      "rank": 2,
+      "rankChange": "same",
+      "score": 4801,
+      "uid": "95f710fac50b769650b5494354a21344bc4ac1bdfb9dd101925154b1ded0d7d5"
+    },
+    {
+      "countryCode": "SA",
+      "nickname": "M.A.L",
+      "rank": 3,
+      "rankChange": "same",
+      "score": 2450,
+      "uid": "092d20eeafb6b68719e19fcd41f072811d333b4f561862f7b13734d0d633db00"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "heart",
+      "nickname": "MF1979",
+      "rank": 4,
+      "rankChange": "same",
+      "score": 1921,
+      "uid": "a6edef5b54050a0eeff694c23ec03d8ff1e6110d49bf2452f2bc7a9c52f706ba"
+    },
+    {
+      "countryCode": "IT",
+      "dailyBadge": "heart",
+      "rank": 5,
+      "rankChange": "same",
+      "score": 1613,
+      "uid": "c6c592d1a439dcda8abf90bfe57de7416d6903f4541e99f4045f42e8e548c30b"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "tasbih",
+      "nickname": "م.م",
+      "rank": 6,
+      "rankChange": "same",
+      "score": 1264,
+      "uid": "cf0116cf9c1bf2ef2965b238768139059a0088bbb734739297ac650ede2fd00b"
+    },
+    {
+      "countryCode": "EG",
+      "nickname": "رنا محمد",
+      "rank": 7,
+      "rankChange": "same",
+      "score": 1195,
+      "uid": "d68eceb3dfda395b1faacd2336b6d2b00bb1eec1bc2551ee8202801e045defaa"
+    },
+    {
+      "countryCode": "SD",
+      "rank": 8,
+      "rankChange": "same",
+      "score": 1013,
+      "uid": "cb623a503d168d04fbbfc6ae35c8f14726cfa34aef87097cfbf90f08552b9fc4"
+    },
+    {
+      "countryCode": "DZ",
+      "rank": 9,
+      "rankChange": "same",
+      "score": 1004,
+      "uid": "659343c9553af4937385441bad14b615033920de902a21848e8cbd2c7fc09b01"
+    },
+    {
+      "countryCode": "EG",
+      "isSupporter": true,
+      "rank": 10,
+      "rankChange": "same",
+      "score": 500,
+      "uid": "d37ab9ff8d45a9931d24389990545bdb773791e2873b2d23534c26bdcef8f48a"
+    }
+  ],
+  "updatedAt": "2026-06-23T20:21:21.596Z"
+}
