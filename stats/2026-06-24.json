@@ -1,0 +1,110 @@
+{
+  "allTimeSalawat": 571605,
+  "weekSalawat": 74975,
+  "todaySalawat": 38869,
+  "activePlayers": 36,
+  "countriesCount": 14,
+  "countries": [
+    "CI",
+    "DZ",
+    "EG",
+    "GM",
+    "IT",
+    "LY",
+    "MA",
+    "ML",
+    "NE",
+    "SA",
+    "SD",
+    "SN",
+    "TN",
+    "YE"
+  ],
+  "topScore": 34856,
+  "roundKey": "2026-06-26",
+  "leaderboard": [
+    {
+      "countryCode": "EG",
+      "nickname": "يونس",
+      "rank": 1,
+      "rankChange": "same",
+      "score": 34856,
+      "uid": "5a4b1d0ed314c539aefe3fedeb07054b2acf361dd98189761e80e047fbf80305"
+    },
+    {
+      "countryCode": "DZ",
+      "nickname": "Saliha",
+      "rank": 2,
+      "rankChange": "same",
+      "score": 12201,
+      "uid": "95f710fac50b769650b5494354a21344bc4ac1bdfb9dd101925154b1ded0d7d5"
+    },
+    {
+      "countryCode": "SA",
+      "dailyBadge": "dome",
+      "nickname": "M.A.L",
+      "rank": 3,
+      "rankChange": "same",
+      "score": 6119,
+      "uid": "092d20eeafb6b68719e19fcd41f072811d333b4f561862f7b13734d0d633db00"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "crescent",
+      "nickname": "م.م",
+      "rank": 4,
+      "rankChange": "same",
+      "score": 5116,
+      "uid": "cf0116cf9c1bf2ef2965b238768139059a0088bbb734739297ac650ede2fd00b"
+    },
+    {
+      "countryCode": "IT",
+      "dailyBadge": "dome",
+      "rank": 5,
+      "rankChange": "same",
+      "score": 3250,
+      "uid": "c6c592d1a439dcda8abf90bfe57de7416d6903f4541e99f4045f42e8e548c30b"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "tasbih",
+      "nickname": "MF1979",
+      "rank": 6,
+      "rankChange": "same",
+      "score": 3164,
+      "uid": "a6edef5b54050a0eeff694c23ec03d8ff1e6110d49bf2452f2bc7a9c52f706ba"
+    },
+    {
+      "countryCode": "EG",
+      "rank": 7,
+      "rankChange": "same",
+      "score": 2620,
+      "uid": "ef1c9bd623d4bc742f23fab926ee50c70968b9fefb3830c8427f796cb3218fd0"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "tasbih",
+      "isSupporter": true,
+      "rank": 8,
+      "rankChange": "same",
+      "score": 1434,
+      "uid": "d37ab9ff8d45a9931d24389990545bdb773791e2873b2d23534c26bdcef8f48a"
+    },
+    {
+      "countryCode": "EG",
+      "nickname": "رنا محمد",
+      "rank": 9,
+      "rankChange": "same",
+      "score": 1296,
+      "uid": "d68eceb3dfda395b1faacd2336b6d2b00bb1eec1bc2551ee8202801e045defaa"
+    },
+    {
+      "countryCode": "LY",
+      "rank": 10,
+      "rankChange": "same",
+      "score": 1167,
+      "uid": "45dc6735f62829bd0a6275bdc6a3ecd43d13f90620c9c18d9443beb7827d6be9"
+    }
+  ],
+  "updatedAt": "2026-06-24T20:46:07.436Z"
+}
