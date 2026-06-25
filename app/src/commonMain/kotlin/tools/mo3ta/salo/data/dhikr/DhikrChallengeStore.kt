@@ -10,6 +10,15 @@ class DhikrChallengeStore(private val settings: Settings) {
         return settings.getInt(KEY_COUNT, 0)
     }
 
+    /** Returns the stored date+count if it belongs to a day before [today] and count > 0. */
+    fun previousEntry(today: LocalDate): Pair<String, Int>? {
+        val storedDate = settings.getStringOrNull(KEY_DATE) ?: return null
+        if (storedDate == today.toString()) return null
+        val count = settings.getInt(KEY_COUNT, 0)
+        if (count == 0) return null
+        return storedDate to count
+    }
+
     fun incrementToday(today: LocalDate): Int {
         ensureToday(today)
         val updated = settings.getInt(KEY_COUNT, 0) + 1
