@@ -47,7 +47,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import tools.mo3ta.salo.analytics.AnalyticsManager
+import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.dhikr_add
 import tools.mo3ta.salo.generated.resources.dhikr_back_cd
@@ -81,9 +84,11 @@ fun DhikrRewardsScreen(
     viewModel: DhikrChallengeViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val analyticsManager: AnalyticsManager = koinInject()
 
     LaunchedEffect(Unit) {
         viewModel.onScreenEntered()
+        analyticsManager.logAction(AppAnalytics.DHIKR_SCREEN_VIEW)
     }
 
     Box(
@@ -104,7 +109,13 @@ fun DhikrRewardsScreen(
                 rank = state.rank,
                 participantCount = state.participantCount,
                 canCount = !state.isLoading,
-                onTap = { viewModel.onDhikrTap() },
+                onTap = {
+                    viewModel.onDhikrTap()
+                    analyticsManager.logAction(
+                        AppAnalytics.DHIKR_TAP,
+                        mapOf(AppAnalytics.PARAM_COUNT to (state.todayCount + 1).toString()),
+                    )
+                },
                 onBack = onBack,
             )
             Surface(
