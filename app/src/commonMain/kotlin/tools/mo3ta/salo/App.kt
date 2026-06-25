@@ -49,8 +49,6 @@ import tools.mo3ta.salo.ui.NicknameAnnouncementDialog
 import tools.mo3ta.salo.ui.SalawatVariantAnnouncementDialog
 import tools.mo3ta.salo.ui.takbeer.TakbeerAnnouncementDialog
 import tools.mo3ta.salo.ui.takbeer.TakbeerSessionScreen
-import tools.mo3ta.salo.ui.tendays.TenDaysPromoDialog
-import tools.mo3ta.salo.ui.tendays.TenDaysScreen
 import tools.mo3ta.salo.ui.support.MilestoneSupportDialog
 import tools.mo3ta.salo.data.MilestoneTracker
 import tools.mo3ta.salo.data.billing.PremiumStore
@@ -86,18 +84,16 @@ fun App(
         var showSettings by remember { mutableStateOf(false) }
         var showHadithList by remember { mutableStateOf(false) }
         var showOnboarding by remember { mutableStateOf(false) }
-        var showTenDays by remember { mutableStateOf(false) }
         var showTakbeerSession by remember { mutableStateOf(false) }
         var showDhikrRewards by remember { mutableStateOf(false) }
         var showExtensionQr by remember { mutableStateOf(false) }
         var showPaywall by remember { mutableStateOf(false) }
 
-        PlatformBackHandler(enabled = showPaywall || showDhikrRewards || showTakbeerSession || showTenDays || showExtensionQr || showHadithList || showAchievements || showSettings || showOnboarding) {
+        PlatformBackHandler(enabled = showPaywall || showDhikrRewards || showTakbeerSession || showExtensionQr || showHadithList || showAchievements || showSettings || showOnboarding) {
             when {
                 showPaywall -> showPaywall = false
                 showDhikrRewards -> showDhikrRewards = false
                 showTakbeerSession -> showTakbeerSession = false
-                showTenDays -> showTenDays = false
                 showExtensionQr -> showExtensionQr = false
                 showHadithList -> showHadithList = false
                 showAchievements -> showAchievements = false
@@ -138,15 +134,10 @@ fun App(
             showDhikrRewards -> DhikrRewardsScreen(
                 onBack = { showDhikrRewards = false },
             )
-            showTenDays -> TenDaysScreen(
-                onBack = { showTenDays = false },
-                onOpenTakbeerSession = { showTakbeerSession = true },
-            )
             else -> MohamedLoversScreen(
                 onOpenAchievements = { showAchievements = true },
                 onOpenSettings = { showSettings = true },
                 onOpenHadithList = { showHadithList = true },
-                onOpenTenDays = { showTenDays = true },
                 onOpenTakbeerSession = { showTakbeerSession = true },
                 onOpenDhikrRewards = { showDhikrRewards = true },
                 onOpenPaywall = { showPaywall = true },
@@ -229,24 +220,6 @@ fun App(
                     settings.putBoolean("salawat_variant_announcement_shown", true)
                     salawatVariantAnnouncementDone = true
                     analyticsManager.logAction(AppAnalytics.SALAWAT_VARIANT_ANNOUNCEMENT_DISMISSED)
-                },
-            )
-        }
-
-        var showTenDaysPromo by remember {
-            val shown = settings.getBoolean("ten_days_promo_shown", false)
-            mutableStateOf(!shown)
-        }
-        if (showTenDaysPromo) {
-            TenDaysPromoDialog(
-                onOpen = {
-                    settings.putBoolean("ten_days_promo_shown", true)
-                    showTenDaysPromo = false
-                    showTenDays = true
-                },
-                onDismiss = {
-                    settings.putBoolean("ten_days_promo_shown", true)
-                    showTenDaysPromo = false
                 },
             )
         }

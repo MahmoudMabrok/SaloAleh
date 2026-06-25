@@ -33,39 +33,39 @@ class DhikrChallengeViewModel(
 
     fun onScreenEntered() {
         val today = today()
-        val count = store.todayCount(today)
-        _state.update {
-            it.copy(
-                dateKey = today.toString(),
-                todayCount = count,
-                isLoading = true,
-                errorMessage = null,
-            )
-        }
         viewModelScope.launch {
             val uid = sessionStore.getOrCreateUid()
-            val dateKey = today.toString()
 
-            if (firebaseClient.isConfigured()) {
-                val mergedCount = firebaseClient.fetchUserCount(dateKey, uid)
-                    .getOrNull()
-                    ?.let { remoteCount -> maxOf(count, remoteCount) }
-                    ?: count
-
-                if (mergedCount != count) store.setTodayCount(today, mergedCount)
-                _state.update {
-                    it.copy(
-                        todayCount = mergedCount,
-                        isLoading = false,
-                    )
-                }
-                // Fetch rank and participant count directly, not gated on write success
-                refreshStats(dateKey, uid)
-            } else {
-                _state.update { it.copy(isLoading = false) }
+            // Push any previous day's count that wasn't synced yet
+            val prev = store.previousEntry(today)
+            if (prev != null && firebaseClient.isConfigured()) {
+                val (prevDate, prevCount) = prev
+                val countryCode = countryCodeProvider.get()
+                firebaseClient.writeUserDay(prevDate, uid, prevCount, countryCode)
             }
 
-            syncCurrentDay(refreshStats = false)
+            val count = store.todayCount(today)
+            _state.update {
+                it.copy(
+                    dateKey = today.toString(),
+                    todayCount = count,
+                    isLoading = firebaseClient.isConfigured(),
+                    errorMessage = null,
+                )
+            }
+
+            if (!firebaseClient.isConfigured()) return@launch
+
+            // Push today's count (merging with remote)
+            val mergedCount = firebaseClient.fetchUserCount(today.toString(), uid)
+                .getOrNull()
+                ?.let { remoteCount -> maxOf(count, remoteCount) }
+                ?: count
+
+            if (mergedCount != count) store.setTodayCount(today, mergedCount)
+            _state.update { it.copy(todayCount = mergedCount, isLoading = false) }
+
+            refreshStats(today.toString(), uid)
         }
     }
 
@@ -76,11 +76,9 @@ class DhikrChallengeViewModel(
             it.copy(
                 dateKey = today.toString(),
                 todayCount = updated,
-                isLoading = false,
                 errorMessage = null,
             )
         }
-        syncCurrentDay(refreshStats = true)
     }
 
     fun resetToday() {
@@ -94,52 +92,26 @@ class DhikrChallengeViewModel(
                 errorMessage = null,
             )
         }
-        syncCurrentDay(refreshStats = true)
     }
 
-    private fun syncCurrentDay(refreshStats: Boolean) {
+    fun onScreenLeft() {
         viewModelScope.launch {
             syncMutex.withLock {
+                if (!firebaseClient.isConfigured()) return@withLock
                 val today = today()
                 val dateKey = today.toString()
                 val count = store.todayCount(today)
                 val uid = sessionStore.getOrCreateUid()
+                val countryCode = countryCodeProvider.get()
 
+                _state.update { it.copy(isSyncing = true) }
+                val result = firebaseClient.writeUserDay(dateKey, uid, count, countryCode)
                 _state.update {
                     it.copy(
-                        dateKey = dateKey,
-                        todayCount = count,
-                        isSyncing = true,
-                        errorMessage = null,
+                        isSyncing = false,
+                        errorMessage = result.exceptionOrNull()?.message,
                     )
                 }
-
-                if (!firebaseClient.isConfigured()) {
-                    _state.update { it.copy(isSyncing = false) }
-                    return@withLock
-                }
-
-                val countryCode = countryCodeProvider.get()
-                val writeResult = firebaseClient.writeUserDay(
-                    dateKey = dateKey,
-                    uid = uid,
-                    count = count,
-                    countryCode = countryCode,
-                )
-
-                val writeError = writeResult.exceptionOrNull()
-                if (writeError != null) {
-                    _state.update {
-                        it.copy(
-                            isSyncing = false,
-                            errorMessage = writeError.message,
-                        )
-                    }
-                    return@withLock
-                }
-
-                if (refreshStats) refreshStats(dateKey, uid)
-                _state.update { it.copy(isSyncing = false) }
             }
         }
     }

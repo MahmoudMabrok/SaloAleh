@@ -106,8 +106,6 @@ import tools.mo3ta.salo.generated.resources.main_screen_tooltip_achievements
 import tools.mo3ta.salo.generated.resources.main_screen_cd_achievements
 import tools.mo3ta.salo.generated.resources.main_screen_tooltip_hadith
 import tools.mo3ta.salo.generated.resources.main_screen_cd_hadith
-import tools.mo3ta.salo.generated.resources.main_screen_tooltip_ten_days
-import tools.mo3ta.salo.generated.resources.main_screen_cd_ten_days
 import tools.mo3ta.salo.generated.resources.main_screen_tooltip_takbeer
 import tools.mo3ta.salo.generated.resources.main_screen_cd_takbeer
 import tools.mo3ta.salo.generated.resources.main_screen_tooltip_dhikr_rewards
@@ -157,7 +155,6 @@ import tools.mo3ta.salo.ui.AchievementCelebrationDialog
 import tools.mo3ta.salo.ui.components.RoundRecapSheet
 import tools.mo3ta.salo.ui.components.UserAchievementsSheet
 import tools.mo3ta.salo.ui.settings.PremiumPromoDialog
-import tools.mo3ta.salo.ui.tendays.TenDaysEntryIcon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -165,7 +162,6 @@ fun MohamedLoversScreen(
     onOpenAchievements: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
     onOpenHadithList: () -> Unit = {},
-    onOpenTenDays: () -> Unit = {},
     onOpenTakbeerSession: () -> Unit = {},
     onOpenDhikrRewards: () -> Unit = {},
     onOpenPaywall: () -> Unit = {},
@@ -223,7 +219,6 @@ fun MohamedLoversScreen(
     val achievementsTooltipState = rememberTooltipState(isPersistent = true)
     val hadithTooltipState = rememberTooltipState(isPersistent = true)
     val dhikrRewardsTooltipState = rememberTooltipState(isPersistent = true)
-    val tenDaysTooltipState = rememberTooltipState(isPersistent = true)
     val takbeerTooltipState = rememberTooltipState(isPersistent = true)
     val infoTooltipState = rememberTooltipState(isPersistent = true)
 
@@ -235,7 +230,6 @@ fun MohamedLoversScreen(
             achievementsTooltipState,
             hadithTooltipState,
             dhikrRewardsTooltipState,
-            tenDaysTooltipState,
             takbeerTooltipState,
             infoTooltipState,
             settingsTooltipState,
@@ -488,14 +482,6 @@ fun MohamedLoversScreen(
                                 imageVector = Icons.Default.Spa,
                                 contentDescription = stringResource(Res.string.main_screen_cd_dhikr_rewards),
                                 tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
-                            )
-                        }
-                    }
-                    TopBarTooltip(text = stringResource(Res.string.main_screen_tooltip_ten_days), state = tenDaysTooltipState) {
-                        IconButton(onClick = onOpenTenDays) {
-                            TenDaysEntryIcon(
-                                modifier = Modifier.size(24.dp),
-                                contentDescription = stringResource(Res.string.main_screen_cd_ten_days),
                             )
                         }
                     }
