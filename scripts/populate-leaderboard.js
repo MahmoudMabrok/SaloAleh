@@ -387,159 +387,159 @@ async function main() {
   }
 
   // --- Ten Days of Dhul Hijjah leaderboard ---
-  await populateTenDaysLeaderboard(db);
+  // await populateTenDaysLeaderboard(db);
 
   process.exit(0);
 }
 
-function isTenDaysPeriodActive(periodKey) {
-  const zone = 'Africa/Cairo';
-  const today = new Intl.DateTimeFormat('en-CA', {
-    timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(new Date());
-  const start = new Date(periodKey + 'T00:00:00');
-  const endDate = new Date(start.getTime() + 9 * 86400000);
-  const end = new Intl.DateTimeFormat('en-CA', {
-    timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(endDate);
-  return today >= periodKey && today < end;
-}
+// function isTenDaysPeriodActive(periodKey) {
+//   const zone = 'Africa/Cairo';
+//   const today = new Intl.DateTimeFormat('en-CA', {
+//     timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit',
+//   }).format(new Date());
+//   const start = new Date(periodKey + 'T00:00:00');
+//   const endDate = new Date(start.getTime() + 9 * 86400000);
+//   const end = new Intl.DateTimeFormat('en-CA', {
+//     timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit',
+//   }).format(endDate);
+//   return today >= periodKey && today < end;
+// }
 
-async function populateTenDaysLeaderboard(db) {
-  const root = 'ten_days_dhul_hijjah';
-  const periodKeys = ['2026-05-18'];
-
-  for (const periodKey of periodKeys) {
-    const active = isTenDaysPeriodActive(periodKey);
-    console.log(`\n--- Ten Days Leaderboard [${periodKey}] active=${active} ---`);
-
-    const playersSnap = await db.ref(`${root}/${periodKey}/players`).orderByChild('totalScore').get();
-    if (!playersSnap.exists()) {
-      console.log('No ten-days players found.');
-      await Promise.all([
-        db.ref(`${root}/${periodKey}/leaderboard`).set({}),
-        db.ref(`${root}/${periodKey}/playerCount`).set(0),
-      ]);
-      continue;
-    }
-
-    const allPlayers = [];
-    playersSnap.forEach(child => {
-      const data = child.val();
-      if (data && typeof data.uid === 'string' && typeof data.totalScore === 'number') {
-        allPlayers.push({
-          uid: data.uid,
-          totalScore: data.totalScore,
-          updatedAt: data.updatedAt || 0,
-          countryCode: typeof data.countryCode === 'string' ? data.countryCode : '',
-        });
-      }
-    });
-
-    allPlayers.sort((a, b) => b.totalScore - a.totalScore || b.updatedAt - a.updatedAt);
-
-    const top10 = allPlayers.slice(0, 10);
-
-    // Read old leaderboard for rank-diff and drop-out detection.
-    const oldLbSnap = await db.ref(`${root}/${periodKey}/leaderboard`).get();
-    const oldRanks = buildOldRankMap(oldLbSnap);
-
-    const leaderboard = {};
-    top10.forEach((player, i) => {
-      const rank = i + 1;
-      leaderboard[String(rank)] = {
-        rank,
-        uid: player.uid,
-        totalScore: player.totalScore,
-        countryCode: player.countryCode,
-        rankChange: computeRankChange(player.uid, rank, oldRanks),
-      };
-    });
-
-    const rankUpdates = {};
-    allPlayers.forEach((player, i) => {
-      rankUpdates[`${root}/${periodKey}/players/${player.uid}/rank`] = i + 1;
-    });
-
-    await Promise.all([
-      db.ref('/').update(rankUpdates),
-      db.ref(`${root}/${periodKey}/leaderboard`).set(leaderboard),
-      db.ref(`${root}/${periodKey}/playerCount`).set(allPlayers.length),
-    ]);
-    console.log(`Wrote ${top10.length} ten-days leaderboard entries (${allPlayers.length} total players).`);
-
-    // Notifications only when period is active.
-    if (!active) continue;
-
-    // Top-3 change notifications.
-    const top3Notifs = [];
-    for (const [uid, oldRank] of Object.entries(oldRanks)) {
-      if (oldRank > 3) continue;
-      const newEntry = top10.find(p => p.uid === uid);
-      const newRank = newEntry ? top10.indexOf(newEntry) + 1 : null;
-      if (newRank == null || newRank > 3) {
-        top3Notifs.push({ uid, event: 'dropped', oldRank, newRank });
-      } else if (newRank > oldRank) {
-        top3Notifs.push({ uid, event: 'lost_position', oldRank, newRank });
-      }
-    }
-
-    if (top3Notifs.length > 0) {
-      console.log(`Ten-days top-3 changes: ${top3Notifs.length} notification(s)`);
-      const top3Messages = {
-        dropped: {
-          title: 'مكانك بين المتسابقين يناديك 🤍',
-          body: 'كنت من أعلى المتنافسين في عشر ذي الحجة — لا تتوقف، فالعمل الصالح في هذه الأيام أحب إلى الله!',
-        },
-        lost_position: {
-          title: 'المنافسة تشتد في العشر 🔥',
-          body: 'تراجع ترتيبك في عشر ذي الحجة — زِد من عملك الصالح وارتقِ!',
-        },
-      };
-      const top3Promises = top3Notifs.map(async ({ uid, event }) => {
-        const userSnap = await db.ref(`mohamed_lovers/users/${uid}`).get();
-        const user = userSnap.val();
-        if (!user?.fcmToken) { console.log(`  ten-days top3 uid=${uid}: no FCM token — skip`); return; }
-        if (user.leaderboardNotifsEnabled === false) { console.log(`  ten-days top3 uid=${uid}: leaderboard notifications disabled — skip`); return; }
-        const msg = top3Messages[event];
-        return admin.messaging().send({
-          token: user.fcmToken,
-          notification: { title: msg.title, body: msg.body },
-          data: { title: msg.title, body: msg.body },
-        })
-          .then(msgId => console.log(`  ten-days top3 uid=${uid} (${event}): sent msgId=${msgId}`))
-          .catch(e => console.error(`  ten-days top3 uid=${uid} (${event}): send failed: ${e.message}`));
-      });
-      await Promise.all(top3Promises);
-    }
-
-    // Drop-out detection: users who were in top 10 but no longer.
-    let droppedUids = [];
-    if (oldLbSnap.exists()) {
-      const oldTop10Uids = new Set(Object.keys(oldRanks));
-      const newTop10Uids = new Set(top10.map(p => p.uid));
-      droppedUids = [...oldTop10Uids].filter(uid => !newTop10Uids.has(uid));
-      console.log(`Ten-days drop-out: old=${oldTop10Uids.size} new=${newTop10Uids.size} dropped=${droppedUids.length}`);
-    }
-
-    if (droppedUids.length > 0) {
-      console.log(`Notifying ${droppedUids.length} ten-days dropped user(s)...`);
-      const notifPromises = droppedUids.map(async uid => {
-        const userSnap = await db.ref(`mohamed_lovers/users/${uid}`).get();
-        const user = userSnap.val();
-        if (!user?.fcmToken) { console.log(`  ten-days uid=${uid}: no FCM token — skip`); return; }
-        if (user.leaderboardNotifsEnabled === false) { console.log(`  ten-days uid=${uid}: leaderboard notifications disabled — skip`); return; }
-        return admin.messaging().send({
-          token: user.fcmToken,
-          notification: { title: 'خرجت من قائمة العشر الأوائل 😔', body: 'مكانك في عشر ذي الحجة يستحق المنافسة — عُد وزِد من عملك الصالح!' },
-          data: { title: 'خرجت من قائمة العشر الأوائل 😔', body: 'مكانك في عشر ذي الحجة يستحق المنافسة — عُد وزِد من عملك الصالح!' },
-        })
-          .then(msgId => console.log(`  ten-days uid=${uid}: sent dropout alert msgId=${msgId}`))
-          .catch(e => console.error(`  ten-days uid=${uid}: send failed: ${e.message}`));
-      });
-      await Promise.all(notifPromises);
-    }
-  }
-}
+// async function populateTenDaysLeaderboard(db) {
+//   const root = 'ten_days_dhul_hijjah';
+//   const periodKeys = ['2026-05-18'];
+//
+//   for (const periodKey of periodKeys) {
+//     const active = isTenDaysPeriodActive(periodKey);
+//     console.log(`\n--- Ten Days Leaderboard [${periodKey}] active=${active} ---`);
+//
+//     const playersSnap = await db.ref(`${root}/${periodKey}/players`).orderByChild('totalScore').get();
+//     if (!playersSnap.exists()) {
+//       console.log('No ten-days players found.');
+//       await Promise.all([
+//         db.ref(`${root}/${periodKey}/leaderboard`).set({}),
+//         db.ref(`${root}/${periodKey}/playerCount`).set(0),
+//       ]);
+//       continue;
+//     }
+//
+//     const allPlayers = [];
+//     playersSnap.forEach(child => {
+//       const data = child.val();
+//       if (data && typeof data.uid === 'string' && typeof data.totalScore === 'number') {
+//         allPlayers.push({
+//           uid: data.uid,
+//           totalScore: data.totalScore,
+//           updatedAt: data.updatedAt || 0,
+//           countryCode: typeof data.countryCode === 'string' ? data.countryCode : '',
+//         });
+//       }
+//     });
+//
+//     allPlayers.sort((a, b) => b.totalScore - a.totalScore || b.updatedAt - a.updatedAt);
+//
+//     const top10 = allPlayers.slice(0, 10);
+//
+//     // Read old leaderboard for rank-diff and drop-out detection.
+//     const oldLbSnap = await db.ref(`${root}/${periodKey}/leaderboard`).get();
+//     const oldRanks = buildOldRankMap(oldLbSnap);
+//
+//     const leaderboard = {};
+//     top10.forEach((player, i) => {
+//       const rank = i + 1;
+//       leaderboard[String(rank)] = {
+//         rank,
+//         uid: player.uid,
+//         totalScore: player.totalScore,
+//         countryCode: player.countryCode,
+//         rankChange: computeRankChange(player.uid, rank, oldRanks),
+//       };
+//     });
+//
+//     const rankUpdates = {};
+//     allPlayers.forEach((player, i) => {
+//       rankUpdates[`${root}/${periodKey}/players/${player.uid}/rank`] = i + 1;
+//     });
+//
+//     await Promise.all([
+//       db.ref('/').update(rankUpdates),
+//       db.ref(`${root}/${periodKey}/leaderboard`).set(leaderboard),
+//       db.ref(`${root}/${periodKey}/playerCount`).set(allPlayers.length),
+//     ]);
+//     console.log(`Wrote ${top10.length} ten-days leaderboard entries (${allPlayers.length} total players).`);
+//
+//     // Notifications only when period is active.
+//     if (!active) continue;
+//
+//     // Top-3 change notifications.
+//     const top3Notifs = [];
+//     for (const [uid, oldRank] of Object.entries(oldRanks)) {
+//       if (oldRank > 3) continue;
+//       const newEntry = top10.find(p => p.uid === uid);
+//       const newRank = newEntry ? top10.indexOf(newEntry) + 1 : null;
+//       if (newRank == null || newRank > 3) {
+//         top3Notifs.push({ uid, event: 'dropped', oldRank, newRank });
+//       } else if (newRank > oldRank) {
+//         top3Notifs.push({ uid, event: 'lost_position', oldRank, newRank });
+//       }
+//     }
+//
+//     if (top3Notifs.length > 0) {
+//       console.log(`Ten-days top-3 changes: ${top3Notifs.length} notification(s)`);
+//       const top3Messages = {
+//         dropped: {
+//           title: 'مكانك بين المتسابقين يناديك 🤍',
+//           body: 'كنت من أعلى المتنافسين في عشر ذي الحجة — لا تتوقف، فالعمل الصالح في هذه الأيام أحب إلى الله!',
+//         },
+//         lost_position: {
+//           title: 'المنافسة تشتد في العشر 🔥',
+//           body: 'تراجع ترتيبك في عشر ذي الحجة — زِد من عملك الصالح وارتقِ!',
+//         },
+//       };
+//       const top3Promises = top3Notifs.map(async ({ uid, event }) => {
+//         const userSnap = await db.ref(`mohamed_lovers/users/${uid}`).get();
+//         const user = userSnap.val();
+//         if (!user?.fcmToken) { console.log(`  ten-days top3 uid=${uid}: no FCM token — skip`); return; }
+//         if (user.leaderboardNotifsEnabled === false) { console.log(`  ten-days top3 uid=${uid}: leaderboard notifications disabled — skip`); return; }
+//         const msg = top3Messages[event];
+//         return admin.messaging().send({
+//           token: user.fcmToken,
+//           notification: { title: msg.title, body: msg.body },
+//           data: { title: msg.title, body: msg.body },
+//         })
+//           .then(msgId => console.log(`  ten-days top3 uid=${uid} (${event}): sent msgId=${msgId}`))
+//           .catch(e => console.error(`  ten-days top3 uid=${uid} (${event}): send failed: ${e.message}`));
+//       });
+//       await Promise.all(top3Promises);
+//     }
+//
+//     // Drop-out detection: users who were in top 10 but no longer.
+//     let droppedUids = [];
+//     if (oldLbSnap.exists()) {
+//       const oldTop10Uids = new Set(Object.keys(oldRanks));
+//       const newTop10Uids = new Set(top10.map(p => p.uid));
+//       droppedUids = [...oldTop10Uids].filter(uid => !newTop10Uids.has(uid));
+//       console.log(`Ten-days drop-out: old=${oldTop10Uids.size} new=${newTop10Uids.size} dropped=${droppedUids.length}`);
+//     }
+//
+//     if (droppedUids.length > 0) {
+//       console.log(`Notifying ${droppedUids.length} ten-days dropped user(s)...`);
+//       const notifPromises = droppedUids.map(async uid => {
+//         const userSnap = await db.ref(`mohamed_lovers/users/${uid}`).get();
+//         const user = userSnap.val();
+//         if (!user?.fcmToken) { console.log(`  ten-days uid=${uid}: no FCM token — skip`); return; }
+//         if (user.leaderboardNotifsEnabled === false) { console.log(`  ten-days uid=${uid}: leaderboard notifications disabled — skip`); return; }
+//         return admin.messaging().send({
+//           token: user.fcmToken,
+//           notification: { title: 'خرجت من قائمة العشر الأوائل 😔', body: 'مكانك في عشر ذي الحجة يستحق المنافسة — عُد وزِد من عملك الصالح!' },
+//           data: { title: 'خرجت من قائمة العشر الأوائل 😔', body: 'مكانك في عشر ذي الحجة يستحق المنافسة — عُد وزِد من عملك الصالح!' },
+//         })
+//           .then(msgId => console.log(`  ten-days uid=${uid}: sent dropout alert msgId=${msgId}`))
+//           .catch(e => console.error(`  ten-days uid=${uid}: send failed: ${e.message}`));
+//       });
+//       await Promise.all(notifPromises);
+//     }
+//   }
+// }
 
 main().catch(err => { console.error(err); process.exit(1); });
