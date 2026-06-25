@@ -1,6 +1,12 @@
 // Reads top-10 players for the active round from Firebase RTDB and writes
 // them to the leaderboard node. Dispatched every ~30 min; detects isFinal automatically.
 const admin = require('firebase-admin');
+const {
+  DHIKR_CHALLENGE_ROOT,
+  buildDhikrChallengeDailyRanking,
+  buildOldRankMap,
+  computeRankChange,
+} = require('./leaderboard-utils');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 const databaseURL = process.env.FIREBASE_DATABASE_URL;
@@ -56,24 +62,6 @@ function cairoToday() {
   }).format(new Date());
 }
 
-function buildOldRankMap(snap) {
-  const map = {};
-  if (!snap.exists()) return map;
-  const val = snap.val();
-  for (let i = 1; i <= 10; i++) {
-    const entry = val[String(i)];
-    if (entry?.uid) map[entry.uid] = entry.rank;
-  }
-  return map;
-}
-
-function computeRankChange(uid, newRank, oldRankMap) {
-  const oldRank = oldRankMap[uid];
-  if (oldRank == null) return 'new';
-  if (oldRank === newRank) return 'same';
-  return newRank < oldRank ? 'up' : 'down';
-}
-
 // Delayed new-build notification: deploy.yml writes a scheduledBuildNotification
 // node (with firesAt) after a production release; we broadcast once that time
 // has passed, then delete the node so it fires exactly once.
@@ -114,6 +102,38 @@ async function sendDueBuildNotification(db) {
   console.log('[build-notif] done — node cleared');
 }
 
+async function populateDhikrChallengeToday(db) {
+  const dateKey = cairoToday();
+  console.log(`\n--- Dhikr Challenge [${dateKey}] ---`);
+
+  const usersSnap = await db.ref(`${DHIKR_CHALLENGE_ROOT}/${dateKey}/users`).get();
+  const users = [];
+
+  if (usersSnap.exists()) {
+    usersSnap.forEach(child => {
+      const data = child.val() || {};
+      const metadata = data.data || {};
+      const uid = typeof metadata.uid === 'string' && metadata.uid.length > 0
+        ? metadata.uid
+        : child.key;
+      users.push({ uid, count: data.count });
+    });
+  }
+
+  const dailyRanking = buildDhikrChallengeDailyRanking(dateKey, users);
+  const updates = {
+    ...dailyRanking.rankUpdates,
+    [`${DHIKR_CHALLENGE_ROOT}/${dateKey}/participantCount`]: dailyRanking.participantCount,
+    [`${DHIKR_CHALLENGE_ROOT}/${dateKey}/totalTodayDhikr`]: dailyRanking.totalTodayDhikr,
+    [`${DHIKR_CHALLENGE_ROOT}/${dateKey}/lastRankedAt`]: admin.database.ServerValue.TIMESTAMP,
+  };
+
+  await db.ref('/').update(updates);
+  console.log(
+    `Wrote dhikr ranks for ${dailyRanking.participantCount} participant(s). totalTodayDhikr=${dailyRanking.totalTodayDhikr}`,
+  );
+}
+
 async function main() {
   const roundKey = explicitRoundKey || cairoRoundKey();
   const isFinal = isRoundFinal(roundKey);
@@ -123,6 +143,9 @@ async function main() {
 
   // Deliver any delayed new-build notification whose scheduled time has passed.
   await sendDueBuildNotification(db);
+
+  // Rank today's dhikr challenge users without publishing a leaderboard list.
+  await populateDhikrChallengeToday(db);
 
   const playersRef = db.ref(`mohamed_lovers/${roundKey}/players`);
 

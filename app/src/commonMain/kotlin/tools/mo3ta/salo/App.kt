@@ -22,6 +22,7 @@ import tools.mo3ta.salo.data.engagement.EngagementStore
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.ui.AchievementCelebrationDialog
 import tools.mo3ta.salo.ui.AchievementsScreen
+import tools.mo3ta.salo.ui.DhikrRewardsScreen
 import tools.mo3ta.salo.ui.HadithListScreen
 import tools.mo3ta.salo.ui.MohamedLoversScreen
 import tools.mo3ta.salo.ui.FcmPermissionReminderDialog
@@ -87,12 +88,14 @@ fun App(
         var showOnboarding by remember { mutableStateOf(false) }
         var showTenDays by remember { mutableStateOf(false) }
         var showTakbeerSession by remember { mutableStateOf(false) }
+        var showDhikrRewards by remember { mutableStateOf(false) }
         var showExtensionQr by remember { mutableStateOf(false) }
         var showPaywall by remember { mutableStateOf(false) }
 
-        PlatformBackHandler(enabled = showPaywall || showTakbeerSession || showTenDays || showExtensionQr || showHadithList || showAchievements || showSettings || showOnboarding) {
+        PlatformBackHandler(enabled = showPaywall || showDhikrRewards || showTakbeerSession || showTenDays || showExtensionQr || showHadithList || showAchievements || showSettings || showOnboarding) {
             when {
                 showPaywall -> showPaywall = false
+                showDhikrRewards -> showDhikrRewards = false
                 showTakbeerSession -> showTakbeerSession = false
                 showTenDays -> showTenDays = false
                 showExtensionQr -> showExtensionQr = false
@@ -116,6 +119,8 @@ fun App(
         var salawatVariantAnnouncementDone by remember {
             mutableStateOf(settings.getBoolean("salawat_variant_announcement_shown", false))
         }
+        val mohamedLoversViewModel: MohamedLoversViewModel = koinViewModel()
+        val mlState by mohamedLoversViewModel.state.collectAsStateWithLifecycle()
 
         when {
             showPaywall -> PaywallScreen(onBack = { showPaywall = false })
@@ -130,6 +135,9 @@ fun App(
             showAchievements -> AchievementsScreen(onBack = { showAchievements = false })
             showHadithList -> HadithListScreen(onBack = { showHadithList = false })
             showTakbeerSession -> TakbeerSessionScreen(onBack = { showTakbeerSession = false })
+            showDhikrRewards -> DhikrRewardsScreen(
+                onBack = { showDhikrRewards = false },
+            )
             showTenDays -> TenDaysScreen(
                 onBack = { showTenDays = false },
                 onOpenTakbeerSession = { showTakbeerSession = true },
@@ -140,8 +148,10 @@ fun App(
                 onOpenHadithList = { showHadithList = true },
                 onOpenTenDays = { showTenDays = true },
                 onOpenTakbeerSession = { showTakbeerSession = true },
+                onOpenDhikrRewards = { showDhikrRewards = true },
                 onOpenPaywall = { showPaywall = true },
                 announcementsDone = takbeerAnnouncementDone && nicknameAnnouncementDone && salawatVariantAnnouncementDone,
+                viewModel = mohamedLoversViewModel,
             )
         }
 
@@ -292,8 +302,6 @@ fun App(
 
         val milestoneTracker = koinInject<MilestoneTracker>()
         val premiumStore = koinInject<PremiumStore>()
-        val viewModel: MohamedLoversViewModel = koinViewModel()
-        val mlState by viewModel.state.collectAsStateWithLifecycle()
         var milestonePending by remember { mutableStateOf<Int?>(null) }
         val currentScore = mlState.syncedTotal + mlState.sessionClicks
         LaunchedEffect(currentScore) {

@@ -103,4 +103,7 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
         purchaseCalls.add(PurchaseCall(uid, productId, productType, purchaseDate))
         return Result.success(Unit)
     }
+
+    override suspend fun writeNickname(roundKey: String, uid: String, nickname: String): Result<Unit> =
+        Result.success(Unit)
 }

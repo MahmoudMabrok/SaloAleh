@@ -9,6 +9,7 @@ object AppAnalytics {
     const val OPEN_MANUAL_SALAWAT = "open_manual_salawat"
     const val OPEN_SETTINGS = "open_settings"
     const val OPEN_TAKBEER_SESSION = "open_takbeer_session"
+    const val OPEN_DHIKR_REWARDS = "open_dhikr_rewards"
     const val LANGUAGE_CHANGED = "language_changed"
     const val SALAWAT_VARIANT_CHANGED = "salawat_variant_changed"
     const val TAKBEER_SESSION_START = "takbeer_session_start"

@@ -62,7 +62,34 @@
     <string name="main_screen_cd_ten_days">عشر ذي الحجة</string>
     <string name="main_screen_tooltip_takbeer">جلسة تكبير جماعية</string>
     <string name="main_screen_cd_takbeer">جلسة تكبير</string>
+    <string name="main_screen_tooltip_dhikr_rewards">ذكر لا إله إلا الله وأجر المئة</string>
+    <string name="main_screen_cd_dhikr_rewards">الذكر</string>
     <string name="main_screen_tooltip_info">معلومات عن الجولة وكيفية اللعب</string>
+
+    <!-- Dhikr Rewards Screen -->
+    <string name="dhikr_title">الذكر</string>
+    <string name="dhikr_back_cd">رجوع</string>
+    <string name="dhikr_phrase">لا إله إلا الله وحده لا شريك له\nله الملك وله الحمد وهو على كل شيء قدير.</string>
+    <string name="dhikr_today">اليوم</string>
+    <string name="dhikr_times">مرة</string>
+    <string name="dhikr_add">ذكر</string>
+    <string name="dhikr_daily_goal">الهدف اليومي: %1$d مرة</string>
+    <string name="dhikr_progress_count">%1$d / %2$d</string>
+    <string name="dhikr_rewards_title">ماذا تنال عند إتمام 100 مرة؟</string>
+    <string name="dhikr_reward_cage">كأنك أعتقت 10 رقاب من ولد إسماعيل</string>
+    <string name="dhikr_reward_book">كُتبت لك 100 حسنة</string>
+    <string name="dhikr_reward_shield">حُصّنت لك من الشيطان حتى تمسي</string>
+    <string name="dhikr_reward_feather">مُحيت عنك 100 سيئة</string>
+    <string name="dhikr_reward_crown">ولم يأتِ أحد بأفضل مما جئت به إلا رجل عمل أكثر منك</string>
+    <string name="dhikr_what_with_you">ماذا معك؟</string>
+    <string name="dhikr_freed_count_label">عدد الرقاب التي أعتقتها</string>
+    <string name="dhikr_freed_count_unit">رقاب</string>
+    <string name="dhikr_rank_title">ترتيبك الحالي</string>
+    <string name="dhikr_rank_number"># %1$d</string>
+    <string name="dhikr_rank_subtitle">من بين %1$d مشارك</string>
+    <string name="dhikr_tap_hint">اضغط في أي مكان للذكر</string>
+    <string name="dhikr_reward_crown_label">الأعظم</string>
+    <string name="dhikr_freed_today">رقاب أُعتقت اليوم</string>
 
     <!-- Info Sheet Supporter -->
     <string name="info_sheet_supporter_label">⭐ داعم</string>

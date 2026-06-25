@@ -42,6 +42,62 @@
       }
     },
 
+    "100_challenge": {
+      "$date": {
+        "participantCount": {
+          ".read": true,
+          ".write": false
+        },
+        "totalTodayDhikr": {
+          ".read": true,
+          ".write": false
+        },
+        "lastRankedAt": {
+          ".read": true,
+          ".write": false
+        },
+        "users": {
+          "$uid": {
+            ".write": "newData.child('data').child('uid').val() === $uid",
+            ".validate": "newData.hasChildren(['count','data'])",
+
+            "count": {
+              ".read": true,
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
+            },
+            "rank": {
+              ".read": true,
+              ".validate": "newData.val() === data.val()"
+            },
+            "data": {
+              ".validate": "newData.hasChildren(['uid','date','countryCode','goal','completed','updatedAt'])",
+              "uid": {
+                ".validate": "newData.isString() && newData.val() === $uid"
+              },
+              "date": {
+                ".validate": "newData.isString() && newData.val() === $date"
+              },
+              "countryCode": {
+                ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 3"
+              },
+              "goal": {
+                ".validate": "newData.isNumber() && newData.val() === 100"
+              },
+              "completed": {
+                ".validate": "newData.isBoolean()"
+              },
+              "updatedAt": {
+                ".validate": "newData.val() === now"
+              },
+              "$other": { ".validate": false }
+            },
+
+            "$other": { ".validate": false }
+          }
+        }
+      }
+    },
+
     "mohamed_lovers": {
       "allTimeTotal": {
         ".read": true,

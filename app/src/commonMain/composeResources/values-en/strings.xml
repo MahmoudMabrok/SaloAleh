@@ -62,7 +62,34 @@
     <string name="main_screen_cd_ten_days">Ten Days of Dhul-Hijjah</string>
     <string name="main_screen_tooltip_takbeer">Group takbeer session</string>
     <string name="main_screen_cd_takbeer">Takbeer session</string>
+    <string name="main_screen_tooltip_dhikr_rewards">La ilaha illa Allah dhikr and 100-count reward</string>
+    <string name="main_screen_cd_dhikr_rewards">Dhikr</string>
     <string name="main_screen_tooltip_info">Round info and how to play</string>
+
+    <!-- Dhikr Rewards Screen -->
+    <string name="dhikr_title">Dhikr</string>
+    <string name="dhikr_back_cd">Back</string>
+    <string name="dhikr_phrase">There is no deity but Allah alone, with no partner.\nHis is the dominion and His is the praise, and He has power over all things.</string>
+    <string name="dhikr_today">Today</string>
+    <string name="dhikr_times">times</string>
+    <string name="dhikr_add">Dhikr</string>
+    <string name="dhikr_daily_goal">Daily goal: %1$d times</string>
+    <string name="dhikr_progress_count">%1$d / %2$d</string>
+    <string name="dhikr_rewards_title">What do you receive at 100 times?</string>
+    <string name="dhikr_reward_cage">As if you freed 10 descendants of Ismail</string>
+    <string name="dhikr_reward_book">100 good deeds written for you</string>
+    <string name="dhikr_reward_shield">Protected from Satan until evening</string>
+    <string name="dhikr_reward_feather">100 sins erased from you</string>
+    <string name="dhikr_reward_crown">No one brings better except one who does more</string>
+    <string name="dhikr_what_with_you">What is with you?</string>
+    <string name="dhikr_freed_count_label">Number of necks you freed</string>
+    <string name="dhikr_freed_count_unit">necks</string>
+    <string name="dhikr_rank_title">Your current rank</string>
+    <string name="dhikr_rank_number"># %1$d</string>
+    <string name="dhikr_rank_subtitle">among %1$d participants</string>
+    <string name="dhikr_tap_hint">Tap anywhere to count</string>
+    <string name="dhikr_reward_crown_label">Supreme</string>
+    <string name="dhikr_freed_today">Necks freed today</string>
 
     <!-- Info Sheet Supporter -->
     <string name="info_sheet_supporter_label">⭐ Supporter</string>

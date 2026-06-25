@@ -1,21 +1,11 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
-
-// Extracted from populate-leaderboard.js
-function buildOldRankMap(entries) {
-  const map = {};
-  for (const [key, entry] of Object.entries(entries)) {
-    if (entry?.uid && !isNaN(Number(key))) map[entry.uid] = entry.rank;
-  }
-  return map;
-}
-
-function computeRankChange(uid, newRank, oldRankMap) {
-  const oldRank = oldRankMap[uid];
-  if (oldRank == null) return 'new';
-  if (oldRank === newRank) return 'same';
-  return newRank < oldRank ? 'up' : 'down';
-}
+const {
+  buildDhikrChallengeDailyRanking,
+  buildOldRankMap,
+  computeRankChange,
+  normalizeDhikrCount,
+} = require('./leaderboard-utils');
 
 describe('computeRankChange', () => {
   it('returns "new" when player not in old leaderboard', () => {
@@ -144,5 +134,45 @@ describe('ten-days leaderboard rank-change', () => {
     const newUids = new Set(['new-1', 'new-2']);
     const dropped = [...oldUids].filter(uid => !newUids.has(uid));
     assert.deepEqual(dropped, ['old-1', 'old-2']);
+  });
+});
+
+describe('dhikr challenge daily ranking', () => {
+  it('ranks active users by count and uid, then writes count and total summaries', () => {
+    const result = buildDhikrChallengeDailyRanking('2026-06-25', [
+      { uid: 'user-b', count: 12 },
+      { uid: 'user-a', count: 12 },
+      { uid: 'user-c', count: 3 },
+      { uid: 'zero-user', count: 0 },
+    ]);
+
+    assert.equal(result.participantCount, 3);
+    assert.equal(result.totalTodayDhikr, 27);
+    assert.deepEqual(result.rankedUsers, [
+      { uid: 'user-a', count: 12, rank: 1 },
+      { uid: 'user-b', count: 12, rank: 2 },
+      { uid: 'user-c', count: 3, rank: 3 },
+    ]);
+    assert.equal(result.rankUpdates['100_challenge/2026-06-25/users/user-a/rank'], 1);
+    assert.equal(result.rankUpdates['100_challenge/2026-06-25/users/user-b/rank'], 2);
+    assert.equal(result.rankUpdates['100_challenge/2026-06-25/users/user-c/rank'], 3);
+    assert.equal(result.rankUpdates['100_challenge/2026-06-25/users/zero-user/rank'], null);
+  });
+
+  it('normalizes invalid and negative counts to zero', () => {
+    assert.equal(normalizeDhikrCount(undefined), 0);
+    assert.equal(normalizeDhikrCount(-4), 0);
+    assert.equal(normalizeDhikrCount(4.8), 4);
+
+    const result = buildDhikrChallengeDailyRanking('2026-06-25', [
+      { uid: 'bad-user', count: '11' },
+      { uid: 'negative-user', count: -2 },
+    ]);
+
+    assert.equal(result.participantCount, 0);
+    assert.equal(result.totalTodayDhikr, 0);
+    assert.deepEqual(result.rankedUsers, []);
+    assert.equal(result.rankUpdates['100_challenge/2026-06-25/users/bad-user/rank'], null);
+    assert.equal(result.rankUpdates['100_challenge/2026-06-25/users/negative-user/rank'], null);
   });
 });

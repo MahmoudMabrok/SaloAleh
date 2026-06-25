@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Spa
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -109,6 +110,8 @@ import tools.mo3ta.salo.generated.resources.main_screen_tooltip_ten_days
 import tools.mo3ta.salo.generated.resources.main_screen_cd_ten_days
 import tools.mo3ta.salo.generated.resources.main_screen_tooltip_takbeer
 import tools.mo3ta.salo.generated.resources.main_screen_cd_takbeer
+import tools.mo3ta.salo.generated.resources.main_screen_tooltip_dhikr_rewards
+import tools.mo3ta.salo.generated.resources.main_screen_cd_dhikr_rewards
 import tools.mo3ta.salo.generated.resources.main_screen_tooltip_info
 import tools.mo3ta.salo.generated.resources.new_round_title
 import tools.mo3ta.salo.generated.resources.new_round_subtitle
@@ -164,6 +167,7 @@ fun MohamedLoversScreen(
     onOpenHadithList: () -> Unit = {},
     onOpenTenDays: () -> Unit = {},
     onOpenTakbeerSession: () -> Unit = {},
+    onOpenDhikrRewards: () -> Unit = {},
     onOpenPaywall: () -> Unit = {},
     announcementsDone: Boolean = true,
     viewModel: MohamedLoversViewModel = koinViewModel(),
@@ -218,6 +222,7 @@ fun MohamedLoversScreen(
     val settingsTooltipState = rememberTooltipState(isPersistent = true)
     val achievementsTooltipState = rememberTooltipState(isPersistent = true)
     val hadithTooltipState = rememberTooltipState(isPersistent = true)
+    val dhikrRewardsTooltipState = rememberTooltipState(isPersistent = true)
     val tenDaysTooltipState = rememberTooltipState(isPersistent = true)
     val takbeerTooltipState = rememberTooltipState(isPersistent = true)
     val infoTooltipState = rememberTooltipState(isPersistent = true)
@@ -229,6 +234,7 @@ fun MohamedLoversScreen(
         val tooltipStates = listOf(
             achievementsTooltipState,
             hadithTooltipState,
+            dhikrRewardsTooltipState,
             tenDaysTooltipState,
             takbeerTooltipState,
             infoTooltipState,
@@ -469,6 +475,18 @@ fun MohamedLoversScreen(
                             Icon(
                                 imageVector = Icons.Default.AutoStories,
                                 contentDescription = stringResource(Res.string.main_screen_cd_hadith),
+                                tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
+                            )
+                        }
+                    }
+                    TopBarTooltip(text = stringResource(Res.string.main_screen_tooltip_dhikr_rewards), state = dhikrRewardsTooltipState) {
+                        IconButton(onClick = {
+                            analyticsManager.logAction(AppAnalytics.OPEN_DHIKR_REWARDS, mapOf(AppAnalytics.PARAM_SOURCE to "top_bar"))
+                            onOpenDhikrRewards()
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Spa,
+                                contentDescription = stringResource(Res.string.main_screen_cd_dhikr_rewards),
                                 tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
                             )
                         }
