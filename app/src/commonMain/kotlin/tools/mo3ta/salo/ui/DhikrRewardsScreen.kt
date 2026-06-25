@@ -68,7 +68,7 @@ import tools.mo3ta.salo.generated.resources.dhikr_tap_hint
 import tools.mo3ta.salo.generated.resources.dhikr_times
 import tools.mo3ta.salo.generated.resources.dhikr_today
 import tools.mo3ta.salo.presentation.DhikrChallengeViewModel
-import tools.mo3ta.salo.ui.dhikr.DhikrBrushes
+import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.dhikr.DhikrColors
 import tools.mo3ta.salo.ui.dhikr.DhikrLinearProgress
 import tools.mo3ta.salo.ui.dhikr.DhikrPanel
@@ -89,7 +89,7 @@ fun DhikrRewardsScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(DhikrColors.Ink),
+            .background(MohamedLoversPalette.DeepBlue),
     ) {
         Column(
             modifier = Modifier
@@ -142,14 +142,13 @@ private fun DhikrImmersiveZone(
     onTap: () -> Unit,
     onBack: () -> Unit,
 ) {
-    val shownRank = rank.takeIf { it > 0 } ?: 18
-    val shownParticipants = participantCount.takeIf { it > 0 } ?: 2458
+    val hasRankData = rank > 0 && participantCount > 0
     val fraction = (count.toFloat() / target.toFloat()).coerceIn(0f, 1f)
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(DhikrBrushes.Header)
+            .background(MohamedLoversPalette.DeepBlue)
             .clickable(
                 enabled = canCount,
                 onClickLabel = stringResource(Res.string.dhikr_add),
@@ -190,37 +189,37 @@ private fun DhikrImmersiveZone(
                         tint = Color.White.copy(alpha = 0.6f),
                     )
                 }
-                Surface(
-                    shape = CircleShape,
-                    color = Color.White.copy(alpha = 0.12f),
-                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f)),
-                ) {
-                    Text(
-                        text = "${stringResource(Res.string.dhikr_rank_number, shownRank)} · ${stringResource(Res.string.dhikr_rank_subtitle, shownParticipants)}",
-                        color = Color.White.copy(alpha = 0.65f),
-                        fontSize = 12.sp,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
-                    )
+                if (hasRankData) {
+                    Surface(
+                        shape = CircleShape,
+                        color = Color.White.copy(alpha = 0.12f),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f)),
+                    ) {
+                        Text(
+                            text = "${stringResource(Res.string.dhikr_rank_number, rank)} · ${stringResource(Res.string.dhikr_rank_subtitle, participantCount)}",
+                            color = Color.White.copy(alpha = 0.65f),
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+                        )
+                    }
                 }
             }
 
             Text(
                 text = stringResource(Res.string.dhikr_phrase),
                 color = Color.White.copy(alpha = 0.85f),
-                fontSize = 19.sp,
+                fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                lineHeight = 32.sp,
+                lineHeight = 26.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .padding(horizontal = 12.dp)
-                    .padding(top = 4.dp, bottom = 20.dp),
+                    .padding(top = 2.dp, bottom = 12.dp),
             )
 
             DhikrProgressRing(
                 fraction = fraction,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f),
+                modifier = Modifier.size(220.dp),
                 trackColor = Color.White.copy(alpha = 0.15f),
                 fillColor = DhikrColors.LightGreen,
             ) {
@@ -228,33 +227,33 @@ private fun DhikrImmersiveZone(
                     Text(
                         text = stringResource(Res.string.dhikr_today),
                         color = Color.White.copy(alpha = 0.55f),
-                        fontSize = 13.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                     )
                     Text(
                         text = count.toString(),
                         color = Color.White,
-                        fontSize = 72.sp,
+                        fontSize = 56.sp,
                         fontWeight = FontWeight.Black,
-                        lineHeight = 76.sp,
+                        lineHeight = 60.sp,
                     )
                     Text(
                         text = stringResource(Res.string.dhikr_times),
                         color = Color.White.copy(alpha = 0.55f),
-                        fontSize = 13.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                     )
                 }
             }
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(8.dp))
             Text(
                 text = stringResource(Res.string.dhikr_tap_hint),
                 color = Color.White.copy(alpha = 0.3f),
                 fontSize = 12.sp,
                 textAlign = TextAlign.Center,
             )
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(16.dp))
         }
     }
 }
