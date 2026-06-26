@@ -152,7 +152,7 @@ fun DhikrRewardsScreen(
                     DhikrRewardsGridCard()
                     Spacer(Modifier.height(DhikrSpacing.PanelGap))
                     DhikrStatsRow(
-                        freedCount = state.todayCount / 100,
+                        freedCount = state.todayCount / 10,
                         todayCount = state.todayCount,
                         target = state.dailyGoal,
                     )
