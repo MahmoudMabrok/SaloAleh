@@ -540,4 +540,6 @@
     <string name="salawat_variant_announcement_body">يمكنك الآن اختيار صيغة الصلاة التي تظهر عند الضغط على السماء، من بين عدة صيغ ثابتة عن النبي ﷺ. اخترها من الإعدادات.</string>
     <string name="salawat_variant_announcement_cta">اختيار الصيغة</string>
     <string name="salawat_variant_announcement_dismiss">ليس الآن</string>
+    <string name="leaderboard_score_label">صلاة</string>
+    <string name="leaderboard_separator_label">• • •</string>
 </resources>

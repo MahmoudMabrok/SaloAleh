@@ -530,4 +530,6 @@
     <string name="salawat_variant_announcement_body">You can now choose which salawat appears when you tap the sky, from several authentic forms. Pick yours in Settings.</string>
     <string name="salawat_variant_announcement_cta">Choose wording</string>
     <string name="salawat_variant_announcement_dismiss">Not now</string>
+    <string name="leaderboard_score_label">prayers</string>
+    <string name="leaderboard_separator_label">• • •</string>
 </resources>

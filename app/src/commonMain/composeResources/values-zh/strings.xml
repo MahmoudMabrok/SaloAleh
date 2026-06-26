@@ -491,4 +491,6 @@
     <string name="salawat_variant_announcement_body">现在你可以选择点击天空时显示的祝福语，从多种真实传述的版本中挑选。请在设置中选择。</string>
     <string name="salawat_variant_announcement_cta">选择祝福语</string>
     <string name="salawat_variant_announcement_dismiss">暂不</string>
+    <string name="leaderboard_score_label">次祈祷</string>
+    <string name="leaderboard_separator_label">• • •</string>
 </resources>

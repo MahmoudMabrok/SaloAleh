@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -99,6 +100,8 @@ import tools.mo3ta.salo.generated.resources.info_sheet_supporter_label
 import tools.mo3ta.salo.generated.resources.info_sheet_notif_disabled
 import tools.mo3ta.salo.generated.resources.leaderboard_join_supporters
 import tools.mo3ta.salo.generated.resources.leaderboard_live_button
+import tools.mo3ta.salo.generated.resources.leaderboard_score_label
+import tools.mo3ta.salo.generated.resources.leaderboard_separator_label
 import tools.mo3ta.salo.generated.resources.notif_rationale_title
 import tools.mo3ta.salo.generated.resources.notif_rationale_description
 import tools.mo3ta.salo.generated.resources.notif_rationale_open_settings
@@ -594,53 +597,6 @@ private fun LeaderboardCard(
             }
         }
         LeaderboardTypeToggle(isDaily = isDaily, onToggle = onToggleLeaderboardType)
-        if (selfEntry != null && !selfInTop) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MohamedLoversPalette.GoldBase.copy(alpha = 0.15f))
-                    .border(
-                        width = 1.dp,
-                        color = MohamedLoversPalette.GoldBase.copy(alpha = 0.4f),
-                        shape = RoundedCornerShape(10.dp),
-                    )
-                    .clickable(enabled = selfEntry.uid.isNotBlank()) {
-                        onUserClick(selfEntry.uid, selfEntry.displayTag)
-                    }
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Text(
-                        text = "${selfEntry.displayedRank}${selfEntry.displayTag}",
-                        style = bodyStyle().copy(fontWeight = FontWeight.W700),
-                        color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.95f),
-                    )
-                    if (selfEntry.dailyBadge != null) {
-                        DailyBadgeIcon(
-                            badgeKey = selfEntry.dailyBadge,
-                            size = 18.dp,
-                            modifier = Modifier.clickable { onBadgeClick(selfEntry.dailyBadge) },
-                        )
-                    }
-                }
-                Text(
-                    text = selfEntry.totalCount.toString(),
-                    style = bodyStyle().copy(fontWeight = FontWeight.W700),
-                    color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
-                )
-            }
-            Text(
-                text = stringResource(Res.string.mohamed_lovers_rank_pending_top),
-                style = bodyStyle().copy(fontSize = 11.sp),
-                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.5f),
-            )
-        }
         if (topPlayers.isEmpty() && selfEntry == null) {
             Text(
                 text = stringResource(Res.string.mohamed_lovers_leaderboard_empty),
@@ -648,14 +604,44 @@ private fun LeaderboardCard(
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.65f),
             )
         } else {
-            topPlayers.forEach { entry ->
+            Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+                topPlayers.forEach { entry ->
+                    LeaderboardRow(
+                        entry = entry,
+                        isPremium = isPremium,
+                        onSupporterClick = onSupporterClick,
+                        onUserClick = onUserClick,
+                        onBadgeClick = onBadgeClick,
+                    )
+                }
+            }
+            if (selfEntry != null && !selfInTop) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(modifier = Modifier.weight(1f).height(1.dp).background(MohamedLoversPalette.GoldBase.copy(alpha = 0.18f)))
+                    Text(
+                        text = stringResource(Res.string.leaderboard_separator_label),
+                        fontSize = 10.sp,
+                        color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.3f),
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                    )
+                    Box(modifier = Modifier.weight(1f).height(1.dp).background(MohamedLoversPalette.GoldBase.copy(alpha = 0.18f)))
+                }
                 LeaderboardRow(
-                    entry = entry,
-                    pinned = false,
+                    entry = selfEntry,
                     isPremium = isPremium,
                     onSupporterClick = onSupporterClick,
                     onUserClick = onUserClick,
                     onBadgeClick = onBadgeClick,
+                )
+                Text(
+                    text = stringResource(Res.string.mohamed_lovers_rank_pending_top),
+                    style = bodyStyle().copy(fontSize = 11.sp),
+                    color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.5f),
                 )
             }
         }
@@ -685,7 +671,6 @@ private fun LeaderboardCard(
 @Composable
 private fun LeaderboardRow(
     entry: MohamedLoversLeaderboardEntry,
-    pinned: Boolean,
     isPremium: Boolean = false,
     onSupporterClick: () -> Unit = {},
     onUserClick: (uid: String, displayTag: String) -> Unit = { _, _ -> },
@@ -697,87 +682,147 @@ private fun LeaderboardRow(
         3 -> MohamedLoversPalette.RankBronze
         else -> MohamedLoversPalette.GoldGlow.copy(alpha = 0.45f)
     }
-    val backgroundColor = when {
-        pinned -> MohamedLoversPalette.GoldBase.copy(alpha = 0.2f)
-        entry.isCurrentUser -> MohamedLoversPalette.GoldBase.copy(alpha = 0.1f)
+    val isMe = entry.isCurrentUser
+    val backgroundColor = if (isMe) MohamedLoversPalette.GoldBase.copy(alpha = 0.12f) else Color.Transparent
+    val borderColor = when {
+        isMe -> MohamedLoversPalette.GoldBase.copy(alpha = 0.4f)
+        entry.isSupporter -> MohamedLoversPalette.GoldHighlight.copy(alpha = 0.35f)
         else -> Color.Transparent
     }
-    val rowModifier = Modifier
-        .fillMaxWidth()
-        .clip(RoundedCornerShape(10.dp))
-        .background(backgroundColor)
-        .then(
-            if (entry.isSupporter) Modifier.border(1.dp, MohamedLoversPalette.GoldHighlight.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
-            else Modifier
-        )
-        .clickable(enabled = entry.uid.isNotBlank()) {
-            onUserClick(entry.uid, entry.displayTag)
-        }
-        .padding(horizontal = 10.dp, vertical = 8.dp)
+    val scoreLabel = stringResource(Res.string.leaderboard_score_label)
+    val tagParts = entry.displayTag.split(" • ", limit = 2)
+    val countryCode = if (tagParts.size == 2) tagParts[0] else entry.displayTag.take(2)
+    val shortName = if (tagParts.size == 2) tagParts[1] else entry.displayTag
+
     Row(
-        modifier = rowModifier,
-        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(backgroundColor)
+            .border(1.dp, borderColor, RoundedCornerShape(12.dp))
+            .clickable(enabled = entry.uid.isNotBlank()) { onUserClick(entry.uid, entry.displayTag) }
+            .padding(horizontal = 10.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        // Rank column
+        Column(
+            modifier = Modifier.width(36.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            RankChangeIndicator(entry.rankChange)
             if (entry.rank > 0) {
                 Text(
-                    text = stringResource(Res.string.mohamed_lovers_rank_number, entry.rank),
-                    style = bodyStyle().copy(
+                    text = entry.rank.toString(),
+                    style = TextStyle(
+                        fontFamily = MohamedLoversFonts.display,
+                        fontSize = if (entry.rank <= 3) 18.sp else 16.sp,
                         fontWeight = FontWeight.W700,
-                        fontSize = if (entry.rank <= 3) 15.sp else 13.sp,
                     ),
-                    color = rankColor,
+                    color = if (isMe) MohamedLoversPalette.GoldHighlight else rankColor,
                 )
             }
-            if (entry.isSupporter) {
-                Text(
-                    text = stringResource(Res.string.info_sheet_supporter_label),
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.W600,
-                    color = MohamedLoversPalette.GoldHighlight,
+            RankChangeIndicator(entry.rankChange)
+        }
+
+        // Avatar + name column
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(9.dp),
+        ) {
+            Box(contentAlignment = Alignment.TopCenter) {
+                Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(MohamedLoversPalette.GoldHighlight.copy(alpha = 0.2f))
-                        .clickable { onSupporterClick() }
-                        .padding(horizontal = 6.dp, vertical = 2.dp),
-                )
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(MohamedLoversPalette.GoldBase.copy(alpha = 0.15f))
+                        .border(
+                            1.5.dp,
+                            if (entry.rank == 1) MohamedLoversPalette.GoldHighlight
+                            else if (isMe) MohamedLoversPalette.GoldBase.copy(alpha = 0.5f)
+                            else Color.Transparent,
+                            RoundedCornerShape(50),
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = countryCode,
+                        style = TextStyle(
+                            fontFamily = MohamedLoversFonts.body,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.W700,
+                        ),
+                        color = rankColor,
+                    )
+                }
             }
-            Text(
-                text = entry.displayTag,
-                style = bodyStyle().copy(
-                    fontWeight = if (entry.isCurrentUser) FontWeight.W700 else FontWeight.W400,
-                ),
-                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.92f),
-            )
-            if (entry.dailyBadge != null) {
-                DailyBadgeIcon(
-                    badgeKey = entry.dailyBadge,
-                    size = 18.dp,
-                    modifier = Modifier.clickable { onBadgeClick(entry.dailyBadge) },
-                )
+            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                ) {
+                    Text(
+                        text = shortName,
+                        style = bodyStyle().copy(
+                            fontWeight = if (isMe) FontWeight.W700 else FontWeight.W500,
+                            fontSize = 13.sp,
+                        ),
+                        color = if (isMe) MohamedLoversPalette.GoldHighlight else MohamedLoversPalette.GoldGlow.copy(alpha = 0.92f),
+                    )
+                    if (entry.isSupporter) {
+                        Text(
+                            text = stringResource(Res.string.info_sheet_supporter_label),
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.W600,
+                            color = MohamedLoversPalette.GoldHighlight,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(MohamedLoversPalette.GoldHighlight.copy(alpha = 0.18f))
+                                .clickable { onSupporterClick() }
+                                .padding(horizontal = 5.dp, vertical = 2.dp),
+                        )
+                    }
+                    if (entry.dailyBadge != null) {
+                        DailyBadgeIcon(
+                            badgeKey = entry.dailyBadge,
+                            size = 16.dp,
+                            modifier = Modifier.clickable { onBadgeClick(entry.dailyBadge) },
+                        )
+                    }
+                }
             }
         }
-        if (entry.scoreMasked && !entry.isCurrentUser) {
-            MaskedScore(entry.totalCount)
-        } else {
-            val isFriday = Clock.System.now()
-                .toLocalDateTime(TimeZone.of("Africa/Cairo"))
-                .dayOfWeek == kotlinx.datetime.DayOfWeek.FRIDAY
-            if (entry.isCurrentUser || !isFriday || isPremium) {
-                Text(
-                    text = entry.totalCount.toString(),
-                    style = bodyStyle().copy(
-                        fontWeight = if (entry.isCurrentUser) FontWeight.W700 else FontWeight.W400,
-                    ),
-                    color = MohamedLoversPalette.GoldGlow.copy(alpha = if (entry.isCurrentUser) 0.85f else 0.7f),
-                )
-            } else {
+
+        // Score column
+        Column(
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(1.dp),
+        ) {
+            if (entry.scoreMasked && !isMe) {
                 MaskedScore(entry.totalCount)
+            } else {
+                val isFriday = Clock.System.now()
+                    .toLocalDateTime(TimeZone.of("Africa/Cairo"))
+                    .dayOfWeek == kotlinx.datetime.DayOfWeek.FRIDAY
+                if (isMe || !isFriday || isPremium) {
+                    Text(
+                        text = entry.totalCount.toString(),
+                        style = TextStyle(
+                            fontFamily = MohamedLoversFonts.display,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.W700,
+                        ),
+                        color = if (isMe) MohamedLoversPalette.GoldHighlight else MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
+                    )
+                    Text(
+                        text = scoreLabel,
+                        fontSize = 9.sp,
+                        color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.4f),
+                    )
+                } else {
+                    MaskedScore(entry.totalCount)
+                }
             }
         }
     }
@@ -807,16 +852,16 @@ private fun MaskedScore(score: Int) {
 @Composable
 private fun RankChangeIndicator(rankChange: String) {
     val (symbol, color) = when (rankChange) {
-        "up" -> "▲" to Color(0xFF4CAF50)
-        "down" -> "▼" to Color(0xFFE53935)
+        "up" -> "▲" to Color(0xFF5FA882)
+        "down" -> "▼" to Color(0xFFC47A6B)
         "new" -> "★" to Color(0xFF42A5F5)
-        else -> "──" to MohamedLoversPalette.GoldGlow.copy(alpha = 0.3f)
+        else -> return
     }
     Text(
         text = symbol,
-        style = bodyStyle().copy(fontSize = 11.sp, fontWeight = FontWeight.W700),
+        fontSize = 9.sp,
+        fontWeight = FontWeight.W700,
         color = color,
-        modifier = Modifier.width(18.dp),
     )
 }
 

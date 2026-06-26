@@ -491,4 +491,6 @@
     <string name="salawat_variant_announcement_body">اب آپ منتخب کر سکتے ہیں کہ آسمان پر ٹیپ کرنے پر کون سا درود ظاہر ہو، کئی مستند صیغوں میں سے۔ ترتیبات میں سے منتخب کریں۔</string>
     <string name="salawat_variant_announcement_cta">صیغہ منتخب کریں</string>
     <string name="salawat_variant_announcement_dismiss">ابھی نہیں</string>
+    <string name="leaderboard_score_label">درود</string>
+    <string name="leaderboard_separator_label">• • •</string>
 </resources>
