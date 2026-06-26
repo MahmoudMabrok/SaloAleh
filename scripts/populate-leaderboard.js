@@ -116,21 +116,38 @@ async function populateDhikrChallengeToday(db) {
       const uid = typeof metadata.uid === 'string' && metadata.uid.length > 0
         ? metadata.uid
         : child.key;
-      users.push({ uid, count: data.count });
+      const currentRank = typeof data.rank === 'number' && data.rank > 0 ? data.rank : null;
+      const countryCode = typeof metadata.countryCode === 'string' ? metadata.countryCode.toUpperCase() : '';
+      users.push({ uid, count: data.count, countryCode, currentRank });
     });
   }
 
   const dailyRanking = buildDhikrChallengeDailyRanking(dateKey, users);
+
+  // Build top-10 leaderboard with rank change vs. the rank already stored in Firebase.
+  const leaderboardEntries = dailyRanking.rankedUsers.slice(0, 10).map((user, i) => {
+    let rankChange = 'same';
+    if (user.currentRank == null || user.currentRank === 0) {
+      rankChange = 'new';
+    } else if (user.rank < user.currentRank) {
+      rankChange = 'up';
+    } else if (user.rank > user.currentRank) {
+      rankChange = 'down';
+    }
+    return [String(i), { uid: user.uid, countryCode: user.countryCode, count: user.count, rank: user.rank, rankChange }];
+  });
+
   const updates = {
     ...dailyRanking.rankUpdates,
     [`${DHIKR_CHALLENGE_ROOT}/${dateKey}/participantCount`]: dailyRanking.participantCount,
     [`${DHIKR_CHALLENGE_ROOT}/${dateKey}/totalTodayDhikr`]: dailyRanking.totalTodayDhikr,
     [`${DHIKR_CHALLENGE_ROOT}/${dateKey}/lastRankedAt`]: admin.database.ServerValue.TIMESTAMP,
+    [`${DHIKR_CHALLENGE_ROOT}/${dateKey}/leaderboard`]: Object.fromEntries(leaderboardEntries),
   };
 
   await db.ref('/').update(updates);
   console.log(
-    `Wrote dhikr ranks for ${dailyRanking.participantCount} participant(s). totalTodayDhikr=${dailyRanking.totalTodayDhikr}`,
+    `Wrote dhikr ranks + leaderboard(${leaderboardEntries.length}) for ${dailyRanking.participantCount} participant(s). totalTodayDhikr=${dailyRanking.totalTodayDhikr}`,
   );
 }
 

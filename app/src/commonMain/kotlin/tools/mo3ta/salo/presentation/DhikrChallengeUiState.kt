@@ -1,6 +1,7 @@
 package tools.mo3ta.salo.presentation
 
 import tools.mo3ta.salo.domain.DHIKR_CHALLENGE_DAILY_GOAL
+import tools.mo3ta.salo.domain.DhikrLeaderboardEntry
 
 data class DhikrChallengeUiState(
     val dateKey: String = "",
@@ -14,4 +15,8 @@ data class DhikrChallengeUiState(
     val errorMessage: String? = null,
     val showCelebration: Boolean = false,
     val celebrationMilestone: Int = 0,
+    val showLeaderboard: Boolean = false,
+    val leaderboard: List<DhikrLeaderboardEntry> = emptyList(),
+    val isLeaderboardLoading: Boolean = false,
+    val currentUid: String = "",
 )

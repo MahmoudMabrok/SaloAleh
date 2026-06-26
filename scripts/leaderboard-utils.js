@@ -35,6 +35,8 @@ function buildDhikrChallengeDailyRanking(dateKey, users, rootPath = DHIKR_CHALLE
     .map(user => ({
       uid: typeof user.uid === 'string' ? user.uid : '',
       count: normalizeDhikrCount(user.count),
+      countryCode: typeof user.countryCode === 'string' ? user.countryCode.toUpperCase().slice(0, 3) : '',
+      currentRank: typeof user.currentRank === 'number' && user.currentRank > 0 ? user.currentRank : null,
     }))
     .filter(user => user.uid.length > 0);
 

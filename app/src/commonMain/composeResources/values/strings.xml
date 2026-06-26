@@ -92,6 +92,9 @@
     <string name="dhikr_freed_today">رقاب أُعتقت اليوم</string>
     <string name="dhikr_milestone_title">أتممت %1$d مرة!</string>
     <string name="dhikr_milestone_subtitle">ما شاء الله!</string>
+    <string name="dhikr_leaderboard_title">المتصدرون</string>
+    <string name="dhikr_leaderboard_rank_new">جديد</string>
+    <string name="dhikr_leaderboard_empty">لا توجد بيانات بعد</string>
 
     <!-- Info Sheet Supporter -->
     <string name="info_sheet_supporter_label">⭐ داعم</string>

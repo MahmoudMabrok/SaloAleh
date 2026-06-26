@@ -77,6 +77,7 @@ import tools.mo3ta.salo.generated.resources.dhikr_today
 import tools.mo3ta.salo.presentation.DhikrChallengeViewModel
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.dhikr.DhikrColors
+import tools.mo3ta.salo.ui.dhikr.DhikrLeaderboardSheet
 import tools.mo3ta.salo.ui.dhikr.DhikrLinearProgress
 import tools.mo3ta.salo.ui.dhikr.DhikrMilestoneCelebration
 import tools.mo3ta.salo.ui.dhikr.DhikrPanel
@@ -134,6 +135,7 @@ fun DhikrRewardsScreen(
                     )
                 },
                 onBack = onBack,
+                onRankClick = { viewModel.onLeaderboardOpened() },
             )
             Surface(
                 modifier = Modifier.fillMaxWidth(),
@@ -165,6 +167,16 @@ fun DhikrRewardsScreen(
             modifier = Modifier.fillMaxSize(),
         )
     }
+
+    if (state.showLeaderboard) {
+        DhikrLeaderboardSheet(
+            entries = state.leaderboard,
+            currentUid = state.currentUid,
+            participantCount = state.participantCount,
+            isLoading = state.isLeaderboardLoading,
+            onDismiss = { viewModel.onLeaderboardClosed() },
+        )
+    }
 }
 
 @Composable
@@ -176,6 +188,7 @@ private fun DhikrImmersiveZone(
     canCount: Boolean,
     onTap: () -> Unit,
     onBack: () -> Unit,
+    onRankClick: () -> Unit,
 ) {
     val hasRankData = rank > 0 && participantCount > 0
     val fraction = (count.toFloat() / target.toFloat()).coerceIn(0f, 1f)
@@ -226,6 +239,7 @@ private fun DhikrImmersiveZone(
                 }
                 if (hasRankData) {
                     Surface(
+                        onClick = onRankClick,
                         shape = CircleShape,
                         color = Color.White.copy(alpha = 0.12f),
                         border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f)),

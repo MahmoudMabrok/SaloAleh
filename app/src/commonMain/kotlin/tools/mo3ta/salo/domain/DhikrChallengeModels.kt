@@ -7,3 +7,11 @@ data class DhikrChallengeDayStats(
     val participantCount: Int = 0,
     val totalTodayDhikr: Int = 0,
 )
+
+data class DhikrLeaderboardEntry(
+    val uid: String,
+    val countryCode: String,
+    val count: Int,
+    val rank: Int,
+    val rankChange: String, // "up" | "down" | "same" | "new"
+)

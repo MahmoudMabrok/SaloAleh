@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>المتصدرون — صلوا عليه</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --night:        #0D1421;
+      --deep:         #111A30;
+      --card:         #1C2840;
+      --card-h:       #222F4C;
+      --gold:         #C9A84C;
+      --gold-l:       #E5C76B;
+      --gold-glow:    rgba(201,168,76,0.12);
+      --gold-border:  rgba(201,168,76,0.25);
+      --parchment:    #E4D9BC;
+      --parchment-d:  #6A6254;
+      --silver:       #9BA8C0;
+      --bronze:       #B07A50;
+      --rank-up:      #5FA882;
+      --rank-dn:      #C47A6B;
+      --rank-same:    #38486A;
+      --border:       rgba(255,255,255,0.055);
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Cairo', system-ui, sans-serif;
+      background: #050B16;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 40px;
+    }
+
+    /* ── Phone Frame ── */
+    .phone {
+      width: 390px;
+      height: 844px;
+      background: var(--night);
+      border-radius: 48px;
+      position: relative;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.07),
+        0 0 0 10px #0A1020,
+        0 0 0 11px rgba(255,255,255,0.04),
+        0 60px 120px rgba(0,0,0,0.85),
+        0 0 120px rgba(201,168,76,0.04);
+      flex-shrink: 0;
+    }
+
+    /* Camera notch */
+    .phone::before {
+      content: '';
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 30px;
+      background: #050B16;
+      border-radius: 0 0 20px 20px;
+      z-index: 100;
+    }
+
+    /* Status bar */
+    .status-bar {
+      position: relative;
+      z-index: 50;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 28px 0;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--parchment);
+      direction: ltr;
+    }
+
+    .status-icons { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+
+    /* App background */
+    .app-screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 52px;
+      background:
+        radial-gradient(ellipse 70% 40% at 50% 10%, #1F3060 0%, transparent 70%),
+        radial-gradient(ellipse 50% 60% at 80% 90%, #0D1E3A 0%, transparent 60%),
+        var(--night);
+    }
+
+    /* Subtle geometric star watermark */
+    .app-screen::before {
+      content: '';
+      position: absolute;
+      top: 60px;
+      right: -80px;
+      width: 320px;
+      height: 320px;
+      background:
+        conic-gradient(from 0deg, transparent 0deg 30deg, rgba(201,168,76,0.025) 30deg 60deg, transparent 60deg 90deg,
+          rgba(201,168,76,0.025) 90deg 120deg, transparent 120deg 150deg, rgba(201,168,76,0.025) 150deg 180deg,
+          transparent 180deg 210deg, rgba(201,168,76,0.025) 210deg 240deg, transparent 240deg 270deg,
+          rgba(201,168,76,0.025) 270deg 300deg, transparent 300deg 330deg, rgba(201,168,76,0.025) 330deg 360deg);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .week-chip {
+      font-size: 11px;
+      color: var(--gold);
+      background: rgba(201,168,76,0.08);
+      border: 1px solid rgba(201,168,76,0.18);
+      border-radius: 12px;
+      padding: 3px 12px;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .app-title {
+      font-family: 'Amiri', serif;
+      font-size: 26px;
+      color: var(--gold);
+      margin-bottom: 36px;
+      letter-spacing: 2px;
+    }
+
+    /* Counter */
+    .counter-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 36px;
+    }
+
+    .counter-num {
+      font-family: 'Amiri', serif;
+      font-size: 100px;
+      line-height: 1;
+      color: var(--parchment);
+      text-shadow: 0 0 60px rgba(201,168,76,0.18);
+      direction: ltr;
+    }
+
+    .counter-label {
+      font-size: 13px;
+      color: var(--parchment-d);
+      letter-spacing: 1px;
+    }
+
+    /* Tap button */
+    .tap-btn {
+      width: 138px;
+      height: 138px;
+      border-radius: 50%;
+      border: 2px solid rgba(201,168,76,0.28);
+      background: radial-gradient(circle at 38% 32%, #243060 0%, #131E38 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Amiri', serif;
+      font-size: 20px;
+      color: var(--gold);
+      cursor: pointer;
+      box-shadow:
+        0 0 0 10px rgba(201,168,76,0.03),
+        0 10px 30px rgba(0,0,0,0.5);
+      transition: transform 0.1s, box-shadow 0.1s;
+      margin-bottom: 48px;
+      user-select: none;
+    }
+
+    .tap-btn:active {
+      transform: scale(0.95);
+      box-shadow: 0 0 0 5px rgba(201,168,76,0.05), 0 5px 15px rgba(0,0,0,0.4);
+    }
+
+    /* Rank badge trigger */
+    .rank-trigger {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      padding: 10px 20px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s, transform 0.15s;
+      font-family: 'Cairo', sans-serif;
+      color: inherit;
+    }
+
+    .rank-trigger:hover {
+      border-color: var(--gold-border);
+      background: var(--card-h);
+      transform: translateY(-1px);
+    }
+
+    .rt-icon { font-size: 15px; }
+
+    .rt-label {
+      font-size: 13px;
+      color: var(--parchment-d);
+    }
+
+    .rt-num {
+      font-family: 'Amiri', serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--gold);
+      line-height: 1;
+      direction: ltr;
+    }
+
+    .rt-change {
+      font-size: 11px;
+      color: var(--rank-up);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .rt-caret { font-size: 9px; }
+
+    /* ── Overlay ── */
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0);
+      backdrop-filter: blur(0px) brightness(1);
+      z-index: 10;
+      pointer-events: none;
+      transition: background 0.35s ease, backdrop-filter 0.35s ease;
+    }
+
+    .overlay.open {
+      background: rgba(0,0,0,0.52);
+      backdrop-filter: blur(8px) brightness(0.7);
+      pointer-events: all;
+    }
+
+    /* ── Leaderboard Sheet ── */
+    .lb-sheet {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 80%;
+      background: var(--deep);
+      border-radius: 28px 28px 0 0;
+      z-index: 20;
+      transform: translateY(100%);
+      transition: transform 0.4s cubic-bezier(0.32, 1.08, 0.60, 1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .lb-sheet.open { transform: translateY(0); }
+
+    /* Sheet header area */
+    .sheet-top {
+      padding: 14px 22px 0;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    /* Large ghost star decoration */
+    .sheet-top::after {
+      content: '✦';
+      position: absolute;
+      font-size: 260px;
+      color: rgba(201,168,76,0.035);
+      top: -80px;
+      left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none;
+      line-height: 1;
+      z-index: 0;
+    }
+
+    .drag-handle {
+      width: 40px;
+      height: 4px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      margin: 0 auto 18px;
+    }
+
+    .sh-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      position: relative;
+      z-index: 1;
+      margin-bottom: 3px;
+    }
+
+    .sh-title {
+      font-family: 'Amiri', serif;
+      font-size: 23px;
+      font-weight: 700;
+      color: var(--parchment);
+    }
+
+    .sh-week {
+      font-size: 11px;
+      color: var(--gold);
+      background: rgba(201,168,76,0.09);
+      border: 1px solid rgba(201,168,76,0.2);
+      border-radius: 12px;
+      padding: 3px 11px;
+      margin-top: 4px;
+    }
+
+    .sh-sub {
+      font-size: 12px;
+      color: var(--parchment-d);
+      margin-bottom: 14px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .sh-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0 -22px;
+    }
+
+    /* ── List ── */
+    .lb-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 6px 12px 6px;
+      scrollbar-width: none;
+    }
+
+    .lb-list::-webkit-scrollbar { display: none; }
+
+    /* ── Row ── */
+    .lb-row {
+      display: grid;
+      grid-template-columns: 40px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 8px;
+      border-radius: 14px;
+      border: 1px solid transparent;
+      transition: background 0.15s;
+      cursor: default;
+    }
+
+    .lb-row + .lb-row { margin-top: 2px; }
+
+    .lb-row:hover { background: rgba(255,255,255,0.022); }
+
+    .lb-row.is-me {
+      background: var(--gold-glow);
+      border-color: var(--gold-border);
+    }
+
+    /* Rank column */
+    .r-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .rnum {
+      font-family: 'Amiri', serif;
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--parchment-d);
+      direction: ltr;
+    }
+
+    .lb-row[data-rank="1"] .rnum { color: var(--gold); }
+    .lb-row[data-rank="2"] .rnum { color: var(--silver); }
+    .lb-row[data-rank="3"] .rnum { color: var(--bronze); }
+    .lb-row.is-me .rnum           { color: var(--gold-l); }
+
+    .rchange {
+      font-size: 9px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 1px;
+      line-height: 1;
+      direction: ltr;
+    }
+
+    .rchange.up   { color: var(--rank-up); }
+    .rchange.dn   { color: var(--rank-dn); }
+    .rchange.same { color: var(--rank-same); }
+
+    /* User column */
+    .u-col {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--card);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+      border: 1.5px solid transparent;
+      position: relative;
+    }
+
+    .lb-row[data-rank="1"] .avatar { border-color: var(--gold); }
+    .lb-row.is-me .avatar          { border-color: rgba(201,168,76,0.45); }
+
+    .crown {
+      position: absolute;
+      top: -9px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 13px;
+      line-height: 1;
+    }
+
+    .uname {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--parchment);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .lb-row.is-me .uname { color: var(--gold-l); }
+
+    .uctry {
+      font-size: 11px;
+      color: var(--parchment-d);
+    }
+
+    /* Score column */
+    .s-col {
+      flex-shrink: 0;
+      text-align: left;
+    }
+
+    .sval {
+      display: block;
+      font-family: 'Amiri', serif;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--parchment);
+      line-height: 1.1;
+      direction: ltr;
+      text-align: left;
+    }
+
+    .lb-row.is-me .sval { color: var(--gold-l); }
+
+    .slbl {
+      display: block;
+      font-size: 9px;
+      color: var(--parchment-d);
+      text-align: left;
+      direction: ltr;
+    }
+
+    /* Dots separator */
+    .sep {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+    }
+
+    .sep-ln { flex: 1; height: 1px; background: var(--border); }
+    .sep-tx { font-size: 10px; color: var(--rank-same); letter-spacing: 3px; }
+
+    /* Footer */
+    .sheet-footer {
+      padding: 12px 16px 30px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+      text-align: center;
+    }
+
+    .footer-hint {
+      font-size: 11px;
+      color: var(--parchment-d);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Phone ── -->
+<div class="phone">
+  <div class="status-bar">
+    <span>٩:٤١</span>
+    <div class="status-icons">
+      <span>●●●</span>
+      <span>WiFi</span>
+      <span>🔋</span>
+    </div>
+  </div>
+
+  <!-- App main screen -->
+  <div class="app-screen">
+    <div class="week-chip">الأسبوع الحالي</div>
+    <div class="app-title">صلوا عليه</div>
+
+    <div class="counter-wrap">
+      <div class="counter-num">١٢٣٤</div>
+      <div class="counter-label">صلاة هذا الأسبوع</div>
+    </div>
+
+    <div class="tap-btn">اضغط</div>
+
+    <!-- This badge triggers the leaderboard -->
+    <button class="rank-trigger" onclick="openSheet()">
+      <span class="rt-icon">🏆</span>
+      <span class="rt-label">ترتيبك</span>
+      <span class="rt-num">#٦</span>
+      <span class="rt-change"><span class="rt-caret">▲</span>١</span>
+    </button>
+  </div>
+
+  <!-- Backdrop overlay -->
+  <div class="overlay" id="overlay" onclick="closeSheet()"></div>
+
+  <!-- Leaderboard sheet -->
+  <div class="lb-sheet" id="lbSheet">
+    <div class="sheet-top">
+      <div class="drag-handle"></div>
+      <div class="sh-row">
+        <div class="sh-title">المتصدرون</div>
+        <div class="sh-week">٢٦ مايو — ٣ يونيو</div>
+      </div>
+      <div class="sh-sub">١٨٤ مشارك هذا الأسبوع</div>
+      <div class="sh-divider"></div>
+    </div>
+
+    <div class="lb-list" id="lbList"></div>
+
+    <div class="sheet-footer">
+      <div class="footer-hint">اسحب للأسفل للإغلاق</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Annotation panel ── -->
+<div style="
+  color: #E4D9BC;
+  font-family: 'Cairo', system-ui, sans-serif;
+  max-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-size: 13px;
+  line-height: 1.6;
+  direction: ltr;
+">
+  <div>
+    <div style="font-size:11px;color:#C9A84C;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Design tokens</div>
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <div style="display:flex;align-items:center;gap:8px;"><div style="width:16px;height:16px;border-radius:4px;background:#0D1421;border:1px solid rgba(255,255,255,0.15);flex-shrink:0"></div><span style="color:#6A6254;">#0D1421 — Night</span></div>
+      <div style="display:flex;align-items:center;gap:8px;"><div style="width:16px;height:16px;border-radius:4px;background:#C9A84C;flex-shrink:0"></div><span style="color:#6A6254;">#C9A84C — Manuscript gold</span></div>
+      <div style="display:flex;align-items:center;gap:8px;"><div style="width:16px;height:16px;border-radius:4px;background:#E4D9BC;flex-shrink:0"></div><span style="color:#6A6254;">#E4D9BC — Parchment</span></div>
+      <div style="display:flex;align-items:center;gap:8px;"><div style="width:16px;height:16px;border-radius:4px;background:#5FA882;flex-shrink:0"></div><span style="color:#6A6254;">#5FA882 — Rank up</span></div>
+      <div style="display:flex;align-items:center;gap:8px;"><div style="width:16px;height:16px;border-radius:4px;background:#C47A6B;flex-shrink:0"></div><span style="color:#6A6254;">#C47A6B — Rank down</span></div>
+    </div>
+  </div>
+
+  <div>
+    <div style="font-size:11px;color:#C9A84C;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Typography</div>
+    <div style="color:#6A6254;">
+      <div><span style="color:#E4D9BC;font-family:'Amiri',serif;font-size:18px;">Amiri</span> — rank numbers & titles</div>
+      <div style="margin-top:4px;"><span style="color:#E4D9BC;">Cairo</span> — names, labels, UI</div>
+    </div>
+  </div>
+
+  <div>
+    <div style="font-size:11px;color:#C9A84C;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Interaction</div>
+    <div style="color:#6A6254;">
+      Tap rank badge → sheet slides up<br>
+      Tap backdrop or drag down → close<br>
+      Sheet auto-scrolls to your row
+    </div>
+  </div>
+
+  <div>
+    <div style="font-size:11px;color:#C9A84C;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Design risk</div>
+    <div style="color:#6A6254;">
+      Amiri (Quranic manuscript typeface) for rank numerals — numbers that feel meaningful, not scored. Tension with modern mobile chrome is intentional.
+    </div>
+  </div>
+</div>
+
+<script>
+const players = [
+  { rank:1, prev:1,  name:'محمد علي',        country:'السعودية', flag:'🇸🇦', score:2847, me:false },
+  { rank:2, prev:4,  name:'أحمد خالد',        country:'مصر',      flag:'🇪🇬', score:2341, me:false },
+  { rank:3, prev:2,  name:'فاطمة محمد',       country:'المغرب',   flag:'🇲🇦', score:1987, me:false },
+  { rank:4, prev:7,  name:'عبدالله السعيد',   country:'الكويت',   flag:'🇰🇼', score:1756, me:false },
+  { rank:5, prev:5,  name:'نور الدين',        country:'تونس',     flag:'🇹🇳', score:1543, me:false },
+  { rank:6, prev:7,  name:'خالد المغربي',     country:'مصر',      flag:'🇪🇬', score:1234, me:true  },
+  { rank:7, prev:3,  name:'سعد الحمدان',      country:'السعودية', flag:'🇸🇦', score:1089, me:false },
+  { rank:8, prev:9,  name:'مريم الزهراوي',    country:'المغرب',   flag:'🇲🇦', score: 987, me:false },
+  { rank:9, prev:6,  name:'يوسف كمال',        country:'تركيا',    flag:'🇹🇷', score: 876, me:false },
+  { rank:10,prev:12, name:'زينب العمري',       country:'الجزائر',  flag:'🇩🇿', score: 765, me:false },
+];
+
+function changeInfo(rank, prev) {
+  const d = prev - rank;
+  if (d === 0) return { cls:'same', arrow:'—', label:'' };
+  if (d > 0)   return { cls:'up',   arrow:'▲', label:`+${d}` };
+  return              { cls:'dn',   arrow:'▼', label:`${d}` };
+}
+
+function fmt(n) { return n.toLocaleString('ar-EG'); }
+
+function buildList() {
+  const list = document.getElementById('lbList');
+  const meIdx = players.findIndex(p => p.me);
+
+  players.forEach((p, i) => {
+    if (i > 0 && i === meIdx && meIdx > 3) {
+      const sep = document.createElement('div');
+      sep.className = 'sep';
+      sep.innerHTML = `<div class="sep-ln"></div><div class="sep-tx">• • •</div><div class="sep-ln"></div>`;
+      list.appendChild(sep);
+    }
+
+    const ch = changeInfo(p.rank, p.prev);
+
+    const row = document.createElement('div');
+    row.className = 'lb-row' + (p.me ? ' is-me' : '');
+    row.setAttribute('data-rank', p.rank);
+
+    const crownHtml = p.rank === 1 ? '<span class="crown">👑</span>' : '';
+    const changeHtml = ch.cls === 'same'
+      ? `<span class="rchange same">—</span>`
+      : `<span class="rchange ${ch.cls}">${ch.arrow} ${ch.label}</span>`;
+
+    row.innerHTML = `
+      <div class="r-col">
+        <div class="rnum">${p.rank}</div>
+        ${changeHtml}
+      </div>
+      <div class="u-col">
+        <div class="avatar">${crownHtml}${p.flag}</div>
+        <div>
+          <div class="uname">${p.name}</div>
+          <div class="uctry">${p.country}</div>
+        </div>
+      </div>
+      <div class="s-col">
+        <span class="sval">${fmt(p.score)}</span>
+        <span class="slbl">صلاة</span>
+      </div>
+    `;
+    list.appendChild(row);
+  });
+}
+
+function openSheet() {
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('lbSheet').classList.add('open');
+  setTimeout(() => {
+    const meRow = document.querySelector('.lb-row.is-me');
+    if (meRow) meRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 420);
+}
+
+function closeSheet() {
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('lbSheet').classList.remove('open');
+}
+
+buildList();
+</script>
+</body>
+</html>

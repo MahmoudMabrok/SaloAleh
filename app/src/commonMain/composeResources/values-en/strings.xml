@@ -92,6 +92,9 @@
     <string name="dhikr_freed_today">Necks freed today</string>
     <string name="dhikr_milestone_title">%1$d times complete!</string>
     <string name="dhikr_milestone_subtitle">Masha Allah!</string>
+    <string name="dhikr_leaderboard_title">Top Players</string>
+    <string name="dhikr_leaderboard_rank_new">New</string>
+    <string name="dhikr_leaderboard_empty">No data yet</string>
 
     <!-- Info Sheet Supporter -->
     <string name="info_sheet_supporter_label">⭐ Supporter</string>

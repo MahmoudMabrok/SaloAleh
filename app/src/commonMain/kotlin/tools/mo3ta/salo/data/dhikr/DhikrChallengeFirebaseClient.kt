@@ -7,6 +7,7 @@ import dev.gitlive.firebase.database.database
 import kotlinx.coroutines.flow.first
 import tools.mo3ta.salo.domain.DHIKR_CHALLENGE_DAILY_GOAL
 import tools.mo3ta.salo.domain.DhikrChallengeDayStats
+import tools.mo3ta.salo.domain.DhikrLeaderboardEntry
 
 class DhikrChallengeFirebaseClient {
 
@@ -86,6 +87,35 @@ class DhikrChallengeFirebaseClient {
         }
     }
 
+    suspend fun fetchLeaderboard(dateKey: String): Result<List<DhikrLeaderboardEntry>> {
+        log.d { "fetchLeaderboard[$dateKey]" }
+        return runCatching {
+            val snap = Firebase.database.reference("$ROOT_PATH/$dateKey/$LEADERBOARD_PATH")
+                .valueEvents
+                .first()
+            if (!snap.exists) return@runCatching emptyList()
+            val map = snap.value as? Map<*, *> ?: return@runCatching emptyList()
+            map.entries
+                .sortedBy { it.key.toString().toIntOrNull() ?: Int.MAX_VALUE }
+                .mapNotNull { (_, v) ->
+                    val entry = v as? Map<*, *> ?: return@mapNotNull null
+                    val uid = entry[UID_KEY] as? String ?: return@mapNotNull null
+                    DhikrLeaderboardEntry(
+                        uid = uid,
+                        countryCode = entry[COUNTRY_CODE_KEY] as? String ?: "",
+                        count = (entry[COUNT_KEY] as? Number)?.toInt() ?: 0,
+                        rank = (entry[RANK_KEY] as? Number)?.toInt() ?: 0,
+                        rankChange = entry[RANK_CHANGE_KEY] as? String ?: "same",
+                    )
+                }
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "fetchLeaderboard[$dateKey] ${it.size} entries" } },
+                onFailure = { log.e(it) { "fetchLeaderboard[$dateKey] failed" } },
+            )
+        }
+    }
+
     private fun dayPath(dateKey: String) = "$ROOT_PATH/$dateKey"
     private fun usersPath(dateKey: String) = "$ROOT_PATH/$dateKey/$USERS_PATH"
     private fun userPath(dateKey: String, uid: String) = "${usersPath(dateKey)}/$uid"
@@ -93,8 +123,10 @@ class DhikrChallengeFirebaseClient {
     private companion object {
         const val ROOT_PATH = "100_challenge"
         const val USERS_PATH = "users"
+        const val LEADERBOARD_PATH = "leaderboard"
         const val COUNT_KEY = "count"
         const val RANK_KEY = "rank"
+        const val RANK_CHANGE_KEY = "rankChange"
         const val DATA_KEY = "data"
         const val UID_KEY = "uid"
         const val DATE_KEY = "date"

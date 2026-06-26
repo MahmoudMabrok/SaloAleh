@@ -31,6 +31,25 @@ class DhikrChallengeViewModel(
     private val _state = MutableStateFlow(DhikrChallengeUiState())
     val state: StateFlow<DhikrChallengeUiState> = _state.asStateFlow()
 
+    fun onLeaderboardOpened() {
+        _state.update { it.copy(showLeaderboard = true, isLeaderboardLoading = true) }
+        viewModelScope.launch {
+            val uid = sessionStore.getOrCreateUid()
+            val dateKey = today().toString()
+            firebaseClient.fetchLeaderboard(dateKey)
+                .onSuccess { entries ->
+                    _state.update { it.copy(leaderboard = entries, isLeaderboardLoading = false, currentUid = uid) }
+                }
+                .onFailure {
+                    _state.update { it.copy(isLeaderboardLoading = false) }
+                }
+        }
+    }
+
+    fun onLeaderboardClosed() {
+        _state.update { it.copy(showLeaderboard = false) }
+    }
+
     fun onScreenEntered() {
         val today = today()
         viewModelScope.launch {

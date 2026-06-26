@@ -66,6 +66,9 @@
 
     <string name="dhikr_milestone_title">%1$d بار مکمل!</string>
     <string name="dhikr_milestone_subtitle">ما شاء اللہ!</string>
+    <string name="dhikr_leaderboard_title">سرفہرست</string>
+    <string name="dhikr_leaderboard_rank_new">نیا</string>
+    <string name="dhikr_leaderboard_empty">ابھی کوئی ڈیٹا نہیں</string>
 
     <!-- Info Sheet Supporter -->
     <string name="info_sheet_supporter_label">⭐ سپورٹر</string>
