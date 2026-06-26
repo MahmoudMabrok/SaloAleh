@@ -95,6 +95,7 @@
     <string name="dhikr_leaderboard_title">المتصدرون</string>
     <string name="dhikr_leaderboard_rank_new">جديد</string>
     <string name="dhikr_leaderboard_empty">لا توجد بيانات بعد</string>
+    <string name="dhikr_rank_unranked">اضغط لرؤية المتصدرين</string>
 
     <!-- Info Sheet Supporter -->
     <string name="info_sheet_supporter_label">⭐ داعم</string>
@@ -542,4 +543,6 @@
     <string name="salawat_variant_announcement_dismiss">ليس الآن</string>
     <string name="leaderboard_score_label">صلاة</string>
     <string name="leaderboard_separator_label">• • •</string>
+    <string name="notif_message_cta">عرض المسابقة</string>
+    <string name="notif_message_cta_none">حسناً</string>
 </resources>

@@ -56,12 +56,16 @@ import tools.mo3ta.salo.analytics.BillingAnalytics
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
+import tools.mo3ta.salo.notification.NotificationAction
+import tools.mo3ta.salo.notification.NotificationMessage
+import tools.mo3ta.salo.ui.NotificationMessageDialog
 
 @Composable
 fun App(
     engagementData: EngagementData? = null,
     onNotificationPermissionRequest: (() -> Unit)? = null,
     newVersionAvailable: String? = null,
+    notificationMessage: NotificationMessage? = null,
 ) {
     val languageStore = koinInject<LanguageStore>()
     val storedLang = languageStore.language
@@ -81,6 +85,10 @@ fun App(
             )
         }
         var showAchievements by remember { mutableStateOf(false) }
+        var pendingNotificationMessage by remember(notificationMessage) {
+            mutableStateOf(notificationMessage)
+        }
+        var openLeaderboardSheet by remember { mutableStateOf(false) }
         var showSettings by remember { mutableStateOf(false) }
         var showHadithList by remember { mutableStateOf(false) }
         var showOnboarding by remember { mutableStateOf(false) }
@@ -143,6 +151,8 @@ fun App(
                 onOpenPaywall = { showPaywall = true },
                 announcementsDone = takbeerAnnouncementDone && nicknameAnnouncementDone && salawatVariantAnnouncementDone,
                 viewModel = mohamedLoversViewModel,
+                openInfoSheet = openLeaderboardSheet,
+                onInfoSheetOpened = { openLeaderboardSheet = false },
             )
         }
 
@@ -342,6 +352,20 @@ fun App(
         var pendingVersionUpdate by remember(newVersionAvailable) {
             mutableStateOf(newVersionAvailable)
         }
+        pendingNotificationMessage?.let { msg ->
+            NotificationMessageDialog(
+                message = msg,
+                onDismiss = {
+                    pendingNotificationMessage = null
+                    when (msg.action) {
+                        NotificationAction.OPEN_LEADERBOARD -> openLeaderboardSheet = true
+                        NotificationAction.OPEN_ACHIEVEMENTS -> showAchievements = true
+                        NotificationAction.NONE -> Unit
+                    }
+                },
+            )
+        }
+
         pendingVersionUpdate?.let { version ->
             VersionUpdateDialog(
                 version = version,

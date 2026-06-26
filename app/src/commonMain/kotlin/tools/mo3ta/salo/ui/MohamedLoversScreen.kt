@@ -166,6 +166,8 @@ fun MohamedLoversScreen(
     onOpenDhikrRewards: () -> Unit = {},
     onOpenPaywall: () -> Unit = {},
     announcementsDone: Boolean = true,
+    openInfoSheet: Boolean = false,
+    onInfoSheetOpened: () -> Unit = {},
     viewModel: MohamedLoversViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -249,6 +251,12 @@ fun MohamedLoversScreen(
     var archCenter by remember { mutableStateOf<Offset?>(null) }
     var isLit by remember { mutableStateOf(false) }
     var infoSheetOpen by remember { mutableStateOf(false) }
+    LaunchedEffect(openInfoSheet) {
+        if (openInfoSheet) {
+            infoSheetOpen = true
+            onInfoSheetOpened()
+        }
+    }
     var badgeTiersSheetOpen by remember { mutableStateOf(false) }
     var badgeDialogKey by remember { mutableStateOf<String?>(null) }
     var showRankTooltip by remember { mutableStateOf(false) }

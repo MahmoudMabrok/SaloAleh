@@ -50,6 +50,11 @@ class SaloFirebaseMessagingService : FirebaseMessagingService() {
             message.data[MainActivity.EXTRA_NEW_VERSION]?.let {
                 putExtra(MainActivity.EXTRA_NEW_VERSION, it)
             }
+            putExtra(MainActivity.EXTRA_NOTIF_TITLE, title)
+            putExtra(MainActivity.EXTRA_NOTIF_BODY, body)
+            message.data["notification_action"]?.let {
+                putExtra(MainActivity.EXTRA_NOTIF_ACTION, it)
+            }
         }
         val pendingIntent = PendingIntent.getActivity(
             this, 0,

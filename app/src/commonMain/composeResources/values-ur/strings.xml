@@ -69,6 +69,7 @@
     <string name="dhikr_leaderboard_title">سرفہرست</string>
     <string name="dhikr_leaderboard_rank_new">نیا</string>
     <string name="dhikr_leaderboard_empty">ابھی کوئی ڈیٹا نہیں</string>
+    <string name="dhikr_rank_unranked">لیڈر بورڈ دیکھنے کے لیے ٹیپ کریں</string>
 
     <!-- Info Sheet Supporter -->
     <string name="info_sheet_supporter_label">⭐ سپورٹر</string>
@@ -493,4 +494,6 @@
     <string name="salawat_variant_announcement_dismiss">ابھی نہیں</string>
     <string name="leaderboard_score_label">درود</string>
     <string name="leaderboard_separator_label">• • •</string>
+    <string name="notif_message_cta">مقابلہ دیکھیں</string>
+    <string name="notif_message_cta_none">ٹھیک ہے</string>
 </resources>

@@ -26,7 +26,9 @@ import tools.mo3ta.salo.data.notification.NotificationSettingsStore
 import tools.mo3ta.salo.data.billing.AndroidBillingManager
 import tools.mo3ta.salo.data.billing.BillingManager
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
+import tools.mo3ta.salo.notification.NotificationAction
 import tools.mo3ta.salo.notification.NotificationChannels
+import tools.mo3ta.salo.notification.NotificationMessage
 import tools.mo3ta.salo.notification.NotificationScheduler
 
 class MainActivity : ComponentActivity() {
@@ -95,6 +97,7 @@ class MainActivity : ComponentActivity() {
         val finalEngagementData = engagementData.copy(shouldReshowFcmAlert = shouldReshowFcmAlert)
 
         val newVersionFromNotification = extractNewVersionFromIntent(intent)
+        val notificationMessage = extractNotificationMessageFromIntent(intent)
 
         setContent {
             App(
@@ -103,6 +106,7 @@ class MainActivity : ComponentActivity() {
                     requestNotificationPermissionIfNeeded()
                 },
                 newVersionAvailable = newVersionFromNotification,
+                notificationMessage = notificationMessage,
             )
         }
     }
@@ -112,10 +116,21 @@ class MainActivity : ComponentActivity() {
         return intent.getStringExtra(EXTRA_NEW_VERSION) ?: ""
     }
 
+    private fun extractNotificationMessageFromIntent(intent: Intent?): NotificationMessage? {
+        if (intent?.getStringExtra(EXTRA_NOTIFICATION_TYPE) == NOTIFICATION_TYPE_VERSION_UPDATE) return null
+        val title = intent?.getStringExtra(EXTRA_NOTIF_TITLE) ?: return null
+        val body = intent.getStringExtra(EXTRA_NOTIF_BODY) ?: return null
+        val action = NotificationAction.from(intent.getStringExtra(EXTRA_NOTIF_ACTION))
+        return NotificationMessage(title, body, action)
+    }
+
     companion object {
         const val EXTRA_NOTIFICATION_TYPE = "notification_type"
         const val EXTRA_NEW_VERSION = "new_version"
         const val NOTIFICATION_TYPE_VERSION_UPDATE = "version_update"
+        const val EXTRA_NOTIF_TITLE = "notif_title"
+        const val EXTRA_NOTIF_BODY = "notif_body"
+        const val EXTRA_NOTIF_ACTION = "notif_action"
     }
 
     // Validates the FCM token at app start. After an Android Auto Backup restore,

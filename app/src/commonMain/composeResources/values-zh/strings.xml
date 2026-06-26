@@ -69,6 +69,7 @@
     <string name="dhikr_leaderboard_title">排行榜</string>
     <string name="dhikr_leaderboard_rank_new">新</string>
     <string name="dhikr_leaderboard_empty">暂无数据</string>
+    <string name="dhikr_rank_unranked">点击查看排行榜</string>
 
     <!-- Info Sheet Supporter -->
     <string name="info_sheet_supporter_label">⭐ 支持者</string>
@@ -493,4 +494,6 @@
     <string name="salawat_variant_announcement_dismiss">暂不</string>
     <string name="leaderboard_score_label">次祈祷</string>
     <string name="leaderboard_separator_label">• • •</string>
+    <string name="notif_message_cta">查看竞赛</string>
+    <string name="notif_message_cta_none">好的</string>
 </resources>
