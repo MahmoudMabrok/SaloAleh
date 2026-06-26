@@ -19,6 +19,7 @@ private const val DATA_KEY = "data"
 private const val UID_KEY = "uid"
 private const val DATE_KEY = "date"
 private const val COUNTRY_CODE_KEY = "countryCode"
+private const val NICKNAME_KEY = "nickname"
 private const val GOAL_KEY = "goal"
 private const val COMPLETED_KEY = "completed"
 private const val UPDATED_AT_KEY = "updatedAt"
@@ -152,6 +153,7 @@ private fun Any?.toDhikrLeaderboardEntry(): DhikrLeaderboardEntry? {
         count = (entry[COUNT_KEY] as? Number)?.toInt() ?: 0,
         rank = (entry[RANK_KEY] as? Number)?.toInt() ?: 0,
         rankChange = entry[RANK_CHANGE_KEY] as? String ?: "same",
+        nickname = entry[NICKNAME_KEY] as? String ?: "",
     )
 }
 

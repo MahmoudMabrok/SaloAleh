@@ -213,9 +213,22 @@ private fun LeaderboardRow(
 
         Spacer(Modifier.width(12.dp))
 
+        // Nickname (if present)
+        if (entry.nickname.isNotBlank()) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = entry.nickname,
+                    color = if (isCurrentUser) DhikrColors.Green else DhikrColors.Ink,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                )
+            }
+        } else {
+            Spacer(Modifier.weight(1f))
+        }
+
         // Score (right-aligned, pushed to end)
         Column(
-            modifier = Modifier.weight(1f),
             horizontalAlignment = Alignment.End,
         ) {
             Text(

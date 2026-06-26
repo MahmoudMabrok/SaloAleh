@@ -14,4 +14,5 @@ data class DhikrLeaderboardEntry(
     val count: Int,
     val rank: Int,
     val rankChange: String, // "up" | "down" | "same" | "new"
+    val nickname: String = "",
 )

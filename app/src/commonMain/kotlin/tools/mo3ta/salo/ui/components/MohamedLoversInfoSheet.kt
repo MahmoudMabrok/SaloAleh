@@ -755,13 +755,9 @@ private fun LeaderboardRow(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = countryCode,
-                        style = TextStyle(
-                            fontFamily = MohamedLoversFonts.body,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.W700,
-                        ),
-                        color = rankColor,
+                        text = countryCodeToFlag(countryCode),
+                        fontSize = 18.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     )
                 }
             }
@@ -1044,6 +1040,20 @@ private fun Long.formatCount(): String {
     val result = StringBuilder()
     s.reversed().forEachIndexed { i, c -> if (i > 0 && i % 3 == 0) result.append(','); result.append(c) }
     return result.reverse().toString()
+}
+
+private fun countryCodeToFlag(code: String): String {
+    if (code.length < 2) return "🌍"
+    val base = 0x1F1E6 - 'A'.code
+    return buildString {
+        for (char in code.uppercase().take(2)) {
+            val cp = base + char.code
+            val high = ((cp - 0x10000) ushr 10) + 0xD800
+            val low = ((cp - 0x10000) and 0x3FF) + 0xDC00
+            append(high.toChar())
+            append(low.toChar())
+        }
+    }
 }
 
 private fun bodyStyle() = TextStyle(
