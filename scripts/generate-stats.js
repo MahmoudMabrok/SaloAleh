@@ -134,6 +134,7 @@ async function main() {
   console.log(`stats/${dateStr}.json written:`, stats);
 
   await sendDailyTop3Notifications(db, dailyLeaderboardSnap);
+  await sendDhikrChallengeRank1Notification(db, roundKey);
 
   process.exit(0);
 }
@@ -172,6 +173,51 @@ async function sendDailyTop3Notifications(db, dailyLeaderboardSnap) {
     data: { title, body, notification_type: 'daily_top3' },
   });
   console.log(`[daily-top3] broadcast to topic "general" msgId=${msgId}`);
+}
+
+async function sendDhikrChallengeRank1Notification(db, roundKey) {
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+
+  console.log(`[dhikr-rank1] checking 100_challenge/${today}/leaderboard for rank 1 winner`);
+  const rank1Snap = await db.ref(`100_challenge/${today}/leaderboard/0`).get();
+
+  if (!rank1Snap.exists()) {
+    console.log('[dhikr-rank1] no rank 1 entry in leaderboard — skip');
+    return;
+  }
+
+  const rank1Entry = rank1Snap.val() || {};
+  const rank1Uid = rank1Entry.uid;
+  const rank1Count = rank1Entry.count || 0;
+
+  if (!rank1Uid || rank1Count === 0) {
+    console.log('[dhikr-rank1] rank 1 entry missing uid or count — skip');
+    return;
+  }
+
+  // Prefer the winner's nickname from the current weekly round player data.
+  let name = null;
+  const nicknameSnap = await db.ref(`mohamed_lovers/${roundKey}/players/${rank1Uid}/nickname`).get();
+  if (nicknameSnap.exists() && typeof nicknameSnap.val() === 'string' && nicknameSnap.val().trim()) {
+    name = nicknameSnap.val().trim();
+  }
+  if (!name) name = rank1Uid.slice(-6).toUpperCase();
+
+  const title = 'بطل اليوم في تحدي الـ١٠٠ 🏆';
+  const body = `تهانينا لـ ${name} على التصدر في تحدي الـ١٠٠ ذكر اليوم بـ ${rank1Count} ذكراً — جزاك الله خيراً!`;
+
+  try {
+    const msgId = await admin.messaging().send({
+      topic: 'general',
+      notification: { title, body },
+      data: { title, body, notification_type: 'dhikr_challenge_rank1' },
+    });
+    console.log(`[dhikr-rank1] sent to topic "general" uid=${rank1Uid} name="${name}" count=${rank1Count} msgId=${msgId}`);
+  } catch (e) {
+    console.error(`[dhikr-rank1] send failed: ${e.message}`);
+  }
 }
 
 main().catch(err => { console.error(err); process.exit(1); });
