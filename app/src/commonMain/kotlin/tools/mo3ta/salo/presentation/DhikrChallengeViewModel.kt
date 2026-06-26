@@ -36,20 +36,20 @@ class DhikrChallengeViewModel(
         viewModelScope.launch {
             val uid = sessionStore.getOrCreateUid()
 
-            // Push any previous day's count that wasn't synced yet
+            // Flush any previous day's pending that wasn't synced before the day rolled over
             val prev = store.previousEntry(today)
             if (prev != null && firebaseClient.isConfigured()) {
-                val (prevDate, prevCount) = prev
+                val (prevDate, prevTotal) = prev
                 val countryCode = countryCodeProvider.get()
-                firebaseClient.writeUserDay(prevDate, uid, prevCount, countryCode)
+                val result = firebaseClient.writeUserDay(prevDate, uid, prevTotal, countryCode)
+                if (result.isSuccess) store.clearPreviousPending()
             }
 
-            val count = store.todayCount(today)
-            // Allow tapping immediately with local count — Firebase sync is background-only
+            // Show local total immediately — tapping is never gated on network
             _state.update {
                 it.copy(
                     dateKey = today.toString(),
-                    todayCount = count,
+                    todayCount = store.todayCount(today),
                     isLoading = false,
                     errorMessage = null,
                 )
@@ -57,15 +57,12 @@ class DhikrChallengeViewModel(
 
             if (!firebaseClient.isConfigured()) return@launch
 
-            // Merge remote count in background without blocking the UI
+            // Background: fetch remote baseline and advance local if remote is higher
+            // (e.g. user counted on another device or the previous session synced more)
             val remoteCount = firebaseClient.fetchUserCount(today.toString(), uid).getOrNull()
             if (remoteCount != null) {
-                val currentCount = store.todayCount(today)
-                val merged = maxOf(currentCount, remoteCount)
-                if (merged != currentCount) {
-                    store.setTodayCount(today, merged)
-                    _state.update { it.copy(todayCount = merged) }
-                }
+                store.updateRemoteBaseline(today, remoteCount)
+                _state.update { it.copy(todayCount = store.todayCount(today)) }
             }
 
             refreshStats(today.toString(), uid)
@@ -93,7 +90,7 @@ class DhikrChallengeViewModel(
 
     fun resetToday() {
         val today = today()
-        val updated = store.setTodayCount(today, 0)
+        val updated = store.resetToday(today)
         _state.update {
             it.copy(
                 dateKey = today.toString(),
@@ -109,13 +106,14 @@ class DhikrChallengeViewModel(
             syncMutex.withLock {
                 if (!firebaseClient.isConfigured()) return@withLock
                 val today = today()
-                val dateKey = today.toString()
-                val count = store.todayCount(today)
+                val total = store.todayCount(today)
+                if (total == 0) return@withLock
                 val uid = sessionStore.getOrCreateUid()
                 val countryCode = countryCodeProvider.get()
 
                 _state.update { it.copy(isSyncing = true) }
-                val result = firebaseClient.writeUserDay(dateKey, uid, count, countryCode)
+                val result = firebaseClient.writeUserDay(today.toString(), uid, total, countryCode)
+                if (result.isSuccess) store.onSyncSuccess(today, total)
                 _state.update {
                     it.copy(
                         isSyncing = false,
