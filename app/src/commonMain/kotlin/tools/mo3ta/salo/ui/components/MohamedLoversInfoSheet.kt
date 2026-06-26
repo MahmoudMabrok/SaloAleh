@@ -604,11 +604,17 @@ private fun LeaderboardCard(
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.65f),
             )
         } else {
+            val isFriday = remember {
+                Clock.System.now()
+                    .toLocalDateTime(TimeZone.of("Africa/Cairo"))
+                    .dayOfWeek == kotlinx.datetime.DayOfWeek.FRIDAY
+            }
             Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
                 topPlayers.forEach { entry ->
                     LeaderboardRow(
                         entry = entry,
                         isPremium = isPremium,
+                        isFriday = isFriday,
                         onSupporterClick = onSupporterClick,
                         onUserClick = onUserClick,
                         onBadgeClick = onBadgeClick,
@@ -634,6 +640,7 @@ private fun LeaderboardCard(
                 LeaderboardRow(
                     entry = selfEntry,
                     isPremium = isPremium,
+                    isFriday = isFriday,
                     onSupporterClick = onSupporterClick,
                     onUserClick = onUserClick,
                     onBadgeClick = onBadgeClick,
@@ -672,6 +679,7 @@ private fun LeaderboardCard(
 private fun LeaderboardRow(
     entry: MohamedLoversLeaderboardEntry,
     isPremium: Boolean = false,
+    isFriday: Boolean = false,
     onSupporterClick: () -> Unit = {},
     onUserClick: (uid: String, displayTag: String) -> Unit = { _, _ -> },
     onBadgeClick: (String) -> Unit = {},
@@ -802,9 +810,6 @@ private fun LeaderboardRow(
             if (entry.scoreMasked && !isMe) {
                 MaskedScore(entry.totalCount)
             } else {
-                val isFriday = Clock.System.now()
-                    .toLocalDateTime(TimeZone.of("Africa/Cairo"))
-                    .dayOfWeek == kotlinx.datetime.DayOfWeek.FRIDAY
                 if (isMe || !isFriday || isPremium) {
                     Text(
                         text = entry.totalCount.toString(),

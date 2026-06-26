@@ -28,6 +28,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import android.app.AlarmManager
 import android.app.Activity
 import android.content.ClipData
@@ -169,20 +172,20 @@ actual fun setAppLocale(languageTag: String) {
 actual fun shareBitmap(imageBitmap: ImageBitmap) {
     val context = AndroidAppContext.get()
     val androidBitmap = imageBitmap.asAndroidBitmap()
-
-    val shareDir = java.io.File(context.cacheDir, "share").also { it.mkdirs() }
-    val file = java.io.File(shareDir, "share_card.png")
-    file.outputStream().use { androidBitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
-
-    val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
-    val sendIntent = Intent(Intent.ACTION_SEND).apply {
-        type = "image/png"
-        putExtra(Intent.EXTRA_STREAM, uri)
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    GlobalScope.launch(Dispatchers.IO) {
+        val shareDir = java.io.File(context.cacheDir, "share").also { it.mkdirs() }
+        val file = java.io.File(shareDir, "share_card.png")
+        file.outputStream().use { androidBitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "image/png"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(sendIntent, null).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        })
     }
-    context.startActivity(Intent.createChooser(sendIntent, null).apply {
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    })
 }
 
 @Composable
