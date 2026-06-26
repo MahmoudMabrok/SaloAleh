@@ -90,6 +90,8 @@
     <string name="dhikr_tap_hint">اضغط في أي مكان للذكر</string>
     <string name="dhikr_reward_crown_label">الأعظم</string>
     <string name="dhikr_freed_today">رقاب أُعتقت اليوم</string>
+    <string name="dhikr_milestone_title">أتممت %1$d مرة!</string>
+    <string name="dhikr_milestone_subtitle">ما شاء الله!</string>
 
     <!-- Info Sheet Supporter -->
     <string name="info_sheet_supporter_label">⭐ داعم</string>

@@ -64,6 +64,9 @@
     <string name="main_screen_cd_takbeer">تکبیر سیشن</string>
     <string name="main_screen_tooltip_info">راؤنڈ کی معلومات اور کھیلنے کا طریقہ</string>
 
+    <string name="dhikr_milestone_title">%1$d بار مکمل!</string>
+    <string name="dhikr_milestone_subtitle">ما شاء اللہ!</string>
+
     <!-- Info Sheet Supporter -->
     <string name="info_sheet_supporter_label">⭐ سپورٹر</string>
 
