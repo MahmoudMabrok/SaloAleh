@@ -135,6 +135,7 @@ async function main() {
 
   await sendDailyTop3Notifications(db, dailyLeaderboardSnap);
   await sendDhikrChallengeRank1Notification(db, roundKey);
+  await aggregateAndCleanDhikrChallenge(db);
 
   process.exit(0);
 }
@@ -218,6 +219,33 @@ async function sendDhikrChallengeRank1Notification(db, roundKey) {
   } catch (e) {
     console.error(`[dhikr-rank1] send failed: ${e.message}`);
   }
+}
+
+async function aggregateAndCleanDhikrChallenge(db) {
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+
+  const [todayTotalSnap, globalTotalSnap] = await Promise.all([
+    db.ref(`100_challenge/${today}/totalTodayDhikr`).get(),
+    db.ref('100_challenge/totalDhkr').get(),
+  ]);
+
+  const todayTotal  = todayTotalSnap.val()  || 0;
+  const globalTotal = globalTotalSnap.val() || 0;
+
+  console.log(`[dhikr-aggregate] today=${today} todayTotal=${todayTotal} globalBefore=${globalTotal}`);
+
+  if (todayTotal === 0) {
+    console.log('[dhikr-aggregate] todayTotal is 0 — skip update and delete');
+    return;
+  }
+
+  await db.ref('100_challenge/totalDhkr').set(globalTotal + todayTotal);
+  console.log(`[dhikr-aggregate] totalDhkr updated: ${globalTotal} → ${globalTotal + todayTotal}`);
+
+  await db.ref(`100_challenge/${today}`).remove();
+  console.log(`[dhikr-aggregate] deleted 100_challenge/${today}`);
 }
 
 main().catch(err => { console.error(err); process.exit(1); });

@@ -43,6 +43,10 @@
     },
 
     "100_challenge": {
+      "totalDhkr": {
+        ".read": true,
+        ".write": false
+      },
       "$date": {
         "participantCount": {
           ".read": true,
