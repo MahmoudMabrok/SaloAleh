@@ -90,6 +90,8 @@
     <string name="dhikr_tap_hint">Tap anywhere to count</string>
     <string name="dhikr_reward_crown_label">Supreme</string>
     <string name="dhikr_freed_today">Necks freed today</string>
+    <string name="dhikr_milestone_title">%1$d times complete!</string>
+    <string name="dhikr_milestone_subtitle">Masha Allah!</string>
 
     <!-- Info Sheet Supporter -->
     <string name="info_sheet_supporter_label">⭐ Supporter</string>

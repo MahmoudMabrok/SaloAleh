@@ -78,6 +78,7 @@ import tools.mo3ta.salo.presentation.DhikrChallengeViewModel
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.dhikr.DhikrColors
 import tools.mo3ta.salo.ui.dhikr.DhikrLinearProgress
+import tools.mo3ta.salo.ui.dhikr.DhikrMilestoneCelebration
 import tools.mo3ta.salo.ui.dhikr.DhikrPanel
 import tools.mo3ta.salo.ui.dhikr.DhikrProgressRing
 import tools.mo3ta.salo.ui.dhikr.DhikrSpacing
@@ -156,6 +157,13 @@ fun DhikrRewardsScreen(
                 }
             }
         }
+
+        DhikrMilestoneCelebration(
+            milestone = state.celebrationMilestone,
+            visible = state.showCelebration,
+            onDismiss = { viewModel.onCelebrationDismissed() },
+            modifier = Modifier.fillMaxSize(),
+        )
     }
 }
 

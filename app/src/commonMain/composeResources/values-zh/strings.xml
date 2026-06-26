@@ -64,6 +64,9 @@
     <string name="main_screen_cd_takbeer">念大赞词</string>
     <string name="main_screen_tooltip_info">轮次信息和玩法说明</string>
 
+    <string name="dhikr_milestone_title">完成 %1$d 次!</string>
+    <string name="dhikr_milestone_subtitle">马沙安拉！</string>
+
     <!-- Info Sheet Supporter -->
     <string name="info_sheet_supporter_label">⭐ 支持者</string>
 

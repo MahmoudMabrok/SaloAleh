@@ -45,25 +45,28 @@ class DhikrChallengeViewModel(
             }
 
             val count = store.todayCount(today)
+            // Allow tapping immediately with local count — Firebase sync is background-only
             _state.update {
                 it.copy(
                     dateKey = today.toString(),
                     todayCount = count,
-                    isLoading = firebaseClient.isConfigured(),
+                    isLoading = false,
                     errorMessage = null,
                 )
             }
 
             if (!firebaseClient.isConfigured()) return@launch
 
-            // Push today's count (merging with remote)
-            val mergedCount = firebaseClient.fetchUserCount(today.toString(), uid)
-                .getOrNull()
-                ?.let { remoteCount -> maxOf(count, remoteCount) }
-                ?: count
-
-            if (mergedCount != count) store.setTodayCount(today, mergedCount)
-            _state.update { it.copy(todayCount = mergedCount, isLoading = false) }
+            // Merge remote count in background without blocking the UI
+            val remoteCount = firebaseClient.fetchUserCount(today.toString(), uid).getOrNull()
+            if (remoteCount != null) {
+                val currentCount = store.todayCount(today)
+                val merged = maxOf(currentCount, remoteCount)
+                if (merged != currentCount) {
+                    store.setTodayCount(today, merged)
+                    _state.update { it.copy(todayCount = merged) }
+                }
+            }
 
             refreshStats(today.toString(), uid)
         }
@@ -72,13 +75,20 @@ class DhikrChallengeViewModel(
     fun onDhikrTap() {
         val today = today()
         val updated = store.incrementToday(today)
+        val isMilestone = updated > 0 && updated % 100 == 0
         _state.update {
             it.copy(
                 dateKey = today.toString(),
                 todayCount = updated,
                 errorMessage = null,
+                showCelebration = isMilestone || it.showCelebration,
+                celebrationMilestone = if (isMilestone) updated else it.celebrationMilestone,
             )
         }
+    }
+
+    fun onCelebrationDismissed() {
+        _state.update { it.copy(showCelebration = false) }
     }
 
     fun resetToday() {

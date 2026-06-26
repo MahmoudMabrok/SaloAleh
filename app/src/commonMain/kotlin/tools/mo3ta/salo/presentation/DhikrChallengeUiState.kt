@@ -12,4 +12,6 @@ data class DhikrChallengeUiState(
     val isLoading: Boolean = true,
     val isSyncing: Boolean = false,
     val errorMessage: String? = null,
+    val showCelebration: Boolean = false,
+    val celebrationMilestone: Int = 0,
 )
