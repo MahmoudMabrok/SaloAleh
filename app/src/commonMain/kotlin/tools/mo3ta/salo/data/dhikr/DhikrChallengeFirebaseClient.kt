@@ -9,6 +9,22 @@ import tools.mo3ta.salo.domain.DHIKR_CHALLENGE_DAILY_GOAL
 import tools.mo3ta.salo.domain.DhikrChallengeDayStats
 import tools.mo3ta.salo.domain.DhikrLeaderboardEntry
 
+private const val ROOT_PATH = "100_challenge"
+private const val USERS_PATH = "users"
+private const val LEADERBOARD_PATH = "leaderboard"
+private const val COUNT_KEY = "count"
+private const val RANK_KEY = "rank"
+private const val RANK_CHANGE_KEY = "rankChange"
+private const val DATA_KEY = "data"
+private const val UID_KEY = "uid"
+private const val DATE_KEY = "date"
+private const val COUNTRY_CODE_KEY = "countryCode"
+private const val GOAL_KEY = "goal"
+private const val COMPLETED_KEY = "completed"
+private const val UPDATED_AT_KEY = "updatedAt"
+private const val PARTICIPANT_COUNT_KEY = "participantCount"
+private const val TOTAL_TODAY_DHIKR_KEY = "totalTodayDhikr"
+
 class DhikrChallengeFirebaseClient {
 
     private val log = Logger.withTag("DhikrChallengeFirebase")
@@ -94,20 +110,10 @@ class DhikrChallengeFirebaseClient {
                 .valueEvents
                 .first()
             if (!snap.exists) return@runCatching emptyList()
-            val map = snap.value as? Map<*, *> ?: return@runCatching emptyList()
-            map.entries
-                .sortedBy { it.key.toString().toIntOrNull() ?: Int.MAX_VALUE }
-                .mapNotNull { (_, v) ->
-                    val entry = v as? Map<*, *> ?: return@mapNotNull null
-                    val uid = entry[UID_KEY] as? String ?: return@mapNotNull null
-                    DhikrLeaderboardEntry(
-                        uid = uid,
-                        countryCode = entry[COUNTRY_CODE_KEY] as? String ?: "",
-                        count = (entry[COUNT_KEY] as? Number)?.toInt() ?: 0,
-                        rank = (entry[RANK_KEY] as? Number)?.toInt() ?: 0,
-                        rankChange = entry[RANK_CHANGE_KEY] as? String ?: "same",
-                    )
-                }
+            val rawValue = snap.value
+            val entries = parseDhikrLeaderboardEntries(rawValue)
+            log.d { "fetchLeaderboard[$dateKey] rawType=${rawValue.leaderboardContainerType()} parsed=${entries.size}" }
+            entries
         }.also { result ->
             result.fold(
                 onSuccess = { log.d { "fetchLeaderboard[$dateKey] ${it.size} entries" } },
@@ -119,22 +125,39 @@ class DhikrChallengeFirebaseClient {
     private fun dayPath(dateKey: String) = "$ROOT_PATH/$dateKey"
     private fun usersPath(dateKey: String) = "$ROOT_PATH/$dateKey/$USERS_PATH"
     private fun userPath(dateKey: String, uid: String) = "${usersPath(dateKey)}/$uid"
+}
 
-    private companion object {
-        const val ROOT_PATH = "100_challenge"
-        const val USERS_PATH = "users"
-        const val LEADERBOARD_PATH = "leaderboard"
-        const val COUNT_KEY = "count"
-        const val RANK_KEY = "rank"
-        const val RANK_CHANGE_KEY = "rankChange"
-        const val DATA_KEY = "data"
-        const val UID_KEY = "uid"
-        const val DATE_KEY = "date"
-        const val COUNTRY_CODE_KEY = "countryCode"
-        const val GOAL_KEY = "goal"
-        const val COMPLETED_KEY = "completed"
-        const val UPDATED_AT_KEY = "updatedAt"
-        const val PARTICIPANT_COUNT_KEY = "participantCount"
-        const val TOTAL_TODAY_DHIKR_KEY = "totalTodayDhikr"
+internal fun parseDhikrLeaderboardEntries(value: Any?): List<DhikrLeaderboardEntry> {
+    val indexedValues = when (value) {
+        is Map<*, *> -> value.entries.map { entry ->
+            (entry.key.toString().toIntOrNull() ?: Int.MAX_VALUE) to entry.value
+        }
+        is List<*> -> value.withIndex().map { indexedValue ->
+            indexedValue.index to indexedValue.value
+        }
+        else -> emptyList()
     }
+
+    return indexedValues
+        .sortedBy { it.first }
+        .mapNotNull { (_, rawEntry) -> rawEntry.toDhikrLeaderboardEntry() }
+}
+
+private fun Any?.toDhikrLeaderboardEntry(): DhikrLeaderboardEntry? {
+    val entry = this as? Map<*, *> ?: return null
+    val uid = entry[UID_KEY] as? String ?: return null
+    return DhikrLeaderboardEntry(
+        uid = uid,
+        countryCode = entry[COUNTRY_CODE_KEY] as? String ?: "",
+        count = (entry[COUNT_KEY] as? Number)?.toInt() ?: 0,
+        rank = (entry[RANK_KEY] as? Number)?.toInt() ?: 0,
+        rankChange = entry[RANK_CHANGE_KEY] as? String ?: "same",
+    )
+}
+
+private fun Any?.leaderboardContainerType(): String = when (this) {
+    null -> "null"
+    is Map<*, *> -> "map"
+    is List<*> -> "list"
+    else -> "other"
 }
