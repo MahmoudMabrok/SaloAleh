@@ -1,0 +1,98 @@
+{
+  "allTimeSalawat": 621803,
+  "weekSalawat": 6215,
+  "todaySalawat": 6215,
+  "activePlayers": 13,
+  "countriesCount": 8,
+  "countries": [
+    "DZ",
+    "EG",
+    "FR",
+    "IT",
+    "SA",
+    "SD",
+    "US",
+    "YE"
+  ],
+  "topScore": 2500,
+  "roundKey": "2026-07-03",
+  "leaderboard": [
+    {
+      "countryCode": "DZ",
+      "dailyBadge": "crown",
+      "nickname": "Saliha",
+      "rank": 1,
+      "rankChange": "same",
+      "score": 2500,
+      "uid": "95f710fac50b769650b5494354a21344bc4ac1bdfb9dd101925154b1ded0d7d5"
+    },
+    {
+      "countryCode": "EG",
+      "nickname": "يونس",
+      "rank": 2,
+      "rankChange": "same",
+      "score": 1518,
+      "uid": "5a4b1d0ed314c539aefe3fedeb07054b2acf361dd98189761e80e047fbf80305"
+    },
+    {
+      "countryCode": "FR",
+      "rank": 3,
+      "rankChange": "same",
+      "score": 1015,
+      "uid": "8bf56836e191e7fc02250be7d0517da88d47008999de33cb6adfe21078060fa4"
+    },
+    {
+      "countryCode": "IT",
+      "dailyBadge": "dome",
+      "rank": 4,
+      "rankChange": "same",
+      "score": 600,
+      "uid": "c6c592d1a439dcda8abf90bfe57de7416d6903f4541e99f4045f42e8e548c30b"
+    },
+    {
+      "countryCode": "SA",
+      "nickname": "M.A.L",
+      "rank": 5,
+      "rankChange": "same",
+      "score": 452,
+      "uid": "092d20eeafb6b68719e19fcd41f072811d333b4f561862f7b13734d0d633db00"
+    },
+    {
+      "countryCode": "SA",
+      "rank": 6,
+      "rankChange": "same",
+      "score": 30,
+      "uid": "0d99a957f94b724a47638e6509315bfdd0bb8a13203eebd52e741e4907eaa616"
+    },
+    {
+      "countryCode": "EG",
+      "rank": 7,
+      "rankChange": "same",
+      "score": 25,
+      "uid": "abcc7116e7de1a8159c3d983d094084f83b6b26bc33873b1fc8d92a56cbf823b"
+    },
+    {
+      "countryCode": "EG",
+      "rank": 8,
+      "rankChange": "same",
+      "score": 24,
+      "uid": "baeb89ceb93c3477d0eac9e41c9e29a19e6c65352e4bbceec0266076ff5305d1"
+    },
+    {
+      "countryCode": "SD",
+      "rank": 9,
+      "rankChange": "same",
+      "score": 23,
+      "uid": "f6d13f6afcc3e30af8e92129d8dff7907533d97229e03b4c5615cc3a55a1189b"
+    },
+    {
+      "countryCode": "EG",
+      "nickname": "م.م",
+      "rank": 10,
+      "rankChange": "new",
+      "score": 14,
+      "uid": "cf0116cf9c1bf2ef2965b238768139059a0088bbb734739297ac650ede2fd00b"
+    }
+  ],
+  "updatedAt": "2026-06-26T20:46:09.555Z"
+}
