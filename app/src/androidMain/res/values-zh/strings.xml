@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="protection_notification_title">念诵守护</string>
+    <string name="protection_channel_name">念诵守护</string>
+    <string name="protection_channel_description">完成 100 次念诵后显示的持续通知</string>
+    <string name="protection_till_evening">您受到保护直到傍晚</string>
+    <string name="protection_till_morning">您受到保护直到早晨</string>
+</resources>

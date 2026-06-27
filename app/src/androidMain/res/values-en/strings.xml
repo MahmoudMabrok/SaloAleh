@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="protection_notification_title">Dhikr protection</string>
+    <string name="protection_channel_name">Dhikr protection</string>
+    <string name="protection_channel_description">Ongoing notification after completing 100 dhikr taps</string>
+    <string name="protection_till_evening">You are under divine protection till evening</string>
+    <string name="protection_till_morning">You are under divine protection till morning</string>
+</resources>

@@ -59,6 +59,15 @@
                 android:value="floating takbeer overlay for Dhul Hijjah" />
         </service>
 
+        <service
+            android:name=".notification.ProtectionNotificationService"
+            android:foregroundServiceType="specialUse"
+            android:exported="false">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="ongoing dhikr protection notification after completing 100 taps" />
+        </service>
+
         <receiver
             android:name=".notification.NotificationAlarmReceiver"
             android:exported="false" />

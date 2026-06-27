@@ -3,7 +3,6 @@ package tools.mo3ta.salo
 import android.Manifest
 import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -34,15 +33,7 @@ import tools.mo3ta.salo.notification.NotificationScheduler
 class MainActivity : ComponentActivity() {
 
     override fun attachBaseContext(newBase: Context) {
-        val prefs = newBase.getSharedPreferences("ml_session", Context.MODE_PRIVATE)
-        val lang = prefs.getString("app_language", "ar") ?: "ar"
-        val locale = java.util.Locale.forLanguageTag(lang)
-        java.util.Locale.setDefault(locale)
-        val config = Configuration(newBase.resources.configuration).apply {
-            setLocale(locale)
-            setLayoutDirection(locale)
-        }
-        super.attachBaseContext(newBase.createConfigurationContext(config))
+        super.attachBaseContext(newBase.withStoredAppLocale())
     }
 
     private val engagementStore: EngagementStore by inject()

@@ -14,6 +14,7 @@ expect fun requestExactAlarmPermission()
 expect fun openStorePage()
 expect fun getAppVersion(): String
 expect fun shareBitmap(imageBitmap: ImageBitmap)
+expect fun startProtectionNotificationService()
 
 expect fun setAppLocale(languageTag: String)
 

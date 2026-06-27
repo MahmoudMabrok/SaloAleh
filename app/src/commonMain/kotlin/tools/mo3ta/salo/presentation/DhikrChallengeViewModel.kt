@@ -31,11 +31,22 @@ class DhikrChallengeViewModel(
     private val _state = MutableStateFlow(DhikrChallengeUiState())
     val state: StateFlow<DhikrChallengeUiState> = _state.asStateFlow()
 
+    init {
+        loadLeaderboard()
+    }
+
     fun onLeaderboardOpened() {
-        _state.update { it.copy(showLeaderboard = true, isLeaderboardLoading = true) }
+        _state.update { it.copy(showLeaderboard = true) }
+    }
+
+    private fun loadLeaderboard() {
         viewModelScope.launch {
             val uid = sessionStore.getOrCreateUid()
+            _state.update { it.copy(currentUid = uid) }
+            if (!firebaseClient.isConfigured()) return@launch
+
             val dateKey = today().toString()
+            _state.update { it.copy(isLeaderboardLoading = true) }
             firebaseClient.fetchLeaderboard(dateKey)
                 .onSuccess { entries ->
                     _state.update { it.copy(leaderboard = entries, isLeaderboardLoading = false, currentUid = uid) }
@@ -60,7 +71,7 @@ class DhikrChallengeViewModel(
             if (prev != null && firebaseClient.isConfigured()) {
                 val (prevDate, prevTotal) = prev
                 val countryCode = countryCodeProvider.get()
-                val result = firebaseClient.writeUserDay(prevDate, uid, prevTotal, countryCode)
+                val result = firebaseClient.writeUserDay(prevDate, uid, prevTotal, countryCode, publishedNickname())
                 if (result.isSuccess) store.clearPreviousPending()
             }
 
@@ -129,9 +140,10 @@ class DhikrChallengeViewModel(
                 if (total == 0) return@withLock
                 val uid = sessionStore.getOrCreateUid()
                 val countryCode = countryCodeProvider.get()
+                val nickname = publishedNickname()
 
                 _state.update { it.copy(isSyncing = true) }
-                val result = firebaseClient.writeUserDay(today.toString(), uid, total, countryCode)
+                val result = firebaseClient.writeUserDay(today.toString(), uid, total, countryCode, nickname)
                 if (result.isSuccess) store.onSyncSuccess(today, total)
                 _state.update {
                     it.copy(
@@ -158,6 +170,9 @@ class DhikrChallengeViewModel(
                 _state.update { it.copy(errorMessage = error.message) }
             }
     }
+
+    private fun publishedNickname(): String =
+        sessionStore.getNickname()?.takeIf { sessionStore.isNicknameEnabled }.orEmpty()
 
     private fun today(): LocalDate = Clock.System.todayIn(cairoZone)
 }

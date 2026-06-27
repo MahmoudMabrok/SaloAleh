@@ -1,6 +1,7 @@
 package tools.mo3ta.salo
 
 import android.app.Application
+import android.content.Context
 import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
 import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
@@ -14,6 +15,10 @@ import tools.mo3ta.salo.di.appModule
 import tools.mo3ta.salo.notification.NotificationChannels
 
 class SaloApplication : Application() {
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(base.withStoredAppLocale())
+    }
+
     override fun onCreate() {
         super.onCreate()
         val appCheck = FirebaseAppCheck.getInstance()

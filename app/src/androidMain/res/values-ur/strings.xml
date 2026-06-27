@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="protection_notification_title">ذکر کی حفاظت</string>
+    <string name="protection_channel_name">ذکر کی حفاظت</string>
+    <string name="protection_channel_description">100 ذکر مکمل کرنے کے بعد جاری اطلاع</string>
+    <string name="protection_till_evening">آپ شام تک شیطان سے محفوظ ہیں</string>
+    <string name="protection_till_morning">آپ صبح تک شیطان سے محفوظ ہیں</string>
+</resources>

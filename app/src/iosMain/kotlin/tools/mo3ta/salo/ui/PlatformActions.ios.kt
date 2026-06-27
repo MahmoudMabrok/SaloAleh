@@ -111,6 +111,8 @@ actual fun openNotificationSettings() {
 
 actual fun requestExactAlarmPermission() = Unit
 
+actual fun startProtectionNotificationService() = Unit
+
 actual fun setLeaderboardTopicSubscription(enabled: Boolean) = Unit
 
 actual fun setAppLocale(languageTag: String) {
@@ -265,4 +267,3 @@ private object IosTakbeerScheduler : KoinComponent {
         isRunning.value = false
     }
 }
-

@@ -64,6 +64,7 @@ import tools.mo3ta.salo.generated.resources.dhikr_phrase
 import tools.mo3ta.salo.generated.resources.dhikr_progress_count
 import tools.mo3ta.salo.generated.resources.dhikr_rank_number
 import tools.mo3ta.salo.generated.resources.dhikr_rank_subtitle
+import tools.mo3ta.salo.generated.resources.dhikr_rank_unranked
 import tools.mo3ta.salo.generated.resources.dhikr_reward_book
 import tools.mo3ta.salo.generated.resources.dhikr_reward_cage
 import tools.mo3ta.salo.generated.resources.dhikr_reward_crown
@@ -106,6 +107,13 @@ fun DhikrRewardsScreen(
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
             viewModel.onScreenLeft()
+        }
+    }
+
+    LaunchedEffect(state.celebrationMilestone) {
+        val milestone = state.celebrationMilestone
+        if (milestone > 0 && milestone % 100 == 0) {
+            startProtectionNotificationService()
         }
     }
 
@@ -190,7 +198,6 @@ private fun DhikrImmersiveZone(
     onBack: () -> Unit,
     onRankClick: () -> Unit,
 ) {
-    val hasRankData = rank > 0 && participantCount > 0
     val fraction = (count.toFloat() / target.toFloat()).coerceIn(0f, 1f)
 
     Box(
@@ -237,20 +244,23 @@ private fun DhikrImmersiveZone(
                         tint = Color.White.copy(alpha = 0.6f),
                     )
                 }
-                if (hasRankData) {
-                    Surface(
-                        onClick = onRankClick,
-                        shape = CircleShape,
-                        color = Color.White.copy(alpha = 0.12f),
-                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f)),
-                    ) {
-                        Text(
-                            text = "${stringResource(Res.string.dhikr_rank_number, rank)} · ${stringResource(Res.string.dhikr_rank_subtitle, participantCount)}",
-                            color = Color.White.copy(alpha = 0.65f),
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
-                        )
+                Surface(
+                    onClick = onRankClick,
+                    shape = CircleShape,
+                    color = Color.White.copy(alpha = 0.12f),
+                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f)),
+                ) {
+                    val chipText = if (rank > 0 && participantCount > 0) {
+                        "${stringResource(Res.string.dhikr_rank_number, rank)} · ${stringResource(Res.string.dhikr_rank_subtitle, participantCount)}"
+                    } else {
+                        stringResource(Res.string.dhikr_rank_unranked)
                     }
+                    Text(
+                        text = chipText,
+                        color = Color.White.copy(alpha = 0.65f),
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+                    )
                 }
             }
 

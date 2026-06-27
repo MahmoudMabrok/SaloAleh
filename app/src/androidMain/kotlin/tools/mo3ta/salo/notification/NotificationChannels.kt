@@ -4,12 +4,14 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
+import tools.mo3ta.salo.withStoredAppLocale
 
 object NotificationChannels {
     const val CHANNEL_DAILY = "channel_daily"
     const val CHANNEL_RETENTION = "channel_retention"
     const val CHANNEL_FRIDAY = "channel_friday"
     const val CHANNEL_PUSH = "channel_push"
+    const val CHANNEL_PROTECTION = "channel_protection"
 
     const val NOTIF_ID_DAILY = 1001
     const val NOTIF_ID_RETENTION = 1002
@@ -17,10 +19,12 @@ object NotificationChannels {
     const val NOTIF_ID_PUSH = 1004
     const val CHANNEL_BUBBLE = "channel_bubble"
     const val NOTIF_ID_BUBBLE = 1005
+    const val NOTIF_ID_PROTECTION = 1006
 
     fun createAll(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val localizedContext = context.withStoredAppLocale()
             manager.createNotificationChannel(
                 NotificationChannel(CHANNEL_DAILY, "تذكير يومي", NotificationManager.IMPORTANCE_DEFAULT)
                     .apply { description = "تذكير يومي بالصلاة على النبي" }
@@ -44,6 +48,17 @@ object NotificationChannels {
                         setSound(null, null)
                         enableVibration(false)
                     }
+            )
+            manager.createNotificationChannel(
+                NotificationChannel(
+                    CHANNEL_PROTECTION,
+                    localizedContext.getString(tools.mo3ta.salo.R.string.protection_channel_name),
+                    NotificationManager.IMPORTANCE_LOW,
+                ).apply {
+                    description = localizedContext.getString(tools.mo3ta.salo.R.string.protection_channel_description)
+                    setSound(null, null)
+                    enableVibration(false)
+                }
             )
         }
     }

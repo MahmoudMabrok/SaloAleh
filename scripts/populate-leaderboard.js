@@ -118,7 +118,8 @@ async function populateDhikrChallengeToday(db) {
         : child.key;
       const currentRank = typeof data.rank === 'number' && data.rank > 0 ? data.rank : null;
       const countryCode = typeof metadata.countryCode === 'string' ? metadata.countryCode.toUpperCase() : '';
-      users.push({ uid, count: data.count, countryCode, currentRank });
+      const nickname = typeof metadata.nickname === 'string' ? metadata.nickname.trim() : '';
+      users.push({ uid, count: data.count, countryCode, nickname, currentRank });
     });
   }
 
@@ -134,7 +135,9 @@ async function populateDhikrChallengeToday(db) {
     } else if (user.rank > user.currentRank) {
       rankChange = 'down';
     }
-    return [String(i), { uid: user.uid, countryCode: user.countryCode, count: user.count, rank: user.rank, rankChange }];
+    const entry = { uid: user.uid, countryCode: user.countryCode, count: user.count, rank: user.rank, rankChange };
+    if (user.nickname) entry.nickname = user.nickname;
+    return [String(i), entry];
   });
 
   const updates = {

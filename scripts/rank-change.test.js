@@ -149,9 +149,9 @@ describe('dhikr challenge daily ranking', () => {
     assert.equal(result.participantCount, 3);
     assert.equal(result.totalTodayDhikr, 27);
     assert.deepEqual(result.rankedUsers, [
-      { uid: 'user-a', count: 12, rank: 1 },
-      { uid: 'user-b', count: 12, rank: 2 },
-      { uid: 'user-c', count: 3, rank: 3 },
+      { uid: 'user-a', count: 12, countryCode: '', nickname: '', currentRank: null, rank: 1 },
+      { uid: 'user-b', count: 12, countryCode: '', nickname: '', currentRank: null, rank: 2 },
+      { uid: 'user-c', count: 3, countryCode: '', nickname: '', currentRank: null, rank: 3 },
     ]);
     assert.equal(result.rankUpdates['100_challenge/2026-06-25/users/user-a/rank'], 1);
     assert.equal(result.rankUpdates['100_challenge/2026-06-25/users/user-b/rank'], 2);
@@ -174,5 +174,15 @@ describe('dhikr challenge daily ranking', () => {
     assert.deepEqual(result.rankedUsers, []);
     assert.equal(result.rankUpdates['100_challenge/2026-06-25/users/bad-user/rank'], null);
     assert.equal(result.rankUpdates['100_challenge/2026-06-25/users/negative-user/rank'], null);
+  });
+
+  it('carries sanitized country code, nickname, and current rank into ranked users', () => {
+    const result = buildDhikrChallengeDailyRanking('2026-06-25', [
+      { uid: 'user-a', count: 7, countryCode: 'egp', nickname: '  Dhikr Friend  ', currentRank: 3 },
+    ]);
+
+    assert.deepEqual(result.rankedUsers, [
+      { uid: 'user-a', count: 7, countryCode: 'EGP', nickname: 'Dhikr Friend', currentRank: 3, rank: 1 },
+    ]);
   });
 });

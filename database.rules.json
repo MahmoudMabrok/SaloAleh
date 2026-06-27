@@ -88,6 +88,9 @@
               "countryCode": {
                 ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 3"
               },
+              "nickname": {
+                ".validate": "newData.isString() && newData.val().length <= 20"
+              },
               "goal": {
                 ".validate": "newData.isNumber() && newData.val() === 100"
               },

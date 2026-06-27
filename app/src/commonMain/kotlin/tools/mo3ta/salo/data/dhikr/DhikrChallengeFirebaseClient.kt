@@ -37,8 +37,10 @@ class DhikrChallengeFirebaseClient {
         uid: String,
         count: Int,
         countryCode: String,
+        nickname: String = "",
     ): Result<Unit> {
-        log.d { "writeUserDay[$dateKey/$uid] count=$count" }
+        val safeNickname = nickname.trim().take(20)
+        log.d { "writeUserDay[$dateKey/$uid] count=$count hasNickname=${safeNickname.isNotBlank()}" }
         return runCatching {
             Firebase.database.reference(userPath(dateKey, uid)).updateChildren(
                 mapOf(
@@ -47,6 +49,7 @@ class DhikrChallengeFirebaseClient {
                         UID_KEY to uid,
                         DATE_KEY to dateKey,
                         COUNTRY_CODE_KEY to countryCode,
+                        NICKNAME_KEY to safeNickname,
                         GOAL_KEY to DHIKR_CHALLENGE_DAILY_GOAL,
                         COMPLETED_KEY to (count >= DHIKR_CHALLENGE_DAILY_GOAL),
                         UPDATED_AT_KEY to ServerValue.TIMESTAMP,

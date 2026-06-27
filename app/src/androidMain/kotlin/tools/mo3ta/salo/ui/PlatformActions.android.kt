@@ -60,6 +60,7 @@ import androidx.core.content.ContextCompat
 import tools.mo3ta.salo.ui.tendays.TenDaysPalette
 import androidx.core.content.FileProvider
 import tools.mo3ta.salo.AndroidAppContext
+import tools.mo3ta.salo.notification.ProtectionNotificationService
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 
 actual fun launchQrScanner(onResult: (String?) -> Unit) {
@@ -151,6 +152,14 @@ actual fun openStorePage() {
 
     runCatching { ctx.startActivity(marketIntent) }
         .onFailure { ctx.startActivity(webIntent) }
+}
+
+actual fun startProtectionNotificationService() {
+    val ctx = AndroidAppContext.get()
+    ContextCompat.startForegroundService(
+        ctx,
+        Intent(ctx, ProtectionNotificationService::class.java),
+    )
 }
 
 actual fun setLeaderboardTopicSubscription(enabled: Boolean) {

@@ -15,6 +15,7 @@ class DhikrChallengeFirebaseClientTest {
                     "rank" to 1,
                     "rankChange" to "same",
                     "uid" to "rank-one",
+                    "nickname" to "ذاكر",
                 ),
                 mapOf(
                     "count" to 200,
@@ -31,6 +32,7 @@ class DhikrChallengeFirebaseClientTest {
         assertEquals(213, entries[0].count)
         assertEquals(1, entries[0].rank)
         assertEquals("same", entries[0].rankChange)
+        assertEquals("ذاكر", entries[0].nickname)
         assertEquals("rank-two", entries[1].uid)
     }
 
