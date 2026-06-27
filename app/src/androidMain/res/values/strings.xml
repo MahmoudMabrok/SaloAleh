@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="protection_notification_title">حرز الذكر</string>
-    <string name="protection_channel_name">حرز الذكر</string>
+    <string name="protection_notification_title">اهل لا اله الا الله</string>
+    <string name="protection_channel_name">اهل لا اله الا الله</string>
     <string name="protection_channel_description">إشعار نشط بعد إتمام مئة ذكر</string>
     <string name="protection_till_evening">انت في حرز من الشيطان حتى المساء</string>
     <string name="protection_till_morning">انت في حرز من الشيطان حتى الصبح</string>
