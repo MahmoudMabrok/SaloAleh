@@ -241,7 +241,7 @@ fun PaywallScreen(onBack: () -> Unit) {
                     SpiritualTierCard(
                         emoji = "🌙",
                         tierName = stringResource(Res.string.paywall_basic_tier_label),
-                        price = prices[basicTier.productId] ?: basicTier.defaultPrice,
+                        price = prices[basicTier.productId] ?: "...",
                         features = listOf(
                             "⭐" to stringResource(Res.string.paywall_supporter_badge_title),
                             "👁️" to stringResource(Res.string.paywall_friday_scores_title),
@@ -257,7 +257,7 @@ fun PaywallScreen(onBack: () -> Unit) {
                     SpiritualTierCard(
                         emoji = if (selectedPeriod == SubscriptionPeriod.YEARLY) "💎" else "⭐",
                         tierName = stringResource(Res.string.paywall_premium_tier_label),
-                        price = prices[premiumTier.productId] ?: premiumTier.defaultPrice,
+                        price = prices[premiumTier.productId] ?: "...",
                         features = listOf(
                             "📡" to stringResource(Res.string.paywall_live_leaderboard_title),
                             "🔒" to stringResource(Res.string.paywall_hide_score_title),
@@ -287,7 +287,7 @@ fun PaywallScreen(onBack: () -> Unit) {
                 Spacer(Modifier.height(16.dp))
 
                 // CTA button
-                val selectedPrice = prices[selectedTier.productId] ?: selectedTier.defaultPrice
+                val selectedPrice = prices[selectedTier.productId] ?: "..."
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
