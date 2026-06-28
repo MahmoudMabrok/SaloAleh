@@ -2,7 +2,7 @@ name: GA4 Analytics Report
 
 on:
   schedule:
-    - cron: '0 20 * * *'
+    - cron: '0 19 * * *'
   workflow_dispatch:
     inputs:
       days:
