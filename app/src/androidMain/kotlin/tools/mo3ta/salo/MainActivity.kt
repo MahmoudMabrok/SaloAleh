@@ -9,6 +9,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.mutableStateOf
 import androidx.core.app.NotificationManagerCompat
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.CoroutineScope
@@ -41,6 +42,9 @@ class MainActivity : ComponentActivity() {
     private val sessionStore: MohamedLoversSessionStore by inject()
     private val firebaseClient: MohamedLoversFirebaseClient by inject()
     private val billingManager: BillingManager by inject()
+
+    private val notificationMessageState = mutableStateOf<NotificationMessage?>(null)
+    private val newVersionState = mutableStateOf<String?>(null)
 
     private val notifPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -87,8 +91,8 @@ class MainActivity : ComponentActivity() {
 
         val finalEngagementData = engagementData.copy(shouldReshowFcmAlert = shouldReshowFcmAlert)
 
-        val newVersionFromNotification = extractNewVersionFromIntent(intent)
-        val notificationMessage = extractNotificationMessageFromIntent(intent)
+        newVersionState.value = extractNewVersionFromIntent(intent)
+        notificationMessageState.value = extractNotificationMessageFromIntent(intent)
 
         setContent {
             App(
@@ -96,10 +100,17 @@ class MainActivity : ComponentActivity() {
                 onNotificationPermissionRequest = {
                     requestNotificationPermissionIfNeeded()
                 },
-                newVersionAvailable = newVersionFromNotification,
-                notificationMessage = notificationMessage,
+                newVersionAvailable = newVersionState.value,
+                notificationMessage = notificationMessageState.value,
             )
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        newVersionState.value = extractNewVersionFromIntent(intent)
+        notificationMessageState.value = extractNotificationMessageFromIntent(intent)
     }
 
     private fun extractNewVersionFromIntent(intent: Intent?): String? {
