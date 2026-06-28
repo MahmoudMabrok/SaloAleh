@@ -214,6 +214,15 @@ class FloatingBubbleService : Service() {
                     isDragging = false
                     true
                 }
+                MotionEvent.ACTION_CANCEL -> {
+                    mainHandler.removeCallbacks(longPressRunnable)
+                    isDragging = false
+                    if (targetsVisible) {
+                        targetsVisible = false
+                        bubbleView.hideActionTargets()
+                    }
+                    true
+                }
                 else -> false
             }
         }
