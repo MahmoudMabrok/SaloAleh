@@ -91,8 +91,9 @@ class FloatingBubbleService : Service() {
 
     private fun setupBubble() {
         bubbleView = FloatingBubbleView(this)
-        bubbleView.onTap = { handleTap() }
+        bubbleView.onTap = { handleBubbleTap() }
         bubbleView.onClose = { stopSelf() }
+        bubbleView.onOpenApp = { handleOpenApp() }
 
         params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -109,6 +110,8 @@ class FloatingBubbleService : Service() {
         setupDrag()
         windowManager.addView(bubbleView, params)
     }
+
+    private var actionTargetsVisible = false
 
     private fun setupDrag() {
         var initialX = 0; var initialY = 0
@@ -127,6 +130,10 @@ class FloatingBubbleService : Service() {
                     val distX = kotlin.math.abs(event.rawX - initialTouchX)
                     val distY = kotlin.math.abs(event.rawY - initialTouchY)
                     if (distX > DRAG_THRESHOLD_PX || distY > DRAG_THRESHOLD_PX) {
+                        if (actionTargetsVisible) {
+                            bubbleView.hideActionTargets()
+                            actionTargetsVisible = false
+                        }
                         params.x = initialX - (event.rawX - initialTouchX).toInt()
                         params.y = initialY + (event.rawY - initialTouchY).toInt()
                         windowManager.updateViewLayout(bubbleView, params)
@@ -138,10 +145,38 @@ class FloatingBubbleService : Service() {
                     val distY = kotlin.math.abs(event.rawY - initialTouchY)
                     val duration = SystemClock.elapsedRealtime() - touchDownTime
                     if (distX < TAP_THRESHOLD && distY < TAP_THRESHOLD && duration < TAP_DURATION_MS) {
-                        if (bubbleView.isCloseButtonHit(event.rawX, event.rawY)) {
-                            stopSelf()
+                        if (actionTargetsVisible) {
+                            val closeCenter = bubbleView.getCloseTargetCenter()
+                            val openCenter = bubbleView.getOpenAppTargetCenter()
+                            val hitRadius = 40f
+                            val closeDistance = kotlin.math.sqrt(
+                                (event.rawX - closeCenter.first) * (event.rawX - closeCenter.first) +
+                                        (event.rawY - closeCenter.second) * (event.rawY - closeCenter.second)
+                            )
+                            val openDistance = kotlin.math.sqrt(
+                                (event.rawX - openCenter.first) * (event.rawX - openCenter.first) +
+                                        (event.rawY - openCenter.second) * (event.rawY - openCenter.second)
+                            )
+                            when {
+                                closeDistance < hitRadius -> {
+                                    bubbleView.hideActionTargets()
+                                    actionTargetsVisible = false
+                                    stopSelf()
+                                }
+                                openDistance < hitRadius -> {
+                                    bubbleView.hideActionTargets()
+                                    actionTargetsVisible = false
+                                    handleOpenApp()
+                                }
+                                else -> {
+                                    bubbleView.hideActionTargets()
+                                    actionTargetsVisible = false
+                                }
+                            }
                         } else {
-                            handleTap()
+                            bubbleView.animateTap()
+                            bubbleView.showActionTargets()
+                            actionTargetsVisible = true
                         }
                     }
                     true
@@ -151,13 +186,18 @@ class FloatingBubbleService : Service() {
         }
     }
 
-    private fun handleTap() {
+    private fun handleBubbleTap() {
         if (roundKey.isBlank()) return
         val pending = sessionStore.incrementPendingClick(roundKey, 1)
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
         dailyGoalStore.recordTap(today, 1)
         bubbleView.updateCount(pending.clickCount)
         analyticsManager.logAction("bubble_tap", mapOf("count" to pending.clickCount.toString()))
+    }
+
+    private fun handleOpenApp() {
+        analyticsManager.logAction("bubble_open_app", emptyMap())
+        // Additional handling for open app can be added here
     }
 
     private fun startReminderCycle() {
