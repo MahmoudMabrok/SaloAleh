@@ -5,7 +5,9 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Color
 import android.graphics.PixelFormat
+import android.graphics.drawable.GradientDrawable
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
@@ -15,7 +17,11 @@ import android.util.TypedValue
 import android.view.Gravity
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
+import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.WindowManager
+import android.widget.FrameLayout
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,7 +49,7 @@ class FloatingBubbleService : Service() {
         private const val TAP_THRESHOLD = 10
         private const val TAP_DURATION_MS = 300L
         private const val LONG_PRESS_MS = 400L
-        private const val TARGET_HIT_RADIUS_DP = 40
+        private const val TARGET_HIT_RADIUS_DP = 44
     }
 
     private val sessionStore: MohamedLoversSessionStore by inject()
@@ -52,9 +58,17 @@ class FloatingBubbleService : Service() {
 
     private lateinit var windowManager: WindowManager
     private lateinit var bubbleView: FloatingBubbleView
-    private lateinit var params: WindowManager.LayoutParams
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private lateinit var bubbleParams: WindowManager.LayoutParams
 
+    // Separate overlay for action targets — fixed at top of screen, not a child of bubble
+    private var actionOverlayView: LinearLayout? = null
+    private var closeTargetView: TextView? = null
+    private var openTargetView: TextView? = null
+
+    // Separate overlay for tooltip — FLAG_NOT_TOUCHABLE, positioned above bubble
+    private var tooltipView: LinearLayout? = null
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var roundKey: String = ""
     private lateinit var prefs: SharedPreferences
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -63,7 +77,7 @@ class FloatingBubbleService : Service() {
     private val longPressRunnable = Runnable {
         targetsVisible = true
         bubbleView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-        bubbleView.showActionTargets()
+        showActionOverlay()
     }
 
     private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
@@ -100,33 +114,40 @@ class FloatingBubbleService : Service() {
         return START_NOT_STICKY
     }
 
+    // ── WindowManager helpers ─────────────────────────────────────────────────
+
+    private fun overlayParams(w: Int, h: Int, flags: Int) = WindowManager.LayoutParams(
+        w, h,
+        WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+        flags,
+        PixelFormat.TRANSLUCENT
+    )
+
     private fun screenSize(): Pair<Int, Int> {
-        val metrics = DisplayMetrics()
+        val m = DisplayMetrics()
         @Suppress("DEPRECATION")
-        windowManager.defaultDisplay.getRealMetrics(metrics)
-        return Pair(metrics.widthPixels, metrics.heightPixels)
+        windowManager.defaultDisplay.getRealMetrics(m)
+        return Pair(m.widthPixels, m.heightPixels)
     }
 
-    private fun clampParams() {
+    private fun clampBubble() {
         val (screenW, screenH) = screenSize()
         val margin = 32.dp()
-        // params.x is distance from RIGHT edge (gravity END), params.y from TOP
-        params.x = params.x.coerceIn(margin, screenW - margin - bubbleView.width)
-        params.y = params.y.coerceIn(margin, screenH - margin - bubbleView.height)
+        // bubbleParams.x = distance from RIGHT edge (Gravity.END); bubbleParams.y from TOP
+        val bw = bubbleView.width.let { if (it > 0) it else 72.dp() }
+        val bh = bubbleView.height.let { if (it > 0) it else 72.dp() }
+        bubbleParams.x = bubbleParams.x.coerceIn(margin, screenW - margin - bw)
+        bubbleParams.y = bubbleParams.y.coerceIn(margin, screenH - margin - bh)
     }
+
+    // ── Bubble setup ──────────────────────────────────────────────────────────
 
     private fun setupBubble() {
         bubbleView = FloatingBubbleView(this)
-        bubbleView.onTap = { handleTap() }
-        bubbleView.onClose = { stopSelf() }
-        bubbleView.onOpenApp = { launchApp() }
 
-        params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-            PixelFormat.TRANSLUCENT
+        bubbleParams = overlayParams(
+            WRAP_CONTENT, WRAP_CONTENT,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
         ).apply {
             gravity = Gravity.TOP or Gravity.END
             x = 0
@@ -134,7 +155,7 @@ class FloatingBubbleService : Service() {
         }
 
         setupDrag()
-        windowManager.addView(bubbleView, params)
+        windowManager.addView(bubbleView, bubbleParams)
     }
 
     private fun setupDrag() {
@@ -146,7 +167,7 @@ class FloatingBubbleService : Service() {
         bubbleView.setOnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    initialX = params.x; initialY = params.y
+                    initialX = bubbleParams.x; initialY = bubbleParams.y
                     initialTouchX = event.rawX; initialTouchY = event.rawY
                     touchDownTime = SystemClock.elapsedRealtime()
                     isDragging = false
@@ -161,20 +182,12 @@ class FloatingBubbleService : Service() {
                             isDragging = true
                             mainHandler.removeCallbacks(longPressRunnable)
                         }
-                        params.x = initialX - (event.rawX - initialTouchX).toInt()
-                        params.y = initialY + (event.rawY - initialTouchY).toInt()
-                        windowManager.updateViewLayout(bubbleView, params)
+                        bubbleParams.x = initialX - (event.rawX - initialTouchX).toInt()
+                        bubbleParams.y = initialY + (event.rawY - initialTouchY).toInt()
+                        windowManager.updateViewLayout(bubbleView, bubbleParams)
 
                         if (targetsVisible) {
-                            val bubbleCx = event.rawX
-                            val bubbleCy = event.rawY
-                            val hitRadius = TARGET_HIT_RADIUS_DP.dp().toFloat()
-                            val (closeCx, closeCy) = bubbleView.getCloseTargetCenter()
-                            val (openCx, openCy) = bubbleView.getOpenAppTargetCenter()
-                            val nearClose = dist(bubbleCx, bubbleCy, closeCx, closeCy) < hitRadius
-                            val nearOpen = dist(bubbleCx, bubbleCy, openCx, openCy) < hitRadius
-                            bubbleView.highlightCloseTarget(nearClose)
-                            bubbleView.highlightOpenTarget(nearOpen)
+                            checkTargetHighlight(event.rawX, event.rawY)
                         }
                     }
                     true
@@ -186,30 +199,12 @@ class FloatingBubbleService : Service() {
                     val duration = SystemClock.elapsedRealtime() - touchDownTime
 
                     if (targetsVisible) {
-                        val bubbleCx = event.rawX
-                        val bubbleCy = event.rawY
-                        val hitRadius = TARGET_HIT_RADIUS_DP.dp().toFloat()
-                        val (closeCx, closeCy) = bubbleView.getCloseTargetCenter()
-                        val (openCx, openCy) = bubbleView.getOpenAppTargetCenter()
-                        when {
-                            dist(bubbleCx, bubbleCy, closeCx, closeCy) < hitRadius -> stopSelf()
-                            dist(bubbleCx, bubbleCy, openCx, openCy) < hitRadius -> {
-                                targetsVisible = false
-                                bubbleView.hideActionTargets()
-                                launchApp()
-                            }
-                            else -> {
-                                targetsVisible = false
-                                bubbleView.hideActionTargets()
-                                clampParams()
-                                windowManager.updateViewLayout(bubbleView, params)
-                            }
-                        }
+                        handleTargetRelease(event.rawX, event.rawY)
                     } else if (distX < TAP_THRESHOLD && distY < TAP_THRESHOLD && duration < TAP_DURATION_MS) {
                         handleTap()
                     } else {
-                        clampParams()
-                        windowManager.updateViewLayout(bubbleView, params)
+                        clampBubble()
+                        windowManager.updateViewLayout(bubbleView, bubbleParams)
                     }
                     isDragging = false
                     true
@@ -217,16 +212,167 @@ class FloatingBubbleService : Service() {
                 MotionEvent.ACTION_CANCEL -> {
                     mainHandler.removeCallbacks(longPressRunnable)
                     isDragging = false
-                    if (targetsVisible) {
-                        targetsVisible = false
-                        bubbleView.hideActionTargets()
-                    }
+                    if (targetsVisible) dismissActionOverlay()
                     true
                 }
                 else -> false
             }
         }
     }
+
+    // ── Action overlay (separate WM view, top of screen) ─────────────────────
+
+    private fun showActionOverlay() {
+        if (actionOverlayView != null) return
+        val (screenW, _) = screenSize()
+        val targetSize = 56.dp()
+        val gap = 32.dp()
+
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+        }
+
+        closeTargetView = buildTarget("✕", Color.parseColor("#B71C1C"), targetSize)
+        openTargetView = buildTarget("↗", Color.parseColor("#FFD700"), targetSize)
+
+        row.addView(closeTargetView)
+        row.addView(FrameLayout(this).apply {
+            layoutParams = LinearLayout.LayoutParams(gap, 1)
+        })
+        row.addView(openTargetView)
+
+        row.alpha = 0f
+        row.translationY = (-16).dp().toFloat()
+
+        val params = overlayParams(
+            WRAP_CONTENT, WRAP_CONTENT,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+        ).apply {
+            gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+            y = 48.dp()
+        }
+
+        windowManager.addView(row, params)
+        actionOverlayView = row
+
+        row.animate().alpha(1f).translationY(0f).setDuration(250).start()
+    }
+
+    private fun dismissActionOverlay() {
+        targetsVisible = false
+        val overlay = actionOverlayView ?: return
+        overlay.animate().alpha(0f).translationY((-16).dp().toFloat()).setDuration(200)
+            .withEndAction {
+                runCatching { windowManager.removeView(overlay) }
+                actionOverlayView = null
+                closeTargetView = null
+                openTargetView = null
+            }.start()
+    }
+
+    private fun buildTarget(icon: String, bgColor: Int, size: Int): TextView =
+        TextView(this).apply {
+            text = icon
+            setTextColor(Color.WHITE)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
+            gravity = Gravity.CENTER
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(bgColor)
+            }
+            elevation = 8.dp().toFloat()
+            layoutParams = LinearLayout.LayoutParams(size, size)
+        }
+
+    private fun targetCenter(view: TextView): Pair<Float, Float> {
+        val loc = IntArray(2)
+        view.getLocationOnScreen(loc)
+        return Pair(loc[0] + view.width / 2f, loc[1] + view.height / 2f)
+    }
+
+    private fun checkTargetHighlight(rawX: Float, rawY: Float) {
+        val hitRadius = TARGET_HIT_RADIUS_DP.dp().toFloat()
+        closeTargetView?.let { cv ->
+            val (cx, cy) = targetCenter(cv)
+            val scale = if (dist(rawX, rawY, cx, cy) < hitRadius) 1.2f else 1f
+            cv.animate().scaleX(scale).scaleY(scale).setDuration(80).start()
+        }
+        openTargetView?.let { ov ->
+            val (ox, oy) = targetCenter(ov)
+            val scale = if (dist(rawX, rawY, ox, oy) < hitRadius) 1.2f else 1f
+            ov.animate().scaleX(scale).scaleY(scale).setDuration(80).start()
+        }
+    }
+
+    private fun handleTargetRelease(rawX: Float, rawY: Float) {
+        val hitRadius = TARGET_HIT_RADIUS_DP.dp().toFloat()
+        val hitClose = closeTargetView?.let { dist(rawX, rawY, targetCenter(it).first, targetCenter(it).second) < hitRadius } == true
+        val hitOpen = openTargetView?.let { dist(rawX, rawY, targetCenter(it).first, targetCenter(it).second) < hitRadius } == true
+        when {
+            hitClose -> { dismissActionOverlay(); stopSelf() }
+            hitOpen -> { dismissActionOverlay(); launchApp() }
+            else -> { dismissActionOverlay(); clampBubble(); windowManager.updateViewLayout(bubbleView, bubbleParams) }
+        }
+    }
+
+    // ── Tooltip (separate WM view, FLAG_NOT_TOUCHABLE) ────────────────────────
+
+    private fun showTooltip() {
+        if (tooltipView != null) return
+        val card = TextView(this).apply {
+            text = "اللهم صل علي محمد وال محمد"
+            textDirection = android.view.View.TEXT_DIRECTION_RTL
+            gravity = Gravity.CENTER
+            setTextColor(Color.WHITE)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            setPadding(16.dp(), 10.dp(), 16.dp(), 10.dp())
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = 14.dp().toFloat()
+                setColor(Color.argb(50, 255, 255, 255))
+                setStroke(1, Color.argb(65, 255, 255, 255))
+            }
+        }
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+        }
+        row.addView(card)
+        row.addView(TextView(this).apply {
+            text = "▼"
+            setTextColor(Color.argb(65, 255, 255, 255))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f)
+            gravity = Gravity.CENTER
+        })
+        row.alpha = 0f
+
+        val p = overlayParams(
+            WRAP_CONTENT, WRAP_CONTENT,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+        ).apply {
+            gravity = Gravity.TOP or Gravity.END
+            x = bubbleParams.x
+            y = (bubbleParams.y - 80.dp()).coerceAtLeast(8.dp())
+        }
+
+        windowManager.addView(row, p)
+        tooltipView = row
+        row.animate().alpha(1f).setDuration(300).start()
+    }
+
+    private fun hideTooltip() {
+        val tv = tooltipView ?: return
+        tv.animate().alpha(0f).setDuration(300)
+            .withEndAction {
+                runCatching { windowManager.removeView(tv) }
+                tooltipView = null
+            }.start()
+    }
+
+    // ── Misc ──────────────────────────────────────────────────────────────────
 
     private fun dist(x1: Float, y1: Float, x2: Float, y2: Float): Float {
         val dx = x1 - x2; val dy = y1 - y2
@@ -253,14 +399,14 @@ class FloatingBubbleService : Service() {
 
     private fun startReminderCycle() {
         scope.launch {
-            bubbleView.showTooltip()
+            showTooltip()
             delay(5_000L)
-            bubbleView.hideTooltip()
+            hideTooltip()
             while (true) {
                 delay(10 * 60 * 1000L)
-                bubbleView.showTooltip()
+                showTooltip()
                 delay(5_000L)
-                bubbleView.hideTooltip()
+                hideTooltip()
             }
         }
     }
@@ -279,9 +425,9 @@ class FloatingBubbleService : Service() {
         mainHandler.removeCallbacks(longPressRunnable)
         prefs.unregisterOnSharedPreferenceChangeListener(prefListener)
         scope.cancel()
-        if (::bubbleView.isInitialized) {
-            runCatching { windowManager.removeView(bubbleView) }
-        }
+        runCatching { if (::bubbleView.isInitialized) windowManager.removeView(bubbleView) }
+        actionOverlayView?.let { runCatching { windowManager.removeView(it) } }
+        tooltipView?.let { runCatching { windowManager.removeView(it) } }
         super.onDestroy()
     }
 
