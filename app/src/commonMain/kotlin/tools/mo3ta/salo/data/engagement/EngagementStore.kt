@@ -127,16 +127,21 @@ class EngagementStore(private val settings: Settings) {
 
     fun shouldShowReviewDialog(today: LocalDate, installDate: LocalDate): Boolean {
         if (settings.getBoolean(KEY_REVIEW_COMPLETED, false)) return false
+        val dismissCount = settings.getInt(KEY_REVIEW_DISMISS_COUNT, 0)
+        if (dismissCount >= 3) return false
         val daysSinceInstall = (today.toEpochDays() - installDate.toEpochDays()).toInt()
         if (daysSinceInstall < 2) return false
         val lastShown = settings.getStringOrNull(KEY_REVIEW_LAST_SHOWN)
         if (lastShown == null) return true
         val lastDate = runCatching { LocalDate.parse(lastShown) }.getOrNull() ?: return true
-        return (today.toEpochDays() - lastDate.toEpochDays()) >= 2
+        val intervalDays = if (dismissCount >= 2) 7 else 2
+        return (today.toEpochDays() - lastDate.toEpochDays()) >= intervalDays
     }
 
     fun markReviewDialogShown(today: LocalDate) {
         settings.putString(KEY_REVIEW_LAST_SHOWN, today.toString())
+        val count = settings.getInt(KEY_REVIEW_DISMISS_COUNT, 0)
+        settings.putInt(KEY_REVIEW_DISMISS_COUNT, count + 1)
     }
 
     fun markReviewCompleted() {
@@ -255,6 +260,7 @@ class EngagementStore(private val settings: Settings) {
         const val KEY_FCM_PERM_DENIED_DATE = "eng_fcm_perm_denied_date"
         const val KEY_REVIEW_COMPLETED = "eng_review_completed"
         const val KEY_REVIEW_LAST_SHOWN = "eng_review_last_shown"
+        const val KEY_REVIEW_DISMISS_COUNT = "eng_review_dismiss_count"
         val json = Json { ignoreUnknownKeys = true }
     }
 }
