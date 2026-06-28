@@ -145,8 +145,9 @@ class FloatingBubbleService : Service() {
     private fun setupBubble() {
         bubbleView = FloatingBubbleView(this)
 
+        val bubbleSize = 72.dp()
         bubbleParams = overlayParams(
-            WRAP_CONTENT, WRAP_CONTENT,
+            bubbleSize, bubbleSize,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
         ).apply {
             gravity = Gravity.TOP or Gravity.END
