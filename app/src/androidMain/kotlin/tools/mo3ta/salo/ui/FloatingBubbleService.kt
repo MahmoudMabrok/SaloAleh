@@ -193,7 +193,11 @@ class FloatingBubbleService : Service() {
                         val (openCx, openCy) = bubbleView.getOpenAppTargetCenter()
                         when {
                             dist(bubbleCx, bubbleCy, closeCx, closeCy) < hitRadius -> stopSelf()
-                            dist(bubbleCx, bubbleCy, openCx, openCy) < hitRadius -> launchApp()
+                            dist(bubbleCx, bubbleCy, openCx, openCy) < hitRadius -> {
+                                targetsVisible = false
+                                bubbleView.hideActionTargets()
+                                launchApp()
+                            }
                             else -> {
                                 targetsVisible = false
                                 bubbleView.hideActionTargets()
