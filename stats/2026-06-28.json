@@ -1,0 +1,108 @@
+{
+  "allTimeSalawat": 662569,
+  "weekSalawat": 46981,
+  "todaySalawat": 21122,
+  "activePlayers": 43,
+  "countriesCount": 10,
+  "countries": [
+    "DZ",
+    "EG",
+    "FR",
+    "IQ",
+    "IT",
+    "MA",
+    "SA",
+    "SD",
+    "US",
+    "YE"
+  ],
+  "topScore": 20008,
+  "roundKey": "2026-07-03",
+  "leaderboard": [
+    {
+      "countryCode": "EG",
+      "dailyBadge": "crown",
+      "nickname": "يونس",
+      "rank": 1,
+      "rankChange": "same",
+      "score": 20008,
+      "uid": "5a4b1d0ed314c539aefe3fedeb07054b2acf361dd98189761e80e047fbf80305"
+    },
+    {
+      "countryCode": "DZ",
+      "dailyBadge": "dome",
+      "nickname": "Saliha",
+      "rank": 2,
+      "rankChange": "same",
+      "score": 7500,
+      "uid": "95f710fac50b769650b5494354a21344bc4ac1bdfb9dd101925154b1ded0d7d5"
+    },
+    {
+      "countryCode": "SA",
+      "dailyBadge": "crescent",
+      "nickname": "M.A.L",
+      "rank": 3,
+      "rankChange": "same",
+      "score": 6734,
+      "uid": "092d20eeafb6b68719e19fcd41f072811d333b4f561862f7b13734d0d633db00"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "nickname": "المحب",
+      "rank": 4,
+      "rankChange": "same",
+      "score": 3041,
+      "uid": "cf0116cf9c1bf2ef2965b238768139059a0088bbb734739297ac650ede2fd00b"
+    },
+    {
+      "countryCode": "IT",
+      "dailyBadge": "heart",
+      "rank": 5,
+      "rankChange": "same",
+      "score": 2020,
+      "uid": "c6c592d1a439dcda8abf90bfe57de7416d6903f4541e99f4045f42e8e548c30b"
+    },
+    {
+      "countryCode": "SD",
+      "rank": 6,
+      "rankChange": "same",
+      "score": 1612,
+      "uid": "f6d13f6afcc3e30af8e92129d8dff7907533d97229e03b4c5615cc3a55a1189b"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "nickname": "MF1979",
+      "rank": 7,
+      "rankChange": "same",
+      "score": 1486,
+      "uid": "a6edef5b54050a0eeff694c23ec03d8ff1e6110d49bf2452f2bc7a9c52f706ba"
+    },
+    {
+      "countryCode": "FR",
+      "rank": 8,
+      "rankChange": "same",
+      "score": 1015,
+      "uid": "8bf56836e191e7fc02250be7d0517da88d47008999de33cb6adfe21078060fa4"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "rank": 9,
+      "rankChange": "same",
+      "score": 1004,
+      "uid": "f6001ce3bb2c67feacd9e14101125a6574e5d7e2622adf8d2cc57d12825fb74f"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "sprout",
+      "isSupporter": true,
+      "rank": 10,
+      "rankChange": "same",
+      "score": 616,
+      "uid": "d37ab9ff8d45a9931d24389990545bdb773791e2873b2d23534c26bdcef8f48a"
+    }
+  ],
+  "updatedAt": "2026-06-28T20:46:09.050Z"
+}
