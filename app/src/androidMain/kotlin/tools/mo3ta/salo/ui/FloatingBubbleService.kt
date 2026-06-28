@@ -10,7 +10,10 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.SystemClock
+import android.util.DisplayMetrics
+import android.util.TypedValue
 import android.view.Gravity
+import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.WindowManager
 import androidx.core.app.NotificationCompat
@@ -39,6 +42,8 @@ class FloatingBubbleService : Service() {
         private const val DRAG_THRESHOLD_PX = 10
         private const val TAP_THRESHOLD = 10
         private const val TAP_DURATION_MS = 300L
+        private const val LONG_PRESS_MS = 400L
+        private const val TARGET_HIT_RADIUS_DP = 40
     }
 
     private val sessionStore: MohamedLoversSessionStore by inject()
@@ -53,16 +58,25 @@ class FloatingBubbleService : Service() {
     private var roundKey: String = ""
     private lateinit var prefs: SharedPreferences
     private val mainHandler = Handler(Looper.getMainLooper())
+
+    private var targetsVisible = false
+    private val longPressRunnable = Runnable {
+        targetsVisible = true
+        bubbleView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+        bubbleView.showActionTargets()
+    }
+
     private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         if (key == pendingCountKey() && ::bubbleView.isInitialized) {
-            mainHandler.post {
-                bubbleView.updateCount(currentPendingCount())
-            }
+            mainHandler.post { bubbleView.updateCount(currentPendingCount()) }
         }
     }
 
     private fun pendingCountKey() = "pending_count_$roundKey"
     private fun currentPendingCount() = prefs.getInt(pendingCountKey(), 0)
+
+    private fun Int.dp(): Int =
+        TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, this.toFloat(), resources.displayMetrics).toInt()
 
     override fun onCreate() {
         super.onCreate()
@@ -76,10 +90,7 @@ class FloatingBubbleService : Service() {
             startForeground(NotificationChannels.NOTIF_ID_BUBBLE, buildNotification())
         }
         intent?.getStringExtra(EXTRA_ROUND_KEY)?.let { roundKey = it }
-        if (roundKey.isBlank()) {
-            stopSelf()
-            return START_NOT_STICKY
-        }
+        if (roundKey.isBlank()) { stopSelf(); return START_NOT_STICKY }
         if (!::bubbleView.isInitialized) {
             setupBubble()
             bubbleView.updateCount(currentPendingCount())
@@ -89,11 +100,26 @@ class FloatingBubbleService : Service() {
         return START_NOT_STICKY
     }
 
+    private fun screenSize(): Pair<Int, Int> {
+        val metrics = DisplayMetrics()
+        @Suppress("DEPRECATION")
+        windowManager.defaultDisplay.getRealMetrics(metrics)
+        return Pair(metrics.widthPixels, metrics.heightPixels)
+    }
+
+    private fun clampParams() {
+        val (screenW, screenH) = screenSize()
+        val margin = 32.dp()
+        // params.x is distance from RIGHT edge (gravity END), params.y from TOP
+        params.x = params.x.coerceIn(margin, screenW - margin - bubbleView.width)
+        params.y = params.y.coerceIn(margin, screenH - margin - bubbleView.height)
+    }
+
     private fun setupBubble() {
         bubbleView = FloatingBubbleView(this)
-        bubbleView.onTap = { handleBubbleTap() }
+        bubbleView.onTap = { handleTap() }
         bubbleView.onClose = { stopSelf() }
-        bubbleView.onOpenApp = { handleOpenApp() }
+        bubbleView.onOpenApp = { launchApp() }
 
         params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -111,12 +137,11 @@ class FloatingBubbleService : Service() {
         windowManager.addView(bubbleView, params)
     }
 
-    private var actionTargetsVisible = false
-
     private fun setupDrag() {
         var initialX = 0; var initialY = 0
         var initialTouchX = 0f; var initialTouchY = 0f
         var touchDownTime = 0L
+        var isDragging = false
 
         bubbleView.setOnTouchListener { _, event ->
             when (event.action) {
@@ -124,61 +149,65 @@ class FloatingBubbleService : Service() {
                     initialX = params.x; initialY = params.y
                     initialTouchX = event.rawX; initialTouchY = event.rawY
                     touchDownTime = SystemClock.elapsedRealtime()
+                    isDragging = false
+                    mainHandler.postDelayed(longPressRunnable, LONG_PRESS_MS)
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
                     val distX = kotlin.math.abs(event.rawX - initialTouchX)
                     val distY = kotlin.math.abs(event.rawY - initialTouchY)
                     if (distX > DRAG_THRESHOLD_PX || distY > DRAG_THRESHOLD_PX) {
-                        if (actionTargetsVisible) {
-                            bubbleView.hideActionTargets()
-                            actionTargetsVisible = false
+                        if (!isDragging) {
+                            isDragging = true
+                            mainHandler.removeCallbacks(longPressRunnable)
                         }
                         params.x = initialX - (event.rawX - initialTouchX).toInt()
                         params.y = initialY + (event.rawY - initialTouchY).toInt()
                         windowManager.updateViewLayout(bubbleView, params)
+
+                        if (targetsVisible) {
+                            val bubbleCx = event.rawX
+                            val bubbleCy = event.rawY
+                            val hitRadius = TARGET_HIT_RADIUS_DP.dp().toFloat()
+                            val (closeCx, closeCy) = bubbleView.getCloseTargetCenter()
+                            val (openCx, openCy) = bubbleView.getOpenAppTargetCenter()
+                            val nearClose = dist(bubbleCx, bubbleCy, closeCx, closeCy) < hitRadius
+                            val nearOpen = dist(bubbleCx, bubbleCy, openCx, openCy) < hitRadius
+                            bubbleView.highlightCloseTarget(nearClose)
+                            bubbleView.highlightOpenTarget(nearOpen)
+                        }
                     }
                     true
                 }
                 MotionEvent.ACTION_UP -> {
+                    mainHandler.removeCallbacks(longPressRunnable)
                     val distX = kotlin.math.abs(event.rawX - initialTouchX)
                     val distY = kotlin.math.abs(event.rawY - initialTouchY)
                     val duration = SystemClock.elapsedRealtime() - touchDownTime
-                    if (distX < TAP_THRESHOLD && distY < TAP_THRESHOLD && duration < TAP_DURATION_MS) {
-                        if (actionTargetsVisible) {
-                            val closeCenter = bubbleView.getCloseTargetCenter()
-                            val openCenter = bubbleView.getOpenAppTargetCenter()
-                            val hitRadius = 40f
-                            val closeDistance = kotlin.math.sqrt(
-                                (event.rawX - closeCenter.first) * (event.rawX - closeCenter.first) +
-                                        (event.rawY - closeCenter.second) * (event.rawY - closeCenter.second)
-                            )
-                            val openDistance = kotlin.math.sqrt(
-                                (event.rawX - openCenter.first) * (event.rawX - openCenter.first) +
-                                        (event.rawY - openCenter.second) * (event.rawY - openCenter.second)
-                            )
-                            when {
-                                closeDistance < hitRadius -> {
-                                    bubbleView.hideActionTargets()
-                                    actionTargetsVisible = false
-                                    stopSelf()
-                                }
-                                openDistance < hitRadius -> {
-                                    bubbleView.hideActionTargets()
-                                    actionTargetsVisible = false
-                                    handleOpenApp()
-                                }
-                                else -> {
-                                    bubbleView.hideActionTargets()
-                                    actionTargetsVisible = false
-                                }
+
+                    if (targetsVisible) {
+                        val bubbleCx = event.rawX
+                        val bubbleCy = event.rawY
+                        val hitRadius = TARGET_HIT_RADIUS_DP.dp().toFloat()
+                        val (closeCx, closeCy) = bubbleView.getCloseTargetCenter()
+                        val (openCx, openCy) = bubbleView.getOpenAppTargetCenter()
+                        when {
+                            dist(bubbleCx, bubbleCy, closeCx, closeCy) < hitRadius -> stopSelf()
+                            dist(bubbleCx, bubbleCy, openCx, openCy) < hitRadius -> launchApp()
+                            else -> {
+                                targetsVisible = false
+                                bubbleView.hideActionTargets()
+                                clampParams()
+                                windowManager.updateViewLayout(bubbleView, params)
                             }
-                        } else {
-                            bubbleView.animateTap()
-                            bubbleView.showActionTargets()
-                            actionTargetsVisible = true
                         }
+                    } else if (distX < TAP_THRESHOLD && distY < TAP_THRESHOLD && duration < TAP_DURATION_MS) {
+                        handleTap()
+                    } else {
+                        clampParams()
+                        windowManager.updateViewLayout(bubbleView, params)
                     }
+                    isDragging = false
                     true
                 }
                 else -> false
@@ -186,18 +215,27 @@ class FloatingBubbleService : Service() {
         }
     }
 
-    private fun handleBubbleTap() {
+    private fun dist(x1: Float, y1: Float, x2: Float, y2: Float): Float {
+        val dx = x1 - x2; val dy = y1 - y2
+        return kotlin.math.sqrt(dx * dx + dy * dy)
+    }
+
+    private fun handleTap() {
         if (roundKey.isBlank()) return
         val pending = sessionStore.incrementPendingClick(roundKey, 1)
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
         dailyGoalStore.recordTap(today, 1)
         bubbleView.updateCount(pending.clickCount)
+        bubbleView.animateTap()
         analyticsManager.logAction("bubble_tap", mapOf("count" to pending.clickCount.toString()))
     }
 
-    private fun handleOpenApp() {
+    private fun launchApp() {
+        val intent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        intent?.let { startActivity(it) }
         analyticsManager.logAction("bubble_open_app", emptyMap())
-        // Additional handling for open app can be added here
     }
 
     private fun startReminderCycle() {
@@ -225,6 +263,7 @@ class FloatingBubbleService : Service() {
 
     override fun onDestroy() {
         _isRunning.value = false
+        mainHandler.removeCallbacks(longPressRunnable)
         prefs.unregisterOnSharedPreferenceChangeListener(prefListener)
         scope.cancel()
         if (::bubbleView.isInitialized) {
