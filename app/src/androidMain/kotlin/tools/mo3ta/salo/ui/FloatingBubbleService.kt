@@ -49,7 +49,6 @@ class FloatingBubbleService : Service() {
         private const val TAP_THRESHOLD = 10
         private const val TAP_DURATION_MS = 300L
         private const val LONG_PRESS_MS = 400L
-        private const val TARGET_HIT_RADIUS_DP = 44
     }
 
     private val sessionStore: MohamedLoversSessionStore by inject()
@@ -221,50 +220,67 @@ class FloatingBubbleService : Service() {
         }
     }
 
-    // ── Action overlay (separate WM view, top of screen) ─────────────────────
+    // ── Bottom dock bar (separate WM view, slides up from bottom on hold) ───────
 
     private fun showActionOverlay() {
         if (actionOverlayView != null) return
         val (screenW, _) = screenSize()
-        val targetSize = 56.dp()
-        val gap = 32.dp()
+        val barW = screenW - 64.dp()
+        val barH = 72.dp()
+        val iconSize = 40.dp()
 
-        val row = LinearLayout(this).apply {
+        // Bar root — pill-shaped frosted container
+        val bar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
+            gravity = Gravity.CENTER_VERTICAL
+            background = GradientDrawable().apply {
+                setColor(Color.argb(220, 8, 18, 35))
+                cornerRadius = (barH / 2).toFloat()
+                setStroke(1.dp(), Color.argb(80, 255, 215, 0))
+            }
+            elevation = 14.dp().toFloat()
         }
 
-        closeTargetView = buildTarget("✕", Color.parseColor("#B71C1C"), targetSize)
-        openTargetView = buildTarget("↗", Color.parseColor("#FFD700"), targetSize)
+        // Close half
+        closeTargetView = buildDockIcon("✕", Color.parseColor("#B71C1C"), iconSize)
+        val closeHalf = buildDockHalf(closeTargetView!!, "إغلاق", barW / 2, barH)
 
-        row.addView(buildTargetWithLabel(closeTargetView!!, "إغلاق"))
-        row.addView(FrameLayout(this).apply {
-            layoutParams = LinearLayout.LayoutParams(gap, 1)
-        })
-        row.addView(buildTargetWithLabel(openTargetView!!, "فتح"))
+        // Divider
+        val divider = android.view.View(this).apply {
+            layoutParams = LinearLayout.LayoutParams(1.dp(), (barH * 0.55).toInt())
+            setBackgroundColor(Color.argb(60, 255, 215, 0))
+        }
 
-        row.alpha = 0f
-        row.translationY = (-16).dp().toFloat()
+        // Open half
+        openTargetView = buildDockIcon("↗", Color.parseColor("#1565C0"), iconSize)
+        val openHalf = buildDockHalf(openTargetView!!, "فتح التطبيق", barW / 2, barH)
+
+        bar.addView(closeHalf)
+        bar.addView(divider)
+        bar.addView(openHalf)
+
+        bar.alpha = 0f
+        bar.translationY = 40.dp().toFloat()
 
         val params = overlayParams(
-            WRAP_CONTENT, WRAP_CONTENT,
+            barW, barH,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
         ).apply {
-            gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-            y = 48.dp()
+            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+            y = 40.dp()
         }
 
-        windowManager.addView(row, params)
-        actionOverlayView = row
+        windowManager.addView(bar, params)
+        actionOverlayView = bar
 
-        row.animate().alpha(1f).translationY(0f).setDuration(250).start()
+        bar.animate().alpha(1f).translationY(0f).setDuration(280).start()
     }
 
     private fun dismissActionOverlay() {
         targetsVisible = false
         val overlay = actionOverlayView ?: return
-        overlay.animate().alpha(0f).translationY((-16).dp().toFloat()).setDuration(200)
+        overlay.animate().alpha(0f).translationY(40.dp().toFloat()).setDuration(220)
             .withEndAction {
                 runCatching { windowManager.removeView(overlay) }
                 actionOverlayView = null
@@ -273,65 +289,63 @@ class FloatingBubbleService : Service() {
             }.start()
     }
 
-    private fun buildTarget(icon: String, bgColor: Int, size: Int): TextView =
+    private fun buildDockIcon(icon: String, bgColor: Int, size: Int): TextView =
         TextView(this).apply {
             text = icon
             setTextColor(Color.WHITE)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
             gravity = Gravity.CENTER
             background = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
                 setColor(bgColor)
             }
-            elevation = 8.dp().toFloat()
+            elevation = 4.dp().toFloat()
             layoutParams = LinearLayout.LayoutParams(size, size)
         }
 
-    private fun buildTargetWithLabel(target: TextView, labelText: String): LinearLayout =
+    private fun buildDockHalf(icon: TextView, label: String, w: Int, h: Int): LinearLayout =
         LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT)
-            addView(target)
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(w, h)
+            val gap = 8.dp()
+            setPadding(gap, 0, gap, 0)
+            addView(icon)
             addView(TextView(this@FloatingBubbleService).apply {
-                text = labelText
+                text = label
                 setTextColor(Color.WHITE)
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
-                gravity = Gravity.CENTER
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+                gravity = Gravity.CENTER_VERTICAL
                 layoutParams = LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply {
-                    topMargin = 4.dp()
+                    leftMargin = 8.dp()
                 }
             })
         }
 
-    private fun targetCenter(view: TextView): Pair<Float, Float> {
-        val loc = IntArray(2)
-        view.getLocationOnScreen(loc)
-        return Pair(loc[0] + view.width / 2f, loc[1] + view.height / 2f)
+    // Bar hit: bubble is in the dock zone when its Y is in the bottom 120dp of screen.
+    // Left half = close, right half = open app.
+    private fun dockHitResult(rawX: Float, rawY: Float): DockHit {
+        val (screenW, screenH) = screenSize()
+        val inBar = rawY > screenH - 120.dp()
+        if (!inBar) return DockHit.NONE
+        return if (rawX < screenW / 2f) DockHit.CLOSE else DockHit.OPEN
     }
 
+    private enum class DockHit { NONE, CLOSE, OPEN }
+
     private fun checkTargetHighlight(rawX: Float, rawY: Float) {
-        val hitRadius = TARGET_HIT_RADIUS_DP.dp().toFloat()
-        closeTargetView?.let { cv ->
-            val (cx, cy) = targetCenter(cv)
-            val scale = if (dist(rawX, rawY, cx, cy) < hitRadius) 1.2f else 1f
-            cv.animate().scaleX(scale).scaleY(scale).setDuration(80).start()
-        }
-        openTargetView?.let { ov ->
-            val (ox, oy) = targetCenter(ov)
-            val scale = if (dist(rawX, rawY, ox, oy) < hitRadius) 1.2f else 1f
-            ov.animate().scaleX(scale).scaleY(scale).setDuration(80).start()
-        }
+        val hit = dockHitResult(rawX, rawY)
+        val closeScale = if (hit == DockHit.CLOSE) 1.2f else 1f
+        val openScale = if (hit == DockHit.OPEN) 1.2f else 1f
+        closeTargetView?.animate()?.scaleX(closeScale)?.scaleY(closeScale)?.setDuration(80)?.start()
+        openTargetView?.animate()?.scaleX(openScale)?.scaleY(openScale)?.setDuration(80)?.start()
     }
 
     private fun handleTargetRelease(rawX: Float, rawY: Float) {
-        val hitRadius = TARGET_HIT_RADIUS_DP.dp().toFloat()
-        val hitClose = closeTargetView?.let { dist(rawX, rawY, targetCenter(it).first, targetCenter(it).second) < hitRadius } == true
-        val hitOpen = openTargetView?.let { dist(rawX, rawY, targetCenter(it).first, targetCenter(it).second) < hitRadius } == true
-        when {
-            hitClose -> { dismissActionOverlay(); stopSelf() }
-            hitOpen -> { dismissActionOverlay(); launchApp() }
-            else -> { dismissActionOverlay(); clampBubble(); windowManager.updateViewLayout(bubbleView, bubbleParams) }
+        when (dockHitResult(rawX, rawY)) {
+            DockHit.CLOSE -> { dismissActionOverlay(); stopSelf() }
+            DockHit.OPEN  -> { dismissActionOverlay(); launchApp() }
+            DockHit.NONE  -> { dismissActionOverlay(); clampBubble(); windowManager.updateViewLayout(bubbleView, bubbleParams) }
         }
     }
 
