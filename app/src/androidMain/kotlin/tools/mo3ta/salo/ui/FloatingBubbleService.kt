@@ -236,11 +236,11 @@ class FloatingBubbleService : Service() {
         closeTargetView = buildTarget("✕", Color.parseColor("#B71C1C"), targetSize)
         openTargetView = buildTarget("↗", Color.parseColor("#FFD700"), targetSize)
 
-        row.addView(closeTargetView)
+        row.addView(buildTargetWithLabel(closeTargetView!!, "إغلاق"))
         row.addView(FrameLayout(this).apply {
             layoutParams = LinearLayout.LayoutParams(gap, 1)
         })
-        row.addView(openTargetView)
+        row.addView(buildTargetWithLabel(openTargetView!!, "فتح"))
 
         row.alpha = 0f
         row.translationY = (-16).dp().toFloat()
@@ -284,6 +284,23 @@ class FloatingBubbleService : Service() {
             }
             elevation = 8.dp().toFloat()
             layoutParams = LinearLayout.LayoutParams(size, size)
+        }
+
+    private fun buildTargetWithLabel(target: TextView, labelText: String): LinearLayout =
+        LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT)
+            addView(target)
+            addView(TextView(this@FloatingBubbleService).apply {
+                text = labelText
+                setTextColor(Color.WHITE)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
+                gravity = Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply {
+                    topMargin = 4.dp()
+                }
+            })
         }
 
     private fun targetCenter(view: TextView): Pair<Float, Float> {
