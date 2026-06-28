@@ -132,7 +132,7 @@ class EngagementStore(private val settings: Settings) {
         val lastShown = settings.getStringOrNull(KEY_REVIEW_LAST_SHOWN)
         if (lastShown == null) return true
         val lastDate = runCatching { LocalDate.parse(lastShown) }.getOrNull() ?: return true
-        return (today.toEpochDays() - lastDate.toEpochDays()) >= 7
+        return (today.toEpochDays() - lastDate.toEpochDays()) >= 2
     }
 
     fun markReviewDialogShown(today: LocalDate) {

@@ -324,9 +324,9 @@
     <string name="overlay_rationale_later">以后再说</string>
 
     <!-- Review Dialog -->
-    <string name="review_title">为应用评分</string>
-    <string name="review_description">如果您喜欢这个应用，请在商店中给我们评分。\n您的评分有助于传播善意并让更多人看到。</string>
-    <string name="review_rate_now">立即评分</string>
+    <string name="review_title">⭐ 帮助传播对先知ﷺ的祝福</string>
+    <string name="review_description">为应用评分可以帮助更多穆斯林发现它，\n每一个因你而诵读祝福的人，你也将获得同等的回赐！\n\n您的片刻 = 以真主意志获得持续的回赐 🌟</string>
+    <string name="review_rate_now">立即评分并传播善意</string>
     <string name="review_later">以后再说</string>
 
     <!-- Version Update Dialog -->

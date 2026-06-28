@@ -324,9 +324,9 @@
     <string name="overlay_rationale_later">بعد میں</string>
 
     <!-- Review Dialog -->
-    <string name="review_title">ایپ کی درجہ بندی کریں</string>
-    <string name="review_description">اگر آپ کو ایپ پسند آئی تو اسٹور پر اپنی درجہ بندی سے ہماری مدد کریں۔\nآپ کی درجہ بندی خیر پھیلانے اور زیادہ لوگوں تک پہنچنے میں مدد کرتی ہے۔</string>
-    <string name="review_rate_now">ابھی درجہ بندی کریں</string>
+    <string name="review_title">⭐ نبی ﷺ پر درود پھیلانے میں مدد کریں</string>
+    <string name="review_description">ایپ کی ریٹنگ سے مزید مسلمان اسے دریافت کر سکتے ہیں،\nاور جو بھی آپ کی وجہ سے درود پڑھے اس کا ثواب آپ کو بھی ملے گا!\n\nآپ کا ایک لمحہ = اللہ کی اجازت سے مستقل ثواب 🌟</string>
+    <string name="review_rate_now">ابھی ریٹ کریں اور خیر پھیلائیں</string>
     <string name="review_later">بعد میں</string>
 
     <!-- Version Update Dialog -->

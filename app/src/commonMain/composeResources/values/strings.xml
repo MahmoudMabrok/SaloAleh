@@ -359,9 +359,9 @@
     <string name="overlay_rationale_later">لاحقاً</string>
 
     <!-- Review Dialog -->
-    <string name="review_title">قيّم التطبيق</string>
-    <string name="review_description">إذا أعجبك التطبيق، ساعدنا بتقييمك على المتجر.\nتقييمك يساعد في نشر الخير ووصول التطبيق لأكبر عدد.</string>
-    <string name="review_rate_now">قيّم الآن</string>
+    <string name="review_title">⭐ ساعد في نشر الصلاة على النبي ﷺ</string>
+    <string name="review_description">تقييمك للتطبيق يجعله يصل لمزيد من المسلمين،\nوكل من يصلّي بسببك لك مثل أجره!\n\nلحظة واحدة منك = ثواب مستمر بإذن الله 🌟</string>
+    <string name="review_rate_now">قيّم الآن وانشر الخير</string>
     <string name="review_later">لاحقاً</string>
 
     <!-- Version Update Dialog -->

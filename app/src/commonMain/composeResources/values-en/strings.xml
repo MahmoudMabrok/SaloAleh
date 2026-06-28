@@ -354,9 +354,9 @@
     <string name="overlay_rationale_later">Later</string>
 
     <!-- Review Dialog -->
-    <string name="review_title">Rate the App</string>
-    <string name="review_description">If you like the app, help us with your rating on the store.\nYour rating helps spread goodness and reach more people.</string>
-    <string name="review_rate_now">Rate Now</string>
+    <string name="review_title">⭐ Help Spread Salawat on the Prophet ﷺ</string>
+    <string name="review_description">Rating the app helps more Muslims discover it,\nand every person who sends Salawat because of you earns you the same reward!\n\nOne moment from you = ongoing thawab, by Allah\'s will 🌟</string>
+    <string name="review_rate_now">Rate Now &amp; Spread the Good</string>
     <string name="review_later">Later</string>
 
     <!-- Version Update Dialog -->
