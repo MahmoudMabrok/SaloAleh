@@ -233,6 +233,7 @@ class FloatingBubbleService : Service() {
         val bar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
+            layoutDirection = android.view.View.LAYOUT_DIRECTION_LTR
             background = GradientDrawable().apply {
                 setColor(Color.argb(220, 8, 18, 35))
                 cornerRadius = (barH / 2).toFloat()
