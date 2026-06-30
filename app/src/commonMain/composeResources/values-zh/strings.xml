@@ -70,6 +70,13 @@
     <string name="dhikr_leaderboard_rank_new">新</string>
     <string name="dhikr_leaderboard_empty">暂无数据</string>
     <string name="dhikr_rank_unranked">点击查看排行榜</string>
+    <string name="dhikr_manual_entry_button">📿 记录外部赞念</string>
+    <string name="manual_dhikr_title">📿 记录外部赞念</string>
+    <string name="manual_dhikr_subtitle">默默地、用手指或用念珠记念真主了？\n记录您所诵念的 - 不要因为不在应用中就停止赞念</string>
+    <string name="manual_dhikr_other_count">其他数量：</string>
+    <string name="manual_dhikr_enter_count">输入数量</string>
+    <string name="manual_dhikr_witness">我证明这个数量是真实准确的，真主了解我的意图</string>
+    <string name="manual_dhikr_submit">✦ 记录赞念 ✦</string>
 
     <!-- Info Sheet Supporter -->
     <string name="info_sheet_supporter_label">⭐ 支持者</string>

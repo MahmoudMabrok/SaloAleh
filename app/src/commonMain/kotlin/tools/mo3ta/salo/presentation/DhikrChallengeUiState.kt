@@ -16,6 +16,8 @@ data class DhikrChallengeUiState(
     val showCelebration: Boolean = false,
     val celebrationMilestone: Int = 0,
     val showLeaderboard: Boolean = false,
+    val showManualDhikrSheet: Boolean = false,
+    val isSubmittingManualDhikr: Boolean = false,
     val leaderboard: List<DhikrLeaderboardEntry> = emptyList(),
     val isLeaderboardLoading: Boolean = false,
     val currentUid: String = "",

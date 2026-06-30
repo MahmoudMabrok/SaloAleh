@@ -60,6 +60,7 @@ import tools.mo3ta.salo.generated.resources.dhikr_add
 import tools.mo3ta.salo.generated.resources.dhikr_back_cd
 import tools.mo3ta.salo.generated.resources.dhikr_daily_goal
 import tools.mo3ta.salo.generated.resources.dhikr_freed_today
+import tools.mo3ta.salo.generated.resources.dhikr_manual_entry_button
 import tools.mo3ta.salo.generated.resources.dhikr_phrase
 import tools.mo3ta.salo.generated.resources.dhikr_progress_count
 import tools.mo3ta.salo.generated.resources.dhikr_rank_number
@@ -84,6 +85,7 @@ import tools.mo3ta.salo.ui.dhikr.DhikrMilestoneCelebration
 import tools.mo3ta.salo.ui.dhikr.DhikrPanel
 import tools.mo3ta.salo.ui.dhikr.DhikrProgressRing
 import tools.mo3ta.salo.ui.dhikr.DhikrSpacing
+import tools.mo3ta.salo.ui.dhikr.ManualDhikrSheet
 
 @Composable
 fun DhikrRewardsScreen(
@@ -164,6 +166,13 @@ fun DhikrRewardsScreen(
                         todayCount = state.todayCount,
                         target = state.dailyGoal,
                     )
+                    Spacer(Modifier.height(DhikrSpacing.PanelGap))
+                    DhikrManualEntryButton(
+                        onClick = {
+                            analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_DHIKR)
+                            viewModel.showManualDhikrSheet()
+                        },
+                    )
                 }
             }
         }
@@ -183,6 +192,34 @@ fun DhikrRewardsScreen(
             participantCount = state.participantCount,
             isLoading = state.isLeaderboardLoading,
             onDismiss = { viewModel.onLeaderboardClosed() },
+        )
+    }
+
+    ManualDhikrSheet(
+        isOpen = state.showManualDhikrSheet,
+        onDismiss = { viewModel.dismissManualDhikrSheet() },
+        onSubmit = { count -> viewModel.submitManualDhikr(count) },
+    )
+}
+
+@Composable
+private fun DhikrManualEntryButton(onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = DhikrColors.Green.copy(alpha = 0.08f),
+        border = BorderStroke(1.dp, DhikrColors.LightGreen.copy(alpha = 0.4f)),
+    ) {
+        Text(
+            text = stringResource(Res.string.dhikr_manual_entry_button),
+            color = DhikrColors.Green,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 14.dp, horizontal = 12.dp),
         )
     }
 }
