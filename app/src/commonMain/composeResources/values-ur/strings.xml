@@ -508,6 +508,10 @@
     <string name="settings_nickname_placeholder">مثلاً: محبِ رسول</string>
     <string name="settings_nickname_show">نام دکھائیں</string>
     <string name="settings_nickname_show_subtitle">لیڈربورڈ پر کوڈ کی بجائے اپنا نام ظاہر کریں</string>
+    <string name="nickname_prompt_title">آپ کا نام کیا ہے؟</string>
+    <string name="nickname_prompt_body">ایک نام منتخب کریں جو لیڈربورڈ پر کوڈ کی بجائے دکھے۔</string>
+    <string name="nickname_prompt_save">نام محفوظ کریں</string>
+    <string name="nickname_prompt_later">بعد میں</string>
     <string name="nickname_announcement_title">اپنا نام چنیں!</string>
     <string name="nickname_announcement_body">اب آپ لیڈربورڈ پر بے ترتیب کوڈ کی بجائے اپنا نام دکھا سکتے ہیں۔ سیٹنگز میں جائیں اور اپنا نام چنیں۔</string>
     <string name="nickname_announcement_cta">میرا نام چنیں</string>

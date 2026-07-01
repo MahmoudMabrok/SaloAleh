@@ -546,6 +546,10 @@
     <string name="settings_nickname_placeholder">e.g. Lover of the Prophet</string>
     <string name="settings_nickname_show">Show name</string>
     <string name="settings_nickname_show_subtitle">Display your name instead of the code on the leaderboard</string>
+    <string name="nickname_prompt_title">What should we call you?</string>
+    <string name="nickname_prompt_body">Choose a name to show on the leaderboard instead of your code.</string>
+    <string name="nickname_prompt_save">Save name</string>
+    <string name="nickname_prompt_later">Later</string>
     <string name="nickname_announcement_title">Choose your name!</string>
     <string name="nickname_announcement_body">You can now choose a name to show on the leaderboard instead of the random code. Go to settings to pick your name.</string>
     <string name="nickname_announcement_cta">Choose my name</string>

@@ -38,6 +38,17 @@ class ScreenSmokeTest {
     }
 
     @Test
+    fun nicknamePromptDialog_renders() = runComposeUiTest {
+        setContent {
+            NicknamePromptDialog(
+                onSave = {},
+                onDismiss = {},
+            )
+        }
+        waitForIdle()
+    }
+
+    @Test
     fun achievementCelebrationDialog_rendersStreakBadge() = runComposeUiTest {
         setContent {
             AchievementCelebrationDialog(

@@ -508,6 +508,10 @@
     <string name="settings_nickname_placeholder">例如：爱先知的人</string>
     <string name="settings_nickname_show">显示名字</string>
     <string name="settings_nickname_show_subtitle">在排行榜上显示你的名字而不是代码</string>
+    <string name="nickname_prompt_title">该怎么称呼你？</string>
+    <string name="nickname_prompt_body">选择一个名字显示在排行榜上，代替你的代码。</string>
+    <string name="nickname_prompt_save">保存名字</string>
+    <string name="nickname_prompt_later">稍后</string>
     <string name="nickname_announcement_title">选择你的名字！</string>
     <string name="nickname_announcement_body">现在你可以选择一个名字显示在排行榜上，代替随机代码。前往设置选择你的名字。</string>
     <string name="nickname_announcement_cta">选择我的名字</string>

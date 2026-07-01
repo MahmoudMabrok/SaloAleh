@@ -556,6 +556,10 @@
     <string name="settings_nickname_placeholder">مثال: محب الرسول</string>
     <string name="settings_nickname_show">عرض الاسم</string>
     <string name="settings_nickname_show_subtitle">إظهار اسمك بدلاً من الرمز في لوحة المتصدرين</string>
+    <string name="nickname_prompt_title">ما اسمك؟</string>
+    <string name="nickname_prompt_body">اختر اسمًا يظهر في لوحة المتصدرين بدل الرمز.</string>
+    <string name="nickname_prompt_save">حفظ الاسم</string>
+    <string name="nickname_prompt_later">لاحقًا</string>
     <string name="nickname_announcement_title">اختر اسمك!</string>
     <string name="nickname_announcement_body">الآن يمكنك اختيار اسم يظهر في لوحة المتصدرين بدلاً من الرمز العشوائي. اذهب للإعدادات لتختار اسمك.</string>
     <string name="nickname_announcement_cta">اختر اسمي</string>

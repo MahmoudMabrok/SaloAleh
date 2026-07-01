@@ -67,7 +67,7 @@ import tools.mo3ta.salo.ui.settings.PurchaseSuccessDialog
 import tools.mo3ta.salo.ui.settings.SettingsScreen
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
-import tools.mo3ta.salo.ui.NicknameAnnouncementDialog
+import tools.mo3ta.salo.ui.NicknamePromptDialog
 import tools.mo3ta.salo.ui.SalawatVariantAnnouncementDialog
 import tools.mo3ta.salo.ui.takbeer.TakbeerAnnouncementDialog
 import tools.mo3ta.salo.ui.takbeer.TakbeerSessionScreen
@@ -89,6 +89,9 @@ import tools.mo3ta.salo.generated.resources.bottom_nav_settings
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.NotificationMessageDialog
 import tools.mo3ta.salo.ui.tendays.TenDaysScreen
+
+// Temporarily suppress feature announcements; the review dialog remains enabled.
+private const val FEATURE_ANNOUNCEMENTS_ENABLED = false
 
 @Composable
 fun App(
@@ -118,13 +121,18 @@ fun App(
         var pendingNotificationMessage by remember(notificationMessage) {
             mutableStateOf(notificationMessage)
         }
+        val settings = koinInject<Settings>()
+        val analyticsManager = koinInject<AnalyticsManager>()
+        val sessionStoreApp = koinInject<MohamedLoversSessionStore>()
         var openLeaderboardSheet by remember { mutableStateOf(false) }
-        var showOnboarding by remember { mutableStateOf(false) }
+        var showOnboarding by remember { mutableStateOf(!sessionStoreApp.hasExistingUserState()) }
         var showTakbeerSession by remember { mutableStateOf(false) }
         var showTenDays by remember { mutableStateOf(false) }
         var showDhikrRewards by remember { mutableStateOf(false) }
         var showExtensionQr by remember { mutableStateOf(false) }
         var showPaywall by remember { mutableStateOf(false) }
+        var nicknamePromptRequested by remember { mutableStateOf(false) }
+        var nicknamePromptDismissedThisSession by remember { mutableStateOf(false) }
 
         PlatformBackHandler(
             enabled = showPaywall ||
@@ -146,26 +154,35 @@ fun App(
             }
         }
 
-        val settings = koinInject<Settings>()
-        val analyticsManager = koinInject<AnalyticsManager>()
         var takbeerAnnouncementDone by remember {
             mutableStateOf(settings.getBoolean("takbeer_announcement_shown", false))
         }
-        val sessionStoreApp = koinInject<MohamedLoversSessionStore>()
         LaunchedEffect(Unit) { analyticsManager.setUserId(sessionStoreApp.getOrCreateUid()) }
-        var nicknameAnnouncementDone by remember {
-            mutableStateOf(sessionStoreApp.isNicknameAnnouncementShown)
-        }
         var salawatVariantAnnouncementDone by remember {
             mutableStateOf(settings.getBoolean("salawat_variant_announcement_shown", false))
         }
         val mohamedLoversViewModel: MohamedLoversViewModel = koinViewModel()
         val mlState by mohamedLoversViewModel.state.collectAsStateWithLifecycle()
+        val nicknamePromptBlocked = showPaywall ||
+            showDhikrRewards ||
+            showTakbeerSession ||
+            showTenDays ||
+            showExtensionQr ||
+            showOnboarding
+        val shouldShowNicknamePrompt = !nicknamePromptBlocked &&
+            sessionStoreApp.getNickname() == null &&
+            (nicknamePromptRequested || (selectedTab == SaloTab.MohamedLovers && !nicknamePromptDismissedThisSession))
 
         when {
             showPaywall -> PaywallScreen(onBack = { showPaywall = false })
             showExtensionQr -> ExtensionQrScreen(onBack = { showExtensionQr = false })
-            showOnboarding -> OnboardingScreen(onDone = { showOnboarding = false })
+            showOnboarding -> OnboardingScreen(
+                onDone = {
+                    showOnboarding = false
+                    nicknamePromptRequested = true
+                    nicknamePromptDismissedThisSession = false
+                },
+            )
             showTakbeerSession -> TakbeerSessionScreen(onBack = { showTakbeerSession = false })
             showTenDays -> TenDaysScreen(
                 onBack = { showTenDays = false },
@@ -206,7 +223,10 @@ fun App(
                             SaloTab.Settings -> SettingsScreen(
                                 onBack = { selectedTab = SaloTab.MohamedLovers },
                                 showBackButton = false,
-                                onOpenOnboarding = { showOnboarding = true },
+                                onOpenOnboarding = {
+                                    showOnboarding = true
+                                    nicknamePromptDismissedThisSession = false
+                                },
                                 onOpenExtensionQr = { showExtensionQr = true },
                                 onOpenPaywall = { showPaywall = true },
                             )
@@ -246,7 +266,25 @@ fun App(
             )
         }
 
-        if (!takbeerAnnouncementDone) {
+        if (shouldShowNicknamePrompt) {
+            NicknamePromptDialog(
+                initialName = sessionStoreApp.getNickname().orEmpty(),
+                onSave = { name ->
+                    mohamedLoversViewModel.saveNickname(name)
+                    nicknamePromptRequested = false
+                    nicknamePromptDismissedThisSession = false
+                    sessionStoreApp.isNicknameAnnouncementShown = true
+                    analyticsManager.logAction(AppAnalytics.NICKNAME_ANNOUNCEMENT_OPENED)
+                },
+                onDismiss = {
+                    nicknamePromptRequested = false
+                    nicknamePromptDismissedThisSession = true
+                    analyticsManager.logAction(AppAnalytics.NICKNAME_ANNOUNCEMENT_DISMISSED)
+                },
+            )
+        }
+
+        if (!shouldShowNicknamePrompt && FEATURE_ANNOUNCEMENTS_ENABLED && !takbeerAnnouncementDone) {
             TakbeerAnnouncementDialog(
                 onOpen = {
                     settings.putBoolean("takbeer_announcement_shown", true)
@@ -262,23 +300,12 @@ fun App(
             )
         }
 
-        if (takbeerAnnouncementDone && !nicknameAnnouncementDone) {
-            NicknameAnnouncementDialog(
-                onOpenSettings = {
-                    sessionStoreApp.isNicknameAnnouncementShown = true
-                    nicknameAnnouncementDone = true
-                    selectedTab = SaloTab.Settings
-                    analyticsManager.logAction(AppAnalytics.NICKNAME_ANNOUNCEMENT_OPENED)
-                },
-                onDismiss = {
-                    sessionStoreApp.isNicknameAnnouncementShown = true
-                    nicknameAnnouncementDone = true
-                    analyticsManager.logAction(AppAnalytics.NICKNAME_ANNOUNCEMENT_DISMISSED)
-                },
-            )
-        }
-
-        if (takbeerAnnouncementDone && nicknameAnnouncementDone && !salawatVariantAnnouncementDone) {
+        if (
+            !shouldShowNicknamePrompt &&
+            FEATURE_ANNOUNCEMENTS_ENABLED &&
+            takbeerAnnouncementDone &&
+            !salawatVariantAnnouncementDone
+        ) {
             SalawatVariantAnnouncementDialog(
                 onOpenSettings = {
                     settings.putBoolean("salawat_variant_announcement_shown", true)

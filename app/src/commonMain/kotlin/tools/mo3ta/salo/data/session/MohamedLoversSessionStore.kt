@@ -99,6 +99,16 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         return s
     }
 
+    fun hasExistingUserState(): Boolean =
+        listOf(
+            KEY_UID,
+            KEY_ALIAS,
+            KEY_PENDING_ROUNDS_INDEX,
+            KEY_PENDING_ROUND_LEGACY,
+            KEY_NICKNAME,
+            KEY_FCM_TOKEN,
+        ).any { settings.hasKey(it) }
+
     fun getPersonalBestRank(): Int = settings.getInt(KEY_PERSONAL_BEST_RANK, Int.MAX_VALUE)
     fun updatePersonalBestRank(rank: Int) {
         if (rank < getPersonalBestRank()) settings.putInt(KEY_PERSONAL_BEST_RANK, rank)

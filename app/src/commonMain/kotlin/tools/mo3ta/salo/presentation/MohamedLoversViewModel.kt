@@ -331,6 +331,19 @@ class MohamedLoversViewModel(
         viewModelScope.launch { repository.writeNickname(nick) }
     }
 
+    fun saveNickname(name: String) {
+        val trimmed = name.trim()
+        if (trimmed.isBlank()) return
+        sessionStore.setNickname(trimmed)
+        sessionStore.isNicknameEnabled = true
+        val nick = sessionStore.getNickname().orEmpty()
+        authUid?.let { uid ->
+            _state.update { it.copy(selfDisplayTag = buildMohamedLoversDisplayTag(uid, it.countryCode, nick)) }
+        }
+        viewModelScope.launch { repository.writeNickname(nick) }
+        applyLeaderboard()
+    }
+
     fun setNicknameEnabled(enabled: Boolean) {
         sessionStore.isNicknameEnabled = enabled
         val nick = sessionStore.getNickname()?.takeIf { enabled }.orEmpty()

@@ -83,6 +83,13 @@ class MohamedLoversSessionStoreTest {
     }
 
     @Test
+    fun hasExistingUserState_initiallyFalse_thenTrueAfterUidCreated() {
+        assertEquals(false, store.hasExistingUserState())
+        store.getRawUid()
+        assertEquals(true, store.hasExistingUserState())
+    }
+
+    @Test
     fun personalBestRank_defaultIsMaxInt() {
         assertEquals(Int.MAX_VALUE, store.getPersonalBestRank())
     }
