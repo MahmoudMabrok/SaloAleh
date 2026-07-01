@@ -83,6 +83,7 @@ private val TypeChannel  = Color(0xFF6B2E1E)
 @Composable
 fun HadithListScreen(
     onBack: () -> Unit,
+    showBackButton: Boolean = true,
     viewModel: HadithListViewModel = koinViewModel(),
 ) {
     val analyticsManager: AnalyticsManager = koinInject()
@@ -117,12 +118,14 @@ fun HadithListScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(Res.string.mohamed_lovers_back_cd),
-                            tint = HLGold,
-                        )
+                    if (showBackButton) {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(Res.string.mohamed_lovers_back_cd),
+                                tint = HLGold,
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0A1528)),

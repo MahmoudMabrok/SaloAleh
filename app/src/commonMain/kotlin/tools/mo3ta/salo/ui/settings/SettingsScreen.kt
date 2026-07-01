@@ -84,7 +84,13 @@ import tools.mo3ta.salo.ui.showPlatformToast
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpenExtensionQr: () -> Unit = {}, onOpenPaywall: () -> Unit = {}) {
+fun SettingsScreen(
+    onBack: () -> Unit,
+    showBackButton: Boolean = true,
+    onOpenOnboarding: () -> Unit = {},
+    onOpenExtensionQr: () -> Unit = {},
+    onOpenPaywall: () -> Unit = {},
+) {
     val store: NotificationSettingsStore = koinInject()
     val hadithStore: DailyHadithStore = koinInject()
     val sessionStore: MohamedLoversSessionStore = koinInject()
@@ -140,12 +146,14 @@ fun SettingsScreen(onBack: () -> Unit, onOpenOnboarding: () -> Unit = {}, onOpen
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(Res.string.mohamed_lovers_back_cd),
-                            tint = MohamedLoversPalette.GoldGlow,
-                        )
+                    if (showBackButton) {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(Res.string.mohamed_lovers_back_cd),
+                                tint = MohamedLoversPalette.GoldGlow,
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

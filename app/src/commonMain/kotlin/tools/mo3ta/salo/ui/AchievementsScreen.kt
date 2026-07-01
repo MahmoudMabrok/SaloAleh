@@ -168,6 +168,7 @@ private data class BadgeDisplayItem(val spec: BadgeSpec, val count: Int)
 @Composable
 fun AchievementsScreen(
     onBack: () -> Unit,
+    showBackButton: Boolean = true,
     viewModel: AchievementsViewModel = koinViewModel(),
 ) {
     val achievements by viewModel.achievements.collectAsStateWithLifecycle()
@@ -220,8 +221,12 @@ fun AchievementsScreen(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.achievements_back_cd), tint = Color.White)
+            if (showBackButton) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.achievements_back_cd), tint = Color.White)
+                }
+            } else {
+                Spacer(Modifier.size(48.dp))
             }
             Text(
                 text = stringResource(Res.string.achievements_title),

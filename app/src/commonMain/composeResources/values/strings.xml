@@ -66,6 +66,21 @@
     <string name="main_screen_cd_dhikr_rewards">الذكر</string>
     <string name="main_screen_tooltip_info">معلومات عن الجولة وكيفية اللعب</string>
 
+    <!-- Bottom Navigation -->
+    <string name="bottom_nav_mohamed_lovers">محبو محمد</string>
+    <string name="bottom_nav_challenges">التحديات</string>
+    <string name="bottom_nav_achievements">الإنجازات</string>
+    <string name="bottom_nav_articles">المقالات</string>
+    <string name="bottom_nav_settings">الإعدادات</string>
+
+    <!-- Challenges Screen -->
+    <string name="challenges_title">التحديات</string>
+    <string name="challenges_subtitle">اختر تحديًا وواصل وردك اليومي بخطوة واضحة.</string>
+    <string name="challenge_dhikr_title">اهل لا اله الا الله</string>
+    <string name="challenge_dhikr_body">أتم 100 ذكر يوميًا وتابع ترتيبك بين المشاركين.</string>
+    <string name="challenge_ten_days_body">اجمع أعمال عشر ذي الحجة من ذكر وتكبير وصيام وصدقة.</string>
+    <string name="challenge_takbeer_body">كبّروا بالتناوب في حلقة جماعية منظمة.</string>
+
     <!-- Dhikr Rewards Screen -->
     <string name="dhikr_title">الذكر</string>
     <string name="dhikr_back_cd">رجوع</string>

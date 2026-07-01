@@ -7,14 +7,35 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoStories
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Spa
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.russhwolf.settings.Settings
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import tools.mo3ta.salo.domain.Achievement
 import tools.mo3ta.salo.domain.EngagementData
@@ -22,6 +43,7 @@ import tools.mo3ta.salo.data.engagement.EngagementStore
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.ui.AchievementCelebrationDialog
 import tools.mo3ta.salo.ui.AchievementsScreen
+import tools.mo3ta.salo.ui.ChallengesScreen
 import tools.mo3ta.salo.ui.DhikrRewardsScreen
 import tools.mo3ta.salo.ui.HadithListScreen
 import tools.mo3ta.salo.ui.MohamedLoversScreen
@@ -58,7 +80,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.notification.NotificationAction
 import tools.mo3ta.salo.notification.NotificationMessage
+import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.bottom_nav_achievements
+import tools.mo3ta.salo.generated.resources.bottom_nav_articles
+import tools.mo3ta.salo.generated.resources.bottom_nav_challenges
+import tools.mo3ta.salo.generated.resources.bottom_nav_mohamed_lovers
+import tools.mo3ta.salo.generated.resources.bottom_nav_settings
+import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.NotificationMessageDialog
+import tools.mo3ta.salo.ui.tendays.TenDaysScreen
 
 @Composable
 fun App(
@@ -84,29 +114,35 @@ fun App(
                 }
             )
         }
-        var showAchievements by remember { mutableStateOf(false) }
+        var selectedTab by remember { mutableStateOf(SaloTab.MohamedLovers) }
         var pendingNotificationMessage by remember(notificationMessage) {
             mutableStateOf(notificationMessage)
         }
         var openLeaderboardSheet by remember { mutableStateOf(false) }
-        var showSettings by remember { mutableStateOf(false) }
-        var showHadithList by remember { mutableStateOf(false) }
         var showOnboarding by remember { mutableStateOf(false) }
         var showTakbeerSession by remember { mutableStateOf(false) }
+        var showTenDays by remember { mutableStateOf(false) }
         var showDhikrRewards by remember { mutableStateOf(false) }
         var showExtensionQr by remember { mutableStateOf(false) }
         var showPaywall by remember { mutableStateOf(false) }
 
-        PlatformBackHandler(enabled = showPaywall || showDhikrRewards || showTakbeerSession || showExtensionQr || showHadithList || showAchievements || showSettings || showOnboarding) {
+        PlatformBackHandler(
+            enabled = showPaywall ||
+                showDhikrRewards ||
+                showTakbeerSession ||
+                showTenDays ||
+                showExtensionQr ||
+                showOnboarding ||
+                selectedTab != SaloTab.MohamedLovers,
+        ) {
             when {
                 showPaywall -> showPaywall = false
                 showDhikrRewards -> showDhikrRewards = false
                 showTakbeerSession -> showTakbeerSession = false
+                showTenDays -> showTenDays = false
                 showExtensionQr -> showExtensionQr = false
-                showHadithList -> showHadithList = false
-                showAchievements -> showAchievements = false
                 showOnboarding -> showOnboarding = false
-                showSettings -> showSettings = false
+                selectedTab != SaloTab.MohamedLovers -> selectedTab = SaloTab.MohamedLovers
             }
         }
 
@@ -130,29 +166,53 @@ fun App(
             showPaywall -> PaywallScreen(onBack = { showPaywall = false })
             showExtensionQr -> ExtensionQrScreen(onBack = { showExtensionQr = false })
             showOnboarding -> OnboardingScreen(onDone = { showOnboarding = false })
-            showSettings -> SettingsScreen(
-                onBack = { showSettings = false },
-                onOpenOnboarding = { showOnboarding = true },
-                onOpenExtensionQr = { showExtensionQr = true },
-                onOpenPaywall = { showPaywall = true },
-            )
-            showAchievements -> AchievementsScreen(onBack = { showAchievements = false })
-            showHadithList -> HadithListScreen(onBack = { showHadithList = false })
             showTakbeerSession -> TakbeerSessionScreen(onBack = { showTakbeerSession = false })
+            showTenDays -> TenDaysScreen(
+                onBack = { showTenDays = false },
+                onOpenTakbeerSession = { showTakbeerSession = true },
+            )
             showDhikrRewards -> DhikrRewardsScreen(
                 onBack = { showDhikrRewards = false },
             )
-            else -> MohamedLoversScreen(
-                onOpenAchievements = { showAchievements = true },
-                onOpenSettings = { showSettings = true },
-                onOpenHadithList = { showHadithList = true },
-                onOpenTakbeerSession = { showTakbeerSession = true },
-                onOpenDhikrRewards = { showDhikrRewards = true },
-                onOpenPaywall = { showPaywall = true },
-                announcementsDone = takbeerAnnouncementDone && nicknameAnnouncementDone && salawatVariantAnnouncementDone,
-                viewModel = mohamedLoversViewModel,
-                openInfoSheet = openLeaderboardSheet,
-                onInfoSheetOpened = { openLeaderboardSheet = false },
+            else -> SaloTabScaffold(
+                selectedTab = selectedTab,
+                onTabSelected = { selectedTab = it },
+                content = { padding ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding),
+                    ) {
+                        when (selectedTab) {
+                            SaloTab.MohamedLovers -> MohamedLoversScreen(
+                                onOpenPaywall = { showPaywall = true },
+                                viewModel = mohamedLoversViewModel,
+                                openInfoSheet = openLeaderboardSheet,
+                                onInfoSheetOpened = { openLeaderboardSheet = false },
+                            )
+                            SaloTab.Challenges -> ChallengesScreen(
+                                onOpenDhikrChallenge = { showDhikrRewards = true },
+                                onOpenTenDays = { showTenDays = true },
+                                onOpenTakbeerSession = { showTakbeerSession = true },
+                            )
+                            SaloTab.Achievements -> AchievementsScreen(
+                                onBack = { selectedTab = SaloTab.MohamedLovers },
+                                showBackButton = false,
+                            )
+                            SaloTab.Articles -> HadithListScreen(
+                                onBack = { selectedTab = SaloTab.MohamedLovers },
+                                showBackButton = false,
+                            )
+                            SaloTab.Settings -> SettingsScreen(
+                                onBack = { selectedTab = SaloTab.MohamedLovers },
+                                showBackButton = false,
+                                onOpenOnboarding = { showOnboarding = true },
+                                onOpenExtensionQr = { showExtensionQr = true },
+                                onOpenPaywall = { showPaywall = true },
+                            )
+                        }
+                    }
+                },
             )
         }
 
@@ -160,7 +220,7 @@ fun App(
             NotificationRationaleDialog(
                 onAllow = {
                     showRationale = false
-                    showSettings = true
+                    selectedTab = SaloTab.Settings
                 },
                 onDismiss = { showRationale = false },
             )
@@ -207,7 +267,7 @@ fun App(
                 onOpenSettings = {
                     sessionStoreApp.isNicknameAnnouncementShown = true
                     nicknameAnnouncementDone = true
-                    showSettings = true
+                    selectedTab = SaloTab.Settings
                     analyticsManager.logAction(AppAnalytics.NICKNAME_ANNOUNCEMENT_OPENED)
                 },
                 onDismiss = {
@@ -223,7 +283,7 @@ fun App(
                 onOpenSettings = {
                     settings.putBoolean("salawat_variant_announcement_shown", true)
                     salawatVariantAnnouncementDone = true
-                    showSettings = true
+                    selectedTab = SaloTab.Settings
                     analyticsManager.logAction(AppAnalytics.SALAWAT_VARIANT_ANNOUNCEMENT_OPENED)
                 },
                 onDismiss = {
@@ -358,8 +418,11 @@ fun App(
                 onDismiss = {
                     pendingNotificationMessage = null
                     when (msg.action) {
-                        NotificationAction.OPEN_LEADERBOARD -> openLeaderboardSheet = true
-                        NotificationAction.OPEN_ACHIEVEMENTS -> showAchievements = true
+                        NotificationAction.OPEN_LEADERBOARD -> {
+                            selectedTab = SaloTab.MohamedLovers
+                            openLeaderboardSheet = true
+                        }
+                        NotificationAction.OPEN_ACHIEVEMENTS -> selectedTab = SaloTab.Achievements
                         NotificationAction.NONE -> Unit
                     }
                 },
@@ -374,6 +437,99 @@ fun App(
                     openStorePage()
                 },
                 onDismiss = { pendingVersionUpdate = null },
+            )
+        }
+    }
+}
+
+private enum class SaloTab {
+    MohamedLovers,
+    Challenges,
+    Achievements,
+    Articles,
+    Settings,
+}
+
+private data class SaloTabItem(
+    val tab: SaloTab,
+    val label: String,
+    val icon: ImageVector,
+)
+
+@Composable
+private fun SaloTabScaffold(
+    selectedTab: SaloTab,
+    onTabSelected: (SaloTab) -> Unit,
+    content: @Composable (PaddingValues) -> Unit,
+) {
+    Scaffold(
+        containerColor = MohamedLoversPalette.DeepBlue,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        bottomBar = {
+            SaloBottomNavigationBar(
+                selectedTab = selectedTab,
+                onTabSelected = onTabSelected,
+            )
+        },
+        content = content,
+    )
+}
+
+@Composable
+private fun SaloBottomNavigationBar(
+    selectedTab: SaloTab,
+    onTabSelected: (SaloTab) -> Unit,
+) {
+    val items = listOf(
+        SaloTabItem(
+            tab = SaloTab.MohamedLovers,
+            label = stringResource(Res.string.bottom_nav_mohamed_lovers),
+            icon = Icons.Default.Favorite,
+        ),
+        SaloTabItem(
+            tab = SaloTab.Challenges,
+            label = stringResource(Res.string.bottom_nav_challenges),
+            icon = Icons.Default.Spa,
+        ),
+        SaloTabItem(
+            tab = SaloTab.Achievements,
+            label = stringResource(Res.string.bottom_nav_achievements),
+            icon = Icons.Default.EmojiEvents,
+        ),
+        SaloTabItem(
+            tab = SaloTab.Articles,
+            label = stringResource(Res.string.bottom_nav_articles),
+            icon = Icons.Default.AutoStories,
+        ),
+        SaloTabItem(
+            tab = SaloTab.Settings,
+            label = stringResource(Res.string.bottom_nav_settings),
+            icon = Icons.Default.Settings,
+        ),
+    )
+
+    NavigationBar(
+        containerColor = Color(0xFF0A1528),
+        tonalElevation = 0.dp,
+    ) {
+        items.forEach { item ->
+            NavigationBarItem(
+                selected = selectedTab == item.tab,
+                onClick = { onTabSelected(item.tab) },
+                icon = {
+                    Icon(
+                        imageVector = item.icon,
+                        contentDescription = item.label,
+                    )
+                },
+                label = { Text(text = item.label) },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = MohamedLoversPalette.GoldHighlight,
+                    selectedTextColor = MohamedLoversPalette.GoldHighlight,
+                    indicatorColor = MohamedLoversPalette.GoldBase.copy(alpha = 0.16f),
+                    unselectedIconColor = MohamedLoversPalette.GoldGlow.copy(alpha = 0.55f),
+                    unselectedTextColor = MohamedLoversPalette.GoldGlow.copy(alpha = 0.55f),
+                ),
             )
         }
     }
