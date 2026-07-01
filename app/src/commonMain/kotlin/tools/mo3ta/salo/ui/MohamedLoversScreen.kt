@@ -1,11 +1,6 @@
 package tools.mo3ta.salo.ui
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -22,40 +17,15 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoStories
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Spa
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TooltipBox
-import androidx.compose.material3.TooltipDefaults
-import androidx.compose.material3.TooltipState
-import androidx.compose.material3.rememberTooltipState
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntRect
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -66,7 +36,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -74,9 +43,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -95,22 +62,10 @@ import tools.mo3ta.salo.generated.resources.mohamed_lovers_blocked_firebase_off
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_blocked_waiting_network
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_code_copied
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_connection_error
-import tools.mo3ta.salo.generated.resources.mohamed_lovers_info_cd
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_reward_text
 import tools.mo3ta.salo.generated.resources.main_screen_rank_chip_tooltip
 import tools.mo3ta.salo.generated.resources.main_screen_bubble_tooltip
 import tools.mo3ta.salo.generated.resources.main_screen_manual_salawat_button
-import tools.mo3ta.salo.generated.resources.main_screen_tooltip_settings
-import tools.mo3ta.salo.generated.resources.main_screen_cd_settings
-import tools.mo3ta.salo.generated.resources.main_screen_tooltip_achievements
-import tools.mo3ta.salo.generated.resources.main_screen_cd_achievements
-import tools.mo3ta.salo.generated.resources.main_screen_tooltip_hadith
-import tools.mo3ta.salo.generated.resources.main_screen_cd_hadith
-import tools.mo3ta.salo.generated.resources.main_screen_tooltip_takbeer
-import tools.mo3ta.salo.generated.resources.main_screen_cd_takbeer
-import tools.mo3ta.salo.generated.resources.main_screen_tooltip_dhikr_rewards
-import tools.mo3ta.salo.generated.resources.main_screen_cd_dhikr_rewards
-import tools.mo3ta.salo.generated.resources.main_screen_tooltip_info
 import tools.mo3ta.salo.generated.resources.new_round_title
 import tools.mo3ta.salo.generated.resources.new_round_subtitle
 import tools.mo3ta.salo.generated.resources.new_round_cta
@@ -156,16 +111,9 @@ import tools.mo3ta.salo.ui.components.RoundRecapSheet
 import tools.mo3ta.salo.ui.components.UserAchievementsSheet
 import tools.mo3ta.salo.ui.settings.PremiumPromoDialog
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MohamedLoversScreen(
-    onOpenAchievements: () -> Unit = {},
-    onOpenSettings: () -> Unit = {},
-    onOpenHadithList: () -> Unit = {},
-    onOpenTakbeerSession: () -> Unit = {},
-    onOpenDhikrRewards: () -> Unit = {},
     onOpenPaywall: () -> Unit = {},
-    announcementsDone: Boolean = true,
     openInfoSheet: Boolean = false,
     onInfoSheetOpened: () -> Unit = {},
     viewModel: MohamedLoversViewModel = koinViewModel(),
@@ -184,7 +132,6 @@ fun MohamedLoversScreen(
     val rewardText = stringResource(Res.string.mohamed_lovers_reward_text)
     val waitingNetworkLabel = stringResource(Res.string.mohamed_lovers_blocked_waiting_network)
     val firebaseOffLabel = stringResource(Res.string.mohamed_lovers_blocked_firebase_off)
-    val infoCd = stringResource(Res.string.mohamed_lovers_info_cd)
 
     DisposableEffect(lifecycleOwner, viewModel) {
         val observer = LifecycleEventObserver { _, event ->
@@ -215,37 +162,6 @@ fun MohamedLoversScreen(
 
     LaunchedEffect(Unit){
         analyticsManager.logView("Mohamed_lovers")
-    }
-
-    val settingsTooltipState = rememberTooltipState(isPersistent = true)
-    val achievementsTooltipState = rememberTooltipState(isPersistent = true)
-    val hadithTooltipState = rememberTooltipState(isPersistent = true)
-    val dhikrRewardsTooltipState = rememberTooltipState(isPersistent = true)
-    val takbeerTooltipState = rememberTooltipState(isPersistent = true)
-    val infoTooltipState = rememberTooltipState(isPersistent = true)
-
-    LaunchedEffect(announcementsDone) {
-        if (!announcementsDone) return@LaunchedEffect
-        if (settingsStore.topBarTooltipsShown) return@LaunchedEffect
-        delay(1500)
-        val tooltipStates = listOf(
-            achievementsTooltipState,
-            hadithTooltipState,
-            dhikrRewardsTooltipState,
-            takbeerTooltipState,
-            infoTooltipState,
-            settingsTooltipState,
-        )
-        for (s in tooltipStates) {
-            coroutineScope {
-                launch { s.show() }
-                delay(3000)
-                s.dismiss()
-            }
-            delay(400)
-        }
-        settingsStore.topBarTooltipsShown = true
-        analyticsManager.logAction(AppAnalytics.FIRST_OPEN_TOOLTIPS_SHOWN)
     }
 
     var archCenter by remember { mutableStateOf<Offset?>(null) }
@@ -420,103 +336,6 @@ fun MohamedLoversScreen(
                             if (tapsEnabled) viewModel.onCountClick()
                         },
                     )
-                }
-            }
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .fillMaxWidth()
-                    .height(84.dp)
-                    .pointerInput(Unit) {
-                        awaitPointerEventScope {
-                            while (true) {
-                                awaitPointerEvent(PointerEventPass.Initial)
-                                    .changes.forEach { it.consume() }
-                            }
-                        }
-                    }
-            )
-
-            Box(modifier = Modifier.align(Alignment.TopEnd).padding(end = 14.dp, top = 36.dp)) {
-                TopBarTooltip(text = stringResource(Res.string.main_screen_tooltip_settings), state = settingsTooltipState) {
-                    IconButton(onClick = {
-                        analyticsManager.logAction(AppAnalytics.OPEN_SETTINGS)
-                        onOpenSettings()
-                    }) {
-                        Box {
-                            Icon(
-                                imageVector = Icons.Default.Settings,
-                                contentDescription = stringResource(Res.string.main_screen_cd_settings),
-                                tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
-                            )
-                            if (premiumStore.highestTier == null) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(8.dp)
-                                        .align(Alignment.TopEnd)
-                                        .background(MohamedLoversPalette.GoldHighlight, CircleShape),
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-            Box(modifier = Modifier.align(Alignment.TopStart).padding(start = 14.dp, top = 36.dp)) {
-                Row {
-                    TopBarTooltip(text = stringResource(Res.string.main_screen_tooltip_achievements), state = achievementsTooltipState) {
-                        IconButton(onClick = onOpenAchievements) {
-                            Icon(
-                                imageVector = Icons.Default.EmojiEvents,
-                                contentDescription = stringResource(Res.string.main_screen_cd_achievements),
-                                tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
-                            )
-                        }
-                    }
-                    TopBarTooltip(text = stringResource(Res.string.main_screen_tooltip_hadith), state = hadithTooltipState) {
-                        IconButton(onClick = onOpenHadithList) {
-                            Icon(
-                                imageVector = Icons.Default.AutoStories,
-                                contentDescription = stringResource(Res.string.main_screen_cd_hadith),
-                                tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
-                            )
-                        }
-                    }
-                    TopBarTooltip(text = stringResource(Res.string.main_screen_tooltip_dhikr_rewards), state = dhikrRewardsTooltipState) {
-                        IconButton(onClick = {
-                            analyticsManager.logAction(AppAnalytics.OPEN_DHIKR_REWARDS, mapOf(AppAnalytics.PARAM_SOURCE to "top_bar"))
-                            onOpenDhikrRewards()
-                        }) {
-                            Icon(
-                                imageVector = Icons.Default.Spa,
-                                contentDescription = stringResource(Res.string.main_screen_cd_dhikr_rewards),
-                                tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
-                            )
-                        }
-                    }
-                    TopBarTooltip(text = stringResource(Res.string.main_screen_tooltip_takbeer), state = takbeerTooltipState) {
-                        IconButton(onClick = {
-                            analyticsManager.logAction(AppAnalytics.OPEN_TAKBEER_SESSION, mapOf(AppAnalytics.PARAM_SOURCE to "top_bar"))
-                            onOpenTakbeerSession()
-                        }) {
-                            Icon(
-                                imageVector = Icons.Default.Groups,
-                                contentDescription = stringResource(Res.string.main_screen_cd_takbeer),
-                                tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
-                            )
-                        }
-                    }
-                    TopBarTooltip(text = stringResource(Res.string.main_screen_tooltip_info), state = infoTooltipState) {
-                        IconButton(onClick = {
-                            analyticsManager.logAction(AppAnalytics.OPEN_INFO_SHEET, mapOf(AppAnalytics.PARAM_SOURCE to "icon"))
-                            infoSheetOpen = true
-                        }) {
-                            Icon(
-                                imageVector = Icons.Default.Info,
-                                contentDescription = infoCd,
-                                tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
-                            )
-                        }
-                    }
                 }
             }
             if (state.isLoading) {
@@ -775,70 +594,6 @@ private fun CountdownCell(value: Int, label: String) {
             fontSize = 11.sp,
         )
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun TopBarTooltip(
-    text: String,
-    state: TooltipState = rememberTooltipState(),
-    content: @Composable () -> Unit,
-) {
-    val density = LocalDensity.current
-    val belowProvider = remember(density) {
-        val spacing = with(density) { 4.dp.roundToPx() }
-        object : PopupPositionProvider {
-            override fun calculatePosition(
-                anchorBounds: IntRect,
-                windowSize: IntSize,
-                layoutDirection: LayoutDirection,
-                popupContentSize: IntSize,
-            ): IntOffset {
-                val x = (anchorBounds.left + anchorBounds.width / 2 - popupContentSize.width / 2)
-                    .coerceIn(0, (windowSize.width - popupContentSize.width).coerceAtLeast(0))
-                val y = anchorBounds.bottom + spacing
-                return IntOffset(x, y)
-            }
-        }
-    }
-    TooltipBox(
-        positionProvider = belowProvider,
-        tooltip = {
-            val flash = rememberInfiniteTransition()
-            val caretAlpha by flash.animateFloat(
-                initialValue = 0.4f,
-                targetValue = 1f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(600),
-                    repeatMode = RepeatMode.Reverse,
-                ),
-            )
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Canvas(modifier = Modifier.size(width = 12.dp, height = 6.dp)) {
-                    val path = Path().apply {
-                        moveTo(size.width / 2f, 0f)
-                        lineTo(size.width, size.height)
-                        lineTo(0f, size.height)
-                        close()
-                    }
-                    drawPath(path, color = MohamedLoversPalette.GoldHighlight.copy(alpha = caretAlpha))
-                }
-                Surface(
-                    color = MohamedLoversPalette.DeepBlue,
-                    shape = RoundedCornerShape(4.dp),
-                ) {
-                    Text(
-                        text = text,
-                        fontSize = 13.sp,
-                        color = MohamedLoversPalette.GoldGlow,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                    )
-                }
-            }
-        },
-        state = state,
-        content = content,
-    )
 }
 
 @Composable

@@ -64,6 +64,22 @@
     <string name="main_screen_cd_takbeer">念大赞词</string>
     <string name="main_screen_tooltip_info">轮次信息和玩法说明</string>
 
+    <!-- Bottom Navigation -->
+    <string name="bottom_nav_mohamed_lovers">爱穆罕默德</string>
+    <string name="bottom_nav_challenges">挑战</string>
+    <string name="bottom_nav_achievements">成就</string>
+    <string name="bottom_nav_articles">文章</string>
+    <string name="bottom_nav_settings">设置</string>
+
+    <!-- Challenges Screen -->
+    <string name="challenges_title">挑战</string>
+    <string name="challenges_subtitle">选择一项挑战，持续完成每日功修。</string>
+    <string name="challenge_dhikr_title">اهل لا اله الا الله</string>
+    <string name="challenge_dhikr_body">每天完成 100 次赞念，并查看你在参与者中的排名。</string>
+    <string name="challenge_ten_days_body">记录伊历十二月前十天的赞念、大赞词、斋戒和施舍。</string>
+    <string name="challenge_takbeer_body">加入引导式集体大赞词环节，轮流念诵。</string>
+    <string name="dhikr_title">赞念</string>
+
     <string name="dhikr_milestone_title">完成 %1$d 次!</string>
     <string name="dhikr_milestone_subtitle">马沙安拉！</string>
     <string name="dhikr_leaderboard_title">排行榜</string>

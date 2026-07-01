@@ -66,6 +66,21 @@
     <string name="main_screen_cd_dhikr_rewards">Dhikr</string>
     <string name="main_screen_tooltip_info">Round info and how to play</string>
 
+    <!-- Bottom Navigation -->
+    <string name="bottom_nav_mohamed_lovers">Lovers</string>
+    <string name="bottom_nav_challenges">Challenges</string>
+    <string name="bottom_nav_achievements">Achievements</string>
+    <string name="bottom_nav_articles">Articles</string>
+    <string name="bottom_nav_settings">Settings</string>
+
+    <!-- Challenges Screen -->
+    <string name="challenges_title">Challenges</string>
+    <string name="challenges_subtitle">Pick a challenge and keep your daily worship moving.</string>
+    <string name="challenge_dhikr_title">اهل لا اله الا الله</string>
+    <string name="challenge_dhikr_body">Complete 100 daily dhikr and compare your rank with other participants.</string>
+    <string name="challenge_ten_days_body">Track the Ten Days deeds: dhikr, takbeer, fasting, and charity.</string>
+    <string name="challenge_takbeer_body">Take turns in a guided group takbeer session.</string>
+
     <!-- Dhikr Rewards Screen -->
     <string name="dhikr_title">Dhikr</string>
     <string name="dhikr_back_cd">Back</string>
