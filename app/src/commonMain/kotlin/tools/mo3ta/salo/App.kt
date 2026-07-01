@@ -90,8 +90,8 @@ import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.NotificationMessageDialog
 import tools.mo3ta.salo.ui.tendays.TenDaysScreen
 
-// Temporarily suppress feature announcements; the review dialog remains enabled.
-private const val FEATURE_ANNOUNCEMENTS_ENABLED = false
+// Temporarily suppress app announcements; the review dialog remains enabled after onboarding.
+private const val APP_ANNOUNCEMENTS_ENABLED = false
 
 @Composable
 fun App(
@@ -169,6 +169,7 @@ fun App(
             showTenDays ||
             showExtensionQr ||
             showOnboarding
+        val canShowAppAnnouncements = APP_ANNOUNCEMENTS_ENABLED && !showOnboarding
         val shouldShowNicknamePrompt = !nicknamePromptBlocked &&
             sessionStoreApp.getNickname() == null &&
             (nicknamePromptRequested || (selectedTab == SaloTab.MohamedLovers && !nicknamePromptDismissedThisSession))
@@ -206,6 +207,7 @@ fun App(
                                 viewModel = mohamedLoversViewModel,
                                 openInfoSheet = openLeaderboardSheet,
                                 onInfoSheetOpened = { openLeaderboardSheet = false },
+                                announcementsEnabled = APP_ANNOUNCEMENTS_ENABLED,
                             )
                             SaloTab.Challenges -> ChallengesScreen(
                                 onOpenDhikrChallenge = { showDhikrRewards = true },
@@ -236,7 +238,7 @@ fun App(
             )
         }
 
-        if (showRationale) {
+        if (canShowAppAnnouncements && showRationale) {
             NotificationRationaleDialog(
                 onAllow = {
                     showRationale = false
@@ -249,7 +251,7 @@ fun App(
         var showFcmReminder by remember {
             mutableStateOf(engagementData?.shouldReshowFcmAlert == true)
         }
-        if (showFcmReminder) {
+        if (canShowAppAnnouncements && showFcmReminder) {
             FcmPermissionReminderDialog(
                 onAllow = {
                     showFcmReminder = false
@@ -259,7 +261,7 @@ fun App(
             )
         }
 
-        pendingBadge?.let { badge ->
+        if (canShowAppAnnouncements) pendingBadge?.let { badge ->
             AchievementCelebrationDialog(
                 achievement = badge,
                 onDismiss = { pendingBadge = null },
@@ -284,7 +286,7 @@ fun App(
             )
         }
 
-        if (!shouldShowNicknamePrompt && FEATURE_ANNOUNCEMENTS_ENABLED && !takbeerAnnouncementDone) {
+        if (canShowAppAnnouncements && !shouldShowNicknamePrompt && !takbeerAnnouncementDone) {
             TakbeerAnnouncementDialog(
                 onOpen = {
                     settings.putBoolean("takbeer_announcement_shown", true)
@@ -302,7 +304,7 @@ fun App(
 
         if (
             !shouldShowNicknamePrompt &&
-            FEATURE_ANNOUNCEMENTS_ENABLED &&
+            canShowAppAnnouncements &&
             takbeerAnnouncementDone &&
             !salawatVariantAnnouncementDone
         ) {
@@ -326,7 +328,7 @@ fun App(
             val shown = settings.getBoolean("premium_promo_shown", false)
             mutableStateOf(!shown && billingManager.isEnabled)
         }
-        if (showPremiumPromo) {
+        if (canShowAppAnnouncements && showPremiumPromo) {
             PremiumPromoDialog(
                 onOpen = {
                     settings.putBoolean("premium_promo_shown", true)
@@ -374,12 +376,13 @@ fun App(
         val premiumStore = koinInject<PremiumStore>()
         var milestonePending by remember { mutableStateOf<Int?>(null) }
         val currentScore = mlState.syncedTotal + mlState.sessionClicks
-        LaunchedEffect(currentScore) {
+        LaunchedEffect(currentScore, canShowAppAnnouncements) {
+            if (!canShowAppAnnouncements) return@LaunchedEffect
             if (premiumStore.highestTier != null) return@LaunchedEffect
             val hit = milestoneTracker.checkMilestone(currentScore) ?: return@LaunchedEffect
             milestonePending = hit
         }
-        milestonePending?.let { milestone ->
+        if (canShowAppAnnouncements) milestonePending?.let { milestone ->
             MilestoneSupportDialog(
                 milestone = milestone,
                 onSupport = {
@@ -417,7 +420,7 @@ fun App(
         var showReview by remember {
             mutableStateOf(engagementStore.shouldShowReviewDialog(today, installDate))
         }
-        if (showReview) {
+        if (!showOnboarding && showReview) {
             ReviewDialog(
                 onGoToStore = {
                     analyticsManager.logAction(AppAnalytics.REVIEW_DIALOG_GO_TO_STORE)
@@ -439,7 +442,7 @@ fun App(
         var pendingVersionUpdate by remember(newVersionAvailable) {
             mutableStateOf(newVersionAvailable)
         }
-        pendingNotificationMessage?.let { msg ->
+        if (canShowAppAnnouncements) pendingNotificationMessage?.let { msg ->
             NotificationMessageDialog(
                 message = msg,
                 onDismiss = {
@@ -456,7 +459,7 @@ fun App(
             )
         }
 
-        pendingVersionUpdate?.let { version ->
+        if (canShowAppAnnouncements) pendingVersionUpdate?.let { version ->
             VersionUpdateDialog(
                 version = version,
                 onUpdate = {

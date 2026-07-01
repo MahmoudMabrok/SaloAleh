@@ -116,6 +116,7 @@ fun MohamedLoversScreen(
     onOpenPaywall: () -> Unit = {},
     openInfoSheet: Boolean = false,
     onInfoSheetOpened: () -> Unit = {},
+    announcementsEnabled: Boolean = true,
     viewModel: MohamedLoversViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -186,8 +187,8 @@ fun MohamedLoversScreen(
 
     val currentUserEntry = state.topPlayers.firstOrNull { it.isCurrentUser } ?: state.selfEntry
     val rankChipVisible = showRankChip && (currentUserEntry?.rank ?: 0) > 0
-    LaunchedEffect(rankChipVisible) {
-        if (rankChipVisible && !settingsStore.rankChipTooltipShown) {
+    LaunchedEffect(rankChipVisible, announcementsEnabled) {
+        if (announcementsEnabled && rankChipVisible && !settingsStore.rankChipTooltipShown) {
             delay(1200)
             showRankTooltip = true
             settingsStore.rankChipTooltipShown = true
@@ -196,8 +197,8 @@ fun MohamedLoversScreen(
         }
     }
 
-    LaunchedEffect(state.canCount) {
-        if (state.canCount && !settingsStore.bubbleTooltipShown) {
+    LaunchedEffect(state.canCount, announcementsEnabled) {
+        if (announcementsEnabled && state.canCount && !settingsStore.bubbleTooltipShown) {
             delay(2500)
             showBubbleTooltip = true
             settingsStore.bubbleTooltipShown = true
@@ -425,42 +426,50 @@ fun MohamedLoversScreen(
                 onDismiss = { viewModel.dismissHadithDialog() },
             )
         }
-        if (state.showGraceWarning) {
+        if (announcementsEnabled && state.showGraceWarning) {
             GraceWarningDialog(onDismiss = { viewModel.dismissGraceWarning() })
         }
-        BubbleFeaturePromo(roundKey = state.roundKey)
-        if (state.showDailyLeaderboardPromo) {
-            DailyLeaderboardPromoDialog(onDismiss = { viewModel.dismissDailyLeaderboardPromo() })
-        }
-        if (state.showNewRoundCountdown) {
-            NewRoundCountdownOverlay(
-                roundEndInstant = state.roundEndInstant,
-                onDismiss = { viewModel.dismissNewRoundCountdown() },
+//        if (announcementsEnabled) {
+//            BubbleFeaturePromo(roundKey = state.roundKey)
+//        }
+//        if (announcementsEnabled && state.showDailyLeaderboardPromo) {
+//            DailyLeaderboardPromoDialog(onDismiss = { viewModel.dismissDailyLeaderboardPromo() })
+//        }
+//        if (announcementsEnabled && state.showNewRoundCountdown) {
+//            NewRoundCountdownOverlay(
+//                roundEndInstant = state.roundEndInstant,
+//                onDismiss = { viewModel.dismissNewRoundCountdown() },
+//            )
+//        }
+
+        // Overtake alert
+        if (announcementsEnabled) {
+            OvertakeOverlay(
+                overtakeRank = state.overtakeRank,
+                onDismiss = viewModel::dismissOvertake,
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = 60.dp),
             )
         }
 
-        // Overtake alert
-        OvertakeOverlay(
-            overtakeRank = state.overtakeRank,
-            onDismiss = viewModel::dismissOvertake,
-            modifier = Modifier.align(Alignment.TopCenter).padding(top = 60.dp),
-        )
-
         // Daily milestone celebration
-        MilestoneCelebration(
-            threshold = state.milestoneThreshold,
-            badgeKey = state.milestoneBadgeKey,
-            onDismiss = viewModel::dismissMilestone,
-        )
+        if (announcementsEnabled) {
+            MilestoneCelebration(
+                threshold = state.milestoneThreshold,
+                badgeKey = state.milestoneBadgeKey,
+                onDismiss = viewModel::dismissMilestone,
+            )
+        }
 
         // Rank movement summary
-        RankMovementBanner(
-            delta = state.rankMovementDelta,
-            oldRank = state.rankMovementOldRank,
-            newRank = state.rankMovementNewRank,
-            onDismiss = viewModel::dismissRankMovement,
-            modifier = Modifier.align(Alignment.Center),
-        )
+        if (announcementsEnabled) {
+            RankMovementBanner(
+                delta = state.rankMovementDelta,
+                oldRank = state.rankMovementOldRank,
+                newRank = state.rankMovementNewRank,
+                onDismiss = viewModel::dismissRankMovement,
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
     }
 }
 
