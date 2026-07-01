@@ -98,6 +98,8 @@
     <string name="manual_dhikr_submit">✦ اذکار درج کریں ✦</string>
 
     <!-- Baqiyat Challenge Screen -->
+    <string name="baqiyat_ayah">﴿ وَالْبَاقِيَاتُ الصَّالِحَاتُ خَيْرٌ عِندَ رَبِّكَ ثَوَابًا وَخَيْرٌ أَمَلًا ﴾</string>
+    <string name="baqiyat_ayah_ref">سورۃ الکہف ۴۶</string>
     <string name="baqiyat_tap_hint">ہر ذکر پر ٹیپ کریں یہاں تک کہ سب غائب ہو جائیں</string>
     <string name="baqiyat_cycles_label">آج مکمل ہونے والے دور</string>
     <string name="baqiyat_phrase_subhanallah">سبحان اللہ</string>

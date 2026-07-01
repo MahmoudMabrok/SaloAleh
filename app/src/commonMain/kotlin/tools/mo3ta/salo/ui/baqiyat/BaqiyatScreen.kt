@@ -49,6 +49,8 @@ import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.data.baqiyat.BaqiyatPhrase
 import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.baqiyat_ayah
+import tools.mo3ta.salo.generated.resources.baqiyat_ayah_ref
 import tools.mo3ta.salo.generated.resources.baqiyat_cycles_label
 import tools.mo3ta.salo.generated.resources.baqiyat_tap_hint
 import tools.mo3ta.salo.generated.resources.challenge_baqiyat_title
@@ -116,6 +118,21 @@ fun BaqiyatScreen(
                 color = MohamedLoversPalette.GoldHighlight,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = stringResource(Res.string.baqiyat_ayah),
+                color = BaqiyatGold.copy(alpha = 0.85f),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center,
+                lineHeight = 24.sp,
+            )
+            Text(
+                text = stringResource(Res.string.baqiyat_ayah_ref),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.5f),
+                fontSize = 11.sp,
+                textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(6.dp))
             Text(
