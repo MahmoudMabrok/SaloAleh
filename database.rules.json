@@ -3,6 +3,57 @@
     ".read": false,
     ".write": false,
 
+    "baqiyat_saliha": {
+      "$dateKey": {
+        "participantCount": {
+          ".read": true,
+          ".write": false
+        },
+        "totalTodayBaqiyat": {
+          ".read": true,
+          ".write": false
+        },
+        "lastRankedAt": {
+          ".read": true,
+          ".write": false
+        },
+        "leaderboard": {
+          ".read": true,
+          ".write": false
+        },
+        "players": {
+          ".read": true,
+          ".indexOn": ["count"],
+          "$uid": {
+            ".write": "newData.child('uid').val() === $uid",
+            ".validate": "newData.hasChildren(['uid','count','countryCode','updatedAt'])",
+
+            "uid": {
+              ".validate": "newData.isString() && newData.val() === $uid"
+            },
+            "count": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2000"
+            },
+            "countryCode": {
+              ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 3"
+            },
+            "nickname": {
+              ".validate": "newData.isString() && newData.val().length <= 20"
+            },
+            "updatedAt": {
+              ".validate": "newData.val() === now"
+            },
+            "rank": {
+              ".read": true,
+              ".validate": "newData.val() === data.val()"
+            },
+
+            "$other": { ".validate": false }
+          }
+        }
+      }
+    },
+
     "ten_days_dhul_hijjah": {
       "$periodKey": {
         "leaderboard": {

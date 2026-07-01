@@ -1,6 +1,8 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const {
+  buildBaqiyatChallengeDailyRanking,
+  buildDailyCountChallengeRanking,
   buildDhikrChallengeDailyRanking,
   buildOldRankMap,
   computeRankChange,
@@ -184,5 +186,45 @@ describe('dhikr challenge daily ranking', () => {
     assert.deepEqual(result.rankedUsers, [
       { uid: 'user-a', count: 7, countryCode: 'EGP', nickname: 'Dhikr Friend', currentRank: 3, rank: 1 },
     ]);
+  });
+});
+
+describe('generic daily count challenge ranking', () => {
+  it('builds ranks under the configured players path', () => {
+    const result = buildDailyCountChallengeRanking({
+      dateKey: '2026-07-02',
+      rootPath: 'custom_challenge',
+      playersPath: 'players',
+      players: [
+        { uid: 'b', count: 4 },
+        { uid: 'a', count: 9 },
+        { uid: 'zero', count: 0 },
+      ],
+    });
+
+    assert.equal(result.participantCount, 2);
+    assert.equal(result.totalCount, 13);
+    assert.deepEqual(result.rankedUsers.map(user => user.uid), ['a', 'b']);
+    assert.equal(result.rankUpdates['custom_challenge/2026-07-02/players/a/rank'], 1);
+    assert.equal(result.rankUpdates['custom_challenge/2026-07-02/players/b/rank'], 2);
+    assert.equal(result.rankUpdates['custom_challenge/2026-07-02/players/zero/rank'], null);
+  });
+});
+
+describe('baqiyat challenge daily ranking', () => {
+  it('uses the baqiyat root and player nodes', () => {
+    const result = buildBaqiyatChallengeDailyRanking('2026-07-02', [
+      { uid: 'user-a', count: 3, countryCode: 'eg', nickname: '  Sabah  ' },
+      { uid: 'user-b', count: 5, countryCode: 'sa' },
+    ]);
+
+    assert.equal(result.participantCount, 2);
+    assert.equal(result.totalTodayBaqiyat, 8);
+    assert.deepEqual(result.rankedUsers, [
+      { uid: 'user-b', count: 5, countryCode: 'SA', nickname: '', currentRank: null, rank: 1 },
+      { uid: 'user-a', count: 3, countryCode: 'EG', nickname: 'Sabah', currentRank: null, rank: 2 },
+    ]);
+    assert.equal(result.rankUpdates['baqiyat_saliha/2026-07-02/players/user-b/rank'], 1);
+    assert.equal(result.rankUpdates['baqiyat_saliha/2026-07-02/players/user-a/rank'], 2);
   });
 });

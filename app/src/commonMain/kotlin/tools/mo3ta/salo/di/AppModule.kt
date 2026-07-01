@@ -5,6 +5,8 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.MilestoneTracker
+import tools.mo3ta.salo.data.baqiyat.BaqiyatFirebaseClient
+import tools.mo3ta.salo.data.baqiyat.BaqiyatStore
 import tools.mo3ta.salo.data.dhikr.DhikrChallengeFirebaseClient
 import tools.mo3ta.salo.data.dhikr.DhikrChallengeStore
 import tools.mo3ta.salo.data.engagement.DailyGoalStore
@@ -25,6 +27,7 @@ import tools.mo3ta.salo.data.tendays.TenDaysFirebaseClient
 import tools.mo3ta.salo.audio.TakbeerSoundPlayer
 import tools.mo3ta.salo.audio.createTakbeerSoundPlayer
 import tools.mo3ta.salo.presentation.AchievementsViewModel
+import tools.mo3ta.salo.presentation.BaqiyatViewModel
 import tools.mo3ta.salo.presentation.DhikrChallengeViewModel
 import tools.mo3ta.salo.presentation.HadithListViewModel
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
@@ -38,6 +41,8 @@ val appModule = module {
     single { DailyGoalStore(get()) }
     single { DhikrChallengeStore(get()) }
     single { DhikrChallengeFirebaseClient() }
+    single { BaqiyatStore(get()) }
+    single { BaqiyatFirebaseClient() }
     single { LanguageStore(get()) }
     single { SalawatVariantStore(get()) }
     single { NotificationSettingsStore(get()) }
@@ -50,6 +55,7 @@ val appModule = module {
     single { HadithListRepository(get()) }
     viewModel { MohamedLoversViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { DhikrChallengeViewModel(get(), get(), get(), get()) }
+    viewModel { BaqiyatViewModel(get(), get(), get(), get()) }
     viewModel { AchievementsViewModel(get()) }
     viewModel { HadithListViewModel(get()) }
     single { TenDaysStore(get()) }

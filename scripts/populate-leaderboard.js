@@ -2,7 +2,9 @@
 // them to the leaderboard node. Dispatched every ~30 min; detects isFinal automatically.
 const admin = require('firebase-admin');
 const {
+  BAQIYAT_CHALLENGE_ROOT,
   DHIKR_CHALLENGE_ROOT,
+  buildBaqiyatChallengeDailyRanking,
   buildDhikrChallengeDailyRanking,
   buildOldRankMap,
   computeRankChange,
@@ -154,6 +156,59 @@ async function populateDhikrChallengeToday(db) {
   );
 }
 
+async function populateBaqiyatChallengeToday(db) {
+  const dateKey = cairoToday();
+  console.log(`\n--- Baqiyat Challenge [${dateKey}] ---`);
+
+  const playersSnap = await db.ref(`${BAQIYAT_CHALLENGE_ROOT}/${dateKey}/players`).get();
+  const players = [];
+
+  if (playersSnap.exists()) {
+    playersSnap.forEach(child => {
+      const data = child.val() || {};
+      const uid = typeof data.uid === 'string' && data.uid.length > 0
+        ? data.uid
+        : child.key;
+      players.push({
+        uid,
+        count: data.count,
+        countryCode: typeof data.countryCode === 'string' ? data.countryCode.toUpperCase() : '',
+        nickname: typeof data.nickname === 'string' ? data.nickname.trim() : '',
+        currentRank: typeof data.rank === 'number' && data.rank > 0 ? data.rank : null,
+      });
+    });
+  }
+
+  const oldLbSnap = await db.ref(`${BAQIYAT_CHALLENGE_ROOT}/${dateKey}/leaderboard`).get();
+  const oldRanks = buildOldRankMap(oldLbSnap);
+  const dailyRanking = buildBaqiyatChallengeDailyRanking(dateKey, players);
+
+  const leaderboardEntries = dailyRanking.rankedUsers.slice(0, 10).map((user, i) => {
+    const entry = {
+      uid: user.uid,
+      countryCode: user.countryCode,
+      count: user.count,
+      rank: user.rank,
+      rankChange: computeRankChange(user.uid, user.rank, oldRanks),
+    };
+    if (user.nickname) entry.nickname = user.nickname;
+    return [String(i), entry];
+  });
+
+  const updates = {
+    ...dailyRanking.rankUpdates,
+    [`${BAQIYAT_CHALLENGE_ROOT}/${dateKey}/participantCount`]: dailyRanking.participantCount,
+    [`${BAQIYAT_CHALLENGE_ROOT}/${dateKey}/totalTodayBaqiyat`]: dailyRanking.totalTodayBaqiyat,
+    [`${BAQIYAT_CHALLENGE_ROOT}/${dateKey}/lastRankedAt`]: admin.database.ServerValue.TIMESTAMP,
+    [`${BAQIYAT_CHALLENGE_ROOT}/${dateKey}/leaderboard`]: Object.fromEntries(leaderboardEntries),
+  };
+
+  await db.ref('/').update(updates);
+  console.log(
+    `Wrote baqiyat ranks + leaderboard(${leaderboardEntries.length}) for ${dailyRanking.participantCount} participant(s). totalTodayBaqiyat=${dailyRanking.totalTodayBaqiyat}`,
+  );
+}
+
 async function main() {
   const roundKey = explicitRoundKey || cairoRoundKey();
   const isFinal = isRoundFinal(roundKey);
@@ -164,8 +219,9 @@ async function main() {
   // Deliver any delayed new-build notification whose scheduled time has passed.
   await sendDueBuildNotification(db);
 
-  // Rank today's dhikr challenge users without publishing a leaderboard list.
+  // Rank today's standalone challenge users.
   await populateDhikrChallengeToday(db);
+  await populateBaqiyatChallengeToday(db);
 
   const playersRef = db.ref(`mohamed_lovers/${roundKey}/players`);
 

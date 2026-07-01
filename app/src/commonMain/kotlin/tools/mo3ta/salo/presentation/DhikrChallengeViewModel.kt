@@ -71,7 +71,7 @@ class DhikrChallengeViewModel(
             if (prev != null && firebaseClient.isConfigured()) {
                 val (prevDate, prevTotal) = prev
                 val countryCode = countryCodeProvider.get()
-                val result = firebaseClient.writeUserDay(prevDate, uid, prevTotal, countryCode, publishedNickname())
+                val result = firebaseClient.writeUserDay(prevDate, uid, prevTotal, countryCode, sessionStore.getPublishedName())
                 if (result.isSuccess) store.clearPreviousPending()
             }
 
@@ -154,8 +154,7 @@ class DhikrChallengeViewModel(
                 val total = store.todayCount(today)
                 val uid = sessionStore.getOrCreateUid()
                 val countryCode = countryCodeProvider.get()
-                val nickname = publishedNickname()
-                val result = firebaseClient.writeUserDay(today.toString(), uid, total, countryCode, nickname)
+                val result = firebaseClient.writeUserDay(today.toString(), uid, total, countryCode, sessionStore.getPublishedName())
                 if (result.isSuccess) store.onSyncSuccess(today, total)
                 refreshStats(today.toString(), uid)
                 _state.update {
@@ -190,10 +189,8 @@ class DhikrChallengeViewModel(
                 if (total == 0) return@withLock
                 val uid = sessionStore.getOrCreateUid()
                 val countryCode = countryCodeProvider.get()
-                val nickname = publishedNickname()
-
                 _state.update { it.copy(isSyncing = true) }
-                val result = firebaseClient.writeUserDay(today.toString(), uid, total, countryCode, nickname)
+                val result = firebaseClient.writeUserDay(today.toString(), uid, total, countryCode, sessionStore.getPublishedName())
                 if (result.isSuccess) store.onSyncSuccess(today, total)
                 _state.update {
                     it.copy(
@@ -220,9 +217,6 @@ class DhikrChallengeViewModel(
                 _state.update { it.copy(errorMessage = error.message) }
             }
     }
-
-    private fun publishedNickname(): String =
-        sessionStore.getNickname()?.takeIf { sessionStore.isNicknameEnabled }.orEmpty()
 
     private fun today(): LocalDate = Clock.System.todayIn(cairoZone)
 }

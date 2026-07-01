@@ -80,6 +80,8 @@
     <string name="challenge_dhikr_body">أتم 100 ذكر يوميًا وتابع ترتيبك بين المشاركين.</string>
     <string name="challenge_ten_days_body">اجمع أعمال عشر ذي الحجة من ذكر وتكبير وصيام وصدقة.</string>
     <string name="challenge_takbeer_body">كبّروا بالتناوب في حلقة جماعية منظمة.</string>
+    <string name="challenge_baqiyat_title">الباقيات الصالحات</string>
+    <string name="challenge_baqiyat_body">امسح الأذكار الخمسة بالضغط عليها، وأكمل الدورة لتزيد رصيدك.</string>
 
     <!-- Dhikr Rewards Screen -->
     <string name="dhikr_title">الذكر</string>
@@ -119,6 +121,17 @@
     <string name="manual_dhikr_enter_count">أدخل العدد</string>
     <string name="manual_dhikr_witness">أشهد أن هذا العدد صحيح وحقيقي، وأن الله مطّلع على نيّتي</string>
     <string name="manual_dhikr_submit">✦ تسجيل الأذكار ✦</string>
+
+    <!-- Baqiyat Challenge Screen -->
+    <string name="baqiyat_ayah">﴿ وَالْبَاقِيَاتُ الصَّالِحَاتُ خَيْرٌ عِندَ رَبِّكَ ثَوَابًا وَخَيْرٌ أَمَلًا ﴾</string>
+    <string name="baqiyat_ayah_ref">سورة الكهف ٤٦</string>
+    <string name="baqiyat_tap_hint">اضغط على كل ذكر حتى تختفي جميعها</string>
+    <string name="baqiyat_cycles_label">الدورات المكتملة اليوم</string>
+    <string name="baqiyat_phrase_subhanallah">سبحان الله</string>
+    <string name="baqiyat_phrase_alhamdulillah">الحمد لله</string>
+    <string name="baqiyat_phrase_allahuakbar">الله أكبر</string>
+    <string name="baqiyat_phrase_lailaha">لا إله إلا الله</string>
+    <string name="baqiyat_phrase_lahawla">لا حول ولا قوة إلا بالله</string>
 
     <!-- Info Sheet Supporter -->
     <string name="info_sheet_supporter_label">⭐ داعم</string>

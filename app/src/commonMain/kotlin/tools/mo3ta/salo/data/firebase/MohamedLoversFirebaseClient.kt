@@ -133,14 +133,14 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
     ): Result<Unit> {
         log.d { "incrementSession[$roundKey/$uid] delta=$delta country=$countryCode" }
         val safeCode = countryCode.takeIf { it.length >= 2 } ?: MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE
-        val nickname = sessionStore.getNickname()?.takeIf { sessionStore.isNicknameEnabled }
+        val publishedName = sessionStore.getPublishedName()
         val fields = mutableMapOf<String, Any>(
             UID_KEY to uid,
             COUNTRY_CODE_KEY to safeCode,
             TOTAL_COUNT_KEY to ServerValue.increment(delta.toDouble()),
             UPDATED_AT_KEY to ServerValue.TIMESTAMP,
+            NICKNAME_KEY to publishedName,
         )
-        if (nickname != null) fields[NICKNAME_KEY] = nickname
         return runCatching {
             Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(fields)
         }.also { result ->
