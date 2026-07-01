@@ -89,6 +89,7 @@
     <string name="dhikr_manual_entry_button">📿 记录外部赞念</string>
     <string name="manual_dhikr_title">📿 记录外部赞念</string>
     <string name="manual_dhikr_subtitle">默默地、用手指或用念珠记念真主了？\n记录您所诵念的 - 不要因为不在应用中就停止赞念</string>
+    <string name="manual_dhikr_count">数量：</string>
     <string name="manual_dhikr_other_count">其他数量：</string>
     <string name="manual_dhikr_enter_count">输入数量</string>
     <string name="manual_dhikr_witness">我证明这个数量是真实准确的，真主了解我的意图</string>

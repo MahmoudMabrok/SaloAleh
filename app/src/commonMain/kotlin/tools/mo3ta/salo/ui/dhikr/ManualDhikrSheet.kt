@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.stringResource
 import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.manual_dhikr_count
 import tools.mo3ta.salo.generated.resources.manual_dhikr_enter_count
 import tools.mo3ta.salo.generated.resources.manual_dhikr_other_count
 import tools.mo3ta.salo.generated.resources.manual_dhikr_submit
@@ -60,6 +61,7 @@ private val PRESET_COUNTS = listOf(33, 100, 300, 500, 1000)
 @Composable
 internal fun ManualDhikrSheet(
     isOpen: Boolean,
+    showPresetChips: Boolean = true,
     onDismiss: () -> Unit,
     onSubmit: (Int) -> Unit,
 ) {
@@ -70,7 +72,11 @@ internal fun ManualDhikrSheet(
     var customText by remember { mutableStateOf("") }
     var witnessChecked by remember { mutableStateOf(false) }
 
-    val effectiveCount = selectedPreset ?: customText.toIntOrNull() ?: 0
+    val effectiveCount = if (showPresetChips) {
+        selectedPreset ?: customText.toIntOrNull() ?: 0
+    } else {
+        customText.toIntOrNull() ?: 0
+    }
     val canSubmit = effectiveCount > 0 && witnessChecked
 
     ModalBottomSheet(
@@ -147,31 +153,38 @@ internal fun ManualDhikrSheet(
 
             Spacer(Modifier.height(2.dp))
 
-            // Preset count chips
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                PRESET_COUNTS.forEach { count ->
-                    CountChip(
-                        count = count,
-                        isSelected = selectedPreset == count,
-                        onClick = {
-                            selectedPreset = if (selectedPreset == count) null else count
-                            customText = ""
-                        },
-                    )
+            if (showPresetChips) {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    PRESET_COUNTS.forEach { count ->
+                        CountChip(
+                            count = count,
+                            isSelected = selectedPreset == count,
+                            onClick = {
+                                selectedPreset = if (selectedPreset == count) null else count
+                                customText = ""
+                            },
+                        )
+                    }
                 }
             }
 
-            // Custom input
+            // Count input
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(Res.string.manual_dhikr_other_count),
+                    text = stringResource(
+                        if (showPresetChips) {
+                            Res.string.manual_dhikr_other_count
+                        } else {
+                            Res.string.manual_dhikr_count
+                        },
+                    ),
                     color = DhikrColors.Muted,
                     fontSize = 14.sp,
                 )

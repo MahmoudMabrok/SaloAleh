@@ -114,6 +114,7 @@
     <string name="dhikr_manual_entry_button">📿 تسجيل أذكار خارجية</string>
     <string name="manual_dhikr_title">📿 تسجيل أذكار خارجية</string>
     <string name="manual_dhikr_subtitle">ذكرت الله بصمت أو على أصابعك أو بالمسبحة؟\nسجّل ما ذكرت — لا تتوقف عن الذكر لأنك بعيد عن التطبيق</string>
+    <string name="manual_dhikr_count">العدد:</string>
     <string name="manual_dhikr_other_count">عدد آخر:</string>
     <string name="manual_dhikr_enter_count">أدخل العدد</string>
     <string name="manual_dhikr_witness">أشهد أن هذا العدد صحيح وحقيقي، وأن الله مطّلع على نيّتي</string>
