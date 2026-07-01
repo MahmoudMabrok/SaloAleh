@@ -78,6 +78,8 @@
     <string name="challenge_dhikr_body">روزانہ 100 اذکار مکمل کریں اور شرکاء میں اپنی رینک دیکھیں۔</string>
     <string name="challenge_ten_days_body">ذوالحجہ کے دس دنوں کے اذکار، تکبیر، روزہ اور صدقہ درج کریں۔</string>
     <string name="challenge_takbeer_body">رہنمائی کے ساتھ اجتماعی تکبیر سیشن میں باری باری شامل ہوں۔</string>
+    <string name="challenge_baqiyat_title">باقیات صالحات</string>
+    <string name="challenge_baqiyat_body">پانچوں اذکار پر ٹیپ کر کے مکمل دور کریں اور اپنا اسکور بڑھائیں۔</string>
     <string name="dhikr_title">ذکر</string>
 
     <string name="dhikr_milestone_title">%1$d بار مکمل!</string>
@@ -94,6 +96,15 @@
     <string name="manual_dhikr_enter_count">تعداد درج کریں</string>
     <string name="manual_dhikr_witness">میں گواہی دیتا ہوں کہ یہ تعداد درست اور حقیقی ہے، اور اللہ میری نیت سے باخبر ہے</string>
     <string name="manual_dhikr_submit">✦ اذکار درج کریں ✦</string>
+
+    <!-- Baqiyat Challenge Screen -->
+    <string name="baqiyat_tap_hint">ہر ذکر پر ٹیپ کریں یہاں تک کہ سب غائب ہو جائیں</string>
+    <string name="baqiyat_cycles_label">آج مکمل ہونے والے دور</string>
+    <string name="baqiyat_phrase_subhanallah">سبحان اللہ</string>
+    <string name="baqiyat_phrase_alhamdulillah">الحمد للہ</string>
+    <string name="baqiyat_phrase_allahuakbar">اللہ اکبر</string>
+    <string name="baqiyat_phrase_lailaha">لا الٰہ الا اللہ</string>
+    <string name="baqiyat_phrase_lahawla">لا حول ولا قوۃ الا باللہ</string>
 
     <!-- Info Sheet Supporter -->
     <string name="info_sheet_supporter_label">⭐ سپورٹر</string>

@@ -80,6 +80,8 @@
     <string name="challenge_dhikr_body">Complete 100 daily dhikr and compare your rank with other participants.</string>
     <string name="challenge_ten_days_body">Track the Ten Days deeds: dhikr, takbeer, fasting, and charity.</string>
     <string name="challenge_takbeer_body">Take turns in a guided group takbeer session.</string>
+    <string name="challenge_baqiyat_title">Everlasting Good Deeds</string>
+    <string name="challenge_baqiyat_body">Tap through the five phrases and complete a round to raise your score.</string>
 
     <!-- Dhikr Rewards Screen -->
     <string name="dhikr_title">Dhikr</string>
@@ -119,6 +121,15 @@
     <string name="manual_dhikr_enter_count">Enter count</string>
     <string name="manual_dhikr_witness">I testify that this count is true and accurate, and that Allah is aware of my intention</string>
     <string name="manual_dhikr_submit">✦ Log Dhikr ✦</string>
+
+    <!-- Baqiyat Challenge Screen -->
+    <string name="baqiyat_tap_hint">Tap each phrase until they all disappear</string>
+    <string name="baqiyat_cycles_label">Cycles completed today</string>
+    <string name="baqiyat_phrase_subhanallah">Subhan Allah</string>
+    <string name="baqiyat_phrase_alhamdulillah">Alhamdulillah</string>
+    <string name="baqiyat_phrase_allahuakbar">Allahu Akbar</string>
+    <string name="baqiyat_phrase_lailaha">La ilaha illallah</string>
+    <string name="baqiyat_phrase_lahawla">La hawla wala quwwata illa billah</string>
 
     <!-- Info Sheet Supporter -->
     <string name="info_sheet_supporter_label">⭐ Supporter</string>

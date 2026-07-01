@@ -78,6 +78,8 @@
     <string name="challenge_dhikr_body">每天完成 100 次赞念，并查看你在参与者中的排名。</string>
     <string name="challenge_ten_days_body">记录伊历十二月前十天的赞念、大赞词、斋戒和施舍。</string>
     <string name="challenge_takbeer_body">加入引导式集体大赞词环节，轮流念诵。</string>
+    <string name="challenge_baqiyat_title">永恒的善功</string>
+    <string name="challenge_baqiyat_body">依次点击五句赞词，完成一整轮以提升你的分数。</string>
     <string name="dhikr_title">赞念</string>
 
     <string name="dhikr_milestone_title">完成 %1$d 次!</string>
@@ -94,6 +96,15 @@
     <string name="manual_dhikr_enter_count">输入数量</string>
     <string name="manual_dhikr_witness">我证明这个数量是真实准确的，真主了解我的意图</string>
     <string name="manual_dhikr_submit">✦ 记录赞念 ✦</string>
+
+    <!-- Baqiyat Challenge Screen -->
+    <string name="baqiyat_tap_hint">依次点击每句赞词，直到全部消失</string>
+    <string name="baqiyat_cycles_label">今日完成轮数</string>
+    <string name="baqiyat_phrase_subhanallah">赞主清净</string>
+    <string name="baqiyat_phrase_alhamdulillah">一切赞颂归安拉</string>
+    <string name="baqiyat_phrase_allahuakbar">安拉至大</string>
+    <string name="baqiyat_phrase_lailaha">万物非主，唯有安拉</string>
+    <string name="baqiyat_phrase_lahawla">万事非力，唯赖安拉</string>
 
     <!-- Info Sheet Supporter -->
     <string name="info_sheet_supporter_label">⭐ 支持者</string>

@@ -3,6 +3,36 @@
     ".read": false,
     ".write": false,
 
+    "baqiyat_saliha": {
+      "$dateKey": {
+        "players": {
+          ".read": true,
+          "$uid": {
+            ".write": "newData.child('uid').val() === $uid",
+            ".validate": "newData.hasChildren(['uid','count','countryCode','updatedAt'])",
+
+            "uid": {
+              ".validate": "newData.isString() && newData.val() === $uid"
+            },
+            "count": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2000"
+            },
+            "countryCode": {
+              ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 3"
+            },
+            "nickname": {
+              ".validate": "newData.isString() && newData.val().length <= 20"
+            },
+            "updatedAt": {
+              ".validate": "newData.val() === now"
+            },
+
+            "$other": { ".validate": false }
+          }
+        }
+      }
+    },
+
     "ten_days_dhul_hijjah": {
       "$periodKey": {
         "leaderboard": {
