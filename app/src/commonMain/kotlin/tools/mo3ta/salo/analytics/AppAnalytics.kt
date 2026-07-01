@@ -10,6 +10,7 @@ object AppAnalytics {
     const val OPEN_SETTINGS = "open_settings"
     const val OPEN_TAKBEER_SESSION = "open_takbeer_session"
     const val OPEN_DHIKR_REWARDS = "open_dhikr_rewards"
+    const val OPEN_MANUAL_DHIKR = "open_manual_dhikr"
     const val DHIKR_TAP = "dhikr_tap"
     const val DHIKR_SCREEN_VIEW = "dhikr_screen_view"
     const val PARAM_COUNT = "count"

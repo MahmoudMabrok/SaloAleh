@@ -42,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.semantics.Role
@@ -60,6 +61,7 @@ import tools.mo3ta.salo.generated.resources.dhikr_add
 import tools.mo3ta.salo.generated.resources.dhikr_back_cd
 import tools.mo3ta.salo.generated.resources.dhikr_daily_goal
 import tools.mo3ta.salo.generated.resources.dhikr_freed_today
+import tools.mo3ta.salo.generated.resources.dhikr_manual_entry_button
 import tools.mo3ta.salo.generated.resources.dhikr_phrase
 import tools.mo3ta.salo.generated.resources.dhikr_progress_count
 import tools.mo3ta.salo.generated.resources.dhikr_rank_number
@@ -84,6 +86,16 @@ import tools.mo3ta.salo.ui.dhikr.DhikrMilestoneCelebration
 import tools.mo3ta.salo.ui.dhikr.DhikrPanel
 import tools.mo3ta.salo.ui.dhikr.DhikrProgressRing
 import tools.mo3ta.salo.ui.dhikr.DhikrSpacing
+import tools.mo3ta.salo.ui.dhikr.ManualDhikrSheet
+
+private val DhikrHeroBackground = Brush.verticalGradient(
+    colors = listOf(
+        Color(0xFF06331F),
+        Color(0xFF0E5A39),
+        Color(0xFF123D44),
+        MohamedLoversPalette.DeepBlue,
+    ),
+)
 
 @Composable
 fun DhikrRewardsScreen(
@@ -120,7 +132,7 @@ fun DhikrRewardsScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MohamedLoversPalette.DeepBlue),
+            .background(DhikrHeroBackground),
     ) {
         Column(
             modifier = Modifier
@@ -144,6 +156,10 @@ fun DhikrRewardsScreen(
                 },
                 onBack = onBack,
                 onRankClick = { viewModel.onLeaderboardOpened() },
+                onManualEntryClick = {
+                    analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_DHIKR)
+                    viewModel.showManualDhikrSheet()
+                },
             )
             Surface(
                 modifier = Modifier.fillMaxWidth(),
@@ -185,6 +201,55 @@ fun DhikrRewardsScreen(
             onDismiss = { viewModel.onLeaderboardClosed() },
         )
     }
+
+    ManualDhikrSheet(
+        isOpen = state.showManualDhikrSheet,
+        showPresetChips = false,
+        onDismiss = { viewModel.dismissManualDhikrSheet() },
+        onSubmit = { count -> viewModel.submitManualDhikr(count) },
+    )
+}
+
+@Composable
+private fun DhikrManualEntryButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier.fillMaxWidth(),
+    onDarkBackground: Boolean = false,
+) {
+    val containerColor = if (onDarkBackground) {
+        Color.White.copy(alpha = 0.14f)
+    } else {
+        DhikrColors.Green.copy(alpha = 0.08f)
+    }
+    val borderColor = if (onDarkBackground) {
+        Color.White.copy(alpha = 0.24f)
+    } else {
+        DhikrColors.LightGreen.copy(alpha = 0.4f)
+    }
+    val textColor = if (onDarkBackground) {
+        Color.White.copy(alpha = 0.92f)
+    } else {
+        DhikrColors.Green
+    }
+
+    Surface(
+        onClick = onClick,
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        color = containerColor,
+        border = BorderStroke(1.dp, borderColor),
+    ) {
+        Text(
+            text = stringResource(Res.string.dhikr_manual_entry_button),
+            color = textColor,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 14.dp, horizontal = 12.dp),
+        )
+    }
 }
 
 @Composable
@@ -197,13 +262,14 @@ private fun DhikrImmersiveZone(
     onTap: () -> Unit,
     onBack: () -> Unit,
     onRankClick: () -> Unit,
+    onManualEntryClick: () -> Unit,
 ) {
     val fraction = (count.toFloat() / target.toFloat()).coerceIn(0f, 1f)
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MohamedLoversPalette.DeepBlue)
+            .background(DhikrHeroBackground)
             .clickable(
                 enabled = canCount,
                 onClickLabel = stringResource(Res.string.dhikr_add),
@@ -263,6 +329,13 @@ private fun DhikrImmersiveZone(
                     )
                 }
             }
+
+            DhikrManualEntryButton(
+                onClick = onManualEntryClick,
+                onDarkBackground = true,
+            )
+
+            Spacer(Modifier.height(12.dp))
 
             Text(
                 text = stringResource(Res.string.dhikr_phrase),

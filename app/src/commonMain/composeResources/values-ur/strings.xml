@@ -86,6 +86,14 @@
     <string name="dhikr_leaderboard_rank_new">نیا</string>
     <string name="dhikr_leaderboard_empty">ابھی کوئی ڈیٹا نہیں</string>
     <string name="dhikr_rank_unranked">لیڈر بورڈ دیکھنے کے لیے ٹیپ کریں</string>
+    <string name="dhikr_manual_entry_button">📿 بیرونی اذکار درج کریں</string>
+    <string name="manual_dhikr_title">📿 بیرونی اذکار درج کریں</string>
+    <string name="manual_dhikr_subtitle">اللہ کو خاموشی سے، انگلیوں پر، یا تسبیح سے یاد کیا؟\nجو پڑھا اسے درج کریں — ایپ سے دور ہونے کی وجہ سے ذکر نہ چھوڑیں</string>
+    <string name="manual_dhikr_count">تعداد:</string>
+    <string name="manual_dhikr_other_count">دوسری تعداد:</string>
+    <string name="manual_dhikr_enter_count">تعداد درج کریں</string>
+    <string name="manual_dhikr_witness">میں گواہی دیتا ہوں کہ یہ تعداد درست اور حقیقی ہے، اور اللہ میری نیت سے باخبر ہے</string>
+    <string name="manual_dhikr_submit">✦ اذکار درج کریں ✦</string>
 
     <!-- Info Sheet Supporter -->
     <string name="info_sheet_supporter_label">⭐ سپورٹر</string>

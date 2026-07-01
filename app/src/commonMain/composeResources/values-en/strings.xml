@@ -111,6 +111,14 @@
     <string name="dhikr_leaderboard_rank_new">New</string>
     <string name="dhikr_leaderboard_empty">No data yet</string>
     <string name="dhikr_rank_unranked">Tap to see the leaderboard</string>
+    <string name="dhikr_manual_entry_button">📿 Log external dhikr</string>
+    <string name="manual_dhikr_title">📿 Log External Dhikr</string>
+    <string name="manual_dhikr_subtitle">Remembered Allah silently, on your fingers, or with a tasbih?\nLog what you recited — don\'t stop your dhikr just because you\'re away from the app</string>
+    <string name="manual_dhikr_count">Count:</string>
+    <string name="manual_dhikr_other_count">Other count:</string>
+    <string name="manual_dhikr_enter_count">Enter count</string>
+    <string name="manual_dhikr_witness">I testify that this count is true and accurate, and that Allah is aware of my intention</string>
+    <string name="manual_dhikr_submit">✦ Log Dhikr ✦</string>
 
     <!-- Info Sheet Supporter -->
     <string name="info_sheet_supporter_label">⭐ Supporter</string>

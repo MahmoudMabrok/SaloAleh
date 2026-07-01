@@ -38,6 +38,19 @@ class DhikrChallengeStore(private val settings: Settings) {
     }
 
     /**
+     * Add [count] pending taps at once (manual external entry) and return the new total
+     * (remote + pending). Never touches network. Non-positive counts are ignored.
+     */
+    fun addToday(today: LocalDate, count: Int): Int {
+        ensureToday(today)
+        if (count > 0) {
+            val newPending = settings.getInt(KEY_PENDING, 0) + count
+            settings.putInt(KEY_PENDING, newPending)
+        }
+        return settings.getInt(KEY_REMOTE, 0) + settings.getInt(KEY_PENDING, 0)
+    }
+
+    /**
      * Update the remote baseline after loading it from Firebase.
      * Only advances the baseline — never reduces it.
      * Pending is untouched so any local taps made during the fetch are preserved.

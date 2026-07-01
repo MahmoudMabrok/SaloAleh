@@ -118,6 +118,56 @@ class DhikrChallengeViewModel(
         _state.update { it.copy(showCelebration = false) }
     }
 
+    fun showManualDhikrSheet() {
+        _state.update { it.copy(showManualDhikrSheet = true) }
+    }
+
+    fun dismissManualDhikrSheet() {
+        _state.update { it.copy(showManualDhikrSheet = false) }
+    }
+
+    /** Record a batch of dhikr counted outside the app (silently, on fingers, with a tasbih). */
+    fun submitManualDhikr(count: Int) {
+        if (count <= 0) return
+        val today = today()
+        val before = store.todayCount(today)
+        val updated = store.addToday(today, count)
+        val crossedMilestone = updated / 100 > before / 100
+        val milestone = updated / 100 * 100
+        _state.update {
+            it.copy(
+                dateKey = today.toString(),
+                todayCount = updated,
+                showManualDhikrSheet = false,
+                isSubmittingManualDhikr = true,
+                errorMessage = null,
+                showCelebration = (crossedMilestone && milestone > 0) || it.showCelebration,
+                celebrationMilestone = if (crossedMilestone && milestone > 0) milestone else it.celebrationMilestone,
+            )
+        }
+        viewModelScope.launch {
+            syncMutex.withLock {
+                if (!firebaseClient.isConfigured()) {
+                    _state.update { it.copy(isSubmittingManualDhikr = false) }
+                    return@withLock
+                }
+                val total = store.todayCount(today)
+                val uid = sessionStore.getOrCreateUid()
+                val countryCode = countryCodeProvider.get()
+                val nickname = publishedNickname()
+                val result = firebaseClient.writeUserDay(today.toString(), uid, total, countryCode, nickname)
+                if (result.isSuccess) store.onSyncSuccess(today, total)
+                refreshStats(today.toString(), uid)
+                _state.update {
+                    it.copy(
+                        isSubmittingManualDhikr = false,
+                        errorMessage = result.exceptionOrNull()?.message,
+                    )
+                }
+            }
+        }
+    }
+
     fun resetToday() {
         val today = today()
         val updated = store.resetToday(today)
