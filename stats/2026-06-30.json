@@ -1,0 +1,113 @@
+{
+  "allTimeSalawat": 705054,
+  "weekSalawat": 89466,
+  "todaySalawat": 19092,
+  "activePlayers": 148,
+  "countriesCount": 13,
+  "countries": [
+    "DZ",
+    "EG",
+    "FR",
+    "GM",
+    "IQ",
+    "IT",
+    "MA",
+    "MR",
+    "NA",
+    "SA",
+    "SD",
+    "US",
+    "YE"
+  ],
+  "topScore": 35113,
+  "roundKey": "2026-07-03",
+  "leaderboard": [
+    {
+      "countryCode": "EG",
+      "dailyBadge": "crown",
+      "nickname": "يونس",
+      "rank": 1,
+      "rankChange": "same",
+      "score": 35113,
+      "uid": "5a4b1d0ed314c539aefe3fedeb07054b2acf361dd98189761e80e047fbf80305"
+    },
+    {
+      "countryCode": "DZ",
+      "dailyBadge": "crescent",
+      "nickname": "Saliha",
+      "rank": 2,
+      "rankChange": "same",
+      "score": 10500,
+      "uid": "95f710fac50b769650b5494354a21344bc4ac1bdfb9dd101925154b1ded0d7d5"
+    },
+    {
+      "countryCode": "SA",
+      "nickname": "M.A.L",
+      "rank": 3,
+      "rankChange": "same",
+      "score": 7901,
+      "uid": "092d20eeafb6b68719e19fcd41f072811d333b4f561862f7b13734d0d633db00"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "nickname": "المحب",
+      "rank": 4,
+      "rankChange": "same",
+      "score": 7419,
+      "uid": "cf0116cf9c1bf2ef2965b238768139059a0088bbb734739297ac650ede2fd00b"
+    },
+    {
+      "countryCode": "IT",
+      "dailyBadge": "dome",
+      "rank": 5,
+      "rankChange": "same",
+      "score": 4010,
+      "uid": "c6c592d1a439dcda8abf90bfe57de7416d6903f4541e99f4045f42e8e548c30b"
+    },
+    {
+      "countryCode": "SD",
+      "dailyBadge": "dome",
+      "rank": 6,
+      "rankChange": "same",
+      "score": 3937,
+      "uid": "f6d13f6afcc3e30af8e92129d8dff7907533d97229e03b4c5615cc3a55a1189b"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "crescent",
+      "rank": 7,
+      "rankChange": "same",
+      "score": 3108,
+      "uid": "3490ffe561dcead6a1142cfe9a0728ceafbb744abd7e5b5c87473c1ee3edab95"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "nickname": "صلوا على النبي 🌺",
+      "rank": 8,
+      "rankChange": "up",
+      "score": 2755,
+      "uid": "15831ce619e85eb362ee6de5d556e51d4c89ba9614c20606b9d8c91f2e0e0073"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "heart",
+      "nickname": "MF1979",
+      "rank": 9,
+      "rankChange": "down",
+      "score": 2437,
+      "uid": "a6edef5b54050a0eeff694c23ec03d8ff1e6110d49bf2452f2bc7a9c52f706ba"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "nickname": "الصلاه على النبي",
+      "rank": 10,
+      "rankChange": "same",
+      "score": 1509,
+      "uid": "022e29de7a377d1d6aeeb39421e0347c93c8b247bb2251cb16b6f3b83848dfef"
+    }
+  ],
+  "updatedAt": "2026-06-30T20:46:09.632Z"
+}
