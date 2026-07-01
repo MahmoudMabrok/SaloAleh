@@ -230,7 +230,7 @@ fun MohamedLoversScreen(
             modifier = Modifier.fillMaxSize(),
         )
         Box(modifier = Modifier.fillMaxSize()) {
-            Column (Modifier.align(Alignment.TopCenter).padding(top = 96.dp)){
+            Column (Modifier.align(Alignment.TopCenter).padding(top = 32.dp)){
                 MohamedLoversHadithBanner()
                 if (state.showRoundEndBanner && !state.showRoundEndResults) {
                     Spacer(Modifier.height(8.dp))
@@ -303,7 +303,7 @@ fun MohamedLoversScreen(
                 modifier = Modifier.align(Alignment.Center),
             )
             Column(
-                modifier = Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.navigationBars).padding(bottom = 40.dp),
+                modifier = Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.navigationBars).padding(bottom = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 MohamedLoversCounter(
