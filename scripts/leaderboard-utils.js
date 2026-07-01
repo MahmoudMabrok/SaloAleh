@@ -1,4 +1,5 @@
 const DHIKR_CHALLENGE_ROOT = '100_challenge';
+const BAQIYAT_CHALLENGE_ROOT = 'baqiyat_saliha';
 
 function buildOldRankMap(source) {
   const entries = source && typeof source.exists === 'function'
@@ -30,8 +31,13 @@ function compareUidAsc(a, b) {
   return 0;
 }
 
-function buildDhikrChallengeDailyRanking(dateKey, users, rootPath = DHIKR_CHALLENGE_ROOT) {
-  const normalizedUsers = users
+function buildDailyCountChallengeRanking({
+  dateKey,
+  players,
+  rootPath,
+  playersPath,
+}) {
+  const normalizedPlayers = players
     .map(user => ({
       uid: typeof user.uid === 'string' ? user.uid : '',
       count: normalizeDhikrCount(user.count),
@@ -41,16 +47,16 @@ function buildDhikrChallengeDailyRanking(dateKey, users, rootPath = DHIKR_CHALLE
     }))
     .filter(user => user.uid.length > 0);
 
-  const activeUsers = normalizedUsers
+  const activeUsers = normalizedPlayers
     .filter(user => user.count > 0)
     .sort((a, b) => b.count - a.count || compareUidAsc(a, b));
 
   const rankUpdates = {};
   const activeUids = new Set(activeUsers.map(user => user.uid));
 
-  normalizedUsers.forEach(user => {
+  normalizedPlayers.forEach(user => {
     if (!activeUids.has(user.uid)) {
-      rankUpdates[`${rootPath}/${dateKey}/users/${user.uid}/rank`] = null;
+      rankUpdates[`${rootPath}/${dateKey}/${playersPath}/${user.uid}/rank`] = null;
     }
   });
 
@@ -60,21 +66,52 @@ function buildDhikrChallengeDailyRanking(dateKey, users, rootPath = DHIKR_CHALLE
   }));
 
   rankedUsers.forEach(user => {
-    rankUpdates[`${rootPath}/${dateKey}/users/${user.uid}/rank`] = user.rank;
+    rankUpdates[`${rootPath}/${dateKey}/${playersPath}/${user.uid}/rank`] = user.rank;
   });
 
   return {
     rankUpdates,
     rankedUsers,
     participantCount: rankedUsers.length,
-    totalTodayDhikr: rankedUsers.reduce((sum, user) => sum + user.count, 0),
+    totalCount: rankedUsers.reduce((sum, user) => sum + user.count, 0),
+  };
+}
+
+function buildDhikrChallengeDailyRanking(dateKey, users, rootPath = DHIKR_CHALLENGE_ROOT) {
+  const ranking = buildDailyCountChallengeRanking({
+    dateKey,
+    players: users,
+    rootPath,
+    playersPath: 'users',
+  });
+
+  return {
+    ...ranking,
+    totalTodayDhikr: ranking.totalCount,
+  };
+}
+
+function buildBaqiyatChallengeDailyRanking(dateKey, players, rootPath = BAQIYAT_CHALLENGE_ROOT) {
+  const ranking = buildDailyCountChallengeRanking({
+    dateKey,
+    players,
+    rootPath,
+    playersPath: 'players',
+  });
+
+  return {
+    ...ranking,
+    totalTodayBaqiyat: ranking.totalCount,
   };
 }
 
 module.exports = {
   DHIKR_CHALLENGE_ROOT,
+  BAQIYAT_CHALLENGE_ROOT,
   buildOldRankMap,
   computeRankChange,
   normalizeDhikrCount,
+  buildDailyCountChallengeRanking,
+  buildBaqiyatChallengeDailyRanking,
   buildDhikrChallengeDailyRanking,
 };

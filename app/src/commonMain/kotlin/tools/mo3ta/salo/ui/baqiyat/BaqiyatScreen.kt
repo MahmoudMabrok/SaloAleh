@@ -140,13 +140,6 @@ fun BaqiyatScreen(
                 },
             )
         }
-
-        DhikrMilestoneCelebration(
-            milestone = state.celebrationMilestone,
-            visible = state.showCelebration,
-            onDismiss = { viewModel.onCelebrationDismissed() },
-            modifier = Modifier.fillMaxSize(),
-        )
     }
 
     if (state.showLeaderboard) {

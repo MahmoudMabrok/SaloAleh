@@ -138,6 +138,9 @@ class MohamedLoversSessionStore(private val settings: Settings) {
     fun saveLastSalawatTimestamp(ts: Long) = settings.putLong(KEY_LAST_SALAWAT_TS, ts)
 
     fun getNickname(): String? = settings.getStringOrNull(KEY_NICKNAME)?.takeIf { it.isNotBlank() }
+
+    fun getPublishedName(): String =
+        getNickname()?.takeIf { isNicknameEnabled } ?: getOrCreateUid().takeLast(6)
     fun setNickname(name: String?) {
         if (name.isNullOrBlank()) settings.remove(KEY_NICKNAME)
         else settings.putString(KEY_NICKNAME, name.trim().take(MAX_NICKNAME_LENGTH))

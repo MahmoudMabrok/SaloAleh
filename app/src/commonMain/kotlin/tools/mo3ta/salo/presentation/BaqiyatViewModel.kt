@@ -42,7 +42,7 @@ class BaqiyatViewModel(
             if (prev != null && firebaseClient.isConfigured()) {
                 val (prevDate, prevTotal) = prev
                 val countryCode = countryCodeProvider.get()
-                val result = firebaseClient.writeUserDay(prevDate, uid, prevTotal, countryCode, publishedNickname())
+                val result = firebaseClient.writeUserDay(prevDate, uid, prevTotal, countryCode, sessionStore.getPublishedName())
                 if (result.isSuccess) store.clearPreviousPending()
             }
 
@@ -113,10 +113,8 @@ class BaqiyatViewModel(
                 if (total == 0) return@withLock
                 val uid = sessionStore.getOrCreateUid()
                 val countryCode = countryCodeProvider.get()
-                val nickname = publishedNickname()
-
                 _state.update { it.copy(isSyncing = true) }
-                val result = firebaseClient.writeUserDay(today.toString(), uid, total, countryCode, nickname)
+                val result = firebaseClient.writeUserDay(today.toString(), uid, total, countryCode, sessionStore.getPublishedName())
                 if (result.isSuccess) store.onSyncSuccess(today, total)
                 _state.update {
                     it.copy(
@@ -130,25 +128,21 @@ class BaqiyatViewModel(
 
     private suspend fun refreshLeaderboard(dateKey: String, uid: String) {
         _state.update { it.copy(isLeaderboardLoading = true) }
-        firebaseClient.fetchLeaderboard(dateKey)
-            .onSuccess { entries ->
-                val self = entries.firstOrNull { it.uid == uid }
-                _state.update {
-                    it.copy(
-                        leaderboard = entries,
-                        rank = self?.rank ?: 0,
-                        participantCount = entries.size,
-                        isLeaderboardLoading = false,
-                    )
-                }
-            }
-            .onFailure { error ->
-                _state.update { it.copy(isLeaderboardLoading = false, errorMessage = error.message) }
-            }
-    }
+        val statsResult = firebaseClient.fetchDayStats(dateKey, uid)
+        val leaderboardResult = firebaseClient.fetchLeaderboard(dateKey)
+        val stats = statsResult.getOrNull()
+        val entries = leaderboardResult.getOrNull().orEmpty()
 
-    private fun publishedNickname(): String =
-        sessionStore.getNickname()?.takeIf { sessionStore.isNicknameEnabled }.orEmpty()
+        _state.update {
+            it.copy(
+                leaderboard = entries,
+                rank = stats?.rank ?: entries.firstOrNull { entry -> entry.uid == uid }?.rank ?: 0,
+                participantCount = stats?.participantCount ?: entries.size,
+                isLeaderboardLoading = false,
+                errorMessage = statsResult.exceptionOrNull()?.message ?: leaderboardResult.exceptionOrNull()?.message,
+            )
+        }
+    }
 
     private fun today(): LocalDate = Clock.System.todayIn(cairoZone)
 }

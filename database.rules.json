@@ -5,8 +5,25 @@
 
     "baqiyat_saliha": {
       "$dateKey": {
+        "participantCount": {
+          ".read": true,
+          ".write": false
+        },
+        "totalTodayBaqiyat": {
+          ".read": true,
+          ".write": false
+        },
+        "lastRankedAt": {
+          ".read": true,
+          ".write": false
+        },
+        "leaderboard": {
+          ".read": true,
+          ".write": false
+        },
         "players": {
           ".read": true,
+          ".indexOn": ["count"],
           "$uid": {
             ".write": "newData.child('uid').val() === $uid",
             ".validate": "newData.hasChildren(['uid','count','countryCode','updatedAt'])",
@@ -25,6 +42,10 @@
             },
             "updatedAt": {
               ".validate": "newData.val() === now"
+            },
+            "rank": {
+              ".read": true,
+              ".validate": "newData.val() === data.val()"
             },
 
             "$other": { ".validate": false }

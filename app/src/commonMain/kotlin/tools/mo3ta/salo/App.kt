@@ -386,12 +386,11 @@ fun App(
         var milestonePending by remember { mutableStateOf<Int?>(null) }
         val currentScore = mlState.syncedTotal + mlState.sessionClicks
         LaunchedEffect(currentScore, canShowAppAnnouncements) {
-            if (!canShowAppAnnouncements) return@LaunchedEffect
             if (premiumStore.highestTier != null) return@LaunchedEffect
             val hit = milestoneTracker.checkMilestone(currentScore) ?: return@LaunchedEffect
             milestonePending = hit
         }
-        if (canShowAppAnnouncements) milestonePending?.let { milestone ->
+        milestonePending?.let { milestone ->
             MilestoneSupportDialog(
                 milestone = milestone,
                 onSupport = {
@@ -451,7 +450,7 @@ fun App(
         var pendingVersionUpdate by remember(newVersionAvailable) {
             mutableStateOf(newVersionAvailable)
         }
-        if (canShowAppAnnouncements) pendingNotificationMessage?.let { msg ->
+        pendingNotificationMessage?.let { msg ->
             NotificationMessageDialog(
                 message = msg,
                 onDismiss = {

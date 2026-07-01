@@ -5,5 +5,12 @@ data class BaqiyatLeaderboardEntry(
     val countryCode: String,
     val count: Int,
     val rank: Int,
+    val rankChange: String = "same",
     val nickname: String = "",
+)
+
+data class BaqiyatDayStats(
+    val rank: Int = 0,
+    val participantCount: Int = 0,
+    val totalTodayBaqiyat: Int = 0,
 )
