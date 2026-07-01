@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -231,6 +232,7 @@ fun MohamedLoversScreen(
         )
         Box(modifier = Modifier.fillMaxSize()) {
             Column (Modifier.align(Alignment.TopCenter).padding(top = 32.dp)){
+                Spacer(modifier = Modifier.size(16.dp))
                 MohamedLoversHadithBanner()
                 if (state.showRoundEndBanner && !state.showRoundEndResults) {
                     Spacer(Modifier.height(8.dp))
@@ -303,7 +305,7 @@ fun MohamedLoversScreen(
                 modifier = Modifier.align(Alignment.Center),
             )
             Column(
-                modifier = Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.navigationBars).padding(bottom = 12.dp),
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 MohamedLoversCounter(
