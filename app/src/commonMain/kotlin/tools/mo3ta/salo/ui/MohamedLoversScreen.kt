@@ -297,17 +297,19 @@ fun MohamedLoversScreen(
 
                             if (rankChipVisible) {
                                 Column(horizontalAlignment = Alignment.End) {
-                                    DailyRankStrip(
-                                        rank = currentUserEntry!!.rank,
-                                        totalPlayers = state.roundPlayerCount,
-                                        todayTaps = state.dailyGoalProgress,
-                                        currentBadgeKey = state.currentDailyBadge,
-                                        onStripClick = {
-                                            analyticsManager.logAction(AppAnalytics.OPEN_INFO_SHEET, mapOf(AppAnalytics.PARAM_SOURCE to "rank_strip"))
-                                            infoSheetOpen = true
-                                        },
-                                        onBadgeClick = { badgeTiersSheetOpen = true },
-                                    )
+                                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                                        DailyRankStrip(
+                                            rank = currentUserEntry!!.rank,
+                                            totalPlayers = state.roundPlayerCount,
+                                            todayTaps = state.dailyGoalProgress,
+                                            currentBadgeKey = state.currentDailyBadge,
+                                            onStripClick = {
+                                                analyticsManager.logAction(AppAnalytics.OPEN_INFO_SHEET, mapOf(AppAnalytics.PARAM_SOURCE to "rank_strip"))
+                                                infoSheetOpen = true
+                                            },
+                                            onBadgeClick = { badgeTiersSheetOpen = true },
+                                        )
+                                    }
                                     AnimatedVisibility(
                                         visible = showRankTooltip,
                                         enter = fadeIn(),
