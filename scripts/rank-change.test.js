@@ -1,6 +1,7 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const {
+  addDaysToDateKey,
   buildBaqiyatChallengeDailyRanking,
   buildDailyCountChallengeRanking,
   buildDhikrChallengeDailyRanking,
@@ -226,5 +227,19 @@ describe('baqiyat challenge daily ranking', () => {
     ]);
     assert.equal(result.rankUpdates['baqiyat_saliha/2026-07-02/players/user-b/rank'], 1);
     assert.equal(result.rankUpdates['baqiyat_saliha/2026-07-02/players/user-a/rank'], 2);
+  });
+});
+
+describe('addDaysToDateKey', () => {
+  it('advances a round key by one week', () => {
+    assert.equal(addDaysToDateKey('2026-07-03', 7), '2026-07-10');
+  });
+
+  it('rolls over a month boundary', () => {
+    assert.equal(addDaysToDateKey('2026-07-31', 7), '2026-08-07');
+  });
+
+  it('rolls over a year boundary', () => {
+    assert.equal(addDaysToDateKey('2026-12-25', 7), '2027-01-01');
   });
 });
