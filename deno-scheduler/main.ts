@@ -72,12 +72,15 @@ Deno.cron(
   () => dispatchWorkflow("leaderboard-populate.yml", "leaderboard"),
 );
 
-// Friday 16:10 UTC = 19:10 Cairo (UTC+3) — closes the round (allTimeTotal, achievements,
-// final ranks) and immediately populates the brand-new round's leaderboard/roundTotal/
-// roundPlayerCount, so both happen from this single cron slot instead of a dedicated one.
+// Friday 17:30 UTC — aggregate round totals after the 19:00 Cairo round close.
+// Cairo is UTC+3 during DST (round closes 16:00 UTC, ~90min buffer) and UTC+2
+// on standard time (round closes 17:00 UTC, 30min buffer). Fixed further out
+// than the old 16:10 UTC slot so clients have more time to flush pending taps
+// before achievements/leaderboard are snapshotted, and so the buffer stays
+// positive year-round instead of only during DST.
 Deno.cron(
   "trigger-aggregate-all-time",
-  "10 16 * * 5",
+  "30 17 * * 5",
   { backoffSchedule: [1_000, 5_000, 30_000] },
   () => dispatchWorkflow("aggregate-all-time.yml", "aggregate"),
 );
@@ -115,7 +118,7 @@ Deno.serve(async (req) => {
           ...cronStatus.leaderboard,
         },
         aggregate: {
-          schedule: "10 16 * * 5 (UTC) — Friday 19:10 Cairo (UTC+3): closes the round + seeds the new round's leaderboard",
+          schedule: "30 17 * * 5 (UTC) — Friday 20:30 Cairo (DST) / 19:30 Cairo (standard)",
           workflow: "aggregate-all-time.yml",
           ...cronStatus.aggregate,
         },
