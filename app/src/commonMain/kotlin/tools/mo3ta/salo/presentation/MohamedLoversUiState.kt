@@ -93,4 +93,8 @@ data class MohamedLoversUiState(
 
     // Idle salawat tracking
     val lastSalawatElapsedMinutes: Long? = null,
+
+    // Heart index
+    val heartScore: Int = 0,
+    val showHeartRefillNudge: Boolean = false,
 )

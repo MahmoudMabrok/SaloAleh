@@ -505,6 +505,9 @@
     <string name="idle_days_one">ایک دن سے</string>
     <string name="idle_days_two">دو دن سے</string>
     <string name="idle_days_plural">%1$d دن سے</string>
+    <string name="heart_index_label">دل کا اشاریہ</string>
+    <string name="heart_index_tooltip">ہر درود +10 ہے، دل ہر 10 سیکنڈ میں 1 کم ہوتا ہے</string>
+    <string name="heart_refill_nudge">اپنے دل کو نبی ﷺ پر درود بھیج کر بھر دیں</string>
 
     <!-- Subscription encouragement -->
     <string name="milestone_congrats_header">ما شاء اللہ! 🎉</string>

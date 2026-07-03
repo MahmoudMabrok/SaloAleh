@@ -19,8 +19,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -36,7 +39,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -59,6 +65,9 @@ import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.grace_warning
 import tools.mo3ta.salo.generated.resources.grace_warning_cta
 import tools.mo3ta.salo.generated.resources.grace_warning_title
+import tools.mo3ta.salo.generated.resources.heart_index_label
+import tools.mo3ta.salo.generated.resources.heart_index_tooltip
+import tools.mo3ta.salo.generated.resources.heart_refill_nudge
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_blocked_firebase_off
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_blocked_waiting_network
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_code_copied
@@ -181,9 +190,18 @@ fun MohamedLoversScreen(
     var showBubbleTooltip by remember { mutableStateOf(false) }
     var selectedUserAchievements by remember { mutableStateOf<Pair<String, String>?>(null) }
     var showOthersAchievementsPromo by remember { mutableStateOf(false) }
+    var showHeartTooltip by remember { mutableStateOf(announcementsEnabled) }
 
     LaunchedEffect(isLit) {
         if (isLit) { delay(1600); isLit = false }
+    }
+
+    LaunchedEffect(announcementsEnabled) {
+        showHeartTooltip = announcementsEnabled
+        if (announcementsEnabled) {
+            delay(7000)
+            showHeartTooltip = false
+        }
     }
 
     val currentUserEntry = state.topPlayers.firstOrNull { it.isCurrentUser } ?: state.selfEntry
@@ -299,6 +317,31 @@ fun MohamedLoversScreen(
                 }
             }
 
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(start = 16.dp, top = 76.dp),
+                    horizontalAlignment = Alignment.Start,
+                ) {
+                    AnimatedVisibility(
+                        visible = showHeartTooltip,
+                        enter = fadeIn(),
+                        exit = fadeOut(),
+                    ) {
+                        HeartIndexTooltip()
+                    }
+                    if (showHeartTooltip) Spacer(Modifier.height(6.dp))
+                    HeartIndexIndicator(
+                        score = state.heartScore,
+                        onClick = {
+                            showHeartTooltip = false
+                            if (tapsEnabled) viewModel.onCountClick()
+                        },
+                    )
+                }
+            }
+
             MohamedLoversArchShrine(
                 isLit = isLit,
                 onArchCenterPositioned = { archCenter = it },
@@ -331,7 +374,14 @@ fun MohamedLoversScreen(
                     )
                 }
                 val elapsedMinutes = state.lastSalawatElapsedMinutes
-                if (elapsedMinutes != null && elapsedMinutes >= 1) {
+                if (state.showHeartRefillNudge) {
+                    Spacer(Modifier.height(8.dp))
+                    HeartRefillBanner(
+                        onClick = {
+                            if (tapsEnabled) viewModel.onCountClick()
+                        },
+                    )
+                } else if (elapsedMinutes != null && elapsedMinutes >= 1) {
                     Spacer(Modifier.height(8.dp))
                     IdleBanner(
                         elapsedMinutes = elapsedMinutes,
@@ -606,6 +656,104 @@ private fun CountdownCell(value: Int, label: String) {
         )
     }
 }
+
+@Composable
+private fun HeartIndexIndicator(score: Int, onClick: () -> Unit) {
+    val fillFraction = (score.coerceAtLeast(0).toFloat() / HEART_VISUAL_FULL_SCORE).coerceIn(0f, 1f)
+    val activeTint = Color(0xFFE85D75)
+    val emptyTint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.35f)
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(20.dp),
+        color = MohamedLoversPalette.SkyTop.copy(alpha = 0.58f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, activeTint.copy(alpha = 0.32f)),
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(7.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 13.dp, vertical = 6.dp),
+        ) {
+            HeartFillIcon(
+                fillFraction = fillFraction,
+                emptyTint = emptyTint,
+                activeTint = activeTint,
+            )
+            Text(
+                text = score.toString(),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.88f),
+                fontSize = 12.sp,
+                fontFamily = MohamedLoversFonts.body,
+            )
+        }
+    }
+}
+
+@Composable
+private fun HeartFillIcon(
+    fillFraction: Float,
+    emptyTint: Color,
+    activeTint: Color,
+) {
+    val label = stringResource(Res.string.heart_index_label)
+    Box(modifier = Modifier.size(18.dp)) {
+        Icon(
+            imageVector = Icons.Filled.Favorite,
+            contentDescription = label,
+            tint = emptyTint,
+            modifier = Modifier.matchParentSize(),
+        )
+        Icon(
+            imageVector = Icons.Filled.Favorite,
+            contentDescription = null,
+            tint = activeTint,
+            modifier = Modifier
+                .matchParentSize()
+                .drawWithContent {
+                    clipRect(right = size.width * fillFraction) {
+                        this@drawWithContent.drawContent()
+                    }
+                },
+        )
+    }
+}
+
+@Composable
+private fun HeartIndexTooltip() {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MohamedLoversPalette.SkyTop.copy(alpha = 0.74f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE85D75).copy(alpha = 0.30f)),
+    ) {
+        Text(
+            text = stringResource(Res.string.heart_index_tooltip),
+            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.9f),
+            fontSize = 11.sp,
+            fontFamily = MohamedLoversFonts.body,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+        )
+    }
+}
+
+@Composable
+private fun HeartRefillBanner(onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = Color(0xFFE85D75).copy(alpha = 0.12f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE85D75).copy(alpha = 0.35f)),
+    ) {
+        Text(
+            text = stringResource(Res.string.heart_refill_nudge),
+            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.9f),
+            fontSize = 13.sp,
+            fontFamily = MohamedLoversFonts.body,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+    }
+}
+
+private const val HEART_VISUAL_FULL_SCORE = 1000f
 
 @Composable
 private fun formatIdleDuration(totalMinutes: Long): String {

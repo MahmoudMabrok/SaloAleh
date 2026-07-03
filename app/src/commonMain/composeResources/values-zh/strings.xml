@@ -505,6 +505,9 @@
     <string name="idle_days_one">1 天</string>
     <string name="idle_days_two">2 天</string>
     <string name="idle_days_plural">%1$d 天</string>
+    <string name="heart_index_label">心之指数</string>
+    <string name="heart_index_tooltip">每次赞圣 +10；心每 10 秒减少 1</string>
+    <string name="heart_refill_nudge">为先知 ﷺ 祝祷，重新填满你的心</string>
 
     <!-- Subscription encouragement -->
     <string name="milestone_congrats_header">ما شاء الله！🎉</string>

@@ -543,6 +543,9 @@
     <string name="idle_days_one">1 day</string>
     <string name="idle_days_two">2 days</string>
     <string name="idle_days_plural">%1$d days</string>
+    <string name="heart_index_label">Heart index</string>
+    <string name="heart_index_tooltip">Each salawat adds +10. The heart loses 1 every 10s.</string>
+    <string name="heart_refill_nudge">Refill your heart — send salawat upon the Prophet ﷺ</string>
 
     <!-- Subscription encouragement -->
     <string name="milestone_congrats_header">Masha\'Allah! 🎉</string>

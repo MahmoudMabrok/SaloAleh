@@ -21,6 +21,12 @@ import tools.mo3ta.salo.data.time.computeFinalMinutesTick
 import tools.mo3ta.salo.data.engagement.DailyGoalStore
 import tools.mo3ta.salo.data.engagement.EngagementStore
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
+import tools.mo3ta.salo.data.heart.HEART_DECAY_INTERVAL_MS
+import tools.mo3ta.salo.data.heart.HEART_LOW_THRESHOLD
+import tools.mo3ta.salo.data.heart.HEART_TAP_BONUS
+import tools.mo3ta.salo.data.heart.HeartStore
+import tools.mo3ta.salo.data.heart.lastHeartResetBoundary
+import tools.mo3ta.salo.data.heart.settleHeart
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
 import tools.mo3ta.salo.data.billing.PremiumFeature
 import tools.mo3ta.salo.data.billing.PremiumStore
@@ -41,6 +47,8 @@ class MohamedLoversViewModel(
     private val settingsStore: NotificationSettingsStore,
     private val sessionStore: MohamedLoversSessionStore,
     private val premiumStore: PremiumStore,
+    private val heartStore: HeartStore,
+    private val startTimers: Boolean = true,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MohamedLoversUiState())
@@ -82,20 +90,29 @@ class MohamedLoversViewModel(
                 currentDailyBadge = DailyBadge.fromTapCount(todayProgress)?.key,
             )
         }
-        viewModelScope.launch {
-            delay(90_000L)
-            refresh()
+        settleHeartDecay()
+        if (startTimers) {
+            viewModelScope.launch {
+                delay(90_000L)
+                refresh()
 //            delay(5*60_000L)
 //            refresh()
-        }
-        viewModelScope.launch {
-            while (isActive) {
-                val ts = sessionStore.getLastSalawatTimestamp()
-                val elapsed = if (ts > 0L) {
-                    (Clock.System.now().toEpochMilliseconds() - ts) / 60_000L
-                } else null
-                _state.update { it.copy(lastSalawatElapsedMinutes = elapsed) }
-                delay(60_000L)
+            }
+            viewModelScope.launch {
+                while (isActive) {
+                    val ts = sessionStore.getLastSalawatTimestamp()
+                    val elapsed = if (ts > 0L) {
+                        (Clock.System.now().toEpochMilliseconds() - ts) / 60_000L
+                    } else null
+                    _state.update { it.copy(lastSalawatElapsedMinutes = elapsed) }
+                    delay(60_000L)
+                }
+            }
+            viewModelScope.launch {
+                while (isActive) {
+                    settleHeartDecay()
+                    delay(HEART_DECAY_INTERVAL_MS)
+                }
             }
         }
     }
@@ -176,7 +193,9 @@ class MohamedLoversViewModel(
         val roundKey = current.roundKey ?: return
         if (!current.canCount) return
 
-        sessionStore.saveLastSalawatTimestamp(Clock.System.now().toEpochMilliseconds())
+        val nowMs = Clock.System.now().toEpochMilliseconds()
+        sessionStore.saveLastSalawatTimestamp(nowMs)
+        val heart = addHeartTap(nowMs)
         val pending = repository.registerLocalTap(roundKey, 1)
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
         val wasComplete = dailyGoalStore.isGoalComplete(today)
@@ -204,6 +223,8 @@ class MohamedLoversViewModel(
                 milestoneBadgeKey = milestoneBadgeKey ?: it.milestoneBadgeKey,
                 currentDailyBadge = badge?.key ?: it.currentDailyBadge,
                 lastSalawatElapsedMinutes = 0L,
+                heartScore = heart.first,
+                showHeartRefillNudge = shouldShowHeartRefillNudge(heart.first, heart.second),
             )
         }
         applyLeaderboard()
@@ -248,6 +269,7 @@ class MohamedLoversViewModel(
     }
 
     fun refreshSessionClicks() {
+        settleHeartDecay()
         val roundKey = state.value.roundKey ?: return
         val pending = repository.getPendingSession(roundKey)
         _state.update { it.copy(sessionClicks = pending.clickCount) }
@@ -273,6 +295,8 @@ class MohamedLoversViewModel(
     fun submitManualSalawat(count: Int) {
         val roundKey = state.value.roundKey ?: return
         if (count <= 0) return
+        val nowMs = Clock.System.now().toEpochMilliseconds()
+        val heart = addHeartTap(nowMs)
         repository.registerLocalTap(roundKey, count)
         val pending = repository.getPendingSession(roundKey)
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
@@ -284,6 +308,8 @@ class MohamedLoversViewModel(
                 isSubmittingManualSalawat = true,
                 dailyGoalProgress = dailyGoalStore.todayProgress(today),
                 lastSalawatElapsedMinutes = 0L,
+                heartScore = heart.first,
+                showHeartRefillNudge = shouldShowHeartRefillNudge(heart.first, heart.second),
             )
         }
         applyLeaderboard()
@@ -292,8 +318,44 @@ class MohamedLoversViewModel(
             repository.incrementExternalCount(roundKey, count)
             _state.update { it.copy(isSubmittingManualSalawat = false) }
         }
-        sessionStore.saveLastSalawatTimestamp(Clock.System.now().toEpochMilliseconds())
+        sessionStore.saveLastSalawatTimestamp(nowMs)
     }
+
+    private fun settleHeartDecay(nowTs: Long = Clock.System.now().toEpochMilliseconds()) {
+        val storedScore = heartStore.getScore()
+        val storedAnchor = heartStore.getAnchorTs()
+        val settled = settleHeart(
+            storedScore = storedScore,
+            anchorTs = storedAnchor,
+            nowTs = nowTs,
+            resetBoundaryTs = lastHeartResetBoundary(nowTs),
+        )
+        if (settled.score != storedScore || settled.anchorTs != storedAnchor) {
+            heartStore.save(settled.score, settled.anchorTs)
+        }
+        _state.update {
+            it.copy(
+                heartScore = settled.score,
+                showHeartRefillNudge = shouldShowHeartRefillNudge(settled.score, settled.anchorTs),
+            )
+        }
+    }
+
+    private fun addHeartTap(nowTs: Long): Pair<Int, Long> {
+        val settled = settleHeart(
+            storedScore = heartStore.getScore(),
+            anchorTs = heartStore.getAnchorTs(),
+            nowTs = nowTs,
+            resetBoundaryTs = lastHeartResetBoundary(nowTs),
+        )
+        val heartScore = settled.score + HEART_TAP_BONUS
+        val heartAnchor = if (settled.anchorTs <= 0L) nowTs else settled.anchorTs
+        heartStore.save(heartScore, heartAnchor)
+        return heartScore to heartAnchor
+    }
+
+    private fun shouldShowHeartRefillNudge(score: Int, anchorTs: Long): Boolean =
+        anchorTs > 0L && score <= HEART_LOW_THRESHOLD
 
     fun resetCurrentRoundScore() {
         val roundKey = state.value.roundKey ?: return

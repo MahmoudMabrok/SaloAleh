@@ -54,6 +54,22 @@ Strict unidirectional layers: **UI → Presentation → Domain → Data**. No Us
 
 DI via Koin: `appModule` (commonMain) + `androidModule`/`iosModule` (platform). All wiring in `di/AppModule.kt`.
 
+## Feature notes
+
+### Heart index
+
+Main-screen emotional gauge for salawat momentum.
+
+- Core files: `data/heart/HeartIndexMath.kt`, `data/heart/HeartStore.kt`, `presentation/MohamedLoversViewModel.kt`, `ui/MohamedLoversScreen.kt`.
+- Local-only persistence through `multiplatform-settings` keys `heart_score` and `heart_anchor_ts`; no Firebase schema/rules changes.
+- Mechanics: every tap adds `+10`; live/offline decay subtracts `1` per `10_000ms` elapsed. Decay is remainder-safe: advance the anchor only by full decay intervals so partial seconds are carried.
+- Score is unbounded above and below. Do not clamp to a max or floor negative values.
+- Weekly heart reset is Friday 22:00 `Africa/Cairo`, intentionally different from the competition round reset at Friday 19:00 Cairo. If the stored anchor predates the latest Friday-22:00 boundary, reset score to `0` and anchor to `now` with no retroactive decay.
+- Fresh install uses `score=0`, `anchorTs=0`; do not show the refill nudge until the clock has started.
+- Nudge condition: `anchorTs > 0 && score <= HEART_LOW_THRESHOLD`.
+- UI: heart widget lives top-left on `MohamedLoversScreen`, includes a short tooltip, and displays a red fill level that reaches full at `1000` points. The visual fill cap does not cap the stored score.
+- Tests: heart math/store tests live under `commonTest/data/heart`; ViewModel coverage is in `MohamedLoversViewModelHeartTest`.
+
 ## Firebase RTDB structure
 
 ```
