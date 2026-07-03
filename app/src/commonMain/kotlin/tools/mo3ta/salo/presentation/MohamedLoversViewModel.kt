@@ -276,6 +276,21 @@ class MohamedLoversViewModel(
         applyLeaderboard()
     }
 
+    /**
+     * Called on app resume. The background final-minutes timer can miss a round
+     * transition while the process is suspended, so if the previously known round
+     * has already ended, do a full [refresh] (new round key, fresh listeners)
+     * instead of just re-reading pending taps for the stale round.
+     */
+    fun onAppResumed() {
+        val roundEnd = state.value.roundEndInstant
+        if (roundEnd != null && Clock.System.now() >= roundEnd) {
+            refresh()
+        } else {
+            refreshSessionClicks()
+        }
+    }
+
     fun applyExtensionScore(round: String, count: Int) {
         repository.registerLocalTap(round, count)
         val pending = repository.getPendingSession(round)

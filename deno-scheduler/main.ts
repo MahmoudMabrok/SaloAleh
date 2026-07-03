@@ -29,6 +29,7 @@ const REF = "main";
 
 const cronStatus: Record<string, { lastRunAt: string | null; lastResult: string | null }> = {
   leaderboard: { lastRunAt: null, lastResult: null },
+  "leaderboard-round-reset": { lastRunAt: null, lastResult: null },
   aggregate: { lastRunAt: null, lastResult: null },
   "update-stats": { lastRunAt: null, lastResult: null },
   "notify-morning": { lastRunAt: null, lastResult: null },
@@ -72,6 +73,16 @@ Deno.cron(
   () => dispatchWorkflow("leaderboard-populate.yml", "leaderboard"),
 );
 
+// Friday 16:05 UTC = 19:05 Cairo (UTC+3) — dedicated run right after the round boundary
+// (19:00 Cairo) so the brand-new round's leaderboard/roundTotal/roundPlayerCount nodes
+// exist within 5 minutes, instead of waiting for the next aligned */30 slot.
+Deno.cron(
+  "trigger-leaderboard-populate-round-reset",
+  "5 16 * * 5",
+  { backoffSchedule: [1_000, 5_000, 30_000] },
+  () => dispatchWorkflow("leaderboard-populate.yml", "leaderboard-round-reset"),
+);
+
 // Friday 16:10 UTC = 19:10 Cairo (UTC+3) — aggregate round totals after the 19:00 Cairo round close.
 Deno.cron(
   "trigger-aggregate-all-time",
@@ -111,6 +122,11 @@ Deno.serve(async (req) => {
           schedule: "*/30 * * * * (UTC)",
           workflow: "leaderboard-populate.yml",
           ...cronStatus.leaderboard,
+        },
+        "leaderboard-round-reset": {
+          schedule: "5 16 * * 5 (UTC) — Friday 19:05 Cairo (UTC+3)",
+          workflow: "leaderboard-populate.yml",
+          ...cronStatus["leaderboard-round-reset"],
         },
         aggregate: {
           schedule: "10 16 * * 5 (UTC) — Friday 19:10 Cairo (UTC+3)",
