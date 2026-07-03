@@ -72,6 +72,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.coroutines.delay
+import tools.mo3ta.salo.data.billing.FeatureFlags
 import tools.mo3ta.salo.ui.shareBitmap
 import org.jetbrains.compose.resources.stringResource
 import tools.mo3ta.salo.generated.resources.Res
@@ -803,7 +804,7 @@ private fun LeaderboardRow(
             horizontalAlignment = Alignment.End,
             verticalArrangement = Arrangement.spacedBy(1.dp),
         ) {
-            if (entry.scoreMasked && !isMe) {
+            if (FeatureFlags.SCORE_MASKING_ENABLED && entry.scoreMasked && !isMe) {
                 MaskedScore(entry.totalCount)
             } else {
                 if (isMe || !isFriday || isPremium) {
