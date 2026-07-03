@@ -292,9 +292,17 @@ class MohamedLoversViewModel(
     }
 
     fun applyExtensionScore(round: String, count: Int) {
+        val nowMs = Clock.System.now().toEpochMilliseconds()
+        val heart = addHeartTap(nowMs, count)
         repository.registerLocalTap(round, count)
         val pending = repository.getPendingSession(round)
-        _state.update { it.copy(sessionClicks = pending.clickCount) }
+        _state.update {
+            it.copy(
+                sessionClicks = pending.clickCount,
+                heartScore = heart.first,
+                showHeartRefillNudge = shouldShowHeartRefillNudge(heart.first, heart.second),
+            )
+        }
         applyLeaderboard()
         flushPendingSession()
     }
@@ -311,7 +319,7 @@ class MohamedLoversViewModel(
         val roundKey = state.value.roundKey ?: return
         if (count <= 0) return
         val nowMs = Clock.System.now().toEpochMilliseconds()
-        val heart = addHeartTap(nowMs)
+        val heart = addHeartTap(nowMs, count)
         repository.registerLocalTap(roundKey, count)
         val pending = repository.getPendingSession(roundKey)
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
@@ -356,14 +364,14 @@ class MohamedLoversViewModel(
         }
     }
 
-    private fun addHeartTap(nowTs: Long): Pair<Int, Long> {
+    private fun addHeartTap(nowTs: Long, count: Int = 1): Pair<Int, Long> {
         val settled = settleHeart(
             storedScore = heartStore.getScore(),
             anchorTs = heartStore.getAnchorTs(),
             nowTs = nowTs,
             resetBoundaryTs = lastHeartResetBoundary(nowTs),
         )
-        val heartScore = settled.score + HEART_TAP_BONUS
+        val heartScore = settled.score + HEART_TAP_BONUS * count
         val heartAnchor = if (settled.anchorTs <= 0L) nowTs else settled.anchorTs
         heartStore.save(heartScore, heartAnchor)
         return heartScore to heartAnchor
