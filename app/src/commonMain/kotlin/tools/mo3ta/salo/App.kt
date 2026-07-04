@@ -46,6 +46,7 @@ import tools.mo3ta.salo.ui.AchievementsScreen
 import tools.mo3ta.salo.ui.baqiyat.BaqiyatScreen
 import tools.mo3ta.salo.ui.ChallengesScreen
 import tools.mo3ta.salo.ui.DhikrRewardsScreen
+import tools.mo3ta.salo.ui.IstighfarRewardsScreen
 import tools.mo3ta.salo.ui.HadithListScreen
 import tools.mo3ta.salo.ui.MohamedLoversScreen
 import tools.mo3ta.salo.ui.FcmPermissionReminderDialog
@@ -131,6 +132,7 @@ fun App(
         var showTenDays by remember { mutableStateOf(false) }
         var showDhikrRewards by remember { mutableStateOf(false) }
         var showBaqiyatChallenge by remember { mutableStateOf(false) }
+        var showIstighfarChallenge by remember { mutableStateOf(false) }
         var showExtensionQr by remember { mutableStateOf(false) }
         var showPaywall by remember { mutableStateOf(false) }
         var nicknamePromptRequested by remember { mutableStateOf(false) }
@@ -140,6 +142,7 @@ fun App(
             enabled = showPaywall ||
                 showDhikrRewards ||
                 showBaqiyatChallenge ||
+                showIstighfarChallenge ||
                 showTakbeerSession ||
                 showTenDays ||
                 showExtensionQr ||
@@ -150,6 +153,7 @@ fun App(
                 showPaywall -> showPaywall = false
                 showDhikrRewards -> showDhikrRewards = false
                 showBaqiyatChallenge -> showBaqiyatChallenge = false
+                showIstighfarChallenge -> showIstighfarChallenge = false
                 showTakbeerSession -> showTakbeerSession = false
                 showTenDays -> showTenDays = false
                 showExtensionQr -> showExtensionQr = false
@@ -170,6 +174,7 @@ fun App(
         val nicknamePromptBlocked = showPaywall ||
             showDhikrRewards ||
             showBaqiyatChallenge ||
+            showIstighfarChallenge ||
             showTakbeerSession ||
             showTenDays ||
             showExtensionQr ||
@@ -200,6 +205,9 @@ fun App(
             showBaqiyatChallenge -> BaqiyatScreen(
                 onBack = { showBaqiyatChallenge = false },
             )
+            showIstighfarChallenge -> IstighfarRewardsScreen(
+                onBack = { showIstighfarChallenge = false },
+            )
             else -> SaloTabScaffold(
                 selectedTab = selectedTab,
                 onTabSelected = { selectedTab = it },
@@ -222,6 +230,7 @@ fun App(
                                 onOpenTenDays = { showTenDays = true },
                                 onOpenTakbeerSession = { showTakbeerSession = true },
                                 onOpenBaqiyatChallenge = { showBaqiyatChallenge = true },
+                                onOpenIstighfarChallenge = { showIstighfarChallenge = true },
                             )
                             SaloTab.Achievements -> AchievementsScreen(
                                 onBack = { selectedTab = SaloTab.MohamedLovers },
