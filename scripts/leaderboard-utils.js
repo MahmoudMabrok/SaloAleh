@@ -1,5 +1,6 @@
 const DHIKR_CHALLENGE_ROOT = '100_challenge';
 const BAQIYAT_CHALLENGE_ROOT = 'baqiyat_saliha';
+const ISTIGHFAR_CHALLENGE_ROOT = 'istighfar_challenge';
 const MOHAMED_LOVERS_ROOT = 'mohamed_lovers';
 
 function buildOldRankMap(source) {
@@ -118,6 +119,20 @@ function buildBaqiyatChallengeDailyRanking(dateKey, players, rootPath = BAQIYAT_
   return {
     ...ranking,
     totalTodayBaqiyat: ranking.totalCount,
+  };
+}
+
+function buildIstighfarChallengeDailyRanking(dateKey, users, rootPath = ISTIGHFAR_CHALLENGE_ROOT) {
+  const ranking = buildDailyCountChallengeRanking({
+    dateKey,
+    players: users,
+    rootPath,
+    playersPath: 'users',
+  });
+
+  return {
+    ...ranking,
+    totalTodayIstighfar: ranking.totalCount,
   };
 }
 
@@ -372,12 +387,14 @@ async function populateMohamedLoversRound(db, admin, roundKey, isFinal) {
 module.exports = {
   DHIKR_CHALLENGE_ROOT,
   BAQIYAT_CHALLENGE_ROOT,
+  ISTIGHFAR_CHALLENGE_ROOT,
   MOHAMED_LOVERS_ROOT,
   buildOldRankMap,
   computeRankChange,
   normalizeDhikrCount,
   buildDailyCountChallengeRanking,
   buildBaqiyatChallengeDailyRanking,
+  buildIstighfarChallengeDailyRanking,
   cairoToday,
   addDaysToDateKey,
   populateMohamedLoversRound,

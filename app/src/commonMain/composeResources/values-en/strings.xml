@@ -82,6 +82,8 @@
     <string name="challenge_takbeer_body">Take turns in a guided group takbeer session.</string>
     <string name="challenge_baqiyat_title">Everlasting Good Deeds</string>
     <string name="challenge_baqiyat_body">Tap through the five phrases and complete a round to raise your score.</string>
+    <string name="challenge_istighfar_title">Seek His Forgiveness</string>
+    <string name="challenge_istighfar_body">The Beloved Prophet ﷺ sought forgiveness 70 times a day — where do you stand?</string>
 
     <!-- Dhikr Rewards Screen -->
     <string name="dhikr_title">Dhikr</string>
@@ -121,6 +123,40 @@
     <string name="manual_dhikr_enter_count">Enter count</string>
     <string name="manual_dhikr_witness">I testify that this count is true and accurate, and that Allah is aware of my intention</string>
     <string name="manual_dhikr_submit">✦ Log Dhikr ✦</string>
+
+    <!-- Istighfar Challenge Screen -->
+    <string name="istighfar_title">Istighfar</string>
+    <string name="istighfar_back_cd">Back</string>
+    <string name="istighfar_phrase">I seek the forgiveness of Allah, the Mighty, the Living, the Sustainer, and I turn to Him in repentance</string>
+    <string name="istighfar_today">Today</string>
+    <string name="istighfar_times">times</string>
+    <string name="istighfar_add">Istighfar</string>
+    <string name="istighfar_daily_goal">Daily goal: %1$d times</string>
+    <string name="istighfar_progress_count">%1$d / %2$d</string>
+    <string name="istighfar_rewards_title">What do you receive from istighfar?</string>
+    <string name="istighfar_reward_relief">Allah makes for him a way out of every hardship</string>
+    <string name="istighfar_reward_ease">and relief from every distress</string>
+    <string name="istighfar_reward_provision">and provides for him from where he does not expect</string>
+    <string name="istighfar_reward_record">Whoever wants his record to please him should increase his istighfar</string>
+    <string name="istighfar_reward_sunnah">The Prophet ﷺ sought Allah\'s forgiveness more than seventy times a day</string>
+    <string name="istighfar_reward_sunnah_label">The Prophet\'s ﷺ Sunnah</string>
+    <string name="istighfar_rank_number"># %1$d</string>
+    <string name="istighfar_rank_subtitle">among %1$d participants</string>
+    <string name="istighfar_tap_hint">Tap anywhere to seek forgiveness</string>
+    <string name="istighfar_cycles_label">Cycles completed today</string>
+    <string name="istighfar_milestone_title">%1$d times complete!</string>
+    <string name="istighfar_milestone_subtitle">May Allah forgive you!</string>
+    <string name="istighfar_leaderboard_title">Top Players</string>
+    <string name="istighfar_leaderboard_rank_new">New</string>
+    <string name="istighfar_leaderboard_empty">No data yet</string>
+    <string name="istighfar_rank_unranked">Tap to see the leaderboard</string>
+    <string name="istighfar_manual_entry_button">🤲 Log external istighfar</string>
+    <string name="manual_istighfar_title">🤲 Log External Istighfar</string>
+    <string name="manual_istighfar_subtitle">Sought Allah\'s forgiveness silently, on your fingers, or with a tasbih?\nLog what you recited — don\'t stop your istighfar just because you\'re away from the app</string>
+    <string name="manual_istighfar_count">Count:</string>
+    <string name="manual_istighfar_enter_count">Enter count</string>
+    <string name="manual_istighfar_witness">I testify that this count is true and accurate, and that Allah is aware of my intention</string>
+    <string name="manual_istighfar_submit">✦ Log Istighfar ✦</string>
 
     <!-- Baqiyat Challenge Screen -->
     <string name="baqiyat_ayah">﴿ وَالْبَاقِيَاتُ الصَّالِحَاتُ خَيْرٌ عِندَ رَبِّكَ ثَوَابًا وَخَيْرٌ أَمَلًا ﴾</string>

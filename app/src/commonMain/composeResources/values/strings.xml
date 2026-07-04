@@ -82,6 +82,8 @@
     <string name="challenge_takbeer_body">كبّروا بالتناوب في حلقة جماعية منظمة.</string>
     <string name="challenge_baqiyat_title">الباقيات الصالحات</string>
     <string name="challenge_baqiyat_body">امسح الأذكار الخمسة بالضغط عليها، وأكمل الدورة لتزيد رصيدك.</string>
+    <string name="challenge_istighfar_title">واستغفروه</string>
+    <string name="challenge_istighfar_body">كان الحبيب المصطفي يستغفر ٧٠ مره فاين انت</string>
 
     <!-- Dhikr Rewards Screen -->
     <string name="dhikr_title">الذكر</string>
@@ -121,6 +123,40 @@
     <string name="manual_dhikr_enter_count">أدخل العدد</string>
     <string name="manual_dhikr_witness">أشهد أن هذا العدد صحيح وحقيقي، وأن الله مطّلع على نيّتي</string>
     <string name="manual_dhikr_submit">✦ تسجيل الأذكار ✦</string>
+
+    <!-- Istighfar Challenge Screen -->
+    <string name="istighfar_title">الاستغفار</string>
+    <string name="istighfar_back_cd">رجوع</string>
+    <string name="istighfar_phrase">أَسْتَغْفِرُ اللَّهَ الْعَظِيمَ الَّذِي لَا إِلَٰهَ إِلَّا هُوَ الْحَيَّ الْقَيُّومَ وَأَتُوبُ إِلَيْهِ</string>
+    <string name="istighfar_today">اليوم</string>
+    <string name="istighfar_times">مرة</string>
+    <string name="istighfar_add">استغفار</string>
+    <string name="istighfar_daily_goal">الهدف اليومي: %1$d مرة</string>
+    <string name="istighfar_progress_count">%1$d / %2$d</string>
+    <string name="istighfar_rewards_title">ماذا تنال من الاستغفار؟</string>
+    <string name="istighfar_reward_relief">جعل الله له من كل ضيق مخرجًا</string>
+    <string name="istighfar_reward_ease">ومن كل همّ فرجًا</string>
+    <string name="istighfar_reward_provision">ورزقه من حيث لا يحتسب</string>
+    <string name="istighfar_reward_record">من أحب أن تسرّه صحيفته فليكثر من الاستغفار</string>
+    <string name="istighfar_reward_sunnah">كان النبي ﷺ يستغفر الله أكثر من سبعين مرة في اليوم الواحد</string>
+    <string name="istighfar_reward_sunnah_label">سنة النبي ﷺ</string>
+    <string name="istighfar_rank_number"># %1$d</string>
+    <string name="istighfar_rank_subtitle">من بين %1$d مشارك</string>
+    <string name="istighfar_tap_hint">اضغط في أي مكان للاستغفار</string>
+    <string name="istighfar_cycles_label">دورات مكتملة اليوم</string>
+    <string name="istighfar_milestone_title">أتممت %1$d مرة!</string>
+    <string name="istighfar_milestone_subtitle">غفر الله لك!</string>
+    <string name="istighfar_leaderboard_title">المتصدرون</string>
+    <string name="istighfar_leaderboard_rank_new">جديد</string>
+    <string name="istighfar_leaderboard_empty">لا توجد بيانات بعد</string>
+    <string name="istighfar_rank_unranked">اضغط لرؤية المتصدرين</string>
+    <string name="istighfar_manual_entry_button">🤲 تسجيل استغفار خارجي</string>
+    <string name="manual_istighfar_title">🤲 تسجيل استغفار خارجي</string>
+    <string name="manual_istighfar_subtitle">استغفرت الله بصمت أو على أصابعك أو بالمسبحة؟\nسجّل ما استغفرت — لا تتوقف عن الاستغفار لأنك بعيد عن التطبيق</string>
+    <string name="manual_istighfar_count">العدد:</string>
+    <string name="manual_istighfar_enter_count">أدخل العدد</string>
+    <string name="manual_istighfar_witness">أشهد أن هذا العدد صحيح وحقيقي، وأن الله مطّلع على نيّتي</string>
+    <string name="manual_istighfar_submit">✦ تسجيل الاستغفار ✦</string>
 
     <!-- Baqiyat Challenge Screen -->
     <string name="baqiyat_ayah">﴿ وَالْبَاقِيَاتُ الصَّالِحَاتُ خَيْرٌ عِندَ رَبِّكَ ثَوَابًا وَخَيْرٌ أَمَلًا ﴾</string>
