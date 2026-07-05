@@ -27,6 +27,7 @@ class BaqiyatViewModel(
 ) : ViewModel() {
 
     private val cairoZone = TimeZone.of("Africa/Cairo")
+    private val activePhrases = BaqiyatPhrase.entries.take(4)
     private val syncMutex = Mutex()
 
     private val _state = MutableStateFlow(BaqiyatUiState(currentUid = sessionStore.getOrCreateUid()))
@@ -51,6 +52,7 @@ class BaqiyatViewModel(
                 it.copy(
                     dateKey = today.toString(),
                     cyclesCompleted = store.todayCount(today),
+                    phraseOrder = activePhrases,
                     tappedPhrases = emptySet(),
                     isLoading = false,
                     errorMessage = null,
@@ -85,6 +87,7 @@ class BaqiyatViewModel(
         _state.update {
             it.copy(
                 tappedPhrases = emptySet(),
+                phraseOrder = shuffledActivePhrases(current.phraseOrder),
                 cyclesCompleted = updated,
                 showCelebration = true,
                 celebrationMilestone = updated,
@@ -145,4 +148,13 @@ class BaqiyatViewModel(
     }
 
     private fun today(): LocalDate = Clock.System.todayIn(cairoZone)
+
+    private fun shuffledActivePhrases(currentOrder: List<BaqiyatPhrase>): List<BaqiyatPhrase> {
+        val shuffled = activePhrases.shuffled()
+        return if (activePhrases.size > 1 && shuffled == currentOrder) {
+            activePhrases.drop(1) + activePhrases.first()
+        } else {
+            shuffled
+        }
+    }
 }

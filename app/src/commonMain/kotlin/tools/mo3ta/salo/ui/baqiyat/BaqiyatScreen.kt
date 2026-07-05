@@ -63,8 +63,6 @@ import tools.mo3ta.salo.presentation.BaqiyatViewModel
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.dhikr.DhikrMilestoneCelebration
 
-private val TopRow = listOf(BaqiyatPhrase.SubhanAllah, BaqiyatPhrase.Alhamdulillah)
-private val MidRow = listOf(BaqiyatPhrase.AllahuAkbar, BaqiyatPhrase.LaIlahaIllallah)
 private val BaqiyatGold = Color(0xFFF5D97A)
 
 @Composable
@@ -149,6 +147,7 @@ fun BaqiyatScreen(
             Spacer(Modifier.height(24.dp))
 
             PhraseGrid(
+                phraseOrder = state.phraseOrder,
                 tappedPhrases = state.tappedPhrases,
                 enabled = !state.isLoading,
                 onTap = { phrase ->
@@ -254,6 +253,7 @@ private fun CyclesCounterCard(cyclesCompleted: Int) {
 
 @Composable
 private fun PhraseGrid(
+    phraseOrder: List<BaqiyatPhrase>,
     tappedPhrases: Set<BaqiyatPhrase>,
     enabled: Boolean,
     onTap: (BaqiyatPhrase) -> Unit,
@@ -263,7 +263,7 @@ private fun PhraseGrid(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            TopRow.forEach { phrase ->
+            phraseOrder.take(2).forEach { phrase ->
                 PhraseSlot(
                     phrase = phrase,
                     visible = phrase !in tappedPhrases,
@@ -274,7 +274,7 @@ private fun PhraseGrid(
             }
         }
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            MidRow.forEach { phrase ->
+            phraseOrder.drop(2).take(2).forEach { phrase ->
                 PhraseSlot(
                     phrase = phrase,
                     visible = phrase !in tappedPhrases,

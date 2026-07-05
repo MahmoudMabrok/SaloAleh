@@ -6,6 +6,7 @@ import tools.mo3ta.salo.domain.BaqiyatLeaderboardEntry
 data class BaqiyatUiState(
     val dateKey: String = "",
     val cyclesCompleted: Int = 0,
+    val phraseOrder: List<BaqiyatPhrase> = BaqiyatPhrase.entries.take(4),
     val tappedPhrases: Set<BaqiyatPhrase> = emptySet(),
     val rank: Int = 0,
     val participantCount: Int = 0,

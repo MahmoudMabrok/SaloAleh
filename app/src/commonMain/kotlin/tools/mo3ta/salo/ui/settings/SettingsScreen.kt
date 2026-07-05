@@ -25,6 +25,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -34,6 +35,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -47,6 +49,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
@@ -112,6 +115,7 @@ fun SettingsScreen(
     var selectedLanguage by remember { mutableStateOf(languageStore.language) }
     val salawatVariantStore: SalawatVariantStore = koinInject()
     var selectedSalawatVariant by remember { mutableStateOf(salawatVariantStore.variantIndex) }
+    var showSalawatVariantSheet by remember { mutableStateOf(false) }
     val analyticsManager: AnalyticsManager = koinInject()
     val billingManager: BillingManager = koinInject()
     val premiumStore: PremiumStore = koinInject()
@@ -189,27 +193,28 @@ fun SettingsScreen(
                 },
             )
 
-            Text(
-                text = stringResource(Res.string.settings_salawat_variant_header),
-                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(vertical = 8.dp),
+            SalawatVariantButton(
+                selectedIndex = selectedSalawatVariant,
+                onClick = { showSalawatVariantSheet = true },
             )
 
-            SalawatVariantSelector(
-                selectedIndex = selectedSalawatVariant,
-                onSelected = { index ->
-                    if (index != selectedSalawatVariant) {
-                        selectedSalawatVariant = index
-                        salawatVariantStore.variantIndex = index
-                        analyticsManager.logAction(
-                            AppAnalytics.SALAWAT_VARIANT_CHANGED,
-                            mapOf(AppAnalytics.PARAM_VARIANT to (index + 1).toString()),
-                        )
-                    }
-                },
-            )
+            if (showSalawatVariantSheet) {
+                SalawatVariantSelectorSheet(
+                    selectedIndex = selectedSalawatVariant,
+                    onDismiss = { showSalawatVariantSheet = false },
+                    onSelected = { index ->
+                        if (index != selectedSalawatVariant) {
+                            selectedSalawatVariant = index
+                            salawatVariantStore.variantIndex = index
+                            analyticsManager.logAction(
+                                AppAnalytics.SALAWAT_VARIANT_CHANGED,
+                                mapOf(AppAnalytics.PARAM_VARIANT to (index + 1).toString()),
+                            )
+                        }
+                        showSalawatVariantSheet = false
+                    },
+                )
+            }
 
             Text(
                 text = stringResource(Res.string.settings_notifications_header),
@@ -567,51 +572,125 @@ private fun LanguageChipRow(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SalawatVariantSelector(
+private fun SalawatVariantButton(
     selectedIndex: Int,
+    onClick: () -> Unit,
+) {
+    val safeSelectedIndex = selectedIndex.coerceIn(0, SalawatVariants.COUNT - 1)
+    val selectedText = stringResource(SalawatVariants.textResIds[safeSelectedIndex])
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 24.dp, bottom = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = stringResource(Res.string.settings_salawat_variant_header),
+            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color.White.copy(alpha = 0.04f))
+                .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
+                .clickable(onClick = onClick)
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = selectedText,
+                color = Color.White,
+                fontSize = 14.sp,
+                lineHeight = 20.sp,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.8f),
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SalawatVariantSelectorSheet(
+    selectedIndex: Int,
+    onDismiss: () -> Unit,
     onSelected: (Int) -> Unit,
 ) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+    val safeSelectedIndex = selectedIndex.coerceIn(0, SalawatVariants.COUNT - 1)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = Color(0xFF16213e),
+        contentColor = Color.White,
     ) {
-        SalawatVariants.textResIds.forEachIndexed { index, resId ->
-            val selected = index == selectedIndex
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(
-                        if (selected) MohamedLoversPalette.GoldGlow.copy(alpha = 0.12f)
-                        else Color.White.copy(alpha = 0.04f),
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 24.dp),
+        ) {
+            Text(
+                text = stringResource(Res.string.settings_salawat_variant_header),
+                color = MohamedLoversPalette.GoldGlow,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 4.dp),
+            )
+
+            SalawatVariants.textResIds.forEachIndexed { index, resId ->
+                val selected = index == safeSelectedIndex
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(
+                            if (selected) MohamedLoversPalette.GoldGlow.copy(alpha = 0.12f)
+                            else Color.White.copy(alpha = 0.04f),
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = if (selected) MohamedLoversPalette.GoldGlow.copy(alpha = 0.5f)
+                            else Color.White.copy(alpha = 0.12f),
+                            shape = RoundedCornerShape(12.dp),
+                        )
+                        .clickable { onSelected(index) }
+                        .padding(horizontal = 12.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RadioButton(
+                        selected = selected,
+                        onClick = { onSelected(index) },
+                        colors = RadioButtonDefaults.colors(
+                            selectedColor = MohamedLoversPalette.GoldGlow,
+                            unselectedColor = Color.White.copy(alpha = 0.5f),
+                        ),
                     )
-                    .border(
-                        width = 1.dp,
-                        color = if (selected) MohamedLoversPalette.GoldGlow.copy(alpha = 0.5f)
-                        else Color.White.copy(alpha = 0.12f),
-                        shape = RoundedCornerShape(12.dp),
+                    Spacer(modifier = Modifier.padding(4.dp))
+                    Text(
+                        text = stringResource(resId),
+                        color = if (selected) Color.White else Color.White.copy(alpha = 0.75f),
+                        fontSize = 14.sp,
+                        lineHeight = 22.sp,
+                        modifier = Modifier.weight(1f),
                     )
-                    .clickable { onSelected(index) }
-                    .padding(horizontal = 12.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                RadioButton(
-                    selected = selected,
-                    onClick = { onSelected(index) },
-                    colors = RadioButtonDefaults.colors(
-                        selectedColor = MohamedLoversPalette.GoldGlow,
-                        unselectedColor = Color.White.copy(alpha = 0.5f),
-                    ),
-                )
-                Spacer(modifier = Modifier.padding(4.dp))
-                Text(
-                    text = stringResource(resId),
-                    color = if (selected) Color.White else Color.White.copy(alpha = 0.75f),
-                    fontSize = 14.sp,
-                    lineHeight = 22.sp,
-                    modifier = Modifier.weight(1f),
-                )
+                }
             }
         }
     }
