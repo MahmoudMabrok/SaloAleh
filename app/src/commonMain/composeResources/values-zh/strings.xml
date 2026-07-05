@@ -74,6 +74,7 @@
     <!-- Challenges Screen -->
     <string name="challenges_title">挑战</string>
     <string name="challenges_subtitle">选择一项挑战，持续完成每日功修。</string>
+    <string name="challenges_cairo_time_note">所有时间均以开罗时间为准</string>
     <string name="challenge_dhikr_title">اهل لا اله الا الله</string>
     <string name="challenge_dhikr_body">每天完成 100 次赞念，并查看你在参与者中的排名。</string>
     <string name="challenge_ten_days_body">记录伊历十二月前十天的赞念、大赞词、斋戒和施舍。</string>
@@ -543,6 +544,9 @@
     <string name="idle_days_plural">%1$d 天</string>
     <string name="heart_index_label">心之指数</string>
     <string name="heart_index_tooltip">每次赞圣 +10；心每 10 秒减少 1</string>
+    <string name="heart_index_dialog_title">心之指数 ❤️</string>
+    <string name="heart_index_dialog_body">心之指数衡量你对先知 ﷺ 赞圣的热度。\n\n• 每次赞圣 +10 分\n• 心每 10 秒减少 1 分\n• 每周五开罗时间晚上 10 点重置\n\n用对圣人 ﷺ 的赞美填满你的心！</string>
+    <string name="heart_index_dialog_dismiss">明白了</string>
     <string name="heart_refill_nudge">为先知 ﷺ 祝祷，重新填满你的心</string>
 
     <!-- Subscription encouragement -->

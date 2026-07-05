@@ -76,6 +76,7 @@
     <!-- Challenges Screen -->
     <string name="challenges_title">Challenges</string>
     <string name="challenges_subtitle">Pick a challenge and keep your daily worship moving.</string>
+    <string name="challenges_cairo_time_note">All timings are based on Cairo time</string>
     <string name="challenge_dhikr_title">اهل لا اله الا الله</string>
     <string name="challenge_dhikr_body">Complete 100 daily dhikr and compare your rank with other participants.</string>
     <string name="challenge_ten_days_body">Track the Ten Days deeds: dhikr, takbeer, fasting, and charity.</string>
@@ -581,6 +582,9 @@
     <string name="idle_days_plural">%1$d days</string>
     <string name="heart_index_label">Heart index</string>
     <string name="heart_index_tooltip">Each salawat adds +10. The heart loses 1 every 10s.</string>
+    <string name="heart_index_dialog_title">Heart Index ❤️</string>
+    <string name="heart_index_dialog_body">The Heart Index measures how warm your heart is with salawat upon the Prophet ﷺ.\n\n• Each salawat adds +10 points\n• The heart loses 1 point every 10 seconds\n• The index resets every Friday at 10 PM Cairo time\n\nKeep your heart full with salawat upon the beloved ﷺ!</string>
+    <string name="heart_index_dialog_dismiss">Got it</string>
     <string name="heart_refill_nudge">Refill your heart — send salawat upon the Prophet ﷺ</string>
 
     <!-- Subscription encouragement -->

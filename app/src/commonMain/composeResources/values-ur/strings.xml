@@ -74,6 +74,7 @@
     <!-- Challenges Screen -->
     <string name="challenges_title">چیلنجز</string>
     <string name="challenges_subtitle">ایک چیلنج منتخب کریں اور روزانہ عبادت جاری رکھیں۔</string>
+    <string name="challenges_cairo_time_note">تمام اوقات قاہرہ ٹائم کے مطابق ہیں</string>
     <string name="challenge_dhikr_title">اهل لا اله الا الله</string>
     <string name="challenge_dhikr_body">روزانہ 100 اذکار مکمل کریں اور شرکاء میں اپنی رینک دیکھیں۔</string>
     <string name="challenge_ten_days_body">ذوالحجہ کے دس دنوں کے اذکار، تکبیر، روزہ اور صدقہ درج کریں۔</string>
@@ -543,6 +544,9 @@
     <string name="idle_days_plural">%1$d دن سے</string>
     <string name="heart_index_label">دل کا اشاریہ</string>
     <string name="heart_index_tooltip">ہر درود +10 ہے، دل ہر 10 سیکنڈ میں 1 کم ہوتا ہے</string>
+    <string name="heart_index_dialog_title">دل کا اشاریہ ❤️</string>
+    <string name="heart_index_dialog_body">دل کا اشاریہ نبی ﷺ پر درود بھیجنے سے آپ کے دل کی گرمی ناپتا ہے۔\n\n• ہر درود +10 پوائنٹس\n• دل ہر 10 سیکنڈ میں 1 پوائنٹ کم ہوتا ہے\n• ہر جمعہ رات 10 بجے قاہرہ وقت پر ری سیٹ ہوتا ہے\n\nاپنا دل حبیب ﷺ پر درود سے بھرا رکھیں!</string>
+    <string name="heart_index_dialog_dismiss">سمجھ آ گئی</string>
     <string name="heart_refill_nudge">اپنے دل کو نبی ﷺ پر درود بھیج کر بھر دیں</string>
 
     <!-- Subscription encouragement -->

@@ -76,6 +76,7 @@
     <!-- Challenges Screen -->
     <string name="challenges_title">التحديات</string>
     <string name="challenges_subtitle">اختر تحديًا وواصل وردك اليومي بخطوة واضحة.</string>
+    <string name="challenges_cairo_time_note">جميع المواعيد بتوقيت القاهرة</string>
     <string name="challenge_dhikr_title">أهل لا إله إلا الله</string>
     <string name="challenge_dhikr_body">أتم 100 ذكر يوميًا وتابع ترتيبك بين المشاركين.</string>
     <string name="challenge_ten_days_body">اجمع أعمال عشر ذي الحجة من ذكر وتكبير وصيام وصدقة.</string>
@@ -592,6 +593,9 @@
     <string name="heart_index_label">مؤشر القلب</string>
     <string name="heart_index_tooltip">كل صلاة +10، وينقص القلب 1 كل 10 ثوانٍ</string>
     <string name="heart_refill_nudge">املأ قلبك بالصلاة على النبي ﷺ</string>
+    <string name="heart_index_dialog_title">مؤشر القلب ❤️</string>
+    <string name="heart_index_dialog_body">مؤشر القلب يقيس حرارة قلبك بالصلاة على النبي ﷺ.\n\n• كل صلاة على النبي ﷺ تضيف +10 نقاط\n• القلب ينقص 1 نقطة كل 10 ثوانٍ\n• يتم إعادة تعيين المؤشر كل جمعة الساعة 10 مساءً بتوقيت القاهرة\n\nاملأ قلبك بالصلاة على الحبيب ﷺ ولا تدعه يفرغ!</string>
+    <string name="heart_index_dialog_dismiss">فهمت</string>
 
     <!-- Subscription encouragement -->
     <string name="milestone_congrats_header">ما شاء الله! 🎉</string>

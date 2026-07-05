@@ -68,6 +68,9 @@ import tools.mo3ta.salo.generated.resources.grace_warning_cta
 import tools.mo3ta.salo.generated.resources.grace_warning_title
 import tools.mo3ta.salo.generated.resources.heart_index_label
 import tools.mo3ta.salo.generated.resources.heart_index_tooltip
+import tools.mo3ta.salo.generated.resources.heart_index_dialog_body
+import tools.mo3ta.salo.generated.resources.heart_index_dialog_dismiss
+import tools.mo3ta.salo.generated.resources.heart_index_dialog_title
 import tools.mo3ta.salo.generated.resources.heart_refill_nudge
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_blocked_firebase_off
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_blocked_waiting_network
@@ -192,6 +195,7 @@ fun MohamedLoversScreen(
     var selectedUserAchievements by remember { mutableStateOf<Pair<String, String>?>(null) }
     var showOthersAchievementsPromo by remember { mutableStateOf(false) }
     var showHeartTooltip by remember { mutableStateOf(announcementsEnabled) }
+    var showHeartInfoDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(isLit) {
         if (isLit) { delay(1600); isLit = false }
@@ -291,7 +295,7 @@ fun MohamedLoversScreen(
                                 score = state.heartScore,
                                 onClick = {
                                     showHeartTooltip = false
-                                    if (tapsEnabled) viewModel.onCountClick()
+                                    showHeartInfoDialog = true
                                 },
                             )
 
@@ -492,6 +496,9 @@ fun MohamedLoversScreen(
                 achievement = state.roundEndAchievement,
                 onDismiss = { viewModel.dismissRoundEndResults() },
             )
+        }
+        if (showHeartInfoDialog) {
+            HeartIndexInfoDialog(onDismiss = { showHeartInfoDialog = false })
         }
         if (state.showHadithDialog) {
             DailyHadithDialog(
@@ -753,6 +760,40 @@ private fun HeartIndexTooltip(modifier: Modifier = Modifier) {
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
         )
     }
+}
+
+@Composable
+private fun HeartIndexInfoDialog(onDismiss: () -> Unit) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = MohamedLoversPalette.DeepBlue,
+        titleContentColor = MohamedLoversPalette.GoldHighlight,
+        textContentColor = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
+        title = {
+            Text(
+                text = stringResource(Res.string.heart_index_dialog_title),
+                fontFamily = MohamedLoversFonts.body,
+                fontSize = 18.sp,
+            )
+        },
+        text = {
+            Text(
+                text = stringResource(Res.string.heart_index_dialog_body),
+                fontFamily = MohamedLoversFonts.body,
+                fontSize = 14.sp,
+                lineHeight = 22.sp,
+            )
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) {
+                Text(
+                    text = stringResource(Res.string.heart_index_dialog_dismiss),
+                    color = MohamedLoversPalette.GoldHighlight,
+                    fontFamily = MohamedLoversFonts.body,
+                )
+            }
+        },
+    )
 }
 
 @Composable

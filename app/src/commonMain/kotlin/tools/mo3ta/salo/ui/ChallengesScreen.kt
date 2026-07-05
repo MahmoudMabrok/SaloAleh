@@ -51,6 +51,7 @@ import tools.mo3ta.salo.generated.resources.challenge_istighfar_body
 import tools.mo3ta.salo.generated.resources.challenge_istighfar_title
 import tools.mo3ta.salo.generated.resources.challenge_takbeer_body
 import tools.mo3ta.salo.generated.resources.challenge_ten_days_body
+import tools.mo3ta.salo.generated.resources.challenges_cairo_time_note
 import tools.mo3ta.salo.generated.resources.challenges_subtitle
 import tools.mo3ta.salo.generated.resources.challenges_title
 import tools.mo3ta.salo.generated.resources.takbeer_session_title
@@ -163,6 +164,12 @@ fun ChallengesScreen(
                     color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.68f),
                     fontSize = 13.sp,
                     lineHeight = 19.sp,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = stringResource(Res.string.challenges_cairo_time_note),
+                    color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.45f),
+                    fontSize = 11.sp,
                 )
                 Spacer(Modifier.height(8.dp))
             }
