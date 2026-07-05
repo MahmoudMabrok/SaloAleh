@@ -2,8 +2,12 @@
 // rounds (including the one that just closed) into allTimeTotal, then writes
 // achievement records for every finisher so the app can surface them
 // to users who missed the live isFinal event. Top-5 finishers also receive
-// a unique winnerCode in their achievement record.
+// a unique winnerCode in their achievement record. Also closes out the round's
+// leaderboard (final ranks) and seeds the brand-new round's leaderboard, so the
+// whole round-boundary handoff happens from this single cron slot instead of a
+// separate leaderboard-populate dispatch.
 const admin = require('firebase-admin');
+const { addDaysToDateKey, populateMohamedLoversRound } = require('./leaderboard-utils');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 const databaseURL = process.env.FIREBASE_DATABASE_URL;
@@ -46,107 +50,65 @@ async function main() {
 
   if (!rootSnapshot.exists()) {
     console.log('No data found under mohamed_lovers.');
-    process.exit(0);
-  }
-
-  const playersSnap = await db.ref(`mohamed_lovers/${closedRound}/players`).get();
-  const players = [];
-  let roundTotal = 0;
-
-  if (playersSnap.exists()) {
-    playersSnap.forEach(child => {
-      const data = child.val();
-      const uid = data?.uid;
-      const totalCount = typeof data?.totalCount === 'number' ? data.totalCount : 0;
-      if (typeof uid === 'string' && totalCount > 0) {
-        players.push({
-          uid,
-          score: totalCount,
-          updatedAt: data.updatedAt || 0,
-          countryCode: typeof data.countryCode === 'string' ? data.countryCode : 'NA',
-          scoreMasked: data.scoreMasked === true,
-          isSupporter: data.isSupporter === true,
-          yesterdayTotalScore: typeof data?.yesterdayTotalScore === 'number' ? data.yesterdayTotalScore : 0,
-        });
-        roundTotal += totalCount;
-      }
-    });
-    console.log(`Closed round total: ${roundTotal}`);
-  }
-
-  const previousTotal = rootSnapshot.child('allTimeTotal').val() || 0;
-  const allTimeTotal = previousTotal + roundTotal;
-  await db.ref('mohamed_lovers/allTimeTotal').set(allTimeTotal);
-  console.log(`allTimeTotal: ${previousTotal} + ${roundTotal} (closed round) = ${allTimeTotal}`);
-
-  if (!playersSnap.exists() || players.length === 0) {
-    console.log(`No players found for ${closedRound} — no history written.`);
-    process.exit(0);
-  }
-
-
-  players.sort((a, b) => b.score - a.score || b.updatedAt - a.updatedAt);
-
-  const writes = {};
-  players.forEach((player, i) => {
-    const rank = i + 1;
-    const winnerCode = rank <= 5 ? generateWinnerCode() : undefined;
-
-    writes[`mohamed_lovers/users/${player.uid}/achievements/${closedRound}`] = {
-      rank,
-      score: player.score,
-      date: closedRound,
-      ...(winnerCode !== undefined && { winnerCode }),
-    };
-    console.log(`  History: uid=${player.uid} rank=${rank} score=${player.score}${winnerCode ? ` winnerCode=${winnerCode}` : ''}`);
-  });
-
-  if (Object.keys(writes).length === 0) {
-    console.log('No entries — no achievements written.');
   } else {
-    await db.ref('/').update(writes);
-    console.log(`Wrote ${Object.keys(writes).length} achievement entries.`);
+    const playersSnap = await db.ref(`mohamed_lovers/${closedRound}/players`).get();
+    const players = [];
+    let roundTotal = 0;
+
+    if (playersSnap.exists()) {
+      playersSnap.forEach(child => {
+        const data = child.val();
+        const uid = data?.uid;
+        const totalCount = typeof data?.totalCount === 'number' ? data.totalCount : 0;
+        if (typeof uid === 'string' && totalCount > 0) {
+          players.push({ uid, score: totalCount, updatedAt: data.updatedAt || 0 });
+          roundTotal += totalCount;
+        }
+      });
+      console.log(`Closed round total: ${roundTotal}`);
+    }
+
+    const previousTotal = rootSnapshot.child('allTimeTotal').val() || 0;
+    const allTimeTotal = previousTotal + roundTotal;
+    await db.ref('mohamed_lovers/allTimeTotal').set(allTimeTotal);
+    console.log(`allTimeTotal: ${previousTotal} + ${roundTotal} (closed round) = ${allTimeTotal}`);
+
+    if (!playersSnap.exists() || players.length === 0) {
+      console.log(`No players found for ${closedRound} — no history/leaderboard written.`);
+    } else {
+      // Same tie-break as populateMohamedLoversRound's ranking, so achievement
+      // rank always agrees with the final rank written to each player node.
+      players.sort((a, b) => b.score - a.score || b.updatedAt - a.updatedAt);
+
+      const writes = {};
+      players.forEach((player, i) => {
+        const rank = i + 1;
+        const winnerCode = rank <= 5 ? generateWinnerCode() : undefined;
+
+        writes[`mohamed_lovers/users/${player.uid}/achievements/${closedRound}`] = {
+          rank,
+          score: player.score,
+          date: closedRound,
+          ...(winnerCode !== undefined && { winnerCode }),
+        };
+        console.log(`  History: uid=${player.uid} rank=${rank} score=${player.score}${winnerCode ? ` winnerCode=${winnerCode}` : ''}`);
+      });
+
+      await db.ref('/').update(writes);
+      console.log(`Wrote ${Object.keys(writes).length} achievement entries.`);
+
+      // Close the round: write final per-player ranks + leaderboard + dailyLeaderboard
+      // (isFinal: true) via the same builder used for the periodic in-round runs.
+      await populateMohamedLoversRound(db, admin, closedRound, true);
+      console.log(`Round ${closedRound} closed.`);
+    }
   }
 
-  // Close the round: write final leaderboards with isFinal: true.
-  const top10 = players.slice(0, 10);
-  const leaderboard = { isFinal: true };
-  top10.forEach((player, i) => {
-    const entry = {
-      rank: i + 1,
-      uid: player.uid,
-      score: player.score,
-      countryCode: player.countryCode,
-    };
-    if (player.scoreMasked) entry.scoreMasked = true;
-    if (player.isSupporter) entry.isSupporter = true;
-    leaderboard[String(i + 1)] = entry;
-  });
-
-  const dailyPlayers = [...players].map(p => ({
-    ...p,
-    dailyScore: Math.max(0, p.score - (p.yesterdayTotalScore || 0)),
-  }));
-  dailyPlayers.sort((a, b) => b.dailyScore - a.dailyScore || b.updatedAt - a.updatedAt);
-  const dailyTop10 = dailyPlayers.slice(0, 10);
-  const dailyLeaderboard = { isFinal: true };
-  dailyTop10.forEach((player, i) => {
-    const entry = {
-      rank: i + 1,
-      uid: player.uid,
-      score: player.dailyScore,
-      countryCode: player.countryCode,
-    };
-    if (player.scoreMasked) entry.scoreMasked = true;
-    if (player.isSupporter) entry.isSupporter = true;
-    dailyLeaderboard[String(i + 1)] = entry;
-  });
-
-  await Promise.all([
-    db.ref(`mohamed_lovers/${closedRound}/leaderboard`).set(leaderboard),
-    db.ref(`mohamed_lovers/${closedRound}/dailyLeaderboard`).set(dailyLeaderboard),
-  ]);
-  console.log(`Round ${closedRound} closed: wrote final leaderboard (${top10.length} entries) + daily (${dailyTop10.length} entries) with isFinal=true`);
+  // Seed the brand-new round's leaderboard/roundTotal/roundPlayerCount right away,
+  // instead of leaving it for the next generic leaderboard-populate cron slot.
+  const newRoundKey = addDaysToDateKey(closedRound, 7);
+  console.log(`New round: ${newRoundKey}`);
+  await populateMohamedLoversRound(db, admin, newRoundKey, false);
 
   process.exit(0);
 }

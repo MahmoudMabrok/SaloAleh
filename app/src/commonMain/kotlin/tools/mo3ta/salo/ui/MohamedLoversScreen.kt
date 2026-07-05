@@ -150,7 +150,7 @@ fun MohamedLoversScreen(
             if (event == Lifecycle.Event.ON_STOP) viewModel.flushPendingSession()
             if (event == Lifecycle.Event.ON_RESUME) {
                 showRankChip = settingsStore.showRankChip
-                viewModel.refreshSessionClicks()
+                viewModel.onAppResumed()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)

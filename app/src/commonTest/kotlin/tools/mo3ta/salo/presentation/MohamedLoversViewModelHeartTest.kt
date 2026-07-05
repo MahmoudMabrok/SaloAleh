@@ -93,6 +93,30 @@ class MohamedLoversViewModelHeartTest {
     }
 
     @Test
+    fun manual_salawat_scales_heart_by_count() = runTest {
+        val heartStore = HeartStore(MapSettings())
+        val vm = buildViewModel(heartStore)
+
+        vm.submitManualSalawat(5)
+
+        assertEquals(50, vm.state.value.heartScore)
+        assertEquals(50, heartStore.getScore())
+        assertTrue(heartStore.getAnchorTs() > 0L)
+    }
+
+    @Test
+    fun extension_score_credits_heart_by_count() = runTest {
+        val heartStore = HeartStore(MapSettings())
+        val vm = buildViewModel(heartStore)
+
+        vm.applyExtensionScore("2026-05-15", 3)
+
+        assertEquals(30, vm.state.value.heartScore)
+        assertEquals(30, heartStore.getScore())
+        assertTrue(heartStore.getAnchorTs() > 0L)
+    }
+
+    @Test
     fun init_settles_offline_decay_and_carries_remainder() = runTest {
         val now = Clock.System.now().toEpochMilliseconds()
         val anchor = now - 35_000L

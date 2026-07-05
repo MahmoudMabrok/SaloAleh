@@ -63,6 +63,7 @@ Main-screen emotional gauge for salawat momentum.
 - Core files: `data/heart/HeartIndexMath.kt`, `data/heart/HeartStore.kt`, `presentation/MohamedLoversViewModel.kt`, `ui/MohamedLoversScreen.kt`.
 - Local-only persistence through `multiplatform-settings` keys `heart_score` and `heart_anchor_ts`; no Firebase schema/rules changes.
 - Mechanics: every tap adds `+10`; live/offline decay subtracts `1` per `10_000ms` elapsed. Decay is remainder-safe: advance the anchor only by full decay intervals so partial seconds are carried.
+- External salawat (manual entry sheet, Chrome extension sync via `applyExtensionScore`) credit the heart index too, scaled by count (`+10 * count`), via the same `addHeartTap` path as regular taps.
 - Score is unbounded above and below. Do not clamp to a max or floor negative values.
 - Weekly heart reset is Friday 22:00 `Africa/Cairo`, intentionally different from the competition round reset at Friday 19:00 Cairo. If the stored anchor predates the latest Friday-22:00 boundary, reset score to `0` and anchor to `now` with no retroactive decay.
 - Fresh install uses `score=0`, `anchorTs=0`; do not show the refill nudge until the clock has started.
@@ -98,7 +99,7 @@ Two Node.js runtimes use `firebase-admin` v12; a third (Deno) only triggers a wo
 |-----------|---------|---------|
 | `scripts/` | GitHub Actions cron | Admin scripts: notifications, leaderboard, stats |
 | `functions/` | Cloud Functions (Node 20) | Firebase-triggered functions |
-| `deno-scheduler/` | Deno Deploy cron | Dispatches `leaderboard-populate.yml` every 30 min + `aggregate-all-time.yml` Fridays after 19:00 Cairo via the GitHub REST API (Deno Cron is precise; GitHub `schedule:` cron is best-effort). Needs `GITHUB_TOKEN` env var. |
+| `deno-scheduler/` | Deno Deploy cron | Dispatches `leaderboard-populate.yml` every 30 min + `aggregate-all-time.yml` Fridays at 19:10 Cairo via the GitHub REST API (Deno Cron is precise; GitHub `schedule:` cron is best-effort). Needs `GITHUB_TOKEN` env var. |
 
 ### GitHub Actions workflows
 
@@ -109,7 +110,7 @@ Two Node.js runtimes use `firebase-admin` v12; a third (Deno) only triggers a wo
 | `leaderboard-populate.yml` | Deno Deploy cron, every 30 min (workflow_dispatch only) | `scripts/populate-leaderboard.js` |
 | `notify-users.yml` | Cairo-aware schedule, Friday hourly | `scripts/notify-users.js` |
 | `update-stats.yml` | Daily 23:45 Cairo | `scripts/generate-stats.js` |
-| `aggregate-all-time.yml` | Deno Deploy cron, Fridays after 19:00 Cairo (workflow_dispatch only) | `scripts/aggregate-all-time.js` |
+| `aggregate-all-time.yml` | Deno Deploy cron, Fridays at 19:10 Cairo (workflow_dispatch only) — closes the round and seeds the new round's leaderboard | `scripts/aggregate-all-time.js` |
 
 All workflows use secrets: `FIREBASE_SERVICE_ACCOUNT`, `FIREBASE_DATABASE_URL`.
 

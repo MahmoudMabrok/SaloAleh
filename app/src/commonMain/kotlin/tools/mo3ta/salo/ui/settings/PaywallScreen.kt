@@ -50,6 +50,7 @@ import tools.mo3ta.salo.generated.resources.*
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.BillingAnalytics
 import tools.mo3ta.salo.data.billing.BillingManager
+import tools.mo3ta.salo.data.billing.FeatureFlags
 import tools.mo3ta.salo.data.billing.PremiumFeature
 import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.billing.ProductRegistry
@@ -187,7 +188,7 @@ fun PaywallScreen(onBack: () -> Unit) {
 
             if (isPremium && currentTier != null) {
                 CurrentPlanCard(features = currentTier.features)
-                if (PremiumFeature.SCORE_MASK in currentTier.features) {
+                if (FeatureFlags.SCORE_MASKING_ENABLED && PremiumFeature.SCORE_MASK in currentTier.features) {
                     Spacer(Modifier.height(12.dp))
                     Row(
                         modifier = Modifier

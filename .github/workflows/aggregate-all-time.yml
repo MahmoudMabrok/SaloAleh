@@ -1,7 +1,7 @@
 name: Aggregate All-Time Total
 
 on:
-  # Triggered by Deno Deploy cron every Friday at 17:10 UTC (after 19:00 Cairo round close).
+  # Triggered by Deno Deploy cron every Friday at 16:10 UTC (19:10 Cairo, after the 19:00 Cairo round close).
   workflow_dispatch:
     inputs:
       closed_round:

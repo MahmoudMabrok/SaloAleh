@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Spa
+import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -46,6 +47,8 @@ import tools.mo3ta.salo.generated.resources.challenge_baqiyat_body
 import tools.mo3ta.salo.generated.resources.challenge_baqiyat_title
 import tools.mo3ta.salo.generated.resources.challenge_dhikr_body
 import tools.mo3ta.salo.generated.resources.challenge_dhikr_title
+import tools.mo3ta.salo.generated.resources.challenge_istighfar_body
+import tools.mo3ta.salo.generated.resources.challenge_istighfar_title
 import tools.mo3ta.salo.generated.resources.challenge_takbeer_body
 import tools.mo3ta.salo.generated.resources.challenge_ten_days_body
 import tools.mo3ta.salo.generated.resources.challenges_subtitle
@@ -68,6 +71,7 @@ fun ChallengesScreen(
     onOpenTenDays: () -> Unit,
     onOpenTakbeerSession: () -> Unit,
     onOpenBaqiyatChallenge: () -> Unit,
+    onOpenIstighfarChallenge: () -> Unit,
 ) {
     val analyticsManager: AnalyticsManager = koinInject()
 
@@ -100,6 +104,19 @@ fun ChallengesScreen(
                     mapOf(AppAnalytics.PARAM_SOURCE to "challenges"),
                 )
                 onOpenBaqiyatChallenge()
+            },
+        ),
+        ChallengeItem(
+            titleRes = Res.string.challenge_istighfar_title,
+            bodyRes = Res.string.challenge_istighfar_body,
+            icon = Icons.Default.AutoStories,
+            accent = Color(0xFFC08A3E),
+            onClick = {
+                analyticsManager.logAction(
+                    AppAnalytics.OPEN_ISTIGHFAR_CHALLENGE,
+                    mapOf(AppAnalytics.PARAM_SOURCE to "challenges"),
+                )
+                onOpenIstighfarChallenge()
             },
         ),
 //        ChallengeItem(

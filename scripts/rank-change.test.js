@@ -1,9 +1,11 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const {
+  addDaysToDateKey,
   buildBaqiyatChallengeDailyRanking,
   buildDailyCountChallengeRanking,
   buildDhikrChallengeDailyRanking,
+  buildIstighfarChallengeDailyRanking,
   buildOldRankMap,
   computeRankChange,
   normalizeDhikrCount,
@@ -226,5 +228,39 @@ describe('baqiyat challenge daily ranking', () => {
     ]);
     assert.equal(result.rankUpdates['baqiyat_saliha/2026-07-02/players/user-b/rank'], 1);
     assert.equal(result.rankUpdates['baqiyat_saliha/2026-07-02/players/user-a/rank'], 2);
+  });
+});
+
+describe('istighfar challenge daily ranking', () => {
+  it('uses the istighfar root and user nodes', () => {
+    const result = buildIstighfarChallengeDailyRanking('2026-07-02', [
+      { uid: 'user-a', count: 35, countryCode: 'eg', nickname: '  Taa\'ib  ' },
+      { uid: 'user-b', count: 70, countryCode: 'sa' },
+      { uid: 'zero-user', count: 0 },
+    ]);
+
+    assert.equal(result.participantCount, 2);
+    assert.equal(result.totalTodayIstighfar, 105);
+    assert.deepEqual(result.rankedUsers, [
+      { uid: 'user-b', count: 70, countryCode: 'SA', nickname: '', currentRank: null, rank: 1 },
+      { uid: 'user-a', count: 35, countryCode: 'EG', nickname: "Taa'ib", currentRank: null, rank: 2 },
+    ]);
+    assert.equal(result.rankUpdates['istighfar_challenge/2026-07-02/users/user-b/rank'], 1);
+    assert.equal(result.rankUpdates['istighfar_challenge/2026-07-02/users/user-a/rank'], 2);
+    assert.equal(result.rankUpdates['istighfar_challenge/2026-07-02/users/zero-user/rank'], null);
+  });
+});
+
+describe('addDaysToDateKey', () => {
+  it('advances a round key by one week', () => {
+    assert.equal(addDaysToDateKey('2026-07-03', 7), '2026-07-10');
+  });
+
+  it('rolls over a month boundary', () => {
+    assert.equal(addDaysToDateKey('2026-07-31', 7), '2026-08-07');
+  });
+
+  it('rolls over a year boundary', () => {
+    assert.equal(addDaysToDateKey('2026-12-25', 7), '2027-01-01');
   });
 });

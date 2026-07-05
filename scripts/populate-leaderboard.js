@@ -4,10 +4,14 @@ const admin = require('firebase-admin');
 const {
   BAQIYAT_CHALLENGE_ROOT,
   DHIKR_CHALLENGE_ROOT,
+  ISTIGHFAR_CHALLENGE_ROOT,
   buildBaqiyatChallengeDailyRanking,
   buildDhikrChallengeDailyRanking,
+  buildIstighfarChallengeDailyRanking,
   buildOldRankMap,
   computeRankChange,
+  cairoToday,
+  populateMohamedLoversRound,
 } = require('./leaderboard-utils');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -55,13 +59,6 @@ function isRoundFinal(roundKey) {
   if (cairoDate > roundKey) return true;
   if (cairoDate === roundKey && cairoHour >= 19) return true;
   return false;
-}
-
-function cairoToday() {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Africa/Cairo',
-    year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(new Date());
 }
 
 // Delayed new-build notification: deploy.yml writes a scheduledBuildNotification
@@ -209,6 +206,57 @@ async function populateBaqiyatChallengeToday(db) {
   );
 }
 
+async function populateIstighfarChallengeToday(db) {
+  const dateKey = cairoToday();
+  console.log(`\n--- Istighfar Challenge [${dateKey}] ---`);
+
+  const usersSnap = await db.ref(`${ISTIGHFAR_CHALLENGE_ROOT}/${dateKey}/users`).get();
+  const users = [];
+
+  if (usersSnap.exists()) {
+    usersSnap.forEach(child => {
+      const data = child.val() || {};
+      const metadata = data.data || {};
+      const uid = typeof metadata.uid === 'string' && metadata.uid.length > 0
+        ? metadata.uid
+        : child.key;
+      const currentRank = typeof data.rank === 'number' && data.rank > 0 ? data.rank : null;
+      const countryCode = typeof metadata.countryCode === 'string' ? metadata.countryCode.toUpperCase() : '';
+      const nickname = typeof metadata.nickname === 'string' ? metadata.nickname.trim() : '';
+      users.push({ uid, count: data.count, countryCode, nickname, currentRank });
+    });
+  }
+
+  const oldLbSnap = await db.ref(`${ISTIGHFAR_CHALLENGE_ROOT}/${dateKey}/leaderboard`).get();
+  const oldRanks = buildOldRankMap(oldLbSnap);
+  const dailyRanking = buildIstighfarChallengeDailyRanking(dateKey, users);
+
+  const leaderboardEntries = dailyRanking.rankedUsers.slice(0, 10).map((user, i) => {
+    const entry = {
+      uid: user.uid,
+      countryCode: user.countryCode,
+      count: user.count,
+      rank: user.rank,
+      rankChange: computeRankChange(user.uid, user.rank, oldRanks),
+    };
+    if (user.nickname) entry.nickname = user.nickname;
+    return [String(i), entry];
+  });
+
+  const updates = {
+    ...dailyRanking.rankUpdates,
+    [`${ISTIGHFAR_CHALLENGE_ROOT}/${dateKey}/participantCount`]: dailyRanking.participantCount,
+    [`${ISTIGHFAR_CHALLENGE_ROOT}/${dateKey}/totalTodayIstighfar`]: dailyRanking.totalTodayIstighfar,
+    [`${ISTIGHFAR_CHALLENGE_ROOT}/${dateKey}/lastRankedAt`]: admin.database.ServerValue.TIMESTAMP,
+    [`${ISTIGHFAR_CHALLENGE_ROOT}/${dateKey}/leaderboard`]: Object.fromEntries(leaderboardEntries),
+  };
+
+  await db.ref('/').update(updates);
+  console.log(
+    `Wrote istighfar ranks + leaderboard(${leaderboardEntries.length}) for ${dailyRanking.participantCount} participant(s). totalTodayIstighfar=${dailyRanking.totalTodayIstighfar}`,
+  );
+}
+
 async function main() {
   const roundKey = explicitRoundKey || cairoRoundKey();
   const isFinal = isRoundFinal(roundKey);
@@ -222,245 +270,9 @@ async function main() {
   // Rank today's standalone challenge users.
   await populateDhikrChallengeToday(db);
   await populateBaqiyatChallengeToday(db);
+  await populateIstighfarChallengeToday(db);
 
-  const playersRef = db.ref(`mohamed_lovers/${roundKey}/players`);
-
-  // Single ordered query — ascending by totalCount; we reverse for ranking.
-  const allPlayersSnapshot = await playersRef.orderByChild('totalCount').get();
-
-  if (!allPlayersSnapshot.exists()) {
-    console.log('No players found. Writing empty leaderboard.');
-    await Promise.all([
-      db.ref(`mohamed_lovers/${roundKey}/leaderboard`).set({ isFinal }),
-      db.ref(`mohamed_lovers/${roundKey}/roundTotal`).set(0),
-      db.ref(`mohamed_lovers/${roundKey}/roundPlayerCount`).set(0),
-    ]);
-    process.exit(0);
-  }
-
-  // Build full list (Firebase returns ascending order from orderByChild).
-  const allPlayers = [];
-  let roundTotal = 0;
-  allPlayersSnapshot.forEach(child => {
-    const data = child.val();
-    if (data && typeof data.uid === 'string' && typeof data.totalCount === 'number') {
-      roundTotal += data.totalCount;
-      allPlayers.push({
-        uid: data.uid,
-        score: data.totalCount,
-        updatedAt: data.updatedAt || 0,
-        countryCode: typeof data.countryCode === 'string' ? data.countryCode : 'NA',
-        yesterdayTotalScore: typeof data.yesterdayTotalScore === 'number' ? data.yesterdayTotalScore : 0,
-        scoreMasked: data.scoreMasked === true,
-        isSupporter: data.isSupporter === true,
-        dailyBadge: typeof data.dailyBadge === 'string' ? data.dailyBadge : null,
-        nickname: typeof data.nickname === 'string' ? data.nickname : '',
-      });
-    }
-  });
-
-  // Sort descending to assign ranks (highest score = rank 1).
-  allPlayers.sort((a, b) => b.score - a.score || b.updatedAt - a.updatedAt);
-
-  const roundPlayerCount = allPlayers.length;
-
-  // Write rank into each player node, then build top-10 leaderboard.
-  const rankUpdates = {};
-  allPlayers.forEach((player, i) => {
-    rankUpdates[`mohamed_lovers/${roundKey}/players/${player.uid}/rank`] = i + 1;
-  });
-
-  const top10 = allPlayers.slice(0, 10);
-  const leaderboard = { isFinal };
-  top10.forEach((player, i) => {
-    const entry = {
-      rank: i + 1,
-      uid: player.uid,
-      score: player.score,
-      countryCode: player.countryCode,
-    };
-    if (player.scoreMasked) entry.scoreMasked = true;
-    if (player.isSupporter) entry.isSupporter = true;
-    if (player.dailyBadge) entry.dailyBadge = player.dailyBadge;
-    if (player.nickname) entry.nickname = player.nickname;
-    leaderboard[String(i + 1)] = entry;
-  });
-
-  // Daily leaderboard: rank by todayScore = totalCount - yesterdayTotalScore.
-  const dailyPlayers = allPlayers.map(p => ({
-    ...p,
-    dailyScore: Math.max(0, p.score - (p.yesterdayTotalScore || 0)),
-  }));
-  dailyPlayers.sort((a, b) => b.dailyScore - a.dailyScore || b.updatedAt - a.updatedAt);
-  const dailyTop10 = dailyPlayers.slice(0, 10);
-  const dailyLeaderboard = { isFinal };
-  dailyTop10.forEach((player, i) => {
-    const entry = {
-      rank: i + 1,
-      uid: player.uid,
-      score: player.dailyScore,
-      countryCode: player.countryCode,
-    };
-    if (player.scoreMasked) entry.scoreMasked = true;
-    if (player.isSupporter) entry.isSupporter = true;
-    if (player.dailyBadge) entry.dailyBadge = player.dailyBadge;
-    if (player.nickname) entry.nickname = player.nickname;
-    dailyLeaderboard[String(i + 1)] = entry;
-  });
-
-  // Read old leaderboards before overwriting — used for rank-diff and drop-out detection.
-  let droppedUids = [];
-  const oldLbSnap = await db.ref(`mohamed_lovers/${roundKey}/leaderboard`).get();
-  const oldDailyLbSnap = await db.ref(`mohamed_lovers/${roundKey}/dailyLeaderboard`).get();
-
-  const oldRanks = buildOldRankMap(oldLbSnap);
-  const oldDailyRanks = buildOldRankMap(oldDailyLbSnap);
-
-  // Enrich weekly leaderboard entries with rankChange.
-  top10.forEach((player, i) => {
-    const rank = i + 1;
-    leaderboard[String(rank)].rankChange = computeRankChange(player.uid, rank, oldRanks);
-  });
-
-  // Enrich daily leaderboard entries with rankChange.
-  dailyTop10.forEach((player, i) => {
-    const rank = i + 1;
-    dailyLeaderboard[String(rank)].rankChange = computeRankChange(player.uid, rank, oldDailyRanks);
-  });
-
-  // Drop-out detection.
-  if (!isFinal && oldLbSnap.exists()) {
-    const oldTop10Uids = new Set(Object.values(oldRanks).length ? Object.keys(oldRanks) : []);
-    const newTop10Uids = new Set(top10.map(p => p.uid));
-    droppedUids = [...oldTop10Uids].filter(uid => !newTop10Uids.has(uid));
-    console.log(`Drop-out detection: old=${oldTop10Uids.size} new=${newTop10Uids.size} dropped=${droppedUids.length}`);
-  }
-
-  await Promise.all([
-    db.ref('/').update(rankUpdates),
-    db.ref(`mohamed_lovers/${roundKey}/leaderboard`).set(leaderboard),
-    db.ref(`mohamed_lovers/${roundKey}/dailyLeaderboard`).set(dailyLeaderboard),
-    db.ref(`mohamed_lovers/${roundKey}/roundTotal`).set(roundTotal),
-    db.ref(`mohamed_lovers/${roundKey}/roundPlayerCount`).set(roundPlayerCount),
-  ]);
-  console.log(`Wrote ${top10.length} leaderboard + ${dailyTop10.length} daily entries. roundTotal=${roundTotal} players=${roundPlayerCount}`);
-  console.log(JSON.stringify(leaderboard, null, 2));
-
-  // Top-3 change notifications — detect drops from top 3 and position losses.
-  if (!isFinal) {
-    const top3Notifs = [];
-
-    // Players who were in top 3 but dropped out (now rank 4+ or gone).
-    for (const [uid, oldRank] of Object.entries(oldRanks)) {
-      if (oldRank > 3) continue;
-      const newEntry = top10.find(p => p.uid === uid);
-      const newRank = newEntry ? top10.indexOf(newEntry) + 1 : null;
-      if (newRank == null || newRank > 3) {
-        top3Notifs.push({ uid, event: 'dropped', oldRank, newRank });
-      } else if (newRank > oldRank) {
-        top3Notifs.push({ uid, event: 'lost_position', oldRank, newRank });
-      }
-    }
-
-    if (top3Notifs.length > 0) {
-      console.log(`Top-3 changes: ${top3Notifs.length} notification(s) to send`);
-      const top3Messages = {
-        dropped: {
-          title: 'مكانك بين المحبين يناديك 🤍',
-          body: 'كنت من أكثر المصلّين على النبي ﷺ — لا تتوقف، فالصلاة عليه نور وشفاعة يوم القيامة!',
-        },
-        lost_position: {
-          title: 'المنافسة تشتد بين المحبين 🔥',
-          body: 'تراجع ترتيبك بين أكثر المصلّين على النبي ﷺ — زِد صلواتك وارتقِ، فأقربكم مني مجلسًا أكثركم صلاةً عليّ!',
-        },
-      };
-      const top3Promises = top3Notifs.map(async ({ uid, event }) => {
-        const userSnap = await db.ref(`mohamed_lovers/users/${uid}`).get();
-        const user = userSnap.val();
-        if (!user?.fcmToken) { console.log(`  top3 uid=${uid}: no FCM token — skip`); return; }
-        if (user.leaderboardNotifsEnabled === false) { console.log(`  top3 uid=${uid}: leaderboard notifications disabled — skip`); return; }
-        const msg = top3Messages[event];
-        return admin.messaging().send({
-          token: user.fcmToken,
-          notification: { title: msg.title, body: msg.body },
-          data: { title: msg.title, body: msg.body },
-        })
-          .then(msgId => console.log(`  top3 uid=${uid} (${event}): sent msgId=${msgId}`))
-          .catch(e => console.error(`  top3 uid=${uid} (${event}): send failed: ${e.message}`));
-      });
-      await Promise.all(top3Promises);
-    }
-  }
-
-  // Notify dropped-out users — once per round (debounced via lastDropOutNotifRound).
-  if (droppedUids.length > 0) {
-    console.log(`Notifying ${droppedUids.length} dropped user(s)...`);
-    const fcmUpdates = {};
-    const notifPromises = droppedUids.map(async uid => {
-      const userSnap = await db.ref(`mohamed_lovers/users/${uid}`).get();
-      const user = userSnap.val();
-      if (!user?.fcmToken) { console.log(`  uid=${uid}: no FCM token — skip`); return; }
-      if (user.leaderboardNotifsEnabled === false) { console.log(`  uid=${uid}: leaderboard notifications disabled — skip`); return; }
-      if (user.lastDropOutNotifRound === roundKey) { console.log(`  uid=${uid}: already notified this round — skip`); return; }
-      fcmUpdates[`mohamed_lovers/users/${uid}/lastDropOutNotifRound`] = roundKey;
-      return admin.messaging().send({
-        token: user.fcmToken,
-        notification: { title: 'خرجت من قائمة الأوائل 😔', body: 'مكانك بين المحبين يستحق المنافسة — عُد وصلِّ على النبي ﷺ الآن!' },
-        data: { title: 'خرجت من قائمة الأوائل 😔', body: 'مكانك بين المحبين يستحق المنافسة — عُد وصلِّ على النبي ﷺ الآن!' },
-      })
-        .then(msgId => console.log(`  uid=${uid}: sent dropout alert msgId=${msgId}`))
-        .catch(e => console.error(`  uid=${uid}: send failed: ${e.message}`));
-    });
-    await Promise.all(notifPromises);
-    if (Object.keys(fcmUpdates).length > 0) {
-      await db.ref('/').update(fcmUpdates);
-      console.log(`Wrote ${Object.keys(fcmUpdates).length} lastDropOutNotifRound flag(s)`);
-    }
-  }
-
-  // --- Idle >8h notification segment ---
-  const IDLE_THRESHOLD_MS = 8 * 60 * 60 * 1000; // 8 hours
-  const nowMs = Date.now();
-  const todayStr = cairoToday();
-
-  if (!isFinal) {
-    const idleCandidates = allPlayers.filter(p =>
-      p.updatedAt && p.score > 0 && (nowMs - p.updatedAt) > IDLE_THRESHOLD_MS
-    );
-    console.log(`\nIdle >8h check: ${idleCandidates.length} candidate(s) of ${allPlayers.length} total`);
-
-    if (idleCandidates.length > 0) {
-      const idleUpdates = {};
-      const idlePromises = idleCandidates.map(async p => {
-        const userSnap = await db.ref(`mohamed_lovers/users/${p.uid}`).get();
-        const user = userSnap.val();
-        if (!user?.fcmToken) { console.log(`  idle uid=${p.uid}: no FCM token — skip`); return; }
-        if (user.leaderboardNotifsEnabled === false) { console.log(`  idle uid=${p.uid}: leaderboard notifications disabled — skip`); return; }
-        if (user.lastIdleNotifDate === todayStr) { console.log(`  idle uid=${p.uid}: already notified today — skip`); return; }
-        idleUpdates[`mohamed_lovers/users/${p.uid}/lastIdleNotifDate`] = todayStr;
-        return admin.messaging().send({
-          token: user.fcmToken,
-          notification: {
-            title: 'أين صلاتك على النبي ﷺ؟',
-            body: 'لم نرك منذ فترة — عُد وأحيِ ذكر الحبيب ﷺ',
-          },
-          data: {
-            title: 'أين صلاتك على النبي ﷺ؟',
-            body: 'لم نرك منذ فترة — عُد وأحيِ ذكر الحبيب ﷺ',
-          },
-        })
-          .then(msgId => console.log(`  idle uid=${p.uid}: sent msgId=${msgId}`))
-          .catch(e => console.error(`  idle uid=${p.uid}: send failed: ${e.message}`));
-      });
-      await Promise.all(idlePromises);
-      if (Object.keys(idleUpdates).length > 0) {
-        await db.ref('/').update(idleUpdates);
-        console.log(`Wrote ${Object.keys(idleUpdates).length} lastIdleNotifDate flag(s)`);
-      }
-    }
-  } else {
-    console.log('\nRound is final — skipping idle notifications');
-  }
+  await populateMohamedLoversRound(db, admin, roundKey, isFinal);
 
   // --- Ten Days of Dhul Hijjah leaderboard ---
   // await populateTenDaysLeaderboard(db);

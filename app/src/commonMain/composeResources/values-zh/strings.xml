@@ -80,6 +80,8 @@
     <string name="challenge_takbeer_body">加入引导式集体大赞词环节，轮流念诵。</string>
     <string name="challenge_baqiyat_title">永恒的善功</string>
     <string name="challenge_baqiyat_body">依次点击五句赞词，完成一整轮以提升你的分数。</string>
+    <string name="challenge_istighfar_title">واستغفروه</string>
+    <string name="challenge_istighfar_body">先知穆斯塔法 ﷺ 每天寻求真主饶恕七十次，你呢？</string>
     <string name="dhikr_title">赞念</string>
 
     <string name="dhikr_milestone_title">完成 %1$d 次!</string>
@@ -96,6 +98,40 @@
     <string name="manual_dhikr_enter_count">输入数量</string>
     <string name="manual_dhikr_witness">我证明这个数量是真实准确的，真主了解我的意图</string>
     <string name="manual_dhikr_submit">✦ 记录赞念 ✦</string>
+
+    <!-- Istighfar Challenge Screen -->
+    <string name="istighfar_title">讨白（求饶）</string>
+    <string name="istighfar_back_cd">返回</string>
+    <string name="istighfar_phrase">أَسْتَغْفِرُ اللَّهَ الْعَظِيمَ الَّذِي لَا إِلَٰهَ إِلَّا هُوَ الْحَيَّ الْقَيُّومَ وَأَتُوبُ إِلَيْهِ</string>
+    <string name="istighfar_today">今天</string>
+    <string name="istighfar_times">次</string>
+    <string name="istighfar_add">求饶</string>
+    <string name="istighfar_daily_goal">每日目标：%1$d 次</string>
+    <string name="istighfar_progress_count">%1$d / %2$d</string>
+    <string name="istighfar_rewards_title">求饶（讨白）能获得什么？</string>
+    <string name="istighfar_reward_relief">真主为他打开走出困境的出路</string>
+    <string name="istighfar_reward_ease">并从每种忧愁中解脱</string>
+    <string name="istighfar_reward_provision">并从意想不到的地方赐予给养</string>
+    <string name="istighfar_reward_record">谁希望自己的功过簿令他欣喜，就应多多求饶</string>
+    <string name="istighfar_reward_sunnah">先知ﷺ每天向真主求饶超过七十次</string>
+    <string name="istighfar_reward_sunnah_label">先知ﷺ的圣行</string>
+    <string name="istighfar_rank_number"># %1$d</string>
+    <string name="istighfar_rank_subtitle">共 %1$d 位参与者中</string>
+    <string name="istighfar_tap_hint">点击任意位置进行求饶</string>
+    <string name="istighfar_cycles_label">今日完成的轮次</string>
+    <string name="istighfar_milestone_title">完成 %1$d 次!</string>
+    <string name="istighfar_milestone_subtitle">愿真主饶恕你！</string>
+    <string name="istighfar_leaderboard_title">排行榜</string>
+    <string name="istighfar_leaderboard_rank_new">新</string>
+    <string name="istighfar_leaderboard_empty">暂无数据</string>
+    <string name="istighfar_rank_unranked">点击查看排行榜</string>
+    <string name="istighfar_manual_entry_button">🤲 记录外部求饶</string>
+    <string name="manual_istighfar_title">🤲 记录外部求饶</string>
+    <string name="manual_istighfar_subtitle">默默地、用手指或用念珠向真主求饶了？\n记录您所诵念的 - 不要因为不在应用中就停止求饶</string>
+    <string name="manual_istighfar_count">数量：</string>
+    <string name="manual_istighfar_enter_count">输入数量</string>
+    <string name="manual_istighfar_witness">我证明这个数量是真实准确的，真主了解我的意图</string>
+    <string name="manual_istighfar_submit">✦ 记录求饶 ✦</string>
 
     <!-- Baqiyat Challenge Screen -->
     <string name="baqiyat_ayah">﴿ وَالْبَاقِيَاتُ الصَّالِحَاتُ خَيْرٌ عِندَ رَبِّكَ ثَوَابًا وَخَيْرٌ أَمَلًا ﴾</string>
