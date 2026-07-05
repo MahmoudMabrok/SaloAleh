@@ -401,14 +401,7 @@ fun MohamedLoversScreen(
                     )
                 }
                 val elapsedMinutes = state.lastSalawatElapsedMinutes
-                if (state.showHeartRefillNudge) {
-                    Spacer(Modifier.height(8.dp))
-                    HeartRefillBanner(
-                        onClick = {
-                            if (tapsEnabled) viewModel.onCountClick()
-                        },
-                    )
-                } else if (elapsedMinutes != null && elapsedMinutes >= 1) {
+                if (elapsedMinutes != null && elapsedMinutes >= 1) {
                     Spacer(Modifier.height(8.dp))
                     IdleBanner(
                         elapsedMinutes = elapsedMinutes,
