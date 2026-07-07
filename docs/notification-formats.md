@@ -38,7 +38,7 @@ Runs every ~30 min via `populate-leaderboard.js`.
 |---|---------|-----------|-------|------|
 | 1 | Top-3 dropped | Was top 3, now rank 4+ or gone | `مكانك بين المحبين يناديك 🤍` | `كنت من أكثر المصلّين على النبي ﷺ — لا تتوقف، فالصلاة عليه نور وشفاعة يوم القيامة!` |
 | 2 | Top-3 lost position | Was top 3, rank slipped within top 3 | `المنافسة تشتد بين المحبين 🔥` | `تراجع ترتيبك بين أكثر المصلّين على النبي ﷺ — زِد صلواتك وارتقِ، فأقربكم مني مجلسًا أكثركم صلاةً عليّ!` |
-| 3 | Dropped from top 10 | Was in top 10, no longer | `خرجت من قائمة الأوائل 😔` | `مكانك بين المحبين يستحق المنافسة — عُد وصلِّ على النبي ﷺ الآن!` |
+| 3 | Dropped from top 10 | Was in top 10, no longer | `خرجت من قائمة الأوائل 😔` | `لقد سبقك المحبين في الصلاة علي النبي، عد وتنافس علي محبة النبي بذكره والصلاة عليه ﷺ` |
 | 4 | Idle >8h | Round active, player scored but no update in 8+ hours | `أين صلاتك على النبي ﷺ؟` | `الحبيب لا يغفل عن ذكر محبوبه، فاين انت من ذكر الحبيب المصطفي ﷺ` |
 
 - Opt-out: `leaderboardNotifsEnabled === false` skips all leaderboard notifications.
