@@ -70,7 +70,7 @@ actual object NotificationScheduler {
             (9..17).forEach { hour ->
                 val content = UNMutableNotificationContent().apply {
                     setTitle("اللهم صلِّ على محمد ﷺ")
-                    setBody("يوم الجمعة المبارك — صلّ على النبي الكريم")
+                    setBody("يوم الجمعة، هو يوم الصلاة علي النبي، عطر فمك بالصلاة ﷺ")
                     setSound(UNNotificationSound.defaultSound())
                 }
                 val components = NSDateComponents().apply {

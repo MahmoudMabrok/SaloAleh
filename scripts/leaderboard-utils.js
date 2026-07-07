@@ -324,8 +324,8 @@ async function populateMohamedLoversRound(db, admin, roundKey, isFinal) {
       fcmUpdates[`${MOHAMED_LOVERS_ROOT}/users/${uid}/lastDropOutNotifRound`] = roundKey;
       return admin.messaging().send({
         token: user.fcmToken,
-        notification: { title: 'خرجت من قائمة الأوائل 😔', body: 'مكانك بين المحبين يستحق المنافسة — عُد وصلِّ على النبي ﷺ الآن!' },
-        data: { title: 'خرجت من قائمة الأوائل 😔', body: 'مكانك بين المحبين يستحق المنافسة — عُد وصلِّ على النبي ﷺ الآن!' },
+        notification: { title: 'خرجت من قائمة الأوائل 😔', body: 'لقد سبقك المحبين في الصلاة علي النبي، عد وتنافس علي محبة النبي بذكره والصلاة عليه ﷺ' },
+        data: { title: 'خرجت من قائمة الأوائل 😔', body: 'لقد سبقك المحبين في الصلاة علي النبي، عد وتنافس علي محبة النبي بذكره والصلاة عليه ﷺ' },
       })
         .then(msgId => console.log(`  uid=${uid}: sent dropout alert msgId=${msgId}`))
         .catch(e => console.error(`  uid=${uid}: send failed: ${e.message}`));
@@ -361,11 +361,11 @@ async function populateMohamedLoversRound(db, admin, roundKey, isFinal) {
           token: user.fcmToken,
           notification: {
             title: 'أين صلاتك على النبي ﷺ؟',
-            body: 'لم نرك منذ فترة — عُد وأحيِ ذكر الحبيب ﷺ',
+            body: 'الحبيب لا يغفل عن ذكر محبوبه، فاين انت من ذكر الحبيب المصطفي ﷺ',
           },
           data: {
             title: 'أين صلاتك على النبي ﷺ؟',
-            body: 'لم نرك منذ فترة — عُد وأحيِ ذكر الحبيب ﷺ',
+            body: 'الحبيب لا يغفل عن ذكر محبوبه، فاين انت من ذكر الحبيب المصطفي ﷺ',
           },
         })
           .then(msgId => console.log(`  idle uid=${p.uid}: sent msgId=${msgId}`))
