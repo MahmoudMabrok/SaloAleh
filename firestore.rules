@@ -1,0 +1,99 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Mohamed Lovers rounds — players can write their own UID doc
+    match /mohamed_lovers_rounds/{roundKey}/players/{uid} {
+      allow read: if true;
+      allow write: if request.resource.data.uid == uid;
+    }
+    match /mohamed_lovers_rounds/{roundKey}/leaderboard/{entry} {
+      allow read: if true;
+      allow write: if false; // server-only
+    }
+    match /mohamed_lovers_rounds/{roundKey}/dailyLeaderboard/{entry} {
+      allow read: if true;
+      allow write: if false; // server-only
+    }
+    match /mohamed_lovers_rounds/{roundKey} {
+      allow read: if true;
+      allow write: if false; // server-only (roundTotal, roundPlayerCount)
+    }
+
+    // User profiles — each user writes their own doc
+    match /mohamed_lovers_users/{uid} {
+      allow read: if true;
+      allow write: if true; // no auth — matches RTDB rules
+    }
+    match /mohamed_lovers_users/{uid}/achievements/{roundKey} {
+      allow read: if true;
+      allow write: if false; // server-only
+    }
+    match /mohamed_lovers_users/{uid}/purchases/{productId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Meta (allTimeTotal etc) — server-only
+    match /mohamed_lovers_meta/{doc} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Dhikr challenge
+    match /dhikr_challenge/{dateKey} {
+      allow read: if true;
+      allow write: if false; // server-only (aggregates)
+    }
+    match /dhikr_challenge/{dateKey}/users/{uid} {
+      allow read: if true;
+      allow write: if request.resource.data.keys().hasAny(['count', 'data']);
+    }
+    match /dhikr_challenge/{dateKey}/leaderboard/{entry} {
+      allow read: if true;
+      allow write: if false; // server-only
+    }
+
+    // Baqiyat challenge
+    match /baqiyat_challenge/{dateKey} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /baqiyat_challenge/{dateKey}/players/{uid} {
+      allow read: if true;
+      allow write: if request.resource.data.uid == uid;
+    }
+    match /baqiyat_challenge/{dateKey}/leaderboard/{entry} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Istighfar challenge
+    match /istighfar_challenge/{dateKey} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /istighfar_challenge/{dateKey}/users/{uid} {
+      allow read: if true;
+      allow write: if request.resource.data.keys().hasAny(['count', 'data']);
+    }
+    match /istighfar_challenge/{dateKey}/leaderboard/{entry} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Ten Days of Dhul Hijjah
+    match /ten_days/{periodKey} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /ten_days/{periodKey}/players/{uid} {
+      allow read: if true;
+      allow write: if request.resource.data.uid == uid;
+    }
+    match /ten_days/{periodKey}/leaderboard/{entry} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

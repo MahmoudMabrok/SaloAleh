@@ -5,6 +5,7 @@ import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.database.ServerValue
 import dev.gitlive.firebase.database.database
 import kotlinx.coroutines.flow.first
+import tools.mo3ta.salo.data.firebase.FirestoreMirror
 import tools.mo3ta.salo.domain.ISTIGHFAR_CHALLENGE_DAILY_GOAL
 import tools.mo3ta.salo.domain.IstighfarChallengeDayStats
 import tools.mo3ta.salo.domain.IstighfarLeaderboardEntry
@@ -26,7 +27,7 @@ private const val UPDATED_AT_KEY = "updatedAt"
 private const val PARTICIPANT_COUNT_KEY = "participantCount"
 private const val TOTAL_TODAY_ISTIGHFAR_KEY = "totalTodayIstighfar"
 
-class IstighfarChallengeFirebaseClient {
+class IstighfarChallengeFirebaseClient(private val mirror: FirestoreMirror) {
 
     private val log = Logger.withTag("IstighfarChallengeFirebase")
 
@@ -58,7 +59,13 @@ class IstighfarChallengeFirebaseClient {
             )
         }.also { result ->
             result.fold(
-                onSuccess = { log.d { "writeUserDay[$dateKey/$uid] ok" } },
+                onSuccess = {
+                    log.d { "writeUserDay[$dateKey/$uid] ok" }
+                    mirror.mirrorIstighfarUserDay(
+                        dateKey, uid, count, countryCode, safeNickname,
+                        ISTIGHFAR_CHALLENGE_DAILY_GOAL, count >= ISTIGHFAR_CHALLENGE_DAILY_GOAL,
+                    )
+                },
                 onFailure = { log.e(it) { "writeUserDay[$dateKey/$uid] failed" } },
             )
         }

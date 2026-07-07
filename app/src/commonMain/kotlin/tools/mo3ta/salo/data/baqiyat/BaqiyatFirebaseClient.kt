@@ -5,6 +5,7 @@ import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.database.ServerValue
 import dev.gitlive.firebase.database.database
 import kotlinx.coroutines.flow.first
+import tools.mo3ta.salo.data.firebase.FirestoreMirror
 import tools.mo3ta.salo.domain.BaqiyatDayStats
 import tools.mo3ta.salo.domain.BaqiyatLeaderboardEntry
 
@@ -21,7 +22,7 @@ private const val UPDATED_AT_KEY = "updatedAt"
 private const val PARTICIPANT_COUNT_KEY = "participantCount"
 private const val TOTAL_TODAY_BAQIYAT_KEY = "totalTodayBaqiyat"
 
-class BaqiyatFirebaseClient {
+class BaqiyatFirebaseClient(private val mirror: FirestoreMirror) {
 
     private val log = Logger.withTag("BaqiyatFirebase")
 
@@ -48,7 +49,10 @@ class BaqiyatFirebaseClient {
             )
         }.also { result ->
             result.fold(
-                onSuccess = { log.d { "writeUserDay[$dateKey/$uid] ok" } },
+                onSuccess = {
+                    log.d { "writeUserDay[$dateKey/$uid] ok" }
+                    mirror.mirrorBaqiyatUserDay(dateKey, uid, count, countryCode, safeNickname)
+                },
                 onFailure = { log.e(it) { "writeUserDay[$dateKey/$uid] failed" } },
             )
         }

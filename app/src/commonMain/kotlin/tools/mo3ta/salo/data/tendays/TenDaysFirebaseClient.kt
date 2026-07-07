@@ -7,6 +7,7 @@ import dev.gitlive.firebase.database.database
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import tools.mo3ta.salo.data.firebase.FirestoreMirror
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 
 data class TenDaysLeaderboardEntry(
@@ -15,7 +16,10 @@ data class TenDaysLeaderboardEntry(
     val countryCode: String,
 )
 
-class TenDaysFirebaseClient(private val sessionStore: MohamedLoversSessionStore) {
+class TenDaysFirebaseClient(
+    private val sessionStore: MohamedLoversSessionStore,
+    private val mirror: FirestoreMirror,
+) {
 
     private val log = Logger.withTag("TenDaysFirebase")
 
@@ -75,6 +79,7 @@ class TenDaysFirebaseClient(private val sessionStore: MohamedLoversSessionStore)
             )
         )
         log.d { "syncScore[$periodKey/$uid]: $totalScore" }
+        mirror.mirrorTenDaysScore(periodKey, uid, totalScore, countryCode)
     }
 
     private companion object {

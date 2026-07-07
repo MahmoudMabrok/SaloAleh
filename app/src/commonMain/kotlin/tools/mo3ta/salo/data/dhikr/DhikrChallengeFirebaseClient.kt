@@ -5,6 +5,7 @@ import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.database.ServerValue
 import dev.gitlive.firebase.database.database
 import kotlinx.coroutines.flow.first
+import tools.mo3ta.salo.data.firebase.FirestoreMirror
 import tools.mo3ta.salo.domain.DHIKR_CHALLENGE_DAILY_GOAL
 import tools.mo3ta.salo.domain.DhikrChallengeDayStats
 import tools.mo3ta.salo.domain.DhikrLeaderboardEntry
@@ -26,7 +27,7 @@ private const val UPDATED_AT_KEY = "updatedAt"
 private const val PARTICIPANT_COUNT_KEY = "participantCount"
 private const val TOTAL_TODAY_DHIKR_KEY = "totalTodayDhikr"
 
-class DhikrChallengeFirebaseClient {
+class DhikrChallengeFirebaseClient(private val mirror: FirestoreMirror) {
 
     private val log = Logger.withTag("DhikrChallengeFirebase")
 
@@ -58,7 +59,13 @@ class DhikrChallengeFirebaseClient {
             )
         }.also { result ->
             result.fold(
-                onSuccess = { log.d { "writeUserDay[$dateKey/$uid] ok" } },
+                onSuccess = {
+                    log.d { "writeUserDay[$dateKey/$uid] ok" }
+                    mirror.mirrorDhikrUserDay(
+                        dateKey, uid, count, countryCode, safeNickname,
+                        DHIKR_CHALLENGE_DAILY_GOAL, count >= DHIKR_CHALLENGE_DAILY_GOAL,
+                    )
+                },
                 onFailure = { log.e(it) { "writeUserDay[$dateKey/$uid] failed" } },
             )
         }

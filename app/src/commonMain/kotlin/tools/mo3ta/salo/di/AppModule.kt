@@ -13,6 +13,7 @@ import tools.mo3ta.salo.data.istighfar.IstighfarChallengeFirebaseClient
 import tools.mo3ta.salo.data.istighfar.IstighfarChallengeStore
 import tools.mo3ta.salo.data.engagement.DailyGoalStore
 import tools.mo3ta.salo.data.engagement.EngagementStore
+import tools.mo3ta.salo.data.firebase.FirestoreMirror
 import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseApi
 import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseClient
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
@@ -39,17 +40,18 @@ import tools.mo3ta.salo.presentation.TakbeerSessionViewModel
 import tools.mo3ta.salo.presentation.TenDaysViewModel
 
 val appModule = module {
-    single { MohamedLoversFirebaseClient(get()) } bind MohamedLoversFirebaseApi::class
+    single { FirestoreMirror() }
+    single { MohamedLoversFirebaseClient(get(), get()) } bind MohamedLoversFirebaseApi::class
     single { MohamedLoversSessionStore(get()) }
     single { EngagementStore(get()) }
     single { DailyGoalStore(get()) }
     single { HeartStore(get()) }
     single { DhikrChallengeStore(get()) }
-    single { DhikrChallengeFirebaseClient() }
+    single { DhikrChallengeFirebaseClient(get()) }
     single { IstighfarChallengeStore(get()) }
-    single { IstighfarChallengeFirebaseClient() }
+    single { IstighfarChallengeFirebaseClient(get()) }
     single { BaqiyatStore(get()) }
-    single { BaqiyatFirebaseClient() }
+    single { BaqiyatFirebaseClient(get()) }
     single { LanguageStore(get()) }
     single { SalawatVariantStore(get()) }
     single { NotificationSettingsStore(get()) }
@@ -67,7 +69,7 @@ val appModule = module {
     viewModel { AchievementsViewModel(get()) }
     viewModel { HadithListViewModel(get()) }
     single { TenDaysStore(get()) }
-    single { TenDaysFirebaseClient(get()) }
+    single { TenDaysFirebaseClient(get(), get()) }
     viewModel { TenDaysViewModel(get(), get(), get(), get()) }
     single<TakbeerSoundPlayer> { createTakbeerSoundPlayer() }
     viewModel { TakbeerSessionViewModel(get()) }

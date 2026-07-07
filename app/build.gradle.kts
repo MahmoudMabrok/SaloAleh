@@ -36,6 +36,7 @@ kotlin {
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.gitlive.firebase.database)
+            implementation(libs.gitlive.firebase.firestore)
             implementation(libs.multiplatform.settings)
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.coroutines.core)

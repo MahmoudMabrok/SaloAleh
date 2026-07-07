@@ -2,6 +2,11 @@
  * @file notify-users.js
  * @description Server-side push notification script for the SaloAleh app.
  *
+ * Phase 1 migration note: This script reads user data from RTDB only and sends
+ * FCM notifications. No Firestore mirror writes needed here — user metadata
+ * (fcmToken, installDate, etc.) is already dual-written by the app client.
+ * In Phase 2, switch reads to Firestore.
+ *
  * Runs every 6 hours via GitHub Actions. Reads per-user activity data from
  * Firebase Realtime Database (RTDB), evaluates five retention segments, and
  * sends targeted FCM messages to at-risk users via Firebase Admin SDK.

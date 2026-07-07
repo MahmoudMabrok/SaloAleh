@@ -4,6 +4,12 @@
 const admin = require('firebase-admin');
 const fs    = require('fs');
 const path  = require('path');
+const {
+  mirrorYesterdayTotalScores,
+  mirrorDailyBadgeClear,
+  mirrorDhikrAggregateAndClean,
+  mirrorBaqiyatAggregateAndClean,
+} = require('./firestore-utils');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 const databaseURL    = process.env.FIREBASE_DATABASE_URL;
@@ -104,6 +110,8 @@ async function main() {
   if (Object.keys(yesterdayTotalScoreUpdates).length > 0) {
     await db.ref('/').update(yesterdayTotalScoreUpdates);
     console.log(`Updated yesterdayTotalScore for ${Object.keys(yesterdayTotalScoreUpdates).length} player(s).`);
+    // Phase 1: mirror to Firestore
+    await mirrorYesterdayTotalScores(admin.firestore(), roundKey, yesterdayTotalScoreUpdates);
   }
 
   // Clear dailyBadge for all players (midnight reset)
@@ -126,6 +134,20 @@ async function main() {
   if (Object.keys(badgeUpdates).length > 0) {
     await db.ref('/').update(badgeUpdates);
     console.log(`Cleared ${Object.keys(badgeUpdates).length} dailyBadge fields`);
+    // Phase 1: mirror to Firestore
+    const badgePlayerUids = [];
+    const badgeLbKeys = [];
+    if (playersSnap.exists()) {
+      playersSnap.forEach((child) => {
+        if (child.val().dailyBadge && child.key) badgePlayerUids.push(child.key);
+      });
+    }
+    if (leaderboardSnap.exists()) {
+      leaderboardSnap.forEach((child) => {
+        if (child.val().dailyBadge && child.key) badgeLbKeys.push(child.key);
+      });
+    }
+    await mirrorDailyBadgeClear(admin.firestore(), roundKey, badgePlayerUids, badgeLbKeys);
   }
 
   if (!fs.existsSync(statsDir)) fs.mkdirSync(statsDir);
@@ -133,9 +155,11 @@ async function main() {
   fs.writeFileSync(outPath, JSON.stringify(stats, null, 2));
   console.log(`stats/${dateStr}.json written:`, stats);
 
-  await sendDailyTop3Notifications(db, dailyLeaderboardSnap);
-  await sendDhikrChallengeRank1Notification(db, roundKey);
-  await sendBaqiyatChallengeRank1Notification(db, roundKey);
+  // Phase 1 migration: FCM sends commented out to avoid duplicates when
+  // Firestore scripts are enabled. Re-enable only one source of FCM in Phase 2.
+  // await sendDailyTop3Notifications(db, dailyLeaderboardSnap);
+  // await sendDhikrChallengeRank1Notification(db, roundKey);
+  // await sendBaqiyatChallengeRank1Notification(db, roundKey);
   await aggregateAndCleanDhikrChallenge(db);
   await aggregateAndCleanBaqiyatChallenge(db);
 
@@ -296,6 +320,9 @@ async function aggregateAndCleanDhikrChallenge(db) {
 
   await db.ref(`100_challenge/${today}`).remove();
   console.log(`[dhikr-aggregate] deleted 100_challenge/${today}`);
+
+  // Phase 1: mirror to Firestore
+  await mirrorDhikrAggregateAndClean(admin.firestore(), today, todayTotal, globalTotal + todayTotal);
 }
 
 async function aggregateAndCleanBaqiyatChallenge(db) {
@@ -323,6 +350,9 @@ async function aggregateAndCleanBaqiyatChallenge(db) {
 
   await db.ref(`baqiyat_saliha/${today}`).remove();
   console.log(`[baqiyat-aggregate] deleted baqiyat_saliha/${today}`);
+
+  // Phase 1: mirror to Firestore
+  await mirrorBaqiyatAggregateAndClean(admin.firestore(), today, todayTotal, globalTotal + todayTotal);
 }
 
 main().catch(err => { console.error(err); process.exit(1); });

@@ -17,7 +17,10 @@ import tools.mo3ta.salo.domain.MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE
 import tools.mo3ta.salo.domain.MohamedLoversPlayer
 import tools.mo3ta.salo.domain.UserAchievement
 
-class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSessionStore) : MohamedLoversFirebaseApi {
+class MohamedLoversFirebaseClient(
+    private val sessionStore: MohamedLoversSessionStore,
+    private val mirror: FirestoreMirror,
+) : MohamedLoversFirebaseApi {
 
     private val log = Logger.withTag("FirebaseClient")
 
@@ -145,7 +148,10 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
             Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(fields)
         }.also { result ->
             result.fold(
-                onSuccess = { log.d { "incrementSession[$roundKey/$uid] ok" } },
+                onSuccess = {
+                    log.d { "incrementSession[$roundKey/$uid] ok" }
+                    mirror.mirrorPlayerIncrement(roundKey, uid, delta, safeCode, publishedName)
+                },
                 onFailure = { log.e(it) { "incrementSession[$roundKey/$uid] failed" } },
             )
         }
@@ -163,7 +169,10 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
             )
         }.also { result ->
             result.fold(
-                onSuccess = { log.d { "incrementExternalCount[$roundKey/$uid] ok" } },
+                onSuccess = {
+                    log.d { "incrementExternalCount[$roundKey/$uid] ok" }
+                    mirror.mirrorExternalCount(roundKey, uid, count)
+                },
                 onFailure = { log.e(it) { "incrementExternalCount[$roundKey/$uid] failed" } },
             )
         }
@@ -177,7 +186,10 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
             )
         }.also { result ->
             result.fold(
-                onSuccess = { log.d { "resetPlayerScore[$roundKey/$uid] ok" } },
+                onSuccess = {
+                    log.d { "resetPlayerScore[$roundKey/$uid] ok" }
+                    mirror.mirrorResetPlayerScore(roundKey, uid)
+                },
                 onFailure = { log.e(it) { "resetPlayerScore[$roundKey/$uid] failed" } },
             )
         }
@@ -194,7 +206,10 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
             )
         }.also { result ->
             result.fold(
-                onSuccess = { log.d { "writeUserActivity[$uid] ok" } },
+                onSuccess = {
+                    log.d { "writeUserActivity[$uid] ok" }
+                    mirror.mirrorUserActivity(uid, installDate, lastOpenDate)
+                },
                 onFailure = { log.e(it) { "writeUserActivity[$uid] failed" } },
             )
         }
@@ -208,7 +223,10 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
             )
         }.also { result ->
             result.fold(
-                onSuccess = { log.d { "writeFcmToken[$uid] ok" } },
+                onSuccess = {
+                    log.d { "writeFcmToken[$uid] ok" }
+                    mirror.mirrorFcmToken(uid, token)
+                },
                 onFailure = { log.e(it) { "writeFcmToken[$uid] failed" } },
             )
         }
@@ -229,7 +247,10 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
             )
         }.also { result ->
             result.fold(
-                onSuccess = { log.d { "writeNotificationPrefs[$uid] ok" } },
+                onSuccess = {
+                    log.d { "writeNotificationPrefs[$uid] ok" }
+                    mirror.mirrorNotificationPrefs(uid, remindersEnabled, leaderboardEnabled)
+                },
                 onFailure = { log.e(it) { "writeNotificationPrefs[$uid] failed" } },
             )
         }
@@ -267,7 +288,10 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
             )
         }.also { result ->
             result.fold(
-                onSuccess = { log.d { "setScoreMasked[$roundKey/$uid] ok" } },
+                onSuccess = {
+                    log.d { "setScoreMasked[$roundKey/$uid] ok" }
+                    mirror.mirrorPlayerField(roundKey, uid, SCORE_MASKED_KEY, masked)
+                },
                 onFailure = { log.e(it) { "setScoreMasked[$roundKey/$uid] failed" } },
             )
         }
@@ -281,7 +305,10 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
             )
         }.also { result ->
             result.fold(
-                onSuccess = { log.d { "setSupporter[$roundKey/$uid] ok" } },
+                onSuccess = {
+                    log.d { "setSupporter[$roundKey/$uid] ok" }
+                    mirror.mirrorPlayerField(roundKey, uid, IS_SUPPORTER_KEY, supporter)
+                },
                 onFailure = { log.e(it) { "setSupporter[$roundKey/$uid] failed" } },
             )
         }
@@ -295,7 +322,10 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
             )
         }.also { result ->
             result.fold(
-                onSuccess = { log.d { "writeDailyBadge[$roundKey/$uid] ok" } },
+                onSuccess = {
+                    log.d { "writeDailyBadge[$roundKey/$uid] ok" }
+                    mirror.mirrorPlayerField(roundKey, uid, DAILY_BADGE_KEY, badgeKey)
+                },
                 onFailure = { log.e(it) { "writeDailyBadge[$roundKey/$uid] failed" } },
             )
         }
@@ -309,7 +339,10 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
             )
         }.also { result ->
             result.fold(
-                onSuccess = { log.d { "writeSupporterStatus[$uid] ok" } },
+                onSuccess = {
+                    log.d { "writeSupporterStatus[$uid] ok" }
+                    mirror.mirrorSupporterStatus(uid, supporter)
+                },
                 onFailure = { log.e(it) { "writeSupporterStatus[$uid] failed" } },
             )
         }
@@ -333,7 +366,10 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
                 )
         }.also { result ->
             result.fold(
-                onSuccess = { log.d { "writePurchaseMetadata[$uid/$productId] ok" } },
+                onSuccess = {
+                    log.d { "writePurchaseMetadata[$uid/$productId] ok" }
+                    mirror.mirrorPurchaseMetadata(uid, productId, productType, purchaseDate)
+                },
                 onFailure = { log.e(it) { "writePurchaseMetadata[$uid/$productId] failed" } },
             )
         }
@@ -348,7 +384,10 @@ class MohamedLoversFirebaseClient(private val sessionStore: MohamedLoversSession
             )
         }.also { result ->
             result.fold(
-                onSuccess = { log.d { "writeNickname[$roundKey/$uid] ok" } },
+                onSuccess = {
+                    log.d { "writeNickname[$roundKey/$uid] ok" }
+                    mirror.mirrorNickname(roundKey, uid, value)
+                },
                 onFailure = { log.e(it) { "writeNickname[$roundKey/$uid] failed" } },
             )
         }
