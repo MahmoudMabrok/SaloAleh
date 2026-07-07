@@ -14,6 +14,7 @@ import tools.mo3ta.salo.data.country.CountryCodeProvider
 import tools.mo3ta.salo.data.engagement.DailyGoalStore
 import tools.mo3ta.salo.data.engagement.EngagementStore
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
+import tools.mo3ta.salo.data.heart.HEART_DECAY_INTERVAL_MS
 import tools.mo3ta.salo.data.heart.HeartStore
 import tools.mo3ta.salo.data.heart.lastHeartResetBoundary
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
@@ -44,18 +45,23 @@ class MohamedLoversViewModelHeartTest {
         Dispatchers.resetMain()
     }
 
+    private class MutableNetworkTimeProvider(
+        var window: MohamedLoversCompetitionWindow,
+    ) : NetworkTimeProvider {
+        override fun prime() {}
+        override fun getCompetitionWindow() = window
+    }
+
     private fun buildViewModel(
         heartStore: HeartStore = HeartStore(MapSettings()),
         sessionStore: MohamedLoversSessionStore = MohamedLoversSessionStore(MapSettings()),
+        provider: MutableNetworkTimeProvider? = null,
     ): MohamedLoversViewModel {
-        val window = MohamedLoversCompetitionWindow(
+        val defaultWindow = MohamedLoversCompetitionWindow(
             networkNow = Instant.parse("2026-05-12T00:00:00Z"),
             roundKey = "2026-05-15",
         )
-        val networkTime = object : NetworkTimeProvider {
-            override fun prime() {}
-            override fun getCompetitionWindow() = window
-        }
+        val networkTime = provider ?: MutableNetworkTimeProvider(defaultWindow)
         val countryCode = object : CountryCodeProvider {
             override fun get() = "EG"
         }
@@ -160,5 +166,36 @@ class MohamedLoversViewModelHeartTest {
         assertEquals(0, vm.state.value.heartScore)
         assertEquals(0, heartStore.getScore())
         assertTrue(heartStore.getAnchorTs() > oldAnchor)
+    }
+
+    @Test
+    fun onAppResumed_settles_heart_decay_even_when_round_ended() = runTest {
+        val now = Clock.System.now().toEpochMilliseconds()
+        val anchor = now - 60 * HEART_DECAY_INTERVAL_MS // 60 intervals ago
+        val heartStore = HeartStore(MapSettings()).apply { save(100, anchor) }
+
+        val oldRoundEnd = Instant.parse("2000-01-01T00:00:00Z")
+        val provider = MutableNetworkTimeProvider(
+            MohamedLoversCompetitionWindow(
+                networkNow = Instant.parse("1999-12-25T00:00:00Z"),
+                roundKey = "1999-12-31",
+                roundEnd = oldRoundEnd,
+            )
+        )
+        val vm = buildViewModel(heartStore, provider = provider)
+
+        // Simulate round ending while user was away
+        provider.window = MohamedLoversCompetitionWindow(
+            networkNow = Instant.parse("2000-01-02T00:00:00Z"),
+            roundKey = "2000-01-07",
+            roundEnd = Instant.parse("2099-01-01T00:00:00Z"),
+        )
+
+        vm.onAppResumed()
+
+        assertTrue(
+            vm.state.value.heartScore <= 40,
+            "heart should have decayed by at least 60 intervals, was ${vm.state.value.heartScore}"
+        )
     }
 }

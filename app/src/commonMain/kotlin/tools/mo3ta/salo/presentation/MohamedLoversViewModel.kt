@@ -283,6 +283,7 @@ class MohamedLoversViewModel(
      * instead of just re-reading pending taps for the stale round.
      */
     fun onAppResumed() {
+        settleHeartDecay()
         val roundEnd = state.value.roundEndInstant
         if (roundEnd != null && Clock.System.now() >= roundEnd) {
             refresh()
