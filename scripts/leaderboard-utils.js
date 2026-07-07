@@ -361,11 +361,11 @@ async function populateMohamedLoversRound(db, admin, roundKey, isFinal) {
           token: user.fcmToken,
           notification: {
             title: 'أين صلاتك على النبي ﷺ؟',
-            body: 'لم نرك منذ فترة — عُد وأحيِ ذكر الحبيب ﷺ',
+            body: 'الحبيب لا يغفل عن ذكر محبوبه، فاين انت من ذكر الحبيب المصطفي ﷺ',
           },
           data: {
             title: 'أين صلاتك على النبي ﷺ؟',
-            body: 'لم نرك منذ فترة — عُد وأحيِ ذكر الحبيب ﷺ',
+            body: 'الحبيب لا يغفل عن ذكر محبوبه، فاين انت من ذكر الحبيب المصطفي ﷺ',
           },
         })
           .then(msgId => console.log(`  idle uid=${p.uid}: sent msgId=${msgId}`))
