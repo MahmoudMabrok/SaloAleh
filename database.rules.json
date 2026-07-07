@@ -161,6 +161,10 @@
     },
 
     "istighfar_challenge": {
+      "totalIstighfar": {
+        ".read": true,
+        ".write": false
+      },
       "$date": {
         "participantCount": {
           ".read": true,

@@ -16,6 +16,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import tools.mo3ta.salo.MainActivity
 import tools.mo3ta.salo.R
+import tools.mo3ta.salo.analytics.FirebaseAnalyticsManager
 import tools.mo3ta.salo.data.firebase.FirestoreMirror
 import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseClient
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
@@ -31,7 +32,7 @@ class SaloFirebaseMessagingService : FirebaseMessagingService() {
             store.saveLocalFcmToken(token)
             store.setFcmTokenSynced(false)
             val uid = store.getOrCreateUid()
-            MohamedLoversFirebaseClient(store, FirestoreMirror()).writeFcmToken(uid, token).onSuccess {
+            MohamedLoversFirebaseClient(store, FirestoreMirror(), FirebaseAnalyticsManager(this@SaloFirebaseMessagingService)).writeFcmToken(uid, token).onSuccess {
                 store.setFcmTokenSynced(true)
             }
         }

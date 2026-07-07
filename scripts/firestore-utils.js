@@ -283,6 +283,19 @@ async function mirrorBaqiyatAggregateAndClean(firestore, dateKey, todayTotal, ne
   }
 }
 
+async function mirrorIstighfarAggregateAndClean(firestore, dateKey, todayTotal, newGlobalTotal) {
+  try {
+    await firestore.collection(ISTIGHFAR_COLLECTION).doc('_totals').set(
+      { totalIstighfar: newGlobalTotal },
+      { merge: true },
+    );
+    await firestore.collection(ISTIGHFAR_COLLECTION).doc(dateKey).delete();
+    console.log(`[firestore-mirror] istighfar aggregate+clean for ${dateKey} done`);
+  } catch (e) {
+    console.error(`[firestore-mirror] istighfar aggregate+clean failed: ${e.message}`);
+  }
+}
+
 module.exports = {
   ROUNDS_COLLECTION,
   USERS_COLLECTION,
@@ -301,4 +314,5 @@ module.exports = {
   mirrorDailyBadgeClear,
   mirrorDhikrAggregateAndClean,
   mirrorBaqiyatAggregateAndClean,
+  mirrorIstighfarAggregateAndClean,
 };

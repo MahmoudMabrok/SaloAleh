@@ -41,17 +41,17 @@ import tools.mo3ta.salo.presentation.TenDaysViewModel
 
 val appModule = module {
     single { FirestoreMirror() }
-    single { MohamedLoversFirebaseClient(get(), get()) } bind MohamedLoversFirebaseApi::class
+    single { MohamedLoversFirebaseClient(get(), get(), get()) } bind MohamedLoversFirebaseApi::class
     single { MohamedLoversSessionStore(get()) }
     single { EngagementStore(get()) }
     single { DailyGoalStore(get()) }
     single { HeartStore(get()) }
     single { DhikrChallengeStore(get()) }
-    single { DhikrChallengeFirebaseClient(get()) }
+    single { DhikrChallengeFirebaseClient(get(), get()) }
     single { IstighfarChallengeStore(get()) }
-    single { IstighfarChallengeFirebaseClient(get()) }
+    single { IstighfarChallengeFirebaseClient(get(), get()) }
     single { BaqiyatStore(get()) }
-    single { BaqiyatFirebaseClient(get()) }
+    single { BaqiyatFirebaseClient(get(), get()) }
     single { LanguageStore(get()) }
     single { SalawatVariantStore(get()) }
     single { NotificationSettingsStore(get()) }
@@ -69,7 +69,7 @@ val appModule = module {
     viewModel { AchievementsViewModel(get()) }
     viewModel { HadithListViewModel(get()) }
     single { TenDaysStore(get()) }
-    single { TenDaysFirebaseClient(get(), get()) }
+    single { TenDaysFirebaseClient(get(), get(), get()) }
     viewModel { TenDaysViewModel(get(), get(), get(), get()) }
     single<TakbeerSoundPlayer> { createTakbeerSoundPlayer() }
     viewModel { TakbeerSessionViewModel(get()) }

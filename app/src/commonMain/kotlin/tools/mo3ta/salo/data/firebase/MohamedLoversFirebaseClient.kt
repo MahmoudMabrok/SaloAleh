@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import tools.mo3ta.salo.analytics.AnalyticsManager
+import tools.mo3ta.salo.analytics.logFirebaseError
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.domain.FirebaseLeaderboard
 import tools.mo3ta.salo.domain.FirebaseLeaderboardEntry
@@ -20,6 +22,7 @@ import tools.mo3ta.salo.domain.UserAchievement
 class MohamedLoversFirebaseClient(
     private val sessionStore: MohamedLoversSessionStore,
     private val mirror: FirestoreMirror,
+    private val analyticsManager: AnalyticsManager,
 ) : MohamedLoversFirebaseApi {
 
     private val log = Logger.withTag("FirebaseClient")
@@ -53,11 +56,15 @@ class MohamedLoversFirebaseClient(
             .onEach { result ->
                 result.fold(
                     onSuccess = { log.d { "observeSelfPlayer[$roundKey/$uid]: $it" } },
-                    onFailure = { log.e(it) { "observeSelfPlayer[$roundKey/$uid] error" } },
+                    onFailure = { error ->
+                        log.e(error) { "observeSelfPlayer[$roundKey/$uid] error" }
+                        trackReadFailure("observe_self_player", error)
+                    },
                 )
             }
             .catch { e ->
                 log.e(e) { "observeSelfPlayer[$roundKey/$uid] flow error" }
+                trackReadFailure("observe_self_player", e)
                 emit(Result.failure(e))
             }
 
@@ -70,7 +77,10 @@ class MohamedLoversFirebaseClient(
         }.also { result ->
             result.fold(
                 onSuccess = { log.d { "fetchRoundPlayerCount[$roundKey]=$it" } },
-                onFailure = { log.e(it) { "fetchRoundPlayerCount[$roundKey] failed" } },
+                onFailure = { error ->
+                    log.e(error) { "fetchRoundPlayerCount[$roundKey] failed" }
+                    trackReadFailure("fetch_round_player_count", error)
+                },
             )
         }
     }
@@ -84,7 +94,10 @@ class MohamedLoversFirebaseClient(
         }.also { result ->
             result.fold(
                 onSuccess = { log.d { "fetchRoundTotal[$roundKey]=$it" } },
-                onFailure = { log.e(it) { "fetchRoundTotal[$roundKey] failed" } },
+                onFailure = { error ->
+                    log.e(error) { "fetchRoundTotal[$roundKey] failed" }
+                    trackReadFailure("fetch_round_total", error)
+                },
             )
         }
     }
@@ -98,7 +111,10 @@ class MohamedLoversFirebaseClient(
         }.also { result ->
             result.fold(
                 onSuccess = { log.d { "fetchAllTimeTotal=$it" } },
-                onFailure = { log.e(it) { "fetchAllTimeTotal failed" } },
+                onFailure = { error ->
+                    log.e(error) { "fetchAllTimeTotal failed" }
+                    trackReadFailure("fetch_all_time_total", error)
+                },
             )
         }
     }
@@ -120,11 +136,15 @@ class MohamedLoversFirebaseClient(
             .onEach { result ->
                 result.fold(
                     onSuccess = { log.d { "observeLeaderboard[$roundKey]: ${it.entries.size} entries, isFinal=${it.isFinal}" } },
-                    onFailure = { log.e(it) { "observeLeaderboard[$roundKey] error" } },
+                    onFailure = { error ->
+                        log.e(error) { "observeLeaderboard[$roundKey] error" }
+                        trackReadFailure("observe_leaderboard", error)
+                    },
                 )
             }
             .catch { e ->
                 log.e(e) { "observeLeaderboard[$roundKey] flow error" }
+                trackReadFailure("observe_leaderboard", e)
                 emit(Result.failure(e))
             }
 
@@ -152,7 +172,10 @@ class MohamedLoversFirebaseClient(
                     log.d { "incrementSession[$roundKey/$uid] ok" }
                     mirror.mirrorPlayerIncrement(roundKey, uid, delta, safeCode, publishedName)
                 },
-                onFailure = { log.e(it) { "incrementSession[$roundKey/$uid] failed" } },
+                onFailure = { error ->
+                    log.e(error) { "incrementSession[$roundKey/$uid] failed" }
+                    trackWriteFailure("increment_session", error)
+                },
             )
         }
     }
@@ -173,7 +196,10 @@ class MohamedLoversFirebaseClient(
                     log.d { "incrementExternalCount[$roundKey/$uid] ok" }
                     mirror.mirrorExternalCount(roundKey, uid, count)
                 },
-                onFailure = { log.e(it) { "incrementExternalCount[$roundKey/$uid] failed" } },
+                onFailure = { error ->
+                    log.e(error) { "incrementExternalCount[$roundKey/$uid] failed" }
+                    trackWriteFailure("increment_external_count", error)
+                },
             )
         }
     }
@@ -190,7 +216,10 @@ class MohamedLoversFirebaseClient(
                     log.d { "resetPlayerScore[$roundKey/$uid] ok" }
                     mirror.mirrorResetPlayerScore(roundKey, uid)
                 },
-                onFailure = { log.e(it) { "resetPlayerScore[$roundKey/$uid] failed" } },
+                onFailure = { error ->
+                    log.e(error) { "resetPlayerScore[$roundKey/$uid] failed" }
+                    trackWriteFailure("reset_player_score", error)
+                },
             )
         }
     }
@@ -210,7 +239,10 @@ class MohamedLoversFirebaseClient(
                     log.d { "writeUserActivity[$uid] ok" }
                     mirror.mirrorUserActivity(uid, installDate, lastOpenDate)
                 },
-                onFailure = { log.e(it) { "writeUserActivity[$uid] failed" } },
+                onFailure = { error ->
+                    log.e(error) { "writeUserActivity[$uid] failed" }
+                    trackWriteFailure("write_user_activity", error)
+                },
             )
         }
     }
@@ -227,7 +259,10 @@ class MohamedLoversFirebaseClient(
                     log.d { "writeFcmToken[$uid] ok" }
                     mirror.mirrorFcmToken(uid, token)
                 },
-                onFailure = { log.e(it) { "writeFcmToken[$uid] failed" } },
+                onFailure = { error ->
+                    log.e(error) { "writeFcmToken[$uid] failed" }
+                    trackWriteFailure("write_fcm_token", error)
+                },
             )
         }
     }
@@ -251,7 +286,10 @@ class MohamedLoversFirebaseClient(
                     log.d { "writeNotificationPrefs[$uid] ok" }
                     mirror.mirrorNotificationPrefs(uid, remindersEnabled, leaderboardEnabled)
                 },
-                onFailure = { log.e(it) { "writeNotificationPrefs[$uid] failed" } },
+                onFailure = { error ->
+                    log.e(error) { "writeNotificationPrefs[$uid] failed" }
+                    trackWriteFailure("write_notification_prefs", error)
+                },
             )
         }
     }
@@ -275,7 +313,10 @@ class MohamedLoversFirebaseClient(
         }.also { result ->
             result.fold(
                 onSuccess = { log.d { "fetchUserAchievements[$uid]: ${it.size} entries" } },
-                onFailure = { log.e(it) { "fetchUserAchievements[$uid] failed" } },
+                onFailure = { error ->
+                    log.e(error) { "fetchUserAchievements[$uid] failed" }
+                    trackReadFailure("fetch_user_achievements", error)
+                },
             )
         }
     }
@@ -292,7 +333,10 @@ class MohamedLoversFirebaseClient(
                     log.d { "setScoreMasked[$roundKey/$uid] ok" }
                     mirror.mirrorPlayerField(roundKey, uid, SCORE_MASKED_KEY, masked)
                 },
-                onFailure = { log.e(it) { "setScoreMasked[$roundKey/$uid] failed" } },
+                onFailure = { error ->
+                    log.e(error) { "setScoreMasked[$roundKey/$uid] failed" }
+                    trackWriteFailure("set_score_masked", error)
+                },
             )
         }
     }
@@ -309,7 +353,10 @@ class MohamedLoversFirebaseClient(
                     log.d { "setSupporter[$roundKey/$uid] ok" }
                     mirror.mirrorPlayerField(roundKey, uid, IS_SUPPORTER_KEY, supporter)
                 },
-                onFailure = { log.e(it) { "setSupporter[$roundKey/$uid] failed" } },
+                onFailure = { error ->
+                    log.e(error) { "setSupporter[$roundKey/$uid] failed" }
+                    trackWriteFailure("set_supporter", error)
+                },
             )
         }
     }
@@ -326,7 +373,10 @@ class MohamedLoversFirebaseClient(
                     log.d { "writeDailyBadge[$roundKey/$uid] ok" }
                     mirror.mirrorPlayerField(roundKey, uid, DAILY_BADGE_KEY, badgeKey)
                 },
-                onFailure = { log.e(it) { "writeDailyBadge[$roundKey/$uid] failed" } },
+                onFailure = { error ->
+                    log.e(error) { "writeDailyBadge[$roundKey/$uid] failed" }
+                    trackWriteFailure("write_daily_badge", error)
+                },
             )
         }
     }
@@ -343,7 +393,10 @@ class MohamedLoversFirebaseClient(
                     log.d { "writeSupporterStatus[$uid] ok" }
                     mirror.mirrorSupporterStatus(uid, supporter)
                 },
-                onFailure = { log.e(it) { "writeSupporterStatus[$uid] failed" } },
+                onFailure = { error ->
+                    log.e(error) { "writeSupporterStatus[$uid] failed" }
+                    trackWriteFailure("write_supporter_status", error)
+                },
             )
         }
     }
@@ -370,7 +423,10 @@ class MohamedLoversFirebaseClient(
                     log.d { "writePurchaseMetadata[$uid/$productId] ok" }
                     mirror.mirrorPurchaseMetadata(uid, productId, productType, purchaseDate)
                 },
-                onFailure = { log.e(it) { "writePurchaseMetadata[$uid/$productId] failed" } },
+                onFailure = { error ->
+                    log.e(error) { "writePurchaseMetadata[$uid/$productId] failed" }
+                    trackWriteFailure("write_purchase_metadata", error)
+                },
             )
         }
     }
@@ -388,7 +444,10 @@ class MohamedLoversFirebaseClient(
                     log.d { "writeNickname[$roundKey/$uid] ok" }
                     mirror.mirrorNickname(roundKey, uid, value)
                 },
-                onFailure = { log.e(it) { "writeNickname[$roundKey/$uid] failed" } },
+                onFailure = { error ->
+                    log.e(error) { "writeNickname[$roundKey/$uid] failed" }
+                    trackWriteFailure("write_nickname", error)
+                },
             )
         }
     }
@@ -416,7 +475,28 @@ class MohamedLoversFirebaseClient(
     }.also { result ->
         result.fold(
             onSuccess = { log.d { "fetchLiveLeaderboard[$roundKey]: ${it.entries.size} entries" } },
-            onFailure = { log.e(it) { "fetchLiveLeaderboard[$roundKey] error" } },
+            onFailure = { error ->
+                log.e(error) { "fetchLiveLeaderboard[$roundKey] error" }
+                trackReadFailure("fetch_live_leaderboard", error)
+            },
+        )
+    }
+
+    private fun trackReadFailure(operation: String, error: Throwable) {
+        analyticsManager.logFirebaseError(
+            surface = "mohamed_lovers",
+            operation = operation,
+            access = "read",
+            error = error,
+        )
+    }
+
+    private fun trackWriteFailure(operation: String, error: Throwable) {
+        analyticsManager.logFirebaseError(
+            surface = "mohamed_lovers",
+            operation = operation,
+            access = "write",
+            error = error,
         )
     }
 

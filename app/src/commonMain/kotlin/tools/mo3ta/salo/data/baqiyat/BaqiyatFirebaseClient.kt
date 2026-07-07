@@ -5,6 +5,8 @@ import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.database.ServerValue
 import dev.gitlive.firebase.database.database
 import kotlinx.coroutines.flow.first
+import tools.mo3ta.salo.analytics.AnalyticsManager
+import tools.mo3ta.salo.analytics.logFirebaseError
 import tools.mo3ta.salo.data.firebase.FirestoreMirror
 import tools.mo3ta.salo.domain.BaqiyatDayStats
 import tools.mo3ta.salo.domain.BaqiyatLeaderboardEntry
@@ -22,7 +24,10 @@ private const val UPDATED_AT_KEY = "updatedAt"
 private const val PARTICIPANT_COUNT_KEY = "participantCount"
 private const val TOTAL_TODAY_BAQIYAT_KEY = "totalTodayBaqiyat"
 
-class BaqiyatFirebaseClient(private val mirror: FirestoreMirror) {
+class BaqiyatFirebaseClient(
+    private val mirror: FirestoreMirror,
+    private val analyticsManager: AnalyticsManager,
+) {
 
     private val log = Logger.withTag("BaqiyatFirebase")
 
@@ -53,7 +58,10 @@ class BaqiyatFirebaseClient(private val mirror: FirestoreMirror) {
                     log.d { "writeUserDay[$dateKey/$uid] ok" }
                     mirror.mirrorBaqiyatUserDay(dateKey, uid, count, countryCode, safeNickname)
                 },
-                onFailure = { log.e(it) { "writeUserDay[$dateKey/$uid] failed" } },
+                onFailure = { error ->
+                    log.e(error) { "writeUserDay[$dateKey/$uid] failed" }
+                    trackWriteFailure("write_user_day", error)
+                },
             )
         }
     }
@@ -69,7 +77,10 @@ class BaqiyatFirebaseClient(private val mirror: FirestoreMirror) {
         }.also { result ->
             result.fold(
                 onSuccess = { log.d { "fetchUserCount[$dateKey/$uid]=$it" } },
-                onFailure = { log.e(it) { "fetchUserCount[$dateKey/$uid] failed" } },
+                onFailure = { error ->
+                    log.e(error) { "fetchUserCount[$dateKey/$uid] failed" }
+                    trackReadFailure("fetch_user_count", error)
+                },
             )
         }
     }
@@ -96,7 +107,10 @@ class BaqiyatFirebaseClient(private val mirror: FirestoreMirror) {
         }.also { result ->
             result.fold(
                 onSuccess = { log.d { "fetchDayStats[$dateKey/$uid] rank=${it.rank} participants=${it.participantCount}" } },
-                onFailure = { log.e(it) { "fetchDayStats[$dateKey/$uid] failed" } },
+                onFailure = { error ->
+                    log.e(error) { "fetchDayStats[$dateKey/$uid] failed" }
+                    trackReadFailure("fetch_day_stats", error)
+                },
             )
         }
     }
@@ -115,9 +129,30 @@ class BaqiyatFirebaseClient(private val mirror: FirestoreMirror) {
         }.also { result ->
             result.fold(
                 onSuccess = { log.d { "fetchLeaderboard[$dateKey] ${it.size} entries" } },
-                onFailure = { log.e(it) { "fetchLeaderboard[$dateKey] failed" } },
+                onFailure = { error ->
+                    log.e(error) { "fetchLeaderboard[$dateKey] failed" }
+                    trackReadFailure("fetch_leaderboard", error)
+                },
             )
         }
+    }
+
+    private fun trackReadFailure(operation: String, error: Throwable) {
+        analyticsManager.logFirebaseError(
+            surface = "baqiyat_challenge",
+            operation = operation,
+            access = "read",
+            error = error,
+        )
+    }
+
+    private fun trackWriteFailure(operation: String, error: Throwable) {
+        analyticsManager.logFirebaseError(
+            surface = "baqiyat_challenge",
+            operation = operation,
+            access = "write",
+            error = error,
+        )
     }
 
     private fun dayPath(dateKey: String) = "$ROOT_PATH/$dateKey"

@@ -9,6 +9,7 @@ const {
   mirrorDailyBadgeClear,
   mirrorDhikrAggregateAndClean,
   mirrorBaqiyatAggregateAndClean,
+  mirrorIstighfarAggregateAndClean,
 } = require('./firestore-utils');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -161,6 +162,7 @@ async function main() {
   await sendIstighfarChallengeRank1Notification(db);
   await aggregateAndCleanDhikrChallenge(db);
   await aggregateAndCleanBaqiyatChallenge(db);
+  await aggregateAndCleanIstighfarChallenge(db);
 
   process.exit(0);
 }
@@ -382,6 +384,36 @@ async function aggregateAndCleanBaqiyatChallenge(db) {
 
   // Phase 1: mirror to Firestore
   await mirrorBaqiyatAggregateAndClean(admin.firestore(), today, todayTotal, globalTotal + todayTotal);
+}
+
+async function aggregateAndCleanIstighfarChallenge(db) {
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+
+  const [todayTotalSnap, globalTotalSnap] = await Promise.all([
+    db.ref(`istighfar_challenge/${today}/totalTodayIstighfar`).get(),
+    db.ref('istighfar_challenge/totalIstighfar').get(),
+  ]);
+
+  const todayTotal = todayTotalSnap.val() || 0;
+  const globalTotal = globalTotalSnap.val() || 0;
+
+  console.log(`[istighfar-aggregate] today=${today} todayTotal=${todayTotal} globalBefore=${globalTotal}`);
+
+  if (todayTotal === 0) {
+    console.log('[istighfar-aggregate] todayTotal is 0 — skip update and delete');
+    return;
+  }
+
+  await db.ref('istighfar_challenge/totalIstighfar').set(globalTotal + todayTotal);
+  console.log(`[istighfar-aggregate] totalIstighfar updated: ${globalTotal} → ${globalTotal + todayTotal}`);
+
+  await db.ref(`istighfar_challenge/${today}`).remove();
+  console.log(`[istighfar-aggregate] deleted istighfar_challenge/${today}`);
+
+  // Phase 1: mirror to Firestore
+  await mirrorIstighfarAggregateAndClean(admin.firestore(), today, todayTotal, globalTotal + todayTotal);
 }
 
 main().catch(err => { console.error(err); process.exit(1); });
