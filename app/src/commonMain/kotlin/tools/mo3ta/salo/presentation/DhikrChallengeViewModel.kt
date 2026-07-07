@@ -14,6 +14,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import tools.mo3ta.salo.data.country.CountryCodeProvider
+import tools.mo3ta.salo.domain.DhikrLeaderboardEntry
 import tools.mo3ta.salo.data.dhikr.DhikrChallengeFirebaseClient
 import tools.mo3ta.salo.data.dhikr.DhikrChallengeStore
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
@@ -30,10 +31,6 @@ class DhikrChallengeViewModel(
 
     private val _state = MutableStateFlow(DhikrChallengeUiState())
     val state: StateFlow<DhikrChallengeUiState> = _state.asStateFlow()
-
-    init {
-        loadLeaderboard()
-    }
 
     fun onLeaderboardOpened() {
         _state.update { it.copy(showLeaderboard = true) }
@@ -62,6 +59,7 @@ class DhikrChallengeViewModel(
     }
 
     fun onScreenEntered() {
+        loadLeaderboard()
         val today = today()
         viewModelScope.launch {
             val uid = sessionStore.getOrCreateUid()
@@ -112,6 +110,7 @@ class DhikrChallengeViewModel(
                 celebrationMilestone = if (isMilestone) updated else it.celebrationMilestone,
             )
         }
+        recalculateLocalLeaderboard()
     }
 
     fun onCelebrationDismissed() {
@@ -145,6 +144,7 @@ class DhikrChallengeViewModel(
                 celebrationMilestone = if (crossedMilestone && milestone > 0) milestone else it.celebrationMilestone,
             )
         }
+        recalculateLocalLeaderboard()
         viewModelScope.launch {
             syncMutex.withLock {
                 if (!firebaseClient.isConfigured()) {
@@ -200,6 +200,32 @@ class DhikrChallengeViewModel(
                 }
             }
         }
+    }
+
+    private fun recalculateLocalLeaderboard() {
+        val current = _state.value
+        val uid = current.currentUid
+        if (uid.isEmpty()) return
+
+        val localCount = current.todayCount
+        val entries = current.leaderboard.toMutableList()
+
+        val existingIndex = entries.indexOfFirst { it.uid == uid }
+        if (existingIndex >= 0) {
+            entries[existingIndex] = entries[existingIndex].copy(count = localCount)
+        } else if (localCount > 0) {
+            entries.add(
+                DhikrLeaderboardEntry(
+                    uid = uid, countryCode = "", count = localCount,
+                    rank = 0, rankChange = "new",
+                )
+            )
+        }
+
+        val ranked = entries.sortedByDescending { it.count }
+            .mapIndexed { index, entry -> entry.copy(rank = index + 1) }
+        val newRank = ranked.firstOrNull { it.uid == uid }?.rank ?: current.rank
+        _state.update { it.copy(leaderboard = ranked, rank = newRank) }
     }
 
     private suspend fun refreshStats(dateKey: String, uid: String) {

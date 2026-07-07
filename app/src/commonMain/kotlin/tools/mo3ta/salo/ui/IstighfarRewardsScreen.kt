@@ -112,7 +112,11 @@ fun IstighfarRewardsScreen(
 
     DisposableEffect(lifecycleOwner, viewModel) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_STOP) viewModel.onScreenLeft()
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> viewModel.onScreenEntered()
+                Lifecycle.Event.ON_STOP -> viewModel.onScreenLeft()
+                else -> {}
+            }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {

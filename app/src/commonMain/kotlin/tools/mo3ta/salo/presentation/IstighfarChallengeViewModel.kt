@@ -14,6 +14,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import tools.mo3ta.salo.data.country.CountryCodeProvider
+import tools.mo3ta.salo.domain.IstighfarLeaderboardEntry
 import tools.mo3ta.salo.data.istighfar.IstighfarChallengeFirebaseClient
 import tools.mo3ta.salo.data.istighfar.IstighfarChallengeStore
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
@@ -31,10 +32,6 @@ class IstighfarChallengeViewModel(
 
     private val _state = MutableStateFlow(IstighfarChallengeUiState())
     val state: StateFlow<IstighfarChallengeUiState> = _state.asStateFlow()
-
-    init {
-        loadLeaderboard()
-    }
 
     fun onLeaderboardOpened() {
         _state.update { it.copy(showLeaderboard = true) }
@@ -63,6 +60,7 @@ class IstighfarChallengeViewModel(
     }
 
     fun onScreenEntered() {
+        loadLeaderboard()
         val today = today()
         viewModelScope.launch {
             val uid = sessionStore.getOrCreateUid()
@@ -113,6 +111,7 @@ class IstighfarChallengeViewModel(
                 celebrationMilestone = if (isMilestone) updated else it.celebrationMilestone,
             )
         }
+        recalculateLocalLeaderboard()
     }
 
     fun onCelebrationDismissed() {
@@ -146,6 +145,7 @@ class IstighfarChallengeViewModel(
                 celebrationMilestone = if (crossedMilestone && milestone > 0) milestone else it.celebrationMilestone,
             )
         }
+        recalculateLocalLeaderboard()
         viewModelScope.launch {
             syncMutex.withLock {
                 if (!firebaseClient.isConfigured()) {
@@ -201,6 +201,32 @@ class IstighfarChallengeViewModel(
                 }
             }
         }
+    }
+
+    private fun recalculateLocalLeaderboard() {
+        val current = _state.value
+        val uid = current.currentUid
+        if (uid.isEmpty()) return
+
+        val localCount = current.todayCount
+        val entries = current.leaderboard.toMutableList()
+
+        val existingIndex = entries.indexOfFirst { it.uid == uid }
+        if (existingIndex >= 0) {
+            entries[existingIndex] = entries[existingIndex].copy(count = localCount)
+        } else if (localCount > 0) {
+            entries.add(
+                IstighfarLeaderboardEntry(
+                    uid = uid, countryCode = "", count = localCount,
+                    rank = 0, rankChange = "new",
+                )
+            )
+        }
+
+        val ranked = entries.sortedByDescending { it.count }
+            .mapIndexed { index, entry -> entry.copy(rank = index + 1) }
+        val newRank = ranked.firstOrNull { it.uid == uid }?.rank ?: current.rank
+        _state.update { it.copy(leaderboard = ranked, rank = newRank) }
     }
 
     private suspend fun refreshStats(dateKey: String, uid: String) {
