@@ -28,7 +28,7 @@ class FirestoreMirror {
                 mapOf(
                     "uid" to uid,
                     "countryCode" to countryCode,
-                    "totalCount" to FieldValue.increment(delta.toDouble()),
+                    "totalCount" to FieldValue.increment(delta),
                     "updatedAt" to FieldValue.serverTimestamp,
                     "nickname" to nickname,
                 ),
@@ -41,7 +41,7 @@ class FirestoreMirror {
             fs.collection(ROUNDS_COLLECTION).document(roundKey)
                 .collection(PLAYERS_SUBCOLLECTION).document(uid)
                 .set(
-                    mapOf("totalExternal" to FieldValue.increment(count.toDouble())),
+                    mapOf("totalExternal" to FieldValue.increment(count)),
                     merge = true,
                 )
         }

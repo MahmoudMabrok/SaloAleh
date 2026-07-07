@@ -156,8 +156,9 @@ async function main() {
   console.log(`stats/${dateStr}.json written:`, stats);
 
   await sendDailyTop3Notifications(db, dailyLeaderboardSnap);
-  await sendDhikrChallengeRank1Notification(db, roundKey);
-  await sendBaqiyatChallengeRank1Notification(db, roundKey);
+  await sendDhikrChallengeRank1Notification(db);
+  await sendBaqiyatChallengeRank1Notification(db);
+  await sendIstighfarChallengeRank1Notification(db);
   await aggregateAndCleanDhikrChallenge(db);
   await aggregateAndCleanBaqiyatChallenge(db);
 
@@ -200,7 +201,7 @@ async function sendDailyTop3Notifications(db, dailyLeaderboardSnap) {
   console.log(`[daily-top3] broadcast to topic "general" msgId=${msgId}`);
 }
 
-async function sendDhikrChallengeRank1Notification(db, roundKey) {
+async function sendDhikrChallengeRank1Notification(db) {
   const today = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit',
   }).format(new Date());
@@ -222,13 +223,9 @@ async function sendDhikrChallengeRank1Notification(db, roundKey) {
     return;
   }
 
-  // Prefer the winner's nickname from the current weekly round player data.
-  let name = null;
-  const nicknameSnap = await db.ref(`mohamed_lovers/${roundKey}/players/${rank1Uid}/nickname`).get();
-  if (nicknameSnap.exists() && typeof nicknameSnap.val() === 'string' && nicknameSnap.val().trim()) {
-    name = nicknameSnap.val().trim();
-  }
-  if (!name) name = rank1Uid.slice(-6).toUpperCase();
+  const name = typeof rank1Entry.nickname === 'string' && rank1Entry.nickname.trim()
+    ? rank1Entry.nickname.trim()
+    : rank1Uid.slice(-6).toUpperCase();
 
   const title = 'بطل اليوم في تحدي الـ١٠٠ 🏆';
   const body = `تهانينا لـ ${name} على التصدر في تحدي الـ١٠٠ ذكر اليوم بـ ${rank1Count} ذكراً — جزاك الله خيراً!`;
@@ -245,7 +242,7 @@ async function sendDhikrChallengeRank1Notification(db, roundKey) {
   }
 }
 
-async function sendBaqiyatChallengeRank1Notification(db, roundKey) {
+async function sendBaqiyatChallengeRank1Notification(db) {
   const today = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit',
   }).format(new Date());
@@ -267,16 +264,9 @@ async function sendBaqiyatChallengeRank1Notification(db, roundKey) {
     return;
   }
 
-  let name = typeof rank1Entry.nickname === 'string' && rank1Entry.nickname.trim()
+  const name = typeof rank1Entry.nickname === 'string' && rank1Entry.nickname.trim()
     ? rank1Entry.nickname.trim()
-    : null;
-  if (!name) {
-    const nicknameSnap = await db.ref(`mohamed_lovers/${roundKey}/players/${rank1Uid}/nickname`).get();
-    if (nicknameSnap.exists() && typeof nicknameSnap.val() === 'string' && nicknameSnap.val().trim()) {
-      name = nicknameSnap.val().trim();
-    }
-  }
-  if (!name) name = rank1Uid.slice(-6).toUpperCase();
+    : rank1Uid.slice(-6).toUpperCase();
 
   const title = 'بطل اليوم في الباقيات الصالحات 🏆';
   const body = `تهانينا لـ ${name} على التصدر في تحدي الباقيات الصالحات اليوم بـ ${rank1Count} دورة — جزاك الله خيراً!`;
@@ -290,6 +280,47 @@ async function sendBaqiyatChallengeRank1Notification(db, roundKey) {
     console.log(`[baqiyat-rank1] sent to topic "challenges" uid=${rank1Uid} name="${name}" count=${rank1Count} msgId=${msgId}`);
   } catch (e) {
     console.error(`[baqiyat-rank1] send failed: ${e.message}`);
+  }
+}
+
+async function sendIstighfarChallengeRank1Notification(db) {
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+
+  console.log(`[istighfar-rank1] checking istighfar_challenge/${today}/leaderboard for rank 1 winner`);
+  const rank1Snap = await db.ref(`istighfar_challenge/${today}/leaderboard/0`).get();
+
+  if (!rank1Snap.exists()) {
+    console.log('[istighfar-rank1] no rank 1 entry in leaderboard — skip');
+    return;
+  }
+
+  const rank1Entry = rank1Snap.val() || {};
+  const rank1Uid = rank1Entry.uid;
+  const rank1Count = rank1Entry.count || 0;
+
+  if (!rank1Uid || rank1Count === 0) {
+    console.log('[istighfar-rank1] rank 1 entry missing uid or count — skip');
+    return;
+  }
+
+  const name = typeof rank1Entry.nickname === 'string' && rank1Entry.nickname.trim()
+    ? rank1Entry.nickname.trim()
+    : rank1Uid.slice(-6).toUpperCase();
+
+  const title = 'بطل اليوم في الاستغفار 🏆';
+  const body = `تهانينا لـ ${name} على التصدر في تحدي الاستغفار اليوم بـ ${rank1Count} مرة — غفر الله لك!`;
+
+  try {
+    const msgId = await admin.messaging().send({
+      topic: 'challenges',
+      notification: { title, body },
+      data: { title, body, notification_type: 'istighfar_challenge_rank1' },
+    });
+    console.log(`[istighfar-rank1] sent to topic "challenges" uid=${rank1Uid} name="${name}" count=${rank1Count} msgId=${msgId}`);
+  } catch (e) {
+    console.error(`[istighfar-rank1] send failed: ${e.message}`);
   }
 }
 
