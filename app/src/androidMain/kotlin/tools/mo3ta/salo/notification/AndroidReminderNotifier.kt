@@ -31,7 +31,7 @@ object AndroidReminderNotifier {
         if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return
 
         val title = "اللهم صلِّ على محمد ﷺ"
-        val body = "يوم الجمعة المبارك — صلّ على النبي الكريم"
+        val body = "يوم الجمعة، هو يوم الصلاة علي النبي، عطر فمك بالصلاة ﷺ"
         NotificationManagerCompat.from(context).notify(
             NotificationChannels.NOTIF_ID_FRIDAY,
             NotificationCompat.Builder(context, NotificationChannels.CHANNEL_FRIDAY)

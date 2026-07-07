@@ -85,7 +85,7 @@ Fires every hour from 9:00 to 17:00 on Fridays (Cairo time).
 
 | Title | Body |
 |-------|------|
-| `اللهم صلِّ على محمد ﷺ` | `يوم الجمعة المبارك — صلّ على النبي الكريم` |
+| `اللهم صلِّ على محمد ﷺ` | `يوم الجمعة، هو يوم الصلاة علي النبي، عطر فمك بالصلاة ﷺ` |
 
 - Channel: `channel_friday` (Android).
 - Toggle: `fridayEnabled` in `NotificationSettingsStore`.
