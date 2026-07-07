@@ -120,7 +120,7 @@ The app and scripts dual-write to both RTDB and Firestore. RTDB remains the sour
 
 ### FCM during migration
 
-FCM notifications are sent from RTDB scripts only (no duplication). Daily top-3, dhikr rank-1, and baqiyat rank-1 notifications in `generate-stats.js` are commented out during Phase 1. Engagement notifications (top-3 position changes, dropout, idle) in `leaderboard-utils.js` remain active. `notify-users.js` is unchanged.
+FCM notifications are sent from RTDB scripts only (no duplication). All notifications in `generate-stats.js` (daily top-3, dhikr rank-1, baqiyat rank-1) are active. Engagement notifications (top-3 position changes, dropout, idle) in `leaderboard-utils.js` remain active. `notify-users.js` is unchanged.
 
 Deploy rules: `firebase deploy --only firestore:rules`
 

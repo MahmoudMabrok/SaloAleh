@@ -155,11 +155,9 @@ async function main() {
   fs.writeFileSync(outPath, JSON.stringify(stats, null, 2));
   console.log(`stats/${dateStr}.json written:`, stats);
 
-  // Phase 1 migration: FCM sends commented out to avoid duplicates when
-  // Firestore scripts are enabled. Re-enable only one source of FCM in Phase 2.
-  // await sendDailyTop3Notifications(db, dailyLeaderboardSnap);
-  // await sendDhikrChallengeRank1Notification(db, roundKey);
-  // await sendBaqiyatChallengeRank1Notification(db, roundKey);
+  await sendDailyTop3Notifications(db, dailyLeaderboardSnap);
+  await sendDhikrChallengeRank1Notification(db, roundKey);
+  await sendBaqiyatChallengeRank1Notification(db, roundKey);
   await aggregateAndCleanDhikrChallenge(db);
   await aggregateAndCleanBaqiyatChallenge(db);
 
