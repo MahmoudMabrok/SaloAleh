@@ -212,7 +212,7 @@ fun MohamedLoversScreen(
     val currentUserEntry = state.topPlayers.firstOrNull { it.isCurrentUser } ?: state.selfEntry
     val rankChipVisible = showRankChip && (currentUserEntry?.rank ?: 0) > 0
     LaunchedEffect(rankChipVisible, announcementsEnabled) {
-        if (announcementsEnabled && rankChipVisible && !settingsStore.rankChipTooltipShown) {
+        if ( rankChipVisible && !settingsStore.rankChipTooltipShown) {
             delay(1200)
             showRankTooltip = true
             settingsStore.rankChipTooltipShown = true
@@ -505,7 +505,7 @@ fun MohamedLoversScreen(
                 onDismiss = { viewModel.dismissHadithDialog() },
             )
         }
-        if (announcementsEnabled && state.showGraceWarning) {
+        if (state.showGraceWarning) {
             GraceWarningDialog(onDismiss = { viewModel.dismissGraceWarning() })
         }
 //        if (announcementsEnabled) {
@@ -531,16 +531,13 @@ fun MohamedLoversScreen(
         }
 
         // Daily milestone celebration
-        if (announcementsEnabled) {
-            MilestoneCelebration(
+        MilestoneCelebration(
                 threshold = state.milestoneThreshold,
                 badgeKey = state.milestoneBadgeKey,
                 onDismiss = viewModel::dismissMilestone,
             )
-        }
 
         // Rank movement summary
-        if (announcementsEnabled) {
             RankMovementBanner(
                 delta = state.rankMovementDelta,
                 oldRank = state.rankMovementOldRank,
@@ -548,7 +545,6 @@ fun MohamedLoversScreen(
                 onDismiss = viewModel::dismissRankMovement,
                 modifier = Modifier.align(Alignment.Center),
             )
-        }
     }
 }
 
