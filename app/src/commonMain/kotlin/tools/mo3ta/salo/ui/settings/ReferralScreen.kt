@@ -70,8 +70,10 @@ fun ReferralScreen(
 
     LaunchedEffect(uid) {
         firebaseApi.writeReferralCode(uid, referralCode)
-        firebaseApi.fetchReferralCount(uid).onSuccess { referralCount = it }
-        firebaseApi.fetchReferralsAllTimeTotal(uid).onSuccess { referralsTotal = it }
+        firebaseApi.fetchReferralStats(referralCode).onSuccess {
+            referralCount = it.referralCount
+            referralsTotal = it.salawatTotal
+        }
     }
 
     val shareBody = stringResource(Res.string.referral_share_body)

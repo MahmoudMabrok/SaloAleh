@@ -560,42 +560,24 @@ class MohamedLoversFirebaseClient(
         }
     }
 
-    override suspend fun fetchReferralCount(uid: String): Result<Int> {
-        log.d { "fetchReferralCount[$uid]" }
+    override suspend fun fetchReferralStats(code: String): Result<ReferralStats> {
+        log.d { "fetchReferralStats[$code]" }
         return runCatching {
-            val snapshot = Firebase.database.reference("$ROOT_PATH/$USERS_PATH/$uid/$REFERRALS_PATH")
+            val snap = Firebase.database.reference("$ROOT_PATH/$REFERRAL_STATS_PATH/$code")
                 .valueEvents.first()
-            snapshot.children.count()
-        }.also { result ->
-            result.fold(
-                onSuccess = { log.d { "fetchReferralCount[$uid] = $it" } },
-                onFailure = { error ->
-                    log.e(error) { "fetchReferralCount[$uid] failed" }
-                    trackReadFailure("fetch_referral_count", error)
-                },
-            )
-        }
-    }
-
-    override suspend fun fetchReferralsAllTimeTotal(uid: String): Result<Long> {
-        log.d { "fetchReferralsAllTimeTotal[$uid]" }
-        return runCatching {
-            val referralsSnap = Firebase.database.reference("$ROOT_PATH/$USERS_PATH/$uid/$REFERRALS_PATH")
-                .valueEvents.first()
-            val referredUids = referralsSnap.children.mapNotNull { it.key }
-            var total = 0L
-            for (referredUid in referredUids) {
-                val snap = Firebase.database.reference("$ROOT_PATH/$USERS_PATH/$referredUid/$ALL_TIME_TOTAL_PATH")
-                    .valueEvents.first()
-                total += (snap.value as? Number)?.toLong() ?: 0L
+            if (!snap.exists) {
+                ReferralStats(referralCount = 0, salawatTotal = 0L)
+            } else {
+                val count = (snap.child("referralCount").value as? Number)?.toInt() ?: 0
+                val total = (snap.child("salawatTotal").value as? Number)?.toLong() ?: 0L
+                ReferralStats(referralCount = count, salawatTotal = total)
             }
-            total
         }.also { result ->
             result.fold(
-                onSuccess = { log.d { "fetchReferralsAllTimeTotal[$uid] = $it" } },
+                onSuccess = { log.d { "fetchReferralStats[$code] = $it" } },
                 onFailure = { error ->
-                    log.e(error) { "fetchReferralsAllTimeTotal[$uid] failed" }
-                    trackReadFailure("fetch_referrals_all_time_total", error)
+                    log.e(error) { "fetchReferralStats[$code] failed" }
+                    trackReadFailure("fetch_referral_stats", error)
                 },
             )
         }
@@ -667,6 +649,7 @@ class MohamedLoversFirebaseClient(
         const val LEADERBOARD_NOTIFS_ENABLED_KEY = "leaderboardNotifsEnabled"
         const val ACHIEVEMENTS_PATH = "achievements"
         const val REFERRAL_CODES_PATH = "referral_codes"
+        const val REFERRAL_STATS_PATH = "referral_stats"
         const val REFERRAL_CODE_KEY = "referralCode"
         const val REFERRALS_PATH = "referrals"
         const val REFERRED_BY_KEY = "referredBy"

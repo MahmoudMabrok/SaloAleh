@@ -5,6 +5,8 @@ import tools.mo3ta.salo.domain.FirebaseLeaderboard
 import tools.mo3ta.salo.domain.MohamedLoversPlayer
 import tools.mo3ta.salo.domain.UserAchievement
 
+data class ReferralStats(val referralCount: Int, val salawatTotal: Long)
+
 interface MohamedLoversFirebaseApi {
     fun isConfigured(): Boolean
     suspend fun ensureSignedInAnonymously(): Result<String>
@@ -39,6 +41,5 @@ interface MohamedLoversFirebaseApi {
     suspend fun writeReferralCode(uid: String, code: String): Result<Unit>
     suspend fun lookupReferralCode(code: String): Result<String?>
     suspend fun applyReferral(referrerUid: String, referredUid: String): Result<Unit>
-    suspend fun fetchReferralCount(uid: String): Result<Int>
-    suspend fun fetchReferralsAllTimeTotal(uid: String): Result<Long>
+    suspend fun fetchReferralStats(code: String): Result<ReferralStats>
 }
