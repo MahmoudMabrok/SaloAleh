@@ -178,9 +178,10 @@ fun App(
         LaunchedEffect(referralCode) {
             val code = referralCode
                 ?: referralStore.getPendingReferralCode()
-                ?: return@LaunchedEffect
-            if (referralStore.isReferralApplied()) {
+                ?: run { referralStore.markFirstLaunchDone(); return@LaunchedEffect }
+            if (referralStore.isReferralApplied() || referralStore.isFirstLaunchDone()) {
                 referralStore.clearPendingReferralCode()
+                referralStore.markFirstLaunchDone()
                 return@LaunchedEffect
             }
             val myUid = sessionStoreApp.getOrCreateUid()
@@ -194,6 +195,7 @@ fun App(
             } else {
                 referralStore.clearPendingReferralCode()
             }
+            referralStore.markFirstLaunchDone()
         }
         var salawatVariantAnnouncementDone by remember {
             mutableStateOf(settings.getBoolean("salawat_variant_announcement_shown", false))
