@@ -239,6 +239,12 @@
           ".validate": "newData.isString() && newData.val().length > 0"
         }
       },
+      "referral_stats": {
+        "$code": {
+          ".read": true,
+          ".write": false
+        }
+      },
       "users": {
         "$uid": {
           ".read": false,

@@ -1,0 +1,28 @@
+name: Update Referral Stats
+
+on:
+  schedule:
+    # Daily at 00:30 Cairo (21:30 UTC)
+    - cron: '30 21 * * *'
+  workflow_dispatch:
+
+jobs:
+  update:
+    name: Precompute referral stats
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install firebase-admin
+        run: npm install firebase-admin
+        working-directory: scripts
+
+      - name: Update referral stats
+        run: node scripts/update-referral-stats.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
