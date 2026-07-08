@@ -522,13 +522,11 @@ fun MohamedLoversScreen(
 //        }
 
         // Overtake alert
-        if (announcementsEnabled) {
-            OvertakeOverlay(
+        OvertakeOverlay(
                 overtakeRank = state.overtakeRank,
                 onDismiss = viewModel::dismissOvertake,
                 modifier = Modifier.align(Alignment.TopCenter).padding(top = 60.dp),
             )
-        }
 
         // Daily milestone celebration
         MilestoneCelebration(
