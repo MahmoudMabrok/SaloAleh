@@ -1,0 +1,32 @@
+name: Backfill All-Time Totals
+
+on:
+  workflow_dispatch:
+    inputs:
+      current_round:
+        description: 'Current round key to exclude (YYYY-MM-DD)'
+        required: true
+        default: '2026-07-10'
+        type: string
+
+jobs:
+  backfill:
+    name: Recompute allTimeTotal for all users
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install firebase-admin
+        run: npm install firebase-admin
+        working-directory: scripts
+
+      - name: Backfill all-time totals
+        run: node scripts/backfill-all-time-totals.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          CURRENT_ROUND: ${{ inputs.current_round }}
