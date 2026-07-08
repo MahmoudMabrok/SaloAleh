@@ -40,4 +40,5 @@ interface MohamedLoversFirebaseApi {
     suspend fun lookupReferralCode(code: String): Result<String?>
     suspend fun applyReferral(referrerUid: String, referredUid: String): Result<Unit>
     suspend fun fetchReferralCount(uid: String): Result<Int>
+    suspend fun fetchReferralsAllTimeTotal(uid: String): Result<Long>
 }

@@ -628,9 +628,16 @@
     <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">عرض المسابقة</string>
     <string name="notif_message_cta_none">حسناً</string>
-    <string name="settings_referral_header">دعوة الأصدقاء</string>
-    <string name="settings_referral_code">كود الدعوة</string>
-    <string name="settings_referral_count">عدد المدعوين</string>
-    <string name="settings_share_referral">مشاركة رابط الدعوة</string>
-    <string name="settings_share_referral_body">حمّل تطبيق صلّ عليه وسجّل معنا في مسابقة الصلاة على النبي ﷺ</string>
+    <string name="settings_referral_header">شارك الأجر</string>
+    <string name="settings_invite_friends">ادعُ أصدقاءك وشاركهم الأجر</string>
+    <string name="referral_screen_title">شارك الأجر</string>
+    <string name="referral_reward_title">شارك التطبيق.. تشارك الأجر</string>
+    <string name="referral_reward_subtitle">كل صلاة على النبي ﷺ يصليها من دعوته لك في ميزان حسناتك بإذن الله.\n«الدّالُّ على الخير كفاعِلِه»</string>
+    <string name="referral_your_code">كود الدعوة الخاص بك</string>
+    <string name="referral_code_copied">تم نسخ الكود</string>
+    <string name="referral_stat_users">عدد المدعوين</string>
+    <string name="referral_stat_total_salawat">إجمالي صلواتهم</string>
+    <string name="referral_ajr_note">كل هذه الصلوات في ميزان حسناتك بإذن الله، لأنك كنت السبب في دلالتهم على الخير</string>
+    <string name="referral_share_button">شارك رابط الدعوة</string>
+    <string name="referral_share_body">صلّ على النبي ﷺ وشاركني الأجر! حمّل تطبيق صلّ عليه وانضم لمسابقة الصلاة على النبي ﷺ</string>
 </resources>

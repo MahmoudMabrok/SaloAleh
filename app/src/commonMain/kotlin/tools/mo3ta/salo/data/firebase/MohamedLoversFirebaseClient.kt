@@ -577,6 +577,30 @@ class MohamedLoversFirebaseClient(
         }
     }
 
+    override suspend fun fetchReferralsAllTimeTotal(uid: String): Result<Long> {
+        log.d { "fetchReferralsAllTimeTotal[$uid]" }
+        return runCatching {
+            val referralsSnap = Firebase.database.reference("$ROOT_PATH/$USERS_PATH/$uid/$REFERRALS_PATH")
+                .valueEvents.first()
+            val referredUids = referralsSnap.children.mapNotNull { it.key }
+            var total = 0L
+            for (referredUid in referredUids) {
+                val snap = Firebase.database.reference("$ROOT_PATH/$USERS_PATH/$referredUid/$ALL_TIME_TOTAL_PATH")
+                    .valueEvents.first()
+                total += (snap.value as? Number)?.toLong() ?: 0L
+            }
+            total
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "fetchReferralsAllTimeTotal[$uid] = $it" } },
+                onFailure = { error ->
+                    log.e(error) { "fetchReferralsAllTimeTotal[$uid] failed" }
+                    trackReadFailure("fetch_referrals_all_time_total", error)
+                },
+            )
+        }
+    }
+
     private fun playersPath(roundKey: String) = "$ROOT_PATH/$roundKey/$PLAYERS_PATH"
     private fun leaderboardPath(roundKey: String, daily: Boolean = false): String {
         val node = if (daily) DAILY_LEADERBOARD_PATH else LEADERBOARD_PATH

@@ -75,8 +75,6 @@ import tools.mo3ta.salo.presentation.MohamedLoversViewModel
 import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.ui.areNotificationsEnabled
 import tools.mo3ta.salo.ui.canScheduleExactAlarms
-import tools.mo3ta.salo.data.referral.ReferralStore
-import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseApi
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.getAppVersion
 import tools.mo3ta.salo.ui.getStoreUrl
@@ -95,6 +93,7 @@ fun SettingsScreen(
     onOpenOnboarding: () -> Unit = {},
     onOpenExtensionQr: () -> Unit = {},
     onOpenPaywall: () -> Unit = {},
+    onOpenReferral: () -> Unit = {},
 ) {
     val store: NotificationSettingsStore = koinInject()
     val hadithStore: DailyHadithStore = koinInject()
@@ -108,16 +107,6 @@ fun SettingsScreen(
     var leaderboardNotifsEnabled by remember { mutableStateOf(store.leaderboardNotifsEnabled) }
     var nicknameText by remember { mutableStateOf(sessionStore.getNickname().orEmpty()) }
     var nicknameEnabled by remember { mutableStateOf(sessionStore.isNicknameEnabled) }
-
-    val referralStore: ReferralStore = koinInject()
-    val firebaseApi: MohamedLoversFirebaseApi = koinInject()
-    val uid = remember { sessionStore.getOrCreateUid() }
-    val referralCode = remember { referralStore.getOrCreateReferralCode(uid) }
-    var referralCount by remember { mutableStateOf(0) }
-    LaunchedEffect(uid) {
-        firebaseApi.writeReferralCode(uid, referralCode)
-        firebaseApi.fetchReferralCount(uid).onSuccess { referralCount = it }
-    }
 
     var notifPermGranted by remember { mutableStateOf(areNotificationsEnabled()) }
     var exactAlarmGranted by remember { mutableStateOf(canScheduleExactAlarms()) }
@@ -442,56 +431,10 @@ fun SettingsScreen(
                 modifier = Modifier.padding(top = 24.dp, bottom = 8.dp),
             )
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(Res.string.settings_referral_code),
-                    color = Color.White,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.weight(1f),
-                )
-                Text(
-                    text = referralCode,
-                    color = MohamedLoversPalette.GoldHighlight,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(Res.string.settings_referral_count),
-                    color = Color.White,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.weight(1f),
-                )
-                Text(
-                    text = referralCount.toString(),
-                    color = MohamedLoversPalette.GoldHighlight,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-
-            val shareReferralBody = stringResource(Res.string.settings_share_referral_body)
             SettingLinkRow(
-                label = stringResource(Res.string.settings_share_referral),
-                onClick = {
-                    val link = "saloaleh://refer?code=$referralCode"
-                    val storeUrl = getStoreUrl()
-                    shareText("$shareReferralBody\n$storeUrl\n$link")
-                },
+                label = stringResource(Res.string.settings_invite_friends),
+                labelColor = MohamedLoversPalette.GoldGlow,
+                onClick = onOpenReferral,
             )
 
             Text(

@@ -580,9 +580,16 @@
     <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">查看竞赛</string>
     <string name="notif_message_cta_none">好的</string>
-    <string name="settings_referral_header">邀请好友</string>
-    <string name="settings_referral_code">邀请码</string>
-    <string name="settings_referral_count">已邀请用户</string>
-    <string name="settings_share_referral">分享邀请链接</string>
-    <string name="settings_share_referral_body">下载应用，加入我们的赞圣竞赛</string>
+    <string name="settings_referral_header">分享回赐</string>
+    <string name="settings_invite_friends">邀请好友，共享回赐</string>
+    <string name="referral_screen_title">分享回赐</string>
+    <string name="referral_reward_title">分享应用..分享回赐</string>
+    <string name="referral_reward_subtitle">通过你邀请的人为先知 ﷺ 的每一次赞圣，都将计入你的善行，因沙安拉。\n「引导他人行善者，如同亲自行善。」</string>
+    <string name="referral_your_code">你的邀请码</string>
+    <string name="referral_code_copied">邀请码已复制</string>
+    <string name="referral_stat_users">已邀请用户</string>
+    <string name="referral_stat_total_salawat">他们的赞圣总数</string>
+    <string name="referral_ajr_note">这些赞圣都将计入你的善行天平，因沙安拉，因为你引导他们行了善</string>
+    <string name="referral_share_button">分享邀请链接</string>
+    <string name="referral_share_body">为先知 ﷺ 赞圣，与我共享回赐！下载应用加入赞圣竞赛</string>
 </resources>

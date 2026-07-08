@@ -267,6 +267,10 @@
           "lastTenDaysInactiveNotif": {
             ".validate": "newData.isString()"
           },
+          "allTimeTotal": {
+            ".read": true,
+            ".validate": "newData.isNumber() && newData.val() >= 0"
+          },
           "referralCode": {
             ".validate": "newData.isString() && newData.val().length >= 6 && newData.val().length <= 12"
           },

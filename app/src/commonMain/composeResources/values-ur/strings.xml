@@ -580,9 +580,16 @@
     <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">مقابلہ دیکھیں</string>
     <string name="notif_message_cta_none">ٹھیک ہے</string>
-    <string name="settings_referral_header">دوستوں کو مدعو کریں</string>
-    <string name="settings_referral_code">ریفرل کوڈ</string>
-    <string name="settings_referral_count">مدعو صارفین</string>
-    <string name="settings_share_referral">ریفرل لنک شیئر کریں</string>
-    <string name="settings_share_referral_body">ایپ ڈاؤن لوڈ کریں اور درود کے مقابلے میں ہمارے ساتھ شامل ہوں</string>
+    <string name="settings_referral_header">اجر بانٹیں</string>
+    <string name="settings_invite_friends">دوستوں کو مدعو کریں اور اجر بانٹیں</string>
+    <string name="referral_screen_title">اجر بانٹیں</string>
+    <string name="referral_reward_title">ایپ شیئر کریں.. اجر بانٹیں</string>
+    <string name="referral_reward_subtitle">آپ کی دعوت پر ہر درود جو نبی ﷺ پر پڑھا جائے، اللہ کی مرضی سے آپ کی نیکیوں میں ہے۔\n«نیکی کی رہنمائی کرنے والا نیکی کرنے والے کی طرح ہے»</string>
+    <string name="referral_your_code">آپ کا ریفرل کوڈ</string>
+    <string name="referral_code_copied">کوڈ کاپی ہو گیا</string>
+    <string name="referral_stat_users">مدعو صارفین</string>
+    <string name="referral_stat_total_salawat">ان کا کل درود</string>
+    <string name="referral_ajr_note">یہ سب درود اللہ کی مرضی سے آپ کی نیکیوں کے ترازو میں ہیں، کیونکہ آپ نے انہیں نیکی کی طرف رہنمائی کی</string>
+    <string name="referral_share_button">ریفرل لنک شیئر کریں</string>
+    <string name="referral_share_body">نبی ﷺ پر درود بھیجیں اور میرے ساتھ اجر بانٹیں! ایپ ڈاؤن لوڈ کریں اور درود کے مقابلے میں شامل ہوں</string>
 </resources>

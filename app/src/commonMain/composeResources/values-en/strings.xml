@@ -618,9 +618,16 @@
     <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">View competition</string>
     <string name="notif_message_cta_none">OK</string>
-    <string name="settings_referral_header">Invite Friends</string>
-    <string name="settings_referral_code">Referral Code</string>
-    <string name="settings_referral_count">Referred Users</string>
-    <string name="settings_share_referral">Share Referral Link</string>
-    <string name="settings_share_referral_body">Download the app and join us in the salawat competition</string>
+    <string name="settings_referral_header">Share the Reward</string>
+    <string name="settings_invite_friends">Invite friends and share the reward</string>
+    <string name="referral_screen_title">Share the Reward</string>
+    <string name="referral_reward_title">Share the app.. share the reward</string>
+    <string name="referral_reward_subtitle">Every salawat upon the Prophet ﷺ by someone you invited counts in your good deeds, by Allah\'s will.\n\"The one who guides to good is like the one who does it.\"</string>
+    <string name="referral_your_code">Your referral code</string>
+    <string name="referral_code_copied">Code copied</string>
+    <string name="referral_stat_users">Referred Users</string>
+    <string name="referral_stat_total_salawat">Their Total Salawat</string>
+    <string name="referral_ajr_note">All these salawat are in your scale of good deeds, by Allah\'s will, because you guided them to this good</string>
+    <string name="referral_share_button">Share Referral Link</string>
+    <string name="referral_share_body">Send salawat upon the Prophet ﷺ and share the reward with me! Download the app and join the salawat competition</string>
 </resources>
