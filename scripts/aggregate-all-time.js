@@ -8,7 +8,7 @@
 // separate leaderboard-populate dispatch.
 const admin = require('firebase-admin');
 const { addDaysToDateKey, populateMohamedLoversRound } = require('./leaderboard-utils');
-const { mirrorAllTimeTotal, mirrorAchievements } = require('./firestore-utils');
+const { mirrorAllTimeTotal, mirrorAchievements, mirrorUserAllTimeTotals } = require('./firestore-utils');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 const databaseURL = process.env.FIREBASE_DATABASE_URL;
@@ -76,6 +76,22 @@ async function main() {
 
     // Phase 1: mirror allTimeTotal to Firestore
     await mirrorAllTimeTotal(admin.firestore(), allTimeTotal);
+
+    // Per-user all-time total: add this round's score to each player's lifetime total
+    if (players.length > 0) {
+      const userTotalWrites = {};
+      for (const player of players) {
+        const prevSnap = await db.ref(`mohamed_lovers/users/${player.uid}/allTimeTotal`).get();
+        const prevTotal = (prevSnap.exists() && typeof prevSnap.val() === 'number') ? prevSnap.val() : 0;
+        const newTotal = prevTotal + player.score;
+        userTotalWrites[`mohamed_lovers/users/${player.uid}/allTimeTotal`] = newTotal;
+      }
+      await db.ref('/').update(userTotalWrites);
+      console.log(`Updated allTimeTotal for ${Object.keys(userTotalWrites).length} users.`);
+
+      // Phase 1: mirror per-user allTimeTotal to Firestore
+      await mirrorUserAllTimeTotals(admin.firestore(), userTotalWrites);
+    }
 
     if (!playersSnap.exists() || players.length === 0) {
       console.log(`No players found for ${closedRound} — no history/leaderboard written.`);

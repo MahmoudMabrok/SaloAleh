@@ -208,6 +208,21 @@ class FirestoreMirror {
             )
     }
 
+    fun mirrorReferralCode(uid: String, code: String) =
+        mirror("referral-code[$uid]") {
+            fs.collection(USERS_COLLECTION).document(uid)
+                .set(mapOf("referralCode" to code), merge = true)
+        }
+
+    fun mirrorReferral(referrerUid: String, referredUid: String) =
+        mirror("referral[$referrerUid->$referredUid]") {
+            fs.collection(USERS_COLLECTION).document(referrerUid)
+                .collection(REFERRALS_SUBCOLLECTION).document(referredUid)
+                .set(mapOf("referredUid" to referredUid, "timestamp" to FieldValue.serverTimestamp))
+            fs.collection(USERS_COLLECTION).document(referredUid)
+                .set(mapOf("referredBy" to referrerUid), merge = true)
+        }
+
     private fun mirror(tag: String, block: suspend () -> Unit) {
         scope.launch {
             try {
@@ -233,5 +248,6 @@ class FirestoreMirror {
         const val BAQIYAT_COLLECTION = "baqiyat_challenge"
         const val ISTIGHFAR_COLLECTION = "istighfar_challenge"
         const val TEN_DAYS_COLLECTION = "ten_days"
+        const val REFERRALS_SUBCOLLECTION = "referrals"
     }
 }

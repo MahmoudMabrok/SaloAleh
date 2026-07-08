@@ -296,6 +296,32 @@ async function mirrorIstighfarAggregateAndClean(firestore, dateKey, todayTotal, 
   }
 }
 
+async function mirrorUserAllTimeTotals(firestore, writes) {
+  try {
+    const batch = firestore.batch();
+    let count = 0;
+    for (const [path, total] of Object.entries(writes)) {
+      // path format: "mohamed_lovers/users/{uid}/allTimeTotal"
+      const parts = path.split('/');
+      const uid = parts[2];
+      batch.set(
+        firestore.collection(USERS_COLLECTION).doc(uid),
+        { allTimeTotal: total },
+        { merge: true },
+      );
+      count++;
+      if (count >= 490) {
+        await batch.commit();
+        count = 0;
+      }
+    }
+    if (count > 0) await batch.commit();
+    console.log(`[firestore-mirror] allTimeTotal mirrored for ${Object.keys(writes).length} users`);
+  } catch (e) {
+    console.error(`[firestore-mirror] user allTimeTotal failed: ${e.message}`);
+  }
+}
+
 module.exports = {
   ROUNDS_COLLECTION,
   USERS_COLLECTION,
@@ -315,4 +341,5 @@ module.exports = {
   mirrorDhikrAggregateAndClean,
   mirrorBaqiyatAggregateAndClean,
   mirrorIstighfarAggregateAndClean,
+  mirrorUserAllTimeTotals,
 };

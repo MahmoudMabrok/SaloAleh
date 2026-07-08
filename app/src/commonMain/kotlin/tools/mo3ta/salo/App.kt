@@ -64,6 +64,7 @@ import tools.mo3ta.salo.data.billing.ProductRegistry
 import tools.mo3ta.salo.domain.MohamedLoversRepository
 import tools.mo3ta.salo.data.billing.SupportTier
 import tools.mo3ta.salo.ui.settings.PaywallScreen
+import tools.mo3ta.salo.ui.settings.ReferralScreen
 import tools.mo3ta.salo.ui.settings.PremiumPromoDialog
 import tools.mo3ta.salo.ui.settings.PurchaseSuccessDialog
 import tools.mo3ta.salo.ui.settings.SettingsScreen
@@ -76,6 +77,8 @@ import tools.mo3ta.salo.ui.takbeer.TakbeerSessionScreen
 import tools.mo3ta.salo.ui.support.MilestoneSupportDialog
 import tools.mo3ta.salo.data.MilestoneTracker
 import tools.mo3ta.salo.data.billing.PremiumStore
+import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseApi
+import tools.mo3ta.salo.data.referral.ReferralStore
 import tools.mo3ta.salo.analytics.BillingAnalytics
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -101,6 +104,7 @@ fun App(
     onNotificationPermissionRequest: (() -> Unit)? = null,
     newVersionAvailable: String? = null,
     notificationMessage: NotificationMessage? = null,
+    referralCode: String? = null,
 ) {
     val languageStore = koinInject<LanguageStore>()
     val storedLang = languageStore.language
@@ -134,12 +138,14 @@ fun App(
         var showBaqiyatChallenge by remember { mutableStateOf(false) }
         var showIstighfarChallenge by remember { mutableStateOf(false) }
         var showExtensionQr by remember { mutableStateOf(false) }
+        var showReferral by remember { mutableStateOf(false) }
         var showPaywall by remember { mutableStateOf(false) }
         var nicknamePromptRequested by remember { mutableStateOf(false) }
         var nicknamePromptDismissedThisSession by remember { mutableStateOf(false) }
 
         PlatformBackHandler(
             enabled = showPaywall ||
+                showReferral ||
                 showDhikrRewards ||
                 showBaqiyatChallenge ||
                 showIstighfarChallenge ||
@@ -151,6 +157,7 @@ fun App(
         ) {
             when {
                 showPaywall -> showPaywall = false
+                showReferral -> showReferral = false
                 showDhikrRewards -> showDhikrRewards = false
                 showBaqiyatChallenge -> showBaqiyatChallenge = false
                 showIstighfarChallenge -> showIstighfarChallenge = false
@@ -165,13 +172,36 @@ fun App(
         var takbeerAnnouncementDone by remember {
             mutableStateOf(settings.getBoolean("takbeer_announcement_shown", false))
         }
+        val referralStore = koinInject<ReferralStore>()
+        val firebaseApi = koinInject<MohamedLoversFirebaseApi>()
         LaunchedEffect(Unit) { analyticsManager.setUserId(sessionStoreApp.getOrCreateUid()) }
+        LaunchedEffect(referralCode) {
+            val code = referralCode
+                ?: referralStore.getPendingReferralCode()
+                ?: return@LaunchedEffect
+            if (referralStore.isReferralApplied()) {
+                referralStore.clearPendingReferralCode()
+                return@LaunchedEffect
+            }
+            val myUid = sessionStoreApp.getOrCreateUid()
+            val referrerUid = firebaseApi.lookupReferralCode(code).getOrNull()
+            if (referrerUid != null && referrerUid != myUid) {
+                firebaseApi.applyReferral(referrerUid, myUid).onSuccess {
+                    referralStore.saveReferredBy(referrerUid)
+                    referralStore.markReferralApplied()
+                    referralStore.clearPendingReferralCode()
+                }
+            } else {
+                referralStore.clearPendingReferralCode()
+            }
+        }
         var salawatVariantAnnouncementDone by remember {
             mutableStateOf(settings.getBoolean("salawat_variant_announcement_shown", false))
         }
         val mohamedLoversViewModel: MohamedLoversViewModel = koinViewModel()
         val mlState by mohamedLoversViewModel.state.collectAsStateWithLifecycle()
         val nicknamePromptBlocked = showPaywall ||
+            showReferral ||
             showDhikrRewards ||
             showBaqiyatChallenge ||
             showIstighfarChallenge ||
@@ -186,6 +216,7 @@ fun App(
 
         when {
             showPaywall -> PaywallScreen(onBack = { showPaywall = false })
+            showReferral -> ReferralScreen(onBack = { showReferral = false })
             showExtensionQr -> ExtensionQrScreen(onBack = { showExtensionQr = false })
             showOnboarding -> OnboardingScreen(
                 onDone = {
@@ -249,6 +280,7 @@ fun App(
                                 },
                                 onOpenExtensionQr = { showExtensionQr = true },
                                 onOpenPaywall = { showPaywall = true },
+                                onOpenReferral = { showReferral = true },
                             )
                         }
                     }

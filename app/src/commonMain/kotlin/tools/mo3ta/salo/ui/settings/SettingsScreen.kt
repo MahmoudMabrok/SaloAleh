@@ -93,6 +93,7 @@ fun SettingsScreen(
     onOpenOnboarding: () -> Unit = {},
     onOpenExtensionQr: () -> Unit = {},
     onOpenPaywall: () -> Unit = {},
+    onOpenReferral: () -> Unit = {},
 ) {
     val store: NotificationSettingsStore = koinInject()
     val hadithStore: DailyHadithStore = koinInject()
@@ -421,6 +422,20 @@ fun SettingsScreen(
                     )
                 }
             }
+
+            Text(
+                text = stringResource(Res.string.settings_referral_header),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 24.dp, bottom = 8.dp),
+            )
+
+            SettingLinkRow(
+                label = stringResource(Res.string.settings_invite_friends),
+                labelColor = MohamedLoversPalette.GoldGlow,
+                onClick = onOpenReferral,
+            )
 
             Text(
                 text = stringResource(Res.string.settings_about_header),

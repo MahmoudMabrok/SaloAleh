@@ -500,6 +500,107 @@ class MohamedLoversFirebaseClient(
         )
     }
 
+    override suspend fun writeReferralCode(uid: String, code: String): Result<Unit> {
+        log.d { "writeReferralCode[$uid] code=$code" }
+        return runCatching {
+            Firebase.database.reference("$ROOT_PATH/$REFERRAL_CODES_PATH/$code").setValue(uid)
+            Firebase.database.reference("$ROOT_PATH/$USERS_PATH/$uid").updateChildren(
+                mapOf(REFERRAL_CODE_KEY to code)
+            )
+        }.also { result ->
+            result.fold(
+                onSuccess = {
+                    log.d { "writeReferralCode[$uid] ok" }
+                    mirror.mirrorReferralCode(uid, code)
+                },
+                onFailure = { error ->
+                    log.e(error) { "writeReferralCode[$uid] failed" }
+                    trackWriteFailure("write_referral_code", error)
+                },
+            )
+        }
+    }
+
+    override suspend fun lookupReferralCode(code: String): Result<String?> {
+        log.d { "lookupReferralCode[$code]" }
+        return runCatching {
+            val snapshot = Firebase.database.reference("$ROOT_PATH/$REFERRAL_CODES_PATH/$code")
+                .valueEvents.first()
+            snapshot.value as? String
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "lookupReferralCode[$code] = $it" } },
+                onFailure = { error ->
+                    log.e(error) { "lookupReferralCode[$code] failed" }
+                    trackReadFailure("lookup_referral_code", error)
+                },
+            )
+        }
+    }
+
+    override suspend fun applyReferral(referrerUid: String, referredUid: String): Result<Unit> {
+        log.d { "applyReferral referrer=$referrerUid referred=$referredUid" }
+        return runCatching {
+            Firebase.database.reference("$ROOT_PATH/$USERS_PATH/$referrerUid/$REFERRALS_PATH/$referredUid")
+                .setValue(true)
+            Firebase.database.reference("$ROOT_PATH/$USERS_PATH/$referredUid").updateChildren(
+                mapOf(REFERRED_BY_KEY to referrerUid)
+            )
+        }.also { result ->
+            result.fold(
+                onSuccess = {
+                    log.d { "applyReferral ok" }
+                    mirror.mirrorReferral(referrerUid, referredUid)
+                },
+                onFailure = { error ->
+                    log.e(error) { "applyReferral failed" }
+                    trackWriteFailure("apply_referral", error)
+                },
+            )
+        }
+    }
+
+    override suspend fun fetchReferralCount(uid: String): Result<Int> {
+        log.d { "fetchReferralCount[$uid]" }
+        return runCatching {
+            val snapshot = Firebase.database.reference("$ROOT_PATH/$USERS_PATH/$uid/$REFERRALS_PATH")
+                .valueEvents.first()
+            snapshot.children.count()
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "fetchReferralCount[$uid] = $it" } },
+                onFailure = { error ->
+                    log.e(error) { "fetchReferralCount[$uid] failed" }
+                    trackReadFailure("fetch_referral_count", error)
+                },
+            )
+        }
+    }
+
+    override suspend fun fetchReferralsAllTimeTotal(uid: String): Result<Long> {
+        log.d { "fetchReferralsAllTimeTotal[$uid]" }
+        return runCatching {
+            val referralsSnap = Firebase.database.reference("$ROOT_PATH/$USERS_PATH/$uid/$REFERRALS_PATH")
+                .valueEvents.first()
+            val referredUids = referralsSnap.children.mapNotNull { it.key }
+            var total = 0L
+            for (referredUid in referredUids) {
+                val snap = Firebase.database.reference("$ROOT_PATH/$USERS_PATH/$referredUid/$ALL_TIME_TOTAL_PATH")
+                    .valueEvents.first()
+                total += (snap.value as? Number)?.toLong() ?: 0L
+            }
+            total
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "fetchReferralsAllTimeTotal[$uid] = $it" } },
+                onFailure = { error ->
+                    log.e(error) { "fetchReferralsAllTimeTotal[$uid] failed" }
+                    trackReadFailure("fetch_referrals_all_time_total", error)
+                },
+            )
+        }
+    }
+
     private fun playersPath(roundKey: String) = "$ROOT_PATH/$roundKey/$PLAYERS_PATH"
     private fun leaderboardPath(roundKey: String, daily: Boolean = false): String {
         val node = if (daily) DAILY_LEADERBOARD_PATH else LEADERBOARD_PATH
@@ -565,6 +666,10 @@ class MohamedLoversFirebaseClient(
         const val REMINDER_NOTIFS_ENABLED_KEY = "reminderNotifsEnabled"
         const val LEADERBOARD_NOTIFS_ENABLED_KEY = "leaderboardNotifsEnabled"
         const val ACHIEVEMENTS_PATH = "achievements"
+        const val REFERRAL_CODES_PATH = "referral_codes"
+        const val REFERRAL_CODE_KEY = "referralCode"
+        const val REFERRALS_PATH = "referrals"
+        const val REFERRED_BY_KEY = "referredBy"
         const val PURCHASES_PATH = "purchases"
         const val PRODUCT_ID_KEY = "productId"
         const val PRODUCT_TYPE_KEY = "productType"
