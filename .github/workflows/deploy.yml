@@ -98,6 +98,7 @@ jobs:
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-sa.json"
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json"
           firebase deploy --only database --project kamapp-3b3ac --non-interactive
+          firebase deploy --only hosting --project kamapp-3b3ac --non-interactive
 
       - name: Upload to Google Play
         uses: r0adkll/upload-google-play@v1
