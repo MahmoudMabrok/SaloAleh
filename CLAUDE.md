@@ -91,6 +91,39 @@ mohamed_lovers/
 
 Security rules live in `database.rules.json`. Deploy with: `firebase deploy --only database`
 
+## Firestore (Phase 1 — dual-write migration)
+
+The app and scripts dual-write to both RTDB and Firestore. RTDB remains the source of truth for reads. Phase 2 will switch reads to Firestore and remove RTDB.
+
+### Firestore collections
+
+| Collection | Maps to RTDB path | Purpose |
+|------------|-------------------|---------|
+| `mohamed_lovers_rounds/{roundKey}` | `mohamed_lovers/{roundKey}/` | Round metadata (roundTotal, roundPlayerCount) |
+| `…/players/{uid}` | `…/players/{uid}` | Per-player data |
+| `…/leaderboard/{rank}` | `…/leaderboard/{rank}` | Server-computed top-10 |
+| `…/dailyLeaderboard/{rank}` | `…/dailyLeaderboard/{rank}` | Server-computed daily top-10 |
+| `mohamed_lovers_users/{uid}` | `mohamed_lovers/users/{uid}/` | User profile (fcmToken, dates, prefs) |
+| `…/achievements/{roundKey}` | `…/achievements/{roundKey}` | Per-round achievement |
+| `…/purchases/{productId}` | `…/purchases/{productId}` | Purchase metadata |
+| `mohamed_lovers_meta/stats` | `mohamed_lovers/allTimeTotal` | Global aggregate stats |
+| `dhikr_challenge/{dateKey}` | `100_challenge/{dateKey}/` | Daily dhikr challenge |
+| `baqiyat_challenge/{dateKey}` | `baqiyat_saliha/{dateKey}/` | Daily baqiyat challenge |
+| `istighfar_challenge/{dateKey}` | `istighfar_challenge/{dateKey}/` | Daily istighfar challenge |
+| `ten_days/{periodKey}` | `ten_days_dhul_hijjah/{periodKey}/` | Ten-days event |
+
+### Key files
+
+- `app/.../firebase/FirestoreMirror.kt` — app-side fire-and-forget dual-writer
+- `scripts/firestore-utils.js` — server-side Firestore mirror utilities
+- `firestore.rules` — Firestore security rules
+
+### FCM during migration
+
+FCM notifications are sent from RTDB scripts only (no duplication). All notifications in `generate-stats.js` (daily top-3, dhikr rank-1, baqiyat rank-1) are active. Engagement notifications (top-3 position changes, dropout, idle) in `leaderboard-utils.js` remain active. `notify-users.js` is unchanged.
+
+Deploy rules: `firebase deploy --only firestore:rules`
+
 ## Server-side scripts
 
 Two Node.js runtimes use `firebase-admin` v12; a third (Deno) only triggers a workflow:

@@ -13,6 +13,11 @@ const {
   cairoToday,
   populateMohamedLoversRound,
 } = require('./leaderboard-utils');
+const {
+  mirrorDhikrChallenge,
+  mirrorBaqiyatChallenge,
+  mirrorIstighfarChallenge,
+} = require('./firestore-utils');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 const databaseURL = process.env.FIREBASE_DATABASE_URL;
@@ -151,6 +156,14 @@ async function populateDhikrChallengeToday(db) {
   console.log(
     `Wrote dhikr ranks + leaderboard(${leaderboardEntries.length}) for ${dailyRanking.participantCount} participant(s). totalTodayDhikr=${dailyRanking.totalTodayDhikr}`,
   );
+
+  // Phase 1: mirror to Firestore
+  await mirrorDhikrChallenge(admin.firestore(), dateKey, {
+    rankedUsers: dailyRanking.rankedUsers,
+    participantCount: dailyRanking.participantCount,
+    totalTodayDhikr: dailyRanking.totalTodayDhikr,
+    leaderboardEntries,
+  });
 }
 
 async function populateBaqiyatChallengeToday(db) {
@@ -204,6 +217,14 @@ async function populateBaqiyatChallengeToday(db) {
   console.log(
     `Wrote baqiyat ranks + leaderboard(${leaderboardEntries.length}) for ${dailyRanking.participantCount} participant(s). totalTodayBaqiyat=${dailyRanking.totalTodayBaqiyat}`,
   );
+
+  // Phase 1: mirror to Firestore
+  await mirrorBaqiyatChallenge(admin.firestore(), dateKey, {
+    rankedUsers: dailyRanking.rankedUsers,
+    participantCount: dailyRanking.participantCount,
+    totalTodayBaqiyat: dailyRanking.totalTodayBaqiyat,
+    leaderboardEntries,
+  });
 }
 
 async function populateIstighfarChallengeToday(db) {
@@ -255,6 +276,14 @@ async function populateIstighfarChallengeToday(db) {
   console.log(
     `Wrote istighfar ranks + leaderboard(${leaderboardEntries.length}) for ${dailyRanking.participantCount} participant(s). totalTodayIstighfar=${dailyRanking.totalTodayIstighfar}`,
   );
+
+  // Phase 1: mirror to Firestore
+  await mirrorIstighfarChallenge(admin.firestore(), dateKey, {
+    rankedUsers: dailyRanking.rankedUsers,
+    participantCount: dailyRanking.participantCount,
+    totalTodayIstighfar: dailyRanking.totalTodayIstighfar,
+    leaderboardEntries,
+  });
 }
 
 async function main() {

@@ -7,6 +7,10 @@ import dev.gitlive.firebase.database.database
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import tools.mo3ta.salo.analytics.AnalyticsManager
+import tools.mo3ta.salo.analytics.logFirebaseError
+import tools.mo3ta.salo.data.firebase.FirestoreMirror
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 
 data class TenDaysLeaderboardEntry(
@@ -15,7 +19,11 @@ data class TenDaysLeaderboardEntry(
     val countryCode: String,
 )
 
-class TenDaysFirebaseClient(private val sessionStore: MohamedLoversSessionStore) {
+class TenDaysFirebaseClient(
+    private val sessionStore: MohamedLoversSessionStore,
+    private val mirror: FirestoreMirror,
+    private val analyticsManager: AnalyticsManager,
+) {
 
     private val log = Logger.withTag("TenDaysFirebase")
 
@@ -32,8 +40,14 @@ class TenDaysFirebaseClient(private val sessionStore: MohamedLoversSessionStore)
                     }
                 }
             }
+            .onEach { result ->
+                result.onFailure { error ->
+                    trackReadFailure("observe_leaderboard", error)
+                }
+            }
             .catch { e ->
                 log.e(e) { "observeLeaderboard error" }
+                trackReadFailure("observe_leaderboard", e)
                 emit(Result.failure(e))
             }
 
@@ -43,8 +57,14 @@ class TenDaysFirebaseClient(private val sessionStore: MohamedLoversSessionStore)
             .map { snapshot ->
                 runCatching { snapshot.value<Int?>() ?: 0 }
             }
+            .onEach { result ->
+                result.onFailure { error ->
+                    trackReadFailure("observe_player_count", error)
+                }
+            }
             .catch { e ->
                 log.e(e) { "observePlayerCount error" }
+                trackReadFailure("observe_player_count", e)
                 emit(Result.failure(e))
             }
 
@@ -54,8 +74,14 @@ class TenDaysFirebaseClient(private val sessionStore: MohamedLoversSessionStore)
             .map { snapshot ->
                 runCatching { snapshot.value<Int?>() ?: 0 }
             }
+            .onEach { result ->
+                result.onFailure { error ->
+                    trackReadFailure("observe_self_rank", error)
+                }
+            }
             .catch { e ->
                 log.e(e) { "observeSelfRank error" }
+                trackReadFailure("observe_self_rank", e)
                 emit(Result.failure(e))
             }
 
@@ -75,6 +101,30 @@ class TenDaysFirebaseClient(private val sessionStore: MohamedLoversSessionStore)
             )
         )
         log.d { "syncScore[$periodKey/$uid]: $totalScore" }
+        mirror.mirrorTenDaysScore(periodKey, uid, totalScore, countryCode)
+    }.also { result ->
+        result.onFailure { error ->
+            log.e(error) { "syncScore[$periodKey/$uid] failed" }
+            trackWriteFailure("sync_score", error)
+        }
+    }
+
+    private fun trackReadFailure(operation: String, error: Throwable) {
+        analyticsManager.logFirebaseError(
+            surface = "ten_days",
+            operation = operation,
+            access = "read",
+            error = error,
+        )
+    }
+
+    private fun trackWriteFailure(operation: String, error: Throwable) {
+        analyticsManager.logFirebaseError(
+            surface = "ten_days",
+            operation = operation,
+            access = "write",
+            error = error,
+        )
     }
 
     private companion object {

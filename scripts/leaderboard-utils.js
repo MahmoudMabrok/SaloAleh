@@ -1,3 +1,5 @@
+const { mirrorMohamedLoversRound: firestoreMirrorRound } = require('./firestore-utils');
+
 const DHIKR_CHALLENGE_ROOT = '100_challenge';
 const BAQIYAT_CHALLENGE_ROOT = 'baqiyat_saliha';
 const ISTIGHFAR_CHALLENGE_ROOT = 'istighfar_challenge';
@@ -265,7 +267,18 @@ async function populateMohamedLoversRound(db, admin, roundKey, isFinal) {
   console.log(`[${roundKey}] Wrote ${top10.length} leaderboard + ${dailyTop10.length} daily entries. roundTotal=${roundTotal} players=${roundPlayerCount}`);
   console.log(JSON.stringify(leaderboard, null, 2));
 
+  // Phase 1: mirror to Firestore (non-blocking)
+  await firestoreMirrorRound(admin.firestore(), roundKey, {
+    leaderboard,
+    dailyLeaderboard,
+    roundTotal,
+    roundPlayerCount,
+    allPlayers,
+  });
+
   // Top-3 change notifications — detect drops from top 3 and position losses.
+  // Phase 1 migration note: FCM sends remain here (RTDB path only).
+  // In Phase 2, move FCM to Firestore-based scripts and remove from here.
   if (!isFinal) {
     const top3Notifs = [];
 

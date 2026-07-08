@@ -5,6 +5,9 @@ import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.database.ServerValue
 import dev.gitlive.firebase.database.database
 import kotlinx.coroutines.flow.first
+import tools.mo3ta.salo.analytics.AnalyticsManager
+import tools.mo3ta.salo.analytics.logFirebaseError
+import tools.mo3ta.salo.data.firebase.FirestoreMirror
 import tools.mo3ta.salo.domain.ISTIGHFAR_CHALLENGE_DAILY_GOAL
 import tools.mo3ta.salo.domain.IstighfarChallengeDayStats
 import tools.mo3ta.salo.domain.IstighfarLeaderboardEntry
@@ -26,7 +29,10 @@ private const val UPDATED_AT_KEY = "updatedAt"
 private const val PARTICIPANT_COUNT_KEY = "participantCount"
 private const val TOTAL_TODAY_ISTIGHFAR_KEY = "totalTodayIstighfar"
 
-class IstighfarChallengeFirebaseClient {
+class IstighfarChallengeFirebaseClient(
+    private val mirror: FirestoreMirror,
+    private val analyticsManager: AnalyticsManager,
+) {
 
     private val log = Logger.withTag("IstighfarChallengeFirebase")
 
@@ -58,8 +64,17 @@ class IstighfarChallengeFirebaseClient {
             )
         }.also { result ->
             result.fold(
-                onSuccess = { log.d { "writeUserDay[$dateKey/$uid] ok" } },
-                onFailure = { log.e(it) { "writeUserDay[$dateKey/$uid] failed" } },
+                onSuccess = {
+                    log.d { "writeUserDay[$dateKey/$uid] ok" }
+                    mirror.mirrorIstighfarUserDay(
+                        dateKey, uid, count, countryCode, safeNickname,
+                        ISTIGHFAR_CHALLENGE_DAILY_GOAL, count >= ISTIGHFAR_CHALLENGE_DAILY_GOAL,
+                    )
+                },
+                onFailure = { error ->
+                    log.e(error) { "writeUserDay[$dateKey/$uid] failed" }
+                    trackWriteFailure("write_user_day", error)
+                },
             )
         }
     }
@@ -75,7 +90,10 @@ class IstighfarChallengeFirebaseClient {
         }.also { result ->
             result.fold(
                 onSuccess = { log.d { "fetchUserCount[$dateKey/$uid]=$it" } },
-                onFailure = { log.e(it) { "fetchUserCount[$dateKey/$uid] failed" } },
+                onFailure = { error ->
+                    log.e(error) { "fetchUserCount[$dateKey/$uid] failed" }
+                    trackReadFailure("fetch_user_count", error)
+                },
             )
         }
     }
@@ -102,7 +120,10 @@ class IstighfarChallengeFirebaseClient {
         }.also { result ->
             result.fold(
                 onSuccess = { log.d { "fetchDayStats[$dateKey/$uid] rank=${it.rank} participants=${it.participantCount} totalToday=${it.totalTodayIstighfar}" } },
-                onFailure = { log.e(it) { "fetchDayStats[$dateKey/$uid] failed" } },
+                onFailure = { error ->
+                    log.e(error) { "fetchDayStats[$dateKey/$uid] failed" }
+                    trackReadFailure("fetch_day_stats", error)
+                },
             )
         }
     }
@@ -121,9 +142,30 @@ class IstighfarChallengeFirebaseClient {
         }.also { result ->
             result.fold(
                 onSuccess = { log.d { "fetchLeaderboard[$dateKey] ${it.size} entries" } },
-                onFailure = { log.e(it) { "fetchLeaderboard[$dateKey] failed" } },
+                onFailure = { error ->
+                    log.e(error) { "fetchLeaderboard[$dateKey] failed" }
+                    trackReadFailure("fetch_leaderboard", error)
+                },
             )
         }
+    }
+
+    private fun trackReadFailure(operation: String, error: Throwable) {
+        analyticsManager.logFirebaseError(
+            surface = "istighfar_challenge",
+            operation = operation,
+            access = "read",
+            error = error,
+        )
+    }
+
+    private fun trackWriteFailure(operation: String, error: Throwable) {
+        analyticsManager.logFirebaseError(
+            surface = "istighfar_challenge",
+            operation = operation,
+            access = "write",
+            error = error,
+        )
     }
 
     private fun dayPath(dateKey: String) = "$ROOT_PATH/$dateKey"

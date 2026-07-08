@@ -8,6 +8,7 @@
 // separate leaderboard-populate dispatch.
 const admin = require('firebase-admin');
 const { addDaysToDateKey, populateMohamedLoversRound } = require('./leaderboard-utils');
+const { mirrorAllTimeTotal, mirrorAchievements } = require('./firestore-utils');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 const databaseURL = process.env.FIREBASE_DATABASE_URL;
@@ -73,6 +74,9 @@ async function main() {
     await db.ref('mohamed_lovers/allTimeTotal').set(allTimeTotal);
     console.log(`allTimeTotal: ${previousTotal} + ${roundTotal} (closed round) = ${allTimeTotal}`);
 
+    // Phase 1: mirror allTimeTotal to Firestore
+    await mirrorAllTimeTotal(admin.firestore(), allTimeTotal);
+
     if (!playersSnap.exists() || players.length === 0) {
       console.log(`No players found for ${closedRound} — no history/leaderboard written.`);
     } else {
@@ -96,6 +100,9 @@ async function main() {
 
       await db.ref('/').update(writes);
       console.log(`Wrote ${Object.keys(writes).length} achievement entries.`);
+
+      // Phase 1: mirror achievements to Firestore
+      await mirrorAchievements(admin.firestore(), writes);
 
       // Close the round: write final per-player ranks + leaderboard + dailyLeaderboard
       // (isFinal: true) via the same builder used for the periodic in-round runs.
