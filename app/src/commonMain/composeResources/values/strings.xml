@@ -628,4 +628,9 @@
     <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">عرض المسابقة</string>
     <string name="notif_message_cta_none">حسناً</string>
+    <string name="settings_referral_header">دعوة الأصدقاء</string>
+    <string name="settings_referral_code">كود الدعوة</string>
+    <string name="settings_referral_count">عدد المدعوين</string>
+    <string name="settings_share_referral">مشاركة رابط الدعوة</string>
+    <string name="settings_share_referral_body">حمّل تطبيق صلّ عليه وسجّل معنا في مسابقة الصلاة على النبي ﷺ</string>
 </resources>

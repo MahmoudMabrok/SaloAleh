@@ -13,6 +13,7 @@ import platform.UserNotifications.UNAuthorizationOptionSound
 import platform.UserNotifications.UNUserNotificationCenter
 import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseClient
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
+import tools.mo3ta.salo.data.referral.ReferralStore
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.data.language.LanguageStore
 import tools.mo3ta.salo.di.appModule
@@ -46,6 +47,17 @@ fun MainViewController() = ComposeUIViewController(
             }
     },
 ) { App() }
+
+fun handleReferralUrl(urlString: String) {
+    val prefix = "saloaleh://refer?code="
+    if (!urlString.startsWith(prefix)) return
+    val code = urlString.removePrefix(prefix).takeIf { it.isNotBlank() } ?: return
+    val koin = KoinPlatformTools.defaultContext().getOrNull() ?: return
+    val referralStore = koin.get<ReferralStore>()
+    if (!referralStore.isReferralApplied()) {
+        referralStore.savePendingReferralCode(code)
+    }
+}
 
 private fun syncFcmTokenIfNeeded(
     sessionStore: MohamedLoversSessionStore,

@@ -580,4 +580,9 @@
     <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">查看竞赛</string>
     <string name="notif_message_cta_none">好的</string>
+    <string name="settings_referral_header">邀请好友</string>
+    <string name="settings_referral_code">邀请码</string>
+    <string name="settings_referral_count">已邀请用户</string>
+    <string name="settings_share_referral">分享邀请链接</string>
+    <string name="settings_share_referral_body">下载应用，加入我们的赞圣竞赛</string>
 </resources>

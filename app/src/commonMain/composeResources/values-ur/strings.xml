@@ -580,4 +580,9 @@
     <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">مقابلہ دیکھیں</string>
     <string name="notif_message_cta_none">ٹھیک ہے</string>
+    <string name="settings_referral_header">دوستوں کو مدعو کریں</string>
+    <string name="settings_referral_code">ریفرل کوڈ</string>
+    <string name="settings_referral_count">مدعو صارفین</string>
+    <string name="settings_share_referral">ریفرل لنک شیئر کریں</string>
+    <string name="settings_share_referral_body">ایپ ڈاؤن لوڈ کریں اور درود کے مقابلے میں ہمارے ساتھ شامل ہوں</string>
 </resources>

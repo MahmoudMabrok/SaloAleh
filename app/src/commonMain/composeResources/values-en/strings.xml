@@ -618,4 +618,9 @@
     <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">View competition</string>
     <string name="notif_message_cta_none">OK</string>
+    <string name="settings_referral_header">Invite Friends</string>
+    <string name="settings_referral_code">Referral Code</string>
+    <string name="settings_referral_count">Referred Users</string>
+    <string name="settings_share_referral">Share Referral Link</string>
+    <string name="settings_share_referral_body">Download the app and join us in the salawat competition</string>
 </resources>

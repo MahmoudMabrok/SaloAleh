@@ -232,6 +232,13 @@
         ".read": true,
         ".write": false
       },
+      "referral_codes": {
+        "$code": {
+          ".read": true,
+          ".write": "!data.exists()",
+          ".validate": "newData.isString() && newData.val().length > 0"
+        }
+      },
       "users": {
         "$uid": {
           ".read": false,
@@ -259,6 +266,17 @@
           },
           "lastTenDaysInactiveNotif": {
             ".validate": "newData.isString()"
+          },
+          "referralCode": {
+            ".validate": "newData.isString() && newData.val().length >= 6 && newData.val().length <= 12"
+          },
+          "referredBy": {
+            ".validate": "newData.isString() && !data.exists()"
+          },
+          "referrals": {
+            "$referredUid": {
+              ".validate": "newData.isBoolean()"
+            }
           },
           "isSupporter": {
             ".validate": "newData.isBoolean()"

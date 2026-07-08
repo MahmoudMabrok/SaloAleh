@@ -26,6 +26,7 @@ import tools.mo3ta.salo.data.notification.NotificationSettingsStore
 import tools.mo3ta.salo.data.billing.AndroidBillingManager
 import tools.mo3ta.salo.data.billing.BillingManager
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
+import tools.mo3ta.salo.data.referral.ReferralStore
 import tools.mo3ta.salo.notification.NotificationAction
 import tools.mo3ta.salo.notification.NotificationChannels
 import tools.mo3ta.salo.notification.NotificationMessage
@@ -42,9 +43,11 @@ class MainActivity : ComponentActivity() {
     private val sessionStore: MohamedLoversSessionStore by inject()
     private val firebaseClient: MohamedLoversFirebaseClient by inject()
     private val billingManager: BillingManager by inject()
+    private val referralStore: ReferralStore by inject()
 
     private val notificationMessageState = mutableStateOf<NotificationMessage?>(null)
     private val newVersionState = mutableStateOf<String?>(null)
+    private val referralCodeState = mutableStateOf<String?>(null)
 
     private val notifPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -94,6 +97,7 @@ class MainActivity : ComponentActivity() {
 
         newVersionState.value = extractNewVersionFromIntent(intent)
         notificationMessageState.value = extractNotificationMessageFromIntent(intent)
+        handleReferralIntent(intent)
 
         setContent {
             App(
@@ -103,6 +107,7 @@ class MainActivity : ComponentActivity() {
                 },
                 newVersionAvailable = newVersionState.value,
                 notificationMessage = notificationMessageState.value,
+                referralCode = referralCodeState.value,
             )
         }
     }
@@ -112,6 +117,7 @@ class MainActivity : ComponentActivity() {
         setIntent(intent)
         newVersionState.value = extractNewVersionFromIntent(intent)
         notificationMessageState.value = extractNotificationMessageFromIntent(intent)
+        handleReferralIntent(intent)
     }
 
     private fun extractNewVersionFromIntent(intent: Intent?): String? {
@@ -175,6 +181,17 @@ class MainActivity : ComponentActivity() {
                 FirebaseMessaging.getInstance().unsubscribeFromTopic("leaderboard_notifs")
         }
         ensureFcmTokenSynced()
+    }
+
+    private fun handleReferralIntent(intent: Intent?) {
+        val uri = intent?.data ?: return
+        if (uri.scheme == "saloaleh" && uri.host == "refer") {
+            val code = uri.getQueryParameter("code")?.takeIf { it.isNotBlank() } ?: return
+            if (!referralStore.isReferralApplied()) {
+                referralStore.savePendingReferralCode(code)
+                referralCodeState.value = code
+            }
+        }
     }
 
     private fun syncNotificationSchedule() {

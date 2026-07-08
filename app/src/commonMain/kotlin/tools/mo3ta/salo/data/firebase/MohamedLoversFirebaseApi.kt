@@ -36,4 +36,8 @@ interface MohamedLoversFirebaseApi {
         purchaseDate: String,
     ): Result<Unit>
     suspend fun writeNickname(roundKey: String, uid: String, nickname: String): Result<Unit>
+    suspend fun writeReferralCode(uid: String, code: String): Result<Unit>
+    suspend fun lookupReferralCode(code: String): Result<String?>
+    suspend fun applyReferral(referrerUid: String, referredUid: String): Result<Unit>
+    suspend fun fetchReferralCount(uid: String): Result<Int>
 }

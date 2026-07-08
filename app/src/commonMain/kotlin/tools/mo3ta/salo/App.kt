@@ -76,6 +76,8 @@ import tools.mo3ta.salo.ui.takbeer.TakbeerSessionScreen
 import tools.mo3ta.salo.ui.support.MilestoneSupportDialog
 import tools.mo3ta.salo.data.MilestoneTracker
 import tools.mo3ta.salo.data.billing.PremiumStore
+import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseApi
+import tools.mo3ta.salo.data.referral.ReferralStore
 import tools.mo3ta.salo.analytics.BillingAnalytics
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -101,6 +103,7 @@ fun App(
     onNotificationPermissionRequest: (() -> Unit)? = null,
     newVersionAvailable: String? = null,
     notificationMessage: NotificationMessage? = null,
+    referralCode: String? = null,
 ) {
     val languageStore = koinInject<LanguageStore>()
     val storedLang = languageStore.language
@@ -165,7 +168,29 @@ fun App(
         var takbeerAnnouncementDone by remember {
             mutableStateOf(settings.getBoolean("takbeer_announcement_shown", false))
         }
+        val referralStore = koinInject<ReferralStore>()
+        val firebaseApi = koinInject<MohamedLoversFirebaseApi>()
         LaunchedEffect(Unit) { analyticsManager.setUserId(sessionStoreApp.getOrCreateUid()) }
+        LaunchedEffect(referralCode) {
+            val code = referralCode
+                ?: referralStore.getPendingReferralCode()
+                ?: return@LaunchedEffect
+            if (referralStore.isReferralApplied()) {
+                referralStore.clearPendingReferralCode()
+                return@LaunchedEffect
+            }
+            val myUid = sessionStoreApp.getOrCreateUid()
+            val referrerUid = firebaseApi.lookupReferralCode(code).getOrNull()
+            if (referrerUid != null && referrerUid != myUid) {
+                firebaseApi.applyReferral(referrerUid, myUid).onSuccess {
+                    referralStore.saveReferredBy(referrerUid)
+                    referralStore.markReferralApplied()
+                    referralStore.clearPendingReferralCode()
+                }
+            } else {
+                referralStore.clearPendingReferralCode()
+            }
+        }
         var salawatVariantAnnouncementDone by remember {
             mutableStateOf(settings.getBoolean("salawat_variant_announcement_shown", false))
         }
