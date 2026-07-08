@@ -24,6 +24,7 @@ firebaseAppCheck = "18.0.0"
 firebaseMessaging = "24.1.0"
 gmsCodeScanner = "16.1.0"
 billing = "7.1.1"
+installReferrer = "2.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -60,6 +61,7 @@ firebase-appcheck-debug = { group = "com.google.firebase", name = "firebase-appc
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging", version.ref = "firebaseMessaging" }
 gms-code-scanner = { group = "com.google.android.gms", name = "play-services-code-scanner", version.ref = "gmsCodeScanner" }
 billing = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "billing" }
+install-referrer = { group = "com.android.installreferrer", name = "installreferrer", version.ref = "installReferrer" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

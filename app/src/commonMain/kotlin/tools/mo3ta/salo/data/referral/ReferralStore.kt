@@ -25,11 +25,16 @@ class ReferralStore(private val settings: Settings) {
 
     fun clearPendingReferralCode() = settings.remove(KEY_PENDING_REFERRAL_CODE)
 
+    fun isInstallReferrerChecked(): Boolean = settings.getBoolean(KEY_INSTALL_REFERRER_CHECKED, false)
+
+    fun markInstallReferrerChecked() = settings.putBoolean(KEY_INSTALL_REFERRER_CHECKED, true)
+
     private companion object {
         const val KEY_REFERRAL_CODE = "referral_code"
         const val KEY_REFERRAL_APPLIED = "referral_applied"
         const val KEY_REFERRED_BY = "referred_by"
         const val KEY_PENDING_REFERRAL_CODE = "pending_referral_code"
+        const val KEY_INSTALL_REFERRER_CHECKED = "install_referrer_checked"
         const val REFERRAL_CODE_LENGTH = 8
     }
 }

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محبو محمد ﷺ — دعوة</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0a1a3a 0%, #0d2147 50%, #102a5c 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            text-align: center;
+            padding: 32px 24px;
+            max-width: 420px;
+        }
+        .icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #f5d97a;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            font-size: 16px;
+            color: rgba(255,255,255,0.8);
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+        .hadith {
+            font-size: 14px;
+            color: rgba(245,217,122,0.7);
+            font-style: italic;
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+        .btn {
+            display: inline-block;
+            padding: 14px 40px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            margin-bottom: 12px;
+            width: 100%;
+            max-width: 300px;
+        }
+        .btn-primary {
+            background: #f5d97a;
+            color: #0a1a3a;
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: #f5d97a;
+            border: 1px solid rgba(245,217,122,0.3);
+        }
+        .status {
+            margin-top: 24px;
+            font-size: 14px;
+            color: rgba(255,255,255,0.5);
+        }
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(245,217,122,0.3);
+            border-top-color: #f5d97a;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-left: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">🕌</div>
+        <div class="title">شارك التطبيق.. تشارك الأجر</div>
+        <div class="subtitle">
+            صديقك دعاك للانضمام إلى محبو محمد ﷺ<br>
+            سباق أسبوعي للصلاة على النبي ﷺ
+        </div>
+        <div class="hadith">«الدال على الخير كفاعله»</div>
+
+        <div id="buttons" style="display:none">
+            <a id="store-btn" class="btn btn-primary" href="#">حمّل التطبيق</a>
+            <br>
+            <a id="open-btn" class="btn btn-secondary" href="#" style="display:none">فتح التطبيق</a>
+        </div>
+
+        <div id="loading" class="status">
+            جاري التحويل <span class="spinner"></span>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            var params = new URLSearchParams(window.location.search);
+            var code = params.get('code') || '';
+            var customSchemeUrl = 'saloaleh://refer?code=' + encodeURIComponent(code);
+
+            var isAndroid = /android/i.test(navigator.userAgent);
+            var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+            var playStoreUrl = 'https://play.google.com/store/apps/details?id=tools.mo3ta.salo';
+            var appStoreUrl = 'https://apps.apple.com/us/app/%D8%B5%D9%84%D9%88%D8%A7-%D8%B9%D9%84%D9%8A%D9%87/id6749495873';
+
+            if (isAndroid && code) {
+                playStoreUrl += '&referrer=referral_code%3D' + encodeURIComponent(code);
+            }
+
+            var storeUrl = isIOS ? appStoreUrl : playStoreUrl;
+            var storeLabel = isIOS ? 'حمّل من App Store' : 'حمّل من Google Play';
+
+            function showButtons() {
+                document.getElementById('loading').style.display = 'none';
+                var btns = document.getElementById('buttons');
+                btns.style.display = 'block';
+                document.getElementById('store-btn').href = storeUrl;
+                document.getElementById('store-btn').textContent = storeLabel;
+            }
+
+            // Try to open the app via custom scheme
+            var appOpened = false;
+            var start = Date.now();
+
+            window.addEventListener('blur', function() { appOpened = true; });
+
+            // Attempt the deep link
+            var iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = customSchemeUrl;
+            document.body.appendChild(iframe);
+
+            setTimeout(function() {
+                document.body.removeChild(iframe);
+                if (!appOpened && Date.now() - start < 3000) {
+                    // App didn't open — show store buttons
+                    showButtons();
+                }
+            }, 2000);
+
+            // Fallback: always show buttons after 2.5s
+            setTimeout(function() {
+                if (!appOpened) {
+                    showButtons();
+                    var openBtn = document.getElementById('open-btn');
+                    openBtn.href = customSchemeUrl;
+                    openBtn.style.display = 'inline-block';
+                }
+            }, 2500);
+        })();
+    </script>
+</body>
+</html>

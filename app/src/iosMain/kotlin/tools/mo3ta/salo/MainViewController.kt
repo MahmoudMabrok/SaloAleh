@@ -49,9 +49,22 @@ fun MainViewController() = ComposeUIViewController(
 ) { App() }
 
 fun handleReferralUrl(urlString: String) {
-    val prefix = "saloaleh://refer?code="
-    if (!urlString.startsWith(prefix)) return
-    val code = urlString.removePrefix(prefix).takeIf { it.isNotBlank() } ?: return
+    val code = when {
+        urlString.startsWith("saloaleh://refer") -> {
+            val queryStart = urlString.indexOf("code=")
+            if (queryStart == -1) null
+            else urlString.substring(queryStart + 5).takeIf { it.isNotBlank() }
+        }
+        urlString.startsWith("https://kamapp-3b3ac.web.app/refer") -> {
+            val queryStart = urlString.indexOf("code=")
+            if (queryStart == -1) null
+            else urlString.substring(queryStart + 5)
+                .substringBefore("&")
+                .takeIf { it.isNotBlank() }
+        }
+        else -> null
+    } ?: return
+
     val koin = KoinPlatformTools.defaultContext().getOrNull() ?: return
     val referralStore = koin.get<ReferralStore>()
     if (!referralStore.isReferralApplied()) {
