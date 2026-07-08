@@ -26,6 +26,7 @@ import tools.mo3ta.salo.data.notification.NotificationSettingsStore
 import tools.mo3ta.salo.data.billing.AndroidBillingManager
 import tools.mo3ta.salo.data.billing.BillingManager
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
+import tools.mo3ta.salo.data.referral.InstallReferrerHelper
 import tools.mo3ta.salo.data.referral.ReferralStore
 import tools.mo3ta.salo.notification.NotificationAction
 import tools.mo3ta.salo.notification.NotificationChannels
@@ -95,6 +96,7 @@ class MainActivity : ComponentActivity() {
 
         val finalEngagementData = engagementData.copy(shouldReshowFcmAlert = shouldReshowFcmAlert)
 
+        InstallReferrerHelper.checkInstallReferrer(this, referralStore)
         newVersionState.value = extractNewVersionFromIntent(intent)
         notificationMessageState.value = extractNotificationMessageFromIntent(intent)
         handleReferralIntent(intent)
@@ -185,7 +187,11 @@ class MainActivity : ComponentActivity() {
 
     private fun handleReferralIntent(intent: Intent?) {
         val uri = intent?.data ?: return
-        if (uri.scheme == "saloaleh" && uri.host == "refer") {
+        val isCustomScheme = uri.scheme == "saloaleh" && uri.host == "refer"
+        val isWebLink = uri.scheme == "https" &&
+            uri.host == "kamapp-3b3ac.web.app" &&
+            uri.path == "/refer"
+        if (isCustomScheme || isWebLink) {
             val code = uri.getQueryParameter("code")?.takeIf { it.isNotBlank() } ?: return
             if (!referralStore.isReferralApplied()) {
                 referralStore.savePendingReferralCode(code)

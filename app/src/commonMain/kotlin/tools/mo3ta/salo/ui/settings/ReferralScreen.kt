@@ -51,7 +51,6 @@ import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.*
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.copyToClipboard
-import tools.mo3ta.salo.ui.getStoreUrl
 import tools.mo3ta.salo.ui.shareText
 import tools.mo3ta.salo.ui.showPlatformToast
 
@@ -234,9 +233,8 @@ fun ReferralScreen(
                     .clip(RoundedCornerShape(12.dp))
                     .background(MohamedLoversPalette.GoldHighlight)
                     .clickable {
-                        val link = "saloaleh://refer?code=$referralCode"
-                        val storeUrl = getStoreUrl()
-                        shareText("$shareBody\n$storeUrl\n$link")
+                        val link = "https://kamapp-3b3ac.web.app/refer?code=$referralCode"
+                        shareText("$shareBody\n$link")
                     }
                     .padding(vertical = 14.dp),
                 contentAlignment = Alignment.Center,
