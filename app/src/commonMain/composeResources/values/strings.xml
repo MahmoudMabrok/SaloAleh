@@ -640,4 +640,8 @@
     <string name="referral_ajr_note">كل هذه الصلوات في ميزان حسناتك بإذن الله، لأنك كنت السبب في دلالتهم على الخير</string>
     <string name="referral_share_button">شارك رابط الدعوة</string>
     <string name="referral_share_body">صلّ على النبي ﷺ وشاركني الأجر! حمّل تطبيق صلّ عليه وانضم لمسابقة الصلاة على النبي ﷺ</string>
+    <string name="referral_announcement_title">شارك الأجر مع أحبابك</string>
+    <string name="referral_announcement_body">ادعُ أصدقاءك لتطبيق صلّ عليه وشاركهم أجر الصلاة على النبي ﷺ.\n«الدّالُّ على الخير كفاعِلِه»\nكل صلاة يصلّيها من دعوته في ميزان حسناتك بإذن الله.</string>
+    <string name="referral_announcement_cta">شارك الآن</string>
+    <string name="referral_announcement_dismiss">لاحقًا</string>
 </resources>

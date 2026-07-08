@@ -630,4 +630,8 @@
     <string name="referral_ajr_note">All these salawat are in your scale of good deeds, by Allah\'s will, because you guided them to this good</string>
     <string name="referral_share_button">Share Referral Link</string>
     <string name="referral_share_body">Send salawat upon the Prophet ﷺ and share the reward with me! Download the app and join the salawat competition</string>
+    <string name="referral_announcement_title">Share the Reward with Your Loved Ones</string>
+    <string name="referral_announcement_body">Invite your friends to the app and share the reward of salawat upon the Prophet ﷺ.\n\"The one who guides to good is like the one who does it.\"\nEvery salawat they send counts in your good deeds, by Allah\'s will.</string>
+    <string name="referral_announcement_cta">Share Now</string>
+    <string name="referral_announcement_dismiss">Later</string>
 </resources>

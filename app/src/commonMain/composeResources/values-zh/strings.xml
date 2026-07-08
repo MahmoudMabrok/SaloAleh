@@ -592,4 +592,8 @@
     <string name="referral_ajr_note">这些赞圣都将计入你的善行天平，因沙安拉，因为你引导他们行了善</string>
     <string name="referral_share_button">分享邀请链接</string>
     <string name="referral_share_body">为先知 ﷺ 赞圣，与我共享回赐！下载应用加入赞圣竞赛</string>
+    <string name="referral_announcement_title">与亲友分享回赐</string>
+    <string name="referral_announcement_body">邀请朋友使用应用，分享为先知 ﷺ 赞圣的回赐。\n"引导他人行善者，如同行善者一样。"\n他们的每一次赞圣都将计入你的善行，因沙安拉。</string>
+    <string name="referral_announcement_cta">立即分享</string>
+    <string name="referral_announcement_dismiss">稍后</string>
 </resources>

@@ -71,6 +71,7 @@ import tools.mo3ta.salo.ui.settings.SettingsScreen
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.ui.NicknamePromptDialog
+import tools.mo3ta.salo.ui.ReferralAnnouncementDialog
 import tools.mo3ta.salo.ui.SalawatVariantAnnouncementDialog
 import tools.mo3ta.salo.ui.takbeer.TakbeerAnnouncementDialog
 import tools.mo3ta.salo.ui.takbeer.TakbeerSessionScreen
@@ -212,6 +213,10 @@ fun App(
             showExtensionQr ||
             showOnboarding
         val canShowAppAnnouncements = APP_ANNOUNCEMENTS_ENABLED && !showOnboarding
+        val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
+        val installDate = remember {
+            runCatching { LocalDate.parse(sessionStoreApp.getOrSetInstallDate(today)) }.getOrDefault(today)
+        }
         val shouldShowNicknamePrompt = !nicknamePromptBlocked &&
             sessionStoreApp.getNickname() == null &&
             (nicknamePromptRequested || (selectedTab == SaloTab.MohamedLovers && !nicknamePromptDismissedThisSession))
@@ -375,6 +380,31 @@ fun App(
             )
         }
 
+        var referralAnnouncementDone by remember {
+            mutableStateOf(settings.getBoolean("referral_announcement_shown", false))
+        }
+        if (
+            !shouldShowNicknamePrompt &&
+            canShowAppAnnouncements &&
+            salawatVariantAnnouncementDone &&
+            !referralAnnouncementDone &&
+            installDate < today
+        ) {
+            ReferralAnnouncementDialog(
+                onOpen = {
+                    settings.putBoolean("referral_announcement_shown", true)
+                    referralAnnouncementDone = true
+                    showReferral = true
+                    analyticsManager.logAction(AppAnalytics.REFERRAL_ANNOUNCEMENT_OPENED)
+                },
+                onDismiss = {
+                    settings.putBoolean("referral_announcement_shown", true)
+                    referralAnnouncementDone = true
+                    analyticsManager.logAction(AppAnalytics.REFERRAL_ANNOUNCEMENT_DISMISSED)
+                },
+            )
+        }
+
         val billingManager = koinInject<BillingManager>()
         var showPremiumPromo by remember {
             val shown = settings.getBoolean("premium_promo_shown", false)
@@ -463,11 +493,6 @@ fun App(
         }
 
         val engagementStore = koinInject<EngagementStore>()
-        val sessionStore = koinInject<MohamedLoversSessionStore>()
-        val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
-        val installDate = remember {
-            runCatching { LocalDate.parse(sessionStore.getOrSetInstallDate(today)) }.getOrDefault(today)
-        }
         var showReview by remember {
             mutableStateOf(engagementStore.shouldShowReviewDialog(today, installDate))
         }

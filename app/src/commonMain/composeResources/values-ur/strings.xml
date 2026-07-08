@@ -592,4 +592,8 @@
     <string name="referral_ajr_note">یہ سب درود اللہ کی مرضی سے آپ کی نیکیوں کے ترازو میں ہیں، کیونکہ آپ نے انہیں نیکی کی طرف رہنمائی کی</string>
     <string name="referral_share_button">ریفرل لنک شیئر کریں</string>
     <string name="referral_share_body">نبی ﷺ پر درود بھیجیں اور میرے ساتھ اجر بانٹیں! ایپ ڈاؤن لوڈ کریں اور درود کے مقابلے میں شامل ہوں</string>
+    <string name="referral_announcement_title">اپنے پیاروں کے ساتھ اجر بانٹیں</string>
+    <string name="referral_announcement_body">اپنے دوستوں کو ایپ کی دعوت دیں اور نبی ﷺ پر درود کا اجر بانٹیں۔\n«نیکی کی طرف رہنمائی کرنے والا اسے کرنے والے کی طرح ہے»\nان کا ہر درود اللہ کی مرضی سے آپ کی نیکیوں میں شمار ہوگا۔</string>
+    <string name="referral_announcement_cta">ابھی شیئر کریں</string>
+    <string name="referral_announcement_dismiss">بعد میں</string>
 </resources>
