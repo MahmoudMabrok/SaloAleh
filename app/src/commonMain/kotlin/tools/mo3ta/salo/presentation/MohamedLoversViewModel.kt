@@ -94,12 +94,12 @@ class MohamedLoversViewModel(
         }
         settleHeartDecay()
         if (startTimers) {
-            viewModelScope.launch {
-                delay(90_000L)
-                refresh()
-//            delay(5*60_000L)
-//            refresh()
-            }
+//            viewModelScope.launch {
+//                delay(90_000L)
+//                refresh()
+////            delay(5*60_000L)
+////            refresh()
+//            }
             viewModelScope.launch {
                 while (isActive) {
                     val ts = sessionStore.getLastSalawatTimestamp()

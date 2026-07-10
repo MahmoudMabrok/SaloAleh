@@ -34,7 +34,7 @@ internal fun MohamedLoversHadithBanner(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 14.dp),
+            .padding(horizontal = 18.dp),
     ) {
         Box(
             modifier = Modifier

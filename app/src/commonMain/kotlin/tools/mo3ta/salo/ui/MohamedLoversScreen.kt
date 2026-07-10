@@ -265,7 +265,7 @@ fun MohamedLoversScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.TopCenter)
-                    .padding(top = 48.dp),
+                    .padding(top = 50.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 MohamedLoversHadithBanner()
@@ -274,30 +274,29 @@ fun MohamedLoversScreen(
                     RoundEndBanner(onClick = { viewModel.onRoundEndBannerClick() })
                 }
 
-                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.Start,
-                    ) {
-                        AnimatedVisibility(
-                            visible = showHeartTooltip,
-                            enter = fadeIn(),
-                            exit = fadeOut(),
-                            modifier = Modifier.padding(start = 16.dp, top = 8.dp),
-                        ) {
-                            HeartIndexTooltip(
-                                modifier = Modifier.widthIn(max = 190.dp),
-                            )
-                        }
-                        if (showHeartTooltip) Spacer(Modifier.height(6.dp)) else Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(14.dp))
 
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.Top,
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.Start,
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
+                            AnimatedVisibility(
+                                visible = showHeartTooltip,
+                                enter = fadeIn(),
+                                exit = fadeOut(),
+                            ) {
+                                HeartIndexTooltip(
+                                    modifier = Modifier.widthIn(max = 190.dp),
+                                )
+                            }
                             HeartIndexIndicator(
                                 score = state.heartScore,
                                 onClick = {
@@ -305,89 +304,70 @@ fun MohamedLoversScreen(
                                     showHeartInfoDialog = true
                                 },
                             )
+                            state.heroesBoard?.let { board ->
+                                HeroesChip(date = board.date, onClick = { viewModel.openHeroesSheet() })
+                            }
+                        }
 
+                        Column(
+                            horizontalAlignment = Alignment.End,
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
                             if (rankChipVisible) {
-                                Column(horizontalAlignment = Alignment.End) {
-                                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                                        DailyRankStrip(
-                                            rank = currentUserEntry!!.rank,
-                                            totalPlayers = state.roundPlayerCount,
-                                            todayTaps = state.dailyGoalProgress,
-                                            currentBadgeKey = state.currentDailyBadge,
-                                            onStripClick = {
-                                                analyticsManager.logAction(AppAnalytics.OPEN_INFO_SHEET, mapOf(AppAnalytics.PARAM_SOURCE to "rank_strip"))
-                                                infoSheetOpen = true
-                                            },
-                                            onBadgeClick = { badgeTiersSheetOpen = true },
-                                        )
-                                    }
-                                    AnimatedVisibility(
-                                        visible = showRankTooltip,
-                                        enter = fadeIn(),
-                                        exit = fadeOut(),
+                                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                                    DailyRankStrip(
+                                        rank = currentUserEntry!!.rank,
+                                        totalPlayers = state.roundPlayerCount,
+                                        todayTaps = state.dailyGoalProgress,
+                                        currentBadgeKey = state.currentDailyBadge,
+                                        onStripClick = {
+                                            analyticsManager.logAction(AppAnalytics.OPEN_INFO_SHEET, mapOf(AppAnalytics.PARAM_SOURCE to "rank_strip"))
+                                            infoSheetOpen = true
+                                        },
+                                        onBadgeClick = { badgeTiersSheetOpen = true },
+                                    )
+                                }
+                                AnimatedVisibility(
+                                    visible = showRankTooltip,
+                                    enter = fadeIn(),
+                                    exit = fadeOut(),
+                                ) {
+                                    Surface(
+                                        shape = RoundedCornerShape(10.dp),
+                                        color = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.15f),
+                                        modifier = Modifier
+                                            .padding(top = 4.dp)
+                                            .clickable { showRankTooltip = false },
                                     ) {
-                                        Surface(
-                                            shape = RoundedCornerShape(10.dp),
-                                            color = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.15f),
-                                            modifier = Modifier
-                                                .padding(top = 4.dp)
-                                                .clickable { showRankTooltip = false },
-                                        ) {
-                                            Text(
-                                                text = stringResource(Res.string.main_screen_rank_chip_tooltip),
-                                                color = MohamedLoversPalette.GoldGlow,
-                                                fontSize = 11.sp,
-                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                            )
-                                        }
+                                        Text(
+                                            text = stringResource(Res.string.main_screen_rank_chip_tooltip),
+                                            color = MohamedLoversPalette.GoldGlow,
+                                            fontSize = 11.sp,
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                        )
                                     }
                                 }
                             }
-                        }
-                    }
-                }
-
-                if (state.heroesBoard != null) {
-                    Spacer(Modifier.height(8.dp))
-                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.Start,
-                        ) {
-                            HeroesChip(onClick = { viewModel.openHeroesSheet() })
-                        }
-                    }
-                }
-
-                Spacer(Modifier.height(8.dp))
-                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        horizontalAlignment = Alignment.End,
-                    ) {
-                        FloatingBubbleButton(roundKey = state.roundKey)
-                        AnimatedVisibility(
-                            visible = showBubbleTooltip,
-                            enter = fadeIn(),
-                            exit = fadeOut(),
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.15f),
-                                modifier = Modifier
-                                    .padding(top = 4.dp)
-                                    .clickable { showBubbleTooltip = false },
+                            FloatingBubbleButton(roundKey = state.roundKey)
+                            AnimatedVisibility(
+                                visible = showBubbleTooltip,
+                                enter = fadeIn(),
+                                exit = fadeOut(),
                             ) {
-                                Text(
-                                    text = stringResource(Res.string.main_screen_bubble_tooltip),
-                                    color = MohamedLoversPalette.GoldGlow,
-                                    fontSize = 11.sp,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                )
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.15f),
+                                    modifier = Modifier
+                                        .padding(top = 4.dp)
+                                        .clickable { showBubbleTooltip = false },
+                                ) {
+                                    Text(
+                                        text = stringResource(Res.string.main_screen_bubble_tooltip),
+                                        color = MohamedLoversPalette.GoldGlow,
+                                        fontSize = 11.sp,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                    )
+                                }
                             }
                         }
                     }
@@ -723,7 +703,7 @@ private fun CountdownCell(value: Int, label: String) {
 }
 
 @Composable
-private fun HeroesChip(onClick: () -> Unit) {
+private fun HeroesChip(date: String, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(20.dp),
@@ -740,12 +720,12 @@ private fun HeroesChip(onClick: () -> Unit) {
         ) {
             Icon(
                 imageVector = Icons.Filled.Star,
-                contentDescription = stringResource(Res.string.heroes_chip_content_description),
+                contentDescription = stringResource(Res.string.heroes_chip_content_description, date),
                 tint = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.9f),
                 modifier = Modifier.size(18.dp),
             )
             Text(
-                text = stringResource(Res.string.heroes_chip_label),
+                text = stringResource(Res.string.heroes_chip_label, date),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.9f),
                 fontSize = 13.sp,
                 fontFamily = MohamedLoversFonts.body,
