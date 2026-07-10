@@ -807,7 +807,7 @@ private fun LeaderboardRow(
             if (FeatureFlags.SCORE_MASKING_ENABLED && entry.scoreMasked && !isMe) {
                 MaskedScore(entry.totalCount)
             } else {
-                if (isMe || !isFriday || isPremium) {
+                if (isMe || !FeatureFlags.SCORE_MASKING_ENABLED || !isFriday || isPremium) {
                     Text(
                         text = entry.totalCount.toString(),
                         style = TextStyle(
