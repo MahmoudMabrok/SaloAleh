@@ -129,9 +129,18 @@ class MainActivity : ComponentActivity() {
 
     private fun extractNotificationMessageFromIntent(intent: Intent?): NotificationMessage? {
         if (intent?.getStringExtra(EXTRA_NOTIFICATION_TYPE) == NOTIFICATION_TYPE_VERSION_UPDATE) return null
-        val title = intent?.getStringExtra(EXTRA_NOTIF_TITLE) ?: return null
-        val body = intent.getStringExtra(EXTRA_NOTIF_BODY) ?: return null
-        val action = NotificationAction.from(intent.getStringExtra(EXTRA_NOTIF_ACTION))
+        // Two delivery paths land here with different extra keys:
+        //  - Foreground: SaloFirebaseMessagingService renames FCM data into EXTRA_NOTIF_* keys.
+        //  - Background/killed: FCM shows the tray notification itself and copies the raw `data`
+        //    payload verbatim onto the launch intent, so keys are "title"/"body"/"notification_action".
+        // Read the app keys first, then fall back to the raw FCM data keys.
+        val title = intent?.getStringExtra(EXTRA_NOTIF_TITLE)
+            ?: intent?.getStringExtra(FCM_DATA_TITLE) ?: return null
+        val body = intent?.getStringExtra(EXTRA_NOTIF_BODY)
+            ?: intent?.getStringExtra(FCM_DATA_BODY) ?: return null
+        val action = NotificationAction.from(
+            intent?.getStringExtra(EXTRA_NOTIF_ACTION) ?: intent?.getStringExtra(FCM_DATA_ACTION)
+        )
         return NotificationMessage(title, body, action)
     }
 
@@ -142,6 +151,12 @@ class MainActivity : ComponentActivity() {
         const val EXTRA_NOTIF_TITLE = "notif_title"
         const val EXTRA_NOTIF_BODY = "notif_body"
         const val EXTRA_NOTIF_ACTION = "notif_action"
+
+        // Raw FCM `data` keys copied onto the launch intent when the system tray
+        // handles the notification (app in background/killed).
+        private const val FCM_DATA_TITLE = "title"
+        private const val FCM_DATA_BODY = "body"
+        private const val FCM_DATA_ACTION = "notification_action"
     }
 
     // Validates the FCM token at app start. After an Android Auto Backup restore,
