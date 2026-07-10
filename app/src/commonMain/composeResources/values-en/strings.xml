@@ -236,6 +236,10 @@
     <string name="achievements_badge_streak_30_how">Open the app 30 consecutive days without a break</string>
     <string name="achievements_badge_round_streak_title">Perfect Week</string>
     <string name="achievements_badge_round_streak_how">Send salawat every day of the round without missing a single day</string>
+    <string name="achievements_section_challenge_badges">Challenge Badges</string>
+    <string name="achievements_badge_challenge_dhikr_how">Reach the daily goal of %1$d dhikr — the badge count grows by 1 for every winning day</string>
+    <string name="achievements_badge_challenge_baqiyat_how">Complete %1$d cycles of the everlasting deeds in one day — the badge count grows by 1 for every winning day</string>
+    <string name="achievements_badge_challenge_istighfar_how">Reach the daily goal of %1$d istighfar — the badge count grows by 1 for every winning day</string>
     <string name="achievements_badge_rank_title">Rank %1$d</string>
     <string name="achievements_badge_rank_how">Achieve rank %1$d in any competitive round</string>
     <string name="achievements_badge_how_label">How to earn it:</string>

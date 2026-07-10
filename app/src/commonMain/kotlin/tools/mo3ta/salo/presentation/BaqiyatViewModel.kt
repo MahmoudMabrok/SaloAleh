@@ -17,13 +17,17 @@ import tools.mo3ta.salo.data.baqiyat.BaqiyatFirebaseClient
 import tools.mo3ta.salo.data.baqiyat.BaqiyatPhrase
 import tools.mo3ta.salo.data.baqiyat.BaqiyatStore
 import tools.mo3ta.salo.data.country.CountryCodeProvider
+import tools.mo3ta.salo.data.engagement.ChallengeBadgeStore
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
+import tools.mo3ta.salo.domain.BAQIYAT_CHALLENGE_DAILY_GOAL
+import tools.mo3ta.salo.domain.ChallengeType
 
 class BaqiyatViewModel(
     private val store: BaqiyatStore,
     private val firebaseClient: BaqiyatFirebaseClient,
     private val sessionStore: MohamedLoversSessionStore,
     private val countryCodeProvider: CountryCodeProvider,
+    private val challengeBadgeStore: ChallengeBadgeStore,
 ) : ViewModel() {
 
     private val cairoZone = TimeZone.of("Africa/Cairo")
@@ -67,6 +71,7 @@ class BaqiyatViewModel(
                 store.updateRemoteBaseline(today, remoteCount)
                 _state.update { it.copy(cyclesCompleted = store.todayCount(today)) }
             }
+            maybeRecordWin(today, store.todayCount(today))
 
             refreshLeaderboard(today.toString(), uid)
         }
@@ -83,7 +88,9 @@ class BaqiyatViewModel(
             return
         }
 
-        val updated = store.incrementToday(today())
+        val today = today()
+        val updated = store.incrementToday(today)
+        maybeRecordWin(today, updated)
         _state.update {
             it.copy(
                 tappedPhrases = emptySet(),
@@ -144,6 +151,13 @@ class BaqiyatViewModel(
                 isLeaderboardLoading = false,
                 errorMessage = statsResult.exceptionOrNull()?.message ?: leaderboardResult.exceptionOrNull()?.message,
             )
+        }
+    }
+
+    /** Reaching the daily cycles goal wins the day: the challenge badge count goes up by 1 (once per day). */
+    private fun maybeRecordWin(today: LocalDate, cycles: Int) {
+        if (cycles >= BAQIYAT_CHALLENGE_DAILY_GOAL) {
+            challengeBadgeStore.recordWin(ChallengeType.BAQIYAT, today)
         }
     }
 
