@@ -571,6 +571,14 @@ fun MohamedLoversScreen(
                 modifier = Modifier.align(Alignment.Center),
             )
     }
+
+    // Per-round "perfect week" streak badge celebration
+    state.roundStreakCelebration?.let { badge ->
+        AchievementCelebrationDialog(
+            achievement = badge,
+            onDismiss = viewModel::dismissRoundStreakCelebration,
+        )
+    }
 }
 
 @Composable

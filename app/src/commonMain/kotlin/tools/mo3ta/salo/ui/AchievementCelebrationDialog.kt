@@ -29,6 +29,8 @@ import tools.mo3ta.salo.generated.resources.achievement_celebration_rank_subtitl
 import tools.mo3ta.salo.generated.resources.achievement_celebration_rank_title
 import tools.mo3ta.salo.generated.resources.achievement_celebration_streak_30_subtitle
 import tools.mo3ta.salo.generated.resources.achievement_celebration_streak_30_title
+import tools.mo3ta.salo.generated.resources.achievement_celebration_round_streak_subtitle
+import tools.mo3ta.salo.generated.resources.achievement_celebration_round_streak_title
 import tools.mo3ta.salo.generated.resources.achievement_celebration_streak_7_subtitle
 import tools.mo3ta.salo.generated.resources.achievement_celebration_streak_7_title
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
@@ -61,6 +63,11 @@ fun AchievementCelebrationDialog(
                 stringResource(Res.string.achievement_celebration_rank_subtitle, achievement.roundKey),
             )
         }
+        is Achievement.RoundStreakBadge -> Triple(
+            "🔥",
+            stringResource(Res.string.achievement_celebration_round_streak_title),
+            stringResource(Res.string.achievement_celebration_round_streak_subtitle),
+        )
     }
 
     Dialog(onDismissRequest = onDismiss) {

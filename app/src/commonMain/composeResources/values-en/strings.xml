@@ -226,6 +226,7 @@
     <string name="achievements_stat_rounds">Rounds</string>
     <string name="achievements_stat_best_rank">Best Rank</string>
     <string name="achievements_section_streak_badges">Streak Badges</string>
+    <string name="achievements_section_round_streak">Weekly Devotion Badge</string>
     <string name="achievements_section_rank_badges">Rank Badges</string>
     <string name="achievements_section_round_history">Round Achievements</string>
     <string name="achievements_medal_info_cd">Medal information</string>
@@ -233,6 +234,8 @@
     <string name="achievements_badge_streak_7_how">Open the app 7 consecutive days without a break</string>
     <string name="achievements_badge_streak_30_title">The Devoted</string>
     <string name="achievements_badge_streak_30_how">Open the app 30 consecutive days without a break</string>
+    <string name="achievements_badge_round_streak_title">Perfect Week</string>
+    <string name="achievements_badge_round_streak_how">Send salawat every day of the round without missing a single day</string>
     <string name="achievements_badge_rank_title">Rank %1$d</string>
     <string name="achievements_badge_rank_how">Achieve rank %1$d in any competitive round</string>
     <string name="achievements_badge_how_label">How to earn it:</string>
@@ -256,6 +259,8 @@
     <string name="achievement_celebration_streak_30_subtitle">You earned the "Devoted" badge for opening the app 30 consecutive days. May God bless you.</string>
     <string name="achievement_celebration_rank_title">Rank %1$d in the leaderboard!</string>
     <string name="achievement_celebration_rank_subtitle">You reached the top 10 in round %1$s. May God bless you.</string>
+    <string name="achievement_celebration_round_streak_title">A Full Week of Devotion!</string>
+    <string name="achievement_celebration_round_streak_subtitle">You sent salawat every day of the round without a break. You unlocked the \"Perfect Week\" badge. Keep it up.</string>
     <string name="achievement_celebration_dismiss">Great! Thanks</string>
 
     <!-- Takbeer Session Screen -->
@@ -625,6 +630,10 @@
     <string name="salawat_variant_announcement_body">You can now choose which salawat appears when you tap the sky, from several authentic forms. Pick yours in Settings.</string>
     <string name="salawat_variant_announcement_cta">Choose wording</string>
     <string name="salawat_variant_announcement_dismiss">Not now</string>
+    <string name="streak_badge_announcement_title">Weekly Devotion Badge</string>
+    <string name="streak_badge_announcement_body">New! Send salawat every day of the round without missing a single day to unlock the \"Perfect Week\" badge — a fresh badge for every round you complete.</string>
+    <string name="streak_badge_announcement_cta">View Achievements</string>
+    <string name="streak_badge_announcement_dismiss">Not now</string>
     <string name="leaderboard_score_label">prayers</string>
     <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">View competition</string>
