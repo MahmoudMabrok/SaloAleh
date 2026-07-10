@@ -3,7 +3,7 @@ name: Update Referral Stats
 on:
   schedule:
     # Daily at 00:30 Cairo (21:30 UTC)
-    - cron: '30 21 * * *'
+    - cron: '1 */6 * * *'
   workflow_dispatch:
 
 jobs:
