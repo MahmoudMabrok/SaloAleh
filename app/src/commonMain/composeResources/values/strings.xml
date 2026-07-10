@@ -668,4 +668,5 @@
     <string name="referral_announcement_body">ادعُ أصدقاءك لتطبيق صلّ عليه وشاركهم أجر الصلاة على النبي ﷺ.\n«الدّالُّ على الخير كفاعِلِه»\nكل صلاة يصلّيها من دعوته في ميزان حسناتك بإذن الله.</string>
     <string name="referral_announcement_cta">شارك الآن</string>
     <string name="referral_announcement_dismiss">لاحقًا</string>
+    <string name="challenge_community_total">الإجمالي اليوم: %1$s</string>
 </resources>

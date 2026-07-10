@@ -74,6 +74,7 @@ import tools.mo3ta.salo.generated.resources.dhikr_reward_crown_label
 import tools.mo3ta.salo.generated.resources.dhikr_reward_feather
 import tools.mo3ta.salo.generated.resources.dhikr_reward_shield
 import tools.mo3ta.salo.generated.resources.dhikr_rewards_title
+import tools.mo3ta.salo.generated.resources.challenge_community_total
 import tools.mo3ta.salo.generated.resources.dhikr_tap_hint
 import tools.mo3ta.salo.generated.resources.dhikr_times
 import tools.mo3ta.salo.generated.resources.dhikr_today
@@ -87,6 +88,14 @@ import tools.mo3ta.salo.ui.dhikr.DhikrPanel
 import tools.mo3ta.salo.ui.dhikr.DhikrProgressRing
 import tools.mo3ta.salo.ui.dhikr.DhikrSpacing
 import tools.mo3ta.salo.ui.dhikr.ManualDhikrSheet
+
+private fun Int.formatWithCommas(): String {
+    if (this < 1000) return "$this"
+    val thousands = this / 1000
+    val remainder = this % 1000
+    return if (remainder == 0) "$thousands,000"
+    else "$thousands,${remainder.toString().padStart(3, '0')}"
+}
 
 private val DhikrHeroBackground = Brush.verticalGradient(
     colors = listOf(
@@ -150,6 +159,7 @@ fun DhikrRewardsScreen(
                 target = state.dailyGoal,
                 rank = state.rank,
                 participantCount = state.participantCount,
+                totalToday = state.totalTodayDhikr,
                 canCount = !state.isLoading,
                 onTap = {
                     viewModel.onDhikrTap()
@@ -262,6 +272,7 @@ private fun DhikrImmersiveZone(
     target: Int,
     rank: Int,
     participantCount: Int,
+    totalToday: Int,
     canCount: Boolean,
     onTap: () -> Unit,
     onBack: () -> Unit,
@@ -389,6 +400,16 @@ private fun DhikrImmersiveZone(
                 fontSize = 12.sp,
                 textAlign = TextAlign.Center,
             )
+            if (totalToday > 0) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = stringResource(Res.string.challenge_community_total, totalToday.formatWithCommas()),
+                    color = DhikrColors.LightGreen.copy(alpha = 0.7f),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                )
+            }
             Spacer(Modifier.height(16.dp))
         }
     }

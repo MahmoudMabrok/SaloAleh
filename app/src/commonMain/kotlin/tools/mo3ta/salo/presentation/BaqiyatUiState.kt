@@ -10,6 +10,7 @@ data class BaqiyatUiState(
     val tappedPhrases: Set<BaqiyatPhrase> = emptySet(),
     val rank: Int = 0,
     val participantCount: Int = 0,
+    val totalTodayBaqiyat: Int = 0,
     val isLoading: Boolean = true,
     val isSyncing: Boolean = false,
     val errorMessage: String? = null,

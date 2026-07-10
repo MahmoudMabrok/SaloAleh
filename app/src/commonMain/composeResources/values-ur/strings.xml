@@ -620,4 +620,5 @@
     <string name="referral_announcement_body">اپنے دوستوں کو ایپ کی دعوت دیں اور نبی ﷺ پر درود کا اجر بانٹیں۔\n«نیکی کی طرف رہنمائی کرنے والا اسے کرنے والے کی طرح ہے»\nان کا ہر درود اللہ کی مرضی سے آپ کی نیکیوں میں شمار ہوگا۔</string>
     <string name="referral_announcement_cta">ابھی شیئر کریں</string>
     <string name="referral_announcement_dismiss">بعد میں</string>
+    <string name="challenge_community_total">آج کا کل: %1$s</string>
 </resources>

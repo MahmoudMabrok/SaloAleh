@@ -148,6 +148,7 @@ class BaqiyatViewModel(
                 leaderboard = entries,
                 rank = stats?.rank ?: entries.firstOrNull { entry -> entry.uid == uid }?.rank ?: 0,
                 participantCount = stats?.participantCount ?: entries.size,
+                totalTodayBaqiyat = stats?.totalTodayBaqiyat ?: 0,
                 isLeaderboardLoading = false,
                 errorMessage = statsResult.exceptionOrNull()?.message ?: leaderboardResult.exceptionOrNull()?.message,
             )

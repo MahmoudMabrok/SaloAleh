@@ -658,4 +658,5 @@
     <string name="referral_announcement_body">Invite your friends to the app and share the reward of salawat upon the Prophet ﷺ.\n\"The one who guides to good is like the one who does it.\"\nEvery salawat they send counts in your good deeds, by Allah\'s will.</string>
     <string name="referral_announcement_cta">Share Now</string>
     <string name="referral_announcement_dismiss">Later</string>
+    <string name="challenge_community_total">Today\'s total: %1$s</string>
 </resources>

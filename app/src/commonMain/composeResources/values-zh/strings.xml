@@ -620,4 +620,5 @@
     <string name="referral_announcement_body">邀请朋友使用应用，分享为先知 ﷺ 赞圣的回赐。\n"引导他人行善者，如同行善者一样。"\n他们的每一次赞圣都将计入你的善行，因沙安拉。</string>
     <string name="referral_announcement_cta">立即分享</string>
     <string name="referral_announcement_dismiss">稍后</string>
+    <string name="challenge_community_total">今日总计：%1$s</string>
 </resources>
