@@ -14,6 +14,9 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import tools.mo3ta.salo.data.country.CountryCodeProvider
+import tools.mo3ta.salo.data.engagement.ChallengeBadgeStore
+import tools.mo3ta.salo.domain.ChallengeType
+import tools.mo3ta.salo.domain.DHIKR_CHALLENGE_DAILY_GOAL
 import tools.mo3ta.salo.domain.DhikrLeaderboardEntry
 import tools.mo3ta.salo.data.dhikr.DhikrChallengeFirebaseClient
 import tools.mo3ta.salo.data.dhikr.DhikrChallengeStore
@@ -24,6 +27,7 @@ class DhikrChallengeViewModel(
     private val firebaseClient: DhikrChallengeFirebaseClient,
     private val sessionStore: MohamedLoversSessionStore,
     private val countryCodeProvider: CountryCodeProvider,
+    private val challengeBadgeStore: ChallengeBadgeStore,
 ) : ViewModel() {
 
     private val cairoZone = TimeZone.of("Africa/Cairo")
@@ -92,6 +96,7 @@ class DhikrChallengeViewModel(
                 store.updateRemoteBaseline(today, remoteCount)
                 _state.update { it.copy(todayCount = store.todayCount(today)) }
             }
+            maybeRecordWin(today, store.todayCount(today))
 
             refreshStats(today.toString(), uid)
         }
@@ -100,6 +105,7 @@ class DhikrChallengeViewModel(
     fun onDhikrTap() {
         val today = today()
         val updated = store.incrementToday(today)
+        maybeRecordWin(today, updated)
         val isMilestone = updated > 0 && updated % 100 == 0
         _state.update {
             it.copy(
@@ -131,6 +137,7 @@ class DhikrChallengeViewModel(
         val today = today()
         val before = store.todayCount(today)
         val updated = store.addToday(today, count)
+        maybeRecordWin(today, updated)
         val crossedMilestone = updated / 100 > before / 100
         val milestone = updated / 100 * 100
         _state.update {
@@ -242,6 +249,13 @@ class DhikrChallengeViewModel(
             .onFailure { error ->
                 _state.update { it.copy(errorMessage = error.message) }
             }
+    }
+
+    /** Reaching the daily goal wins the day: the challenge badge count goes up by 1 (once per day). */
+    private fun maybeRecordWin(today: LocalDate, total: Int) {
+        if (total >= DHIKR_CHALLENGE_DAILY_GOAL) {
+            challengeBadgeStore.recordWin(ChallengeType.DHIKR, today)
+        }
     }
 
     private fun today(): LocalDate = Clock.System.todayIn(cairoZone)

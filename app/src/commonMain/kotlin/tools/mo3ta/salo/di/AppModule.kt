@@ -12,6 +12,7 @@ import tools.mo3ta.salo.data.dhikr.DhikrChallengeFirebaseClient
 import tools.mo3ta.salo.data.dhikr.DhikrChallengeStore
 import tools.mo3ta.salo.data.istighfar.IstighfarChallengeFirebaseClient
 import tools.mo3ta.salo.data.istighfar.IstighfarChallengeStore
+import tools.mo3ta.salo.data.engagement.ChallengeBadgeStore
 import tools.mo3ta.salo.data.engagement.DailyGoalStore
 import tools.mo3ta.salo.data.engagement.EngagementStore
 import tools.mo3ta.salo.data.engagement.RoundStreakStore
@@ -48,6 +49,7 @@ val appModule = module {
     single { EngagementStore(get()) }
     single { DailyGoalStore(get()) }
     single { RoundStreakStore(get()) }
+    single { ChallengeBadgeStore(get()) }
     single { HeartStore(get()) }
     single { DhikrChallengeStore(get()) }
     single { DhikrChallengeFirebaseClient(get(), get()) }
@@ -67,10 +69,10 @@ val appModule = module {
     single { HadithRemoteDataSource(get()) }
     single { HadithListRepository(get()) }
     viewModel { MohamedLoversViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    viewModel { DhikrChallengeViewModel(get(), get(), get(), get()) }
-    viewModel { IstighfarChallengeViewModel(get(), get(), get(), get()) }
-    viewModel { BaqiyatViewModel(get(), get(), get(), get()) }
-    viewModel { AchievementsViewModel(get(), get()) }
+    viewModel { DhikrChallengeViewModel(get(), get(), get(), get(), get()) }
+    viewModel { IstighfarChallengeViewModel(get(), get(), get(), get(), get()) }
+    viewModel { BaqiyatViewModel(get(), get(), get(), get(), get()) }
+    viewModel { AchievementsViewModel(get(), get(), get()) }
     viewModel { HadithListViewModel(get()) }
     single { TenDaysStore(get()) }
     single { TenDaysFirebaseClient(get(), get(), get()) }

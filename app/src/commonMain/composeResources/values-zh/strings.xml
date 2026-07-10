@@ -207,6 +207,10 @@
     <string name="achievements_badge_streak_30_how">连续30天不间断打开应用</string>
     <string name="achievements_badge_round_streak_title">完美一周</string>
     <string name="achievements_badge_round_streak_how">在整个轮次中每天都为先知ﷺ祈福，一天也不间断</string>
+    <string name="achievements_section_challenge_badges">挑战徽章</string>
+    <string name="achievements_badge_challenge_dhikr_how">一天内完成 %1$d 次赞念即达成每日目标 — 每个获胜日徽章计数加 1</string>
+    <string name="achievements_badge_challenge_baqiyat_how">一天内完成 %1$d 轮永恒善功 — 每个获胜日徽章计数加 1</string>
+    <string name="achievements_badge_challenge_istighfar_how">一天内完成 %1$d 次求恕 — 每个获胜日徽章计数加 1</string>
     <string name="achievements_badge_rank_title">第%1$d名</string>
     <string name="achievements_badge_rank_how">在任意竞赛轮次中获得第%1$d名</string>
     <string name="achievements_badge_how_label">如何获得：</string>

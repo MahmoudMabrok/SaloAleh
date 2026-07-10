@@ -54,6 +54,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.domain.Achievement
 import tools.mo3ta.salo.domain.BadgeType
+import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.badge_10th_place
 import tools.mo3ta.salo.generated.resources.badge_1st_place
@@ -72,9 +73,16 @@ import tools.mo3ta.salo.generated.resources.achievements_badge_how_label
 import tools.mo3ta.salo.generated.resources.achievements_badge_rank_how
 import tools.mo3ta.salo.generated.resources.achievements_badge_rank_title
 import tools.mo3ta.salo.generated.resources.achievements_badge_repeatable
+import tools.mo3ta.salo.generated.resources.achievements_badge_challenge_baqiyat_how
+import tools.mo3ta.salo.generated.resources.achievements_badge_challenge_dhikr_how
+import tools.mo3ta.salo.generated.resources.achievements_badge_challenge_istighfar_how
 import tools.mo3ta.salo.generated.resources.achievements_badge_round_streak_how
 import tools.mo3ta.salo.generated.resources.achievements_badge_round_streak_title
+import tools.mo3ta.salo.generated.resources.achievements_section_challenge_badges
 import tools.mo3ta.salo.generated.resources.achievements_section_round_streak
+import tools.mo3ta.salo.generated.resources.challenge_baqiyat_title
+import tools.mo3ta.salo.generated.resources.challenge_dhikr_title
+import tools.mo3ta.salo.generated.resources.challenge_istighfar_title
 import tools.mo3ta.salo.generated.resources.achievements_badge_streak_30_how
 import tools.mo3ta.salo.generated.resources.achievements_badge_streak_30_title
 import tools.mo3ta.salo.generated.resources.achievements_badge_streak_7_how
@@ -166,6 +174,21 @@ private val ALL_BADGES: List<BadgeSpec> = buildList {
 
 private data class BadgeDisplayItem(val spec: BadgeSpec, val count: Int)
 
+// ── Challenge badges: one per daily challenge; every win (daily goal reached) adds 1 ──
+
+private data class ChallengeBadgeSpec(
+    val type: ChallengeType,
+    val emoji: String,
+    val titleRes: StringResource,
+    val howToEarnRes: StringResource,
+)
+
+private val CHALLENGE_BADGES = listOf(
+    ChallengeBadgeSpec(ChallengeType.DHIKR, "📿", Res.string.challenge_dhikr_title, Res.string.achievements_badge_challenge_dhikr_how),
+    ChallengeBadgeSpec(ChallengeType.BAQIYAT, "✨", Res.string.challenge_baqiyat_title, Res.string.achievements_badge_challenge_baqiyat_how),
+    ChallengeBadgeSpec(ChallengeType.ISTIGHFAR, "🤲", Res.string.challenge_istighfar_title, Res.string.achievements_badge_challenge_istighfar_how),
+)
+
 // ── Screen ─────────────────────────────────────────────────────────────────────
 
 @Composable
@@ -176,6 +199,7 @@ fun AchievementsScreen(
 ) {
     val achievements by viewModel.achievements.collectAsStateWithLifecycle()
     val currentStreak by viewModel.currentStreak.collectAsStateWithLifecycle()
+    val challengeBadgeCounts by viewModel.challengeBadgeCounts.collectAsStateWithLifecycle()
 
     val analyticsManager: AnalyticsManager = koinInject()
     LaunchedEffect(Unit) { analyticsManager.logView("AchievementsScreen") }
@@ -208,12 +232,15 @@ fun AchievementsScreen(
         achievements.count { it is Achievement.RoundStreakBadge }
     }
 
-    val earnedBadgesCount = remember(streakItems, rankItems, roundStreakCount) {
-        (streakItems + rankItems).count { it.count > 0 } + (if (roundStreakCount > 0) 1 else 0)
+    val earnedBadgesCount = remember(streakItems, rankItems, roundStreakCount, challengeBadgeCounts) {
+        (streakItems + rankItems).count { it.count > 0 } +
+            (if (roundStreakCount > 0) 1 else 0) +
+            challengeBadgeCounts.values.count { it > 0 }
     }
     val bestRank = remember(roundHistory) { roundHistory.minOfOrNull { it.rank } }
 
     var selectedSpec by remember { mutableStateOf<BadgeSpec?>(null) }
+    var selectedChallengeBadge by remember { mutableStateOf<ChallengeBadgeSpec?>(null) }
     var showMedalInfo by remember { mutableStateOf(false) }
     var showRoundStreakInfo by remember { mutableStateOf(false) }
 
@@ -286,6 +313,22 @@ fun AchievementsScreen(
                 count = roundStreakCount,
                 onClick = { showRoundStreakInfo = true },
             )
+        }
+
+        // ── Challenge badges (one per daily challenge, +1 per win) ──
+        Spacer(Modifier.height(16.dp))
+        SectionLabel(stringResource(Res.string.achievements_section_challenge_badges))
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            CHALLENGE_BADGES.forEach { spec ->
+                ChallengeBadgeCard(
+                    spec = spec,
+                    count = challengeBadgeCounts[spec.type] ?: 0,
+                    onClick = { selectedChallengeBadge = spec },
+                )
+            }
         }
 
         // ── Rank badges ──
@@ -414,6 +457,42 @@ fun AchievementsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { selectedSpec = null }) {
+                    Text(stringResource(Res.string.achievements_dialog_ok), color = MohamedLoversPalette.Gold, fontWeight = FontWeight.Bold)
+                }
+            },
+        )
+    }
+
+    // ── Challenge badge info dialog ──
+    selectedChallengeBadge?.let { spec ->
+        AlertDialog(
+            onDismissRequest = { selectedChallengeBadge = null },
+            containerColor = MohamedLoversPalette.DeepBlue,
+            shape = RoundedCornerShape(20.dp),
+            title = {
+                Text(
+                    text = "${spec.emoji}  " + stringResource(spec.titleRes),
+                    color = MohamedLoversPalette.Gold,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(Res.string.achievements_badge_how_label), color = Color.White.copy(alpha = 0.55f), fontSize = 13.sp)
+                    Text(stringResource(spec.howToEarnRes, spec.type.dailyGoal), color = Color.White, fontSize = 15.sp, lineHeight = 22.sp)
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "✨ " + stringResource(Res.string.achievements_badge_repeatable),
+                        color = MohamedLoversPalette.Gold.copy(alpha = 0.8f),
+                        fontSize = 12.sp,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { selectedChallengeBadge = null }) {
                     Text(stringResource(Res.string.achievements_dialog_ok), color = MohamedLoversPalette.Gold, fontWeight = FontWeight.Bold)
                 }
             },
@@ -699,6 +778,72 @@ private fun RoundStreakBadgeCard(
                 Text(text = "$count", color = Color.Black, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
         } else if (!achieved) {
+            Text(text = "🔒", fontSize = 13.sp)
+        }
+    }
+}
+
+// ── Challenge badge card (one per daily challenge, count grows with each win) ─
+
+@Composable
+private fun ChallengeBadgeCard(
+    spec: ChallengeBadgeSpec,
+    count: Int,
+    onClick: () -> Unit,
+) {
+    val achieved = count > 0
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                if (achieved) MohamedLoversPalette.Gold.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.04f),
+                RoundedCornerShape(14.dp),
+            )
+            .border(
+                1.dp,
+                if (achieved) MohamedLoversPalette.Gold.copy(alpha = 0.42f)
+                else MohamedLoversPalette.Gold.copy(alpha = 0.16f),
+                RoundedCornerShape(14.dp),
+            )
+            .clickable(onClick = onClick)
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .background(
+                    if (achieved) MohamedLoversPalette.Gold.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.06f),
+                    CircleShape,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(text = spec.emoji, fontSize = 22.sp, modifier = Modifier.alpha(if (achieved) 1f else 0.4f))
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(spec.titleRes),
+                color = if (achieved) MohamedLoversPalette.Gold else Color.White,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            Spacer(Modifier.height(3.dp))
+            Text(
+                text = stringResource(spec.howToEarnRes, spec.type.dailyGoal),
+                color = Color.White.copy(alpha = 0.55f),
+                fontSize = 11.sp,
+                lineHeight = 16.sp,
+            )
+        }
+        if (achieved) {
+            Box(
+                modifier = Modifier.size(22.dp).background(MohamedLoversPalette.Gold, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(text = "$count", color = Color.Black, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
+        } else {
             Text(text = "🔒", fontSize = 13.sp)
         }
     }

@@ -83,6 +83,16 @@ Per-round streak earned by sending salawat every day of a competition round with
 - Announcement gated by its own `STREAK_BADGE_ANNOUNCEMENT_ENABLED` flag in `App.kt` (independent of the globally-suppressed `APP_ANNOUNCEMENTS_ENABLED`).
 - Tests: `commonTest/data/engagement/RoundStreakStoreTest.kt`.
 
+### Challenge badges
+
+Per-challenge achievement badges: each daily challenge (dhikr, baqiyat, istighfar) has one badge whose count grows by 1 for every "win" — a day where the user reaches that challenge's daily goal (dhikr 100, baqiyat 10 cycles, istighfar 70).
+
+- Core files: `domain/ChallengeBadgeModels.kt` (`ChallengeType`), `data/engagement/ChallengeBadgeStore.kt`, the three challenge ViewModels, `ui/AchievementsScreen.kt`.
+- Local-only persistence via `multiplatform-settings` keys `challenge_badge_last_win_{id}`, `challenge_badge_count_{id}`. No Firebase schema/rules changes.
+- At most one win per Cairo day per challenge (`recordWin` is idempotent within a day). Wins are checked on every count change — taps, manual entry sheets, and remote-baseline sync on screen enter.
+- UI: "challenge badges" section on `AchievementsScreen` with a gold count pill per badge; counts also feed the badges stat card.
+- Tests: `commonTest/data/engagement/ChallengeBadgeStoreTest.kt`.
+
 ## Firebase RTDB structure
 
 ```

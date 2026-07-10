@@ -14,6 +14,8 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import tools.mo3ta.salo.data.country.CountryCodeProvider
+import tools.mo3ta.salo.data.engagement.ChallengeBadgeStore
+import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.domain.IstighfarLeaderboardEntry
 import tools.mo3ta.salo.data.istighfar.IstighfarChallengeFirebaseClient
 import tools.mo3ta.salo.data.istighfar.IstighfarChallengeStore
@@ -25,6 +27,7 @@ class IstighfarChallengeViewModel(
     private val firebaseClient: IstighfarChallengeFirebaseClient,
     private val sessionStore: MohamedLoversSessionStore,
     private val countryCodeProvider: CountryCodeProvider,
+    private val challengeBadgeStore: ChallengeBadgeStore,
 ) : ViewModel() {
 
     private val cairoZone = TimeZone.of("Africa/Cairo")
@@ -93,6 +96,7 @@ class IstighfarChallengeViewModel(
                 store.updateRemoteBaseline(today, remoteCount)
                 _state.update { it.copy(todayCount = store.todayCount(today)) }
             }
+            maybeRecordWin(today, store.todayCount(today))
 
             refreshStats(today.toString(), uid)
         }
@@ -101,6 +105,7 @@ class IstighfarChallengeViewModel(
     fun onIstighfarTap() {
         val today = today()
         val updated = store.incrementToday(today)
+        maybeRecordWin(today, updated)
         val isMilestone = updated > 0 && updated % ISTIGHFAR_CHALLENGE_DAILY_GOAL == 0
         _state.update {
             it.copy(
@@ -132,6 +137,7 @@ class IstighfarChallengeViewModel(
         val today = today()
         val before = store.todayCount(today)
         val updated = store.addToday(today, count)
+        maybeRecordWin(today, updated)
         val crossedMilestone = updated / ISTIGHFAR_CHALLENGE_DAILY_GOAL > before / ISTIGHFAR_CHALLENGE_DAILY_GOAL
         val milestone = updated / ISTIGHFAR_CHALLENGE_DAILY_GOAL * ISTIGHFAR_CHALLENGE_DAILY_GOAL
         _state.update {
@@ -243,6 +249,13 @@ class IstighfarChallengeViewModel(
             .onFailure { error ->
                 _state.update { it.copy(errorMessage = error.message) }
             }
+    }
+
+    /** Reaching the daily goal wins the day: the challenge badge count goes up by 1 (once per day). */
+    private fun maybeRecordWin(today: LocalDate, total: Int) {
+        if (total >= ISTIGHFAR_CHALLENGE_DAILY_GOAL) {
+            challengeBadgeStore.recordWin(ChallengeType.ISTIGHFAR, today)
+        }
     }
 
     private fun today(): LocalDate = Clock.System.todayIn(cairoZone)

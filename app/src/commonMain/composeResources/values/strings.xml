@@ -241,6 +241,10 @@
     <string name="achievements_badge_streak_30_how">افتح التطبيق 30 يوماً متتالياً دون انقطاع</string>
     <string name="achievements_badge_round_streak_title">الأسبوع المكتمل</string>
     <string name="achievements_badge_round_streak_how">صلِّ على النبي ﷺ كل يوم طوال الجولة دون أن تفوّت يوماً واحداً</string>
+    <string name="achievements_section_challenge_badges">شارات التحديات</string>
+    <string name="achievements_badge_challenge_dhikr_how">أكمل هدف اليوم (%1$d ذكراً) في تحدي الذكر — تزيد الشارة 1 مع كل يوم فوز</string>
+    <string name="achievements_badge_challenge_baqiyat_how">أكمل %1$d دورات من الباقيات الصالحات في يوم واحد — تزيد الشارة 1 مع كل يوم فوز</string>
+    <string name="achievements_badge_challenge_istighfar_how">أكمل هدف اليوم (%1$d استغفاراً) — تزيد الشارة 1 مع كل يوم فوز</string>
     <string name="achievements_badge_rank_title">المركز %1$d</string>
     <string name="achievements_badge_rank_how">احصل على المركز %1$d في أي جولة تنافسية</string>
     <string name="achievements_badge_how_label">كيف تحصل عليها:</string>
