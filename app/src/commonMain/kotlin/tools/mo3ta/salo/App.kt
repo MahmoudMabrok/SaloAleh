@@ -73,6 +73,7 @@ import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.ui.NicknamePromptDialog
 import tools.mo3ta.salo.ui.ReferralAnnouncementDialog
 import tools.mo3ta.salo.ui.SalawatVariantAnnouncementDialog
+import tools.mo3ta.salo.ui.StreakBadgeAnnouncementDialog
 import tools.mo3ta.salo.ui.takbeer.TakbeerAnnouncementDialog
 import tools.mo3ta.salo.ui.takbeer.TakbeerSessionScreen
 import tools.mo3ta.salo.ui.support.MilestoneSupportDialog
@@ -98,6 +99,10 @@ import tools.mo3ta.salo.ui.tendays.TenDaysScreen
 
 // Temporarily suppress app announcements; the review dialog remains enabled after onboarding.
 private const val APP_ANNOUNCEMENTS_ENABLED = false
+
+// The per-round streak badge announcement ships independently of the global suppression
+// above so the new feature is surfaced once. Flip to false to hide it.
+private const val STREAK_BADGE_ANNOUNCEMENT_ENABLED = true
 
 @Composable
 fun App(
@@ -401,6 +406,30 @@ fun App(
                     settings.putBoolean("referral_announcement_shown", true)
                     referralAnnouncementDone = true
                     analyticsManager.logAction(AppAnalytics.REFERRAL_ANNOUNCEMENT_DISMISSED)
+                },
+            )
+        }
+
+        var streakBadgeAnnouncementDone by remember {
+            mutableStateOf(settings.getBoolean("streak_badge_announcement_shown", false))
+        }
+        if (
+            STREAK_BADGE_ANNOUNCEMENT_ENABLED &&
+            !showOnboarding &&
+            !shouldShowNicknamePrompt &&
+            !streakBadgeAnnouncementDone
+        ) {
+            StreakBadgeAnnouncementDialog(
+                onOpenAchievements = {
+                    settings.putBoolean("streak_badge_announcement_shown", true)
+                    streakBadgeAnnouncementDone = true
+                    selectedTab = SaloTab.Achievements
+                    analyticsManager.logAction(AppAnalytics.STREAK_BADGE_ANNOUNCEMENT_OPENED)
+                },
+                onDismiss = {
+                    settings.putBoolean("streak_badge_announcement_shown", true)
+                    streakBadgeAnnouncementDone = true
+                    analyticsManager.logAction(AppAnalytics.STREAK_BADGE_ANNOUNCEMENT_DISMISSED)
                 },
             )
         }

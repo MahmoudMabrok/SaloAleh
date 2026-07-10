@@ -22,7 +22,25 @@ sealed class Achievement {
         val score: Int? = null,
         val winnerCode: String = "",
     ) : Achievement()
+
+    /**
+     * Earned when the user sends salawat every day of a competition round without
+     * missing a single day (a "perfect week"). Repeatable — one per round.
+     */
+    data class RoundStreakBadge(
+        val roundKey: String,
+        val earnedDate: LocalDate,
+    ) : Achievement()
 }
+
+/** Number of consecutive active days within a round required to earn the round-streak badge. */
+const val ROUND_STREAK_TARGET = 7
+
+/** Outcome of recording a day's salawat activity for the round-streak tracker. */
+data class RoundStreakResult(
+    val currentStreak: Int,
+    val newlyEarnedBadge: Achievement.RoundStreakBadge?,
+)
 
 data class UserAchievement(
     val rank: Int,

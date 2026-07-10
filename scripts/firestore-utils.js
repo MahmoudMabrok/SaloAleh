@@ -267,6 +267,33 @@ async function mirrorDailyBadgeClear(firestore, roundKey, playerUids, leaderboar
   }
 }
 
+async function mirrorRoundStreakClear(firestore, roundKey, playerUids, leaderboardKeys) {
+  try {
+    const admin = require('firebase-admin');
+    const batch = firestore.batch();
+    for (const uid of playerUids) {
+      batch.set(
+        firestore.collection(ROUNDS_COLLECTION).doc(roundKey)
+          .collection('players').doc(uid),
+        { roundStreak: admin.firestore.FieldValue.delete() },
+        { merge: true },
+      );
+    }
+    for (const key of leaderboardKeys) {
+      batch.set(
+        firestore.collection(ROUNDS_COLLECTION).doc(roundKey)
+          .collection('leaderboard').doc(key),
+        { roundStreak: admin.firestore.FieldValue.delete() },
+        { merge: true },
+      );
+    }
+    await batch.commit();
+    console.log(`[firestore-mirror] roundStreak cleared`);
+  } catch (e) {
+    console.error(`[firestore-mirror] roundStreak clear failed: ${e.message}`);
+  }
+}
+
 async function mirrorDhikrAggregateAndClean(firestore, dateKey, todayTotal, newGlobalTotal) {
   try {
     await firestore.collection(DHIKR_COLLECTION).doc('_totals').set(
@@ -350,6 +377,7 @@ module.exports = {
   mirrorAchievements,
   mirrorYesterdayTotalScores,
   mirrorDailyBadgeClear,
+  mirrorRoundStreakClear,
   mirrorDhikrAggregateAndClean,
   mirrorBaqiyatAggregateAndClean,
   mirrorIstighfarAggregateAndClean,

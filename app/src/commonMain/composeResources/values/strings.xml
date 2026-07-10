@@ -231,6 +231,7 @@
     <string name="achievements_stat_rounds">جولات</string>
     <string name="achievements_stat_best_rank">أفضل مركز</string>
     <string name="achievements_section_streak_badges">شارات الأيام</string>
+    <string name="achievements_section_round_streak">شارة المداومة الأسبوعية</string>
     <string name="achievements_section_rank_badges">شارات المراكز</string>
     <string name="achievements_section_round_history">إنجازات الجولات</string>
     <string name="achievements_medal_info_cd">معلومات الميداليات</string>
@@ -238,6 +239,8 @@
     <string name="achievements_badge_streak_7_how">افتح التطبيق 7 أيام متتالية دون انقطاع</string>
     <string name="achievements_badge_streak_30_title">المحب</string>
     <string name="achievements_badge_streak_30_how">افتح التطبيق 30 يوماً متتالياً دون انقطاع</string>
+    <string name="achievements_badge_round_streak_title">الأسبوع المكتمل</string>
+    <string name="achievements_badge_round_streak_how">صلِّ على النبي ﷺ كل يوم طوال الجولة دون أن تفوّت يوماً واحداً</string>
     <string name="achievements_badge_rank_title">المركز %1$d</string>
     <string name="achievements_badge_rank_how">احصل على المركز %1$d في أي جولة تنافسية</string>
     <string name="achievements_badge_how_label">كيف تحصل عليها:</string>
@@ -261,6 +264,8 @@
     <string name="achievement_celebration_streak_30_subtitle">فتحت شارة «المحب» لفتح التطبيق 30 يوماً متتالياً. بارك الله فيك.</string>
     <string name="achievement_celebration_rank_title">المركز %1$d في الترتيب!</string>
     <string name="achievement_celebration_rank_subtitle">وصلت إلى قائمة أفضل 10 محبين في جولة %1$s. بارك الله فيك ﷺ</string>
+    <string name="achievement_celebration_round_streak_title">أسبوع كامل من المداومة!</string>
+    <string name="achievement_celebration_round_streak_subtitle">صلّيت على النبي ﷺ كل يوم طوال الجولة دون انقطاع. فتحت شارة «الأسبوع المكتمل». دُم على هذا الخير.</string>
     <string name="achievement_celebration_dismiss">رائع! شكراً</string>
 
     <!-- Takbeer Session Screen -->
@@ -635,6 +640,10 @@
     <string name="salawat_variant_announcement_body">يمكنك الآن اختيار صيغة الصلاة التي تظهر عند الضغط على السماء، من بين عدة صيغ ثابتة عن النبي ﷺ. اخترها من الإعدادات.</string>
     <string name="salawat_variant_announcement_cta">اختيار الصيغة</string>
     <string name="salawat_variant_announcement_dismiss">ليس الآن</string>
+    <string name="streak_badge_announcement_title">شارة المداومة الأسبوعية</string>
+    <string name="streak_badge_announcement_body">جديد! صلِّ على النبي ﷺ كل يوم طوال الجولة دون أن تفوّت يوماً واحداً لتفتح شارة «الأسبوع المكتمل». شارة جديدة كل جولة تكملها.</string>
+    <string name="streak_badge_announcement_cta">عرض الإنجازات</string>
+    <string name="streak_badge_announcement_dismiss">ليس الآن</string>
     <string name="leaderboard_score_label">صلاة</string>
     <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">عرض المسابقة</string>

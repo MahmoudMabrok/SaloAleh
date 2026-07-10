@@ -400,6 +400,29 @@ class MohamedLoversFirebaseClient(
         }
     }
 
+    override suspend fun writeRoundStreak(roundKey: String, uid: String, streak: Int): Result<Unit> {
+        // Publish positive streaks; clear the field (null) when the streak is not active
+        // so the leaderboard badge disappears for this user.
+        val value: Int? = streak.takeIf { it > 0 }
+        log.d { "writeRoundStreak[$roundKey/$uid] streak=$value" }
+        return runCatching {
+            Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(
+                mapOf(ROUND_STREAK_KEY to value)
+            )
+        }.also { result ->
+            result.fold(
+                onSuccess = {
+                    log.d { "writeRoundStreak[$roundKey/$uid] ok" }
+                    mirror.mirrorPlayerField(roundKey, uid, ROUND_STREAK_KEY, value)
+                },
+                onFailure = { error ->
+                    log.e(error) { "writeRoundStreak[$roundKey/$uid] failed" }
+                    trackWriteFailure("write_round_streak", error)
+                },
+            )
+        }
+    }
+
     override suspend fun writeSupporterStatus(uid: String, supporter: Boolean): Result<Unit> {
         log.d { "writeSupporterStatus[$uid] supporter=$supporter" }
         return runCatching {
@@ -618,8 +641,9 @@ class MohamedLoversFirebaseClient(
         val scoreMasked = map[SCORE_MASKED_KEY] as? Boolean ?: false
         val isSupporter = map[IS_SUPPORTER_KEY] as? Boolean ?: false
         val dailyBadge = map[DAILY_BADGE_KEY] as? String
+        val roundStreak = (map[ROUND_STREAK_KEY] as? Number)?.toInt()?.takeIf { it > 0 }
         val nickname = map[NICKNAME_KEY] as? String ?: ""
-        return FirebaseLeaderboardEntry(rank = rank, uid = uid, score = score, countryCode = countryCode, rankChange = rankChange, scoreMasked = scoreMasked, isSupporter = isSupporter, dailyBadge = dailyBadge, nickname = nickname)
+        return FirebaseLeaderboardEntry(rank = rank, uid = uid, score = score, countryCode = countryCode, rankChange = rankChange, scoreMasked = scoreMasked, isSupporter = isSupporter, dailyBadge = dailyBadge, roundStreak = roundStreak, nickname = nickname)
     }
 
     private fun dev.gitlive.firebase.database.DataSnapshot.toPlayer(): MohamedLoversPlayer? {
@@ -658,6 +682,7 @@ class MohamedLoversFirebaseClient(
         const val SCORE_MASKED_KEY = "scoreMasked"
         const val IS_SUPPORTER_KEY = "isSupporter"
         const val DAILY_BADGE_KEY = "dailyBadge"
+        const val ROUND_STREAK_KEY = "roundStreak"
         const val NICKNAME_KEY = "nickname"
         const val YESTERDAY_TOTAL_SCORE_KEY = "yesterdayTotalScore"
         const val ROUND_TOTAL_PATH = "roundTotal"

@@ -13,6 +13,7 @@ import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.country.CountryCodeProvider
 import tools.mo3ta.salo.data.engagement.DailyGoalStore
 import tools.mo3ta.salo.data.engagement.EngagementStore
+import tools.mo3ta.salo.data.engagement.RoundStreakStore
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
 import tools.mo3ta.salo.data.heart.HEART_DECAY_INTERVAL_MS
 import tools.mo3ta.salo.data.heart.HeartStore
@@ -78,6 +79,7 @@ class MohamedLoversViewModelHeartTest {
             engagementStore = EngagementStore(MapSettings()),
             hadithStore = DailyHadithStore(MapSettings()),
             dailyGoalStore = DailyGoalStore(MapSettings()),
+            roundStreakStore = RoundStreakStore(MapSettings()),
             settingsStore = NotificationSettingsStore(MapSettings()),
             sessionStore = sessionStore,
             premiumStore = premiumStore,

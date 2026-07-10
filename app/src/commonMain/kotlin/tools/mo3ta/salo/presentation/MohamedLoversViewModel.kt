@@ -20,6 +20,7 @@ import kotlinx.datetime.todayIn
 import tools.mo3ta.salo.data.time.computeFinalMinutesTick
 import tools.mo3ta.salo.data.engagement.DailyGoalStore
 import tools.mo3ta.salo.data.engagement.EngagementStore
+import tools.mo3ta.salo.data.engagement.RoundStreakStore
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
 import tools.mo3ta.salo.data.heart.HEART_DECAY_INTERVAL_MS
 import tools.mo3ta.salo.data.heart.HEART_LOW_THRESHOLD
@@ -44,6 +45,7 @@ class MohamedLoversViewModel(
     private val engagementStore: EngagementStore,
     private val hadithStore: DailyHadithStore,
     private val dailyGoalStore: DailyGoalStore,
+    private val roundStreakStore: RoundStreakStore,
     private val settingsStore: NotificationSettingsStore,
     private val sessionStore: MohamedLoversSessionStore,
     private val premiumStore: PremiumStore,
@@ -155,6 +157,9 @@ class MohamedLoversViewModel(
                     status = resolveStatus(bootstrap.firebaseConfigured, bootstrap.competitionWindow),
                     canCount = bootstrap.competitionWindow.networkNow != null,
                     sessionClicks = bootstrap.pendingSession.clickCount,
+                    roundStreak = bootstrap.competitionWindow.roundKey?.let { rk ->
+                        roundStreakStore.getCurrentStreak(rk, Clock.System.todayIn(TimeZone.of("Africa/Cairo")))
+                    } ?: 0,
                     error = null,
                 )
             }
@@ -201,6 +206,7 @@ class MohamedLoversViewModel(
         val wasComplete = dailyGoalStore.isGoalComplete(today)
         dailyGoalStore.recordTap(today, 1)
         val isNowComplete = dailyGoalStore.isGoalComplete(today)
+        val streakResult = roundStreakStore.recordActivity(roundKey, today)
         val todayStr = today.toString()
         val rawTaps = dailyGoalStore.todayProgress(today)
         val badge = DailyBadge.fromTapCount(rawTaps)
@@ -225,9 +231,26 @@ class MohamedLoversViewModel(
                 lastSalawatElapsedMinutes = 0L,
                 heartScore = heart.first,
                 showHeartRefillNudge = shouldShowHeartRefillNudge(heart.first, heart.second),
+                roundStreak = streakResult.currentStreak,
+                roundStreakCelebration = streakResult.newlyEarnedBadge ?: it.roundStreakCelebration,
             )
         }
+        publishRoundStreak(roundKey, streakResult.currentStreak, current.roundStreak)
         applyLeaderboard()
+    }
+
+    fun dismissRoundStreakCelebration() {
+        _state.update { it.copy(roundStreakCelebration = null) }
+    }
+
+    /**
+     * Publishes the round streak to the player's Firebase record so it renders next to
+     * their name on the leaderboard. Fire-and-forget; only writes when the value changed
+     * (streak is idempotent within a day) to avoid a network write on every tap.
+     */
+    private fun publishRoundStreak(roundKey: String, streak: Int, previous: Int) {
+        if (streak == previous || !state.value.firebaseConfigured) return
+        viewModelScope.launch { repository.writeRoundStreak(roundKey, streak) }
     }
 
     fun flushPendingSession() {
@@ -297,13 +320,19 @@ class MohamedLoversViewModel(
         val heart = addHeartTap(nowMs, count)
         repository.registerLocalTap(round, count)
         val pending = repository.getPendingSession(round)
+        val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
+        val prevStreak = state.value.roundStreak
+        val streakResult = roundStreakStore.recordActivity(round, today)
         _state.update {
             it.copy(
                 sessionClicks = pending.clickCount,
                 heartScore = heart.first,
                 showHeartRefillNudge = shouldShowHeartRefillNudge(heart.first, heart.second),
+                roundStreak = streakResult.currentStreak,
+                roundStreakCelebration = streakResult.newlyEarnedBadge ?: it.roundStreakCelebration,
             )
         }
+        publishRoundStreak(round, streakResult.currentStreak, prevStreak)
         applyLeaderboard()
         flushPendingSession()
     }
@@ -325,6 +354,8 @@ class MohamedLoversViewModel(
         val pending = repository.getPendingSession(roundKey)
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
         dailyGoalStore.recordTap(today, count)
+        val prevStreak = state.value.roundStreak
+        val streakResult = roundStreakStore.recordActivity(roundKey, today)
         _state.update {
             it.copy(
                 sessionClicks = pending.clickCount,
@@ -334,8 +365,11 @@ class MohamedLoversViewModel(
                 lastSalawatElapsedMinutes = 0L,
                 heartScore = heart.first,
                 showHeartRefillNudge = shouldShowHeartRefillNudge(heart.first, heart.second),
+                roundStreak = streakResult.currentStreak,
+                roundStreakCelebration = streakResult.newlyEarnedBadge ?: it.roundStreakCelebration,
             )
         }
+        publishRoundStreak(roundKey, streakResult.currentStreak, prevStreak)
         applyLeaderboard()
         flushPendingSession()
         viewModelScope.launch {
@@ -676,6 +710,7 @@ class MohamedLoversViewModel(
                 scoreMasked = entry.scoreMasked,
                 isSupporter = entry.isSupporter,
                 dailyBadge = entry.dailyBadge,
+                roundStreak = if (isCurrentUser) state.value.roundStreak.takeIf { it > 0 } else entry.roundStreak,
             )
         }.sortedByDescending { it.totalCount }
             .mapIndexed { index, entry -> entry.copy(rank = index + 1) }
@@ -696,6 +731,7 @@ class MohamedLoversViewModel(
                 totalCount = selfDisplayScore,
                 isCurrentUser = true,
                 dailyBadge = state.value.currentDailyBadge,
+                roundStreak = state.value.roundStreak.takeIf { it > 0 },
                 uid = uid,
             )
         }

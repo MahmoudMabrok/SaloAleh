@@ -71,6 +71,18 @@ Main-screen emotional gauge for salawat momentum.
 - UI: heart widget lives top-left on `MohamedLoversScreen`, includes a short tooltip, and displays a red fill level that reaches full at `1000` points. The visual fill cap does not cap the stored score.
 - Tests: heart math/store tests live under `commonTest/data/heart`; ViewModel coverage is in `MohamedLoversViewModelHeartTest`.
 
+### Round streak badge ("perfect week")
+
+Per-round streak earned by sending salawat every day of a competition round without missing a day.
+
+- Core files: `data/engagement/RoundStreakStore.kt`, `domain/EngagementModels.kt` (`Achievement.RoundStreakBadge`, `ROUND_STREAK_TARGET = 7`), `presentation/MohamedLoversViewModel.kt`, `ui/AchievementsScreen.kt`, `ui/StreakBadgeAnnouncementDialog.kt`.
+- Local persistence via `multiplatform-settings` keys `round_streak_round_key`, `round_streak_last_active`, `round_streak_count`, `round_streak_badges`. Resets each round; a missed day restarts the streak at 1. Earns one repeatable badge per round at 7 consecutive active days.
+- Every salawat path (tap, manual sheet, extension sync) records activity and **publishes the current streak to `players/{uid}/roundStreak`** (client, fire-and-forget, only on change) so it shows next to the name on the leaderboard. Hidden when `0`/absent.
+- Leaderboard plumbing mirrors `dailyBadge`: `leaderboard-utils.js` carries `roundStreak` into `leaderboard`/`dailyLeaderboard` entries; the client parses it in `toLeaderboardEntry`; the UI renders a 🔥+count pill in `MohamedLoversInfoSheet`.
+- The daily cron `generate-stats.js` **breaks streaks for users inactive that day** — if `totalCount <= yesterdayTotalScore` (no salawat since the last run) it clears `roundStreak` in `players` and `leaderboard`, so a stale badge disappears even if the client never reopens.
+- Announcement gated by its own `STREAK_BADGE_ANNOUNCEMENT_ENABLED` flag in `App.kt` (independent of the globally-suppressed `APP_ANNOUNCEMENTS_ENABLED`).
+- Tests: `commonTest/data/engagement/RoundStreakStoreTest.kt`.
+
 ## Firebase RTDB structure
 
 ```
@@ -84,7 +96,7 @@ mohamed_lovers/
 └── {roundKey}/                           # e.g. "2026-05-16" (next Friday Cairo date)
     ├── roundTotal, roundPlayerCount      # server-computed aggregates
     ├── leaderboard/                      # server-populated top-N
-    └── players/{uid}/                    # client-writable: uid, totalCount, updatedAt, countryCode
+    └── players/{uid}/                    # client-writable: uid, totalCount, updatedAt, countryCode, dailyBadge, roundStreak
 ```
 
 **Round key convention:** `YYYY-MM-DD` of the _next_ Friday in Cairo timezone (`Africa/Cairo`). Round resets at 19:00 Cairo time (16:00 UTC) on Friday.

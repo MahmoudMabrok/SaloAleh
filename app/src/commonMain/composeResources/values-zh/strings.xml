@@ -197,6 +197,7 @@
     <string name="achievements_stat_rounds">轮次</string>
     <string name="achievements_stat_best_rank">最佳排名</string>
     <string name="achievements_section_streak_badges">连续天数徽章</string>
+    <string name="achievements_section_round_streak">每周坚持徽章</string>
     <string name="achievements_section_rank_badges">排名徽章</string>
     <string name="achievements_section_round_history">轮次成就</string>
     <string name="achievements_medal_info_cd">奖牌信息</string>
@@ -204,6 +205,8 @@
     <string name="achievements_badge_streak_7_how">连续7天不间断打开应用</string>
     <string name="achievements_badge_streak_30_title">挚爱者</string>
     <string name="achievements_badge_streak_30_how">连续30天不间断打开应用</string>
+    <string name="achievements_badge_round_streak_title">完美一周</string>
+    <string name="achievements_badge_round_streak_how">在整个轮次中每天都为先知ﷺ祈福，一天也不间断</string>
     <string name="achievements_badge_rank_title">第%1$d名</string>
     <string name="achievements_badge_rank_how">在任意竞赛轮次中获得第%1$d名</string>
     <string name="achievements_badge_how_label">如何获得：</string>
@@ -227,6 +230,8 @@
     <string name="achievement_celebration_streak_30_subtitle">您连续30天打开应用，获得了"挚爱者"徽章。愿真主赐福于您。</string>
     <string name="achievement_celebration_rank_title">排行榜第%1$d名！</string>
     <string name="achievement_celebration_rank_subtitle">您在第%1$s轮中进入了前10名。愿真主赐福于您。</string>
+    <string name="achievement_celebration_round_streak_title">坚持了完整的一周！</string>
+    <string name="achievement_celebration_round_streak_subtitle">您在整个轮次中每天都为先知ﷺ祈福，从未间断。您解锁了「完美一周」徽章。请继续保持。</string>
     <string name="achievement_celebration_dismiss">太好了！谢谢</string>
 
     <!-- Takbeer Session Screen -->
@@ -587,6 +592,10 @@
     <string name="salawat_variant_announcement_body">现在你可以选择点击天空时显示的祝福语，从多种真实传述的版本中挑选。请在设置中选择。</string>
     <string name="salawat_variant_announcement_cta">选择祝福语</string>
     <string name="salawat_variant_announcement_dismiss">暂不</string>
+    <string name="streak_badge_announcement_title">每周坚持徽章</string>
+    <string name="streak_badge_announcement_body">全新功能！在整个轮次中每天都为先知ﷺ祈福，一天也不间断，即可解锁「完美一周」徽章——每完成一个轮次都能获得新徽章。</string>
+    <string name="streak_badge_announcement_cta">查看成就</string>
+    <string name="streak_badge_announcement_dismiss">暂不</string>
     <string name="leaderboard_score_label">次祈祷</string>
     <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">查看竞赛</string>

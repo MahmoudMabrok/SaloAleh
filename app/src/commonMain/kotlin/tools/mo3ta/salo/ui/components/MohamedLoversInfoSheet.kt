@@ -795,6 +795,20 @@ private fun LeaderboardRow(
                             modifier = Modifier.clickable { onBadgeClick(entry.dailyBadge) },
                         )
                     }
+                    entry.roundStreak?.let { streak ->
+                        if (streak > 0) {
+                            Text(
+                                text = "🔥$streak",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.W700,
+                                color = MohamedLoversPalette.GoldHighlight,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(MohamedLoversPalette.GoldHighlight.copy(alpha = 0.15f))
+                                    .padding(horizontal = 5.dp, vertical = 2.dp),
+                            )
+                        }
+                    }
                 }
             }
         }

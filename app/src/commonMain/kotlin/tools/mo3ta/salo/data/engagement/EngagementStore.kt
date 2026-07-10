@@ -211,6 +211,7 @@ class EngagementStore(private val settings: Settings) {
             when (it) {
                 is Achievement.StreakBadge -> it.earnedDate
                 is Achievement.RankAchievement -> it.earnedDate
+                is Achievement.RoundStreakBadge -> it.earnedDate
             }
         }
     }

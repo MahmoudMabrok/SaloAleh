@@ -14,6 +14,7 @@ data class MohamedLoversLeaderboardEntry(
     val scoreMasked: Boolean = false,
     val isSupporter: Boolean = false,
     val dailyBadge: String? = null,
+    val roundStreak: Int? = null,
 ){
     val displayedRank = if (rank > 0) "#$rank " else ""
 }
@@ -75,6 +76,10 @@ data class MohamedLoversUiState(
     val dailyGoalTarget: Int = 0,
     val dailyGoalProgress: Int = 0,
     val dailyGoalJustCompleted: Boolean = false,
+
+    // Per-round daily salawat streak ("perfect week" badge)
+    val roundStreak: Int = 0,
+    val roundStreakCelebration: Achievement.RoundStreakBadge? = null,
 
     // New round transition
     val showNewRoundCountdown: Boolean = false,

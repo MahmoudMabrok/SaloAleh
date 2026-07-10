@@ -197,6 +197,7 @@
     <string name="achievements_stat_rounds">راؤنڈز</string>
     <string name="achievements_stat_best_rank">بہترین درجہ</string>
     <string name="achievements_section_streak_badges">سلسلہ بیجز</string>
+    <string name="achievements_section_round_streak">ہفتہ وار پابندی کا بیج</string>
     <string name="achievements_section_rank_badges">درجہ بیجز</string>
     <string name="achievements_section_round_history">راؤنڈ کامیابیاں</string>
     <string name="achievements_medal_info_cd">تمغے کی معلومات</string>
@@ -204,6 +205,8 @@
     <string name="achievements_badge_streak_7_how">ایپ کو مسلسل 7 دن بغیر کسی وقفے کے کھولیں</string>
     <string name="achievements_badge_streak_30_title">محبت کرنے والا</string>
     <string name="achievements_badge_streak_30_how">ایپ کو مسلسل 30 دن بغیر کسی وقفے کے کھولیں</string>
+    <string name="achievements_badge_round_streak_title">مکمل ہفتہ</string>
+    <string name="achievements_badge_round_streak_how">پورے راؤنڈ کے دوران ہر دن نبی ﷺ پر درود بھیجیں، ایک دن بھی نہ چھوڑیں</string>
     <string name="achievements_badge_rank_title">درجہ %1$d</string>
     <string name="achievements_badge_rank_how">کسی بھی مقابلے کے راؤنڈ میں درجہ %1$d حاصل کریں</string>
     <string name="achievements_badge_how_label">یہ کیسے حاصل کریں:</string>
@@ -227,6 +230,8 @@
     <string name="achievement_celebration_streak_30_subtitle">آپ نے مسلسل 30 دن ایپ کھول کر «محبت کرنے والا» بیج حاصل کیا۔ اللہ آپ پر برکت نازل فرمائے۔</string>
     <string name="achievement_celebration_rank_title">لیڈر بورڈ میں درجہ %1$d!</string>
     <string name="achievement_celebration_rank_subtitle">آپ راؤنڈ %1$s میں سرفہرست 10 میں پہنچ گئے۔ اللہ آپ پر برکت نازل فرمائے ﷺ</string>
+    <string name="achievement_celebration_round_streak_title">پورا ہفتہ پابندی کے ساتھ!</string>
+    <string name="achievement_celebration_round_streak_subtitle">آپ نے پورے راؤنڈ کے دوران ہر دن نبی ﷺ پر درود بھیجا، ایک دن بھی نہیں چھوڑا۔ آپ نے «مکمل ہفتہ» بیج کھول لیا۔ اسی خیر پر قائم رہیں۔</string>
     <string name="achievement_celebration_dismiss">شاندار! شکریہ</string>
 
     <!-- Takbeer Session Screen -->
@@ -587,6 +592,10 @@
     <string name="salawat_variant_announcement_body">اب آپ منتخب کر سکتے ہیں کہ آسمان پر ٹیپ کرنے پر کون سا درود ظاہر ہو، کئی مستند صیغوں میں سے۔ ترتیبات میں سے منتخب کریں۔</string>
     <string name="salawat_variant_announcement_cta">صیغہ منتخب کریں</string>
     <string name="salawat_variant_announcement_dismiss">ابھی نہیں</string>
+    <string name="streak_badge_announcement_title">ہفتہ وار پابندی کا بیج</string>
+    <string name="streak_badge_announcement_body">نیا! پورے راؤنڈ کے دوران ہر دن نبی ﷺ پر درود بھیجیں، ایک دن بھی نہ چھوڑیں تاکہ «مکمل ہفتہ» بیج کھلے — ہر مکمل راؤنڈ پر ایک نیا بیج۔</string>
+    <string name="streak_badge_announcement_cta">کارنامے دیکھیں</string>
+    <string name="streak_badge_announcement_dismiss">ابھی نہیں</string>
     <string name="leaderboard_score_label">درود</string>
     <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">مقابلہ دیکھیں</string>
