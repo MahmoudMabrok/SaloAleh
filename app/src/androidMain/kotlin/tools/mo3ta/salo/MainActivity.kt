@@ -136,10 +136,10 @@ class MainActivity : ComponentActivity() {
         // Read the app keys first, then fall back to the raw FCM data keys.
         val title = intent?.getStringExtra(EXTRA_NOTIF_TITLE)
             ?: intent?.getStringExtra(FCM_DATA_TITLE) ?: return null
-        val body = intent.getStringExtra(EXTRA_NOTIF_BODY)
-            ?: intent.getStringExtra(FCM_DATA_BODY) ?: return null
+        val body = intent?.getStringExtra(EXTRA_NOTIF_BODY)
+            ?: intent?.getStringExtra(FCM_DATA_BODY) ?: return null
         val action = NotificationAction.from(
-            intent.getStringExtra(EXTRA_NOTIF_ACTION) ?: intent.getStringExtra(FCM_DATA_ACTION)
+            intent?.getStringExtra(EXTRA_NOTIF_ACTION) ?: intent?.getStringExtra(FCM_DATA_ACTION)
         )
         return NotificationMessage(title, body, action)
     }
