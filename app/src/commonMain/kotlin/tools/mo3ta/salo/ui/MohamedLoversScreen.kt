@@ -158,6 +158,7 @@ fun MohamedLoversScreen(
             if (event == Lifecycle.Event.ON_RESUME) {
                 showRankChip = settingsStore.showRankChip
                 viewModel.onAppResumed()
+                viewModel.flushPendingSession()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
