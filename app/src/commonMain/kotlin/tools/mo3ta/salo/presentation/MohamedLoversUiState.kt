@@ -14,6 +14,7 @@ data class MohamedLoversLeaderboardEntry(
     val scoreMasked: Boolean = false,
     val isSupporter: Boolean = false,
     val dailyBadge: String? = null,
+    val roundStreak: Int? = null,
 ){
     val displayedRank = if (rank > 0) "#$rank " else ""
 }

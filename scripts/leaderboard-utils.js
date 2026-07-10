@@ -175,6 +175,7 @@ async function populateMohamedLoversRound(db, admin, roundKey, isFinal) {
         scoreMasked: data.scoreMasked === true,
         isSupporter: data.isSupporter === true,
         dailyBadge: typeof data.dailyBadge === 'string' ? data.dailyBadge : null,
+        roundStreak: typeof data.roundStreak === 'number' && data.roundStreak > 0 ? data.roundStreak : null,
         nickname: typeof data.nickname === 'string' ? data.nickname : '',
       });
     }
@@ -203,6 +204,7 @@ async function populateMohamedLoversRound(db, admin, roundKey, isFinal) {
     if (player.scoreMasked) entry.scoreMasked = true;
     if (player.isSupporter) entry.isSupporter = true;
     if (player.dailyBadge) entry.dailyBadge = player.dailyBadge;
+    if (player.roundStreak) entry.roundStreak = player.roundStreak;
     if (player.nickname) entry.nickname = player.nickname;
     leaderboard[String(i + 1)] = entry;
   });
@@ -225,6 +227,7 @@ async function populateMohamedLoversRound(db, admin, roundKey, isFinal) {
     if (player.scoreMasked) entry.scoreMasked = true;
     if (player.isSupporter) entry.isSupporter = true;
     if (player.dailyBadge) entry.dailyBadge = player.dailyBadge;
+    if (player.roundStreak) entry.roundStreak = player.roundStreak;
     if (player.nickname) entry.nickname = player.nickname;
     dailyLeaderboard[String(i + 1)] = entry;
   });

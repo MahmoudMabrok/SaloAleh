@@ -7,6 +7,7 @@ const path  = require('path');
 const {
   mirrorYesterdayTotalScores,
   mirrorDailyBadgeClear,
+  mirrorRoundStreakClear,
   mirrorDhikrAggregateAndClean,
   mirrorBaqiyatAggregateAndClean,
   mirrorIstighfarAggregateAndClean,
@@ -150,6 +151,45 @@ async function main() {
       });
     }
     await mirrorDailyBadgeClear(admin.firestore(), roundKey, badgePlayerUids, badgeLbKeys);
+  }
+
+  // Break the round-streak badge for players who sent no salawat today. A player is
+  // inactive today when their totalCount has not grown since the previous run's
+  // snapshot (yesterdayTotalScore — the same signal the daily leaderboard uses), so
+  // their leaderboard streak badge must disappear. Active players keep the value the
+  // client last published.
+  const streakUpdates = {};
+  const brokenStreakUids = new Set();
+  if (playersSnap.exists()) {
+    playersSnap.forEach((child) => {
+      const data = child.val();
+      const streak = data?.roundStreak || 0;
+      if (streak > 0 && child.key) {
+        const prevScore = data?.yesterdayTotalScore || 0;
+        const curScore = data?.totalCount || 0;
+        if (curScore <= prevScore) {
+          streakUpdates[`mohamed_lovers/${roundKey}/players/${child.key}/roundStreak`] = null;
+          brokenStreakUids.add(child.key);
+        }
+      }
+    });
+  }
+  // Also clear from leaderboard entries (keyed by rank; match on uid).
+  const brokenStreakLbKeys = [];
+  if (leaderboardSnap.exists()) {
+    leaderboardSnap.forEach((child) => {
+      const entry = child.val();
+      if (entry && entry.roundStreak && brokenStreakUids.has(entry.uid) && child.key) {
+        streakUpdates[`mohamed_lovers/${roundKey}/leaderboard/${child.key}/roundStreak`] = null;
+        brokenStreakLbKeys.push(child.key);
+      }
+    });
+  }
+  if (Object.keys(streakUpdates).length > 0) {
+    await db.ref('/').update(streakUpdates);
+    console.log(`Broke ${brokenStreakUids.size} inactive round-streak(s)`);
+    // Phase 1: mirror to Firestore
+    await mirrorRoundStreakClear(admin.firestore(), roundKey, [...brokenStreakUids], brokenStreakLbKeys);
   }
 
   if (!fs.existsSync(statsDir)) fs.mkdirSync(statsDir);

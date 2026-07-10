@@ -235,11 +235,22 @@ class MohamedLoversViewModel(
                 roundStreakCelebration = streakResult.newlyEarnedBadge ?: it.roundStreakCelebration,
             )
         }
+        publishRoundStreak(roundKey, streakResult.currentStreak, current.roundStreak)
         applyLeaderboard()
     }
 
     fun dismissRoundStreakCelebration() {
         _state.update { it.copy(roundStreakCelebration = null) }
+    }
+
+    /**
+     * Publishes the round streak to the player's Firebase record so it renders next to
+     * their name on the leaderboard. Fire-and-forget; only writes when the value changed
+     * (streak is idempotent within a day) to avoid a network write on every tap.
+     */
+    private fun publishRoundStreak(roundKey: String, streak: Int, previous: Int) {
+        if (streak == previous || !state.value.firebaseConfigured) return
+        viewModelScope.launch { repository.writeRoundStreak(roundKey, streak) }
     }
 
     fun flushPendingSession() {
@@ -310,6 +321,7 @@ class MohamedLoversViewModel(
         repository.registerLocalTap(round, count)
         val pending = repository.getPendingSession(round)
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
+        val prevStreak = state.value.roundStreak
         val streakResult = roundStreakStore.recordActivity(round, today)
         _state.update {
             it.copy(
@@ -320,6 +332,7 @@ class MohamedLoversViewModel(
                 roundStreakCelebration = streakResult.newlyEarnedBadge ?: it.roundStreakCelebration,
             )
         }
+        publishRoundStreak(round, streakResult.currentStreak, prevStreak)
         applyLeaderboard()
         flushPendingSession()
     }
@@ -341,6 +354,7 @@ class MohamedLoversViewModel(
         val pending = repository.getPendingSession(roundKey)
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
         dailyGoalStore.recordTap(today, count)
+        val prevStreak = state.value.roundStreak
         val streakResult = roundStreakStore.recordActivity(roundKey, today)
         _state.update {
             it.copy(
@@ -355,6 +369,7 @@ class MohamedLoversViewModel(
                 roundStreakCelebration = streakResult.newlyEarnedBadge ?: it.roundStreakCelebration,
             )
         }
+        publishRoundStreak(roundKey, streakResult.currentStreak, prevStreak)
         applyLeaderboard()
         flushPendingSession()
         viewModelScope.launch {
@@ -695,6 +710,7 @@ class MohamedLoversViewModel(
                 scoreMasked = entry.scoreMasked,
                 isSupporter = entry.isSupporter,
                 dailyBadge = entry.dailyBadge,
+                roundStreak = if (isCurrentUser) state.value.roundStreak.takeIf { it > 0 } else entry.roundStreak,
             )
         }.sortedByDescending { it.totalCount }
             .mapIndexed { index, entry -> entry.copy(rank = index + 1) }
@@ -715,6 +731,7 @@ class MohamedLoversViewModel(
                 totalCount = selfDisplayScore,
                 isCurrentUser = true,
                 dailyBadge = state.value.currentDailyBadge,
+                roundStreak = state.value.roundStreak.takeIf { it > 0 },
                 uid = uid,
             )
         }

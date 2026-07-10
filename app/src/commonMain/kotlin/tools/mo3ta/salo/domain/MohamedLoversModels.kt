@@ -36,6 +36,7 @@ data class FirebaseLeaderboardEntry(
     val scoreMasked: Boolean = false,
     val isSupporter: Boolean = false,
     val dailyBadge: String? = null,
+    val roundStreak: Int? = null,
     val nickname: String = "",
 )
 

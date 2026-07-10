@@ -82,6 +82,9 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
     override suspend fun writeDailyBadge(roundKey: String, uid: String, badgeKey: String?): Result<Unit> =
         Result.success(Unit)
 
+    override suspend fun writeRoundStreak(roundKey: String, uid: String, streak: Int): Result<Unit> =
+        Result.success(Unit)
+
     override suspend fun fetchLiveLeaderboard(roundKey: String): Result<FirebaseLeaderboard> =
         Result.success(FirebaseLeaderboard(emptyList(), false))
 
