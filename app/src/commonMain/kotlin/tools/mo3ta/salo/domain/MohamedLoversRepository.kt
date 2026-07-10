@@ -45,6 +45,9 @@ class MohamedLoversRepository(
     suspend fun fetchAllTimeTotal(): Result<Long> =
         firebaseClient.fetchAllTimeTotal()
 
+    suspend fun fetchHeroes(): Result<HeroesBoard?> =
+        firebaseClient.fetchHeroes()
+
     fun observeSelfPlayer(roundKey: String, uid: String): Flow<Result<MohamedLoversPlayer?>> =
         firebaseClient.observeSelfPlayer(roundKey, uid)
 

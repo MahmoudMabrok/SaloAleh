@@ -587,6 +587,17 @@
     <string name="heart_index_dialog_dismiss">Got it</string>
     <string name="heart_refill_nudge">Refill your heart — send salawat upon the Prophet ﷺ</string>
 
+    <!-- Heroes / champions of the day -->
+    <string name="heroes_chip_label">Today\'s heroes</string>
+    <string name="heroes_chip_content_description">Today\'s heroes</string>
+    <string name="heroes_sheet_title">Today\'s heroes 🌟</string>
+    <string name="heroes_sheet_subtitle">The champions of our challenges today</string>
+    <string name="heroes_challenge_salawat">Salawat upon the Prophet ﷺ</string>
+    <string name="heroes_challenge_dhikr">The 100 dhikr challenge</string>
+    <string name="heroes_challenge_baqiyat">Baqiyat as-Salihat</string>
+    <string name="heroes_challenge_istighfar">Istighfar</string>
+    <string name="heroes_challenge_empty">No champions yet</string>
+
     <!-- Subscription encouragement -->
     <string name="milestone_congrats_header">Masha\'Allah! 🎉</string>
     <string name="milestone_congrats_body">May Allah bless you! You reached %1$s salawat upon the Prophet ﷺ</string>

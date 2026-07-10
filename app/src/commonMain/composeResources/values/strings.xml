@@ -597,6 +597,17 @@
     <string name="heart_index_dialog_body">مؤشر القلب يقيس حرارة قلبك بالصلاة على النبي ﷺ.\n\n• كل صلاة على النبي ﷺ تضيف +10 نقاط\n• القلب ينقص 1 نقطة كل 10 ثوانٍ\n• يتم إعادة تعيين المؤشر كل جمعة الساعة 10 مساءً بتوقيت القاهرة\n\nاملأ قلبك بالصلاة على الحبيب ﷺ ولا تدعه يفرغ!</string>
     <string name="heart_index_dialog_dismiss">فهمت</string>
 
+    <!-- Heroes / champions of the day -->
+    <string name="heroes_chip_label">أبطال اليوم</string>
+    <string name="heroes_chip_content_description">أبطال اليوم</string>
+    <string name="heroes_sheet_title">أبطال اليوم 🌟</string>
+    <string name="heroes_sheet_subtitle">المتصدرون في تحدياتنا اليوم</string>
+    <string name="heroes_challenge_salawat">الصلاة على النبي ﷺ</string>
+    <string name="heroes_challenge_dhikr">تحدي الـ١٠٠ ذكر</string>
+    <string name="heroes_challenge_baqiyat">الباقيات الصالحات</string>
+    <string name="heroes_challenge_istighfar">الاستغفار</string>
+    <string name="heroes_challenge_empty">لا يوجد متصدرون بعد</string>
+
     <!-- Subscription encouragement -->
     <string name="milestone_congrats_header">ما شاء الله! 🎉</string>
     <string name="milestone_congrats_body">بارك الله فيك! وصلت إلى %1$s صلاة على الحبيب ﷺ</string>

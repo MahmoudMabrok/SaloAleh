@@ -14,6 +14,8 @@ import tools.mo3ta.salo.analytics.logFirebaseError
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.domain.FirebaseLeaderboard
 import tools.mo3ta.salo.domain.FirebaseLeaderboardEntry
+import tools.mo3ta.salo.domain.HeroesBoard
+import tools.mo3ta.salo.domain.parseHeroesBoard
 import tools.mo3ta.salo.domain.MOHAMED_LOVERS_TOP_LIMIT
 import tools.mo3ta.salo.domain.MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE
 import tools.mo3ta.salo.domain.MohamedLoversPlayer
@@ -114,6 +116,23 @@ class MohamedLoversFirebaseClient(
                 onFailure = { error ->
                     log.e(error) { "fetchAllTimeTotal failed" }
                     trackReadFailure("fetch_all_time_total", error)
+                },
+            )
+        }
+    }
+
+    override suspend fun fetchHeroes(): Result<HeroesBoard?> {
+        log.d { "fetchHeroes" }
+        return runCatching {
+            val snapshot = Firebase.database.reference("$ROOT_PATH/$HEROES_PATH")
+                .valueEvents.first()
+            if (!snapshot.exists) null else parseHeroesBoard(snapshot.value)
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "fetchHeroes date=${it?.date} hasAny=${it?.hasAny}" } },
+                onFailure = { error ->
+                    log.e(error) { "fetchHeroes failed" }
+                    trackReadFailure("fetch_heroes", error)
                 },
             )
         }
@@ -644,6 +663,7 @@ class MohamedLoversFirebaseClient(
         const val ROUND_TOTAL_PATH = "roundTotal"
         const val ROUND_PLAYER_COUNT_PATH = "roundPlayerCount"
         const val ALL_TIME_TOTAL_PATH = "allTimeTotal"
+        const val HEROES_PATH = "heroes"
         const val USERS_PATH = "users"
         const val REMINDER_NOTIFS_ENABLED_KEY = "reminderNotifsEnabled"
         const val LEADERBOARD_NOTIFS_ENABLED_KEY = "leaderboardNotifsEnabled"
