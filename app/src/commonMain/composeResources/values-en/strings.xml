@@ -588,7 +588,7 @@
     <string name="heart_index_label">Heart index</string>
     <string name="heart_index_tooltip">Each salawat adds +10. The heart loses 1 every 10s.</string>
     <string name="heart_index_dialog_title">Heart Index ❤️</string>
-    <string name="heart_index_dialog_body">The Heart Index measures how warm your heart is with salawat upon the Prophet ﷺ.\n\n• Each salawat adds +10 points\n• The heart loses 1 point every 10 seconds\n• The index resets every Friday at 10 PM Cairo time\n\nKeep your heart full with salawat upon the beloved ﷺ!</string>
+    <string name="heart_index_dialog_body">The Heart Index measures how warm your heart is with salawat upon the Prophet ﷺ.\n\n• Each salawat adds +10 points\n• The heart loses 1 point every 10 seconds\n• The index resets every two days at 10 PM Cairo time\n\nKeep your heart full with salawat upon the beloved ﷺ!</string>
     <string name="heart_index_dialog_dismiss">Got it</string>
     <string name="heart_refill_nudge">Refill your heart — send salawat upon the Prophet ﷺ</string>
 

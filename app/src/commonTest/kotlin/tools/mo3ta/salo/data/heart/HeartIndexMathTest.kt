@@ -71,7 +71,7 @@ class HeartIndexMathTest {
     }
 
     @Test
-    fun weekly_reset_sets_score_zero_and_anchor_to_now() {
+    fun reset_sets_score_zero_and_anchor_to_now() {
         val result = settleHeart(50, 10_000L, 80_000L, 20_000L)
         assertEquals(0, result.score)
         assertEquals(80_000L, result.anchorTs)
@@ -87,23 +87,23 @@ class HeartIndexMathTest {
     }
 
     @Test
-    fun last_boundary_for_thursday_is_previous_friday_22_cairo() {
+    fun last_boundary_for_off_grid_day_is_previous_day_22_cairo() {
         assertEquals(
-            cairoTs(2026, 6, 26, 22, 0),
+            cairoTs(2026, 7, 1, 22, 0),
             lastHeartResetBoundary(cairoTs(2026, 7, 2, 12, 0)),
         )
     }
 
     @Test
-    fun last_boundary_for_friday_before_22_is_previous_week() {
+    fun last_boundary_for_reset_day_before_22_is_two_days_back() {
         assertEquals(
-            cairoTs(2026, 6, 26, 22, 0),
+            cairoTs(2026, 7, 1, 22, 0),
             lastHeartResetBoundary(cairoTs(2026, 7, 3, 21, 59)),
         )
     }
 
     @Test
-    fun last_boundary_for_friday_at_22_is_same_day() {
+    fun last_boundary_for_reset_day_at_22_is_same_day() {
         assertEquals(
             cairoTs(2026, 7, 3, 22, 0),
             lastHeartResetBoundary(cairoTs(2026, 7, 3, 22, 0)),
@@ -111,10 +111,22 @@ class HeartIndexMathTest {
     }
 
     @Test
-    fun last_boundary_for_friday_after_22_is_same_day() {
+    fun last_boundary_for_reset_day_after_22_is_same_day() {
         assertEquals(
             cairoTs(2026, 7, 3, 22, 0),
             lastHeartResetBoundary(cairoTs(2026, 7, 3, 22, 1)),
+        )
+    }
+
+    @Test
+    fun boundaries_fall_every_two_days() {
+        assertEquals(
+            cairoTs(2026, 7, 3, 22, 0),
+            lastHeartResetBoundary(cairoTs(2026, 7, 5, 21, 59)),
+        )
+        assertEquals(
+            cairoTs(2026, 7, 5, 22, 0),
+            lastHeartResetBoundary(cairoTs(2026, 7, 5, 22, 0)),
         )
     }
 
