@@ -638,6 +638,8 @@
     <string name="streak_badge_announcement_body">New! Send salawat every day of the round without missing a single day to unlock the \"Perfect Week\" badge — a fresh badge for every round you complete.</string>
     <string name="streak_badge_announcement_cta">View Achievements</string>
     <string name="streak_badge_announcement_dismiss">Not now</string>
+    <string name="leaderboard_streak_info_title">Devotion Streak</string>
+    <string name="leaderboard_streak_info_desc">The number of consecutive days this participant has sent salawat during the current round without missing a day. Completing %1$d consecutive days earns the \"Perfect Week\" badge.</string>
     <string name="leaderboard_score_label">prayers</string>
     <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">View competition</string>

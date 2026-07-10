@@ -600,6 +600,8 @@
     <string name="streak_badge_announcement_body">نیا! پورے راؤنڈ کے دوران ہر دن نبی ﷺ پر درود بھیجیں، ایک دن بھی نہ چھوڑیں تاکہ «مکمل ہفتہ» بیج کھلے — ہر مکمل راؤنڈ پر ایک نیا بیج۔</string>
     <string name="streak_badge_announcement_cta">کارنامے دیکھیں</string>
     <string name="streak_badge_announcement_dismiss">ابھی نہیں</string>
+    <string name="leaderboard_streak_info_title">پابندی کا شعلہ</string>
+    <string name="leaderboard_streak_info_desc">موجودہ راؤنڈ کے دوران اس شریک نے مسلسل کتنے دن نبی ﷺ پر درود بھیجا ہے، ایک دن بھی چھوڑے بغیر۔ %1$d مسلسل دن مکمل کرنے پر «مکمل ہفتہ» بیج ملتا ہے۔</string>
     <string name="leaderboard_score_label">درود</string>
     <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">مقابلہ دیکھیں</string>
