@@ -29,6 +29,9 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
 
     override suspend fun fetchAllTimeTotal(): Result<Long> = Result.success(0L)
 
+    var heroesResult: Result<HeroesBoard?> = Result.success(null)
+    override suspend fun fetchHeroes(): Result<HeroesBoard?> = heroesResult
+
     override fun observeLeaderboard(roundKey: String, daily: Boolean): Flow<Result<FirebaseLeaderboard>> =
         flowOf(Result.success(FirebaseLeaderboard(emptyList(), false)))
 

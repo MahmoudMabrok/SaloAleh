@@ -549,6 +549,17 @@
     <string name="heart_index_dialog_dismiss">سمجھ آ گئی</string>
     <string name="heart_refill_nudge">اپنے دل کو نبی ﷺ پر درود بھیج کر بھر دیں</string>
 
+    <!-- Heroes / champions of the day -->
+    <string name="heroes_chip_label">آج کے ہیروز</string>
+    <string name="heroes_chip_content_description">آج کے ہیروز</string>
+    <string name="heroes_sheet_title">آج کے ہیروز 🌟</string>
+    <string name="heroes_sheet_subtitle">آج ہمارے چیلنجز میں سرفہرست</string>
+    <string name="heroes_challenge_salawat">نبی ﷺ پر درود</string>
+    <string name="heroes_challenge_dhikr">۱۰۰ ذکر چیلنج</string>
+    <string name="heroes_challenge_baqiyat">باقیات صالحات</string>
+    <string name="heroes_challenge_istighfar">استغفار</string>
+    <string name="heroes_challenge_empty">ابھی کوئی سرفہرست نہیں</string>
+
     <!-- Subscription encouragement -->
     <string name="milestone_congrats_header">ما شاء اللہ! 🎉</string>
     <string name="milestone_congrats_body">اللہ آپ کو برکت دے! آپ نے حبیب ﷺ پر %1$s درود بھیجے</string>

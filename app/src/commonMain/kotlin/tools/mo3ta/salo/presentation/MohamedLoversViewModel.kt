@@ -507,6 +507,9 @@ class MohamedLoversViewModel(
 
     fun clearError() = _state.update { it.copy(error = null) }
 
+    fun openHeroesSheet() = _state.update { it.copy(showHeroesSheet = true) }
+    fun dismissHeroesSheet() = _state.update { it.copy(showHeroesSheet = false) }
+
     private fun connectToLeaderboardIfPossible() {
         val roundKey = state.value.roundKey
         if (!state.value.firebaseConfigured || roundKey.isNullOrBlank()) {
@@ -525,6 +528,9 @@ class MohamedLoversViewModel(
             }
             repository.fetchAllTimeTotal().onSuccess { total ->
                 _state.update { it.copy(allTimeTotal = total) }
+            }
+            repository.fetchHeroes().onSuccess { heroes ->
+                _state.update { it.copy(heroesBoard = heroes?.takeIf { board -> board.hasAny }) }
             }
         }
 

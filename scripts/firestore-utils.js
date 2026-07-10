@@ -168,6 +168,17 @@ async function mirrorIstighfarChallenge(firestore, dateKey, {
   }
 }
 
+// Mirrors the daily heroes/champions record to Firestore. Overwrites the whole
+// doc (no merge) so stale challenges from the previous day are replaced.
+async function mirrorHeroes(firestore, heroes) {
+  try {
+    await firestore.collection(META_COLLECTION).doc('heroes').set(heroes);
+    console.log(`[firestore-mirror] heroes ${heroes.date} mirrored`);
+  } catch (e) {
+    console.error(`[firestore-mirror] heroes failed: ${e.message}`);
+  }
+}
+
 async function mirrorAllTimeTotal(firestore, allTimeTotal) {
   try {
     await firestore.collection(META_COLLECTION).doc('stats').set(
@@ -335,6 +346,7 @@ module.exports = {
   mirrorBaqiyatChallenge,
   mirrorIstighfarChallenge,
   mirrorAllTimeTotal,
+  mirrorHeroes,
   mirrorAchievements,
   mirrorYesterdayTotalScores,
   mirrorDailyBadgeClear,

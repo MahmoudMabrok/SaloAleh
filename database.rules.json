@@ -232,6 +232,10 @@
         ".read": true,
         ".write": false
       },
+      "heroes": {
+        ".read": true,
+        ".write": false
+      },
       "referral_codes": {
         "$code": {
           ".read": true,

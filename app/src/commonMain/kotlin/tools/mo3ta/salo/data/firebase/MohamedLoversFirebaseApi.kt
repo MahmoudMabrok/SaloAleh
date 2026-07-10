@@ -2,6 +2,7 @@ package tools.mo3ta.salo.data.firebase
 
 import kotlinx.coroutines.flow.Flow
 import tools.mo3ta.salo.domain.FirebaseLeaderboard
+import tools.mo3ta.salo.domain.HeroesBoard
 import tools.mo3ta.salo.domain.MohamedLoversPlayer
 import tools.mo3ta.salo.domain.UserAchievement
 
@@ -14,6 +15,7 @@ interface MohamedLoversFirebaseApi {
     suspend fun fetchRoundPlayerCount(roundKey: String): Result<Int>
     suspend fun fetchRoundTotal(roundKey: String): Result<Int>
     suspend fun fetchAllTimeTotal(): Result<Long>
+    suspend fun fetchHeroes(): Result<HeroesBoard?>
     fun observeLeaderboard(roundKey: String, daily: Boolean = false): Flow<Result<FirebaseLeaderboard>>
     suspend fun fetchLiveLeaderboard(roundKey: String): Result<FirebaseLeaderboard>
     suspend fun incrementSession(roundKey: String, uid: String, delta: Int, countryCode: String): Result<Unit>

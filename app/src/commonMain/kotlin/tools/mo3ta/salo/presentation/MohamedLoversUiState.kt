@@ -2,6 +2,7 @@ package tools.mo3ta.salo.presentation
 
 import kotlinx.datetime.Instant
 import tools.mo3ta.salo.domain.Achievement
+import tools.mo3ta.salo.domain.HeroesBoard
 
 data class MohamedLoversLeaderboardEntry(
     val rank: Int,
@@ -97,4 +98,8 @@ data class MohamedLoversUiState(
     // Heart index
     val heartScore: Int = 0,
     val showHeartRefillNudge: Boolean = false,
+
+    // Heroes / champions of the day
+    val heroesBoard: HeroesBoard? = null,
+    val showHeroesSheet: Boolean = false,
 )

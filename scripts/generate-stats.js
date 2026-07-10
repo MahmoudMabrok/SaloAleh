@@ -10,6 +10,7 @@ const {
   mirrorDhikrAggregateAndClean,
   mirrorBaqiyatAggregateAndClean,
   mirrorIstighfarAggregateAndClean,
+  mirrorHeroes,
 } = require('./firestore-utils');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -160,6 +161,9 @@ async function main() {
   await sendDhikrChallengeRank1Notification(db);
   await sendBaqiyatChallengeRank1Notification(db);
   await sendIstighfarChallengeRank1Notification(db);
+  // Persist the day's champions BEFORE the per-challenge day nodes are deleted by
+  // the aggregate-and-clean steps below (those remove 100_challenge/{today} etc).
+  await persistHeroes(db, dailyLeaderboardSnap);
   await aggregateAndCleanDhikrChallenge(db);
   await aggregateAndCleanBaqiyatChallenge(db);
   await aggregateAndCleanIstighfarChallenge(db);
@@ -324,6 +328,81 @@ async function sendIstighfarChallengeRank1Notification(db) {
   } catch (e) {
     console.error(`[istighfar-rank1] send failed: ${e.message}`);
   }
+}
+
+// Persists the day's top-3 champions across all active challenges to a single
+// RTDB node (mohamed_lovers/heroes) that the app reads (read-only). Overwritten
+// daily. Mirrored to Firestore per the Phase-1 dual-write convention.
+async function persistHeroes(db, dailyLeaderboardSnap) {
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+
+  const heroName = (entry) => {
+    const nk = typeof entry.nickname === 'string' ? entry.nickname.trim() : '';
+    if (nk) return nk.slice(0, 20);
+    const uid = typeof entry.uid === 'string' ? entry.uid : '';
+    return uid ? uid.slice(-6).toUpperCase() : '';
+  };
+
+  // Salawat daily leaderboard is 1-indexed ("1".."10") and uses `score`.
+  const salawat = [];
+  if (dailyLeaderboardSnap.exists()) {
+    const lb = dailyLeaderboardSnap.val() || {};
+    if (!lb.isFinal) {
+      for (let rank = 1; rank <= 3; rank++) {
+        const entry = lb[String(rank)];
+        if (!entry?.uid) break;
+        salawat.push({
+          rank,
+          name: heroName(entry),
+          count: entry.score || 0,
+          countryCode: entry.countryCode || '',
+        });
+      }
+    }
+  }
+
+  // Daily count challenges use a 0-indexed leaderboard node and `count`.
+  async function challengeTop3(path) {
+    const snap = await db.ref(path).get();
+    if (!snap.exists()) return [];
+    const lb = snap.val() || {};
+    const out = [];
+    for (let i = 0; i < 3; i++) {
+      const entry = lb[String(i)];
+      if (!entry?.uid) break;
+      out.push({
+        rank: i + 1,
+        name: heroName(entry),
+        count: entry.count || 0,
+        countryCode: entry.countryCode || '',
+      });
+    }
+    return out;
+  }
+
+  const [dhikr, baqiyat, istighfar] = await Promise.all([
+    challengeTop3(`100_challenge/${today}/leaderboard`),
+    challengeTop3(`baqiyat_saliha/${today}/leaderboard`),
+    challengeTop3(`istighfar_challenge/${today}/leaderboard`),
+  ]);
+
+  const heroes = {
+    date: today,
+    updatedAt: new Date().toISOString(),
+    challenges: { salawat, dhikr, baqiyat, istighfar },
+  };
+
+  // RTDB is the source of truth; overwrite the whole node so stale entries from
+  // yesterday never linger.
+  await db.ref('mohamed_lovers/heroes').set(heroes);
+  console.log(
+    `[heroes] persisted for ${today}: salawat=${salawat.length} dhikr=${dhikr.length} baqiyat=${baqiyat.length} istighfar=${istighfar.length}`,
+  );
+
+  // Phase 1: mirror to Firestore.
+  await mirrorHeroes(admin.firestore(), heroes);
 }
 
 async function aggregateAndCleanDhikrChallenge(db) {
