@@ -550,7 +550,7 @@
     <string name="heart_index_label">心之指数</string>
     <string name="heart_index_tooltip">每次赞圣 +10；心每 10 秒减少 1</string>
     <string name="heart_index_dialog_title">心之指数 ❤️</string>
-    <string name="heart_index_dialog_body">心之指数衡量你对先知 ﷺ 赞圣的热度。\n\n• 每次赞圣 +10 分\n• 心每 10 秒减少 1 分\n• 每周五开罗时间晚上 10 点重置\n\n用对圣人 ﷺ 的赞美填满你的心！</string>
+    <string name="heart_index_dialog_body">心之指数衡量你对先知 ﷺ 赞圣的热度。\n\n• 每次赞圣 +10 分\n• 心每 10 秒减少 1 分\n• 每两天开罗时间晚上 10 点重置\n\n用对圣人 ﷺ 的赞美填满你的心！</string>
     <string name="heart_index_dialog_dismiss">明白了</string>
     <string name="heart_refill_nudge">为先知 ﷺ 祝祷，重新填满你的心</string>
 

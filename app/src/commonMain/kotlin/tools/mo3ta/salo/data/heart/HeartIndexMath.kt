@@ -1,7 +1,6 @@
 package tools.mo3ta.salo.data.heart
 
 import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atTime
@@ -13,8 +12,12 @@ internal const val HEART_TAP_BONUS = 10
 internal const val HEART_DECAY_INTERVAL_MS = 10_000L
 internal const val HEART_DECAY_PER_INTERVAL = 1
 internal const val HEART_LOW_THRESHOLD = 0
-internal val HEART_RESET_DAY = DayOfWeek.FRIDAY
+internal const val HEART_RESET_INTERVAL_DAYS = 2
 internal const val HEART_RESET_HOUR = 22
+
+// Fixed grid reference (epoch day 1 = 1970-01-02): reset boundaries fall at 22:00 Cairo
+// every HEART_RESET_INTERVAL_DAYS days counted from this date.
+private const val HEART_RESET_REFERENCE_EPOCH_DAY = 1L
 
 internal data class HeartSettleResult(
     val score: Int,
@@ -28,7 +31,8 @@ internal fun lastHeartResetBoundary(
 ): Long {
     val nowInstant = Instant.fromEpochMilliseconds(nowTs)
     val localNow = nowInstant.toLocalDateTime(zone)
-    val daysSinceResetDay = ((localNow.dayOfWeek.ordinal - HEART_RESET_DAY.ordinal + 7) % 7).toLong()
+    val daysSinceReference = localNow.date.toEpochDays() - HEART_RESET_REFERENCE_EPOCH_DAY
+    val daysSinceResetDay = daysSinceReference.mod(HEART_RESET_INTERVAL_DAYS.toLong())
 
     fun boundary(daysBack: Long): Instant =
         localNow.date
@@ -40,7 +44,7 @@ internal fun lastHeartResetBoundary(
     return if (nowInstant >= candidate) {
         candidate.toEpochMilliseconds()
     } else {
-        boundary(daysSinceResetDay + 7).toEpochMilliseconds()
+        boundary(daysSinceResetDay + HEART_RESET_INTERVAL_DAYS).toEpochMilliseconds()
     }
 }
 
