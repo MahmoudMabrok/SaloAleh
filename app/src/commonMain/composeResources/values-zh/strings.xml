@@ -600,6 +600,8 @@
     <string name="streak_badge_announcement_body">全新功能！在整个轮次中每天都为先知ﷺ祈福，一天也不间断，即可解锁「完美一周」徽章——每完成一个轮次都能获得新徽章。</string>
     <string name="streak_badge_announcement_cta">查看成就</string>
     <string name="streak_badge_announcement_dismiss">暂不</string>
+    <string name="leaderboard_streak_info_title">坚持之火</string>
+    <string name="leaderboard_streak_info_desc">该参与者在本轮次中连续为先知ﷺ祈福的天数，一天也未间断。连续坚持 %1$d 天即可获得「完美一周」徽章。</string>
     <string name="leaderboard_score_label">次祈祷</string>
     <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">查看竞赛</string>

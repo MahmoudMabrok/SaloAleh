@@ -648,6 +648,8 @@
     <string name="streak_badge_announcement_body">جديد! صلِّ على النبي ﷺ كل يوم طوال الجولة دون أن تفوّت يوماً واحداً لتفتح شارة «الأسبوع المكتمل». شارة جديدة كل جولة تكملها.</string>
     <string name="streak_badge_announcement_cta">عرض الإنجازات</string>
     <string name="streak_badge_announcement_dismiss">ليس الآن</string>
+    <string name="leaderboard_streak_info_title">شعلة المداومة</string>
+    <string name="leaderboard_streak_info_desc">عدد الأيام المتتالية التي صلّى فيها هذا المشارك على النبي ﷺ خلال الجولة الحالية دون انقطاع. من يُكمل %1$d أيام متتالية يفوز بشارة «الأسبوع المكتمل».</string>
     <string name="leaderboard_score_label">صلاة</string>
     <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">عرض المسابقة</string>

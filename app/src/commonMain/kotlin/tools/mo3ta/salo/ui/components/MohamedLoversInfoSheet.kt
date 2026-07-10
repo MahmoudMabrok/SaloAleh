@@ -127,6 +127,7 @@ internal fun MohamedLoversInfoSheet(
     onOpenPaywall: () -> Unit = {},
     onUserClick: (uid: String, displayTag: String) -> Unit = { _, _ -> },
     onBadgeClick: (String) -> Unit = {},
+    onStreakClick: (Int) -> Unit = {},
 ) {
     if (!isOpen) return
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
@@ -217,6 +218,7 @@ internal fun MohamedLoversInfoSheet(
                 },
                 onUserClick = onUserClick,
                 onBadgeClick = onBadgeClick,
+                onStreakClick = onStreakClick,
             )
             if (state.isWinner) {
                 WinnerCard(winnerCode = state.winnerCode, onCopyWinnerCode = onCopyWinnerCode)
@@ -569,6 +571,7 @@ private fun LeaderboardCard(
     onOpenPaywall: () -> Unit = {},
     onUserClick: (uid: String, displayTag: String) -> Unit = { _, _ -> },
     onBadgeClick: (String) -> Unit = {},
+    onStreakClick: (Int) -> Unit = {},
 ) {
     SheetCard {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -619,6 +622,7 @@ private fun LeaderboardCard(
                         onSupporterClick = onSupporterClick,
                         onUserClick = onUserClick,
                         onBadgeClick = onBadgeClick,
+                        onStreakClick = onStreakClick,
                     )
                 }
             }
@@ -645,6 +649,7 @@ private fun LeaderboardCard(
                     onSupporterClick = onSupporterClick,
                     onUserClick = onUserClick,
                     onBadgeClick = onBadgeClick,
+                    onStreakClick = onStreakClick,
                 )
                 Text(
                     text = stringResource(Res.string.mohamed_lovers_rank_pending_top),
@@ -684,6 +689,7 @@ private fun LeaderboardRow(
     onSupporterClick: () -> Unit = {},
     onUserClick: (uid: String, displayTag: String) -> Unit = { _, _ -> },
     onBadgeClick: (String) -> Unit = {},
+    onStreakClick: (Int) -> Unit = {},
 ) {
     val rankColor = when (entry.rank) {
         1 -> MohamedLoversPalette.GoldHighlight
@@ -805,6 +811,7 @@ private fun LeaderboardRow(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(4.dp))
                                     .background(MohamedLoversPalette.GoldHighlight.copy(alpha = 0.15f))
+                                    .clickable { onStreakClick(streak) }
                                     .padding(horizontal = 5.dp, vertical = 2.dp),
                             )
                         }
