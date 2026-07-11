@@ -659,4 +659,5 @@
     <string name="referral_announcement_cta">立即分享</string>
     <string name="referral_announcement_dismiss">稍后</string>
     <string name="challenge_community_total">今日总计：%1$s</string>
+    <string name="challenges_all_lovers_total">今日总计</string>
 </resources>

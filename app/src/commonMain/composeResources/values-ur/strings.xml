@@ -659,4 +659,5 @@
     <string name="referral_announcement_cta">ابھی شیئر کریں</string>
     <string name="referral_announcement_dismiss">بعد میں</string>
     <string name="challenge_community_total">آج کا کل: %1$s</string>
+    <string name="challenges_all_lovers_total">آج کا کل</string>
 </resources>

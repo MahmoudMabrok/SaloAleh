@@ -31,6 +31,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -41,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.generated.resources.Res
@@ -54,18 +57,29 @@ import tools.mo3ta.salo.generated.resources.challenge_quran_body
 import tools.mo3ta.salo.generated.resources.challenge_quran_title
 import tools.mo3ta.salo.generated.resources.challenge_takbeer_body
 import tools.mo3ta.salo.generated.resources.challenge_ten_days_body
+import tools.mo3ta.salo.generated.resources.challenges_all_lovers_total
 import tools.mo3ta.salo.generated.resources.challenges_cairo_time_note
 import tools.mo3ta.salo.generated.resources.challenges_subtitle
 import tools.mo3ta.salo.generated.resources.challenges_title
 import tools.mo3ta.salo.generated.resources.takbeer_session_title
 import tools.mo3ta.salo.generated.resources.tendays_title
+import tools.mo3ta.salo.presentation.ChallengesViewModel
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
+
+private fun formatNumber(value: Int): String {
+    if (value < 1000) return "$value"
+    val thousands = value / 1000
+    val remainder = value % 1000
+    return if (remainder == 0) "$thousands,000"
+    else "$thousands,${remainder.toString().padStart(3, '0')}"
+}
 
 private data class ChallengeItem(
     val titleRes: StringResource,
     val bodyRes: StringResource,
     val icon: ImageVector,
     val accent: Color,
+    val total: Int,
     val onClick: () -> Unit,
 )
 
@@ -79,9 +93,12 @@ fun ChallengesScreen(
     onOpenQuranChallenge: () -> Unit,
 ) {
     val analyticsManager: AnalyticsManager = koinInject()
+    val viewModel: ChallengesViewModel = koinViewModel()
+    val totals by viewModel.totals.collectAsState()
 
     LaunchedEffect(Unit) {
         analyticsManager.logView("ChallengesScreen")
+        viewModel.onScreenEntered()
     }
 
     val items = listOf(
@@ -90,6 +107,7 @@ fun ChallengesScreen(
             bodyRes = Res.string.challenge_dhikr_body,
             icon = Icons.Default.Spa,
             accent = Color(0xFF7DD3A8),
+            total = totals.dhikr,
             onClick = {
                 analyticsManager.logAction(
                     AppAnalytics.OPEN_DHIKR_REWARDS,
@@ -103,6 +121,7 @@ fun ChallengesScreen(
             bodyRes = Res.string.challenge_baqiyat_body,
             icon = Icons.Default.AutoAwesome,
             accent = Color(0xFFB68CE0),
+            total = totals.baqiyat,
             onClick = {
                 analyticsManager.logAction(
                     AppAnalytics.OPEN_BAQIYAT_CHALLENGE,
@@ -116,6 +135,7 @@ fun ChallengesScreen(
             bodyRes = Res.string.challenge_istighfar_body,
             icon = Icons.Default.AutoStories,
             accent = Color(0xFFC08A3E),
+            total = totals.istighfar,
             onClick = {
                 analyticsManager.logAction(
                     AppAnalytics.OPEN_ISTIGHFAR_CHALLENGE,
@@ -129,6 +149,7 @@ fun ChallengesScreen(
             bodyRes = Res.string.challenge_quran_body,
             icon = Icons.Default.MenuBook,
             accent = Color(0xFF1F7A5C),
+            total = totals.quran,
             onClick = {
                 analyticsManager.logAction(
                     AppAnalytics.OPEN_QURAN_CHALLENGE,
@@ -245,11 +266,36 @@ private fun ChallengeCard(item: ChallengeItem) {
                 )
             }
 
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = null,
-                tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.4f),
-            )
+            if (item.total > 0) {
+                Column(
+                    modifier = Modifier
+                        .background(
+                            item.accent.copy(alpha = 0.10f),
+                            RoundedCornerShape(12.dp),
+                        )
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = formatNumber(item.total),
+                        color = item.accent,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                    )
+                    Text(
+                        text = stringResource(Res.string.challenges_all_lovers_total),
+                        color = item.accent.copy(alpha = 0.7f),
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
+            } else {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.4f),
+                )
+            }
         }
     }
 }

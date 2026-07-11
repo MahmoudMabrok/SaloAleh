@@ -54,7 +54,6 @@ import tools.mo3ta.salo.generated.resources.baqiyat_ayah_ref
 import tools.mo3ta.salo.generated.resources.baqiyat_cycles_label
 import tools.mo3ta.salo.generated.resources.baqiyat_tap_hint
 import tools.mo3ta.salo.generated.resources.challenge_baqiyat_title
-import tools.mo3ta.salo.generated.resources.challenge_community_total
 import tools.mo3ta.salo.generated.resources.dhikr_back_cd
 import tools.mo3ta.salo.generated.resources.dhikr_rank_number
 import tools.mo3ta.salo.generated.resources.dhikr_rank_subtitle
@@ -64,13 +63,6 @@ import tools.mo3ta.salo.presentation.BaqiyatViewModel
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.dhikr.DhikrMilestoneCelebration
 
-private fun Int.formatWithCommas(): String {
-    if (this < 1000) return "$this"
-    val thousands = this / 1000
-    val remainder = this % 1000
-    return if (remainder == 0) "$thousands,000"
-    else "$thousands,${remainder.toString().padStart(3, '0')}"
-}
 
 private val BaqiyatGold = Color(0xFFF5D97A)
 
@@ -148,16 +140,6 @@ fun BaqiyatScreen(
                 fontSize = 13.sp,
                 textAlign = TextAlign.Center,
             )
-            if (state.totalTodayBaqiyat > 0) {
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    text = stringResource(Res.string.challenge_community_total, state.totalTodayBaqiyat.formatWithCommas()),
-                    color = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.7f),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
-                    textAlign = TextAlign.Center,
-                )
-            }
 
             Spacer(Modifier.height(20.dp))
 

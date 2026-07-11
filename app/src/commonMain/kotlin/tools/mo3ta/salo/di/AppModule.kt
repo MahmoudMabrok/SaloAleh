@@ -37,6 +37,7 @@ import tools.mo3ta.salo.audio.TakbeerSoundPlayer
 import tools.mo3ta.salo.audio.createTakbeerSoundPlayer
 import tools.mo3ta.salo.presentation.AchievementsViewModel
 import tools.mo3ta.salo.presentation.BaqiyatViewModel
+import tools.mo3ta.salo.presentation.ChallengesViewModel
 import tools.mo3ta.salo.presentation.DhikrChallengeViewModel
 import tools.mo3ta.salo.presentation.IstighfarChallengeViewModel
 import tools.mo3ta.salo.presentation.QuranChallengeViewModel
@@ -79,6 +80,7 @@ val appModule = module {
     viewModel { QuranChallengeViewModel(get(), get(), get(), get(), get()) }
     viewModel { BaqiyatViewModel(get(), get(), get(), get(), get()) }
     viewModel { AchievementsViewModel(get(), get(), get()) }
+    viewModel { ChallengesViewModel() }
     viewModel { HadithListViewModel(get()) }
     single { TenDaysStore(get()) }
     single { TenDaysFirebaseClient(get(), get(), get()) }

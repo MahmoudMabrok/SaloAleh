@@ -73,7 +73,6 @@ import tools.mo3ta.salo.generated.resources.quran_reward_sunnah
 import tools.mo3ta.salo.generated.resources.quran_reward_sunnah_label
 import tools.mo3ta.salo.generated.resources.quran_rewards_title
 import tools.mo3ta.salo.generated.resources.quran_today
-import tools.mo3ta.salo.generated.resources.challenge_community_total
 import tools.mo3ta.salo.generated.resources.quran_tap_hint
 import tools.mo3ta.salo.presentation.QuranChallengeViewModel
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
@@ -86,13 +85,6 @@ import tools.mo3ta.salo.ui.quran.QuranProgressRing
 import tools.mo3ta.salo.ui.quran.QuranSpacing
 import tools.mo3ta.salo.ui.quran.ManualQuranSheet
 
-private fun Int.formatWithCommas(): String {
-    if (this < 1000) return "$this"
-    val thousands = this / 1000
-    val remainder = this % 1000
-    return if (remainder == 0) "$thousands,000"
-    else "$thousands,${remainder.toString().padStart(3, '0')}"
-}
 
 private val QuranHeroBackground = Brush.verticalGradient(
     colors = listOf(
@@ -149,7 +141,6 @@ fun QuranChallengeScreen(
                 target = state.dailyGoal,
                 rank = state.rank,
                 participantCount = state.participantCount,
-                totalToday = state.totalTodayQuran,
                 canCount = !state.isLoading,
                 onPageTap = {
                     viewModel.onQuranPageTap()
@@ -288,7 +279,6 @@ private fun QuranImmersiveZone(
     target: Int,
     rank: Int,
     participantCount: Int,
-    totalToday: Int,
     canCount: Boolean,
     onPageTap: () -> Unit,
     onBack: () -> Unit,
@@ -418,16 +408,6 @@ private fun QuranImmersiveZone(
                 fontSize = 12.sp,
                 textAlign = TextAlign.Center,
             )
-            if (totalToday > 0) {
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = stringResource(Res.string.challenge_community_total, totalToday.formatWithCommas()),
-                    color = QuranColors.LightTeal.copy(alpha = 0.7f),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
-                    textAlign = TextAlign.Center,
-                )
-            }
             Spacer(Modifier.height(16.dp))
         }
     }

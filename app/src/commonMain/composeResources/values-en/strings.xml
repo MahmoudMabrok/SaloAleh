@@ -697,4 +697,5 @@
     <string name="referral_announcement_cta">Share Now</string>
     <string name="referral_announcement_dismiss">Later</string>
     <string name="challenge_community_total">Today\'s total: %1$s</string>
+    <string name="challenges_all_lovers_total">Today\'s total</string>
 </resources>

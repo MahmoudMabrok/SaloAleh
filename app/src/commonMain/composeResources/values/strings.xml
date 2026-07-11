@@ -707,4 +707,5 @@
     <string name="referral_announcement_cta">شارك الآن</string>
     <string name="referral_announcement_dismiss">لاحقًا</string>
     <string name="challenge_community_total">الإجمالي اليوم: %1$s</string>
+    <string name="challenges_all_lovers_total">إجمالي اليوم</string>
 </resources>
