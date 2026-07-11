@@ -33,6 +33,10 @@ service cloud.firestore {
       allow read: if true;
       allow write: if true;
     }
+    match /mohamed_lovers_users/{uid}/referrals/{referredUid} {
+      allow read: if true;
+      allow write: if true;
+    }
 
     // Meta (allTimeTotal etc) — server-only
     match /mohamed_lovers_meta/{doc} {
