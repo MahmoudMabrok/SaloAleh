@@ -8,6 +8,7 @@ const META_COLLECTION = 'mohamed_lovers_meta';
 const DHIKR_COLLECTION = 'dhikr_challenge';
 const BAQIYAT_COLLECTION = 'baqiyat_challenge';
 const ISTIGHFAR_COLLECTION = 'istighfar_challenge';
+const QURAN_COLLECTION = 'quran_challenge';
 const TEN_DAYS_COLLECTION = 'ten_days';
 
 async function mirrorMohamedLoversRound(firestore, roundKey, {
@@ -165,6 +166,39 @@ async function mirrorIstighfarChallenge(firestore, dateKey, {
     console.log(`[firestore-mirror] istighfar ${dateKey} mirrored`);
   } catch (e) {
     console.error(`[firestore-mirror] istighfar ${dateKey} failed: ${e.message}`);
+  }
+}
+
+async function mirrorQuranChallenge(firestore, dateKey, {
+  rankedUsers,
+  participantCount,
+  totalTodayQuran,
+  leaderboardEntries,
+}) {
+  try {
+    const dayRef = firestore.collection(QURAN_COLLECTION).doc(dateKey);
+    await dayRef.set({ participantCount, totalTodayQuran }, { merge: true });
+
+    const batch = firestore.batch();
+
+    for (const user of rankedUsers) {
+      batch.set(
+        dayRef.collection('users').doc(user.uid),
+        { rank: user.rank },
+        { merge: true },
+      );
+    }
+
+    if (leaderboardEntries) {
+      for (const [key, entry] of leaderboardEntries) {
+        batch.set(dayRef.collection('leaderboard').doc(key), entry);
+      }
+    }
+
+    await batch.commit();
+    console.log(`[firestore-mirror] quran ${dateKey} mirrored`);
+  } catch (e) {
+    console.error(`[firestore-mirror] quran ${dateKey} failed: ${e.message}`);
   }
 }
 
@@ -334,6 +368,19 @@ async function mirrorIstighfarAggregateAndClean(firestore, dateKey, todayTotal, 
   }
 }
 
+async function mirrorQuranAggregateAndClean(firestore, dateKey, todayTotal, newGlobalTotal) {
+  try {
+    await firestore.collection(QURAN_COLLECTION).doc('_totals').set(
+      { totalQuran: newGlobalTotal },
+      { merge: true },
+    );
+    await firestore.collection(QURAN_COLLECTION).doc(dateKey).delete();
+    console.log(`[firestore-mirror] quran aggregate+clean for ${dateKey} done`);
+  } catch (e) {
+    console.error(`[firestore-mirror] quran aggregate+clean failed: ${e.message}`);
+  }
+}
+
 async function mirrorUserAllTimeTotals(firestore, writes) {
   try {
     const batch = firestore.batch();
@@ -367,11 +414,13 @@ module.exports = {
   DHIKR_COLLECTION,
   BAQIYAT_COLLECTION,
   ISTIGHFAR_COLLECTION,
+  QURAN_COLLECTION,
   TEN_DAYS_COLLECTION,
   mirrorMohamedLoversRound,
   mirrorDhikrChallenge,
   mirrorBaqiyatChallenge,
   mirrorIstighfarChallenge,
+  mirrorQuranChallenge,
   mirrorAllTimeTotal,
   mirrorHeroes,
   mirrorAchievements,
@@ -381,5 +430,6 @@ module.exports = {
   mirrorDhikrAggregateAndClean,
   mirrorBaqiyatAggregateAndClean,
   mirrorIstighfarAggregateAndClean,
+  mirrorQuranAggregateAndClean,
   mirrorUserAllTimeTotals,
 };
