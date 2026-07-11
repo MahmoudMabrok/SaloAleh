@@ -83,6 +83,8 @@
     <string name="challenge_baqiyat_body">依次点击五句赞词，完成一整轮以提升你的分数。</string>
     <string name="challenge_istighfar_title">واستغفروه</string>
     <string name="challenge_istighfar_body">先知穆斯塔法 ﷺ 每天寻求真主饶恕七十次，你呢？</string>
+    <string name="challenge_quran_title">古兰经</string>
+    <string name="challenge_quran_body">我的族人已经抛弃了这部古兰经</string>
     <string name="dhikr_title">赞念</string>
 
     <string name="dhikr_milestone_title">完成 %1$d 次!</string>
@@ -127,6 +129,38 @@
     <string name="istighfar_leaderboard_empty">暂无数据</string>
     <string name="istighfar_rank_unranked">点击查看排行榜</string>
     <string name="istighfar_manual_entry_button">🤲 记录外部求饶</string>
+
+    <string name="quran_back_cd">返回</string>
+    <string name="quran_phrase">我的族人已经抛弃了这部古兰经</string>
+    <string name="quran_today">今天</string>
+    <string name="quran_pages_label">页</string>
+    <string name="quran_page_add">+ 1 页</string>
+    <string name="quran_daily_goal">每日目标：%1$d 页</string>
+    <string name="quran_progress_count">%1$d / %2$d</string>
+    <string name="quran_rewards_title">诵读古兰经的美德</string>
+    <string name="quran_reward_light">在审判日为其伴侣带来光明</string>
+    <string name="quran_reward_cure">治愈心灵之疾</string>
+    <string name="quran_reward_intercession">在审判日为其伴侣求情</string>
+    <string name="quran_reward_rank">其伴侣在天堂中被提升</string>
+    <string name="quran_reward_sunnah">先知ﷺ每天诵读古兰经</string>
+    <string name="quran_reward_sunnah_label">先知ﷺ的圣行</string>
+    <string name="quran_rank_number"># %1$d</string>
+    <string name="quran_rank_subtitle">共 %1$d 位参与者中</string>
+    <string name="quran_tap_hint">记录您今天阅读的页数</string>
+    <string name="quran_pages_read">完成的目标</string>
+    <string name="quran_milestone_title">完成 %1$d 页!</string>
+    <string name="quran_milestone_subtitle">愿真主赐福于你！</string>
+    <string name="quran_leaderboard_title">排行榜</string>
+    <string name="quran_leaderboard_rank_new">新</string>
+    <string name="quran_leaderboard_empty">暂无数据</string>
+    <string name="quran_rank_unranked">点击查看排行榜</string>
+    <string name="quran_manual_entry_button">📖 记录外部页数</string>
+    <string name="manual_quran_title">📖 记录古兰经页数</string>
+    <string name="manual_quran_subtitle">在应用外阅读了古兰经？\n记录您所读的 - 不要因为不在应用中就停止阅读</string>
+    <string name="manual_quran_count">页数：</string>
+    <string name="manual_quran_enter_count">输入页数</string>
+    <string name="manual_quran_witness">我证明这个数量是真实准确的，真主了解我的意图</string>
+    <string name="manual_quran_submit">✦ 记录阅读 ✦</string>
     <string name="manual_istighfar_title">🤲 记录外部求饶</string>
     <string name="manual_istighfar_subtitle">默默地、用手指或用念珠向真主求饶了？\n记录您所诵念的 - 不要因为不在应用中就停止求饶</string>
     <string name="manual_istighfar_count">数量：</string>
@@ -211,6 +245,7 @@
     <string name="achievements_badge_challenge_dhikr_how">一天内完成 %1$d 次赞念即达成每日目标 — 每个获胜日徽章计数加 1</string>
     <string name="achievements_badge_challenge_baqiyat_how">一天内完成 %1$d 轮永恒善功 — 每个获胜日徽章计数加 1</string>
     <string name="achievements_badge_challenge_istighfar_how">一天内完成 %1$d 次求恕 — 每个获胜日徽章计数加 1</string>
+    <string name="achievements_badge_challenge_quran_how">一天内完成 %1$d 页 — 每个获胜日徽章计数加 1</string>
     <string name="achievements_badge_rank_title">第%1$d名</string>
     <string name="achievements_badge_rank_how">在任意竞赛轮次中获得第%1$d名</string>
     <string name="achievements_badge_how_label">如何获得：</string>
@@ -560,13 +595,14 @@
 
     <!-- Heroes / champions of the day -->
     <string name="heroes_chip_label">英雄</string>
-    <string name="heroes_chip_content_description">%1$s 的英雄</string>
+    <string name="heroes_chip_content_description">英雄</string>
     <string name="heroes_sheet_title">今日英雄 🌟</string>
     <string name="heroes_sheet_subtitle">今日各项挑战的领先者</string>
     <string name="heroes_challenge_salawat">为先知 ﷺ 祝祷</string>
     <string name="heroes_challenge_dhikr">100 赞念挑战</string>
     <string name="heroes_challenge_baqiyat">永存的善功</string>
     <string name="heroes_challenge_istighfar">求恕</string>
+    <string name="heroes_challenge_quran">古兰经</string>
     <string name="heroes_challenge_empty">暂无领先者</string>
 
     <!-- Subscription encouragement -->

@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Spa
 import androidx.compose.material.icons.filled.AutoStories
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -49,6 +50,8 @@ import tools.mo3ta.salo.generated.resources.challenge_dhikr_body
 import tools.mo3ta.salo.generated.resources.challenge_dhikr_title
 import tools.mo3ta.salo.generated.resources.challenge_istighfar_body
 import tools.mo3ta.salo.generated.resources.challenge_istighfar_title
+import tools.mo3ta.salo.generated.resources.challenge_quran_body
+import tools.mo3ta.salo.generated.resources.challenge_quran_title
 import tools.mo3ta.salo.generated.resources.challenge_takbeer_body
 import tools.mo3ta.salo.generated.resources.challenge_ten_days_body
 import tools.mo3ta.salo.generated.resources.challenges_cairo_time_note
@@ -73,6 +76,7 @@ fun ChallengesScreen(
     onOpenTakbeerSession: () -> Unit,
     onOpenBaqiyatChallenge: () -> Unit,
     onOpenIstighfarChallenge: () -> Unit,
+    onOpenQuranChallenge: () -> Unit,
 ) {
     val analyticsManager: AnalyticsManager = koinInject()
 
@@ -118,6 +122,19 @@ fun ChallengesScreen(
                     mapOf(AppAnalytics.PARAM_SOURCE to "challenges"),
                 )
                 onOpenIstighfarChallenge()
+            },
+        ),
+        ChallengeItem(
+            titleRes = Res.string.challenge_quran_title,
+            bodyRes = Res.string.challenge_quran_body,
+            icon = Icons.Default.MenuBook,
+            accent = Color(0xFF1F7A5C),
+            onClick = {
+                analyticsManager.logAction(
+                    AppAnalytics.OPEN_QURAN_CHALLENGE,
+                    mapOf(AppAnalytics.PARAM_SOURCE to "challenges"),
+                )
+                onOpenQuranChallenge()
             },
         ),
 //        ChallengeItem(

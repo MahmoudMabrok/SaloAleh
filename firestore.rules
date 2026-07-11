@@ -82,6 +82,20 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Quran Challenge
+    match /quran_challenge/{dateKey} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /quran_challenge/{dateKey}/users/{uid} {
+      allow read: if true;
+      allow write: if request.resource.data.keys().hasAny(['count', 'data']);
+    }
+    match /quran_challenge/{dateKey}/leaderboard/{entry} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Ten Days of Dhul Hijjah
     match /ten_days/{periodKey} {
       allow read: if true;

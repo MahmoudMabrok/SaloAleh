@@ -304,8 +304,8 @@ fun MohamedLoversScreen(
                                     showHeartInfoDialog = true
                                 },
                             )
-                            state.heroesBoard?.let { board ->
-                                HeroesChip(date = board.date, onClick = { viewModel.openHeroesSheet() })
+                            if (state.status == MohamedLoversStatus.Open) {
+                                HeroesChip(onClick = { viewModel.openHeroesSheet() })
                             }
                         }
 
@@ -509,12 +509,11 @@ fun MohamedLoversScreen(
             HeartIndexInfoDialog(onDismiss = { showHeartInfoDialog = false })
         }
         if (state.showHeroesSheet) {
-            state.heroesBoard?.let { board ->
-                HeroesSheet(
-                    board = board,
-                    onDismiss = { viewModel.dismissHeroesSheet() },
-                )
-            }
+            HeroesSheet(
+                board = state.heroesBoard,
+                isLoading = state.heroesLoading,
+                onDismiss = { viewModel.dismissHeroesSheet() },
+            )
         }
         if (state.showHadithDialog) {
             DailyHadithDialog(
@@ -703,7 +702,7 @@ private fun CountdownCell(value: Int, label: String) {
 }
 
 @Composable
-private fun HeroesChip(date: String, onClick: () -> Unit) {
+private fun HeroesChip(onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(20.dp),
@@ -720,7 +719,7 @@ private fun HeroesChip(date: String, onClick: () -> Unit) {
         ) {
             Icon(
                 imageVector = Icons.Filled.Star,
-                contentDescription = stringResource(Res.string.heroes_chip_content_description, date),
+                contentDescription = stringResource(Res.string.heroes_chip_content_description),
                 tint = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.9f),
                 modifier = Modifier.size(18.dp),
             )

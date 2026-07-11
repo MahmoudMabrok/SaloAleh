@@ -107,4 +107,5 @@ data class MohamedLoversUiState(
     // Heroes / champions of the day
     val heroesBoard: HeroesBoard? = null,
     val showHeroesSheet: Boolean = false,
+    val heroesLoading: Boolean = false,
 )

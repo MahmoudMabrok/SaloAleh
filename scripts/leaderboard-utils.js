@@ -3,6 +3,7 @@ const { mirrorMohamedLoversRound: firestoreMirrorRound } = require('./firestore-
 const DHIKR_CHALLENGE_ROOT = '100_challenge';
 const BAQIYAT_CHALLENGE_ROOT = 'baqiyat_saliha';
 const ISTIGHFAR_CHALLENGE_ROOT = 'istighfar_challenge';
+const QURAN_CHALLENGE_ROOT = 'quran_challenge';
 const MOHAMED_LOVERS_ROOT = 'mohamed_lovers';
 
 function buildOldRankMap(source) {
@@ -135,6 +136,20 @@ function buildIstighfarChallengeDailyRanking(dateKey, users, rootPath = ISTIGHFA
   return {
     ...ranking,
     totalTodayIstighfar: ranking.totalCount,
+  };
+}
+
+function buildQuranChallengeDailyRanking(dateKey, users, rootPath = QURAN_CHALLENGE_ROOT) {
+  const ranking = buildDailyCountChallengeRanking({
+    dateKey,
+    players: users,
+    rootPath,
+    playersPath: 'users',
+  });
+
+  return {
+    ...ranking,
+    totalTodayQuran: ranking.totalCount,
   };
 }
 
@@ -404,6 +419,7 @@ module.exports = {
   DHIKR_CHALLENGE_ROOT,
   BAQIYAT_CHALLENGE_ROOT,
   ISTIGHFAR_CHALLENGE_ROOT,
+  QURAN_CHALLENGE_ROOT,
   MOHAMED_LOVERS_ROOT,
   buildOldRankMap,
   computeRankChange,
@@ -411,6 +427,7 @@ module.exports = {
   buildDailyCountChallengeRanking,
   buildBaqiyatChallengeDailyRanking,
   buildIstighfarChallengeDailyRanking,
+  buildQuranChallengeDailyRanking,
   cairoToday,
   addDaysToDateKey,
   populateMohamedLoversRound,

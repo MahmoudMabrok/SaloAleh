@@ -95,6 +95,7 @@ import tools.mo3ta.salo.generated.resources.bottom_nav_mohamed_lovers
 import tools.mo3ta.salo.generated.resources.bottom_nav_settings
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.NotificationMessageDialog
+import tools.mo3ta.salo.ui.QuranChallengeScreen
 import tools.mo3ta.salo.ui.tendays.TenDaysScreen
 
 // Temporarily suppress app announcements; the review dialog remains enabled after onboarding.
@@ -143,6 +144,7 @@ fun App(
         var showDhikrRewards by remember { mutableStateOf(false) }
         var showBaqiyatChallenge by remember { mutableStateOf(false) }
         var showIstighfarChallenge by remember { mutableStateOf(false) }
+        var showQuranChallenge by remember { mutableStateOf(false) }
         var showExtensionQr by remember { mutableStateOf(false) }
         var showReferral by remember { mutableStateOf(false) }
         var showPaywall by remember { mutableStateOf(false) }
@@ -155,6 +157,7 @@ fun App(
                 showDhikrRewards ||
                 showBaqiyatChallenge ||
                 showIstighfarChallenge ||
+                showQuranChallenge ||
                 showTakbeerSession ||
                 showTenDays ||
                 showExtensionQr ||
@@ -167,6 +170,7 @@ fun App(
                 showDhikrRewards -> showDhikrRewards = false
                 showBaqiyatChallenge -> showBaqiyatChallenge = false
                 showIstighfarChallenge -> showIstighfarChallenge = false
+                showQuranChallenge -> showQuranChallenge = false
                 showTakbeerSession -> showTakbeerSession = false
                 showTenDays -> showTenDays = false
                 showExtensionQr -> showExtensionQr = false
@@ -213,6 +217,7 @@ fun App(
             showDhikrRewards ||
             showBaqiyatChallenge ||
             showIstighfarChallenge ||
+            showQuranChallenge ||
             showTakbeerSession ||
             showTenDays ||
             showExtensionQr ||
@@ -251,6 +256,9 @@ fun App(
             showIstighfarChallenge -> IstighfarRewardsScreen(
                 onBack = { showIstighfarChallenge = false },
             )
+            showQuranChallenge -> QuranChallengeScreen(
+                onBack = { showQuranChallenge = false },
+            )
             else -> SaloTabScaffold(
                 selectedTab = selectedTab,
                 onTabSelected = { selectedTab = it },
@@ -274,6 +282,7 @@ fun App(
                                 onOpenTakbeerSession = { showTakbeerSession = true },
                                 onOpenBaqiyatChallenge = { showBaqiyatChallenge = true },
                                 onOpenIstighfarChallenge = { showIstighfarChallenge = true },
+                                onOpenQuranChallenge = { showQuranChallenge = true },
                             )
                             SaloTab.Achievements -> AchievementsScreen(
                                 onBack = { selectedTab = SaloTab.MohamedLovers },

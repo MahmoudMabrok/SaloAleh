@@ -12,6 +12,8 @@ import tools.mo3ta.salo.data.dhikr.DhikrChallengeFirebaseClient
 import tools.mo3ta.salo.data.dhikr.DhikrChallengeStore
 import tools.mo3ta.salo.data.istighfar.IstighfarChallengeFirebaseClient
 import tools.mo3ta.salo.data.istighfar.IstighfarChallengeStore
+import tools.mo3ta.salo.data.quran.QuranChallengeFirebaseClient
+import tools.mo3ta.salo.data.quran.QuranChallengeStore
 import tools.mo3ta.salo.data.engagement.ChallengeBadgeStore
 import tools.mo3ta.salo.data.engagement.DailyGoalStore
 import tools.mo3ta.salo.data.engagement.EngagementStore
@@ -37,6 +39,7 @@ import tools.mo3ta.salo.presentation.AchievementsViewModel
 import tools.mo3ta.salo.presentation.BaqiyatViewModel
 import tools.mo3ta.salo.presentation.DhikrChallengeViewModel
 import tools.mo3ta.salo.presentation.IstighfarChallengeViewModel
+import tools.mo3ta.salo.presentation.QuranChallengeViewModel
 import tools.mo3ta.salo.presentation.HadithListViewModel
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
 import tools.mo3ta.salo.presentation.TakbeerSessionViewModel
@@ -55,6 +58,8 @@ val appModule = module {
     single { DhikrChallengeFirebaseClient(get(), get()) }
     single { IstighfarChallengeStore(get()) }
     single { IstighfarChallengeFirebaseClient(get(), get()) }
+    single { QuranChallengeStore(get()) }
+    single { QuranChallengeFirebaseClient(get(), get()) }
     single { BaqiyatStore(get()) }
     single { BaqiyatFirebaseClient(get(), get()) }
     single { LanguageStore(get()) }
@@ -71,6 +76,7 @@ val appModule = module {
     viewModel { MohamedLoversViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { DhikrChallengeViewModel(get(), get(), get(), get(), get()) }
     viewModel { IstighfarChallengeViewModel(get(), get(), get(), get(), get()) }
+    viewModel { QuranChallengeViewModel(get(), get(), get(), get(), get()) }
     viewModel { BaqiyatViewModel(get(), get(), get(), get(), get()) }
     viewModel { AchievementsViewModel(get(), get(), get()) }
     viewModel { HadithListViewModel(get()) }

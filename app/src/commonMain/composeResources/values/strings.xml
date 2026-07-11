@@ -85,6 +85,8 @@
     <string name="challenge_baqiyat_body">امسح الأذكار الخمسة بالضغط عليها، وأكمل الدورة لتزيد رصيدك.</string>
     <string name="challenge_istighfar_title">واستغفروه</string>
     <string name="challenge_istighfar_body">كان الحبيب المصطفي يستغفر ٧٠ مره فاين انت</string>
+    <string name="challenge_quran_title">القرآن الكريم</string>
+    <string name="challenge_quran_body">إن قومي اتخذوا هذا القرآن مهجورا</string>
 
     <!-- Dhikr Rewards Screen -->
     <string name="dhikr_title">الذكر</string>
@@ -152,6 +154,38 @@
     <string name="istighfar_leaderboard_empty">لا توجد بيانات بعد</string>
     <string name="istighfar_rank_unranked">اضغط لرؤية المتصدرين</string>
     <string name="istighfar_manual_entry_button">🤲 تسجيل استغفار خارجي</string>
+
+    <string name="quran_back_cd">رجوع</string>
+    <string name="quran_phrase">إِنَّ قَوْمِي اتَّخَذُوا هَٰذَا الْقُرْآنَ مَهْجُورًا</string>
+    <string name="quran_today">اليوم</string>
+    <string name="quran_pages_label">صفحة</string>
+    <string name="quran_page_add">+ صفحة واحدة</string>
+    <string name="quran_daily_goal">الهدف اليومي: %1$d صفحات</string>
+    <string name="quran_progress_count">%1$d / %2$d</string>
+    <string name="quran_rewards_title">فضائل قراءة القرآن</string>
+    <string name="quran_reward_light">نور لصاحبه يوم القيامة</string>
+    <string name="quran_reward_cure">شفاء لما في الصدور</string>
+    <string name="quran_reward_intercession">يشفع لصاحبه يوم القيامة</string>
+    <string name="quran_reward_rank">يُرفع به صاحبه في الجنة</string>
+    <string name="quran_reward_sunnah">كان النبي ﷺ يتلو القرآن كل يوم</string>
+    <string name="quran_reward_sunnah_label">سنة النبي ﷺ</string>
+    <string name="quran_rank_number"># %1$d</string>
+    <string name="quran_rank_subtitle">من بين %1$d مشارك</string>
+    <string name="quran_tap_hint">سجّل الصفحات التي قرأتها اليوم</string>
+    <string name="quran_pages_read">أهداف مكتملة</string>
+    <string name="quran_milestone_title">أتممت %1$d صفحة!</string>
+    <string name="quran_milestone_subtitle">بارك الله فيك!</string>
+    <string name="quran_leaderboard_title">المتصدرون</string>
+    <string name="quran_leaderboard_rank_new">جديد</string>
+    <string name="quran_leaderboard_empty">لا توجد بيانات بعد</string>
+    <string name="quran_rank_unranked">اضغط لرؤية المتصدرين</string>
+    <string name="quran_manual_entry_button">📖 تسجيل صفحات خارجية</string>
+    <string name="manual_quran_title">📖 تسجيل صفحات قرآن</string>
+    <string name="manual_quran_subtitle">قرأت القرآن بعيدًا عن التطبيق؟\nسجّل ما قرأت — لا تتوقف عن القراءة لأنك بعيد عن التطبيق</string>
+    <string name="manual_quran_count">الصفحات:</string>
+    <string name="manual_quran_enter_count">أدخل عدد الصفحات</string>
+    <string name="manual_quran_witness">أشهد أن هذا العدد صحيح وحقيقي، وأن الله مطّلع على نيّتي</string>
+    <string name="manual_quran_submit">✦ تسجيل القراءة ✦</string>
     <string name="manual_istighfar_title">🤲 تسجيل استغفار خارجي</string>
     <string name="manual_istighfar_subtitle">استغفرت الله بصمت أو على أصابعك أو بالمسبحة؟\nسجّل ما استغفرت — لا تتوقف عن الاستغفار لأنك بعيد عن التطبيق</string>
     <string name="manual_istighfar_count">العدد:</string>
@@ -245,6 +279,7 @@
     <string name="achievements_badge_challenge_dhikr_how">أكمل هدف اليوم (%1$d ذكراً) في تحدي الذكر — تزيد الشارة 1 مع كل يوم فوز</string>
     <string name="achievements_badge_challenge_baqiyat_how">أكمل %1$d دورات من الباقيات الصالحات في يوم واحد — تزيد الشارة 1 مع كل يوم فوز</string>
     <string name="achievements_badge_challenge_istighfar_how">أكمل هدف اليوم (%1$d استغفاراً) — تزيد الشارة 1 مع كل يوم فوز</string>
+    <string name="achievements_badge_challenge_quran_how">أكمل هدف اليوم (%1$d صفحات) — تزيد الشارة 1 مع كل يوم فوز</string>
     <string name="achievements_badge_rank_title">المركز %1$d</string>
     <string name="achievements_badge_rank_how">احصل على المركز %1$d في أي جولة تنافسية</string>
     <string name="achievements_badge_how_label">كيف تحصل عليها:</string>
@@ -608,13 +643,14 @@
 
     <!-- Heroes / champions of the day -->
     <string name="heroes_chip_label">أبطال</string>
-    <string name="heroes_chip_content_description">أبطال يوم %1$s</string>
+    <string name="heroes_chip_content_description">أبطال</string>
     <string name="heroes_sheet_title">أبطال اليوم 🌟</string>
     <string name="heroes_sheet_subtitle">المتصدرون في تحدياتنا اليوم</string>
     <string name="heroes_challenge_salawat">الصلاة على النبي ﷺ</string>
     <string name="heroes_challenge_dhikr">تحدي الـ١٠٠ ذكر</string>
     <string name="heroes_challenge_baqiyat">الباقيات الصالحات</string>
     <string name="heroes_challenge_istighfar">الاستغفار</string>
+    <string name="heroes_challenge_quran">القرآن</string>
     <string name="heroes_challenge_empty">لا يوجد متصدرون بعد</string>
 
     <!-- Subscription encouragement -->

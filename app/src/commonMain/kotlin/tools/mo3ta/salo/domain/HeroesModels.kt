@@ -14,6 +14,7 @@ enum class HeroChallengeType(val key: String) {
     Dhikr("dhikr"),
     Baqiyat("baqiyat"),
     Istighfar("istighfar"),
+    Quran("quran"),
 }
 
 data class HeroChallenge(

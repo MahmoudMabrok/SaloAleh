@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -35,6 +36,7 @@ import tools.mo3ta.salo.generated.resources.heroes_challenge_baqiyat
 import tools.mo3ta.salo.generated.resources.heroes_challenge_dhikr
 import tools.mo3ta.salo.generated.resources.heroes_challenge_empty
 import tools.mo3ta.salo.generated.resources.heroes_challenge_istighfar
+import tools.mo3ta.salo.generated.resources.heroes_challenge_quran
 import tools.mo3ta.salo.generated.resources.heroes_challenge_salawat
 import tools.mo3ta.salo.generated.resources.heroes_sheet_subtitle
 import tools.mo3ta.salo.generated.resources.heroes_sheet_title
@@ -42,7 +44,8 @@ import tools.mo3ta.salo.generated.resources.heroes_sheet_title
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HeroesSheet(
-    board: HeroesBoard,
+    board: HeroesBoard?,
+    isLoading: Boolean,
     onDismiss: () -> Unit,
 ) {
     ModalBottomSheet(
@@ -71,20 +74,38 @@ fun HeroesSheet(
                 fontSize = 12.sp,
                 modifier = Modifier.padding(top = 2.dp, bottom = 4.dp),
             )
-            if (board.date.isNotBlank()) {
-                Text(
-                    text = board.date,
-                    color = MohamedLoversPalette.GoldBase.copy(alpha = 0.45f),
-                    fontSize = 11.sp,
-                    modifier = Modifier.padding(bottom = 16.dp),
-                )
-            } else {
-                Spacer(Modifier.height(12.dp))
-            }
+            when {
+                isLoading -> {
+                    Spacer(Modifier.height(32.dp))
+                    CircularProgressIndicator(color = MohamedLoversPalette.GoldHighlight)
+                    Spacer(Modifier.height(32.dp))
+                }
+                board == null -> {
+                    Spacer(Modifier.height(24.dp))
+                    Text(
+                        text = stringResource(Res.string.heroes_challenge_empty),
+                        color = MohamedLoversPalette.GoldBase.copy(alpha = 0.6f),
+                        fontSize = 13.sp,
+                    )
+                    Spacer(Modifier.height(24.dp))
+                }
+                else -> {
+                    if (board.date.isNotBlank()) {
+                        Text(
+                            text = board.date,
+                            color = MohamedLoversPalette.GoldBase.copy(alpha = 0.45f),
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(bottom = 16.dp),
+                        )
+                    } else {
+                        Spacer(Modifier.height(12.dp))
+                    }
 
-            board.challenges.forEach { challenge ->
-                ChallengeSection(challenge)
-                Spacer(Modifier.height(12.dp))
+                    board.challenges.forEach { challenge ->
+                        ChallengeSection(challenge)
+                        Spacer(Modifier.height(12.dp))
+                    }
+                }
             }
         }
     }
@@ -168,6 +189,7 @@ private fun challengeTitleRes(type: HeroChallengeType): StringResource = when (t
     HeroChallengeType.Dhikr -> Res.string.heroes_challenge_dhikr
     HeroChallengeType.Baqiyat -> Res.string.heroes_challenge_baqiyat
     HeroChallengeType.Istighfar -> Res.string.heroes_challenge_istighfar
+    HeroChallengeType.Quran -> Res.string.heroes_challenge_quran
 }
 
 private fun medalFor(rank: Int): String = when (rank) {

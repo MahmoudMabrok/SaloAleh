@@ -21,6 +21,12 @@ object AppAnalytics {
     const val OPEN_MANUAL_ISTIGHFAR = "open_manual_istighfar"
     const val ISTIGHFAR_TAP = "istighfar_tap"
     const val ISTIGHFAR_SCREEN_VIEW = "istighfar_screen_view"
+
+    const val OPEN_QURAN_CHALLENGE = "open_quran_challenge"
+    const val OPEN_MANUAL_QURAN = "open_manual_quran"
+    const val QURAN_TAP = "quran_tap"
+    const val QURAN_SCREEN_VIEW = "quran_screen_view"
+
     const val PARAM_COUNT = "count"
     const val LANGUAGE_CHANGED = "language_changed"
     const val SALAWAT_VARIANT_CHANGED = "salawat_variant_changed"

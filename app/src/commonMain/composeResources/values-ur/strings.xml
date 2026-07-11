@@ -83,6 +83,8 @@
     <string name="challenge_baqiyat_body">پانچوں اذکار پر ٹیپ کر کے مکمل دور کریں اور اپنا اسکور بڑھائیں۔</string>
     <string name="challenge_istighfar_title">واستغفروه</string>
     <string name="challenge_istighfar_body">حبیب مصطفیٰ ﷺ روزانہ ستر مرتبہ استغفار کرتے تھے، آپ کہاں ہیں؟</string>
+    <string name="challenge_quran_title">قرآن کریم</string>
+    <string name="challenge_quran_body">میری قوم نے اس قرآن کو چھوڑ دیا ہے</string>
     <string name="dhikr_title">ذکر</string>
 
     <string name="dhikr_milestone_title">%1$d بار مکمل!</string>
@@ -127,6 +129,38 @@
     <string name="istighfar_leaderboard_empty">ابھی کوئی ڈیٹا نہیں</string>
     <string name="istighfar_rank_unranked">لیڈر بورڈ دیکھنے کے لیے ٹیپ کریں</string>
     <string name="istighfar_manual_entry_button">🤲 بیرونی استغفار درج کریں</string>
+
+    <string name="quran_back_cd">واپس</string>
+    <string name="quran_phrase">میری قوم نے اس قرآن کو چھوڑ دیا ہے</string>
+    <string name="quran_today">آج</string>
+    <string name="quran_pages_label">صفحات</string>
+    <string name="quran_page_add">+ ایک صفحہ</string>
+    <string name="quran_daily_goal">روزانہ ہدف: %1$d صفحات</string>
+    <string name="quran_progress_count">%1$d / %2$d</string>
+    <string name="quran_rewards_title">قرآن پڑھنے کے فضائل</string>
+    <string name="quran_reward_light">قیامت کے دن اپنے ساتھی کے لیے نور</string>
+    <string name="quran_reward_cure">سینوں میں جو ہے اس کے لیے شفا</string>
+    <string name="quran_reward_intercession">قیامت کے دن اپنے ساتھی کی شفاعت کرے گا</string>
+    <string name="quran_reward_rank">اس کا ساتھی جنت میں بلند مقام پائے گا</string>
+    <string name="quran_reward_sunnah">نبی ﷺ ہر روز قرآن کی تلاوت کرتے تھے</string>
+    <string name="quran_reward_sunnah_label">نبی ﷺ کی سنت</string>
+    <string name="quran_rank_number"># %1$d</string>
+    <string name="quran_rank_subtitle">%1$d شرکاء میں سے</string>
+    <string name="quran_tap_hint">آج پڑھے ہوئے صفحات درج کریں</string>
+    <string name="quran_pages_read">مکمل اہداف</string>
+    <string name="quran_milestone_title">%1$d صفحات مکمل!</string>
+    <string name="quran_milestone_subtitle">اللہ آپ پر برکت نازل کرے!</string>
+    <string name="quran_leaderboard_title">سرفہرست</string>
+    <string name="quran_leaderboard_rank_new">نیا</string>
+    <string name="quran_leaderboard_empty">ابھی کوئی ڈیٹا نہیں</string>
+    <string name="quran_rank_unranked">لیڈر بورڈ دیکھنے کے لیے ٹیپ کریں</string>
+    <string name="quran_manual_entry_button">📖 بیرونی صفحات درج کریں</string>
+    <string name="manual_quran_title">📖 قرآن کے صفحات درج کریں</string>
+    <string name="manual_quran_subtitle">ایپ سے دور قرآن پڑھا؟\nجو پڑھا اسے درج کریں — ایپ سے دور ہونے کی وجہ سے قراءت نہ چھوڑیں</string>
+    <string name="manual_quran_count">صفحات:</string>
+    <string name="manual_quran_enter_count">صفحات کی تعداد درج کریں</string>
+    <string name="manual_quran_witness">میں گواہی دیتا ہوں کہ یہ تعداد درست اور حقیقی ہے، اور اللہ میری نیت سے باخبر ہے</string>
+    <string name="manual_quran_submit">✦ قراءت درج کریں ✦</string>
     <string name="manual_istighfar_title">🤲 بیرونی استغفار درج کریں</string>
     <string name="manual_istighfar_subtitle">اللہ سے خاموشی سے، انگلیوں پر، یا تسبیح سے استغفار کیا؟\nجو پڑھا اسے درج کریں — ایپ سے دور ہونے کی وجہ سے استغفار نہ چھوڑیں</string>
     <string name="manual_istighfar_count">تعداد:</string>
@@ -211,6 +245,7 @@
     <string name="achievements_badge_challenge_dhikr_how">ایک دن میں %1$d ذکر مکمل کر کے روزانہ کا ہدف حاصل کریں — ہر جیتنے والے دن پر بیج کی گنتی 1 بڑھتی ہے</string>
     <string name="achievements_badge_challenge_baqiyat_how">ایک دن میں باقیات صالحات کے %1$d دور مکمل کریں — ہر جیتنے والے دن پر بیج کی گنتی 1 بڑھتی ہے</string>
     <string name="achievements_badge_challenge_istighfar_how">ایک دن میں %1$d استغفار مکمل کریں — ہر جیتنے والے دن پر بیج کی گنتی 1 بڑھتی ہے</string>
+    <string name="achievements_badge_challenge_quran_how">ایک دن میں %1$d صفحات مکمل کریں — ہر جیتنے والے دن پر بیج کی گنتی 1 بڑھتی ہے</string>
     <string name="achievements_badge_rank_title">درجہ %1$d</string>
     <string name="achievements_badge_rank_how">کسی بھی مقابلے کے راؤنڈ میں درجہ %1$d حاصل کریں</string>
     <string name="achievements_badge_how_label">یہ کیسے حاصل کریں:</string>
@@ -560,13 +595,14 @@
 
     <!-- Heroes / champions of the day -->
     <string name="heroes_chip_label">ہیروز</string>
-    <string name="heroes_chip_content_description">%1$s کے ہیروز</string>
+    <string name="heroes_chip_content_description">ہیروز</string>
     <string name="heroes_sheet_title">آج کے ہیروز 🌟</string>
     <string name="heroes_sheet_subtitle">آج ہمارے چیلنجز میں سرفہرست</string>
     <string name="heroes_challenge_salawat">نبی ﷺ پر درود</string>
     <string name="heroes_challenge_dhikr">۱۰۰ ذکر چیلنج</string>
     <string name="heroes_challenge_baqiyat">باقیات صالحات</string>
     <string name="heroes_challenge_istighfar">استغفار</string>
+    <string name="heroes_challenge_quran">قرآن</string>
     <string name="heroes_challenge_empty">ابھی کوئی سرفہرست نہیں</string>
 
     <!-- Subscription encouragement -->

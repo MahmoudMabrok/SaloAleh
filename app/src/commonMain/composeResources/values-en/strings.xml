@@ -85,6 +85,8 @@
     <string name="challenge_baqiyat_body">Tap through the five phrases and complete a round to raise your score.</string>
     <string name="challenge_istighfar_title">Seek His Forgiveness</string>
     <string name="challenge_istighfar_body">The Beloved Prophet ﷺ sought forgiveness 70 times a day — where do you stand?</string>
+    <string name="challenge_quran_title">The Holy Quran</string>
+    <string name="challenge_quran_body">My people have abandoned this Quran</string>
 
     <!-- Dhikr Rewards Screen -->
     <string name="dhikr_title">Dhikr</string>
@@ -152,6 +154,38 @@
     <string name="istighfar_leaderboard_empty">No data yet</string>
     <string name="istighfar_rank_unranked">Tap to see the leaderboard</string>
     <string name="istighfar_manual_entry_button">🤲 Log external istighfar</string>
+
+    <string name="quran_back_cd">Back</string>
+    <string name="quran_phrase">My people have abandoned this Quran</string>
+    <string name="quran_today">Today</string>
+    <string name="quran_pages_label">pages</string>
+    <string name="quran_page_add">+ 1 page</string>
+    <string name="quran_daily_goal">Daily goal: %1$d pages</string>
+    <string name="quran_progress_count">%1$d / %2$d</string>
+    <string name="quran_rewards_title">Virtues of reciting the Quran</string>
+    <string name="quran_reward_light">A light for its companion on the Day of Judgment</string>
+    <string name="quran_reward_cure">A cure for what is in the hearts</string>
+    <string name="quran_reward_intercession">It will intercede for its companion on the Day of Judgment</string>
+    <string name="quran_reward_rank">Its companion is elevated in Paradise</string>
+    <string name="quran_reward_sunnah">The Prophet ﷺ recited the Quran every day</string>
+    <string name="quran_reward_sunnah_label">The Prophet\'s ﷺ Sunnah</string>
+    <string name="quran_rank_number"># %1$d</string>
+    <string name="quran_rank_subtitle">among %1$d participants</string>
+    <string name="quran_tap_hint">Log the pages you read today</string>
+    <string name="quran_pages_read">Goals completed</string>
+    <string name="quran_milestone_title">%1$d pages complete!</string>
+    <string name="quran_milestone_subtitle">May Allah bless you!</string>
+    <string name="quran_leaderboard_title">Top Readers</string>
+    <string name="quran_leaderboard_rank_new">New</string>
+    <string name="quran_leaderboard_empty">No data yet</string>
+    <string name="quran_rank_unranked">Tap to see the leaderboard</string>
+    <string name="quran_manual_entry_button">📖 Log external pages</string>
+    <string name="manual_quran_title">📖 Log Quran Pages</string>
+    <string name="manual_quran_subtitle">Read Quran away from the app?\nLog what you read — don\'t stop reading just because you\'re away from the app</string>
+    <string name="manual_quran_count">Pages:</string>
+    <string name="manual_quran_enter_count">Enter page count</string>
+    <string name="manual_quran_witness">I testify that this count is true and accurate, and that Allah is aware of my intention</string>
+    <string name="manual_quran_submit">✦ Log Reading ✦</string>
     <string name="manual_istighfar_title">🤲 Log External Istighfar</string>
     <string name="manual_istighfar_subtitle">Sought Allah\'s forgiveness silently, on your fingers, or with a tasbih?\nLog what you recited — don\'t stop your istighfar just because you\'re away from the app</string>
     <string name="manual_istighfar_count">Count:</string>
@@ -240,6 +274,7 @@
     <string name="achievements_badge_challenge_dhikr_how">Reach the daily goal of %1$d dhikr — the badge count grows by 1 for every winning day</string>
     <string name="achievements_badge_challenge_baqiyat_how">Complete %1$d cycles of the everlasting deeds in one day — the badge count grows by 1 for every winning day</string>
     <string name="achievements_badge_challenge_istighfar_how">Reach the daily goal of %1$d istighfar — the badge count grows by 1 for every winning day</string>
+    <string name="achievements_badge_challenge_quran_how">Reach the daily goal of %1$d pages — the badge count grows by 1 for every winning day</string>
     <string name="achievements_badge_rank_title">Rank %1$d</string>
     <string name="achievements_badge_rank_how">Achieve rank %1$d in any competitive round</string>
     <string name="achievements_badge_how_label">How to earn it:</string>
@@ -598,13 +633,14 @@
 
     <!-- Heroes / champions of the day -->
     <string name="heroes_chip_label">Heroes</string>
-    <string name="heroes_chip_content_description">Heroes of %1$s</string>
+    <string name="heroes_chip_content_description">Heroes</string>
     <string name="heroes_sheet_title">Today\'s heroes 🌟</string>
     <string name="heroes_sheet_subtitle">The champions of our challenges today</string>
     <string name="heroes_challenge_salawat">Salawat upon the Prophet ﷺ</string>
     <string name="heroes_challenge_dhikr">The 100 dhikr challenge</string>
     <string name="heroes_challenge_baqiyat">Baqiyat as-Salihat</string>
     <string name="heroes_challenge_istighfar">Istighfar</string>
+    <string name="heroes_challenge_quran">Quran</string>
     <string name="heroes_challenge_empty">No champions yet</string>
 
     <!-- Subscription encouragement -->

@@ -169,6 +169,34 @@ class FirestoreMirror {
             )
     }
 
+    fun mirrorQuranUserDay(
+        dateKey: String,
+        uid: String,
+        count: Int,
+        countryCode: String,
+        nickname: String,
+        goal: Int,
+        completed: Boolean,
+    ) = mirror("quran-user[$dateKey/$uid]") {
+        fs.collection(QURAN_COLLECTION).document(dateKey)
+            .collection(USERS_SUBCOLLECTION).document(uid)
+            .set(
+                mapOf(
+                    "count" to count.coerceAtLeast(0),
+                    "data" to mapOf(
+                        "uid" to uid,
+                        "date" to dateKey,
+                        "countryCode" to countryCode,
+                        "nickname" to nickname,
+                        "goal" to goal,
+                        "completed" to completed,
+                        "updatedAt" to FieldValue.serverTimestamp,
+                    ),
+                ),
+                merge = true,
+            )
+    }
+
     fun mirrorBaqiyatUserDay(
         dateKey: String,
         uid: String,
@@ -247,6 +275,7 @@ class FirestoreMirror {
         const val DHIKR_COLLECTION = "dhikr_challenge"
         const val BAQIYAT_COLLECTION = "baqiyat_challenge"
         const val ISTIGHFAR_COLLECTION = "istighfar_challenge"
+        const val QURAN_COLLECTION = "quran_challenge"
         const val TEN_DAYS_COLLECTION = "ten_days"
         const val REFERRALS_SUBCOLLECTION = "referrals"
     }

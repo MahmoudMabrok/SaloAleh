@@ -11,6 +11,7 @@ const {
   mirrorDhikrAggregateAndClean,
   mirrorBaqiyatAggregateAndClean,
   mirrorIstighfarAggregateAndClean,
+  mirrorQuranAggregateAndClean,
   mirrorHeroes,
 } = require('./firestore-utils');
 
@@ -201,12 +202,14 @@ async function main() {
   await sendDhikrChallengeRank1Notification(db);
   await sendBaqiyatChallengeRank1Notification(db);
   await sendIstighfarChallengeRank1Notification(db);
+  await sendQuranChallengeRank1Notification(db);
   // Persist the day's champions BEFORE the per-challenge day nodes are deleted by
   // the aggregate-and-clean steps below (those remove 100_challenge/{today} etc).
   await persistHeroes(db, dailyLeaderboardSnap);
   await aggregateAndCleanDhikrChallenge(db);
   await aggregateAndCleanBaqiyatChallenge(db);
   await aggregateAndCleanIstighfarChallenge(db);
+  await aggregateAndCleanQuranChallenge(db);
 
   process.exit(0);
 }
