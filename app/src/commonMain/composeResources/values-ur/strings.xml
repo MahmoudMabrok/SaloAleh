@@ -559,7 +559,7 @@
     <string name="heart_refill_nudge">اپنے دل کو نبی ﷺ پر درود بھیج کر بھر دیں</string>
 
     <!-- Heroes / champions of the day -->
-    <string name="heroes_chip_label">%1$s کے ہیروز</string>
+    <string name="heroes_chip_label">ہیروز</string>
     <string name="heroes_chip_content_description">%1$s کے ہیروز</string>
     <string name="heroes_sheet_title">آج کے ہیروز 🌟</string>
     <string name="heroes_sheet_subtitle">آج ہمارے چیلنجز میں سرفہرست</string>

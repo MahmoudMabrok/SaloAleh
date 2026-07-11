@@ -725,7 +725,7 @@ private fun HeroesChip(date: String, onClick: () -> Unit) {
                 modifier = Modifier.size(18.dp),
             )
             Text(
-                text = stringResource(Res.string.heroes_chip_label, date),
+                text = stringResource(Res.string.heroes_chip_label),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.9f),
                 fontSize = 13.sp,
                 fontFamily = MohamedLoversFonts.body,

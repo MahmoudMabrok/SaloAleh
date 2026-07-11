@@ -607,7 +607,7 @@
     <string name="heart_index_dialog_dismiss">فهمت</string>
 
     <!-- Heroes / champions of the day -->
-    <string name="heroes_chip_label">أبطال يوم %1$s</string>
+    <string name="heroes_chip_label">أبطال</string>
     <string name="heroes_chip_content_description">أبطال يوم %1$s</string>
     <string name="heroes_sheet_title">أبطال اليوم 🌟</string>
     <string name="heroes_sheet_subtitle">المتصدرون في تحدياتنا اليوم</string>
