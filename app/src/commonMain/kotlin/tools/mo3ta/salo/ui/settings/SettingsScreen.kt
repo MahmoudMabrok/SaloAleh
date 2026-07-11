@@ -194,28 +194,19 @@ fun SettingsScreen(
                 },
             )
 
-            SalawatVariantButton(
-                selectedIndex = selectedSalawatVariant,
-                onClick = { showSalawatVariantSheet = true },
+            Text(
+                text = stringResource(Res.string.settings_referral_header),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 24.dp, bottom = 8.dp),
             )
 
-            if (showSalawatVariantSheet) {
-                SalawatVariantSelectorSheet(
-                    selectedIndex = selectedSalawatVariant,
-                    onDismiss = { showSalawatVariantSheet = false },
-                    onSelected = { index ->
-                        if (index != selectedSalawatVariant) {
-                            selectedSalawatVariant = index
-                            salawatVariantStore.variantIndex = index
-                            analyticsManager.logAction(
-                                AppAnalytics.SALAWAT_VARIANT_CHANGED,
-                                mapOf(AppAnalytics.PARAM_VARIANT to (index + 1).toString()),
-                            )
-                        }
-                        showSalawatVariantSheet = false
-                    },
-                )
-            }
+            SettingLinkRow(
+                label = stringResource(Res.string.settings_invite_friends),
+                labelColor = MohamedLoversPalette.GoldGlow,
+                onClick = onOpenReferral,
+            )
 
             Text(
                 text = stringResource(Res.string.settings_notifications_header),
@@ -424,20 +415,6 @@ fun SettingsScreen(
             }
 
             Text(
-                text = stringResource(Res.string.settings_referral_header),
-                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(top = 24.dp, bottom = 8.dp),
-            )
-
-            SettingLinkRow(
-                label = stringResource(Res.string.settings_invite_friends),
-                labelColor = MohamedLoversPalette.GoldGlow,
-                onClick = onOpenReferral,
-            )
-
-            Text(
                 text = stringResource(Res.string.settings_about_header),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
                 fontSize = 12.sp,
@@ -458,6 +435,29 @@ fun SettingsScreen(
                 label = stringResource(Res.string.settings_share_app),
                 onClick = { shareText(getStoreUrl()) },
             )
+
+            SalawatVariantButton(
+                selectedIndex = selectedSalawatVariant,
+                onClick = { showSalawatVariantSheet = true },
+            )
+
+            if (showSalawatVariantSheet) {
+                SalawatVariantSelectorSheet(
+                    selectedIndex = selectedSalawatVariant,
+                    onDismiss = { showSalawatVariantSheet = false },
+                    onSelected = { index ->
+                        if (index != selectedSalawatVariant) {
+                            selectedSalawatVariant = index
+                            salawatVariantStore.variantIndex = index
+                            analyticsManager.logAction(
+                                AppAnalytics.SALAWAT_VARIANT_CHANGED,
+                                mapOf(AppAnalytics.PARAM_VARIANT to (index + 1).toString()),
+                            )
+                        }
+                        showSalawatVariantSheet = false
+                    },
+                )
+            }
 
             SettingLinkRow(
                 label = stringResource(Res.string.settings_open_store_page),
