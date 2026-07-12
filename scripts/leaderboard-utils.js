@@ -27,6 +27,126 @@ function computeRankChange(uid, newRank, oldRankMap) {
   return newRank < oldRank ? 'up' : 'down';
 }
 
+// Detects top-3 movements between an old rank map and the new ranked ordering.
+// Returns one notification per user who was in the top 3 and either dropped out
+// of it ('dropped') or slipped to a lower rank still within it ('lost_position').
+// `rankedUsers` is the new ordering (index 0 = rank 1); each item has a `uid`.
+// Shared by mohamed_lovers and every daily challenge so the signal stays identical.
+function computeTop3Changes(oldRanks, rankedUsers) {
+  const top3Notifs = [];
+  for (const [uid, oldRank] of Object.entries(oldRanks)) {
+    if (oldRank > 3) continue;
+    const newIndex = rankedUsers.findIndex(u => u.uid === uid);
+    const newRank = newIndex >= 0 ? newIndex + 1 : null;
+    if (newRank == null || newRank > 3) {
+      top3Notifs.push({ uid, event: 'dropped', oldRank, newRank });
+    } else if (newRank > oldRank) {
+      top3Notifs.push({ uid, event: 'lost_position', oldRank, newRank });
+    }
+  }
+  return top3Notifs;
+}
+
+// Sends the top-3 change FCM notifications produced by computeTop3Changes.
+// FCM tokens and the leaderboard opt-out flag live under mohamed_lovers/users
+// for every feature (challenges included). `messages` maps event → {title, body}.
+// `label` only tags log lines. Fire-and-forget per token, mirroring mohamed_lovers.
+async function sendTop3ChangeNotifications(db, admin, top3Notifs, messages, label) {
+  if (!top3Notifs || top3Notifs.length === 0) return;
+  console.log(`[${label}] Top-3 changes: ${top3Notifs.length} notification(s) to send`);
+  const promises = top3Notifs.map(async ({ uid, event }) => {
+    const msg = messages[event];
+    if (!msg) return;
+    const userSnap = await db.ref(`${MOHAMED_LOVERS_ROOT}/users/${uid}`).get();
+    const user = userSnap.val();
+    if (!user?.fcmToken) { console.log(`  [${label}] top3 uid=${uid}: no FCM token — skip`); return; }
+    if (user.leaderboardNotifsEnabled === false) { console.log(`  [${label}] top3 uid=${uid}: leaderboard notifications disabled — skip`); return; }
+    return admin.messaging().send({
+      token: user.fcmToken,
+      notification: { title: msg.title, body: msg.body },
+      data: { title: msg.title, body: msg.body },
+    })
+      .then(msgId => console.log(`  [${label}] top3 uid=${uid} (${event}): sent msgId=${msgId}`))
+      .catch(e => console.error(`  [${label}] top3 uid=${uid} (${event}): send failed: ${e.message}`));
+  });
+  await Promise.all(promises);
+}
+
+// Top-3 change message copy, keyed by event, for mohamed_lovers and each challenge.
+const MOHAMED_LOVERS_TOP3_MESSAGES = {
+  dropped: {
+    title: 'مكانك بين المحبين يناديك 🤍',
+    body: 'كنت من أكثر المصلّين على النبي ﷺ — لا تتوقف، فالصلاة عليه نور وشفاعة يوم القيامة!',
+  },
+  lost_position: {
+    title: 'المنافسة تشتد بين المحبين 🔥',
+    body: 'تراجع ترتيبك بين أكثر المصلّين على النبي ﷺ — زِد صلواتك وارتقِ، فأقربكم مني مجلسًا أكثركم صلاةً عليّ!',
+  },
+};
+
+const CHALLENGE_TOP3_MESSAGES = {
+  dhikr: {
+    dropped: {
+      title: 'مكانك في تحدي الذكر يناديك 🤍',
+      body: 'كنت من المتصدرين في تحدي الذكر — عُد وواصل ذكر الله، فذكر الله أكبر!',
+    },
+    lost_position: {
+      title: 'المنافسة تشتد في تحدي الذكر 🔥',
+      body: 'تراجع ترتيبك في تحدي الذكر — أكثِر من ذكر الله وارتقِ!',
+    },
+  },
+  baqiyat: {
+    dropped: {
+      title: 'مكانك في الباقيات الصالحات يناديك 🤍',
+      body: 'كنت من المتصدرين في تحدي الباقيات الصالحات — عُد وواصل، فهي خير عند ربك ثوابًا وخير أملاً!',
+    },
+    lost_position: {
+      title: 'المنافسة تشتد في الباقيات الصالحات 🔥',
+      body: 'تراجع ترتيبك في تحدي الباقيات الصالحات — زِد من الباقيات وارتقِ!',
+    },
+  },
+  istighfar: {
+    dropped: {
+      title: 'مكانك في تحدي الاستغفار يناديك 🤍',
+      body: 'كنت من المتصدرين في تحدي الاستغفار — عُد واستغفر، فالمستغفرون بالأسحار لهم البشرى!',
+    },
+    lost_position: {
+      title: 'المنافسة تشتد في تحدي الاستغفار 🔥',
+      body: 'تراجع ترتيبك في تحدي الاستغفار — أكثِر من الاستغفار وارتقِ!',
+    },
+  },
+  zabad: {
+    dropped: {
+      title: 'مكانك في تحدي التسبيح يناديك 🤍',
+      body: 'كنت من المتصدرين في تحدي سبحان الله وبحمده — عُد وسبِّح، فهما كلمتان حبيبتان إلى الرحمن!',
+    },
+    lost_position: {
+      title: 'المنافسة تشتد في تحدي التسبيح 🔥',
+      body: 'تراجع ترتيبك في تحدي التسبيح — زِد من تسبيحك وارتقِ!',
+    },
+  },
+  ghars: {
+    dropped: {
+      title: 'مكانك في تحدي الغَرْس يناديك 🌴',
+      body: 'كنت من المتصدرين في تحدي الغَرْس — عُد واغرس، فمن قالها غُرست له نخلة في الجنة!',
+    },
+    lost_position: {
+      title: 'المنافسة تشتد في تحدي الغَرْس 🔥',
+      body: 'تراجع ترتيبك في تحدي الغَرْس — أكثِر من الغرس وارتقِ!',
+    },
+  },
+  quran: {
+    dropped: {
+      title: 'مكانك في تحدي التلاوة يناديك 🤍',
+      body: 'كنت من المتصدرين في تحدي تلاوة القرآن — عُد واتلُ، فبكل حرف حسنة والحسنة بعشر أمثالها!',
+    },
+    lost_position: {
+      title: 'المنافسة تشتد في تحدي التلاوة 🔥',
+      body: 'تراجع ترتيبك في تحدي تلاوة القرآن — زِد من تلاوتك وارتقِ!',
+    },
+  },
+};
+
 function normalizeDhikrCount(value) {
   if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
   return Math.max(0, Math.floor(value));
@@ -310,48 +430,8 @@ async function populateMohamedLoversRound(db, admin, roundKey, isFinal) {
   // Phase 1 migration note: FCM sends remain here (RTDB path only).
   // In Phase 2, move FCM to Firestore-based scripts and remove from here.
   if (!isFinal) {
-    const top3Notifs = [];
-
-    // Players who were in top 3 but dropped out (now rank 4+ or gone).
-    for (const [uid, oldRank] of Object.entries(oldRanks)) {
-      if (oldRank > 3) continue;
-      const newEntry = top10.find(p => p.uid === uid);
-      const newRank = newEntry ? top10.indexOf(newEntry) + 1 : null;
-      if (newRank == null || newRank > 3) {
-        top3Notifs.push({ uid, event: 'dropped', oldRank, newRank });
-      } else if (newRank > oldRank) {
-        top3Notifs.push({ uid, event: 'lost_position', oldRank, newRank });
-      }
-    }
-
-    if (top3Notifs.length > 0) {
-      console.log(`Top-3 changes: ${top3Notifs.length} notification(s) to send`);
-      const top3Messages = {
-        dropped: {
-          title: 'مكانك بين المحبين يناديك 🤍',
-          body: 'كنت من أكثر المصلّين على النبي ﷺ — لا تتوقف، فالصلاة عليه نور وشفاعة يوم القيامة!',
-        },
-        lost_position: {
-          title: 'المنافسة تشتد بين المحبين 🔥',
-          body: 'تراجع ترتيبك بين أكثر المصلّين على النبي ﷺ — زِد صلواتك وارتقِ، فأقربكم مني مجلسًا أكثركم صلاةً عليّ!',
-        },
-      };
-      const top3Promises = top3Notifs.map(async ({ uid, event }) => {
-        const userSnap = await db.ref(`${MOHAMED_LOVERS_ROOT}/users/${uid}`).get();
-        const user = userSnap.val();
-        if (!user?.fcmToken) { console.log(`  top3 uid=${uid}: no FCM token — skip`); return; }
-        if (user.leaderboardNotifsEnabled === false) { console.log(`  top3 uid=${uid}: leaderboard notifications disabled — skip`); return; }
-        const msg = top3Messages[event];
-        return admin.messaging().send({
-          token: user.fcmToken,
-          notification: { title: msg.title, body: msg.body },
-          data: { title: msg.title, body: msg.body },
-        })
-          .then(msgId => console.log(`  top3 uid=${uid} (${event}): sent msgId=${msgId}`))
-          .catch(e => console.error(`  top3 uid=${uid} (${event}): send failed: ${e.message}`));
-      });
-      await Promise.all(top3Promises);
-    }
+    const top3Notifs = computeTop3Changes(oldRanks, top10);
+    await sendTop3ChangeNotifications(db, admin, top3Notifs, MOHAMED_LOVERS_TOP3_MESSAGES, 'mohamed_lovers');
   }
 
   // Notify dropped-out users — once per round (debounced via lastDropOutNotifRound).
@@ -437,6 +517,10 @@ module.exports = {
   MOHAMED_LOVERS_ROOT,
   buildOldRankMap,
   computeRankChange,
+  computeTop3Changes,
+  sendTop3ChangeNotifications,
+  MOHAMED_LOVERS_TOP3_MESSAGES,
+  CHALLENGE_TOP3_MESSAGES,
   normalizeDhikrCount,
   buildDailyCountChallengeRanking,
   buildBaqiyatChallengeDailyRanking,

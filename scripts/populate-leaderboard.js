@@ -16,6 +16,9 @@ const {
   buildQuranChallengeDailyRanking,
   buildOldRankMap,
   computeRankChange,
+  computeTop3Changes,
+  sendTop3ChangeNotifications,
+  CHALLENGE_TOP3_MESSAGES,
   cairoToday,
   populateMohamedLoversRound,
 } = require('./leaderboard-utils');
@@ -136,6 +139,9 @@ async function populateDhikrChallengeToday(db) {
     });
   }
 
+  // Read the previous leaderboard before overwriting — used for top-3 change alerts.
+  const oldLbSnap = await db.ref(`${DHIKR_CHALLENGE_ROOT}/${dateKey}/leaderboard`).get();
+  const oldRanks = buildOldRankMap(oldLbSnap);
   const dailyRanking = buildDhikrChallengeDailyRanking(dateKey, users);
 
   // Build top-10 leaderboard with rank change vs. the rank already stored in Firebase.
@@ -173,6 +179,10 @@ async function populateDhikrChallengeToday(db) {
     totalTodayDhikr: dailyRanking.totalTodayDhikr,
     leaderboardEntries,
   });
+
+  // Top-3 change notifications (drop-out / lost position), like mohamed_lovers.
+  const top3Notifs = computeTop3Changes(oldRanks, dailyRanking.rankedUsers);
+  await sendTop3ChangeNotifications(db, admin, top3Notifs, CHALLENGE_TOP3_MESSAGES.dhikr, 'dhikr');
 }
 
 async function populateBaqiyatChallengeToday(db) {
@@ -234,6 +244,10 @@ async function populateBaqiyatChallengeToday(db) {
     totalTodayBaqiyat: dailyRanking.totalTodayBaqiyat,
     leaderboardEntries,
   });
+
+  // Top-3 change notifications (drop-out / lost position), like mohamed_lovers.
+  const top3Notifs = computeTop3Changes(oldRanks, dailyRanking.rankedUsers);
+  await sendTop3ChangeNotifications(db, admin, top3Notifs, CHALLENGE_TOP3_MESSAGES.baqiyat, 'baqiyat');
 }
 
 async function populateIstighfarChallengeToday(db) {
@@ -293,6 +307,10 @@ async function populateIstighfarChallengeToday(db) {
     totalTodayIstighfar: dailyRanking.totalTodayIstighfar,
     leaderboardEntries,
   });
+
+  // Top-3 change notifications (drop-out / lost position), like mohamed_lovers.
+  const top3Notifs = computeTop3Changes(oldRanks, dailyRanking.rankedUsers);
+  await sendTop3ChangeNotifications(db, admin, top3Notifs, CHALLENGE_TOP3_MESSAGES.istighfar, 'istighfar');
 }
 
 async function populateQuranChallengeToday(db) {
@@ -352,6 +370,10 @@ async function populateQuranChallengeToday(db) {
     totalTodayQuran: dailyRanking.totalTodayQuran,
     leaderboardEntries,
   });
+
+  // Top-3 change notifications (drop-out / lost position), like mohamed_lovers.
+  const top3Notifs = computeTop3Changes(oldRanks, dailyRanking.rankedUsers);
+  await sendTop3ChangeNotifications(db, admin, top3Notifs, CHALLENGE_TOP3_MESSAGES.quran, 'quran');
 }
 
 async function populateZabadChallengeToday(db) {
@@ -411,6 +433,10 @@ async function populateZabadChallengeToday(db) {
     totalTodayZabad: dailyRanking.totalTodayZabad,
     leaderboardEntries,
   });
+
+  // Top-3 change notifications (drop-out / lost position), like mohamed_lovers.
+  const top3Notifs = computeTop3Changes(oldRanks, dailyRanking.rankedUsers);
+  await sendTop3ChangeNotifications(db, admin, top3Notifs, CHALLENGE_TOP3_MESSAGES.zabad, 'zabad');
 }
 
 async function populateGharsChallengeToday(db) {
@@ -470,6 +496,10 @@ async function populateGharsChallengeToday(db) {
     totalTodayGhars: dailyRanking.totalTodayGhars,
     leaderboardEntries,
   });
+
+  // Top-3 change notifications (drop-out / lost position), like mohamed_lovers.
+  const top3Notifs = computeTop3Changes(oldRanks, dailyRanking.rankedUsers);
+  await sendTop3ChangeNotifications(db, admin, top3Notifs, CHALLENGE_TOP3_MESSAGES.ghars, 'ghars');
 }
 
 async function main() {

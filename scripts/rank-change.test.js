@@ -8,6 +8,7 @@ const {
   buildIstighfarChallengeDailyRanking,
   buildOldRankMap,
   computeRankChange,
+  computeTop3Changes,
   normalizeDhikrCount,
 } = require('./leaderboard-utils');
 
@@ -138,6 +139,46 @@ describe('ten-days leaderboard rank-change', () => {
     const newUids = new Set(['new-1', 'new-2']);
     const dropped = [...oldUids].filter(uid => !newUids.has(uid));
     assert.deepEqual(dropped, ['old-1', 'old-2']);
+  });
+});
+
+describe('computeTop3Changes', () => {
+  const ranked = uids => uids.map(uid => ({ uid }));
+
+  it('returns no notifications when the top 3 is unchanged', () => {
+    const oldRanks = { a: 1, b: 2, c: 3 };
+    assert.deepEqual(computeTop3Changes(oldRanks, ranked(['a', 'b', 'c'])), []);
+  });
+
+  it('flags a user who dropped out of the top 3 entirely', () => {
+    const oldRanks = { a: 1, b: 2, c: 3 };
+    const notifs = computeTop3Changes(oldRanks, ranked(['a', 'b', 'x']));
+    assert.deepEqual(notifs, [{ uid: 'c', event: 'dropped', oldRank: 3, newRank: null }]);
+  });
+
+  it('flags a user who fell to rank 4+ as dropped', () => {
+    const oldRanks = { a: 1, b: 2, c: 3 };
+    const notifs = computeTop3Changes(oldRanks, ranked(['a', 'b', 'x', 'c']));
+    assert.deepEqual(notifs, [{ uid: 'c', event: 'dropped', oldRank: 3, newRank: 4 }]);
+  });
+
+  it('flags a user who lost a position but is still in the top 3', () => {
+    const oldRanks = { a: 1, b: 2, c: 3 };
+    const notifs = computeTop3Changes(oldRanks, ranked(['b', 'a', 'c']));
+    assert.deepEqual(notifs, [{ uid: 'a', event: 'lost_position', oldRank: 1, newRank: 2 }]);
+  });
+
+  it('does not notify users who climbed or held within the top 3', () => {
+    const oldRanks = { a: 2, b: 1 };
+    // b (was 1) is now 2 -> lost_position; a (was 2) is now 1 -> improved, no notif
+    const notifs = computeTop3Changes(oldRanks, ranked(['a', 'b']));
+    assert.deepEqual(notifs, [{ uid: 'b', event: 'lost_position', oldRank: 1, newRank: 2 }]);
+  });
+
+  it('ignores users who were outside the top 3', () => {
+    const oldRanks = { a: 1, d: 4, e: 5 };
+    const notifs = computeTop3Changes(oldRanks, ranked(['x', 'y', 'z']));
+    assert.deepEqual(notifs, [{ uid: 'a', event: 'dropped', oldRank: 1, newRank: null }]);
   });
 });
 
