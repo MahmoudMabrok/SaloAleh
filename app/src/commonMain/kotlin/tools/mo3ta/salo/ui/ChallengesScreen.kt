@@ -154,7 +154,13 @@ fun ChallengesScreen(
             icon = Icons.Default.Waves,
             accent = Color(0xFF2ED3C4),
             total = totals.zabad,
-            onClick = onOpenZabadChallenge,
+            onClick = {
+                analyticsManager.logAction(
+                    AppAnalytics.OPEN_ZABAD_CHALLENGE,
+                    mapOf(AppAnalytics.PARAM_SOURCE to "challenges"),
+                )
+                onOpenZabadChallenge()
+            },
         ),
         ChallengeItem(
             titleRes = Res.string.challenge_quran_title,

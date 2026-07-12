@@ -116,7 +116,9 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import tools.mo3ta.salo.generated.resources.achievements_badge_challenge_quran_how
+import tools.mo3ta.salo.generated.resources.achievements_badge_challenge_zabad_how
 import tools.mo3ta.salo.generated.resources.challenge_quran_title
+import tools.mo3ta.salo.generated.resources.challenge_zabad_title
 
 // ── Badge definitions ──────────────────────────────────────────────────────────
 
@@ -190,6 +192,7 @@ private val CHALLENGE_BADGES = listOf(
     ChallengeBadgeSpec(ChallengeType.BAQIYAT, "✨", Res.string.challenge_baqiyat_title, Res.string.achievements_badge_challenge_baqiyat_how),
     ChallengeBadgeSpec(ChallengeType.ISTIGHFAR, "🤲", Res.string.challenge_istighfar_title, Res.string.achievements_badge_challenge_istighfar_how),
     ChallengeBadgeSpec(ChallengeType.QURAN, "📖", Res.string.challenge_quran_title, Res.string.achievements_badge_challenge_quran_how),
+    ChallengeBadgeSpec(ChallengeType.ZABAD, "🌊", Res.string.challenge_zabad_title, Res.string.achievements_badge_challenge_zabad_how),
 )
 
 // ── Screen ─────────────────────────────────────────────────────────────────────
