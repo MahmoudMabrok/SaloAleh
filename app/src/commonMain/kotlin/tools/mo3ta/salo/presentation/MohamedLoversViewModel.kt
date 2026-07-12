@@ -509,6 +509,9 @@ class MohamedLoversViewModel(
         settingsStore.useDailyLeaderboard = daily
         _state.update { it.copy(isUsingDailyLeaderboard = daily, isSwitchingLeaderboardMode = true) }
         leaderboardJob?.cancel()
+        // Ranks aren't comparable across modes — without this, landing on a better rank in
+        // the other mode reads as an overtake and fires the animation.
+        lastProjectedRank = 0
         // Keep the previous list on screen until the other node emits; applyLeaderboard()
         // is suppressed while switching so it can't mix the new mode's self score with
         // the old mode's entries.
@@ -651,6 +654,7 @@ class MohamedLoversViewModel(
                 repository.observeLeaderboard(roundKey, settingsStore.useDailyLeaderboard).collectLatest { result ->
                     result.onSuccess { leaderboard ->
                         remoteLeaderboard = leaderboard
+                        endLeaderboardModeSwitch()
                         applyLeaderboard()
                         if (!leaderboard.isFinal) {
                             sawLeaderboardLive = true
@@ -715,7 +719,10 @@ class MohamedLoversViewModel(
                                 )
                             }
                         }
-                    }.onFailure { t -> _state.update { it.copy(error = t.toLoversError()) } }
+                    }.onFailure { t ->
+                        endLeaderboardModeSwitch()
+                        _state.update { it.copy(error = t.toLoversError()) }
+                    }
                 }
             }
         }

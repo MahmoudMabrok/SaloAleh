@@ -30,6 +30,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
@@ -206,6 +208,7 @@ internal fun MohamedLoversInfoSheet(
                 selfEntry = state.selfEntry,
                 selfInTop = state.selfInTop,
                 isDaily = state.isUsingDailyLeaderboard,
+                isSwitching = state.isSwitchingLeaderboardMode,
                 onToggleLeaderboardType = onToggleLeaderboardType,
                 isPremium = isPremium,
                 isLoadingLive = state.isLoadingLiveLeaderboard,
@@ -562,6 +565,7 @@ private fun LeaderboardCard(
     selfEntry: MohamedLoversLeaderboardEntry?,
     selfInTop: Boolean,
     isDaily: Boolean,
+    isSwitching: Boolean,
     onToggleLeaderboardType: (Boolean) -> Unit,
     isPremium: Boolean = false,
     isLoadingLive: Boolean = false,
@@ -601,60 +605,81 @@ private fun LeaderboardCard(
             }
         }
         LeaderboardTypeToggle(isDaily = isDaily, onToggle = onToggleLeaderboardType)
-        if (topPlayers.isEmpty() && selfEntry == null) {
-            Text(
-                text = stringResource(Res.string.mohamed_lovers_leaderboard_empty),
-                style = bodyStyle(),
-                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.65f),
-            )
-        } else {
-            val isFriday = remember {
-                Clock.System.now()
-                    .toLocalDateTime(TimeZone.of("Africa/Cairo"))
-                    .dayOfWeek == kotlinx.datetime.DayOfWeek.FRIDAY
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                topPlayers.forEach { entry ->
-                    LeaderboardRow(
-                        entry = entry,
-                        isPremium = isPremium,
-                        isFriday = isFriday,
-                        onSupporterClick = onSupporterClick,
-                        onUserClick = onUserClick,
-                        onBadgeClick = onBadgeClick,
-                        onStreakClick = onStreakClick,
-                    )
-                }
-            }
-            if (selfEntry != null && !selfInTop) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(modifier = Modifier.weight(1f).height(1.dp).background(MohamedLoversPalette.GoldBase.copy(alpha = 0.18f)))
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .alpha(if (isSwitching) 0.5f else 1f),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                if (topPlayers.isEmpty() && selfEntry == null) {
                     Text(
-                        text = stringResource(Res.string.leaderboard_separator_label),
-                        fontSize = 10.sp,
-                        color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.3f),
-                        modifier = Modifier.padding(horizontal = 8.dp),
+                        text = stringResource(Res.string.mohamed_lovers_leaderboard_empty),
+                        style = bodyStyle(),
+                        color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.65f),
                     )
-                    Box(modifier = Modifier.weight(1f).height(1.dp).background(MohamedLoversPalette.GoldBase.copy(alpha = 0.18f)))
+                } else {
+                    val isFriday = remember {
+                        Clock.System.now()
+                            .toLocalDateTime(TimeZone.of("Africa/Cairo"))
+                            .dayOfWeek == kotlinx.datetime.DayOfWeek.FRIDAY
+                    }
+                    Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+                        topPlayers.forEach { entry ->
+                            LeaderboardRow(
+                                entry = entry,
+                                isPremium = isPremium,
+                                isFriday = isFriday,
+                                onSupporterClick = onSupporterClick,
+                                onUserClick = onUserClick,
+                                onBadgeClick = onBadgeClick,
+                                onStreakClick = onStreakClick,
+                            )
+                        }
+                    }
+                    if (selfEntry != null && !selfInTop) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Box(modifier = Modifier.weight(1f).height(1.dp).background(MohamedLoversPalette.GoldBase.copy(alpha = 0.18f)))
+                            Text(
+                                text = stringResource(Res.string.leaderboard_separator_label),
+                                fontSize = 10.sp,
+                                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.3f),
+                                modifier = Modifier.padding(horizontal = 8.dp),
+                            )
+                            Box(modifier = Modifier.weight(1f).height(1.dp).background(MohamedLoversPalette.GoldBase.copy(alpha = 0.18f)))
+                        }
+                        LeaderboardRow(
+                            entry = selfEntry,
+                            isPremium = isPremium,
+                            isFriday = isFriday,
+                            onSupporterClick = onSupporterClick,
+                            onUserClick = onUserClick,
+                            onBadgeClick = onBadgeClick,
+                            onStreakClick = onStreakClick,
+                        )
+                        Text(
+                            text = stringResource(Res.string.mohamed_lovers_rank_pending_top),
+                            style = bodyStyle().copy(fontSize = 11.sp),
+                            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.5f),
+                        )
+                    }
                 }
-                LeaderboardRow(
-                    entry = selfEntry,
-                    isPremium = isPremium,
-                    isFriday = isFriday,
-                    onSupporterClick = onSupporterClick,
-                    onUserClick = onUserClick,
-                    onBadgeClick = onBadgeClick,
-                    onStreakClick = onStreakClick,
-                )
-                Text(
-                    text = stringResource(Res.string.mohamed_lovers_rank_pending_top),
-                    style = bodyStyle().copy(fontSize = 11.sp),
-                    color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.5f),
+            }
+            if (isSwitching) {
+                // Anchored to the top of the list, not its centre: a full board is taller
+                // than the sheet, which would push a centred spinner below the fold.
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 12.dp)
+                        .size(22.dp),
+                    color = MohamedLoversPalette.GoldGlow,
+                    strokeWidth = 2.dp,
                 )
             }
         }
