@@ -642,6 +642,8 @@
     <string name="heroes_challenge_baqiyat">Baqiyat as-Salihat</string>
     <string name="heroes_challenge_istighfar">Istighfar</string>
     <string name="heroes_challenge_quran">Quran</string>
+    <string name="heroes_challenge_zabad">The Hundred</string>
+    <string name="heroes_challenge_ghars">The Planting</string>
     <string name="heroes_challenge_empty">No champions yet</string>
 
     <!-- Subscription encouragement -->

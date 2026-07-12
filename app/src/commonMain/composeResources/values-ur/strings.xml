@@ -604,6 +604,8 @@
     <string name="heroes_challenge_baqiyat">باقیات صالحات</string>
     <string name="heroes_challenge_istighfar">استغفار</string>
     <string name="heroes_challenge_quran">قرآن</string>
+    <string name="heroes_challenge_zabad">سو تسبیحات</string>
+    <string name="heroes_challenge_ghars">شجرکاری</string>
     <string name="heroes_challenge_empty">ابھی کوئی سرفہرست نہیں</string>
 
     <!-- Subscription encouragement -->

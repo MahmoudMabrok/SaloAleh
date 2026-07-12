@@ -652,6 +652,8 @@
     <string name="heroes_challenge_baqiyat">الباقيات الصالحات</string>
     <string name="heroes_challenge_istighfar">الاستغفار</string>
     <string name="heroes_challenge_quran">القرآن</string>
+    <string name="heroes_challenge_zabad">تسبيح المئة</string>
+    <string name="heroes_challenge_ghars">الغَرْس</string>
     <string name="heroes_challenge_empty">لا يوجد متصدرون بعد</string>
 
     <!-- Subscription encouragement -->

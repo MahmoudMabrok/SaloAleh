@@ -604,6 +604,8 @@
     <string name="heroes_challenge_baqiyat">永存的善功</string>
     <string name="heroes_challenge_istighfar">求恕</string>
     <string name="heroes_challenge_quran">古兰经</string>
+    <string name="heroes_challenge_zabad">百次赞颂</string>
+    <string name="heroes_challenge_ghars">栽种</string>
     <string name="heroes_challenge_empty">暂无领先者</string>
 
     <!-- Subscription encouragement -->

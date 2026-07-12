@@ -508,24 +508,26 @@ async function persistHeroes(db, dailyLeaderboardSnap) {
     }));
   }
 
-  const [dhikr, baqiyat, istighfar, quran] = await Promise.all([
+  const [dhikr, baqiyat, istighfar, quran, zabad, ghars] = await Promise.all([
     challengeTop3(DHIKR_CHALLENGE_ROOT),
     challengeTop3(BAQIYAT_CHALLENGE_ROOT),
     challengeTop3(ISTIGHFAR_CHALLENGE_ROOT),
     challengeTop3(QURAN_CHALLENGE_ROOT),
+    challengeTop3(ZABAD_CHALLENGE_ROOT),
+    challengeTop3(GHARS_CHALLENGE_ROOT),
   ]);
 
   const heroes = {
     date: today,
     updatedAt: new Date().toISOString(),
-    challenges: { salawat, dhikr, baqiyat, istighfar, quran },
+    challenges: { salawat, dhikr, baqiyat, istighfar, quran, zabad, ghars },
   };
 
   // RTDB is the source of truth; overwrite the whole node so stale entries from
   // yesterday never linger.
   await db.ref('mohamed_lovers/heroes').set(heroes);
   console.log(
-    `[heroes] persisted for ${today}: salawat=${salawat.length} dhikr=${dhikr.length} baqiyat=${baqiyat.length} istighfar=${istighfar.length} quran=${quran.length}`,
+    `[heroes] persisted for ${today}: salawat=${salawat.length} dhikr=${dhikr.length} baqiyat=${baqiyat.length} istighfar=${istighfar.length} quran=${quran.length} zabad=${zabad.length} ghars=${ghars.length}`,
   );
 
   // Phase 1: mirror to Firestore.

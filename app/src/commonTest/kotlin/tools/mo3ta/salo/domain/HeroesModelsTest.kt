@@ -33,6 +33,9 @@ class HeroesModelsTest {
                 HeroChallengeType.Dhikr,
                 HeroChallengeType.Baqiyat,
                 HeroChallengeType.Istighfar,
+                HeroChallengeType.Quran,
+                HeroChallengeType.Zabad,
+                HeroChallengeType.Ghars,
             ),
             board.challenges.map { it.type },
         )
@@ -83,7 +86,7 @@ class HeroesModelsTest {
         val raw = mapOf("date" to "2026-07-10", "challenges" to emptyMap<Any?, Any?>())
         val board = parseHeroesBoard(raw)!!
         assertFalse(board.hasAny)
-        assertEquals(4, board.challenges.size)
+        assertEquals(HeroChallengeType.entries.size, board.challenges.size)
     }
 
     @Test
