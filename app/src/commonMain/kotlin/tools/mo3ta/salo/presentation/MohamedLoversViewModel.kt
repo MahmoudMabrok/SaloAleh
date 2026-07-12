@@ -59,6 +59,7 @@ class MohamedLoversViewModel(
     private val flushMutex = Mutex()
     private var selfJob: Job? = null
     private var leaderboardJob: Job? = null
+    private var leaderboardModeSwitchJob: Job? = null
     private var remoteLeaderboard: FirebaseLeaderboard = FirebaseLeaderboard(emptyList(), false)
     private var remoteSelfPlayer: MohamedLoversPlayer? = null
     private var authUid: String? = null
@@ -504,12 +505,30 @@ class MohamedLoversViewModel(
     }
 
     fun setLeaderboardMode(daily: Boolean) {
+        if (daily == state.value.isUsingDailyLeaderboard) return
         settingsStore.useDailyLeaderboard = daily
-        _state.update { it.copy(isUsingDailyLeaderboard = daily) }
+        _state.update { it.copy(isUsingDailyLeaderboard = daily, isSwitchingLeaderboardMode = true) }
         leaderboardJob?.cancel()
-        remoteLeaderboard = FirebaseLeaderboard(emptyList(), false)
-        applyLeaderboard()
+        // Keep the previous list on screen until the other node emits; applyLeaderboard()
+        // is suppressed while switching so it can't mix the new mode's self score with
+        // the old mode's entries.
         connectToLeaderboardIfPossible()
+        leaderboardModeSwitchJob?.cancel()
+        leaderboardModeSwitchJob = viewModelScope.launch {
+            delay(LEADERBOARD_MODE_SWITCH_TIMEOUT_MS)
+            leaderboardModeSwitchJob = null
+            remoteLeaderboard = FirebaseLeaderboard(emptyList(), false)
+            _state.update { it.copy(isSwitchingLeaderboardMode = false) }
+            applyLeaderboard()
+        }
+    }
+
+    private fun endLeaderboardModeSwitch() {
+        leaderboardModeSwitchJob?.cancel()
+        leaderboardModeSwitchJob = null
+        if (state.value.isSwitchingLeaderboardMode) {
+            _state.update { it.copy(isSwitchingLeaderboardMode = false) }
+        }
     }
 
     fun setScoreMasked(masked: Boolean) {
@@ -537,6 +556,10 @@ class MohamedLoversViewModel(
 
     private companion object {
         const val LIVE_COOLDOWN_MS = 30_000L
+
+        // Safety net: if the new mode's node never emits (offline, missing node),
+        // stop waiting so the board is never left frozen on the previous mode's list.
+        const val LEADERBOARD_MODE_SWITCH_TIMEOUT_MS = 6_000L
     }
 
     fun clearError() = _state.update { it.copy(error = null) }
@@ -563,6 +586,7 @@ class MohamedLoversViewModel(
         if (!state.value.firebaseConfigured || roundKey.isNullOrBlank()) {
             selfJob?.cancel(); leaderboardJob?.cancel()
             remoteLeaderboard = FirebaseLeaderboard(emptyList(), false); remoteSelfPlayer = null
+            endLeaderboardModeSwitch()
             applyLeaderboard()
             return
         }
@@ -698,6 +722,9 @@ class MohamedLoversViewModel(
     }
 
     private fun applyLeaderboard() {
+        // Mid mode-switch the cached entries still belong to the previous mode. Leave the
+        // rendered list untouched rather than recomputing it from stale data.
+        if (state.value.isSwitchingLeaderboardMode) return
         val uid = authUid
         val isDaily = state.value.isUsingDailyLeaderboard
         val selfRemoteTotal = remoteSelfPlayer?.totalCount ?: 0

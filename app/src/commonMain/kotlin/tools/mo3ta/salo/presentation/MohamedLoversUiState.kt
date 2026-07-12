@@ -46,7 +46,7 @@ data class MohamedLoversUiState(
     val selfEntry: MohamedLoversLeaderboardEntry? = null,
     val selfInTop: Boolean = false,
     val topPlayers: List<MohamedLoversLeaderboardEntry> = emptyList(),
-    val isUsingDailyLeaderboard: Boolean = false,
+    val isUsingDailyLeaderboard: Boolean = true,
     val showDailyLeaderboardPromo: Boolean = false,
     val isLoadingLiveLeaderboard: Boolean = false,
     val error: MohamedLoversError? = null,

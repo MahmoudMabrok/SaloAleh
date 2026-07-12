@@ -48,7 +48,7 @@ class NotificationSettingsStore(private val settings: Settings) {
         set(v) = settings.putBoolean(KEY_BUBBLE_TOOLTIP_SHOWN, v)
 
     var useDailyLeaderboard: Boolean
-        get() = settings.getBoolean(KEY_USE_DAILY_LEADERBOARD, false)
+        get() = settings.getBoolean(KEY_USE_DAILY_LEADERBOARD, true)
         set(v) = settings.putBoolean(KEY_USE_DAILY_LEADERBOARD, v)
 
     var dailyLeaderboardPromoShown: Boolean
