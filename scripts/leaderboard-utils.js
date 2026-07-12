@@ -285,6 +285,51 @@ function buildQuranChallengeDailyRanking(dateKey, users, rootPath = QURAN_CHALLE
   };
 }
 
+// Per-challenge participant-node layout. The daily count challenges store their
+// participants under different child paths, and baqiyat keeps each player's
+// metadata (uid/countryCode/nickname) directly on the child while the others nest
+// it under a `.data` object. `build` is the ranking function that sorts the
+// normalized participants into competition order.
+const CHALLENGE_PARTICIPANT_CONFIG = {
+  [DHIKR_CHALLENGE_ROOT]:     { playersPath: 'users',   nested: true,  build: buildDhikrChallengeDailyRanking },
+  [BAQIYAT_CHALLENGE_ROOT]:   { playersPath: 'players', nested: false, build: buildBaqiyatChallengeDailyRanking },
+  [ISTIGHFAR_CHALLENGE_ROOT]: { playersPath: 'users',   nested: true,  build: buildIstighfarChallengeDailyRanking },
+  [ZABAD_CHALLENGE_ROOT]:     { playersPath: 'users',   nested: true,  build: buildZabadChallengeDailyRanking },
+  [GHARS_CHALLENGE_ROOT]:     { playersPath: 'users',   nested: true,  build: buildGharsChallengeDailyRanking },
+  [QURAN_CHALLENGE_ROOT]:     { playersPath: 'users',   nested: true,  build: buildQuranChallengeDailyRanking },
+};
+
+// Reads a daily count-challenge's raw participant node and returns the users
+// sorted into competition rank order (highest count first, uid ascending on ties),
+// each carrying a 1-based `rank`. This recomputes the ranking from the live
+// per-user counts rather than trusting the periodically-written `leaderboard`
+// node, so winner selection reflects the final counts even when the leaderboard
+// cron has not run since the day's last taps.
+async function readChallengeRankedUsers(db, rootPath, dateKey) {
+  const config = CHALLENGE_PARTICIPANT_CONFIG[rootPath];
+  if (!config) throw new Error(`Unknown challenge root: ${rootPath}`);
+
+  const snap = await db.ref(`${rootPath}/${dateKey}/${config.playersPath}`).get();
+  const participants = [];
+  if (snap.exists()) {
+    snap.forEach(child => {
+      const data = child.val() || {};
+      const metadata = config.nested ? (data.data || {}) : data;
+      const uid = typeof metadata.uid === 'string' && metadata.uid.length > 0
+        ? metadata.uid
+        : child.key;
+      participants.push({
+        uid,
+        count: data.count,
+        countryCode: typeof metadata.countryCode === 'string' ? metadata.countryCode.toUpperCase() : '',
+        nickname: typeof metadata.nickname === 'string' ? metadata.nickname.trim() : '',
+      });
+    });
+  }
+
+  return config.build(dateKey, participants).rankedUsers;
+}
+
 // Builds/writes the mohamed_lovers leaderboard + dailyLeaderboard + per-player ranks
 // for a single round, and (when the round is not final) sends top-3/dropout/idle
 // notifications. Shared by populate-leaderboard.js (periodic runs against whichever
@@ -528,6 +573,7 @@ module.exports = {
   buildZabadChallengeDailyRanking,
   buildGharsChallengeDailyRanking,
   buildQuranChallengeDailyRanking,
+  readChallengeRankedUsers,
   cairoToday,
   addDaysToDateKey,
   populateMohamedLoversRound,
