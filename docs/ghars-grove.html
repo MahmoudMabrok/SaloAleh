@@ -1,0 +1,838 @@
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&amp;family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&amp;display=swap">
+<title>الغَرْس — Palm Garden Challenge</title>
+<style>
+
+
+:root{
+  --night:#14103A; --dusk:#3B2352; --rose:#8C4A54; --apricot:#E09A62;
+  --sun:#FFD9A0; --palm:#0B2A22; --frond:#3E8F63; --date:#C4762A;
+  --water:#26445C; --sand:#EADBC0; --ink:#3A2A1C; --gold:#F5D97A;
+  --sheet:#EFE2CB;
+  --disp:'Aref Ruqaa', serif;
+  --body:'IBM Plex Sans Arabic', system-ui, sans-serif;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:
+    radial-gradient(120% 70% at 50% 0%, #241a4d 0%, #14103A 45%, #0B0A22 100%);
+  color:#EFE6D8;
+  font-family:var(--body);
+  font-weight:300;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px 120px}
+
+/* ---------- masthead ---------- */
+.mast{padding:88px 0 56px;text-align:center;position:relative}
+.mast .eyebrow{
+  font-size:11px;letter-spacing:.34em;text-transform:uppercase;
+  color:#9A8FB8;font-weight:500;margin:0 0 26px;
+}
+.mast h1{
+  font-family:var(--disp);font-weight:400;
+  font-size:clamp(30px,5.2vw,58px);
+  line-height:1.85;margin:0;color:#F6EAD2;
+  direction:rtl;
+}
+.mast .src{
+  margin:22px auto 0;max-width:520px;
+  font-size:13px;line-height:1.9;color:#8E86A8;direction:rtl;
+}
+.mast .en{
+  margin:34px auto 0;max-width:620px;
+  font-size:15px;line-height:1.75;color:#B9AFCE;font-weight:300;
+}
+.rule{height:1px;background:linear-gradient(90deg,transparent,#4B3F6E,transparent);margin:0}
+
+/* ---------- section shell ---------- */
+.sec{padding:76px 0 0}
+.sec-head{display:flex;align-items:baseline;gap:16px;margin:0 0 8px}
+.sec-head h2{
+  font-family:var(--disp);font-weight:400;font-size:26px;margin:0;color:#F6EAD2;
+}
+.sec-head .lat{font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:#7E739E;font-weight:500}
+.sec-note{font-size:15px;line-height:1.8;color:#A79DC0;max-width:640px;margin:0 0 34px;font-weight:300}
+.sec-note strong{color:#E3D7BC;font-weight:500}
+
+/* ---------- phone ---------- */
+.phone{
+  width:390px;height:844px;flex:0 0 auto;
+  border-radius:44px;overflow:hidden;position:relative;
+  background:#14103A;
+  box-shadow:0 40px 90px -30px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.07);
+  direction:rtl;
+}
+.phone canvas{position:absolute;inset:0 0 auto 0;width:100%;display:block}
+
+/* top bar */
+.tbar{
+  position:absolute;top:0;right:0;left:0;height:96px;z-index:3;
+  display:flex;align-items:flex-end;justify-content:space-between;
+  padding:0 20px 12px;
+}
+.tbar .glyph{
+  width:36px;height:36px;border-radius:12px;display:grid;place-items:center;
+  background:rgba(255,255,255,.09);color:#EFE6D8;font-size:17px;
+  border:1px solid rgba(255,255,255,.10);
+}
+.tbar .ttl{font-family:var(--disp);font-size:20px;color:#F3E7CE;font-weight:400}
+
+/* the phrase — the tap target */
+.phrase{
+  position:absolute;left:0;right:0;bottom:266px;z-index:3;
+  text-align:center;pointer-events:none;padding:0 24px;
+}
+.phrase .line{
+  font-family:var(--disp);font-weight:400;
+  font-size:25px;line-height:2.1;color:#FBF2DE;
+  text-shadow:0 2px 22px rgba(10,8,30,.85), 0 1px 3px rgba(10,8,30,.9);
+}
+.phrase .hint{
+  margin-top:6px;font-size:11.5px;color:rgba(251,242,222,.62);font-weight:400;
+  letter-spacing:.02em;
+}
+.phrase .hint.empty{color:var(--gold)}
+
+/* sheet */
+.sheet{
+  position:absolute;left:0;right:0;bottom:0;height:232px;z-index:4;
+  background:var(--sheet);
+  border-radius:30px 30px 0 0;
+  padding:20px 22px 0;
+  color:var(--ink);
+  box-shadow:0 -18px 40px -22px rgba(0,0,0,.55);
+}
+.nums{display:flex;align-items:flex-end;gap:0}
+.num{flex:1}
+.num .k{font-size:11px;font-weight:500;color:#8A7256;letter-spacing:.04em;margin-bottom:2px}
+.num .v{
+  font-size:40px;font-weight:300;line-height:1;color:var(--ink);
+  font-variant-numeric:tabular-nums;letter-spacing:-.01em;
+}
+.num .v small{font-size:14px;font-weight:400;color:#8A7256;margin-right:5px}
+.num.today .v{color:#1F5C40}
+.divv{width:1px;align-self:stretch;background:#D8C7A9;margin:0 18px}
+
+.num .v.goal{color:#A08A6A;font-weight:300}
+.tier{margin-top:20px}
+.tier-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+.groves{display:flex;align-items:center;gap:5px}
+.pip{width:9px;height:9px;border-radius:50%;background:#D6C3A2;display:inline-block}
+.pip.on{background:#1F5C40}
+.pip-more{font-size:11px;color:#1F5C40;font-weight:600;margin-right:2px}
+.gl{font-size:11px;color:#8A7256;margin-right:7px;font-weight:400}
+.tier-next{font-size:11.5px;color:#8A7256;font-weight:400}
+.track{height:3px;background:#DCCCAF;border-radius:2px;overflow:hidden}
+.fill{height:100%;background:linear-gradient(90deg,#C4762A,#2F7A56);border-radius:2px}
+
+.acts{
+  display:flex;gap:10px;margin-top:20px;
+  border-top:1px solid #DFCFB2;padding-top:14px;
+}
+.act{
+  flex:1;text-align:center;font-size:12.5px;font-weight:500;color:#6B5740;
+  padding:11px 8px;border-radius:13px;background:#E4D4B7;
+}
+.act.pri{background:var(--palm);color:#F0E4CB}
+
+/* milestone toast inside phone */
+.toast{
+  position:absolute;left:50%;transform:translateX(-50%);
+  bottom:372px;z-index:5;
+  font-family:var(--disp);font-size:16px;color:#0E2A20;
+  background:linear-gradient(180deg,#FFE9A8,#E8C560);
+  padding:9px 22px;border-radius:999px;white-space:nowrap;
+  box-shadow:0 10px 30px -8px rgba(0,0,0,.6);
+  opacity:0;transition:opacity .4s;
+}
+.toast.on{opacity:1}
+
+/* ---------- live demo ---------- */
+.live{display:flex;gap:56px;align-items:center;flex-wrap:wrap;justify-content:center}
+.live .side{flex:1;min-width:280px;max-width:400px}
+.live .side h3{
+  font-family:var(--disp);font-weight:400;font-size:22px;margin:0 0 14px;color:#F6EAD2;
+}
+.live .side p{font-size:14.5px;line-height:1.85;color:#A79DC0;margin:0 0 22px;font-weight:300}
+.live .side p b{color:#E3D7BC;font-weight:500}
+.tapbtn{
+  display:inline-flex;align-items:center;gap:10px;
+  background:#F5D97A;color:#1B1436;border:0;border-radius:14px;
+  font-family:var(--body);font-weight:600;font-size:14px;
+  padding:14px 24px;cursor:pointer;
+}
+.tapbtn:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.reset{
+  background:transparent;color:#8E86A8;border:1px solid #3C3266;
+  border-radius:14px;padding:14px 18px;font-family:var(--body);font-size:13px;cursor:pointer;margin-right:10px;
+}
+.reset:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.tapzone{cursor:pointer}
+.tapzone:focus-visible{outline:none}
+.tapzone:focus-visible .phone{box-shadow:0 0 0 4px #F5D97A, 0 40px 90px -30px rgba(0,0,0,.85)}
+
+/* ---------- gallery ---------- */
+.gal{display:flex;gap:22px;overflow-x:auto;padding:8px 4px 30px;justify-content:center;scroll-snap-type:x mandatory}
+.gal figure{margin:0;flex:0 0 auto;width:257px;scroll-snap-align:center}
+.gal .phone{transform:scale(.66);transform-origin:top center;margin-bottom:-287px}
+.gal figcaption{text-align:center;margin-top:20px;max-width:257px}
+.gal .cap-t{font-family:var(--disp);font-size:18px;color:#F6EAD2;direction:rtl}
+.gal .cap-s{font-size:12px;line-height:1.65;color:#8E86A8;margin-top:6px;font-weight:300}
+
+/* ---------- tokens ---------- */
+.tok{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0;border:1px solid #342C58;border-radius:16px;overflow:hidden}
+.sw{padding:16px 14px;border-left:1px solid #342C58}
+.sw:last-child{border-left:0}
+.sw .chip{height:52px;border-radius:9px;margin-bottom:12px;border:1px solid rgba(255,255,255,.10)}
+.sw .nm{font-size:12.5px;font-weight:500;color:#EFE6D8}
+.sw .hx{font-size:11px;color:#7E739E;letter-spacing:.06em;margin-top:3px;font-variant-numeric:tabular-nums}
+.sw .use{font-size:11px;color:#6E6490;margin-top:7px;line-height:1.5}
+
+.type{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:26px}
+.tcard{border:1px solid #342C58;border-radius:16px;padding:24px}
+.tcard .role{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#7E739E;font-weight:500}
+.tcard .fam{font-size:15px;color:#EFE6D8;margin-top:6px;font-weight:500}
+.tcard .spec{font-size:12px;color:#8E86A8;margin-top:4px;line-height:1.7}
+.tcard .demo{margin-top:20px;direction:rtl;color:#F6EAD2}
+.tcard .demo.d1{font-family:var(--disp);font-size:27px;line-height:1.9}
+.tcard .demo.d2{font-family:var(--body);font-size:16px;font-weight:400;line-height:1.8}
+.tcard .demo.d2 span{display:block;font-size:34px;font-weight:300;font-variant-numeric:tabular-nums;direction:ltr;text-align:right;margin-top:8px}
+
+/* ---------- card in list ---------- */
+.listcard{
+  width:390px;background:#EFE2CB;border-radius:22px;padding:16px;
+  direction:rtl;color:var(--ink);display:flex;gap:14px;align-items:flex-start;
+  box-shadow:0 20px 50px -24px rgba(0,0,0,.7);
+}
+.listcard .ic{
+  width:52px;height:52px;flex:0 0 auto;border-radius:16px;
+  background:linear-gradient(160deg,#1F5C40,#0B2A22);
+  display:grid;place-items:center;
+}
+.listcard .tx{flex:1;min-width:0}
+.listcard .t{font-family:var(--disp);font-size:19px;color:#0E2A20;line-height:1.6}
+.listcard .b{font-size:12.5px;line-height:1.75;color:#7A6650;margin-top:2px}
+.listcard .tot{
+  margin-top:10px;display:inline-block;font-size:11.5px;font-weight:500;
+  background:#DCE9DF;color:#1F5C40;padding:5px 11px;border-radius:999px;
+}
+
+/* ---------- plan ---------- */
+.plan{display:grid;gap:14px}
+.ph{border:1px solid #342C58;border-radius:16px;padding:22px 24px}
+.ph-h{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.ph-n{
+  width:26px;height:26px;flex:0 0 auto;border-radius:8px;display:grid;place-items:center;
+  background:#F5D97A;color:#1B1436;font-size:13px;font-weight:700;
+}
+.ph-h h3{margin:0;font-size:16px;font-weight:600;color:#F6EAD2}
+.ph-t{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7E739E;font-weight:500;margin-right:auto}
+.ph ul{margin:0;padding-left:18px}
+.ph li{font-size:13.5px;line-height:1.85;color:#A79DC0;font-weight:300;margin-bottom:5px}
+.ph li strong{color:#E3D7BC;font-weight:600}
+.ph li em{color:#C6BADA;font-style:italic}
+.ph code, .sec-note code{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;
+  background:#251E45;color:#C3B6E0;padding:2px 6px;border-radius:5px;
+}
+.warn{color:#F5D97A;font-weight:600}
+
+/* ---------- notes ---------- */
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:22px}
+.note{border:1px solid #342C58;border-radius:16px;padding:22px}
+.note h4{font-size:13px;margin:0 0 10px;color:#F5D97A;font-weight:600;letter-spacing:.02em}
+.note p{margin:0;font-size:13.5px;line-height:1.8;color:#A79DC0;font-weight:300}
+.note p + p{margin-top:10px}
+.note.cut h4{color:#C97B7B}
+
+@media (max-width:900px){
+  .type{grid-template-columns:1fr}
+  .gal .phone{transform:scale(.72);margin-bottom:-230px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}
+</style>
+
+<div class="wrap">
+
+  <header class="mast">
+    <p class="eyebrow">SaloAleh · New Challenge</p>
+    <h1>مَن قالَ: سُبْحَانَ اللهِ الْعَظِيمِ وَبِحَمْدِهِ<br>غُرِسَتْ لَهُ نَخْلَةٌ فِي الجَنَّةِ</h1>
+    <p class="src">رواه الترمذي وحسّنه — عن جابر بن عبد الله رضي الله عنه</p>
+    <p class="en">The hadith is already the mechanic. Every tasbeeh plants one palm. So the counter isn't a number in a ring like the app's other four challenges — the counter <em>is</em> a grove, drawn palm by palm at first light. A daily challenge, goal 100, resetting at Cairo midnight like the rest.</p>
+  </header>
+
+  <div class="rule"></div>
+
+  <!-- LIVE -->
+  <section class="sec">
+    <div class="sec-head"><h2>الغَرْس</h2><span class="lat">The signature — tap to plant</span></div>
+    <p class="sec-note">Tap anywhere on the grove. A sapling breaks the soil at the next slot in the front row, unfurls, and stands. When the front row fills, the grove <strong>steps back a row</strong>. Keep going to <strong>25</strong> — the grove completes, recedes to the horizon, and fresh soil opens up. Tap ~25 times in the demo to see it.</p>
+
+    <div class="live">
+      <div class="side">
+        <h3>لماذا الغَرْس، لا العدّاد؟</h3>
+        <p>The other four challenges all end in the same place: a number inside a progress ring. Here the hadith hands you a better one — <b>a palm, planted</b>. So the count is the grove, and the ring is gone.</p>
+        <p>Each palm is <b>deterministic</b>: height, lean, frond count and sway all come from a seeded RNG on its index, so palm #12 looks identical on every device. Drawn only with Paths, arcs and gradients — <b>no blur</b> — so it ports 1:1 to Compose <code>Canvas</code>. Never more than <b>25 on screen</b>, so the cost is a constant.</p>
+        <button class="tapbtn" id="plant">🌱 &nbsp;سبِّح — اغرس نخلة</button>
+        <button class="reset" id="reset">إعادة</button>
+      </div>
+
+      <div class="tapzone" id="tapzone" role="button" tabindex="0" aria-label="اضغط لغرس نخلة">
+        <div class="phone">
+          <canvas id="c-live"></canvas>
+          <div class="tbar">
+            <div class="glyph">→</div>
+            <div class="ttl">الغَرْس</div>
+            <div class="glyph">؟</div>
+          </div>
+          <div class="toast" id="toast-live"></div>
+          <div class="phrase">
+            <div class="line">سُبْحَانَ اللهِ الْعَظِيمِ وَبِحَمْدِهِ</div>
+            <div class="hint" id="hint-live">اضغط في أيّ مكان لتُغرَس لك نخلة</div>
+          </div>
+          <div class="sheet" id="sheet-live"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GALLERY -->
+  <section class="sec">
+    <div class="sec-head"><h2>البستان</h2><span class="lat">One grove = 25 palms. Four groves = the day's goal.</span></div>
+    <p class="sec-note">The screen never draws more than <strong>25 palms</strong>. The 25th bears dates and completes the grove; the next tasbeeh sends that grove <strong>receding into the tree-line on the horizon</strong> and breaks fresh soil in front. Nothing is erased — the day's work accumulates as distance. The score keeps climbing regardless, and resets at Cairo midnight like every other challenge.</p>
+    <div class="gal">
+      <figure>
+        <div class="phone" data-count="0"><canvas></canvas>
+          <div class="tbar"><div class="glyph">→</div><div class="ttl">الغَرْس</div><div class="glyph">؟</div></div>
+          <div class="phrase"><div class="line">سُبْحَانَ اللهِ الْعَظِيمِ وَبِحَمْدِهِ</div><div class="hint empty">الأرض مُهيّأة. سبِّح لتُغرَس أوّل نخلة.</div></div>
+          <div class="sheet"></div>
+        </div>
+        <figcaption><div class="cap-t">صِفْر</div><div class="cap-s">Bare, tilled soil at first light. The invitation is the only gold on screen.</div></figcaption>
+      </figure>
+      <figure>
+        <div class="phone" data-count="25"><canvas></canvas>
+          <div class="tbar"><div class="glyph">→</div><div class="ttl">الغَرْس</div><div class="glyph">؟</div></div>
+          <div class="phrase"><div class="line">سُبْحَانَ اللهِ الْعَظِيمِ وَبِحَمْدِهِ</div><div class="hint">اضغط في أيّ مكان لتُغرَس لك نخلة</div></div>
+          <div class="sheet"></div>
+        </div>
+        <figcaption><div class="cap-t">٢٥ — بستان مكتمل</div><div class="cap-s">Full grove. The 25th palm is carrying dates. The next tap sends it to the horizon.</div></figcaption>
+      </figure>
+      <figure>
+        <div class="phone" data-count="83"><canvas></canvas>
+          <div class="tbar"><div class="glyph">→</div><div class="ttl">الغَرْس</div><div class="glyph">؟</div></div>
+          <div class="phrase"><div class="line">سُبْحَانَ اللهِ الْعَظِيمِ وَبِحَمْدِهِ</div><div class="hint">اضغط في أيّ مكان لتُغرَس لك نخلة</div></div>
+          <div class="sheet"></div>
+        </div>
+        <figcaption><div class="cap-t">٨٣ — بستانك الرابع</div><div class="cap-s">Three finished groves on the tree-line, eight palms into the fourth. Still only 25 drawn.</div></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- TOKENS -->
+  <section class="sec">
+    <div class="sec-head"><h2>اللون</h2><span class="lat">Palette — dawn over the grove</span></div>
+    <p class="sec-note">Tasbeeh is the dhikr of <strong>حين تُصبحون وحين تُمسون</strong>, so the grove is lit at first light. The foreground is near-silhouette against a lit horizon — palms read as shape, not colour. The only warm accent is <strong>ripe-date amber</strong>, spent on the milestone fruit and nothing else.</p>
+    <div class="tok">
+      <div class="sw"><div class="chip" style="background:#14103A"></div><div class="nm">NightIndigo</div><div class="hx">#14103A</div><div class="use">Top of sky. Inherits the app's DeepBlue world.</div></div>
+      <div class="sw"><div class="chip" style="background:#8C4A54"></div><div class="nm">DawnRose</div><div class="hx">#8C4A54</div><div class="use">Mid sky, the pre-sunrise flush.</div></div>
+      <div class="sw"><div class="chip" style="background:#E09A62"></div><div class="nm">HorizonApricot</div><div class="hx">#E09A62</div><div class="use">The lit band the palms stand against.</div></div>
+      <div class="sw"><div class="chip" style="background:#0B2A22"></div><div class="nm">PalmDeep</div><div class="hx">#0B2A22</div><div class="use">Trunks and fronds in the foreground.</div></div>
+      <div class="sw"><div class="chip" style="background:#3E8F63"></div><div class="nm">FrondLit</div><div class="hx">#3E8F63</div><div class="use">Sunlit frond edges only.</div></div>
+      <div class="sw"><div class="chip" style="background:#C4762A"></div><div class="nm">DateAmber</div><div class="hx">#C4762A</div><div class="use">The one accent. Milestone fruit.</div></div>
+      <div class="sw"><div class="chip" style="background:#EFE2CB"></div><div class="nm">SandPale</div><div class="hx">#EFE2CB</div><div class="use">The sheet. Sun-bleached earth, not "cream".</div></div>
+    </div>
+  </section>
+
+  <!-- TYPE -->
+  <section class="sec">
+    <div class="sec-head"><h2>الحَرْف</h2><span class="lat">Type</span></div>
+    <p class="sec-note">The app currently ships no custom fonts — every <code>Text</code> sets its size inline. This challenge introduces two, and they earn their place: the tasbeeh itself is the thing you're here to say, so it should look <strong>said</strong>, not labelled.</p>
+    <div class="type">
+      <div class="tcard">
+        <div class="role">Display · used 3× per screen</div>
+        <div class="fam">Aref Ruqaa</div>
+        <div class="spec">Ruqʿah-flavoured calligraphic naskh. Carries tashkeel cleanly at 25sp+. Reserved for the tasbeeh, the screen title, and the tier name. Never for UI chrome.</div>
+        <div class="demo d1">سُبْحَانَ اللهِ الْعَظِيمِ وَبِحَمْدِهِ<br>بُسْتَان · وَاحَة</div>
+      </div>
+      <div class="tcard">
+        <div class="role">Body &amp; data</div>
+        <div class="fam">IBM Plex Sans Arabic</div>
+        <div class="spec">Humanist, low-contrast, real tabular numerals. Deliberately <em>not</em> Cairo or Tajawal — those are the Inter of Arabic and would make this read like every other app. Weights 300 / 400 / 500 / 600.</div>
+        <div class="demo d2">إجمالي بستانك<span>2,840</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LIST CARD -->
+  <section class="sec">
+    <div class="sec-head"><h2>البطاقة</h2><span class="lat">Entry point in ChallengesScreen</span></div>
+    <p class="sec-note">Slots into the existing <code>ChallengeCard</code> list beside dhikr / baqiyat / istighfar / quran. Accent <strong>#1F5C40</strong> — the only deep green in the row, so it's findable at a glance.</p>
+    <div class="listcard">
+      <div class="ic"><svg width="26" height="26" viewBox="0 0 26 26" id="pico"></svg></div>
+      <div class="tx">
+        <div class="t">اغرس نخلة</div>
+        <div class="b">مَن قال: سبحان الله العظيم وبحمده، غُرست له نخلة في الجنة</div>
+        <div class="tot">🌴 ١٫٢ مليون نخلة غُرست اليوم</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLAN -->
+  <section class="sec">
+    <div class="sec-head"><h2>التنفيذ</h2><span class="lat">Implementation plan</span></div>
+    <p class="sec-note">A plain daily challenge — it clones <code>istighfar</code> exactly (<code>Store</code> + <code>FirebaseClient</code> + <code>FirestoreMirror</code>, orchestrated by the ViewModel; no repository). <strong>No new schema, no lifetime total, no rules change beyond one new subtree.</strong> Feature name: <strong>ghars</strong> (الغَرْس). Everything novel lives in the renderer.</p>
+
+    <div class="plan">
+      <div class="ph">
+        <div class="ph-h"><span class="ph-n">1</span><h3>Data &amp; domain — no UI</h3><span class="ph-t">mechanical clone · tests first</span></div>
+        <ul>
+          <li><code>domain/GharsModels.kt</code> — <code>GHARS_DAILY_GOAL = 100</code>, <code>GHARS_GROVE_SIZE = 25</code>, <code>GharsDayStats</code>, <code>GharsLeaderboardEntry</code>. Copy of <code>IstighfarChallengeModels.kt</code>.</li>
+          <li><code>data/ghars/GharsStore.kt</code> — remote-baseline + pending-delta, keyed on the Cairo date. Same file as <code>IstighfarChallengeStore</code> with new keys.</li>
+          <li><code>data/ghars/GharsFirebaseClient.kt</code> — writes <code>ghars_challenge/{dateKey}/users/{uid}/count</code> and <code>/data</code>; reads server-computed <code>rank</code>, <code>participantCount</code>, <code>leaderboard</code>.</li>
+          <li><code>FirestoreMirror.mirrorGharsUserDay(…)</code> — dual-write, fire-and-forget. New collection <code>ghars_challenge/{dateKey}</code>.</li>
+          <li><code>ChallengeType.GHARS(id="ghars", dailyGoal=100)</code> → the badge falls out of the existing <code>ChallengeBadgeStore</code> for free.</li>
+          <li><code>database.rules.json</code> + <code>firestore.rules</code> — one new subtree, same shape as the istighfar block (aggregates read-only to the client).</li>
+          <li>Tests: <code>GharsStoreTest</code> — pending-delta flush, Cairo day rollover, previous-day back-flush.</li>
+        </ul>
+      </div>
+
+      <div class="ph">
+        <div class="ph-h"><span class="ph-n">2</span><h3>The grove renderer</h3><span class="ph-t">the only new thing</span></div>
+        <ul>
+          <li><code>ui/ghars/GroveMath.kt</code> — <strong>pure Kotlin, no Compose</strong>: <code>mulberry32</code> seeded RNG, <code>palmParams(index)</code>, band occupancy over <code>CAPS = [7, 8, 10]</code>, <code>slotX</code>. Unit-tested for determinism.</li>
+          <li>The wrap: <code>shown = if (n == 0) 0 else ((n - 1) % 25) + 1</code>, <code>groves = n / 25</code>. <strong>At most 25 palms are ever drawn</strong> — the perf ceiling is a constant, not a function of the score.</li>
+          <li><code>ui/ghars/PalmGroveCanvas.kt</code> — Compose <code>Canvas</code>. Only <code>Path</code> (quadratic), <code>drawArc</code>, <code>drawOval</code>, linear/radial <code>Brush</code>. <strong>No blur anywhere</strong> — haze and glow are radial gradients + alpha, so it ports 1:1 from the mockup and stays cheap. No <code>ImageBitmap</code> caching needed at 25 palms.</li>
+          <li>Three <code>Animatable</code>s: sprout 620&nbsp;ms (height eases out, fronds unfurl), soil burst 700&nbsp;ms, grove-recede 1,200&nbsp;ms. All skipped when the OS reports reduced motion.</li>
+          <li>The finished grove is not erased — it shrinks toward the horizon and joins a procedural tree-line whose density comes from <code>groves</code>. One cheap <code>Path</code>.</li>
+        </ul>
+      </div>
+
+      <div class="ph">
+        <div class="ph-h"><span class="ph-n">3</span><h3>Screen, wiring, strings</h3></div>
+        <ul>
+          <li><code>presentation/GharsViewModel.kt</code> + <code>GharsUiState.kt</code>; <code>onScreenEntered</code> / <code>onScreenLeft</code> flush behind a <code>Mutex</code>, exactly as istighfar does.</li>
+          <li><code>ui/GharsScreen.kt</code> — the grove is the tap target (whole hero <code>clickable</code>, <code>Role.Button</code>); sand sheet below. <code>ui/ghars/GharsDesignSystem.kt</code> holds the palette as an <code>internal object</code>, matching the four existing design-system files.</li>
+          <li><code>ui/ghars/GharsLeaderboardSheet.kt</code> + <code>ManualTasbeehSheet.kt</code> — copies of the istighfar pair.</li>
+          <li>Fonts: <strong>Aref Ruqaa</strong> + <strong>IBM Plex Sans Arabic</strong> into <code>composeResources/font/</code>. First custom fonts in the app — scope them to this screen only; don't retrofit the others yet.</li>
+          <li><code>di/AppModule.kt</code>: two <code>single</code>s + one <code>viewModel</code>. <code>App.kt</code>: flag, <code>PlatformBackHandler</code>, <code>nicknamePromptBlocked</code>, <code>when</code> branch, callback — the same 5 edits every challenge needs.</li>
+          <li>Strings across <strong>all four</strong> locales in one pass: <code>values/</code> (ar), <code>values-en/</code>, <code>values-ur/</code>, <code>values-zh/</code>.</li>
+        </ul>
+      </div>
+
+      <div class="ph">
+        <div class="ph-h"><span class="ph-n">4</span><h3>Server &amp; entry point</h3></div>
+        <ul>
+          <li><code>scripts/generate-stats.js</code> — aggregate <code>totalTodayGhars</code>, <code>participantCount</code>, top-10 <code>leaderboard</code>, per-user <code>rank</code>; add the rank-1 FCM notification beside the dhikr and baqiyat ones.</li>
+          <li><code>ChallengesScreen.kt</code> — the <code>ChallengeItem</code> card (accent <code>#1F5C40</code>, the only deep green in the row); <code>ChallengesViewModel.kt</code> — read today's community total.</li>
+          <li>Analytics: <code>GHARS_SCREEN_VIEW</code>, <code>GHARS_TAP</code>, <code>OPEN_GHARS_CHALLENGE</code>.</li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="sec-note" style="margin-top:30px">Phases 1 and 2 are independent — the renderer needs no backend and the store needs no UI, so they can run in parallel. Phase 1 is near-mechanical; <strong>budget the real time for phase 2</strong>.</p>
+  </section>
+
+  <!-- NOTES -->
+  <section class="sec">
+    <div class="sec-head"><h2>القرارات</h2><span class="lat">What I chose, and what I cut</span></div>
+    <div class="notes">
+      <div class="note">
+        <h4>Daily, like every other challenge</h4>
+        <p>Score resets at Cairo midnight, same as dhikr / baqiyat / istighfar. <b>Zero schema surprises</b> — one new RTDB subtree, one new Firestore collection, no lifetime total, no new rule shape.</p>
+      </div>
+      <div class="note">
+        <h4>25 palms, hard ceiling</h4>
+        <p>The canvas never draws a 26th. The score is unbounded; the <b>drawing</b> is not. That turns the renderer's cost into a constant and removes the perf risk entirely — no bitmap caching, no LOD, nothing to measure on a low-end device.</p>
+      </div>
+      <div class="note">
+        <h4>The wrap is a moment, not an erase</h4>
+        <p>A hard clear at 25 would read as losing your work. Instead the finished grove <b>recedes into the tree-line</b> on the horizon and fresh soil opens in front. Still ≤25 palms drawn; the day's total is legible as depth. This replaces the confetti the other challenges fire.</p>
+      </div>
+      <div class="note cut">
+        <h4>Cut: the water channel</h4>
+        <p>I drew a still قناة (the Islamic-garden water channel) and then killed it. Finicky code for a 40px strip that the grove didn't need. The accessory to remove before leaving the house.</p>
+      </div>
+      <div class="note cut">
+        <h4>Cut: a tending sim</h4>
+        <p>"Agriculture" could mean watering / pruning / trees dying from neglect. I didn't build it — a <b>reward</b> tree doesn't die because you skipped a day. Say the word and I'll add slow maturation as a layer, which keeps the theology intact.</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  var REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---- seeded rng (mulberry32 — same impl ports to Kotlin) ----
+  function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+  function params(i){
+    var r=mulberry32((i+1)*2654435761>>>0);
+    var a=r(),b=r(),c=r(),d=r(),e=r(),f=r();
+    return {h:0.82+a*0.40, lean:(b-0.5)*0.22, fr:12+Math.floor(c*5),
+            bow:(d-0.5)*0.50, jit:(e-0.5)*0.55, ph:f*6.283,
+            dates:((i+1)%GROVE===0)};        // the palm that completes a grove bears fruit
+  }
+
+  // ---- palette ----
+  // stops are fractions of the SKY BAND (0 = top of screen, 1 = horizon)
+  var SKY=[[0.00,[20,16,58]],[0.30,[59,35,82]],[0.62,[140,74,84]],[0.88,[224,154,98]],[1.00,[255,201,138]]];
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function skyAt(t){
+    if(t<=SKY[0][0])return SKY[0][1];
+    for(var i=1;i<SKY.length;i++){
+      if(t<=SKY[i][0]){
+        var p=(t-SKY[i-1][0])/(SKY[i][0]-SKY[i-1][0]);
+        var A=SKY[i-1][1],B=SKY[i][1];
+        return [lerp(A[0],B[0],p),lerp(A[1],B[1],p),lerp(A[2],B[2],p)];
+      }
+    }
+    return SKY[SKY.length-1][1];
+  }
+  function mix(c,d,t){return [lerp(c[0],d[0],t),lerp(c[1],d[1],t),lerp(c[2],d[2],t)];}
+  function rgb(c,a){return 'rgba('+(c[0]|0)+','+(c[1]|0)+','+(c[2]|0)+','+(a===undefined?1:a)+')';}
+
+  var PALM=[11,42,34], FROND=[62,143,99], DATE=[196,118,42], GOLD=[245,217,122];
+
+  var K=0.72, HAZE_K=0.855, BASE_H=168, SHEET_H=232, HAZE_MAX=0.62;
+  var CAPS=[7,8,10], GROVE=25, BANDS=CAPS.length;   // never more than 25 palms on screen
+  var DAILY_GOAL=100;                                // 4 complete groves
+  function cap(b){return CAPS[b];}
+
+  function easeOut(t){return 1-Math.pow(1-t,3);}
+
+  // ---- one palm, Paths + gradients only (no blur → ports to Compose Canvas) ----
+  function palm(g,x,by,s,p,grow,t,haze,sky){
+    if(grow<=0.001)return;
+    var e=easeOut(grow);
+    var h=BASE_H*s*p.h*e;
+    var sway=REDUCED?0:Math.sin(t*0.0007+p.ph)*0.022;
+    var lean=p.lean+sway;
+
+    var dark=mix(PALM,sky,haze), lit=mix(FROND,sky,Math.min(0.88,haze+0.06));
+
+    // trunk: tapered path along a bowed spine
+    var tx=x+Math.sin(lean)*h, ty=by-h*Math.cos(lean);
+    var cx=x+(tx-x)*0.5+p.bow*h*0.16, cy=by-h*0.5;
+    var wB=Math.max(0.8,3.9*s), wT=Math.max(0.5,2.1*s);
+    var L=[],R=[],N=7;
+    for(var i=0;i<=N;i++){
+      var u=i/N, iu=1-u;
+      var px=iu*iu*x+2*iu*u*cx+u*u*tx;
+      var py=iu*iu*by+2*iu*u*cy+u*u*ty;
+      var dx=2*iu*(cx-x)+2*u*(tx-cx), dy=2*iu*(cy-by)+2*u*(ty-cy);
+      var m=Math.hypot(dx,dy)||1; var nx=-dy/m, ny=dx/m;
+      var w=lerp(wB,wT,u);
+      L.push([px+nx*w,py+ny*w]); R.push([px-nx*w,py-ny*w]);
+    }
+    var tg=g.createLinearGradient(x,by,tx,ty);
+    tg.addColorStop(0,rgb(mix(dark,[0,0,0],0.25)));
+    tg.addColorStop(1,rgb(mix(dark,[255,255,255],0.10)));
+    g.beginPath(); g.moveTo(L[0][0],L[0][1]);
+    for(i=1;i<=N;i++)g.lineTo(L[i][0],L[i][1]);
+    for(i=N;i>=0;i--)g.lineTo(R[i][0],R[i][1]);
+    g.closePath(); g.fillStyle=tg; g.fill();
+
+    // trunk scale-rings
+    if(s>0.32){
+      g.strokeStyle=rgb(mix(dark,[255,255,255],0.16),0.5);
+      g.lineWidth=Math.max(0.5,0.9*s);
+      for(i=1;i<N;i++){ g.beginPath(); g.moveTo(L[i][0],L[i][1]); g.lineTo(R[i][0],R[i][1]); g.stroke(); }
+    }
+
+    // crown — thin arching fronds, heavy droop on the outer ones (date palm, not papyrus)
+    var fl=h*0.46*(0.30+0.70*e);
+    var spread=lerp(0.22,1,e);
+    for(var k=0;k<p.fr;k++){
+      var u2=p.fr===1?0.5:k/(p.fr-1);
+      var base=-Math.PI*1.04+u2*Math.PI*1.08;              // sweeps just past horizontal both sides
+      var ang=base*spread-(1-spread)*Math.PI*0.5+lean*0.5;
+      var out=Math.abs(Math.cos(ang));                      // 1 at the sides, 0 straight up
+      var len=fl*(0.72+0.28*Math.sin(u2*Math.PI));
+      var droop=len*(0.16+0.55*out*out);                    // outer fronds fall hard
+      var ex=tx+Math.cos(ang)*len, ey=ty+Math.sin(ang)*len+droop;
+      var mx=tx+Math.cos(ang)*len*0.52, my=ty+Math.sin(ang)*len*0.52-len*0.06;
+      var w2=Math.max(0.6,len*0.062);                       // thin
+      var up=Math.max(0,-Math.sin(ang));
+      var col=mix(dark,lit,0.14+0.52*up);
+      g.beginPath();
+      g.moveTo(tx,ty);
+      g.quadraticCurveTo(mx,my-w2,ex,ey);
+      g.quadraticCurveTo(mx,my+w2,tx,ty);
+      g.closePath(); g.fillStyle=rgb(col); g.fill();
+      if(s>0.42){
+        g.beginPath(); g.moveTo(tx,ty); g.quadraticCurveTo(mx,my,ex,ey);
+        g.strokeStyle=rgb(mix(col,[0,0,0],0.30),0.5); g.lineWidth=Math.max(0.35,0.6*s); g.stroke();
+      }
+    }
+
+    // heart of the crown
+    g.beginPath(); g.arc(tx,ty,Math.max(0.7,1.6*s),0,6.283);
+    g.fillStyle=rgb(mix(dark,[0,0,0],0.25)); g.fill();
+
+    // milestone fruit
+    if(p.dates&&e>0.65&&s>0.24){
+      var dc=mix(DATE,sky,haze*0.7);
+      for(var q=0;q<3;q++){
+        var a2=-Math.PI*0.72+q*0.52;
+        var bx=tx+Math.cos(a2)*fl*0.22, byy=ty+Math.sin(a2)*fl*0.22+fl*0.16;
+        for(var n=0;n<7;n++){
+          var rr=mulberry32((k+q*13+n*7+p.fr)>>>0)();
+          g.beginPath();
+          g.arc(bx+(rr-0.5)*7*s,byy+n*2.1*s,Math.max(0.7,1.6*s),0,6.283);
+          g.fillStyle=rgb(dc,0.95); g.fill();
+        }
+      }
+      // gold hairline halo — radial gradient, never blur
+      var hg=g.createRadialGradient(tx,ty,0,tx,ty,fl*0.9);
+      hg.addColorStop(0,rgb(GOLD,0.20)); hg.addColorStop(1,rgb(GOLD,0));
+      g.beginPath(); g.arc(tx,ty,fl*0.9,0,6.283); g.fillStyle=hg; g.fill();
+    }
+  }
+
+  // ---- the grove ----
+  function draw(cv,st,t){
+    var g=cv.getContext('2d');
+    var W=cv.clientWidth, H=cv.clientHeight;
+    var dpr=Math.min(2,window.devicePixelRatio||1);
+    if(cv.width!==W*dpr){cv.width=W*dpr;cv.height=H*dpr;}
+    g.setTransform(dpr,0,0,dpr,0,0);
+    g.clearRect(0,0,W,H);
+
+    var hz=H*0.545, nr=H-SHEET_H-16;
+
+    // sky
+    var sg=g.createLinearGradient(0,0,0,hz);
+    for(var i=0;i<SKY.length;i++)sg.addColorStop(SKY[i][0],rgb(SKY[i][1]));
+    g.fillStyle=sg; g.fillRect(0,0,W,hz+1);
+
+    // stars (fading with dawn)
+    for(i=0;i<26;i++){
+      var r=mulberry32((i+77)*99991>>>0);
+      var sx=r()*W, sy=r()*hz*0.52, sa=(0.10+r()*0.42)*(1-sy/(hz*0.62));
+      g.beginPath(); g.arc(sx,sy,r()*0.9+0.4,0,6.283);
+      g.fillStyle='rgba(255,244,220,'+Math.max(0,sa).toFixed(3)+')'; g.fill();
+    }
+
+    // sun bloom + disc  (radial gradients only)
+    var bg=g.createRadialGradient(W*0.5,hz,0,W*0.5,hz,W*0.62);
+    bg.addColorStop(0,'rgba(255,214,150,0.55)');
+    bg.addColorStop(0.45,'rgba(255,175,120,0.18)');
+    bg.addColorStop(1,'rgba(255,175,120,0)');
+    g.beginPath(); g.rect(0,0,W,hz+1); g.fillStyle=bg; g.fill();
+    var dg=g.createRadialGradient(W*0.5,hz,0,W*0.5,hz,26);
+    dg.addColorStop(0,'rgba(255,243,216,0.95)'); dg.addColorStop(0.75,'rgba(255,222,168,0.75)'); dg.addColorStop(1,'rgba(255,222,168,0)');
+    g.beginPath(); g.arc(W*0.5,hz,26,0,6.283); g.fillStyle=dg; g.fill();
+
+    // ground — lit at the horizon, falling into shadow in the foreground
+    var gg=g.createLinearGradient(0,hz,0,nr+40);
+    gg.addColorStop(0,'rgb(198,158,112)');
+    gg.addColorStop(0.24,'rgb(140,102,70)');
+    gg.addColorStop(0.62,'rgb(86,60,42)');
+    gg.addColorStop(1,'rgb(48,33,25)');
+    g.fillStyle=gg; g.fillRect(0,hz,W,H-hz);
+
+    var N=st.count;
+    var groves=Math.floor(N/GROVE);                        // groves finished today
+    var shown=N===0?0:((N-1)%GROVE)+1;                     // never exceeds 25
+    var start=N===0?0:Math.floor((N-1)/GROVE)*GROVE;       // global index of this grove's first palm
+
+    // the tree-line: every grove you finished today, hazed onto the horizon as distant canopy
+    if(groves>0){
+      var dens=Math.min(1,Math.log10(groves*6+1)/2.0);
+      var mc=mix(PALM,skyAt(1),0.78);
+      var cnt=Math.floor(14+dens*30), step=W/cnt, baseY=hz+2;
+      g.fillStyle=rgb(mc,0.44+0.34*dens);
+      g.beginPath(); g.moveTo(-4,baseY);
+      for(i=0;i<=cnt;i++){
+        var r2=mulberry32((i+301)*40503>>>0);
+        var cxm=i*step, rad=step*(0.42+r2()*0.30);
+        var crown=(4.5+r2()*7.5)*(0.6+dens*0.9);        // rounded canopy, never a spike
+        g.lineTo(cxm-rad,baseY);
+        g.quadraticCurveTo(cxm,baseY-crown*2.1,cxm+rad,baseY);
+      }
+      g.lineTo(W+4,baseY); g.closePath(); g.fill();
+      g.fillStyle=rgb(mix(mc,[0,0,0],0.18),0.5);        // a denser core under the canopy
+      g.fillRect(0,baseY-2,W,3.5);
+    }
+
+    // band occupancy — band 0 always holds the most recent palms
+    var take=[],rem=shown;
+    for(var b=0;b<BANDS;b++){var c=Math.min(rem,cap(b));take.push(c);rem-=c;if(rem<=0)break;}
+    function bandStart(b){var s=0;for(var q=0;q<=b;q++)s+=(take[q]||0);return shown-s;}
+    function slotX(j,b){
+      var cp=cap(b), m=W*0.04, p=params(start+j);
+      var stagger=(b%2)*0.5;                    // quincunx — rows offset like a real grove
+      return m+(((j%cp)+0.5+stagger)/cp)*(W-2*m)+p.jit*(W-2*m)/cp*0.8;
+    }
+    function band(b){
+      if(!take[b])return;
+      var by=hz+(nr-hz)*Math.pow(K,b);
+      var s=Math.pow(K,b);
+      var haze=Math.min(HAZE_MAX,1-Math.pow(HAZE_K,b));
+      var sky=skyAt(Math.min(1,Math.max(0,(by-56)/hz)));
+      var lo=bandStart(b), hi=lo+take[b];
+      for(var j=lo;j<hi;j++){
+        var p=params(start+j), px2=slotX(j,b);
+        var grow=(j===shown-1)?st.grow:1;
+        var sh=g.createRadialGradient(px2,by,0,px2,by,18*s);
+        sh.addColorStop(0,'rgba(22,12,7,0.42)'); sh.addColorStop(1,'rgba(22,12,7,0)');
+        g.beginPath(); g.ellipse(px2,by,18*s,4.5*s,0,0,6.283); g.fillStyle=sh; g.fill();
+        palm(g,px2,by,s,p,grow,t,haze,sky);
+      }
+    }
+
+    // the grove you just completed, receding into the tree-line (never erased, just distant)
+    if(st.recede>0){
+      var rc=st.recede;                                    // 1 → 0
+      g.save(); g.globalAlpha=Math.min(1,rc*1.4);
+      var pStart=start-GROVE, pTake=[],pr=GROVE;
+      for(b=0;b<BANDS;b++){var pc=Math.min(pr,cap(b));pTake.push(pc);pr-=pc;}
+      for(b=BANDS-1;b>=0;b--){
+        var pby=hz+(nr-hz)*Math.pow(K,b)*(0.10+0.90*rc);   // slides toward the horizon
+        var ps=Math.pow(K,b)*(0.16+0.84*rc);               // and shrinks into it
+        var phz=Math.min(0.9,(1-Math.pow(HAZE_K,b))+(1-rc)*0.75);
+        var psky=skyAt(Math.min(1,Math.max(0,(pby-56)/hz)));
+        var plo=0; for(var q=0;q<b;q++)plo+=pTake[q];
+        for(var j2=plo;j2<plo+pTake[b];j2++){
+          var pp2=params(pStart+j2);
+          palm(g,slotX(j2,b),pby,ps,pp2,1,t,phz,psky);
+        }
+      }
+      g.restore();
+    }
+
+    for(b=take.length-1;b>=0;b--)band(b);   // far rows first, front row last
+
+    // planting burst — expanding soil ring + light bloom (gradients only, no blur)
+    if(st.burst>0&&shown>0){
+      var bx2=slotX(shown-1,0), bp=1-st.burst, rr2=10+bp*54;
+      g.beginPath(); g.ellipse(bx2,nr,rr2,rr2*0.28,0,0,6.283);
+      g.strokeStyle='rgba(255,224,176,'+(st.burst*0.6).toFixed(3)+')'; g.lineWidth=1.5; g.stroke();
+      var lb=g.createRadialGradient(bx2,nr-46,0,bx2,nr-46,96);
+      lb.addColorStop(0,'rgba(255,226,170,'+(st.burst*0.26).toFixed(3)+')');
+      lb.addColorStop(1,'rgba(255,226,170,0)');
+      g.beginPath(); g.arc(bx2,nr-46,96,0,6.283); g.fillStyle=lb; g.fill();
+    }
+
+    // foreground shadow — grounds the tasbeeh so it reads over the soil
+    var vg=g.createLinearGradient(0,nr-130,0,H);
+    vg.addColorStop(0,'rgba(18,11,7,0)');
+    vg.addColorStop(0.62,'rgba(18,11,7,0.42)');
+    vg.addColorStop(1,'rgba(18,11,7,0.66)');
+    g.fillStyle=vg; g.fillRect(0,nr-130,W,H-(nr-130));
+  }
+
+  function fmt(n){return n.toLocaleString('en-US');}
+  function pips(g2){
+    var s='';
+    for(var i=0;i<4;i++)s+='<span class="pip'+(i<g2?' on':'')+'"></span>';
+    if(g2>4)s+='<span class="pip-more">+'+(g2-4)+'</span>';
+    return s;
+  }
+  function sheetHTML(n){
+    var g2=Math.floor(n/GROVE), inG=n%GROVE;
+    var pct=Math.max(0,Math.min(100,(n/DAILY_GOAL)*100));
+    return '<div class="nums">'+
+      '<div class="num today"><div class="k">غُرِسَ لك اليوم</div><div class="v">'+fmt(n)+'<small>نخلة</small></div></div>'+
+      '<div class="divv"></div>'+
+      '<div class="num"><div class="k">الهدف اليومي</div><div class="v goal">'+DAILY_GOAL+'</div></div>'+
+    '</div>'+
+    '<div class="tier"><div class="tier-row">'+
+      '<div class="groves">'+pips(g2)+'<span class="gl">بساتين مكتملة</span></div>'+
+      '<div class="tier-next">'+(inG===0&&n>0?'اكتمل البستان':'باقٍ '+(GROVE-inG)+' لاكتمال البستان')+'</div>'+
+    '</div><div class="track"><div class="fill" style="width:'+pct+'%"></div></div></div>'+
+    '<div class="acts"><div class="act pri">🏆 &nbsp;المتصدرون</div><div class="act">تسجيل تسبيح خارجي</div></div>';
+  }
+
+  // ---- live ----
+  var SEED_N=17;
+  var live={count:SEED_N,grow:1,burst:0,recede:0};
+  var cvL=document.getElementById('c-live');
+  function sizeLive(){var ph=cvL.parentElement;cvL.style.height=(ph.clientHeight)+'px';}
+  sizeLive(); window.addEventListener('resize',sizeLive);
+
+  function sync(){
+    document.getElementById('sheet-live').innerHTML=sheetHTML(live.count);
+    var h=document.getElementById('hint-live');
+    h.textContent = live.count===0 ? 'الأرض مُهيّأة. سبِّح لتُغرَس أوّل نخلة.'
+                                   : 'اضغط في أيّ مكان لتُغرَس لك نخلة';
+    h.className = live.count===0?'hint empty':'hint';
+  }
+
+  var toast=document.getElementById('toast-live'), toastT=null;
+  function plant(){
+    live.count++;
+    live.grow=REDUCED?1:0; live.burst=1;
+    if(live.count>1 && (live.count-1)%GROVE===0){          // grove #n just completed
+      live.recede=REDUCED?0:1;
+      toast.textContent='اكتمل بستانك رقم '+Math.floor(live.count/GROVE);
+      toast.classList.add('on');
+      clearTimeout(toastT); toastT=setTimeout(function(){toast.classList.remove('on');},2800);
+    }
+    sync();
+  }
+  document.getElementById('plant').addEventListener('click',plant);
+  var tz=document.getElementById('tapzone');
+  tz.addEventListener('click',plant);
+  tz.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();plant();}});
+  document.getElementById('reset').addEventListener('click',function(){
+    live.count=SEED_N;live.grow=1;live.burst=0;live.recede=0;sync();
+  });
+
+  // ---- gallery ----
+  var gals=[];
+  document.querySelectorAll('.gal .phone').forEach(function(ph){
+    var cv=ph.querySelector('canvas');
+    cv.style.height=ph.clientHeight+'px';
+    var n=+ph.dataset.count;
+    ph.querySelector('.sheet').innerHTML=sheetHTML(n);
+    gals.push({cv:cv,st:{count:n,grow:1,burst:0,recede:0}});
+  });
+
+  // ---- palm glyph for the list card ----
+  (function(){
+    var svg=document.getElementById('pico');
+    var ns='http://www.w3.org/2000/svg';
+    var g2=document.createElementNS(ns,'g');
+    for(var k=0;k<7;k++){
+      var a=-Math.PI*0.95+ (k/6)*Math.PI*0.9;
+      var pth=document.createElementNS(ns,'path');
+      var ex=13+Math.cos(a)*9, ey=8+Math.sin(a)*9+2.6;
+      var mx=13+Math.cos(a)*5, my=8+Math.sin(a)*5-0.6;
+      pth.setAttribute('d','M13 8 Q'+mx+' '+(my-1.7)+' '+ex+' '+ey+' Q'+mx+' '+(my+1.7)+' 13 8 Z');
+      pth.setAttribute('fill', k<3?'#7CCCA0':'#B8E6CC');
+      g2.appendChild(pth);
+    }
+    var tr=document.createElementNS(ns,'path');
+    tr.setAttribute('d','M12.1 8 Q13.6 15 15.4 22 L12.4 22 Q11.4 15 11 8 Z');
+    tr.setAttribute('fill','#E4C79A');
+    svg.appendChild(tr); svg.appendChild(g2);
+  })();
+
+  // ---- loop ----
+  var last=0;
+  function frame(t){
+    if(live.grow<1){live.grow=Math.min(1,live.grow+(t-last)/620);}
+    if(live.burst>0){live.burst=Math.max(0,live.burst-(t-last)/700);}
+    if(live.recede>0){live.recede=Math.max(0,live.recede-(t-last)/1200);}
+    last=t;
+    draw(cvL,live,t);
+    for(var i=0;i<gals.length;i++)draw(gals[i].cv,gals[i].st,t);
+    requestAnimationFrame(frame);
+  }
+  sync();
+  requestAnimationFrame(function(t){last=t;frame(t);});
+})();
+</script>
