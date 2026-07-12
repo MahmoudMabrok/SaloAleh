@@ -75,14 +75,14 @@
 
     <!-- Challenges Screen -->
     <string name="challenges_title">Challenges</string>
-    <string name="challenges_subtitle">Pick a challenge and keep your daily worship moving.</string>
+    <string name="challenges_subtitle">Choose a deed and compete in it, so you may be among its people before Allah.</string>
     <string name="challenges_cairo_time_note">All timings are based on Cairo time</string>
     <string name="challenge_dhikr_title">اهل لا اله الا الله</string>
     <string name="challenge_dhikr_body">Complete 100 daily dhikr and compare your rank with other participants.</string>
     <string name="challenge_ten_days_body">Track the Ten Days deeds: dhikr, takbeer, fasting, and charity.</string>
     <string name="challenge_takbeer_body">Take turns in a guided group takbeer session.</string>
     <string name="challenge_baqiyat_title">Everlasting Good Deeds</string>
-    <string name="challenge_baqiyat_body">Tap through the five phrases and complete a round to raise your score.</string>
+    <string name="challenge_baqiyat_body">How many necks will you free today?</string>
     <string name="challenge_istighfar_title">Seek His Forgiveness</string>
     <string name="challenge_istighfar_body">The Beloved Prophet ﷺ sought forgiveness 70 times a day — where do you stand?</string>
     <string name="challenge_quran_title">The Holy Quran</string>

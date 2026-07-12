@@ -75,14 +75,14 @@
 
     <!-- Challenges Screen -->
     <string name="challenges_title">التحديات</string>
-    <string name="challenges_subtitle">اختر تحديًا وواصل وردك اليومي بخطوة واضحة.</string>
+    <string name="challenges_subtitle">اختر لنفسك عملا ونافس فيه لكي تكون من اهله عند الله.</string>
     <string name="challenges_cairo_time_note">جميع المواعيد بتوقيت القاهرة</string>
     <string name="challenge_dhikr_title">أهل لا إله إلا الله</string>
     <string name="challenge_dhikr_body">أتم 100 ذكر يوميًا وتابع ترتيبك بين المشاركين.</string>
     <string name="challenge_ten_days_body">اجمع أعمال عشر ذي الحجة من ذكر وتكبير وصيام وصدقة.</string>
     <string name="challenge_takbeer_body">كبّروا بالتناوب في حلقة جماعية منظمة.</string>
     <string name="challenge_baqiyat_title">الباقيات الصالحات</string>
-    <string name="challenge_baqiyat_body">امسح الأذكار الخمسة بالضغط عليها، وأكمل الدورة لتزيد رصيدك.</string>
+    <string name="challenge_baqiyat_body">كم رقبة ستعتق اليوم؟</string>
     <string name="challenge_istighfar_title">واستغفروه</string>
     <string name="challenge_istighfar_body">كان الحبيب المصطفي يستغفر ٧٠ مره فاين انت</string>
     <string name="challenge_quran_title">القرآن الكريم</string>
