@@ -117,6 +117,7 @@ class GharsChallengeViewModel(
                 completedGroves = updated / GHARS_GROVE_SIZE,
                 errorMessage = null,
                 groveToastNumber = if (completedAGrove) updated / GHARS_GROVE_SIZE else it.groveToastNumber,
+                plantSerial = it.plantSerial + 1,
             )
         }
         recalculateLocalLeaderboard()
@@ -151,6 +152,7 @@ class GharsChallengeViewModel(
                 isSubmittingManualGhars = true,
                 errorMessage = null,
                 groveToastNumber = if (crossedGrove) updated / GHARS_GROVE_SIZE else it.groveToastNumber,
+                plantSerial = it.plantSerial + 1,
             )
         }
         recalculateLocalLeaderboard()

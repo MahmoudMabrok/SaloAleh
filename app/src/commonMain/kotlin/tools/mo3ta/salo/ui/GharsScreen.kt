@@ -103,7 +103,11 @@ fun GharsScreen(onBack: () -> Unit, viewModel: GharsChallengeViewModel = koinVie
                     viewModel.onGharsTap()
                 },
         ) {
-            PalmGroveCanvas(count = state.todayCount, modifier = Modifier.fillMaxSize())
+            PalmGroveCanvas(
+                count = state.todayCount,
+                plantSerial = state.plantSerial,
+                modifier = Modifier.fillMaxSize(),
+            )
 
             // Top bar
             Row(
