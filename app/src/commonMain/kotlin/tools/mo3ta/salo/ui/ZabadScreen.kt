@@ -39,6 +39,8 @@ import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.generated.resources.*
 import tools.mo3ta.salo.presentation.ZabadChallengeViewModel
+import tools.mo3ta.salo.ui.ghars.arefRuqaaFamily
+import tools.mo3ta.salo.ui.ghars.ibmPlexArabicFamily
 import tools.mo3ta.salo.ui.zabad.*
 
 @Composable
@@ -98,10 +100,27 @@ fun ZabadScreen(onBack: () -> Unit, viewModel: ZabadChallengeViewModel = koinVie
             Icon(Icons.Default.EmojiEvents, null, tint = Color(0xFFE9C46A))
         }
         Column(Modifier.fillMaxWidth().padding(horizontal = 28.dp).align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(stringResource(Res.string.zabad_phrase), color = Color(0xFFEAF6F4), fontSize = 28.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
-            Spacer(Modifier.height(20.dp))
-            Text("${state.todayCount % 100}", color = Color.White, fontSize = 64.sp, fontWeight = FontWeight.Light)
-            Text(stringResource(Res.string.zabad_progress), color = Color(0xB3EAF6F4), fontSize = 14.sp)
+            Text(stringResource(Res.string.zabad_phrase), color = Color(0xFFEAF6F4), fontSize = 28.sp, fontWeight = FontWeight.Bold, fontFamily = arefRuqaaFamily(), textAlign = TextAlign.Center, lineHeight = 42.sp)
+            Spacer(Modifier.height(12.dp))
+            Text(
+                stringResource(Res.string.zabad_hadith),
+                color = Color(0xFFE9C46A).copy(alpha = .82f),
+                fontSize = 15.sp,
+                fontFamily = arefRuqaaFamily(),
+                textAlign = TextAlign.Center,
+                lineHeight = 30.sp,
+            )
+            Spacer(Modifier.height(5.dp))
+            Text(
+                stringResource(Res.string.zabad_hadith_ref),
+                color = Color(0xFFE9C46A).copy(alpha = .5f),
+                fontSize = 11.sp,
+                fontFamily = ibmPlexArabicFamily(),
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(18.dp))
+            Text("${state.todayCount % 100}", color = Color.White, fontSize = 60.sp, fontWeight = FontWeight.Light, fontFamily = ibmPlexArabicFamily())
+            Text(stringResource(Res.string.zabad_progress), color = Color(0xB3EAF6F4), fontSize = 14.sp, fontFamily = ibmPlexArabicFamily())
             LinearProgressIndicator(progress = { (state.todayCount % 100) / 100f }, modifier = Modifier.fillMaxWidth(.55f).padding(top = 10.dp), color = Color(0xFF2ED3C4), trackColor = Color.White.copy(alpha = .15f))
             if (!state.isWashing && state.elapsedSinceWashMillis > 0L) {
                 val totalMinutes = state.elapsedSinceWashMillis / 60_000L
@@ -110,6 +129,7 @@ fun ZabadScreen(onBack: () -> Unit, viewModel: ZabadChallengeViewModel = koinVie
                     stringResource(Res.string.zabad_accumulated, (totalMinutes / 60).toString(), (totalMinutes % 60).toString()),
                     color = Color(0xFFEAF6F4).copy(alpha = (.42f + sea.murk * .45f).coerceAtMost(.9f)),
                     fontSize = 12.sp,
+                    fontFamily = ibmPlexArabicFamily(),
                     textAlign = TextAlign.Center,
                     modifier = Modifier
                         .clip(RoundedCornerShape(11.dp))
@@ -119,15 +139,15 @@ fun ZabadScreen(onBack: () -> Unit, viewModel: ZabadChallengeViewModel = koinVie
             }
         }
         Column(Modifier.fillMaxWidth().padding(28.dp).navigationBarsPadding().align(Alignment.BottomCenter), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(stringResource(Res.string.zabad_tap_hint), color = Color(0xB3EAF6F4), textAlign = TextAlign.Center, fontSize = 13.sp)
+            Text(stringResource(Res.string.zabad_tap_hint), color = Color(0xB3EAF6F4), textAlign = TextAlign.Center, fontSize = 13.sp, fontFamily = ibmPlexArabicFamily())
             TextButton(onClick = {
                 analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_ZABAD)
                 viewModel.showManualZabadSheet()
-            }) { Text(stringResource(Res.string.manual_zabad_title), color = Color(0xFF2ED3C4)) }
+            }) { Text(stringResource(Res.string.manual_zabad_title), color = Color(0xFF2ED3C4), fontFamily = ibmPlexArabicFamily()) }
         }
         if (state.isWashing) Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(stringResource(Res.string.zabad_verdict_title), color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold)
-            Text(stringResource(Res.string.zabad_verdict_sub), color = Color(0xFFE9C46A), fontSize = 17.sp)
+            Text(stringResource(Res.string.zabad_verdict_title), color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold, fontFamily = arefRuqaaFamily())
+            Text(stringResource(Res.string.zabad_verdict_sub), color = Color(0xFFE9C46A), fontSize = 17.sp, fontFamily = arefRuqaaFamily())
         }
     }
     if (state.showLeaderboard) ZabadLeaderboardSheet(entries = state.leaderboard, currentUid = state.currentUid, isLoading = state.isLeaderboardLoading, participantCount = state.participantCount, onDismiss = viewModel::onLeaderboardClosed)

@@ -39,13 +39,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.stringResource
+import tools.mo3ta.salo.ui.ghars.arefRuqaaFamily
+import tools.mo3ta.salo.ui.ghars.ibmPlexArabicFamily
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.manual_zabad_count
 import tools.mo3ta.salo.generated.resources.manual_zabad_enter_count
@@ -99,6 +100,7 @@ internal fun ManualZabadSheet(
                 color = ZabadColors.Ink,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
+                fontFamily = arefRuqaaFamily(),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -108,7 +110,7 @@ internal fun ManualZabadSheet(
                 text = stringResource(Res.string.manual_zabad_subtitle),
                 color = ZabadColors.Muted,
                 fontSize = 13.sp,
-                fontStyle = FontStyle.Italic,
+                fontFamily = ibmPlexArabicFamily(),
                 textAlign = TextAlign.Center,
                 lineHeight = 22.sp,
                 modifier = Modifier.fillMaxWidth(),
@@ -305,6 +307,7 @@ internal fun ManualZabadSheet(
                     color = if (canSubmit) Color.White else ZabadColors.Muted,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.W700,
+                    fontFamily = arefRuqaaFamily(),
                 )
             }
 
