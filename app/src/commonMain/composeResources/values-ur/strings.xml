@@ -681,4 +681,24 @@
   <string name="zabad_verdict_sub">اگرچہ سمندر کی جھاگ کے برابر ہوں</string>
   <string name="challenge_zabad_title">سو تسبیحات</string>
   <string name="challenge_zabad_body">سبحان اللہ وبحمدہ 100 مرتبہ — گناہ مٹا دیے جاتے ہیں</string>
+
+  <string name="challenge_ghars_title">ایک کھجور لگائیں</string>
+  <string name="challenge_ghars_body">جس نے کہا: سبحان اللہ العظیم وبحمدہ، اس کے لیے جنت میں ایک کھجور کا درخت لگایا جاتا ہے</string>
+  <string name="ghars_title">شجرکاری</string>
+  <string name="ghars_phrase">سُبْحَانَ اللہِ الْعَظِیمِ وَبِحَمْدِہِ</string>
+  <string name="ghars_tap_hint">کہیں بھی دبائیں، آپ کے لیے ایک کھجور لگائی جائے گی</string>
+  <string name="ghars_empty_hint">زمین تیار ہے۔ تسبیح کریں تاکہ پہلی کھجور لگے</string>
+  <string name="ghars_today_label">آج آپ کے لیے لگائی گئیں</string>
+  <string name="ghars_unit">کھجوریں</string>
+  <string name="ghars_goal_label">روزانہ ہدف</string>
+  <string name="ghars_groves_label">مکمل باغ</string>
+  <string name="ghars_grove_complete">باغ مکمل</string>
+  <string name="ghars_remaining">باغ مکمل ہونے میں %1$d باقی</string>
+  <string name="ghars_grove_toast">آپ کا باغ نمبر %1$d مکمل ہوا</string>
+  <string name="manual_ghars_title">🌴 بیرونی تسبیح درج کریں</string>
+  <string name="manual_ghars_subtitle">خاموشی سے، انگلیوں پر، یا تسبیح سے تسبیح کی؟\nجو پڑھا اسے درج کریں — ایپ سے دور ہونے پر بھی آپ کے لیے کھجوریں لگتی ہیں</string>
+  <string name="manual_ghars_count">تعداد:</string>
+  <string name="manual_ghars_enter_count">تعداد درج کریں</string>
+  <string name="manual_ghars_witness">میں گواہی دیتا ہوں کہ یہ تعداد درست اور حقیقی ہے، اور اللہ میری نیت سے باخبر ہے</string>
+  <string name="manual_ghars_submit">✦ تسبیح درج کریں ✦</string>
 </resources>

@@ -681,4 +681,24 @@
   <string name="zabad_verdict_sub">即使多如海中泡沫</string>
   <string name="challenge_zabad_title">百次赞颂</string>
   <string name="challenge_zabad_body">赞颂真主超绝并赞美他100次——罪过得以宽恕</string>
+
+  <string name="challenge_ghars_title">种一棵棕榈树</string>
+  <string name="challenge_ghars_body">谁诵念"赞颂伟大的真主并赞美他"，就为他在天园里种下一棵棕榈树</string>
+  <string name="ghars_title">栽种</string>
+  <string name="ghars_phrase">赞颂伟大的真主，并赞美他</string>
+  <string name="ghars_tap_hint">点击任意处，为您种下一棵棕榈树</string>
+  <string name="ghars_empty_hint">土地已备好。赞颂真主以种下第一棵棕榈树</string>
+  <string name="ghars_today_label">今日为您种下</string>
+  <string name="ghars_unit">棵</string>
+  <string name="ghars_goal_label">每日目标</string>
+  <string name="ghars_groves_label">已完成的棕榈园</string>
+  <string name="ghars_grove_complete">棕榈园已完成</string>
+  <string name="ghars_remaining">还差 %1$d 棵完成棕榈园</string>
+  <string name="ghars_grove_toast">您的第 %1$d 座棕榈园已完成</string>
+  <string name="manual_ghars_title">🌴 记录外部赞颂</string>
+  <string name="manual_ghars_subtitle">默默地、用手指或用念珠赞颂了真主？\n记录您所诵念的——即使不在应用中，也会为您种下棕榈树</string>
+  <string name="manual_ghars_count">数量：</string>
+  <string name="manual_ghars_enter_count">输入数量</string>
+  <string name="manual_ghars_witness">我证明这个数量是真实准确的，真主了解我的意图</string>
+  <string name="manual_ghars_submit">✦ 记录赞颂 ✦</string>
 </resources>

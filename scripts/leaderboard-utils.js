@@ -4,6 +4,7 @@ const DHIKR_CHALLENGE_ROOT = '100_challenge';
 const BAQIYAT_CHALLENGE_ROOT = 'baqiyat_saliha';
 const ISTIGHFAR_CHALLENGE_ROOT = 'istighfar_challenge';
 const ZABAD_CHALLENGE_ROOT = 'zabad_challenge';
+const GHARS_CHALLENGE_ROOT = 'ghars_challenge';
 const QURAN_CHALLENGE_ROOT = 'quran_challenge';
 const MOHAMED_LOVERS_ROOT = 'mohamed_lovers';
 
@@ -143,6 +144,11 @@ function buildIstighfarChallengeDailyRanking(dateKey, users, rootPath = ISTIGHFA
 function buildZabadChallengeDailyRanking(dateKey, users, rootPath = ZABAD_CHALLENGE_ROOT) {
   const result = buildDailyCountChallengeRanking({ dateKey, players: users, rootPath, playersPath: 'users' });
   return { ...result, totalTodayZabad: result.totalCount };
+}
+
+function buildGharsChallengeDailyRanking(dateKey, users, rootPath = GHARS_CHALLENGE_ROOT) {
+  const result = buildDailyCountChallengeRanking({ dateKey, players: users, rootPath, playersPath: 'users' });
+  return { ...result, totalTodayGhars: result.totalCount };
 }
 
 function buildQuranChallengeDailyRanking(dateKey, users, rootPath = QURAN_CHALLENGE_ROOT) {
@@ -426,6 +432,7 @@ module.exports = {
   BAQIYAT_CHALLENGE_ROOT,
   ISTIGHFAR_CHALLENGE_ROOT,
   ZABAD_CHALLENGE_ROOT,
+  GHARS_CHALLENGE_ROOT,
   QURAN_CHALLENGE_ROOT,
   MOHAMED_LOVERS_ROOT,
   buildOldRankMap,
@@ -435,6 +442,7 @@ module.exports = {
   buildBaqiyatChallengeDailyRanking,
   buildIstighfarChallengeDailyRanking,
   buildZabadChallengeDailyRanking,
+  buildGharsChallengeDailyRanking,
   buildQuranChallengeDailyRanking,
   cairoToday,
   addDaysToDateKey,
