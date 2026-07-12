@@ -28,6 +28,14 @@ class ChallengeBadgeStoreTest {
         assertEquals(1, s.getWinCount(ChallengeType.DHIKR))
     }
 
+    @Test fun zabadMultipleRoundsAwardOnlyOneDailyWin() {
+        val s = store()
+        val day = LocalDate(2026, 7, 12)
+        s.recordWin(ChallengeType.ZABAD, day)
+        assertNull(s.recordWin(ChallengeType.ZABAD, day))
+        assertEquals(1, s.getWinCount(ChallengeType.ZABAD))
+    }
+
     @Test
     fun winsAcrossDays_countIncrementsByOnePerDay() {
         val s = store()

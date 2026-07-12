@@ -202,6 +202,7 @@ async function main() {
   await sendDhikrChallengeRank1Notification(db);
   await sendBaqiyatChallengeRank1Notification(db);
   await sendIstighfarChallengeRank1Notification(db);
+  await sendZabadChallengeRank1Notification(db);
   await sendQuranChallengeRank1Notification(db);
   // Persist the day's champions BEFORE the per-challenge day nodes are deleted by
   // the aggregate-and-clean steps below (those remove 100_challenge/{today} etc).
@@ -209,6 +210,7 @@ async function main() {
   await aggregateAndCleanDhikrChallenge(db);
   await aggregateAndCleanBaqiyatChallenge(db);
   await aggregateAndCleanIstighfarChallenge(db);
+  await aggregateAndCleanZabadChallenge(db);
   await aggregateAndCleanQuranChallenge(db);
 
   process.exit(0);
@@ -417,6 +419,47 @@ async function sendQuranChallengeRank1Notification(db) {
 // Persists the day's top-3 champions across all active challenges to a single
 // RTDB node (mohamed_lovers/heroes) that the app reads (read-only). Overwritten
 // daily. Mirrored to Firestore per the Phase-1 dual-write convention.
+async function sendZabadChallengeRank1Notification(db) {
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+
+  console.log(`[zabad-rank1] checking zabad_challenge/${today}/leaderboard for rank 1 winner`);
+  const rank1Snap = await db.ref(`zabad_challenge/${today}/leaderboard/0`).get();
+
+  if (!rank1Snap.exists()) {
+    console.log('[zabad-rank1] no rank 1 entry in leaderboard — skip');
+    return;
+  }
+
+  const rank1Entry = rank1Snap.val() || {};
+  const rank1Uid = rank1Entry.uid;
+  const rank1Count = rank1Entry.count || 0;
+
+  if (!rank1Uid || rank1Count === 0) {
+    console.log('[zabad-rank1] rank 1 entry missing uid or count — skip');
+    return;
+  }
+
+  const name = typeof rank1Entry.nickname === 'string' && rank1Entry.nickname.trim()
+    ? rank1Entry.nickname.trim()
+    : rank1Uid.slice(-6).toUpperCase();
+
+  const title = 'بطل اليوم في تسبيح المئة 🏆';
+  const body = `تهانينا لـ ${name} على التصدر في تحدي سبحان الله وبحمده اليوم بـ ${rank1Count} تسبيحة!`;
+
+  try {
+    const msgId = await admin.messaging().send({
+      topic: 'challenges',
+      notification: { title, body },
+      data: { title, body, notification_type: 'zabad_challenge_rank1' },
+    });
+    console.log(`[zabad-rank1] sent to topic "challenges" uid=${rank1Uid} name="${name}" count=${rank1Count} msgId=${msgId}`);
+  } catch (e) {
+    console.error(`[zabad-rank1] send failed: ${e.message}`);
+  }
+}
+
 async function persistHeroes(db, dailyLeaderboardSnap) {
   const today = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit',
@@ -578,6 +621,22 @@ async function aggregateAndCleanIstighfarChallenge(db) {
 
   // Phase 1: mirror to Firestore
   await mirrorIstighfarAggregateAndClean(admin.firestore(), today, todayTotal, globalTotal + todayTotal);
+}
+
+async function aggregateAndCleanZabadChallenge(db) {
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+  const [todaySnap, globalSnap] = await Promise.all([
+    db.ref(`zabad_challenge/${today}/totalTodayZabad`).get(),
+    db.ref('zabad_challenge/totalZabad').get(),
+  ]);
+  const todayTotal = todaySnap.val() || 0;
+  const globalTotal = globalSnap.val() || 0;
+  if (todayTotal === 0) return;
+  await db.ref('zabad_challenge/totalZabad').set(globalTotal + todayTotal);
+  await db.ref(`zabad_challenge/${today}`).remove();
+  console.log(`[zabad-aggregate] totalZabad updated: ${globalTotal} → ${globalTotal + todayTotal}`);
 }
 
 async function aggregateAndCleanQuranChallenge(db) {

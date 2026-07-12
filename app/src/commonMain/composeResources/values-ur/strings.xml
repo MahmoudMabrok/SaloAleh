@@ -660,4 +660,25 @@
     <string name="referral_announcement_dismiss">بعد میں</string>
     <string name="challenge_community_total">آج کا کل: %1$s</string>
     <string name="challenges_all_lovers_total">آج کا کل</string>
+    <string name="zabad_rank_number"># %1$d</string>
+    <string name="zabad_rank_subtitle">%1$d شرکاء میں سے</string>
+    <string name="zabad_leaderboard_title">سرفہرست</string>
+    <string name="zabad_leaderboard_rank_new">نیا</string>
+    <string name="zabad_leaderboard_empty">ابھی کوئی ڈیٹا نہیں</string>
+    <string name="zabad_rank_unranked">لیڈر بورڈ دیکھنے کے لیے ٹیپ کریں</string>
+    <string name="manual_zabad_title">🤲 بیرونی استغفار درج کریں</string>
+    <string name="manual_zabad_subtitle">اللہ سے خاموشی سے، انگلیوں پر، یا تسبیح سے استغفار کیا؟\nجو پڑھا اسے درج کریں — ایپ سے دور ہونے کی وجہ سے استغفار نہ چھوڑیں</string>
+    <string name="manual_zabad_count">تعداد:</string>
+    <string name="manual_zabad_enter_count">تعداد درج کریں</string>
+    <string name="manual_zabad_witness">میں گواہی دیتا ہوں کہ یہ تعداد درست اور حقیقی ہے، اور اللہ میری نیت سے باخبر ہے</string>
+    <string name="manual_zabad_submit">✦ استغفار درج کریں ✦</string>
+
+  <string name="zabad_phrase">سُبْحَانَ اللهِ وَبِحَمْدِهِ</string>
+  <string name="zabad_tap_hint">تسبیح کے لیے دبائیں — خاموشی جتنی طویل ہو، جھاگ اتنا بڑھتا ہے</string>
+  <string name="zabad_progress">100 میں سے</string>
+  <string name="zabad_accumulated">%1$s گھنٹے %2$s منٹ سے جھاگ جمع ہے</string>
+  <string name="zabad_verdict_title">گناہ مٹا دیے گئے</string>
+  <string name="zabad_verdict_sub">اگرچہ سمندر کی جھاگ کے برابر ہوں</string>
+  <string name="challenge_zabad_title">سو تسبیحات</string>
+  <string name="challenge_zabad_body">سبحان اللہ وبحمدہ 100 مرتبہ — گناہ مٹا دیے جاتے ہیں</string>
 </resources>

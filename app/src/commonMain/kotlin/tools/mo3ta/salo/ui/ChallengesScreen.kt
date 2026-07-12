@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Spa
 import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.Waves
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -53,6 +54,8 @@ import tools.mo3ta.salo.generated.resources.challenge_dhikr_body
 import tools.mo3ta.salo.generated.resources.challenge_dhikr_title
 import tools.mo3ta.salo.generated.resources.challenge_istighfar_body
 import tools.mo3ta.salo.generated.resources.challenge_istighfar_title
+import tools.mo3ta.salo.generated.resources.challenge_zabad_body
+import tools.mo3ta.salo.generated.resources.challenge_zabad_title
 import tools.mo3ta.salo.generated.resources.challenge_quran_body
 import tools.mo3ta.salo.generated.resources.challenge_quran_title
 import tools.mo3ta.salo.generated.resources.challenge_takbeer_body
@@ -90,6 +93,7 @@ fun ChallengesScreen(
     onOpenTakbeerSession: () -> Unit,
     onOpenBaqiyatChallenge: () -> Unit,
     onOpenIstighfarChallenge: () -> Unit,
+    onOpenZabadChallenge: () -> Unit,
     onOpenQuranChallenge: () -> Unit,
 ) {
     val analyticsManager: AnalyticsManager = koinInject()
@@ -143,6 +147,14 @@ fun ChallengesScreen(
                 )
                 onOpenIstighfarChallenge()
             },
+        ),
+        ChallengeItem(
+            titleRes = Res.string.challenge_zabad_title,
+            bodyRes = Res.string.challenge_zabad_body,
+            icon = Icons.Default.Waves,
+            accent = Color(0xFF2ED3C4),
+            total = totals.zabad,
+            onClick = onOpenZabadChallenge,
         ),
         ChallengeItem(
             titleRes = Res.string.challenge_quran_title,

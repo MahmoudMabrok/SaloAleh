@@ -8,6 +8,7 @@ const META_COLLECTION = 'mohamed_lovers_meta';
 const DHIKR_COLLECTION = 'dhikr_challenge';
 const BAQIYAT_COLLECTION = 'baqiyat_challenge';
 const ISTIGHFAR_COLLECTION = 'istighfar_challenge';
+const ZABAD_COLLECTION = 'zabad_challenge';
 const QURAN_COLLECTION = 'quran_challenge';
 const TEN_DAYS_COLLECTION = 'ten_days';
 
@@ -166,6 +167,39 @@ async function mirrorIstighfarChallenge(firestore, dateKey, {
     console.log(`[firestore-mirror] istighfar ${dateKey} mirrored`);
   } catch (e) {
     console.error(`[firestore-mirror] istighfar ${dateKey} failed: ${e.message}`);
+  }
+}
+
+async function mirrorZabadChallenge(firestore, dateKey, {
+  rankedUsers,
+  participantCount,
+  totalTodayZabad,
+  leaderboardEntries,
+}) {
+  try {
+    const dayRef = firestore.collection(ZABAD_COLLECTION).doc(dateKey);
+    await dayRef.set({ participantCount, totalTodayZabad }, { merge: true });
+
+    const batch = firestore.batch();
+
+    for (const user of rankedUsers) {
+      batch.set(
+        dayRef.collection('users').doc(user.uid),
+        { rank: user.rank },
+        { merge: true },
+      );
+    }
+
+    if (leaderboardEntries) {
+      for (const [key, entry] of leaderboardEntries) {
+        batch.set(dayRef.collection('leaderboard').doc(key), entry);
+      }
+    }
+
+    await batch.commit();
+    console.log(`[firestore-mirror] zabad ${dateKey} mirrored`);
+  } catch (e) {
+    console.error(`[firestore-mirror] zabad ${dateKey} failed: ${e.message}`);
   }
 }
 
@@ -414,12 +448,14 @@ module.exports = {
   DHIKR_COLLECTION,
   BAQIYAT_COLLECTION,
   ISTIGHFAR_COLLECTION,
+  ZABAD_COLLECTION,
   QURAN_COLLECTION,
   TEN_DAYS_COLLECTION,
   mirrorMohamedLoversRound,
   mirrorDhikrChallenge,
   mirrorBaqiyatChallenge,
   mirrorIstighfarChallenge,
+  mirrorZabadChallenge,
   mirrorQuranChallenge,
   mirrorAllTimeTotal,
   mirrorHeroes,

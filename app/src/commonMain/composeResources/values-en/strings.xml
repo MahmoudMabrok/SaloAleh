@@ -698,4 +698,25 @@
     <string name="referral_announcement_dismiss">Later</string>
     <string name="challenge_community_total">Today\'s total: %1$s</string>
     <string name="challenges_all_lovers_total">Today\'s total</string>
+    <string name="zabad_rank_number"># %1$d</string>
+    <string name="zabad_rank_subtitle">among %1$d participants</string>
+    <string name="zabad_leaderboard_title">Top Players</string>
+    <string name="zabad_leaderboard_rank_new">New</string>
+    <string name="zabad_leaderboard_empty">No data yet</string>
+    <string name="zabad_rank_unranked">Tap to see the leaderboard</string>
+    <string name="manual_zabad_title">🤲 Log External Istighfar</string>
+    <string name="manual_zabad_subtitle">Sought Allah\'s forgiveness silently, on your fingers, or with a tasbih?\nLog what you recited — don\'t stop your zabad just because you\'re away from the app</string>
+    <string name="manual_zabad_count">Count:</string>
+    <string name="manual_zabad_enter_count">Enter count</string>
+    <string name="manual_zabad_witness">I testify that this count is true and accurate, and that Allah is aware of my intention</string>
+    <string name="manual_zabad_submit">✦ Log Istighfar ✦</string>
+
+  <string name="zabad_phrase">Glory and praise be to Allah</string>
+  <string name="zabad_tap_hint">Tap to glorify — the longer the silence, the more foam gathers and the sea rises</string>
+  <string name="zabad_progress">of 100</string>
+  <string name="zabad_accumulated">Foam accumulated for %1$s h %2$s m</string>
+  <string name="zabad_verdict_title">Your sins are forgiven</string>
+  <string name="zabad_verdict_sub">Even if they were like the foam of the sea</string>
+  <string name="challenge_zabad_title">The Hundred</string>
+  <string name="challenge_zabad_body">Say Glory and praise be to Allah 100 times — sins are forgiven even if like sea foam</string>
 </resources>

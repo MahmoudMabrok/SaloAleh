@@ -5,10 +5,12 @@ const {
   BAQIYAT_CHALLENGE_ROOT,
   DHIKR_CHALLENGE_ROOT,
   ISTIGHFAR_CHALLENGE_ROOT,
+  ZABAD_CHALLENGE_ROOT,
   QURAN_CHALLENGE_ROOT,
   buildBaqiyatChallengeDailyRanking,
   buildDhikrChallengeDailyRanking,
   buildIstighfarChallengeDailyRanking,
+  buildZabadChallengeDailyRanking,
   buildQuranChallengeDailyRanking,
   buildOldRankMap,
   computeRankChange,
@@ -19,6 +21,7 @@ const {
   mirrorDhikrChallenge,
   mirrorBaqiyatChallenge,
   mirrorIstighfarChallenge,
+  mirrorZabadChallenge,
   mirrorQuranChallenge,
 } = require('./firestore-utils');
 
@@ -348,6 +351,65 @@ async function populateQuranChallengeToday(db) {
   });
 }
 
+async function populateZabadChallengeToday(db) {
+  const dateKey = cairoToday();
+  console.log(`\n--- Zabad Challenge [${dateKey}] ---`);
+
+  const usersSnap = await db.ref(`${ZABAD_CHALLENGE_ROOT}/${dateKey}/users`).get();
+  const users = [];
+
+  if (usersSnap.exists()) {
+    usersSnap.forEach(child => {
+      const data = child.val() || {};
+      const metadata = data.data || {};
+      const uid = typeof metadata.uid === 'string' && metadata.uid.length > 0
+        ? metadata.uid
+        : child.key;
+      const currentRank = typeof data.rank === 'number' && data.rank > 0 ? data.rank : null;
+      const countryCode = typeof metadata.countryCode === 'string' ? metadata.countryCode.toUpperCase() : '';
+      const nickname = typeof metadata.nickname === 'string' ? metadata.nickname.trim() : '';
+      users.push({ uid, count: data.count, countryCode, nickname, currentRank });
+    });
+  }
+
+  const oldLbSnap = await db.ref(`${ZABAD_CHALLENGE_ROOT}/${dateKey}/leaderboard`).get();
+  const oldRanks = buildOldRankMap(oldLbSnap);
+  const dailyRanking = buildZabadChallengeDailyRanking(dateKey, users);
+
+  const leaderboardEntries = dailyRanking.rankedUsers.slice(0, 10).map((user, i) => {
+    const entry = {
+      uid: user.uid,
+      countryCode: user.countryCode,
+      count: user.count,
+      rank: user.rank,
+      rankChange: computeRankChange(user.uid, user.rank, oldRanks),
+    };
+    if (user.nickname) entry.nickname = user.nickname;
+    return [String(i), entry];
+  });
+
+  const updates = {
+    ...dailyRanking.rankUpdates,
+    [`${ZABAD_CHALLENGE_ROOT}/${dateKey}/participantCount`]: dailyRanking.participantCount,
+    [`${ZABAD_CHALLENGE_ROOT}/${dateKey}/totalTodayZabad`]: dailyRanking.totalTodayZabad,
+    [`${ZABAD_CHALLENGE_ROOT}/${dateKey}/lastRankedAt`]: admin.database.ServerValue.TIMESTAMP,
+    [`${ZABAD_CHALLENGE_ROOT}/${dateKey}/leaderboard`]: Object.fromEntries(leaderboardEntries),
+  };
+
+  await db.ref('/').update(updates);
+  console.log(
+    `Wrote zabad ranks + leaderboard(${leaderboardEntries.length}) for ${dailyRanking.participantCount} participant(s). totalTodayZabad=${dailyRanking.totalTodayZabad}`,
+  );
+
+  // Phase 1: mirror to Firestore
+  await mirrorZabadChallenge(admin.firestore(), dateKey, {
+    rankedUsers: dailyRanking.rankedUsers,
+    participantCount: dailyRanking.participantCount,
+    totalTodayZabad: dailyRanking.totalTodayZabad,
+    leaderboardEntries,
+  });
+}
+
 async function main() {
   const roundKey = explicitRoundKey || cairoRoundKey();
   const isFinal = isRoundFinal(roundKey);
@@ -362,6 +424,7 @@ async function main() {
   await populateDhikrChallengeToday(db);
   await populateBaqiyatChallengeToday(db);
   await populateIstighfarChallengeToday(db);
+  await populateZabadChallengeToday(db);
   await populateQuranChallengeToday(db);
 
   await populateMohamedLoversRound(db, admin, roundKey, isFinal);

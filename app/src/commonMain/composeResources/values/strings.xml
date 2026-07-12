@@ -708,4 +708,25 @@
     <string name="referral_announcement_dismiss">لاحقًا</string>
     <string name="challenge_community_total">الإجمالي اليوم: %1$s</string>
     <string name="challenges_all_lovers_total">إجمالي اليوم</string>
+    <string name="zabad_rank_number"># %1$d</string>
+    <string name="zabad_rank_subtitle">من بين %1$d مشارك</string>
+    <string name="zabad_leaderboard_title">المتصدرون</string>
+    <string name="zabad_leaderboard_rank_new">جديد</string>
+    <string name="zabad_leaderboard_empty">لا توجد بيانات بعد</string>
+    <string name="zabad_rank_unranked">اضغط لرؤية المتصدرين</string>
+    <string name="manual_zabad_title">🤲 تسجيل استغفار خارجي</string>
+    <string name="manual_zabad_subtitle">استغفرت الله بصمت أو على أصابعك أو بالمسبحة؟\nسجّل ما استغفرت — لا تتوقف عن الاستغفار لأنك بعيد عن التطبيق</string>
+    <string name="manual_zabad_count">العدد:</string>
+    <string name="manual_zabad_enter_count">أدخل العدد</string>
+    <string name="manual_zabad_witness">أشهد أن هذا العدد صحيح وحقيقي، وأن الله مطّلع على نيّتي</string>
+    <string name="manual_zabad_submit">✦ تسجيل الاستغفار ✦</string>
+
+  <string name="zabad_phrase">سُبْحَانَ اللهِ وَبِحَمْدِهِ</string>
+  <string name="zabad_tap_hint">اضغط لتُسبِّح — كلَّما طال صمتك، تراكم الزَّبَد وعلا البحر</string>
+  <string name="zabad_progress">من ١٠٠</string>
+  <string name="zabad_accumulated">زَبَدٌ تراكم منذ %1$s س %2$s د</string>
+  <string name="zabad_verdict_title">حُطَّتْ خَطَايَاهُ</string>
+  <string name="zabad_verdict_sub">وإن كانت مثل زَبَدِ البحر</string>
+  <string name="challenge_zabad_title">تسبيح المئة</string>
+  <string name="challenge_zabad_body">سبحان الله وبحمده ١٠٠ مرة — تُحَطُّ الخطايا ولو كانت مثل زبد البحر</string>
 </resources>

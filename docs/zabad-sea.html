@@ -1,0 +1,484 @@
+<meta charset="utf-8">
+<title>زَبَد البحر — تحدي «سبحان الله وبحمده»</title>
+<style>
+  :root{
+    --abyss:#04121C; --murk:#123B49; --tide:#1FA5A0; --clear:#2ED3C4;
+    --silt:#5C6B70; --foam:#EAF6F4; --moon:#E9C46A; --ink:#8FB0B9;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;padding:44px 24px 90px;
+    background:radial-gradient(1100px 520px at 50% -8%, #0b2c3a 0%, transparent 62%), var(--abyss);
+    color:var(--foam);direction:rtl;
+    font-family:"SF Arabic","Geeza Pro","Damascus",system-ui,-apple-system,sans-serif;
+  }
+  .wrap{max-width:1140px;margin:0 auto}
+  .eyebrow{font-size:11.5px;letter-spacing:.2em;color:var(--tide);font-weight:700;margin:0 0 12px}
+  h1{font-size:clamp(28px,3.6vw,42px);margin:0 0 16px;font-weight:800;line-height:1.3}
+  h1 .a{color:var(--clear)}
+  .hadith{
+    max-width:740px;font-size:15.5px;line-height:2.05;color:#BFD9DE;margin:0;
+    border-inline-start:2px solid var(--moon);padding-inline-start:16px;
+  }
+  .hadith b{color:var(--moon);font-weight:700}
+
+  .stage{display:flex;gap:52px;align-items:flex-start;margin:48px 0 0;flex-wrap:wrap}
+
+  .phone{
+    width:330px;height:690px;border-radius:42px;background:#000;padding:8px;flex:none;
+    box-shadow:0 40px 90px -25px rgba(0,0,0,.85),0 0 0 1px rgba(255,255,255,.08);
+  }
+  .screen{
+    width:100%;height:100%;border-radius:35px;overflow:hidden;position:relative;
+    background:var(--abyss);cursor:pointer;user-select:none;
+  }
+  .screen canvas{position:absolute;inset:0;width:100%;height:100%}
+  .ui{position:absolute;inset:0;padding:16px 18px;display:flex;flex-direction:column;pointer-events:none}
+  .topbar{display:flex;justify-content:space-between;align-items:center;height:34px}
+  .back{color:rgba(255,255,255,.5);font-size:20px}
+  .chip{
+    font-size:11px;color:rgba(255,255,255,.72);background:rgba(255,255,255,.11);
+    border:1px solid rgba(255,255,255,.17);border-radius:999px;padding:4px 11px;
+  }
+  .phrase{
+    text-align:center;font-size:17px;font-weight:800;margin-top:16px;
+    color:rgba(255,255,255,.94);text-shadow:0 2px 16px rgba(0,0,0,.75);
+  }
+  .hint{
+    margin-top:auto;text-align:center;font-size:11.5px;line-height:1.7;
+    color:rgba(234,246,244,.42);padding-bottom:4px;
+  }
+  .verdict{
+    position:absolute;left:0;right:0;top:46%;text-align:center;pointer-events:none;
+    opacity:0;transform:translateY(12px) scale(.94);transition:opacity .55s,transform .55s;
+  }
+  .verdict.on{opacity:1;transform:none}
+  .verdict .big{
+    font-size:26px;font-weight:800;color:#fff;
+    text-shadow:0 0 34px rgba(46,211,196,.95),0 2px 22px rgba(0,0,0,.85);
+  }
+  .verdict .sub{font-size:12.5px;color:var(--moon);font-weight:600;margin-top:9px;letter-spacing:.04em}
+
+  .panel{flex:1;min-width:330px;max-width:520px}
+  .panel h2{font-size:12px;letter-spacing:.16em;color:var(--tide);margin:0 0 16px;font-weight:700}
+  .rule{list-style:none;padding:0;margin:0 0 34px}
+  .rule li{
+    display:flex;gap:14px;padding:14px 0;border-bottom:1px solid #14384a;
+    font-size:14px;line-height:1.95;color:#BFD9DE;
+  }
+  .rule li:last-child{border-bottom:0}
+  .rule .k{
+    flex:none;width:80px;font-size:11.5px;font-weight:700;color:var(--clear);
+    padding-top:4px;letter-spacing:.02em;
+  }
+  .rule b{color:#fff;font-weight:700}
+  .rule em{color:var(--moon);font-style:normal}
+
+  .controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px;width:330px}
+  button{
+    font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;
+    background:#0d2f3d;color:#BFE9E4;border:1px solid #1c5061;border-radius:10px;
+    padding:9px 13px;transition:.15s;
+  }
+  button:hover{background:#134155;color:#fff}
+  button:focus-visible{outline:2px solid var(--clear);outline-offset:2px}
+  button.hot{background:#12414f;border-color:#2b7286}
+  .demo-note{width:330px;margin-top:12px;font-size:11.5px;color:#6B8C96;line-height:1.8}
+
+  .swatches{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}
+  .sw{text-align:center;font-size:9.5px;color:#7FA0AA;direction:ltr}
+  .sw i{display:block;width:46px;height:46px;border-radius:11px;margin-bottom:5px;border:1px solid rgba(255,255,255,.12)}
+  .copy{margin-top:30px;font-size:13px;line-height:2.1;color:#8FB0B9}
+  .copy code{
+    background:#0b2733;border:1px solid #17414f;border-radius:5px;padding:1px 6px;
+    font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--clear);direction:ltr;display:inline-block;
+  }
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">SALOALEH · CHALLENGE DESIGN</p>
+  <h1>زَبَد البحر — تحدي <span class="a">«سبحان الله وبحمده»</span></h1>
+  <p class="hadith">
+    «مَنْ قَالَ: سُبْحَانَ اللَّهِ وَبِحَمْدِهِ، فِي يَوْمٍ مِائَةَ مَرَّةٍ، <b>حُطَّتْ خَطَايَاهُ</b> وَإِنْ كَانَتْ مِثْلَ <b>زَبَدِ الْبَحْرِ</b>»
+  </p>
+
+  <div class="stage">
+    <div>
+      <div class="phone">
+        <div class="screen" id="scr">
+          <canvas id="cv"></canvas>
+          <div class="ui">
+            <div class="topbar">
+              <span class="back">→</span>
+              <span class="chip">#١٤ من ٢٬٣٠٨ مسبِّحًا</span>
+            </div>
+            <div class="phrase">سُبْحَانَ اللهِ وَبِحَمْدِهِ</div>
+            <div class="hint">اضغط لتُسبِّح<br>كلَّما طال صمتك، تراكم الزَّبَد وعلا البحر</div>
+          </div>
+          <div class="verdict" id="verdict">
+            <div class="big">حُطَّتْ خَطَايَاهُ</div>
+            <div class="sub">وإن كانت مثل زَبَدِ البحر</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button data-inc="1">تسبيحة</button>
+        <button data-inc="10">+١٠</button>
+        <button id="jump">اقفز إلى ٩٧</button>
+        <button data-hour="1">+ ساعة</button>
+        <button id="fast" class="hot">الزمن ×١</button>
+        <button id="reset">تصفير</button>
+      </div>
+      <p class="demo-note">
+        في العرض: الساعة الواحدة = ٤ ثوانٍ. اضغط «الزمن ×١» ليتسارع فترى الزَّبَد يتراكم وارتفاع الماء بعينك.
+      </p>
+    </div>
+
+    <div class="panel">
+      <h2>المحاكاة</h2>
+      <ul class="rule">
+        <li>
+          <span class="k">البحر</span>
+          <span>منسوبه <b>لا يتبع عدّادك</b>، بل يتبع <em>الزمن</em>. يبدأ منخفضًا صافيًا بعد كل غَسْل، ويعلو ببطء كلما مرَّت الساعات دون تسبيح — حتى يبلغ سقفه بعد ١٢ ساعة.</span>
+        </li>
+        <li>
+          <span class="k">الزَّبَد</span>
+          <span>كتل داكنة تطفو على السطح = الخطايا. عددها وسرعة انسياقها <b>يزدادان مع الوقت</b>: كلما طال الأمد، كثُر ما قد يقع من الخطايا وأسرع تراكمه. يُعكِّر الماء معها.</span>
+        </li>
+        <li>
+          <span class="k">التسبيح</span>
+          <span>كل ضغطة تُحدث دائرة على السطح وترفع العدّاد. العدّاد وحده هو <b>مقياس تقدّمك</b> — خطٌّ رفيع تحت الرقم، لا حلقة كبقية الشاشات.</span>
+        </li>
+        <li>
+          <span class="k">عند ١٠٠</span>
+          <span>تندفع <b>موجة من اليمين إلى اليسار</b>، تجرف الزَّبَد كله خارج الإطار وتذيبه ضوءًا، ويصفو الماء إلى فيروزيّ، ثم ينحسر إلى منسوبه الأدنى. تعود ساعة التراكم إلى الصفر، والعدّاد إلى الصفر، وتُستأنف من جديد.</span>
+        </li>
+      </ul>
+
+      <h2>الألوان</h2>
+      <div class="swatches">
+        <div class="sw"><i style="background:#04121C"></i>Abyss<br>04121C</div>
+        <div class="sw"><i style="background:#123B49"></i>Murk<br>123B49</div>
+        <div class="sw"><i style="background:#1FA5A0"></i>Tide<br>1FA5A0</div>
+        <div class="sw"><i style="background:#2ED3C4"></i>Clear<br>2ED3C4</div>
+        <div class="sw"><i style="background:#5C6B70"></i>Silt<br>5C6B70</div>
+        <div class="sw"><i style="background:#EAF6F4"></i>Foam<br>EAF6F4</div>
+        <div class="sw"><i style="background:#E9C46A"></i>Moon<br>E9C46A</div>
+      </div>
+      <p class="copy">
+        الألوان الأربعة المحجوزة للتحديات الحالية: الذكر <code>#7DD3A8</code>، الباقيات <code>#B68CE0</code>، الاستغفار <code>#C08A3E</code>، القرآن <code>#1F7A5C</code>.
+        الفيروزي البحري <code>#2ED3C4</code> خارج هذه العائلة ويُقرأ فورًا كماء. الذهبي <code>#E9C46A</code> هو الرابط الوحيد مع
+        <code>MohamedLoversPalette.GoldHighlight</code>، ولا يظهر إلا في القمر وسطر «حُطَّت خطاياه».
+        <br><br>
+        التنفيذ: <code>Canvas</code> واحد داخل <code>ZabadScreen</code> + <code>withInfiniteAnimationFrameNanos</code>. لا صور ولا أصول جديدة.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const GOAL = 100;
+  const CAP_MIN = 720;            // 12h -> sea at its ceiling
+  const SEC_PER_HOUR = 4;         // demo clock: 1h of app time = 4s
+
+  const cv = document.getElementById('cv');
+  const scr = document.getElementById('scr');
+  const verdict = document.getElementById('verdict');
+  let g = fit();
+  addEventListener('resize', ()=> g = fit());
+  function fit(){
+    const r = cv.getBoundingClientRect();
+    const d = Math.min(devicePixelRatio||1,2);
+    cv.width=r.width*d; cv.height=r.height*d;
+    const ctx=cv.getContext('2d'); ctx.setTransform(d,0,0,d,0,0);
+    return {ctx,w:r.width,h:r.height};
+  }
+  const lerp=(a,b,t)=>a+(b-a)*t;
+  const clamp=(v,a,b)=>Math.min(Math.max(v,a),b);
+  const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+  // returns hex so mix() calls can nest
+  function mix(c1,c2,t){
+    const p=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+    const a=p(c1), b=p(c2);
+    const c=i=>Math.round(clamp(lerp(a[i],b[i],t),0,255)).toString(16).padStart(2,'0');
+    return `#${c(0)}${c(1)}${c(2)}`;
+  }
+  const rnd=s=>()=>(s=(s*16807)%2147483647)/2147483647;
+  const ar=n=>String(n).replace(/\d/g,d=>'٠١٢٣٤٥٦٧٨٩'[d]);
+
+  // ---------- state ----------
+  const S = {
+    count:0,
+    minutes:180,        // minutes of accumulation since the last wash
+    speed:1,
+    washing:false, washT:0,
+    waterY:0,           // eased, in px
+    hudA:1,             // eased HUD alpha, so the counter never snaps back
+    foam:[], ripples:[], motes:[],
+  };
+  let t=0, spawnAcc=0;
+
+  // preset for stills: ?m=<minutes>&c=<count>&freeze=1
+  const q=new URLSearchParams(location.search);
+  if(q.has('m')) S.minutes=+q.get('m');
+  if(q.has('c')) S.count=+q.get('c');
+  const FREEZE = q.has('freeze');
+
+  // sea ceiling/floor as fractions of height
+  const FLOOR = 0.74;   // freshly washed: low water
+  const CEIL  = 0.44;   // after 12h: high water
+  const targetLevel = h => h * lerp(FLOOR, CEIL, clamp(S.minutes/CAP_MIN,0,1));
+
+  // how much foam the elapsed time justifies, and how fast it drifts
+  const foamTarget = () => Math.round(lerp(2, 24, clamp(S.minutes/CAP_MIN,0,1)));
+  const driftScale = () => 1 + 2.4*clamp(S.minutes/CAP_MIN,0,1);
+
+  const R = rnd(2024);
+  function spawnFoam(){
+    S.foam.push({
+      x: .04 + R()*.92,
+      r: 5 + R()*8,
+      dir: R()<.5 ? -1 : 1,
+      base: (.0002 + R()*.0004),
+      bob: R()*6.28,
+      born: 0, gone: 0,
+    });
+  }
+
+  let last = null;
+  function draw(ts){
+    // delta-time, so the simulation runs the same at any frame rate
+    const dt = last==null ? 1/60 : clamp((ts-last)/1000, 0, .05);
+    last = ts;
+    const smooth = k => 1 - Math.exp(-k*dt);      // frame-rate-independent easing
+    t += dt;
+    const {ctx,w,h} = g;
+
+    // ---- clock: 1 app-hour per SEC_PER_HOUR real seconds ----
+    if(!S.washing && !FREEZE) S.minutes += (60/SEC_PER_HOUR) * S.speed * dt;
+    S.minutes = clamp(S.minutes, 0, CAP_MIN*1.4);
+
+    // foam population follows the clock
+    spawnAcc += dt;
+    if(spawnAcc > .12 && !S.washing){
+      spawnAcc = 0;
+      const alive = S.foam.filter(f=>f.gone<1).length;
+      if(alive < foamTarget()) spawnFoam();
+    }
+
+    // water level eases toward what the clock justifies
+    const tgt = targetLevel(h);
+    if(S.waterY===0) S.waterY = tgt;
+    S.waterY += (tgt - S.waterY) * smooth(S.washing ? .7 : 2.4);
+
+    const murkT = clamp(S.minutes/CAP_MIN,0,1);                 // 0 clean … 1 murky
+    const clarity = S.washing ? ease(clamp(S.washT/1.2,0,1)) : 0;
+
+    // ---- sky ----
+    const sky=ctx.createLinearGradient(0,0,0,h);
+    sky.addColorStop(0,'#04121C');
+    sky.addColorStop(1, mix(mix('#0E3446','#0A2634',murkT), '#15525C', clarity));
+    ctx.fillStyle=sky; ctx.fillRect(0,0,w,h);
+
+    // stars fade as the night thickens with foam
+    const sr=rnd(7);
+    for(let i=0;i<26;i++){
+      const x=sr()*w, y=sr()*h*.42, s=sr()*1.2+.4, tw=sr()*6.28;
+      const a=(.22+.32*Math.abs(Math.sin(t*.7+tw)))*(1-murkT*.55);
+      ctx.fillStyle=`rgba(234,246,244,${a})`;
+      ctx.beginPath(); ctx.arc(x,y,s,0,6.28); ctx.fill();
+    }
+    // moon — dims as the sea rises, blazes when it clears
+    const moonA = (.55 - murkT*.35) + clarity*.5;
+    ctx.fillStyle=`rgba(233,196,106,${.10+clarity*.20})`;
+    ctx.beginPath(); ctx.arc(w*.79,h*.155,27,0,6.28); ctx.fill();
+    ctx.fillStyle=`rgba(233,196,106,${clamp(moonA,.2,1)})`;
+    ctx.beginPath(); ctx.arc(w*.79,h*.155,9.5,0,6.28); ctx.fill();
+
+    // ---- surface geometry ----
+    const base=S.waterY;
+    const amp = REDUCED?1.5:(2.4 + 1.9*Math.sin(t*.55) + murkT*1.6);
+    const surf = x => base + Math.sin(x*.030 + t*1.35)*amp + Math.sin(x*.012 - t*.85)*amp*.65;
+
+    let crest=-9999, crestH=0;
+    if(S.washing){
+      const p=clamp(S.washT/1.35,0,1);
+      crest = w+100 - ease(p)*(w+240);
+      crestH = Math.sin(p*Math.PI) * h*0.15;
+    }
+    const CW = 150;                       // crest half-width; falloff must reach 0 at the edges
+    const surfW = x => {
+      let y=surf(x);
+      if(S.washing){
+        const d=x-crest;
+        if(d>-CW && d<CW) y -= crestH*Math.cos((d/CW)*(Math.PI/2));
+      }
+      return y;
+    };
+
+    // ---- water body ----
+    ctx.beginPath(); ctx.moveTo(0,h);
+    for(let x=0;x<=w;x+=3) ctx.lineTo(x, surfW(x));
+    ctx.lineTo(w,h); ctx.closePath();
+    const wg=ctx.createLinearGradient(0,base-30,0,h);
+    wg.addColorStop(0, mix(mix('#1D6072','#14414E',murkT), '#3FE0CF', clarity));
+    wg.addColorStop(.45, mix(mix('#154A5A','#0F3441',murkT), '#1FA5A0', clarity));
+    wg.addColorStop(1, mix('#061E2A','#0B5A60', clarity));
+    ctx.fillStyle=wg; ctx.fill();
+
+    // suspended silt — density tracks the clock, vanishes in the wash
+    ctx.save(); ctx.clip();
+    const gr=rnd(99);
+    const n=Math.round(14+34*murkT);
+    for(let i=0;i<n;i++){
+      const x=gr()*w, y=base+14+gr()*(h-base);
+      ctx.fillStyle=`rgba(92,107,112,${.30*(1-clarity)})`;
+      ctx.beginPath(); ctx.arc(x, y+Math.sin(t*.5+i)*2, 1.4+gr()*2, 0, 6.28); ctx.fill();
+    }
+    ctx.restore();
+
+    // surface line
+    ctx.beginPath();
+    for(let x=0;x<=w;x+=3){const y=surfW(x); x?ctx.lineTo(x,y):ctx.moveTo(x,y);}
+    ctx.strokeStyle=`rgba(234,246,244,${.30+clarity*.45})`;
+    ctx.lineWidth=1.5; ctx.stroke();
+
+    // ---- foam = the sins ----
+    for(const f of S.foam){
+      if(f.gone>=1) continue;
+      f.born = Math.min(f.born + 1.2*dt, 1);
+      f.x += f.dir * f.base * driftScale() * 60*dt;
+      if(f.x<.03||f.x>.97) f.dir*=-1;
+
+      if(S.washing){
+        if(f.x*w > crest-40 && f.x*w < crest+170){ f.x -= .84*dt; f.gone=Math.min(f.gone+1.8*dt,1); }
+        else if(f.x*w <= crest-40){ f.gone=Math.min(f.gone+2.1*dt,1); }
+      }
+      const px=f.x*w, py=surfW(px)-3+Math.sin(t*1.15+f.bob)*1.6;
+      const a=(1-f.gone)*f.born;
+      if(a<=0) continue;
+      for(let k=-1;k<=1;k++){
+        const rr=f.r*(k===0?1:.6);
+        ctx.fillStyle=`rgba(92,107,112,${.86*a})`;
+        ctx.beginPath(); ctx.arc(px+k*f.r*.8, py-rr*.35, rr, 0, 6.28); ctx.fill();
+        ctx.fillStyle=`rgba(163,182,187,${.45*a})`;
+        ctx.beginPath(); ctx.arc(px+k*f.r*.8-rr*.25, py-rr*.62, rr*.42, 0, 6.28); ctx.fill();
+      }
+      if(f.gone>0 && f.gone<1){
+        for(let k=0;k<5;k++){
+          ctx.fillStyle=`rgba(234,246,244,${(1-f.gone)*.75})`;
+          ctx.beginPath();
+          ctx.arc(px+(k-2)*7, py - f.gone*46 - k*4, 1.7*(1-f.gone)+.5, 0, 6.28); ctx.fill();
+        }
+      }
+    }
+
+    // ---- crest ----
+    if(S.washing && crest>-CW && crest<w+CW){
+      ctx.beginPath();
+      const x0=Math.max(0,crest-CW), x1=Math.min(w,crest+CW);
+      for(let x=x0;x<=x1;x+=2){const y=surfW(x); x===x0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+      ctx.strokeStyle='rgba(234,246,244,.95)'; ctx.lineWidth=3.2; ctx.stroke();
+      const pr=rnd(5);
+      for(let i=0;i<26;i++){
+        const x=crest-70+pr()*190, y=surfW(x)-pr()*30;
+        ctx.fillStyle=`rgba(234,246,244,${.2+pr()*.55})`;
+        ctx.beginPath(); ctx.arc(x,y,pr()*2.1+.5,0,6.28); ctx.fill();
+      }
+    }
+
+    // ---- ripples from taps ----
+    S.ripples=S.ripples.filter(r=>r.t<1);
+    for(const r of S.ripples){
+      r.t+=2.4*dt;
+      ctx.strokeStyle=`rgba(234,246,244,${(1-r.t)*.5})`; ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.ellipse(r.x, surfW(r.x), r.t*72, r.t*11, 0, 0, 6.28); ctx.stroke();
+    }
+
+    // the HUD clears out fast so the wave and the verdict own the screen alone,
+    // then eases back in over the fresh sea instead of snapping
+    const hudWant = S.washing ? 1 - ease(clamp(S.washT/0.45,0,1)) : 1;
+    S.hudA += (hudWant - S.hudA) * smooth(S.washing ? 18 : 3);
+    const hud = S.hudA;
+
+    // ---- counter: sky side, above the water's ceiling ----
+    const cy=h*0.345;
+    ctx.textAlign='center';
+    ctx.shadowColor='rgba(4,18,28,.85)'; ctx.shadowBlur=20;
+    ctx.fillStyle=`rgba(234,246,244,${.97*hud})`;
+    ctx.font='800 66px "SF Arabic",system-ui,sans-serif';
+    ctx.fillText(String(S.count), w/2, cy);
+    ctx.shadowBlur=0;
+    ctx.font='600 12px "SF Arabic",system-ui,sans-serif';
+    ctx.fillStyle=`rgba(234,246,244,${.5*hud})`;
+    ctx.fillText('من 100', w/2, cy+21);
+
+    // slim progress line under the count — RTL: fills from the right
+    const pw=w*.46, px0=(w-pw)/2, py0=cy+38, frac=S.count/GOAL;
+    ctx.fillStyle=`rgba(234,246,244,${.14*hud})`;
+    ctx.beginPath(); ctx.roundRect(px0,py0,pw,3,2); ctx.fill();
+    if(frac>0){
+      ctx.fillStyle=`rgba(46,211,196,${hud})`;
+      ctx.beginPath(); ctx.roundRect(px0+pw*(1-frac), py0, pw*frac, 3, 2); ctx.fill();
+    }
+
+    // ---- accumulation read-out: rides the waterline, never climbs into the counter ----
+    const hrs=Math.floor(S.minutes/60), mins=Math.floor(S.minutes%60);
+    const label = `زَبَدٌ تراكم منذ ${ar(hrs)} س ${ar(mins)} د`;
+    ctx.font='600 11.5px "SF Arabic",system-ui,sans-serif';
+    const tw2=ctx.measureText(label).width;
+    const by=Math.max(base-26, py0+42);
+    ctx.fillStyle=`rgba(4,18,28,${.4*hud})`;
+    ctx.beginPath(); ctx.roundRect(w/2-tw2/2-10, by-13, tw2+20, 22, 11); ctx.fill();
+    ctx.fillStyle=`rgba(234,246,244,${(.42+murkT*.45)*hud})`;
+    ctx.fillText(label, w/2, by+2);
+
+    // ---- wash lifecycle ----
+    if(S.washing){
+      S.washT += dt;
+      if(S.washT>.9 && S.minutes>0) S.minutes = Math.max(0, S.minutes - 900*dt);   // the clock drains too
+      if(S.washT>2.9){
+        S.washing=false; S.washT=0; S.count=0; S.minutes=0;
+        S.foam=[]; spawnAcc=0;
+        verdict.classList.remove('on');
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);   // must start from rAF so the first frame carries a timestamp
+
+  // ---------- interaction ----------
+  function tap(n,x){
+    if(S.washing) return;
+    S.count=Math.min(S.count+n,GOAL);
+    if(x!=null) S.ripples.push({x,t:0});
+    if(S.count>=GOAL){
+      S.washing=true; S.washT=0;
+      setTimeout(()=>verdict.classList.add('on'), 1500);
+    }
+  }
+  scr.addEventListener('click',e=>{
+    const r=scr.getBoundingClientRect();
+    tap(1, e.clientX-r.left);
+  });
+  document.querySelectorAll('[data-inc]').forEach(b=>
+    b.addEventListener('click',()=>tap(+b.dataset.inc,null)));
+  document.getElementById('jump').addEventListener('click',()=>{ if(!S.washing) S.count=97; });
+  document.querySelectorAll('[data-hour]').forEach(b=>
+    b.addEventListener('click',()=>{ S.minutes=clamp(S.minutes+60,0,CAP_MIN*1.4); }));
+  const fastBtn=document.getElementById('fast');
+  fastBtn.addEventListener('click',()=>{
+    S.speed = S.speed===1 ? 20 : (S.speed===20 ? 60 : 1);
+    fastBtn.textContent = `الزمن ×${ar(S.speed)}`;
+  });
+  if(q.has('wash')) setTimeout(()=>tap(GOAL,null), +q.get('wash')||1200);
+  document.getElementById('reset').addEventListener('click',()=>{
+    S.count=0; S.minutes=0; S.washing=false; S.washT=0; S.foam=[]; S.speed=1;
+    fastBtn.textContent='الزمن ×١';
+    verdict.classList.remove('on');
+  });
+})();
+</script>
