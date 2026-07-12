@@ -10,7 +10,32 @@ const {
   computeRankChange,
   computeTop3Changes,
   normalizeDhikrCount,
+  readChallengeRankedUsers,
+  DHIKR_CHALLENGE_ROOT,
+  BAQIYAT_CHALLENGE_ROOT,
 } = require('./leaderboard-utils');
+
+// Minimal RTDB stub: maps a ref path to a plain object of children and mimics the
+// snapshot surface (`exists()` / ordered `forEach` yielding `{ key, val() }`).
+function makeFakeDb(pathToChildren) {
+  return {
+    ref(path) {
+      return {
+        async get() {
+          const children = pathToChildren[path];
+          return {
+            exists: () => children != null && Object.keys(children).length > 0,
+            forEach(cb) {
+              for (const [key, value] of Object.entries(children || {})) {
+                cb({ key, val: () => value });
+              }
+            },
+          };
+        },
+      };
+    },
+  };
+}
 
 describe('computeRankChange', () => {
   it('returns "new" when player not in old leaderboard', () => {
@@ -303,5 +328,51 @@ describe('addDaysToDateKey', () => {
 
   it('rolls over a year boundary', () => {
     assert.equal(addDaysToDateKey('2026-12-25', 7), '2027-01-01');
+  });
+});
+
+describe('readChallengeRankedUsers', () => {
+  it('ranks nested-metadata challenges (users path) by live count, highest first', async () => {
+    const db = makeFakeDb({
+      '100_challenge/2026-07-12/users': {
+        'child-a': { count: 40, data: { uid: 'uid-a', countryCode: 'eg', nickname: ' Ali ' } },
+        'child-b': { count: 90, data: { uid: 'uid-b', countryCode: 'sa', nickname: 'Sara' } },
+        'child-c': { count: 90, data: { uid: 'uid-c' } },
+      },
+    });
+
+    const ranked = await readChallengeRankedUsers(db, DHIKR_CHALLENGE_ROOT, '2026-07-12');
+
+    assert.deepEqual(ranked.map(u => u.uid), ['uid-b', 'uid-c', 'uid-a']); // 90 tie broken by uid asc
+    assert.deepEqual(ranked.map(u => u.rank), [1, 2, 3]);
+    assert.equal(ranked[0].count, 90);
+    assert.equal(ranked[0].countryCode, 'SA');
+    assert.equal(ranked[2].nickname, 'Ali'); // trimmed
+  });
+
+  it('ranks flat-metadata challenges (baqiyat players path) and drops zero counts', async () => {
+    const db = makeFakeDb({
+      'baqiyat_saliha/2026-07-12/players': {
+        'uid-a': { uid: 'uid-a', count: 5, countryCode: 'eg' },
+        'uid-b': { uid: 'uid-b', count: 12, countryCode: 'sa' },
+        'uid-z': { uid: 'uid-z', count: 0, countryCode: 'kw' },
+      },
+    });
+
+    const ranked = await readChallengeRankedUsers(db, BAQIYAT_CHALLENGE_ROOT, '2026-07-12');
+
+    assert.deepEqual(ranked.map(u => u.uid), ['uid-b', 'uid-a']); // zero-count user excluded
+    assert.equal(ranked[0].count, 12);
+  });
+
+  it('returns [] when the participant node is absent', async () => {
+    const db = makeFakeDb({});
+    const ranked = await readChallengeRankedUsers(db, DHIKR_CHALLENGE_ROOT, '2026-07-12');
+    assert.deepEqual(ranked, []);
+  });
+
+  it('throws on an unknown challenge root', async () => {
+    const db = makeFakeDb({});
+    await assert.rejects(() => readChallengeRankedUsers(db, 'not_a_challenge', '2026-07-12'));
   });
 });

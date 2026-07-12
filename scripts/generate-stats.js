@@ -14,6 +14,16 @@ const {
   mirrorQuranAggregateAndClean,
   mirrorHeroes,
 } = require('./firestore-utils');
+const {
+  DHIKR_CHALLENGE_ROOT,
+  BAQIYAT_CHALLENGE_ROOT,
+  ISTIGHFAR_CHALLENGE_ROOT,
+  ZABAD_CHALLENGE_ROOT,
+  GHARS_CHALLENGE_ROOT,
+  QURAN_CHALLENGE_ROOT,
+  readChallengeRankedUsers,
+  cairoToday,
+} = require('./leaderboard-utils');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 const databaseURL    = process.env.FIREBASE_DATABASE_URL;
@@ -255,29 +265,21 @@ async function sendDailyTop3Notifications(db, dailyLeaderboardSnap) {
 }
 
 async function sendDhikrChallengeRank1Notification(db) {
-  const today = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(new Date());
+  const today = cairoToday();
 
-  console.log(`[dhikr-rank1] checking 100_challenge/${today}/leaderboard for rank 1 winner`);
-  const rank1Snap = await db.ref(`100_challenge/${today}/leaderboard/0`).get();
+  console.log(`[dhikr-rank1] computing rank 1 winner from live 100_challenge/${today} counts`);
+  const rankedUsers = await readChallengeRankedUsers(db, DHIKR_CHALLENGE_ROOT, today);
+  const winner = rankedUsers[0];
 
-  if (!rank1Snap.exists()) {
-    console.log('[dhikr-rank1] no rank 1 entry in leaderboard — skip');
+  if (!winner || !winner.uid || !winner.count) {
+    console.log('[dhikr-rank1] no eligible participant — skip');
     return;
   }
 
-  const rank1Entry = rank1Snap.val() || {};
-  const rank1Uid = rank1Entry.uid;
-  const rank1Count = rank1Entry.count || 0;
-
-  if (!rank1Uid || rank1Count === 0) {
-    console.log('[dhikr-rank1] rank 1 entry missing uid or count — skip');
-    return;
-  }
-
-  const name = typeof rank1Entry.nickname === 'string' && rank1Entry.nickname.trim()
-    ? rank1Entry.nickname.trim()
+  const rank1Uid = winner.uid;
+  const rank1Count = winner.count;
+  const name = winner.nickname && winner.nickname.trim()
+    ? winner.nickname.trim()
     : rank1Uid.slice(-6).toUpperCase();
 
   const title = 'بطل اليوم في تحدي الـ١٠٠ 🏆';
@@ -296,29 +298,21 @@ async function sendDhikrChallengeRank1Notification(db) {
 }
 
 async function sendBaqiyatChallengeRank1Notification(db) {
-  const today = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(new Date());
+  const today = cairoToday();
 
-  console.log(`[baqiyat-rank1] checking baqiyat_saliha/${today}/leaderboard for rank 1 winner`);
-  const rank1Snap = await db.ref(`baqiyat_saliha/${today}/leaderboard/0`).get();
+  console.log(`[baqiyat-rank1] computing rank 1 winner from live baqiyat_saliha/${today} counts`);
+  const rankedUsers = await readChallengeRankedUsers(db, BAQIYAT_CHALLENGE_ROOT, today);
+  const winner = rankedUsers[0];
 
-  if (!rank1Snap.exists()) {
-    console.log('[baqiyat-rank1] no rank 1 entry in leaderboard — skip');
+  if (!winner || !winner.uid || !winner.count) {
+    console.log('[baqiyat-rank1] no eligible participant — skip');
     return;
   }
 
-  const rank1Entry = rank1Snap.val() || {};
-  const rank1Uid = rank1Entry.uid;
-  const rank1Count = rank1Entry.count || 0;
-
-  if (!rank1Uid || rank1Count === 0) {
-    console.log('[baqiyat-rank1] rank 1 entry missing uid or count — skip');
-    return;
-  }
-
-  const name = typeof rank1Entry.nickname === 'string' && rank1Entry.nickname.trim()
-    ? rank1Entry.nickname.trim()
+  const rank1Uid = winner.uid;
+  const rank1Count = winner.count;
+  const name = winner.nickname && winner.nickname.trim()
+    ? winner.nickname.trim()
     : rank1Uid.slice(-6).toUpperCase();
 
   const title = 'بطل اليوم في الباقيات الصالحات 🏆';
@@ -337,29 +331,21 @@ async function sendBaqiyatChallengeRank1Notification(db) {
 }
 
 async function sendIstighfarChallengeRank1Notification(db) {
-  const today = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(new Date());
+  const today = cairoToday();
 
-  console.log(`[istighfar-rank1] checking istighfar_challenge/${today}/leaderboard for rank 1 winner`);
-  const rank1Snap = await db.ref(`istighfar_challenge/${today}/leaderboard/0`).get();
+  console.log(`[istighfar-rank1] computing rank 1 winner from live istighfar_challenge/${today} counts`);
+  const rankedUsers = await readChallengeRankedUsers(db, ISTIGHFAR_CHALLENGE_ROOT, today);
+  const winner = rankedUsers[0];
 
-  if (!rank1Snap.exists()) {
-    console.log('[istighfar-rank1] no rank 1 entry in leaderboard — skip');
+  if (!winner || !winner.uid || !winner.count) {
+    console.log('[istighfar-rank1] no eligible participant — skip');
     return;
   }
 
-  const rank1Entry = rank1Snap.val() || {};
-  const rank1Uid = rank1Entry.uid;
-  const rank1Count = rank1Entry.count || 0;
-
-  if (!rank1Uid || rank1Count === 0) {
-    console.log('[istighfar-rank1] rank 1 entry missing uid or count — skip');
-    return;
-  }
-
-  const name = typeof rank1Entry.nickname === 'string' && rank1Entry.nickname.trim()
-    ? rank1Entry.nickname.trim()
+  const rank1Uid = winner.uid;
+  const rank1Count = winner.count;
+  const name = winner.nickname && winner.nickname.trim()
+    ? winner.nickname.trim()
     : rank1Uid.slice(-6).toUpperCase();
 
   const title = 'بطل اليوم في الاستغفار 🏆';
@@ -378,29 +364,21 @@ async function sendIstighfarChallengeRank1Notification(db) {
 }
 
 async function sendQuranChallengeRank1Notification(db) {
-  const today = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(new Date());
+  const today = cairoToday();
 
-  console.log(`[quran-rank1] checking quran_challenge/${today}/leaderboard for rank 1 winner`);
-  const rank1Snap = await db.ref(`quran_challenge/${today}/leaderboard/0`).get();
+  console.log(`[quran-rank1] computing rank 1 winner from live quran_challenge/${today} counts`);
+  const rankedUsers = await readChallengeRankedUsers(db, QURAN_CHALLENGE_ROOT, today);
+  const winner = rankedUsers[0];
 
-  if (!rank1Snap.exists()) {
-    console.log('[quran-rank1] no rank 1 entry in leaderboard — skip');
+  if (!winner || !winner.uid || !winner.count) {
+    console.log('[quran-rank1] no eligible participant — skip');
     return;
   }
 
-  const rank1Entry = rank1Snap.val() || {};
-  const rank1Uid = rank1Entry.uid;
-  const rank1Count = rank1Entry.count || 0;
-
-  if (!rank1Uid || rank1Count === 0) {
-    console.log('[quran-rank1] rank 1 entry missing uid or count — skip');
-    return;
-  }
-
-  const name = typeof rank1Entry.nickname === 'string' && rank1Entry.nickname.trim()
-    ? rank1Entry.nickname.trim()
+  const rank1Uid = winner.uid;
+  const rank1Count = winner.count;
+  const name = winner.nickname && winner.nickname.trim()
+    ? winner.nickname.trim()
     : rank1Uid.slice(-6).toUpperCase();
 
   const title = 'بطل اليوم في تلاوة القرآن 🏆';
@@ -422,29 +400,21 @@ async function sendQuranChallengeRank1Notification(db) {
 // RTDB node (mohamed_lovers/heroes) that the app reads (read-only). Overwritten
 // daily. Mirrored to Firestore per the Phase-1 dual-write convention.
 async function sendZabadChallengeRank1Notification(db) {
-  const today = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(new Date());
+  const today = cairoToday();
 
-  console.log(`[zabad-rank1] checking zabad_challenge/${today}/leaderboard for rank 1 winner`);
-  const rank1Snap = await db.ref(`zabad_challenge/${today}/leaderboard/0`).get();
+  console.log(`[zabad-rank1] computing rank 1 winner from live zabad_challenge/${today} counts`);
+  const rankedUsers = await readChallengeRankedUsers(db, ZABAD_CHALLENGE_ROOT, today);
+  const winner = rankedUsers[0];
 
-  if (!rank1Snap.exists()) {
-    console.log('[zabad-rank1] no rank 1 entry in leaderboard — skip');
+  if (!winner || !winner.uid || !winner.count) {
+    console.log('[zabad-rank1] no eligible participant — skip');
     return;
   }
 
-  const rank1Entry = rank1Snap.val() || {};
-  const rank1Uid = rank1Entry.uid;
-  const rank1Count = rank1Entry.count || 0;
-
-  if (!rank1Uid || rank1Count === 0) {
-    console.log('[zabad-rank1] rank 1 entry missing uid or count — skip');
-    return;
-  }
-
-  const name = typeof rank1Entry.nickname === 'string' && rank1Entry.nickname.trim()
-    ? rank1Entry.nickname.trim()
+  const rank1Uid = winner.uid;
+  const rank1Count = winner.count;
+  const name = winner.nickname && winner.nickname.trim()
+    ? winner.nickname.trim()
     : rank1Uid.slice(-6).toUpperCase();
 
   const title = 'بطل اليوم في تسبيح المئة 🏆';
@@ -463,29 +433,21 @@ async function sendZabadChallengeRank1Notification(db) {
 }
 
 async function sendGharsChallengeRank1Notification(db) {
-  const today = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(new Date());
+  const today = cairoToday();
 
-  console.log(`[ghars-rank1] checking ghars_challenge/${today}/leaderboard for rank 1 winner`);
-  const rank1Snap = await db.ref(`ghars_challenge/${today}/leaderboard/0`).get();
+  console.log(`[ghars-rank1] computing rank 1 winner from live ghars_challenge/${today} counts`);
+  const rankedUsers = await readChallengeRankedUsers(db, GHARS_CHALLENGE_ROOT, today);
+  const winner = rankedUsers[0];
 
-  if (!rank1Snap.exists()) {
-    console.log('[ghars-rank1] no rank 1 entry in leaderboard — skip');
+  if (!winner || !winner.uid || !winner.count) {
+    console.log('[ghars-rank1] no eligible participant — skip');
     return;
   }
 
-  const rank1Entry = rank1Snap.val() || {};
-  const rank1Uid = rank1Entry.uid;
-  const rank1Count = rank1Entry.count || 0;
-
-  if (!rank1Uid || rank1Count === 0) {
-    console.log('[ghars-rank1] rank 1 entry missing uid or count — skip');
-    return;
-  }
-
-  const name = typeof rank1Entry.nickname === 'string' && rank1Entry.nickname.trim()
-    ? rank1Entry.nickname.trim()
+  const rank1Uid = winner.uid;
+  const rank1Count = winner.count;
+  const name = winner.nickname && winner.nickname.trim()
+    ? winner.nickname.trim()
     : rank1Uid.slice(-6).toUpperCase();
 
   const title = 'غارس اليوم في تحدي الغَرْس 🌴';
@@ -533,30 +495,24 @@ async function persistHeroes(db, dailyLeaderboardSnap) {
     }
   }
 
-  // Daily count challenges use a 0-indexed leaderboard node and `count`.
-  async function challengeTop3(path) {
-    const snap = await db.ref(path).get();
-    if (!snap.exists()) return [];
-    const lb = snap.val() || {};
-    const out = [];
-    for (let i = 0; i < 3; i++) {
-      const entry = lb[String(i)];
-      if (!entry?.uid) break;
-      out.push({
-        rank: i + 1,
-        name: heroName(entry),
-        count: entry.count || 0,
-        countryCode: entry.countryCode || '',
-      });
-    }
-    return out;
+  // Daily count challenges: recompute the top-3 from the live per-user counts
+  // (same source the winner notifications use) instead of the periodically-written
+  // leaderboard node, so the persisted heroes reflect the final end-of-day counts.
+  async function challengeTop3(rootPath) {
+    const rankedUsers = await readChallengeRankedUsers(db, rootPath, today);
+    return rankedUsers.slice(0, 3).map((user, i) => ({
+      rank: i + 1,
+      name: heroName(user),
+      count: user.count || 0,
+      countryCode: user.countryCode || '',
+    }));
   }
 
   const [dhikr, baqiyat, istighfar, quran] = await Promise.all([
-    challengeTop3(`100_challenge/${today}/leaderboard`),
-    challengeTop3(`baqiyat_saliha/${today}/leaderboard`),
-    challengeTop3(`istighfar_challenge/${today}/leaderboard`),
-    challengeTop3(`quran_challenge/${today}/leaderboard`),
+    challengeTop3(DHIKR_CHALLENGE_ROOT),
+    challengeTop3(BAQIYAT_CHALLENGE_ROOT),
+    challengeTop3(ISTIGHFAR_CHALLENGE_ROOT),
+    challengeTop3(QURAN_CHALLENGE_ROOT),
   ]);
 
   const heroes = {
