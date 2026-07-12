@@ -725,7 +725,7 @@
   <string name="zabad_phrase">سُبْحَانَ اللهِ وَبِحَمْدِهِ</string>
   <string name="zabad_hadith">مَنْ قَالَ: سُبْحَانَ اللهِ وَبِحَمْدِهِ فِي يَوْمٍ مِائَةَ مَرَّةٍ، حُطَّتْ خَطَايَاهُ وَإِنْ كَانَتْ مِثْلَ زَبَدِ البَحْرِ</string>
   <string name="zabad_hadith_ref">متفق عليه</string>
-  <string name="zabad_tap_hint">اضغط لتُسبِّح — كلَّما طال صمتك، تراكم الزَّبَد وعلا البحر</string>
+  <string name="zabad_tap_hint">أكثِر من الذِّكر كي تُحَطَّ عنك ذنوبك</string>
   <string name="zabad_progress">من ١٠٠</string>
   <string name="zabad_accumulated">زَبَدٌ تراكم منذ %1$s س %2$s د</string>
   <string name="zabad_verdict_title">حُطَّتْ خَطَايَاهُ</string>

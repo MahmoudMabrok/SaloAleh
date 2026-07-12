@@ -677,7 +677,7 @@
   <string name="zabad_phrase">سُبْحَانَ اللهِ وَبِحَمْدِهِ</string>
   <string name="zabad_hadith">جو شخص دن میں سو مرتبہ "سبحان اللہ وبحمدہ" کہے، اس کے گناہ مٹا دیے جاتے ہیں خواہ سمندر کی جھاگ کے برابر ہوں</string>
   <string name="zabad_hadith_ref">متفق علیہ</string>
-  <string name="zabad_tap_hint">تسبیح کے لیے دبائیں — خاموشی جتنی طویل ہو، جھاگ اتنا بڑھتا ہے</string>
+  <string name="zabad_tap_hint">زیادہ ذکر کرو تاکہ تمہارے گناہ مٹ جائیں</string>
   <string name="zabad_progress">100 میں سے</string>
   <string name="zabad_accumulated">%1$s گھنٹے %2$s منٹ سے جھاگ جمع ہے</string>
   <string name="zabad_verdict_title">گناہ مٹا دیے گئے</string>

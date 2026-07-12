@@ -22,4 +22,8 @@ data class GharsChallengeUiState(
     val currentUid: String = "",
     // Transient toast shown when a grove completes: "اكتمل بستانك رقم N".
     val groveToastNumber: Int = 0,
+    // Monotonic counter bumped only on a real user plant (tap / manual entry) — never on
+    // screen-entry load or remote-baseline sync. The canvas sprouts a palm only when this
+    // changes, so re-opening the screen shows the settled grove instead of re-growing a palm.
+    val plantSerial: Int = 0,
 )

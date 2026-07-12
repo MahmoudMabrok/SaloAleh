@@ -715,7 +715,7 @@
   <string name="zabad_phrase">Glory and praise be to Allah</string>
   <string name="zabad_hadith">Whoever says "Glory and praise be to Allah" one hundred times a day, his sins are wiped away even if they were like the foam of the sea</string>
   <string name="zabad_hadith_ref">Bukhari &amp; Muslim</string>
-  <string name="zabad_tap_hint">Tap to glorify — the longer the silence, the more foam gathers and the sea rises</string>
+  <string name="zabad_tap_hint">Remember Allah more, so your sins are wiped away</string>
   <string name="zabad_progress">of 100</string>
   <string name="zabad_accumulated">Foam accumulated for %1$s h %2$s m</string>
   <string name="zabad_verdict_title">Your sins are forgiven</string>

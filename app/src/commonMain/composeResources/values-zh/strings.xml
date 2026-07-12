@@ -677,7 +677,7 @@
   <string name="zabad_phrase">赞颂真主超绝，赞颂归于他</string>
   <string name="zabad_hadith">谁若每日诵念"赞主超绝，赞归于主"一百遍，其罪过必被抹去，纵如海中泡沫之多</string>
   <string name="zabad_hadith_ref">布哈里与穆斯林圣训集</string>
-  <string name="zabad_tap_hint">点击赞颂——沉默越久，泡沫越多，海面越高</string>
+  <string name="zabad_tap_hint">多多记念真主，你的罪过便得消除</string>
   <string name="zabad_progress">共100次</string>
   <string name="zabad_accumulated">泡沫已积累 %1$s 小时 %2$s 分钟</string>
   <string name="zabad_verdict_title">罪过已被宽恕</string>
