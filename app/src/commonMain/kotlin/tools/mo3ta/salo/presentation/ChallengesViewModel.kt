@@ -20,6 +20,7 @@ data class ChallengesTotals(
     val baqiyat: Int = 0,
     val istighfar: Int = 0,
     val zabad: Int = 0,
+    val ghars: Int = 0,
     val quran: Int = 0,
 )
 
@@ -39,6 +40,7 @@ class ChallengesViewModel : ViewModel() {
             val baqiyat = async { readTotal(db, "baqiyat_saliha/$dateKey/totalTodayBaqiyat") }
             val istighfar = async { readTotal(db, "istighfar_challenge/$dateKey/totalTodayIstighfar") }
             val zabad = async { readTotal(db, "zabad_challenge/$dateKey/totalTodayZabad") }
+            val ghars = async { readTotal(db, "ghars_challenge/$dateKey/totalTodayGhars") }
             val quran = async { readTotal(db, "quran_challenge/$dateKey/totalTodayQuran") }
 
             _totals.update {
@@ -47,6 +49,7 @@ class ChallengesViewModel : ViewModel() {
                     baqiyat = baqiyat.await(),
                     istighfar = istighfar.await(),
                     zabad = zabad.await(),
+                    ghars = ghars.await(),
                     quran = quran.await(),
                 )
             }

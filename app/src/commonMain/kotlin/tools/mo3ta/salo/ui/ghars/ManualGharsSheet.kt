@@ -1,0 +1,327 @@
+package tools.mo3ta.salo.ui.ghars
+
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import org.jetbrains.compose.resources.stringResource
+import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.manual_ghars_count
+import tools.mo3ta.salo.generated.resources.manual_ghars_enter_count
+import tools.mo3ta.salo.generated.resources.manual_ghars_submit
+import tools.mo3ta.salo.generated.resources.manual_ghars_subtitle
+import tools.mo3ta.salo.generated.resources.manual_ghars_title
+import tools.mo3ta.salo.generated.resources.manual_ghars_witness
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun ManualGharsSheet(
+    isOpen: Boolean,
+    onDismiss: () -> Unit,
+    onSubmit: (Int) -> Unit,
+) {
+    if (!isOpen) return
+
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var customText by remember { mutableStateOf("") }
+    var witnessChecked by remember { mutableStateOf(false) }
+
+    val effectiveCount = customText.toIntOrNull() ?: 0
+    val canSubmit = effectiveCount > 0 && witnessChecked
+    val danger = Color(0xFFDC503C)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = GharsColors.SandPale,
+        dragHandle = null,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 18.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(36.dp)
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(GharsColors.SheetStroke)
+                    .align(Alignment.CenterHorizontally),
+            )
+
+            Text(
+                text = stringResource(Res.string.manual_ghars_title),
+                color = GharsColors.SheetInk,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = arefRuqaaFamily(),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            Text(
+                text = stringResource(Res.string.manual_ghars_subtitle),
+                color = GharsColors.SheetMuted,
+                fontSize = 13.sp,
+                fontStyle = FontStyle.Italic,
+                fontFamily = ibmPlexArabicFamily(),
+                textAlign = TextAlign.Center,
+                lineHeight = 22.sp,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            // Sapling beads decoration
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                repeat(3) {
+                    Bead()
+                    if (it < 2) Spacer(Modifier.width(6.dp))
+                }
+                Spacer(Modifier.width(12.dp))
+                Box(
+                    modifier = Modifier
+                        .width(16.dp)
+                        .height(2.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(Color.Transparent, GharsColors.FrondLit, Color.Transparent),
+                            ),
+                        ),
+                )
+                Spacer(Modifier.width(12.dp))
+                repeat(3) {
+                    Bead()
+                    if (it < 2) Spacer(Modifier.width(6.dp))
+                }
+            }
+
+            Spacer(Modifier.height(2.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(Res.string.manual_ghars_count),
+                    color = GharsColors.SheetMuted,
+                    fontSize = 14.sp,
+                    fontFamily = ibmPlexArabicFamily(),
+                )
+                Spacer(Modifier.width(10.dp))
+                OutlinedTextField(
+                    value = customText,
+                    onValueChange = { raw -> customText = raw.filter { it.isDigit() } },
+                    placeholder = {
+                        Text(
+                            stringResource(Res.string.manual_ghars_enter_count),
+                            color = GharsColors.SheetMuted.copy(alpha = 0.6f),
+                            fontSize = 14.sp,
+                            fontFamily = ibmPlexArabicFamily(),
+                        )
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    textStyle = TextStyle(
+                        color = GharsColors.SheetInk,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = ibmPlexArabicFamily(),
+                        textAlign = TextAlign.Center,
+                    ),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = GharsColors.Accent,
+                        unfocusedBorderColor = GharsColors.SheetStroke,
+                        cursorColor = GharsColors.Accent,
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
+            // Hadith card — the source of the mechanic
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(GharsColors.Accent.copy(alpha = 0.07f))
+                    .border(
+                        width = 1.dp,
+                        color = GharsColors.Accent.copy(alpha = 0.3f),
+                        shape = RoundedCornerShape(14.dp),
+                    )
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = "«مَن قالَ: سُبْحَانَ اللهِ الْعَظِيمِ وَبِحَمْدِهِ، غُرِسَتْ لَهُ نَخْلَةٌ فِي الجَنَّةِ»",
+                    color = GharsColors.SheetInk,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Normal,
+                    fontFamily = arefRuqaaFamily(),
+                    textAlign = TextAlign.Center,
+                    lineHeight = 32.sp,
+                )
+                Text(
+                    text = "رواه الترمذي وحسّنه",
+                    color = GharsColors.Accent.copy(alpha = 0.85f),
+                    fontSize = 12.sp,
+                    fontFamily = ibmPlexArabicFamily(),
+                )
+            }
+
+            val witnessBackground by animateColorAsState(
+                targetValue = if (witnessChecked)
+                    GharsColors.Accent.copy(alpha = 0.10f)
+                else
+                    danger.copy(alpha = 0.08f),
+                animationSpec = tween(300),
+            )
+            val witnessBorder by animateColorAsState(
+                targetValue = if (witnessChecked)
+                    GharsColors.Accent.copy(alpha = 0.5f)
+                else
+                    danger.copy(alpha = 0.3f),
+                animationSpec = tween(300),
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(witnessBackground)
+                    .border(1.dp, witnessBorder, RoundedCornerShape(12.dp))
+                    .clickable { witnessChecked = !witnessChecked }
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.Top,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(22.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .border(
+                            2.dp,
+                            if (witnessChecked) GharsColors.Accent else GharsColors.SheetStroke,
+                            RoundedCornerShape(6.dp),
+                        )
+                        .then(
+                            if (witnessChecked) Modifier.background(GharsColors.Accent)
+                            else Modifier,
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (witnessChecked) {
+                        Text(
+                            text = "✓",
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.W700,
+                        )
+                    }
+                }
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    text = stringResource(Res.string.manual_ghars_witness),
+                    color = GharsColors.SheetInk,
+                    fontSize = 14.sp,
+                    fontFamily = ibmPlexArabicFamily(),
+                    lineHeight = 24.sp,
+                )
+            }
+
+            val submitAlpha = if (canSubmit) 1f else 0.35f
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(
+                        Brush.linearGradient(
+                            listOf(GharsColors.Accent, GharsColors.PalmDeep),
+                        ).takeIf { canSubmit }
+                            ?: Brush.linearGradient(
+                                listOf(
+                                    GharsColors.Accent.copy(alpha = 0.3f),
+                                    GharsColors.PalmDeep.copy(alpha = 0.3f),
+                                ),
+                            ),
+                    )
+                    .border(
+                        1.dp,
+                        GharsColors.Accent.copy(alpha = submitAlpha),
+                        RoundedCornerShape(14.dp),
+                    )
+                    .then(if (canSubmit) Modifier.clickable { onSubmit(effectiveCount) } else Modifier)
+                    .padding(vertical = 14.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = stringResource(Res.string.manual_ghars_submit),
+                    color = if (canSubmit) Color.White else GharsColors.SheetMuted,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.W700,
+                    fontFamily = ibmPlexArabicFamily(),
+                )
+            }
+
+            Spacer(Modifier.height(8.dp))
+        }
+    }
+}
+
+@Composable
+private fun Bead() {
+    Box(
+        modifier = Modifier
+            .size(10.dp)
+            .clip(CircleShape)
+            .background(
+                Brush.radialGradient(
+                    listOf(GharsColors.FrondLit, GharsColors.PalmDeep),
+                ),
+            ),
+    )
+}

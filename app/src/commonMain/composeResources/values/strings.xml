@@ -730,4 +730,24 @@
   <string name="zabad_verdict_sub">وإن كانت مثل زَبَدِ البحر</string>
   <string name="challenge_zabad_title">تسبيح المئة</string>
   <string name="challenge_zabad_body">سبحان الله وبحمده ١٠٠ مرة — تُحَطُّ الخطايا ولو كانت مثل زبد البحر</string>
+
+  <string name="challenge_ghars_title">اغرس نخلة</string>
+  <string name="challenge_ghars_body">مَن قال: سبحان الله العظيم وبحمده، غُرست له نخلة في الجنة</string>
+  <string name="ghars_title">الغَرْس</string>
+  <string name="ghars_phrase">سُبْحَانَ اللهِ الْعَظِيمِ وَبِحَمْدِهِ</string>
+  <string name="ghars_tap_hint">اضغط في أيّ مكان لتُغرَس لك نخلة</string>
+  <string name="ghars_empty_hint">الأرض مُهيّأة. سبِّح لتُغرَس أوّل نخلة</string>
+  <string name="ghars_today_label">غُرِسَ لك اليوم</string>
+  <string name="ghars_unit">نخلة</string>
+  <string name="ghars_goal_label">الهدف اليومي</string>
+  <string name="ghars_groves_label">بساتين مكتملة</string>
+  <string name="ghars_grove_complete">اكتمل البستان</string>
+  <string name="ghars_remaining">باقٍ %1$d لاكتمال البستان</string>
+  <string name="ghars_grove_toast">اكتمل بستانك رقم %1$d</string>
+  <string name="manual_ghars_title">🌴 تسجيل تسبيح خارجي</string>
+  <string name="manual_ghars_subtitle">سبّحت بصمت أو على أصابعك أو بالمسبحة؟\nسجّل ما سبّحت — لتُغرَس لك النخل ولو كنت بعيدًا عن التطبيق</string>
+  <string name="manual_ghars_count">العدد:</string>
+  <string name="manual_ghars_enter_count">أدخل العدد</string>
+  <string name="manual_ghars_witness">أشهد أن هذا العدد صحيح وحقيقي، وأن الله مطّلع على نيّتي</string>
+  <string name="manual_ghars_submit">✦ تسجيل التسبيح ✦</string>
 </resources>

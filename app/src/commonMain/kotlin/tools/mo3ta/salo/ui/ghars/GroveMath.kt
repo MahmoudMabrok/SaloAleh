@@ -1,0 +1,113 @@
+package tools.mo3ta.salo.ui.ghars
+
+import kotlin.math.min
+import kotlin.math.pow
+
+/**
+ * Pure-Kotlin grove arithmetic — no Compose. Everything the renderer needs to be
+ * deterministic lives here so it can be unit-tested without a canvas.
+ *
+ * The wrap is what keeps this cheap: the screen never draws more than [GROVE_SIZE]
+ * palms, so render cost is a constant independent of the score.
+ */
+
+const val GROVE_SIZE = 25 // palms per grove; hard drawing ceiling
+val ROW_CAPACITY = intArrayOf(7, 8, 10) // palms per depth row, nearest first; sums to 25
+const val ROW_DEPTH_FALLOFF = 0.72f // scale multiplier per row back
+const val HAZE_FALLOFF = 0.855f // atmospheric haze falloff base per row back
+const val HAZE_MAX = 0.62f // atmospheric haze cap on the furthest row
+
+/**
+ * mulberry32 — the exact PRNG the HTML mockup uses, ported bit-for-bit so a palm
+ * looks identical on every device forever. Kotlin `Int` arithmetic already wraps at
+ * 32 bits (two's complement), matching JS `Math.imul`.
+ */
+class Mulberry32(private var state: Int) {
+    fun next(): Float {
+        state += 0x6D2B79F5
+        var t = state
+        t = (t xor (t ushr 15)) * (t or 1)
+        t = (t + ((t xor (t ushr 7)) * (t or 61))) xor t
+        return ((t xor (t ushr 14)).toLong() and 0xFFFFFFFFL).toFloat() / 4294967296f
+    }
+}
+
+data class PalmParams(
+    val heightScale: Float,
+    val lean: Float,
+    val frondCount: Int,
+    val trunkBow: Float,
+    val jitter: Float,
+    val swayPhase: Float,
+    val bearsDates: Boolean, // (index + 1) % GROVE_SIZE == 0 — the grove-completing palm
+)
+
+/** Deterministic per-palm parameters, seeded on the palm's absolute index. */
+fun palmParams(index: Int): PalmParams {
+    val seed = (((index + 1).toLong() * 2654435761L) and 0xFFFFFFFFL).toInt()
+    val r = Mulberry32(seed)
+    val a = r.next(); val b = r.next(); val c = r.next()
+    val d = r.next(); val e = r.next(); val f = r.next()
+    return PalmParams(
+        heightScale = 0.82f + a * 0.40f,
+        lean = (b - 0.5f) * 0.22f,
+        frondCount = 12 + (c * 5).toInt(),
+        trunkBow = (d - 0.5f) * 0.50f,
+        jitter = (e - 0.5f) * 0.55f,
+        swayPhase = f * 6.283f,
+        bearsDates = (index + 1) % GROVE_SIZE == 0,
+    )
+}
+
+/** Palms visible on screen for [count] taps — never exceeds [GROVE_SIZE]. */
+fun shownPalms(count: Int): Int = if (count <= 0) 0 else ((count - 1) % GROVE_SIZE) + 1
+
+/** Absolute index of the first palm of the grove currently being planted. */
+fun groveStartIndex(count: Int): Int =
+    if (count <= 0) 0 else ((count - 1) / GROVE_SIZE) * GROVE_SIZE
+
+/** Groves fully planted today. */
+fun completedGroves(count: Int): Int = if (count <= 0) 0 else count / GROVE_SIZE
+
+/** True on the tasbeeh that has just sent a completed grove receding to the horizon. */
+fun completesGrove(count: Int): Boolean = count > 1 && (count - 1) % GROVE_SIZE == 0
+
+/**
+ * How many palms sit in each depth row (nearest first) for [shown] visible palms.
+ * Row 0 (front) always holds the most recent palms; older palms recede backward.
+ */
+fun rowOccupancy(shown: Int): IntArray {
+    val take = IntArray(ROW_CAPACITY.size)
+    var rem = shown
+    for (b in ROW_CAPACITY.indices) {
+        val c = min(rem, ROW_CAPACITY[b])
+        take[b] = c
+        rem -= c
+        if (rem <= 0) break
+    }
+    return take
+}
+
+/** Index of the first (lowest, oldest) shown-slot held by row [band], given [take]. */
+fun rowStart(take: IntArray, shown: Int, band: Int): Int {
+    var s = 0
+    for (q in 0..band) s += take[q]
+    return shown - s
+}
+
+/** Depth scale of row [band] — front row is 1, each row back multiplies by the falloff. */
+fun rowScale(band: Int): Float = ROW_DEPTH_FALLOFF.pow(band)
+
+/** Atmospheric haze of row [band], capped so the furthest row never fully dissolves. */
+fun rowHaze(band: Int): Float = min(HAZE_MAX, 1f - HAZE_FALLOFF.pow(band))
+
+/**
+ * Fraction (0..1) of the usable width where the palm at shown-slot [j] in row [band]
+ * stands. Rows are staggered into a quincunx like a real date grove.
+ * The renderer maps this to a pixel x via: margin + fraction * (width - 2*margin).
+ */
+fun palmXFraction(j: Int, band: Int, jitter: Float): Float {
+    val cap = ROW_CAPACITY[band]
+    val stagger = (band % 2) * 0.5f
+    return ((j % cap) + 0.5f + stagger) / cap + jitter / cap * 0.8f
+}

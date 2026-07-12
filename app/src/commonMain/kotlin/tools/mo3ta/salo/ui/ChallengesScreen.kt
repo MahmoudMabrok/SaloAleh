@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Spa
 import androidx.compose.material.icons.filled.AutoStories
+import androidx.compose.material.icons.filled.Forest
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Waves
 import androidx.compose.material3.Icon
@@ -56,6 +57,8 @@ import tools.mo3ta.salo.generated.resources.challenge_istighfar_body
 import tools.mo3ta.salo.generated.resources.challenge_istighfar_title
 import tools.mo3ta.salo.generated.resources.challenge_zabad_body
 import tools.mo3ta.salo.generated.resources.challenge_zabad_title
+import tools.mo3ta.salo.generated.resources.challenge_ghars_body
+import tools.mo3ta.salo.generated.resources.challenge_ghars_title
 import tools.mo3ta.salo.generated.resources.challenge_quran_body
 import tools.mo3ta.salo.generated.resources.challenge_quran_title
 import tools.mo3ta.salo.generated.resources.challenge_takbeer_body
@@ -94,6 +97,7 @@ fun ChallengesScreen(
     onOpenBaqiyatChallenge: () -> Unit,
     onOpenIstighfarChallenge: () -> Unit,
     onOpenZabadChallenge: () -> Unit,
+    onOpenGharsChallenge: () -> Unit,
     onOpenQuranChallenge: () -> Unit,
 ) {
     val analyticsManager: AnalyticsManager = koinInject()
@@ -160,6 +164,20 @@ fun ChallengesScreen(
                     mapOf(AppAnalytics.PARAM_SOURCE to "challenges"),
                 )
                 onOpenZabadChallenge()
+            },
+        ),
+        ChallengeItem(
+            titleRes = Res.string.challenge_ghars_title,
+            bodyRes = Res.string.challenge_ghars_body,
+            icon = Icons.Default.Forest,
+            accent = Color(0xFF1F5C40),
+            total = totals.ghars,
+            onClick = {
+                analyticsManager.logAction(
+                    AppAnalytics.OPEN_GHARS_CHALLENGE,
+                    mapOf(AppAnalytics.PARAM_SOURCE to "challenges"),
+                )
+                onOpenGharsChallenge()
             },
         ),
         ChallengeItem(

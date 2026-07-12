@@ -720,4 +720,24 @@
   <string name="zabad_verdict_sub">Even if they were like the foam of the sea</string>
   <string name="challenge_zabad_title">The Hundred</string>
   <string name="challenge_zabad_body">Say Glory and praise be to Allah 100 times — sins are forgiven even if like sea foam</string>
+
+  <string name="challenge_ghars_title">Plant a Palm</string>
+  <string name="challenge_ghars_body">Whoever says "Glory to Allah the Magnificent, and praise be to Him" has a palm planted for them in Paradise</string>
+  <string name="ghars_title">The Planting</string>
+  <string name="ghars_phrase">Glory to Allah the Magnificent, and praise be to Him</string>
+  <string name="ghars_tap_hint">Tap anywhere and a palm is planted for you</string>
+  <string name="ghars_empty_hint">The soil is ready. Glorify Allah to plant your first palm</string>
+  <string name="ghars_today_label">Planted for you today</string>
+  <string name="ghars_unit">palms</string>
+  <string name="ghars_goal_label">Daily goal</string>
+  <string name="ghars_groves_label">Groves completed</string>
+  <string name="ghars_grove_complete">Grove complete</string>
+  <string name="ghars_remaining">%1$d more to complete the grove</string>
+  <string name="ghars_grove_toast">Your grove no. %1$d is complete</string>
+  <string name="manual_ghars_title">🌴 Log External Tasbeeh</string>
+  <string name="manual_ghars_subtitle">Glorified Allah silently, on your fingers, or with a tasbih?\nLog what you recited — palms are planted for you even when you\'re away from the app</string>
+  <string name="manual_ghars_count">Count:</string>
+  <string name="manual_ghars_enter_count">Enter count</string>
+  <string name="manual_ghars_witness">I testify that this count is true and accurate, and that Allah is aware of my intention</string>
+  <string name="manual_ghars_submit">✦ Log Tasbeeh ✦</string>
 </resources>

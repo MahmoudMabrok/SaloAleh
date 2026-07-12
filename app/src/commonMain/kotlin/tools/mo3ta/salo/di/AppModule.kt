@@ -14,6 +14,8 @@ import tools.mo3ta.salo.data.istighfar.IstighfarChallengeFirebaseClient
 import tools.mo3ta.salo.data.istighfar.IstighfarChallengeStore
 import tools.mo3ta.salo.data.zabad.ZabadChallengeFirebaseClient
 import tools.mo3ta.salo.data.zabad.ZabadChallengeStore
+import tools.mo3ta.salo.data.ghars.GharsChallengeFirebaseClient
+import tools.mo3ta.salo.data.ghars.GharsChallengeStore
 import tools.mo3ta.salo.data.quran.QuranChallengeFirebaseClient
 import tools.mo3ta.salo.data.quran.QuranChallengeStore
 import tools.mo3ta.salo.data.engagement.ChallengeBadgeStore
@@ -43,6 +45,7 @@ import tools.mo3ta.salo.presentation.ChallengesViewModel
 import tools.mo3ta.salo.presentation.DhikrChallengeViewModel
 import tools.mo3ta.salo.presentation.IstighfarChallengeViewModel
 import tools.mo3ta.salo.presentation.ZabadChallengeViewModel
+import tools.mo3ta.salo.presentation.GharsChallengeViewModel
 import tools.mo3ta.salo.presentation.QuranChallengeViewModel
 import tools.mo3ta.salo.presentation.HadithListViewModel
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
@@ -64,6 +67,8 @@ val appModule = module {
     single { IstighfarChallengeFirebaseClient(get(), get()) }
     single { ZabadChallengeStore(get()) }
     single { ZabadChallengeFirebaseClient(get(), get()) }
+    single { GharsChallengeStore(get()) }
+    single { GharsChallengeFirebaseClient(get(), get()) }
     single { QuranChallengeStore(get()) }
     single { QuranChallengeFirebaseClient(get(), get()) }
     single { BaqiyatStore(get()) }
@@ -83,6 +88,7 @@ val appModule = module {
     viewModel { DhikrChallengeViewModel(get(), get(), get(), get(), get()) }
     viewModel { IstighfarChallengeViewModel(get(), get(), get(), get(), get()) }
     viewModel { ZabadChallengeViewModel(get(), get(), get(), get(), get()) }
+    viewModel { GharsChallengeViewModel(get(), get(), get(), get(), get()) }
     viewModel { QuranChallengeViewModel(get(), get(), get(), get(), get()) }
     viewModel { BaqiyatViewModel(get(), get(), get(), get(), get()) }
     viewModel { AchievementsViewModel(get(), get(), get()) }

@@ -32,6 +32,10 @@ object AppAnalytics {
     const val QURAN_TAP = "quran_tap"
     const val QURAN_SCREEN_VIEW = "quran_screen_view"
 
+    const val OPEN_GHARS_CHALLENGE = "open_ghars_challenge"
+    const val GHARS_TAP = "ghars_tap"
+    const val GHARS_SCREEN_VIEW = "ghars_screen_view"
+
     const val PARAM_COUNT = "count"
     const val LANGUAGE_CHANGED = "language_changed"
     const val SALAWAT_VARIANT_CHANGED = "salawat_variant_changed"

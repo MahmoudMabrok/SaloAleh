@@ -48,6 +48,7 @@ import tools.mo3ta.salo.ui.ChallengesScreen
 import tools.mo3ta.salo.ui.DhikrRewardsScreen
 import tools.mo3ta.salo.ui.IstighfarRewardsScreen
 import tools.mo3ta.salo.ui.ZabadScreen
+import tools.mo3ta.salo.ui.GharsScreen
 import tools.mo3ta.salo.ui.HadithListScreen
 import tools.mo3ta.salo.ui.MohamedLoversScreen
 import tools.mo3ta.salo.ui.FcmPermissionReminderDialog
@@ -146,6 +147,7 @@ fun App(
         var showBaqiyatChallenge by remember { mutableStateOf(false) }
         var showIstighfarChallenge by remember { mutableStateOf(false) }
         var showZabadChallenge by remember { mutableStateOf(false) }
+        var showGharsChallenge by remember { mutableStateOf(false) }
         var showQuranChallenge by remember { mutableStateOf(false) }
         var showExtensionQr by remember { mutableStateOf(false) }
         var showReferral by remember { mutableStateOf(false) }
@@ -160,6 +162,7 @@ fun App(
                 showBaqiyatChallenge ||
                 showIstighfarChallenge ||
                 showZabadChallenge ||
+                showGharsChallenge ||
                 showQuranChallenge ||
                 showTakbeerSession ||
                 showTenDays ||
@@ -174,6 +177,7 @@ fun App(
                 showBaqiyatChallenge -> showBaqiyatChallenge = false
                 showIstighfarChallenge -> showIstighfarChallenge = false
                 showZabadChallenge -> showZabadChallenge = false
+                showGharsChallenge -> showGharsChallenge = false
                 showQuranChallenge -> showQuranChallenge = false
                 showTakbeerSession -> showTakbeerSession = false
                 showTenDays -> showTenDays = false
@@ -222,6 +226,7 @@ fun App(
             showBaqiyatChallenge ||
             showIstighfarChallenge ||
             showZabadChallenge ||
+            showGharsChallenge ||
             showQuranChallenge ||
             showTakbeerSession ||
             showTenDays ||
@@ -262,6 +267,7 @@ fun App(
                 onBack = { showIstighfarChallenge = false },
             )
             showZabadChallenge -> ZabadScreen(onBack = { showZabadChallenge = false })
+            showGharsChallenge -> GharsScreen(onBack = { showGharsChallenge = false })
             showQuranChallenge -> QuranChallengeScreen(
                 onBack = { showQuranChallenge = false },
             )
@@ -289,6 +295,7 @@ fun App(
                                 onOpenBaqiyatChallenge = { showBaqiyatChallenge = true },
                                 onOpenIstighfarChallenge = { showIstighfarChallenge = true },
                                 onOpenZabadChallenge = { showZabadChallenge = true },
+                                onOpenGharsChallenge = { showGharsChallenge = true },
                                 onOpenQuranChallenge = { showQuranChallenge = true },
                             )
                             SaloTab.Achievements -> AchievementsScreen(
