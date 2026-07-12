@@ -22,6 +22,11 @@ object AppAnalytics {
     const val ISTIGHFAR_TAP = "istighfar_tap"
     const val ISTIGHFAR_SCREEN_VIEW = "istighfar_screen_view"
 
+    const val OPEN_ZABAD_CHALLENGE = "open_zabad_challenge"
+    const val OPEN_MANUAL_ZABAD = "open_manual_zabad"
+    const val ZABAD_TAP = "zabad_tap"
+    const val ZABAD_SCREEN_VIEW = "zabad_screen_view"
+
     const val OPEN_QURAN_CHALLENGE = "open_quran_challenge"
     const val OPEN_MANUAL_QURAN = "open_manual_quran"
     const val QURAN_TAP = "quran_tap"

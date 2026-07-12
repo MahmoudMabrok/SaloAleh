@@ -246,6 +246,7 @@
     <string name="achievements_badge_challenge_baqiyat_how">一天内完成 %1$d 轮永恒善功 — 每个获胜日徽章计数加 1</string>
     <string name="achievements_badge_challenge_istighfar_how">一天内完成 %1$d 次求恕 — 每个获胜日徽章计数加 1</string>
     <string name="achievements_badge_challenge_quran_how">一天内完成 %1$d 页 — 每个获胜日徽章计数加 1</string>
+    <string name="achievements_badge_challenge_zabad_how">一天内完成 %1$d 次赞念 — 每个获胜日徽章计数加 1</string>
     <string name="achievements_badge_rank_title">第%1$d名</string>
     <string name="achievements_badge_rank_how">在任意竞赛轮次中获得第%1$d名</string>
     <string name="achievements_badge_how_label">如何获得：</string>

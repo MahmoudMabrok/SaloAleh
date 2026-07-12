@@ -26,7 +26,10 @@ import kotlinx.coroutines.delay
 import kotlin.math.sin
 import kotlin.time.Duration.Companion.milliseconds
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import tools.mo3ta.salo.analytics.AnalyticsManager
+import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.generated.resources.*
 import tools.mo3ta.salo.presentation.ZabadChallengeViewModel
 import tools.mo3ta.salo.ui.zabad.*
@@ -34,11 +37,13 @@ import tools.mo3ta.salo.ui.zabad.*
 @Composable
 fun ZabadScreen(onBack: () -> Unit, viewModel: ZabadChallengeViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val analyticsManager: AnalyticsManager = koinInject()
     var phase by remember { mutableFloatStateOf(0f) }
     var washProgress by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(Unit) {
         viewModel.onScreenEntered()
+        analyticsManager.logAction(AppAnalytics.ZABAD_SCREEN_VIEW)
         var previous = 0L
         while (true) withInfiniteAnimationFrameNanos { now ->
             if (previous != 0L) {
@@ -56,7 +61,15 @@ fun ZabadScreen(onBack: () -> Unit, viewModel: ZabadChallengeViewModel = koinVie
     DisposableEffect(Unit) { onDispose { viewModel.onScreenLeft() } }
 
     val sea = calculateZabadSea(state.elapsedSinceWashMillis.milliseconds)
-    Box(Modifier.fillMaxSize().background(Color(0xFF04121C)).clickable { if (!state.isWashing) viewModel.onZabadTap() }) {
+    Box(Modifier.fillMaxSize().background(Color(0xFF04121C)).clickable {
+        if (!state.isWashing) {
+            viewModel.onZabadTap()
+            analyticsManager.logAction(
+                AppAnalytics.ZABAD_TAP,
+                mapOf(AppAnalytics.PARAM_COUNT to (state.todayCount + 1).toString()),
+            )
+        }
+    }) {
         Canvas(Modifier.fillMaxSize()) { drawZabadSea(sea, phase, washProgress) }
         IconButton(onClick = onBack, modifier = Modifier.statusBarsPadding().padding(12.dp).align(Alignment.TopStart)) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color(0xFFEAF6F4))
@@ -73,7 +86,10 @@ fun ZabadScreen(onBack: () -> Unit, viewModel: ZabadChallengeViewModel = koinVie
         }
         Column(Modifier.fillMaxWidth().padding(28.dp).navigationBarsPadding().align(Alignment.BottomCenter), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(stringResource(Res.string.zabad_tap_hint), color = Color(0xB3EAF6F4), textAlign = TextAlign.Center, fontSize = 13.sp)
-            TextButton(onClick = viewModel::showManualZabadSheet) { Text(stringResource(Res.string.manual_zabad_title), color = Color(0xFF2ED3C4)) }
+            TextButton(onClick = {
+                analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_ZABAD)
+                viewModel.showManualZabadSheet()
+            }) { Text(stringResource(Res.string.manual_zabad_title), color = Color(0xFF2ED3C4)) }
         }
         if (state.isWashing) Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(stringResource(Res.string.zabad_verdict_title), color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold)
