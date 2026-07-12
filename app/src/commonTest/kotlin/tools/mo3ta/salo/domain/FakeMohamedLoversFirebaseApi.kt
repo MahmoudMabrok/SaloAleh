@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flowOf
 import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseApi
+import tools.mo3ta.salo.data.firebase.ReferralStats
 
 open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
 
@@ -112,4 +113,14 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
 
     override suspend fun writeNickname(roundKey: String, uid: String, nickname: String): Result<Unit> =
         Result.success(Unit)
+
+    override suspend fun writeReferralCode(uid: String, code: String): Result<Unit> = Result.success(Unit)
+
+    override suspend fun lookupReferralCode(code: String): Result<String?> = Result.success(null)
+
+    override suspend fun applyReferral(referrerUid: String, referredUid: String): Result<Unit> =
+        Result.success(Unit)
+
+    override suspend fun fetchReferralStats(code: String): Result<ReferralStats> =
+        Result.success(ReferralStats(referralCount = 0, salawatTotal = 0L))
 }

@@ -3,12 +3,12 @@ package tools.mo3ta.salo.ui.ghars
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.withInfiniteAnimationFrameNanos
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -17,11 +17,19 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.cos
@@ -31,12 +39,14 @@ import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
+import androidx.compose.ui.graphics.Canvas as GraphicsCanvas
 
 // ---- palette (dawn over the grove) ----
 private val PALM = Color(0xFF0B2A22)
 private val FROND = Color(0xFF3E8F63)
 private val DATE = Color(0xFFC4762A)
 private val GOLD = Color(0xFFF5D97A)
+private val SOIL_SHADOW = Color(0xFF160C07)
 
 // Sky stops as fractions of the sky band (0 = top of screen, 1 = horizon).
 private val SKY_STOPS: Array<Pair<Float, Color>> = arrayOf(
@@ -48,6 +58,49 @@ private val SKY_STOPS: Array<Pair<Float, Color>> = arrayOf(
 )
 
 private const val BASE_H = 168f
+private const val TRUNK_STEPS = 7
+
+/**
+ * Logical height (dp) kept clear at the foot of the canvas so the front row is planted
+ * above the tasbeeh overlay instead of behind it. The mockup reserved its in-canvas dock
+ * (`nr = H - SHEET_H - 16`); here the sheet lives outside the canvas, so we only reserve
+ * the tasbeeh + hint block that floats over the grove.
+ */
+private const val FOREGROUND_RESERVE = 140f
+
+private const val GROW_MS = 1500
+private const val BURST_MS = 1000
+private const val RECEDE_MS = 1600
+
+/**
+ * Everything the renderer reuses across frames.
+ *
+ * The grove is fill-heavy: at full size the crowns overlap into a canopy that covers most of
+ * the screen, so a repaint is tens of millions of shaded pixels. The old canvas paid that
+ * every single frame, forever, to animate a ~1.3° sway — plus ~700 fresh `Path`/`Brush`
+ * objects per frame. The sway is gone (nothing animates between taps, so the canvas now
+ * issues no frames at all when idle) and what still gets drawn reuses the buffers below.
+ */
+private class GroveScratch {
+    // The backdrop (sky, stars, sun, ground, tree-line) only changes when the canvas resizes
+    // or a grove completes, so it is rasterised once and blitted after that.
+    var backdrop: ImageBitmap? = null
+    var backdropW = 0
+    var backdropH = 0
+    var backdropGroves = -1
+
+    val trunk = Path()
+    val frond = Path()
+    val spine = Path()
+    val leftX = FloatArray(TRUNK_STEPS + 1)
+    val leftY = FloatArray(TRUNK_STEPS + 1)
+    val rightX = FloatArray(TRUNK_STEPS + 1)
+    val rightY = FloatArray(TRUNK_STEPS + 1)
+
+    // One soil-shadow brush per depth row: it is drawn in the palm's local space and moved
+    // into place with translate(), so the same shader serves every palm in the row.
+    val soilShadow = arrayOfNulls<Brush>(ROW_CAPACITY.size)
+}
 
 /**
  * The whole signature: a grove drawn palm by palm at first light. Only Path/arc/oval and
@@ -60,43 +113,64 @@ fun PalmGroveCanvas(
     modifier: Modifier = Modifier,
     reduceMotion: Boolean = false,
 ) {
-    val grow = remember { Animatable(1f) }
+    // A brand-new Animatable per tap, born at 0. Reusing one across taps meant it still held
+    // 1f from the last growth when the new palm first painted, so the palm flashed full-size
+    // for a frame before snapTo(0f) landed and it started growing again.
+    val grow = remember(count, reduceMotion) { Animatable(if (reduceMotion) 1f else 0f) }
     val burst = remember { Animatable(0f) }
     val recede = remember { Animatable(0f) }
-    var timePhase by remember { mutableFloatStateOf(0f) }
+    val scratch = remember { GroveScratch() }
+    var recedeTrigger by remember { mutableIntStateOf(0) }
 
     // Every tap sprouts the newest palm and bursts the soil; a grove-completing tap
-    // also sends the finished grove receding to the horizon.
-    LaunchedEffect(count) {
+    // also sends the finished grove receding to the horizon. Between taps nothing animates,
+    // so the canvas issues no frames at all — see [GroveScratch] on why the old sway clock
+    // (which repainted every palm 60x a second, forever) had to go.
+    LaunchedEffect(count, reduceMotion) {
         if (count <= 0) return@LaunchedEffect
         if (reduceMotion) {
-            grow.snapTo(1f); burst.snapTo(0f); recede.snapTo(0f)
+            burst.snapTo(0f)
             return@LaunchedEffect
         }
-        launch { grow.snapTo(0f); grow.animateTo(1f, tween(620, easing = LinearEasing)) }
-        launch { burst.snapTo(1f); burst.animateTo(0f, tween(700, easing = LinearEasing)) }
-        if (completesGrove(count)) {
-            launch { recede.snapTo(1f); recede.animateTo(0f, tween(1200, easing = LinearEasing)) }
-        }
+        launch { grow.animateTo(1f, tween(GROW_MS, easing = LinearEasing)) }
+        launch { burst.snapTo(1f); burst.animateTo(0f, tween(BURST_MS, easing = LinearEasing)) }
+        if (completesGrove(count)) recedeTrigger++
     }
 
-    // Continuous sway clock (delta-time driven, clamped — never per-frame constants).
-    LaunchedEffect(reduceMotion) {
-        if (reduceMotion) return@LaunchedEffect
-        var previous = 0L
-        while (true) withInfiniteAnimationFrameNanos { now ->
-            if (previous != 0L) {
-                val dt = ((now - previous) / 1_000_000_000f).coerceAtMost(0.05f)
-                timePhase += dt
-            }
-            previous = now
+    // The recede has to outlive the tap that started it. Run inside the effect above and the
+    // very next tap cancels it mid-flight, stranding `recede` at whatever value it had reached —
+    // and a stranded recede paints the finished grove on top of the new one, forever.
+    LaunchedEffect(recedeTrigger, reduceMotion) {
+        if (recedeTrigger == 0 || reduceMotion) {
+            recede.snapTo(0f)
+            return@LaunchedEffect
         }
+        recede.snapTo(1f)
+        recede.animateTo(0f, tween(RECEDE_MS, easing = LinearEasing))
     }
 
-    Canvas(modifier) {
-        drawGrove(count, grow.value, burst.value, recede.value, timePhase, reduceMotion)
+    // Only the sprouting palm changes while it grows — but it has to stay correctly interleaved
+    // with the grove, since a palm sprouting in a back row must be painted *under* the rows in
+    // front of it. So the scene is cut into three layers around it: everything drawn before it,
+    // the palm itself, and everything drawn after it. The two grove layers depend only on
+    // `count`, so during the 1.5s of growth they are never re-recorded — they sit in cached
+    // compositing layers and are simply re-composited, while the live layer redraws one palm.
+    Box(modifier) {
+        Canvas(Modifier.matchParentSize().offscreenLayer()) {
+            drawGroveLayer(count, front = false, scratch = scratch)
+        }
+        Canvas(Modifier.matchParentSize()) {
+            drawLiveLayer(count, grow.value, burst.value, recede.value, scratch)
+        }
+        Canvas(Modifier.matchParentSize().offscreenLayer()) {
+            drawGroveLayer(count, front = true, scratch = scratch)
+        }
     }
 }
+
+/** Keeps the layer's painted output in its own buffer so an unchanged layer is re-composited, not redrawn. */
+private fun Modifier.offscreenLayer(): Modifier =
+    graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
 
 private fun mix(a: Color, b: Color, t: Float): Color = lerp(a, b, t.coerceIn(0f, 1f))
 
@@ -116,19 +190,230 @@ private fun skyAt(t: Float): Color {
     return SKY_STOPS.last().second
 }
 
-private fun DrawScope.drawGrove(
+private fun horizonY(h: Float): Float = h * 0.545f
+
+/** Near/foreground soil line — where the front row is planted. */
+private fun soilY(h: Float): Float = h - FOREGROUND_RESERVE
+
+/**
+ * The mockup draws in CSS pixels (`g.setTransform(dpr, …)`), so every constant in this file
+ * is a logical dp. Scaling the scene by [DrawScope.density] — and measuring the canvas in the
+ * same logical units — is what keeps a palm the size it was designed to be instead of
+ * shrinking it by the device's pixel ratio.
+ */
+/**
+ * The settled grove, split at the sprouting palm.
+ *
+ * Palms paint back row first so the front row overlaps it. The sprouting palm is always the last
+ * one in its own row, so everything that must sit *behind* it is "the rows further back, plus the
+ * older palms of its own row" ([front] = false) and everything that must sit *in front* of it is
+ * "the rows nearer the viewer" ([front] = true). Neither half reads the growth animation, so
+ * neither is re-recorded while a palm grows.
+ */
+private fun DrawScope.drawGroveLayer(count: Int, front: Boolean, scratch: GroveScratch) {
+    val wPx = size.width.toInt()
+    val hPx = size.height.toInt()
+    if (wPx <= 0 || hPx <= 0) return
+
+    if (!front) drawBackdropImage(count, scratch)
+
+    scale(density, density, pivot = Offset.Zero) {
+        val w = size.width / density
+        val h = size.height / density
+        val g = GroveGeometry(w, h)
+        val shown = shownPalms(count)
+        if (shown == 0) {
+            if (front) drawForegroundShadow(g, w, h)
+            return@scale
+        }
+        val start = groveStartIndex(count)
+        val newest = shown - 1
+        val newestBand = rowOfSlot(newest)
+        val take = rowOccupancy(shown)
+
+        // far rows first, front row last
+        for (band in take.indices.reversed()) {
+            if (take[band] == 0) continue
+            val inFrontOfSprout = band < newestBand
+            if (inFrontOfSprout != front) continue
+            val lo = rowStart(band)
+            // the sprouting palm itself belongs to the live layer, never to a cached one
+            val hi = if (band == newestBand) newest else lo + take[band]
+            for (j in lo until hi) {
+                drawPlantedPalm(g, j, start, band, 1f, scratch)
+            }
+        }
+        if (front) drawForegroundShadow(g, w, h)
+    }
+}
+
+/** The sprouting palm, its soil burst, and a completed grove receding to the horizon. */
+private fun DrawScope.drawLiveLayer(
     count: Int,
     grow: Float,
     burst: Float,
     recede: Float,
-    timePhase: Float,
-    reduceMotion: Boolean,
+    scratch: GroveScratch,
 ) {
-    val w = size.width
-    val h = size.height
-    val hz = h * 0.545f            // horizon line
-    val nr = h - 16f               // near/foreground soil line (the sand sheet sits below)
-    val margin = w * 0.04f
+    if (size.width <= 0f || size.height <= 0f) return
+    scale(density, density, pivot = Offset.Zero) {
+        val w = size.width / density
+        val h = size.height / density
+        val g = GroveGeometry(w, h)
+        val shown = shownPalms(count)
+        if (shown == 0) return@scale
+        val start = groveStartIndex(count)
+        val newest = shown - 1
+        val band = rowOfSlot(newest)
+
+        // ---- the grove just completed, receding into the tree-line (never erased, just distant) ----
+        if (recede > 0f) {
+            val rc = recede // 1 -> 0
+            val pStart = start - GROVE_SIZE
+            val pTake = rowOccupancy(GROVE_SIZE)
+            val paint = Paint().apply { alpha = min(1f, rc * 1.4f) }
+            drawContext.canvas.saveLayer(Rect(0f, 0f, w, h), paint)
+            for (b in ROW_CAPACITY.indices.reversed()) {
+                val pby = g.hz + (g.nr - g.hz) * rowScale(b) * (0.10f + 0.90f * rc)
+                val ps = rowScale(b) * (0.16f + 0.84f * rc)
+                val phz = min(0.9f, (1f - HAZE_FALLOFF.pow(b)) + (1f - rc) * 0.75f)
+                val psky = skyAt(((pby - 56f) / g.hz).coerceIn(0f, 1f))
+                val plo = rowStart(b)
+                for (j2 in plo until plo + pTake[b]) {
+                    drawPalm(g.slotX(j2, pStart), pby, ps, palmParams(pStart + j2), 1f, phz, psky, scratch)
+                }
+            }
+            drawContext.canvas.restore()
+        }
+
+        drawPlantedPalm(g, newest, start, band, grow, scratch)
+
+        // ---- planting burst — expanding soil ring + light bloom, at the palm just planted ----
+        if (burst > 0f) {
+            val bs = rowScale(band)
+            val bx = g.slotX(newest, start)
+            val by = g.baseY(band)
+            val rr = (10f + (1f - burst) * 54f) * bs
+            drawOval(
+                Color(0xFFFFE0B0).copy(alpha = burst * 0.6f),
+                topLeft = Offset(bx - rr, by - rr * 0.28f),
+                size = Size(2f * rr, 2f * rr * 0.28f),
+                style = Stroke(max(0.8f, 1.5f * bs)),
+            )
+            val bloom = 96f * bs
+            drawCircle(
+                Brush.radialGradient(
+                    0f to Color(0xFFFFE2AA).copy(alpha = burst * 0.26f),
+                    1f to Color(0xFFFFE2AA).copy(alpha = 0f),
+                    center = Offset(bx, by - 46f * bs),
+                    radius = bloom,
+                ),
+                bloom,
+                Offset(bx, by - 46f * bs),
+            )
+        }
+    }
+}
+
+/** Where the grove stands, in logical dp. */
+private class GroveGeometry(w: Float, h: Float) {
+    val hz = horizonY(h)
+    val nr = soilY(h)
+    private val margin = w * 0.04f
+    private val span = w - 2f * margin
+
+    fun slotX(j: Int, groveStart: Int): Float =
+        margin + palmXFraction(j, palmParams(groveStart + j).jitter) * span
+
+    fun baseY(band: Int): Float = hz + (nr - hz) * rowScale(band)
+}
+
+/** One palm at its fixed place in the grove, with the soil shadow it casts. */
+private fun DrawScope.drawPlantedPalm(
+    g: GroveGeometry,
+    slot: Int,
+    groveStart: Int,
+    band: Int,
+    grow: Float,
+    scratch: GroveScratch,
+) {
+    val by = g.baseY(band)
+    val s = rowScale(band)
+    val px = g.slotX(slot, groveStart)
+    val shadow = scratch.soilShadow[band] ?: Brush.radialGradient(
+        0f to SOIL_SHADOW.copy(alpha = 0.42f),
+        1f to SOIL_SHADOW.copy(alpha = 0f),
+        center = Offset.Zero,
+        radius = 18f * s,
+    ).also { scratch.soilShadow[band] = it }
+    if (grow > 0.001f) {
+        translate(px, by) {
+            drawOval(shadow, topLeft = Offset(-18f * s, -4.5f * s), size = Size(36f * s, 9f * s))
+        }
+    }
+    val sky = skyAt(((by - 56f) / g.hz).coerceIn(0f, 1f))
+    drawPalm(px, by, s, palmParams(groveStart + slot), grow, rowHaze(band), sky, scratch)
+}
+
+/** Grounds the tasbeeh so it reads over the soil. */
+private fun DrawScope.drawForegroundShadow(g: GroveGeometry, w: Float, h: Float) {
+    val top = g.nr - 130f
+    drawRect(
+        Brush.verticalGradient(
+            0.00f to Color(0xFF120B07).copy(alpha = 0f),
+            0.62f to Color(0xFF120B07).copy(alpha = 0.42f),
+            1.00f to Color(0xFF120B07).copy(alpha = 0.66f),
+            startY = top,
+            endY = h,
+        ),
+        topLeft = Offset(0f, top),
+        size = Size(w, h - top),
+    )
+}
+
+private fun DrawScope.drawBackdropImage(count: Int, scratch: GroveScratch) {
+    val wPx = size.width.toInt()
+    val hPx = size.height.toInt()
+    val groves = completedGroves(count)
+    val backdrop = scratch.backdrop.takeIf {
+        it != null && scratch.backdropW == wPx && scratch.backdropH == hPx && scratch.backdropGroves == groves
+    } ?: rasterizeBackdrop(wPx, hPx, density, layoutDirection, groves).also {
+        scratch.backdrop = it
+        scratch.backdropW = wPx
+        scratch.backdropH = hPx
+        scratch.backdropGroves = groves
+    }
+    drawImage(backdrop)
+}
+
+/**
+ * Sky, stars, sun, ground and tree-line, rasterised once. None of it reacts to the sway clock,
+ * so redrawing four full-screen gradients and forty-odd seeded shapes every frame was pure waste.
+ */
+private fun rasterizeBackdrop(
+    widthPx: Int,
+    heightPx: Int,
+    density: Float,
+    layoutDirection: LayoutDirection,
+    groves: Int,
+): ImageBitmap {
+    val image = ImageBitmap(widthPx, heightPx)
+    CanvasDrawScope().draw(
+        Density(density),
+        layoutDirection,
+        GraphicsCanvas(image),
+        Size(widthPx.toFloat(), heightPx.toFloat()),
+    ) {
+        scale(density, density, pivot = Offset.Zero) {
+            drawBackdrop(widthPx / density, heightPx / density, groves)
+        }
+    }
+    return image
+}
+
+private fun DrawScope.drawBackdrop(w: Float, h: Float, groves: Int) {
+    val hz = horizonY(h)
+    val nr = soilY(h)
 
     // ---- sky ----
     drawRect(
@@ -138,15 +423,13 @@ private fun DrawScope.drawGrove(
     )
 
     // ---- stars, fading with dawn ----
-    run {
-        for (i in 0 until 26) {
-            val r = Mulberry32((((i + 77).toLong() * 99991L) and 0xFFFFFFFFL).toInt())
-            val sx = r.next() * w
-            val sy = r.next() * hz * 0.52f
-            val sa = ((0.10f + r.next() * 0.42f) * (1f - sy / (hz * 0.62f))).coerceAtLeast(0f)
-            val rad = r.next() * 0.9f + 0.4f
-            drawCircle(Color(0xFFFFF4DC).copy(alpha = sa), rad, Offset(sx, sy))
-        }
+    for (i in 0 until 26) {
+        val r = Mulberry32((((i + 77).toLong() * 99991L) and 0xFFFFFFFFL).toInt())
+        val sx = r.next() * w
+        val sy = r.next() * hz * 0.52f
+        val sa = ((0.10f + r.next() * 0.42f) * (1f - sy / (hz * 0.62f))).coerceAtLeast(0f)
+        val rad = r.next() * 0.9f + 0.4f
+        drawCircle(Color(0xFFFFF4DC).copy(alpha = sa), rad, Offset(sx, sy))
     }
 
     // ---- sun bloom + disc (radial gradients only) ----
@@ -187,11 +470,6 @@ private fun DrawScope.drawGrove(
         size = Size(w, h - hz),
     )
 
-    val n = count
-    val groves = completedGroves(n)
-    val shown = shownPalms(n)
-    val start = groveStartIndex(n)
-
     // ---- tree-line: every grove finished today, hazed onto the horizon as distant canopy ----
     if (groves > 0) {
         val dens = min(1f, log10(groves * 6f + 1f) / 2.0f)
@@ -219,101 +497,6 @@ private fun DrawScope.drawGrove(
             size = Size(w, 3.5f),
         )
     }
-
-    // ---- band occupancy — row 0 always holds the most recent palms ----
-    val take = rowOccupancy(shown)
-    fun slotX(j: Int, band: Int): Float {
-        val frac = palmXFraction(j, band, palmParams(start + j).jitter)
-        return margin + frac * (w - 2f * margin)
-    }
-    fun drawBand(band: Int) {
-        if (band >= take.size || take[band] == 0) return
-        val by = hz + (nr - hz) * rowScale(band)
-        val s = rowScale(band)
-        val haze = rowHaze(band)
-        val sky = skyAt(((by - 56f) / hz).coerceIn(0f, 1f))
-        val lo = rowStart(take, shown, band)
-        val hi = lo + take[band]
-        for (j in lo until hi) {
-            val p = palmParams(start + j)
-            val px = slotX(j, band)
-            val g = if (j == shown - 1) grow else 1f
-            // soil shadow under the palm
-            drawOval(
-                Brush.radialGradient(
-                    0f to Color(0xFF160C07).copy(alpha = 0.42f),
-                    1f to Color(0xFF160C07).copy(alpha = 0f),
-                    center = Offset(px, by),
-                    radius = 18f * s,
-                ),
-                topLeft = Offset(px - 18f * s, by - 4.5f * s),
-                size = Size(36f * s, 9f * s),
-            )
-            drawPalm(px, by, s, p, g, timePhase, haze, sky, reduceMotion)
-        }
-    }
-
-    // ---- the grove just completed, receding into the tree-line (never erased, just distant) ----
-    if (recede > 0f) {
-        val rc = recede // 1 -> 0
-        val a = min(1f, rc * 1.4f)
-        val pStart = start - GROVE_SIZE
-        val pTake = rowOccupancy(GROVE_SIZE)
-        val paint = Paint().apply { alpha = a }
-        drawContext.canvas.saveLayer(Rect(0f, 0f, w, h), paint)
-        for (band in ROW_CAPACITY.indices.reversed()) {
-            val pby = hz + (nr - hz) * rowScale(band) * (0.10f + 0.90f * rc)
-            val ps = rowScale(band) * (0.16f + 0.84f * rc)
-            val phz = min(0.9f, (1f - HAZE_FALLOFF.pow(band)) + (1f - rc) * 0.75f)
-            val psky = skyAt(((pby - 56f) / hz).coerceIn(0f, 1f))
-            var plo = 0
-            for (q in 0 until band) plo += pTake[q]
-            for (j2 in plo until plo + pTake[band]) {
-                val pp = palmParams(pStart + j2)
-                drawPalm(slotX(j2, band), pby, ps, pp, 1f, timePhase, phz, psky, reduceMotion)
-            }
-        }
-        drawContext.canvas.restore()
-    }
-
-    // far rows first, front row last
-    for (band in take.indices.reversed()) drawBand(band)
-
-    // ---- planting burst — expanding soil ring + light bloom ----
-    if (burst > 0f && shown > 0) {
-        val bx = slotX(shown - 1, 0)
-        val bp = 1f - burst
-        val rr = 10f + bp * 54f
-        drawOval(
-            Color(0xFFFFE0B0).copy(alpha = burst * 0.6f),
-            topLeft = Offset(bx - rr, nr - rr * 0.28f),
-            size = Size(2f * rr, 2f * rr * 0.28f),
-            style = Stroke(1.5f),
-        )
-        drawCircle(
-            Brush.radialGradient(
-                0f to Color(0xFFFFE2AA).copy(alpha = burst * 0.26f),
-                1f to Color(0xFFFFE2AA).copy(alpha = 0f),
-                center = Offset(bx, nr - 46f),
-                radius = 96f,
-            ),
-            96f,
-            Offset(bx, nr - 46f),
-        )
-    }
-
-    // ---- foreground shadow — grounds the tasbeeh so it reads over the soil ----
-    drawRect(
-        Brush.verticalGradient(
-            0.00f to Color(0xFF120B07).copy(alpha = 0f),
-            0.62f to Color(0xFF120B07).copy(alpha = 0.42f),
-            1.00f to Color(0xFF120B07).copy(alpha = 0.66f),
-            startY = nr - 130f,
-            endY = h,
-        ),
-        topLeft = Offset(0f, nr - 130f),
-        size = Size(w, h - (nr - 130f)),
-    )
 }
 
 /** One palm — a tapered trunk, arching fronds, and (on a grove-completing palm) date clusters. */
@@ -323,16 +506,14 @@ private fun DrawScope.drawPalm(
     s: Float,
     p: PalmParams,
     grow: Float,
-    timePhase: Float,
     haze: Float,
     sky: Color,
-    reduceMotion: Boolean,
+    scratch: GroveScratch,
 ) {
     if (grow <= 0.001f) return
     val e = easeOutCubic(grow)
     val h = BASE_H * s * p.heightScale * e
-    val sway = if (reduceMotion) 0f else sin(timePhase * 0.7f + p.swayPhase) * 0.022f
-    val lean = p.lean + sway
+    val lean = p.lean
 
     val dark = mix(PALM, sky, haze)
     val lit = mix(FROND, sky, min(0.88f, haze + 0.06f))
@@ -344,11 +525,12 @@ private fun DrawScope.drawPalm(
     val cy = by - h * 0.5f
     val wB = max(0.8f, 3.9f * s)
     val wT = max(0.5f, 2.1f * s)
-    val steps = 7
-    val left = ArrayList<Offset>(steps + 1)
-    val right = ArrayList<Offset>(steps + 1)
-    for (i in 0..steps) {
-        val u = i.toFloat() / steps
+    val leftX = scratch.leftX
+    val leftY = scratch.leftY
+    val rightX = scratch.rightX
+    val rightY = scratch.rightY
+    for (i in 0..TRUNK_STEPS) {
+        val u = i.toFloat() / TRUNK_STEPS
         val iu = 1f - u
         val px = iu * iu * x + 2f * iu * u * cx + u * u * tx
         val py = iu * iu * by + 2f * iu * u * cy + u * u * ty
@@ -358,15 +540,17 @@ private fun DrawScope.drawPalm(
         val nx = -dy / m
         val ny = dx / m
         val ww = wB + (wT - wB) * u
-        left.add(Offset(px + nx * ww, py + ny * ww))
-        right.add(Offset(px - nx * ww, py - ny * ww))
+        leftX[i] = px + nx * ww
+        leftY[i] = py + ny * ww
+        rightX[i] = px - nx * ww
+        rightY[i] = py - ny * ww
     }
-    val trunk = Path().apply {
-        moveTo(left[0].x, left[0].y)
-        for (i in 1..steps) lineTo(left[i].x, left[i].y)
-        for (i in steps downTo 0) lineTo(right[i].x, right[i].y)
-        close()
-    }
+    val trunk = scratch.trunk
+    trunk.rewind()
+    trunk.moveTo(leftX[0], leftY[0])
+    for (i in 1..TRUNK_STEPS) trunk.lineTo(leftX[i], leftY[i])
+    for (i in TRUNK_STEPS downTo 0) trunk.lineTo(rightX[i], rightY[i])
+    trunk.close()
     drawPath(
         trunk,
         Brush.linearGradient(
@@ -381,12 +565,23 @@ private fun DrawScope.drawPalm(
     if (s > 0.32f) {
         val ringColor = mix(dark, Color.White, 0.16f).copy(alpha = 0.5f)
         val ringW = max(0.5f, 0.9f * s)
-        for (i in 1 until steps) drawLine(ringColor, left[i], right[i], strokeWidth = ringW)
+        for (i in 1 until TRUNK_STEPS) {
+            drawLine(
+                ringColor,
+                Offset(leftX[i], leftY[i]),
+                Offset(rightX[i], rightY[i]),
+                strokeWidth = ringW,
+            )
+        }
     }
 
     // crown — thin arching fronds, heavy droop on the outer ones (date palm, not papyrus)
     val fl = h * 0.46f * (0.30f + 0.70f * e)
     val spread = 0.22f + (1f - 0.22f) * e
+    val frond = scratch.frond
+    val spine = scratch.spine
+    val drawSpines = s > 0.42f
+    val spineWidth = max(0.35f, 0.6f * s)
     for (k in 0 until p.frondCount) {
         val u2 = if (p.frondCount == 1) 0.5f else k.toFloat() / (p.frondCount - 1)
         val base = -PI_F * 1.04f + u2 * PI_F * 1.08f
@@ -401,19 +596,17 @@ private fun DrawScope.drawPalm(
         val w2 = max(0.6f, len * 0.062f)
         val up = max(0f, -sin(ang))
         val col = mix(dark, lit, 0.14f + 0.52f * up)
-        val frond = Path().apply {
-            moveTo(tx, ty)
-            quadraticBezierTo(mx, my - w2, ex, ey)
-            quadraticBezierTo(mx, my + w2, tx, ty)
-            close()
-        }
+        frond.rewind()
+        frond.moveTo(tx, ty)
+        frond.quadraticBezierTo(mx, my - w2, ex, ey)
+        frond.quadraticBezierTo(mx, my + w2, tx, ty)
+        frond.close()
         drawPath(frond, col)
-        if (s > 0.42f) {
-            val spine = Path().apply {
-                moveTo(tx, ty)
-                quadraticBezierTo(mx, my, ex, ey)
-            }
-            drawPath(spine, mix(col, Color.Black, 0.30f).copy(alpha = 0.5f), style = Stroke(max(0.35f, 0.6f * s)))
+        if (drawSpines) {
+            spine.rewind()
+            spine.moveTo(tx, ty)
+            spine.quadraticBezierTo(mx, my, ex, ey)
+            drawPath(spine, mix(col, Color.Black, 0.30f).copy(alpha = 0.5f), style = Stroke(spineWidth))
         }
     }
 

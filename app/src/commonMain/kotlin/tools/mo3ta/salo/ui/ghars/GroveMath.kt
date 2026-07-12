@@ -74,7 +74,8 @@ fun completesGrove(count: Int): Boolean = count > 1 && (count - 1) % GROVE_SIZE 
 
 /**
  * How many palms sit in each depth row (nearest first) for [shown] visible palms.
- * Row 0 (front) always holds the most recent palms; older palms recede backward.
+ * Rows fill front-first: a palm is planted at the end of the current row, and once that
+ * row is full the next palm opens the row behind it. A planted palm never moves again.
  */
 fun rowOccupancy(shown: Int): IntArray {
     val take = IntArray(ROW_CAPACITY.size)
@@ -88,12 +89,25 @@ fun rowOccupancy(shown: Int): IntArray {
     return take
 }
 
-/** Index of the first (lowest, oldest) shown-slot held by row [band], given [take]. */
-fun rowStart(take: IntArray, shown: Int, band: Int): Int {
+/** Index of the first slot held by row [band] — fixed, because rows fill front-first. */
+fun rowStart(band: Int): Int {
     var s = 0
-    for (q in 0..band) s += take[q]
-    return shown - s
+    for (q in 0 until band) s += ROW_CAPACITY[q]
+    return s
 }
+
+/** The depth row that slot [j] (0-based within the grove) stands in. */
+fun rowOfSlot(j: Int): Int {
+    var acc = 0
+    for (b in ROW_CAPACITY.indices) {
+        acc += ROW_CAPACITY[b]
+        if (j < acc) return b
+    }
+    return ROW_CAPACITY.lastIndex
+}
+
+/** Where slot [j] sits inside its own row, counting from the row's left edge. */
+fun slotInRow(j: Int): Int = j - rowStart(rowOfSlot(j))
 
 /** Depth scale of row [band] — front row is 1, each row back multiplies by the falloff. */
 fun rowScale(band: Int): Float = ROW_DEPTH_FALLOFF.pow(band)
@@ -102,12 +116,13 @@ fun rowScale(band: Int): Float = ROW_DEPTH_FALLOFF.pow(band)
 fun rowHaze(band: Int): Float = min(HAZE_MAX, 1f - HAZE_FALLOFF.pow(band))
 
 /**
- * Fraction (0..1) of the usable width where the palm at shown-slot [j] in row [band]
- * stands. Rows are staggered into a quincunx like a real date grove.
+ * Fraction (0..1) of the usable width where the palm at slot [j] stands. Rows are
+ * staggered into a quincunx like a real date grove.
  * The renderer maps this to a pixel x via: margin + fraction * (width - 2*margin).
  */
-fun palmXFraction(j: Int, band: Int, jitter: Float): Float {
+fun palmXFraction(j: Int, jitter: Float): Float {
+    val band = rowOfSlot(j)
     val cap = ROW_CAPACITY[band]
     val stagger = (band % 2) * 0.5f
-    return ((j % cap) + 0.5f + stagger) / cap + jitter / cap * 0.8f
+    return (slotInRow(j) + 0.5f + stagger) / cap + jitter / cap * 0.8f
 }

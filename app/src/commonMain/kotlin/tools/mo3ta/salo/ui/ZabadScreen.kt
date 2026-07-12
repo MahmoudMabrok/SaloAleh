@@ -1,5 +1,6 @@
 package tools.mo3ta.salo.ui
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.withInfiniteAnimationFrameNanos
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -13,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -50,6 +52,7 @@ fun ZabadScreen(onBack: () -> Unit, viewModel: ZabadChallengeViewModel = koinVie
     var phase by remember { mutableFloatStateOf(0f) }
     var washProgress by remember { mutableFloatStateOf(0f) }
     val ripples = remember { mutableStateListOf<Ripple>() }
+    val surges = remember { mutableStateListOf<Surge>() }
 
     LaunchedEffect(Unit) {
         viewModel.onScreenEntered()
@@ -64,6 +67,10 @@ fun ZabadScreen(onBack: () -> Unit, viewModel: ZabadChallengeViewModel = koinVie
                     ripples.forEach { it.age += dt * 2.4f }
                     ripples.removeAll { it.age >= 1f }
                 }
+                if (surges.isNotEmpty()) {
+                    surges.forEach { it.age += dt * 1.5f }
+                    surges.removeAll { it.age >= 1f }
+                }
             }
             previous = now
         }
@@ -74,6 +81,8 @@ fun ZabadScreen(onBack: () -> Unit, viewModel: ZabadChallengeViewModel = koinVie
     DisposableEffect(Unit) { onDispose { viewModel.onScreenLeft() } }
 
     val sea = calculateZabadSea(state.elapsedSinceWashMillis.milliseconds)
+    // the verdict needs the screen to itself — the counter would otherwise print through it
+    val counterAlpha by animateFloatAsState(if (state.isWashing) 0f else 1f, label = "counterAlpha")
     Box(
         Modifier
             .fillMaxSize()
@@ -87,19 +96,23 @@ fun ZabadScreen(onBack: () -> Unit, viewModel: ZabadChallengeViewModel = koinVie
                             AppAnalytics.ZABAD_TAP,
                             mapOf(AppAnalytics.PARAM_COUNT to (s.todayCount + 1).toString()),
                         )
-                        if (size.width > 0) ripples.add(Ripple(offset.x / size.width.toFloat()))
+                        if (size.width > 0) {
+                            val xFrac = offset.x / size.width.toFloat()
+                            ripples.add(Ripple(xFrac))
+                            surges.add(Surge(xFrac))
+                        }
                     }
                 }
             },
     ) {
-        Canvas(Modifier.fillMaxSize()) { drawZabadSea(sea, phase, washProgress, ripples) }
+        Canvas(Modifier.fillMaxSize()) { drawZabadSea(sea, phase, washProgress, ripples, surges) }
         IconButton(onClick = onBack, modifier = Modifier.statusBarsPadding().padding(12.dp).align(Alignment.TopStart)) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color(0xFFEAF6F4))
         }
         IconButton(onClick = viewModel::onLeaderboardOpened, modifier = Modifier.statusBarsPadding().padding(12.dp).align(Alignment.TopEnd)) {
             Icon(Icons.Default.EmojiEvents, null, tint = Color(0xFFE9C46A))
         }
-        Column(Modifier.fillMaxWidth().padding(horizontal = 28.dp).align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 28.dp).align(Alignment.Center).alpha(counterAlpha), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(stringResource(Res.string.zabad_phrase), color = Color(0xFFEAF6F4), fontSize = 28.sp, fontWeight = FontWeight.Bold, fontFamily = arefRuqaaFamily(), textAlign = TextAlign.Center, lineHeight = 42.sp)
             Spacer(Modifier.height(12.dp))
             Text(
@@ -159,6 +172,11 @@ private class Ripple(val xFrac: Float) {
     var age: Float = 0f
 }
 
+/** A tap-triggered swell in the waterline itself, spreading out from [xFrac] as [age] runs 0→1. */
+private class Surge(val xFrac: Float) {
+    var age: Float = 0f
+}
+
 /** Deterministic LCG so stars/silt/spray are stable frame-to-frame (mirrors the mockup's seeded rng). */
 private class Lcg(seed: Int) {
     private var s: Long = (seed.toLong() % 2147483647L).let { if (it <= 0L) it + 2147483646L else it }
@@ -172,29 +190,59 @@ private fun ease(t: Float): Float =
     if (t < .5f) 2f * t * t else 1f - (-2f * t + 2f) * (-2f * t + 2f) / 2f
 
 /**
- * Full-bleed sea whose level, foam and murk are driven by [sea] (time since the last wash);
- * [wash] runs 0→1 during the wave that clears the sins at 100. Ported from `docs/zabad-sea.html`.
+ * Full-bleed sea. [sea] is sampled once per screen entry (and again after each wash), so the level,
+ * foam and murk hold still while the user taps; [wash] runs 0→1 during the wave that takes over at
+ * 100. Taps add [ripples] and [surges] — surface detail only, they never move the waterline.
+ * Ported from `docs/zabad-sea-v2.html`.
+ *//**
+ * Full-bleed sea. [sea] is sampled once per screen entry (and again after each wash), so the level,
+ * foam and murk hold still while the user taps; [wash] runs 0→1 during the wave that takes over at
+ * 100. Taps add [ripples] and [surges] — surface detail only, they never move the waterline.
+ *
+ * Ported from `docs/zabad-sea-v2.html`, whose canvas is ~332 CSS px wide. A [DrawScope] measures in
+ * device pixels, so every length authored against the mockup is multiplied by [DrawScope.density]
+ * (and every wave frequency divided by it) — without that the whole sea draws ~3x too small and the
+ * waterline grows 3x too many ripples on a real phone.
  */
-private fun DrawScope.drawZabadSea(sea: ZabadSeaState, phase: Float, wash: Float, ripples: List<Ripple>) {
+private fun DrawScope.drawZabadSea(
+    sea: ZabadSeaState,
+    phase: Float,
+    wash: Float,
+    ripples: List<Ripple>,
+    surges: List<Surge>,
+) {
     val w = size.width
     val h = size.height
+    val dp = density // px per dp: the mockup's units → this screen's units
     val murkT = sea.murk
     val clarity = if (wash > 0f) ease(wash) else 0f
-    // water drains from its accumulated level back to the floor as the wave clears
+    // water drains from its frozen level back to the floor as the wave clears
     val base = h * (sea.waterLevel + (SEA_FLOOR - sea.waterLevel) * clarity)
     val halfPi = (PI / 2.0).toFloat()
 
-    // ---- surface geometry (a living waterline, plus the wash crest bump) ----
-    val amp = 2.4f + 1.9f * sin(phase * .55f) + murkT * 1.6f
-    val crestW = 150f
-    val crestX = if (wash > 0f) w + 100f - ease(wash) * (w + 240f) else -9999f
-    val crestH = if (wash > 0f) sin(wash * PI.toFloat()) * h * 0.15f else 0f
-    fun surf(x: Float) = base + sin(x * .030f + phase * 1.35f) * amp + sin(x * .012f - phase * .85f) * amp * .65f
+    // ---- surface geometry: three sine layers, the wash crest, and the bump each tap sends out ----
+    val amp = (2.6f + 1.9f * sin(phase * .55f) + murkT * 1.8f) * dp
+    val crestW = 150f * dp
+    val crestX = if (wash > 0f) w + 100f * dp - ease(wash) * (w + 240f * dp) else -9999f
+    val crestH = if (wash > 0f) sin(wash * PI.toFloat()) * h * 0.16f else 0f
+    fun surf(x: Float) = base +
+        sin(x * .030f / dp + phase * 1.35f) * amp +
+        sin(x * .012f / dp - phase * .85f) * amp * .65f +
+        sin(x * .061f / dp + phase * 2.1f) * amp * .22f
     fun surfW(x: Float): Float {
         var y = surf(x)
         if (wash > 0f) {
             val d = x - crestX
             if (d > -crestW && d < crestW) y -= crestH * cos((d / crestW) * halfPi)
+        }
+        for (surge in surges) {
+            val sx = surge.xFrac * w
+            val spread = (26f + surge.age * 190f) * dp
+            val d = abs(x - sx)
+            if (d < spread) {
+                val fall = cos((d / spread) * halfPi)
+                y -= 13f * dp * (1f - surge.age) * fall * fall
+            }
         }
         return y
     }
@@ -208,17 +256,30 @@ private fun DrawScope.drawZabadSea(sea: ZabadSeaState, phase: Float, wash: Float
     repeat(26) {
         val x = sr.next() * w
         val y = sr.next() * h * .42f
-        val s = sr.next() * 1.2f + .4f
+        val r = (sr.next() * 1.2f + .4f) * dp
         val tw = sr.next() * 6.28f
         val a = (.22f + .32f * abs(sin(phase * .7f + tw))) * (1f - murkT * .55f)
-        drawCircle(Color(0xFFEAF6F4).copy(alpha = a.coerceIn(0f, 1f)), s, Offset(x, y))
+        drawCircle(Color(0xFFEAF6F4).copy(alpha = a.coerceIn(0f, 1f)), r, Offset(x, y))
     }
 
     // ---- moon: dims as the sea rises, blazes when it clears ----
     val moonC = Offset(w * .79f, h * .155f)
-    drawCircle(Color(0xFFE9C46A).copy(alpha = (.10f + clarity * .20f).coerceIn(0f, 1f)), 27f, moonC)
+    drawCircle(Color(0xFFE9C46A).copy(alpha = (.10f + clarity * .20f).coerceIn(0f, 1f)), 27f * dp, moonC)
     val moonA = (.55f - murkT * .35f) + clarity * .5f
-    drawCircle(Color(0xFFE9C46A).copy(alpha = moonA.coerceIn(.2f, 1f)), 9.5f, moonC)
+    drawCircle(Color(0xFFE9C46A).copy(alpha = moonA.coerceIn(.2f, 1f)), 9.5f * dp, moonC)
+
+    // ---- back swell: a slower wave behind the body, so the sea has depth, not one flat face ----
+    val swell = Path().apply {
+        moveTo(0f, h)
+        var x = 0f
+        while (x <= w) {
+            lineTo(x, base + 13f * dp + sin(x * .017f / dp - phase * .62f) * (amp * 1.5f + 3f * dp))
+            x += 6f
+        }
+        lineTo(w, h)
+        close()
+    }
+    drawPath(swell, Color(0xFF14414E).copy(alpha = (.55f + murkT * .25f).coerceIn(0f, 1f)))
 
     // ---- water body: gradient tracks murk (down) and clarity (up) ----
     val water = Path().apply {
@@ -235,20 +296,24 @@ private fun DrawScope.drawZabadSea(sea: ZabadSeaState, phase: Float, wash: Float
         water,
         Brush.verticalGradient(
             0f to top, .45f to mid, 1f to bottom,
-            startY = (base - 30f).coerceAtLeast(0f),
+            startY = (base - 30f * dp).coerceAtLeast(0f),
             endY = h,
         ),
     )
 
-    // ---- suspended silt: density tracks the clock, vanishes in the wash ----
+    // ---- suspended silt: density tracks the frozen murk, vanishes in the wash ----
     clipPath(water) {
         val gr = Lcg(99)
         val n = (14f + 34f * murkT).toInt()
         repeat(n) { i ->
             val x = gr.next() * w
-            val y = base + 14f + gr.next() * (h - base)
-            val r = 1.4f + gr.next() * 2f
-            drawCircle(Color(0xFF5C6B70).copy(alpha = (.30f * (1f - clarity)).coerceIn(0f, 1f)), r, Offset(x, y + sin(phase * .5f + i) * 2f))
+            val y = base + 14f * dp + gr.next() * (h - base)
+            val r = (1.4f + gr.next() * 2f) * dp
+            drawCircle(
+                Color(0xFF5C6B70).copy(alpha = (.30f * (1f - clarity)).coerceIn(0f, 1f)),
+                r,
+                Offset(x, y + sin(phase * .5f + i) * 2f * dp),
+            )
         }
     }
 
@@ -258,15 +323,40 @@ private fun DrawScope.drawZabadSea(sea: ZabadSeaState, phase: Float, wash: Float
         var x = 0f
         while (x <= w) { lineTo(x, surfW(x)); x += 4f }
     }
-    drawPath(surfaceLine, Color(0xFFEAF6F4).copy(alpha = (.30f + clarity * .45f).coerceIn(0f, 1f)), style = Stroke(width = 1.5f))
+    drawPath(
+        surfaceLine,
+        Color(0xFFEAF6F4).copy(alpha = (.30f + clarity * .45f).coerceIn(0f, 1f)),
+        style = Stroke(width = 1.5f * dp),
+    )
 
-    // ---- foam clumps = the sins: dark, drifting; swept out and dissolved into light by the wave ----
+    // ---- whitecaps: a lick of white wherever the surface is climbing steeply ----
+    run {
+        var x = 0f
+        while (x <= w) {
+            // normalised back to dp so the threshold means the same thing on every screen
+            val slope = (surfW(x + 5f * dp) - surfW(x - 5f * dp)) / dp
+            if (slope < -1.5f) {
+                val a = ((-slope - 1.5f) * .16f).coerceAtMost(.42f) * (1f - clarity * .5f)
+                drawCircle(
+                    Color(0xFFEAF6F4).copy(alpha = a.coerceIn(0f, 1f)),
+                    1.7f * dp,
+                    Offset(x, surfW(x) - 1f * dp),
+                )
+            }
+            x += 9f * dp
+        }
+    }
+
+    // ---- foam = the sins: dark rafts of scum lying on the waterline, swept out by the wave ----
     val driftScale = 1f + 2.4f * murkT
     val fr = Lcg(2024)
     val span = 0.94f
-    repeat(sea.foamCount) { i ->
-        val fx0 = .03f + fr.next() * span
-        val r = 5f + fr.next() * 8f
+    val flat = .46f // squashed: foam lies on the water, it does not billow above it
+    val n = sea.foamCount
+    repeat(n) { i ->
+        // stratified across the width, so a handful of clumps spread out instead of bunching up
+        val fx0 = .03f + ((i + fr.next()) / n) * span
+        val r = (10f + fr.next() * 14f) * dp
         val dir = if (fr.next() < .5f) -1f else 1f
         val speed = .0002f + fr.next() * .0004f
         val bob = fr.next() * 6.28f
@@ -277,24 +367,39 @@ private fun DrawScope.drawZabadSea(sea: ZabadSeaState, phase: Float, wash: Float
         val alpha = (1f - clarity)
         if (alpha <= 0f || fx < -.05f) return@repeat
         val px = fx * w
-        val py = surfW(px) - 3f + sin(phase * 1.15f + bob) * 1.6f
-        for (k in -1..1) {
-            val rr = r * (if (k == 0) 1f else .6f)
-            drawCircle(Color(0xFF5C6B70).copy(alpha = .86f * alpha), rr, Offset(px + k * r * .8f, py - rr * .35f))
-            drawCircle(Color(0xFFA3B6BB).copy(alpha = .45f * alpha), rr * .42f, Offset(px + k * r * .8f - rr * .25f, py - rr * .62f))
+        val py = surfW(px) - 2f * dp + sin(phase * 1.15f + bob) * 1.6f * dp
+        for (k in -1..1) { // three squashed lobes read as one ragged raft
+            val rx = r * (if (k == 0) 1f else .66f)
+            val ry = rx * flat
+            val cx = px + k * r * .78f
+            val cy = py - ry * .5f
+            drawOval(
+                Color(0xFF5C6B70).copy(alpha = .88f * alpha),
+                topLeft = Offset(cx - rx, cy - ry),
+                size = Size(rx * 2f, ry * 2f),
+            )
         }
-        if (clarity in 0.01f..0.99f) {
+        for (k in 0..4) { // bubbles catching the moon — this is what reads as scum, not cloud
+            val bx = px + (fr.next() - .5f) * r * 2.1f
+            val by = py - fr.next() * r * flat * 1.1f - 1f * dp
+            drawCircle(
+                Color(0xFFA3B6BB).copy(alpha = .50f * alpha),
+                (1f + fr.next() * 2.4f) * dp,
+                Offset(bx, by),
+            )
+        }
+        if (clarity in 0.01f..0.99f) { // it doesn't just vanish — it goes up as light
             for (k in 0..4) {
                 drawCircle(
                     Color(0xFFEAF6F4).copy(alpha = ((1f - clarity) * .75f).coerceIn(0f, 1f)),
-                    1.7f * (1f - clarity) + .5f,
-                    Offset(px + (k - 2) * 7f, py - clarity * 46f - k * 4f),
+                    (2.1f * (1f - clarity) + .5f) * dp,
+                    Offset(px + (k - 2) * 8f * dp, py - clarity * 52f * dp - k * 4f * dp),
                 )
             }
         }
     }
 
-    // ---- crest of the clearing wave, plus its spray ----
+    // ---- crest of the wave that takes over, plus its spray ----
     if (wash > 0f && crestX > -crestW && crestX < w + crestW) {
         val crest = Path()
         val x0 = (crestX - crestW).coerceAtLeast(0f)
@@ -302,12 +407,16 @@ private fun DrawScope.drawZabadSea(sea: ZabadSeaState, phase: Float, wash: Float
         var x = x0
         crest.moveTo(x0, surfW(x0))
         while (x <= x1) { crest.lineTo(x, surfW(x)); x += 2f }
-        drawPath(crest, Color(0xFFEAF6F4).copy(alpha = .95f), style = Stroke(width = 3.2f))
+        drawPath(crest, Color(0xFFEAF6F4).copy(alpha = .95f), style = Stroke(width = 3.2f * dp))
         val pr = Lcg(5)
         repeat(26) {
-            val sx = crestX - 70f + pr.next() * 190f
-            val sy = surfW(sx) - pr.next() * 30f
-            drawCircle(Color(0xFFEAF6F4).copy(alpha = (.2f + pr.next() * .55f).coerceIn(0f, 1f)), pr.next() * 2.1f + .5f, Offset(sx, sy))
+            val sx = crestX - 70f * dp + pr.next() * 190f * dp
+            val sy = surfW(sx) - pr.next() * 30f * dp
+            drawCircle(
+                Color(0xFFEAF6F4).copy(alpha = (.2f + pr.next() * .55f).coerceIn(0f, 1f)),
+                (pr.next() * 2.1f + .5f) * dp,
+                Offset(sx, sy),
+            )
         }
     }
 
@@ -315,13 +424,13 @@ private fun DrawScope.drawZabadSea(sea: ZabadSeaState, phase: Float, wash: Float
     for (r in ripples) {
         val cx = r.xFrac * w
         val cy = surfW(cx)
-        val rx = r.age * 72f
-        val ry = r.age * 11f
+        val rx = r.age * 72f * dp
+        val ry = r.age * 11f * dp
         drawOval(
             Color(0xFFEAF6F4).copy(alpha = ((1f - r.age) * .5f).coerceIn(0f, 1f)),
             topLeft = Offset(cx - rx, cy - ry),
             size = Size(rx * 2f, ry * 2f),
-            style = Stroke(width = 1.2f),
+            style = Stroke(width = 1.2f * dp),
         )
     }
 }

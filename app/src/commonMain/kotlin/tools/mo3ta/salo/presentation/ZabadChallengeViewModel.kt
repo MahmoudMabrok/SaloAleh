@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
@@ -66,16 +65,7 @@ class ZabadChallengeViewModel(
     fun onScreenEntered() {
         loadLeaderboard()
         val today = today()
-        viewModelScope.launch {
-            while (true) {
-                val lastWash = store.lastWashTimestamp()
-                _state.update { it.copy(
-                    elapsedSinceWashMillis = if (lastWash == 0L) 0L else (Clock.System.now().toEpochMilliseconds() - lastWash).coerceAtLeast(0L),
-                    roundsToday = store.roundsToday(today()),
-                ) }
-                delay(1_000)
-            }
-        }
+        sampleSea(today)
         viewModelScope.launch {
             val uid = sessionStore.getOrCreateUid()
 
@@ -272,6 +262,23 @@ class ZabadChallengeViewModel(
             .onFailure { error ->
                 _state.update { it.copy(errorMessage = error.message) }
             }
+    }
+
+    /**
+     * Read the silence behind the sea, once. Called on screen entry; a wash re-samples it by zeroing
+     * [ZabadChallengeUiState.elapsedSinceWashMillis] directly. Nothing else moves the water, so the
+     * level, foam and murk the user opens into are the ones they tap on.
+     */
+    private fun sampleSea(today: LocalDate) {
+        val lastWash = store.lastWashTimestamp()
+        _state.update {
+            it.copy(
+                elapsedSinceWashMillis =
+                    if (lastWash == 0L) 0L
+                    else (Clock.System.now().toEpochMilliseconds() - lastWash).coerceAtLeast(0L),
+                roundsToday = store.roundsToday(today),
+            )
+        }
     }
 
     /** Reaching the daily goal wins the day: the challenge badge count goes up by 1 (once per day). */

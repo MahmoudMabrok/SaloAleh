@@ -78,12 +78,47 @@ class GroveMathTest {
         assertEquals(GROVE_SIZE, ROW_CAPACITY.sum())
     }
 
-    @Test fun frontRowHoldsTheMostRecentPalms() {
-        // With 10 palms, the front row (band 0) keeps the 7 newest slots.
-        val shown = 10
-        val take = rowOccupancy(shown)
-        val frontStart = rowStart(take, shown, 0)
-        assertEquals(shown - take[0], frontStart)
-        assertEquals(3, frontStart) // slots 3..9 up front, 0..2 behind
+    @Test fun rowsFillFrontFirst() {
+        // With 10 palms: the front row is full (slots 0..6) and the row behind has taken 3.
+        val take = rowOccupancy(10)
+        assertEquals(listOf(7, 3, 0), take.toList())
+        assertEquals(0, rowStart(0))
+        assertEquals(7, rowStart(1))
+        assertEquals(15, rowStart(2))
+    }
+
+    @Test fun aPlantedPalmNeverMoves() {
+        // The whole point of the front-first fill: slot j keeps its row and its place in
+        // that row no matter how many palms are planted after it.
+        for (j in 0 until GROVE_SIZE) {
+            val band = rowOfSlot(j)
+            val place = slotInRow(j)
+            for (shown in (j + 1)..GROVE_SIZE) {
+                val take = rowOccupancy(shown)
+                assertTrue(place < take[band], "palm $j left row $band once $shown palms were up")
+                assertEquals(band, rowOfSlot(j), "palm $j changed row at $shown palms")
+                assertEquals(place, slotInRow(j), "palm $j slid within its row at $shown palms")
+            }
+        }
+    }
+
+    @Test fun newestPalmIsTheLastSlotOfTheCurrentRow() {
+        // Palm 8 (slot 7) opens the middle row; palm 15 (slot 14) is the last of that row.
+        assertEquals(0, rowOfSlot(6))
+        assertEquals(1, rowOfSlot(7))
+        assertEquals(0, slotInRow(7))
+        assertEquals(1, rowOfSlot(14))
+        assertEquals(7, slotInRow(14))
+        assertEquals(2, rowOfSlot(15))
+        assertEquals(9, slotInRow(GROVE_SIZE - 1))
+    }
+
+    @Test fun palmsInARowNeverShareASlot() {
+        for (band in ROW_CAPACITY.indices) {
+            val lo = rowStart(band)
+            val xs = (lo until lo + ROW_CAPACITY[band]).map { palmXFraction(it, jitter = 0f) }
+            assertEquals(xs.size, xs.toSet().size, "row $band stacked two palms on one spot")
+            assertEquals(xs.sorted(), xs, "row $band does not fill left to right")
+        }
     }
 }
