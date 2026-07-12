@@ -715,14 +715,16 @@
     <string name="zabad_leaderboard_rank_new">جديد</string>
     <string name="zabad_leaderboard_empty">لا توجد بيانات بعد</string>
     <string name="zabad_rank_unranked">اضغط لرؤية المتصدرين</string>
-    <string name="manual_zabad_title">🤲 تسجيل استغفار خارجي</string>
-    <string name="manual_zabad_subtitle">استغفرت الله بصمت أو على أصابعك أو بالمسبحة؟\nسجّل ما استغفرت — لا تتوقف عن الاستغفار لأنك بعيد عن التطبيق</string>
+    <string name="manual_zabad_title">🌊 تسجيل تسبيح خارجي</string>
+    <string name="manual_zabad_subtitle">سبّحت الله بصمت أو على أصابعك أو بالمسبحة؟\nسجّل ما سبّحت — لا تتوقف عن التسبيح لأنك بعيد عن التطبيق</string>
     <string name="manual_zabad_count">العدد:</string>
     <string name="manual_zabad_enter_count">أدخل العدد</string>
     <string name="manual_zabad_witness">أشهد أن هذا العدد صحيح وحقيقي، وأن الله مطّلع على نيّتي</string>
-    <string name="manual_zabad_submit">✦ تسجيل الاستغفار ✦</string>
+    <string name="manual_zabad_submit">✦ تسجيل التسبيح ✦</string>
 
   <string name="zabad_phrase">سُبْحَانَ اللهِ وَبِحَمْدِهِ</string>
+  <string name="zabad_hadith">مَنْ قَالَ: سُبْحَانَ اللهِ وَبِحَمْدِهِ فِي يَوْمٍ مِائَةَ مَرَّةٍ، حُطَّتْ خَطَايَاهُ وَإِنْ كَانَتْ مِثْلَ زَبَدِ البَحْرِ</string>
+  <string name="zabad_hadith_ref">متفق عليه</string>
   <string name="zabad_tap_hint">اضغط لتُسبِّح — كلَّما طال صمتك، تراكم الزَّبَد وعلا البحر</string>
   <string name="zabad_progress">من ١٠٠</string>
   <string name="zabad_accumulated">زَبَدٌ تراكم منذ %1$s س %2$s د</string>

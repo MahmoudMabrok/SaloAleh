@@ -667,14 +667,16 @@
     <string name="zabad_leaderboard_rank_new">新</string>
     <string name="zabad_leaderboard_empty">暂无数据</string>
     <string name="zabad_rank_unranked">点击查看排行榜</string>
-    <string name="manual_zabad_title">🤲 记录外部求饶</string>
-    <string name="manual_zabad_subtitle">默默地、用手指或用念珠向真主求饶了？\n记录您所诵念的 - 不要因为不在应用中就停止求饶</string>
+    <string name="manual_zabad_title">🌊 记录外部赞颂</string>
+    <string name="manual_zabad_subtitle">默默地、用手指或用念珠赞颂真主了？\n记录您所诵念的 - 不要因为不在应用中就停止赞颂</string>
     <string name="manual_zabad_count">数量：</string>
     <string name="manual_zabad_enter_count">输入数量</string>
     <string name="manual_zabad_witness">我证明这个数量是真实准确的，真主了解我的意图</string>
-    <string name="manual_zabad_submit">✦ 记录求饶 ✦</string>
+    <string name="manual_zabad_submit">✦ 记录赞颂 ✦</string>
 
   <string name="zabad_phrase">赞颂真主超绝，赞颂归于他</string>
+  <string name="zabad_hadith">谁若每日诵念"赞主超绝，赞归于主"一百遍，其罪过必被抹去，纵如海中泡沫之多</string>
+  <string name="zabad_hadith_ref">布哈里与穆斯林圣训集</string>
   <string name="zabad_tap_hint">点击赞颂——沉默越久，泡沫越多，海面越高</string>
   <string name="zabad_progress">共100次</string>
   <string name="zabad_accumulated">泡沫已积累 %1$s 小时 %2$s 分钟</string>

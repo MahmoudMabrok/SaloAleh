@@ -705,14 +705,16 @@
     <string name="zabad_leaderboard_rank_new">New</string>
     <string name="zabad_leaderboard_empty">No data yet</string>
     <string name="zabad_rank_unranked">Tap to see the leaderboard</string>
-    <string name="manual_zabad_title">🤲 Log External Istighfar</string>
-    <string name="manual_zabad_subtitle">Sought Allah\'s forgiveness silently, on your fingers, or with a tasbih?\nLog what you recited — don\'t stop your zabad just because you\'re away from the app</string>
+    <string name="manual_zabad_title">🌊 Log External Tasbeeh</string>
+    <string name="manual_zabad_subtitle">Glorified Allah silently, on your fingers, or with a tasbih?\nLog what you recited — don\'t stop your tasbeeh just because you\'re away from the app</string>
     <string name="manual_zabad_count">Count:</string>
     <string name="manual_zabad_enter_count">Enter count</string>
     <string name="manual_zabad_witness">I testify that this count is true and accurate, and that Allah is aware of my intention</string>
-    <string name="manual_zabad_submit">✦ Log Istighfar ✦</string>
+    <string name="manual_zabad_submit">✦ Log Tasbeeh ✦</string>
 
   <string name="zabad_phrase">Glory and praise be to Allah</string>
+  <string name="zabad_hadith">Whoever says "Glory and praise be to Allah" one hundred times a day, his sins are wiped away even if they were like the foam of the sea</string>
+  <string name="zabad_hadith_ref">Bukhari &amp; Muslim</string>
   <string name="zabad_tap_hint">Tap to glorify — the longer the silence, the more foam gathers and the sea rises</string>
   <string name="zabad_progress">of 100</string>
   <string name="zabad_accumulated">Foam accumulated for %1$s h %2$s m</string>

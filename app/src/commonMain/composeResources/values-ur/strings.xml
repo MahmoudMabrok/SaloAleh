@@ -667,14 +667,16 @@
     <string name="zabad_leaderboard_rank_new">نیا</string>
     <string name="zabad_leaderboard_empty">ابھی کوئی ڈیٹا نہیں</string>
     <string name="zabad_rank_unranked">لیڈر بورڈ دیکھنے کے لیے ٹیپ کریں</string>
-    <string name="manual_zabad_title">🤲 بیرونی استغفار درج کریں</string>
-    <string name="manual_zabad_subtitle">اللہ سے خاموشی سے، انگلیوں پر، یا تسبیح سے استغفار کیا؟\nجو پڑھا اسے درج کریں — ایپ سے دور ہونے کی وجہ سے استغفار نہ چھوڑیں</string>
+    <string name="manual_zabad_title">🌊 بیرونی تسبیح درج کریں</string>
+    <string name="manual_zabad_subtitle">اللہ کی تسبیح خاموشی سے، انگلیوں پر، یا تسبیح سے کی؟\nجو پڑھا اسے درج کریں — ایپ سے دور ہونے کی وجہ سے تسبیح نہ چھوڑیں</string>
     <string name="manual_zabad_count">تعداد:</string>
     <string name="manual_zabad_enter_count">تعداد درج کریں</string>
     <string name="manual_zabad_witness">میں گواہی دیتا ہوں کہ یہ تعداد درست اور حقیقی ہے، اور اللہ میری نیت سے باخبر ہے</string>
-    <string name="manual_zabad_submit">✦ استغفار درج کریں ✦</string>
+    <string name="manual_zabad_submit">✦ تسبیح درج کریں ✦</string>
 
   <string name="zabad_phrase">سُبْحَانَ اللهِ وَبِحَمْدِهِ</string>
+  <string name="zabad_hadith">جو شخص دن میں سو مرتبہ "سبحان اللہ وبحمدہ" کہے، اس کے گناہ مٹا دیے جاتے ہیں خواہ سمندر کی جھاگ کے برابر ہوں</string>
+  <string name="zabad_hadith_ref">متفق علیہ</string>
   <string name="zabad_tap_hint">تسبیح کے لیے دبائیں — خاموشی جتنی طویل ہو، جھاگ اتنا بڑھتا ہے</string>
   <string name="zabad_progress">100 میں سے</string>
   <string name="zabad_accumulated">%1$s گھنٹے %2$s منٹ سے جھاگ جمع ہے</string>
