@@ -111,24 +111,28 @@ private class GroveScratch {
 fun PalmGroveCanvas(
     count: Int,
     modifier: Modifier = Modifier,
+    plantSerial: Int = 0,
     reduceMotion: Boolean = false,
 ) {
-    // A brand-new Animatable per tap, born at 0. Reusing one across taps meant it still held
-    // 1f from the last growth when the new palm first painted, so the palm flashed full-size
-    // for a frame before snapTo(0f) landed and it started growing again.
-    val grow = remember(count, reduceMotion) { Animatable(if (reduceMotion) 1f else 0f) }
+    // The sprout animation is keyed on [plantSerial] — bumped only on a real user plant (tap /
+    // manual entry) — never on [count] alone. Opening the screen (or a remote-baseline sync)
+    // changes count without a new plant, so the grove settles in fully grown instead of
+    // re-growing its newest palm every time. A brand-new Animatable per plant, born at 0, keeps
+    // the newest palm from flashing full-size for a frame before it starts growing.
+    val grow = remember(plantSerial, reduceMotion) {
+        Animatable(if (plantSerial == 0 || reduceMotion) 1f else 0f)
+    }
     val burst = remember { Animatable(0f) }
     val recede = remember { Animatable(0f) }
     val scratch = remember { GroveScratch() }
     var recedeTrigger by remember { mutableIntStateOf(0) }
 
-    // Every tap sprouts the newest palm and bursts the soil; a grove-completing tap
-    // also sends the finished grove receding to the horizon. Between taps nothing animates,
+    // Every plant sprouts the newest palm and bursts the soil; a grove-completing plant
+    // also sends the finished grove receding to the horizon. Between plants nothing animates,
     // so the canvas issues no frames at all — see [GroveScratch] on why the old sway clock
     // (which repainted every palm 60x a second, forever) had to go.
-    LaunchedEffect(count, reduceMotion) {
-        if (count <= 0) return@LaunchedEffect
-        if (reduceMotion) {
+    LaunchedEffect(plantSerial, reduceMotion) {
+        if (plantSerial == 0 || reduceMotion || count <= 0) {
             burst.snapTo(0f)
             return@LaunchedEffect
         }
