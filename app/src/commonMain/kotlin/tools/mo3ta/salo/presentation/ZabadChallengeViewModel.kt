@@ -83,6 +83,7 @@ class ZabadChallengeViewModel(
                 it.copy(
                     dateKey = today.toString(),
                     todayCount = store.todayCount(today),
+                    manualRemainingToday = store.manualRemainingToday(today),
                     isLoading = false,
                     errorMessage = null,
                 )
@@ -154,6 +155,7 @@ class ZabadChallengeViewModel(
             it.copy(
                 dateKey = today.toString(),
                 todayCount = updated,
+                manualRemainingToday = store.manualRemainingToday(today),
                 showManualZabadSheet = false,
                 isSubmittingManualZabad = true,
                 errorMessage = null,

@@ -1,5 +1,6 @@
 package tools.mo3ta.salo.presentation
 
+import tools.mo3ta.salo.domain.CHALLENGE_MANUAL_DAILY_CAP
 import tools.mo3ta.salo.domain.QURAN_CHALLENGE_DAILY_GOAL
 import tools.mo3ta.salo.domain.QuranLeaderboardEntry
 
@@ -18,6 +19,7 @@ data class QuranChallengeUiState(
     val showLeaderboard: Boolean = false,
     val showManualQuranSheet: Boolean = false,
     val isSubmittingManualQuran: Boolean = false,
+    val manualRemainingToday: Int = CHALLENGE_MANUAL_DAILY_CAP,
     val leaderboard: List<QuranLeaderboardEntry> = emptyList(),
     val isLeaderboardLoading: Boolean = false,
     val currentUid: String = "",

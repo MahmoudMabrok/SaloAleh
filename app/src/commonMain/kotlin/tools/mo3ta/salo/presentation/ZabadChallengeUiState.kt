@@ -1,5 +1,6 @@
 package tools.mo3ta.salo.presentation
 
+import tools.mo3ta.salo.domain.CHALLENGE_MANUAL_DAILY_CAP
 import tools.mo3ta.salo.domain.ZABAD_CHALLENGE_DAILY_GOAL
 import tools.mo3ta.salo.domain.ZabadLeaderboardEntry
 
@@ -18,6 +19,7 @@ data class ZabadChallengeUiState(
     val showLeaderboard: Boolean = false,
     val showManualZabadSheet: Boolean = false,
     val isSubmittingManualZabad: Boolean = false,
+    val manualRemainingToday: Int = CHALLENGE_MANUAL_DAILY_CAP,
     val leaderboard: List<ZabadLeaderboardEntry> = emptyList(),
     val isLeaderboardLoading: Boolean = false,
     val currentUid: String = "",

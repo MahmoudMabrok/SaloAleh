@@ -2,6 +2,7 @@ package tools.mo3ta.salo.data.ghars
 
 import com.russhwolf.settings.Settings
 import kotlinx.datetime.LocalDate
+import tools.mo3ta.salo.domain.CHALLENGE_MANUAL_DAILY_CAP
 
 class GharsChallengeStore(private val settings: Settings) {
 
@@ -39,15 +40,28 @@ class GharsChallengeStore(private val settings: Settings) {
 
     /**
      * Add [count] pending taps at once (manual external entry) and return the new total
-     * (remote + pending). Never touches network. Non-positive counts are ignored.
+     * (remote + pending). Never touches network. Non-positive counts are ignored, and the
+     * amount actually applied is clamped so cumulative manual entry never exceeds
+     * [CHALLENGE_MANUAL_DAILY_CAP] for the day. Regular taps ([incrementToday]) are not counted
+     * against this cap.
      */
     fun addToday(today: LocalDate, count: Int): Int {
         ensureToday(today)
         if (count > 0) {
-            val newPending = settings.getInt(KEY_PENDING, 0) + count
-            settings.putInt(KEY_PENDING, newPending)
+            val usedManual = settings.getInt(KEY_MANUAL, 0)
+            val applied = count.coerceAtMost((CHALLENGE_MANUAL_DAILY_CAP - usedManual).coerceAtLeast(0))
+            if (applied > 0) {
+                settings.putInt(KEY_PENDING, settings.getInt(KEY_PENDING, 0) + applied)
+                settings.putInt(KEY_MANUAL, usedManual + applied)
+            }
         }
         return settings.getInt(KEY_REMOTE, 0) + settings.getInt(KEY_PENDING, 0)
+    }
+
+    /** How much more may still be added via manual entry today (cap minus what's used). */
+    fun manualRemainingToday(today: LocalDate): Int {
+        if (settings.getStringOrNull(KEY_DATE) != today.toString()) return CHALLENGE_MANUAL_DAILY_CAP
+        return (CHALLENGE_MANUAL_DAILY_CAP - settings.getInt(KEY_MANUAL, 0)).coerceAtLeast(0)
     }
 
     /**
@@ -79,6 +93,7 @@ class GharsChallengeStore(private val settings: Settings) {
         ensureToday(today)
         settings.putInt(KEY_REMOTE, 0)
         settings.putInt(KEY_PENDING, 0)
+        settings.putInt(KEY_MANUAL, 0)
         return 0
     }
 
@@ -88,11 +103,14 @@ class GharsChallengeStore(private val settings: Settings) {
         settings.putString(KEY_DATE, date)
         settings.putInt(KEY_REMOTE, 0)
         settings.putInt(KEY_PENDING, 0)
+        settings.putInt(KEY_MANUAL, 0)
     }
 
     private companion object {
         const val KEY_DATE = "ghars_challenge_date"
         const val KEY_REMOTE = "ghars_challenge_count"
         const val KEY_PENDING = "ghars_challenge_pending"
+        // Cumulative manual ("external") entry today — the daily-cap ledger.
+        const val KEY_MANUAL = "ghars_challenge_manual"
     }
 }

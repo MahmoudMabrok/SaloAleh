@@ -85,6 +85,7 @@ class GharsChallengeViewModel(
                     dateKey = today.toString(),
                     todayCount = local,
                     completedGroves = local / GHARS_GROVE_SIZE,
+                    manualRemainingToday = store.manualRemainingToday(today),
                     isLoading = false,
                     errorMessage = null,
                 )
@@ -148,6 +149,7 @@ class GharsChallengeViewModel(
                 dateKey = today.toString(),
                 todayCount = updated,
                 completedGroves = updated / GHARS_GROVE_SIZE,
+                manualRemainingToday = store.manualRemainingToday(today),
                 showManualGharsSheet = false,
                 isSubmittingManualGhars = true,
                 errorMessage = null,

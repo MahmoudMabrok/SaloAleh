@@ -1,5 +1,6 @@
 package tools.mo3ta.salo.presentation
 
+import tools.mo3ta.salo.domain.CHALLENGE_MANUAL_DAILY_CAP
 import tools.mo3ta.salo.domain.GHARS_CHALLENGE_DAILY_GOAL
 import tools.mo3ta.salo.domain.GharsLeaderboardEntry
 
@@ -17,6 +18,7 @@ data class GharsChallengeUiState(
     val showLeaderboard: Boolean = false,
     val showManualGharsSheet: Boolean = false,
     val isSubmittingManualGhars: Boolean = false,
+    val manualRemainingToday: Int = CHALLENGE_MANUAL_DAILY_CAP,
     val leaderboard: List<GharsLeaderboardEntry> = emptyList(),
     val isLeaderboardLoading: Boolean = false,
     val currentUid: String = "",

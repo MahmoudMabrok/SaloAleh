@@ -126,6 +126,7 @@
     <string name="manual_dhikr_enter_count">أدخل العدد</string>
     <string name="manual_dhikr_witness">أشهد أن هذا العدد صحيح وحقيقي، وأن الله مطّلع على نيّتي</string>
     <string name="manual_dhikr_submit">✦ تسجيل الأذكار ✦</string>
+    <string name="manual_challenge_cap_error">لا يمكنك إضافة أكثر من %1$d يدويًا في اليوم الواحد</string>
 
     <!-- Istighfar Challenge Screen -->
     <string name="istighfar_title">الاستغفار</string>

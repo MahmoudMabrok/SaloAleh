@@ -201,6 +201,7 @@ fun IstighfarRewardsScreen(
 
     ManualIstighfarSheet(
         isOpen = state.showManualIstighfarSheet,
+        remaining = state.manualRemainingToday,
         onDismiss = { viewModel.dismissManualIstighfarSheet() },
         onSubmit = { count -> viewModel.submitManualIstighfar(count) },
     )

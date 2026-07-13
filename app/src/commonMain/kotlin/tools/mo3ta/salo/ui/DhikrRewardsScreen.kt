@@ -210,6 +210,7 @@ fun DhikrRewardsScreen(
     ManualDhikrSheet(
         isOpen = state.showManualDhikrSheet,
         showPresetChips = false,
+        remaining = state.manualRemainingToday,
         onDismiss = { viewModel.dismissManualDhikrSheet() },
         onSubmit = { count -> viewModel.submitManualDhikr(count) },
     )

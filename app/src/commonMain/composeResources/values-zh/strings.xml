@@ -101,6 +101,7 @@
     <string name="manual_dhikr_enter_count">输入数量</string>
     <string name="manual_dhikr_witness">我证明这个数量是真实准确的，真主了解我的意图</string>
     <string name="manual_dhikr_submit">✦ 记录赞念 ✦</string>
+    <string name="manual_challenge_cap_error">每天手动录入不能超过 %1$d</string>
 
     <!-- Istighfar Challenge Screen -->
     <string name="istighfar_title">讨白（求饶）</string>

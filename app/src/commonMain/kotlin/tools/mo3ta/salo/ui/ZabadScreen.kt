@@ -164,7 +164,7 @@ fun ZabadScreen(onBack: () -> Unit, viewModel: ZabadChallengeViewModel = koinVie
         }
     }
     if (state.showLeaderboard) ZabadLeaderboardSheet(entries = state.leaderboard, currentUid = state.currentUid, isLoading = state.isLeaderboardLoading, participantCount = state.participantCount, onDismiss = viewModel::onLeaderboardClosed)
-    ManualZabadSheet(isOpen = state.showManualZabadSheet, onDismiss = viewModel::dismissManualZabadSheet, onSubmit = viewModel::submitManualZabad)
+    ManualZabadSheet(isOpen = state.showManualZabadSheet, remaining = state.manualRemainingToday, onDismiss = viewModel::dismissManualZabadSheet, onSubmit = viewModel::submitManualZabad)
 }
 
 /** A tap-triggered surface ring; [xFrac] is the horizontal tap position 0..1, [age] runs 0→1. */

@@ -1,5 +1,6 @@
 package tools.mo3ta.salo.presentation
 
+import tools.mo3ta.salo.domain.CHALLENGE_MANUAL_DAILY_CAP
 import tools.mo3ta.salo.domain.DHIKR_CHALLENGE_DAILY_GOAL
 import tools.mo3ta.salo.domain.DhikrLeaderboardEntry
 
@@ -18,6 +19,7 @@ data class DhikrChallengeUiState(
     val showLeaderboard: Boolean = false,
     val showManualDhikrSheet: Boolean = false,
     val isSubmittingManualDhikr: Boolean = false,
+    val manualRemainingToday: Int = CHALLENGE_MANUAL_DAILY_CAP,
     val leaderboard: List<DhikrLeaderboardEntry> = emptyList(),
     val isLeaderboardLoading: Boolean = false,
     val currentUid: String = "",

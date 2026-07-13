@@ -46,7 +46,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.stringResource
+import tools.mo3ta.salo.domain.CHALLENGE_MANUAL_DAILY_CAP
 import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.manual_challenge_cap_error
 import tools.mo3ta.salo.generated.resources.manual_dhikr_count
 import tools.mo3ta.salo.generated.resources.manual_dhikr_enter_count
 import tools.mo3ta.salo.generated.resources.manual_dhikr_other_count
@@ -62,6 +64,7 @@ private val PRESET_COUNTS = listOf(33, 100, 300, 500, 1000)
 internal fun ManualDhikrSheet(
     isOpen: Boolean,
     showPresetChips: Boolean = true,
+    remaining: Int = CHALLENGE_MANUAL_DAILY_CAP,
     onDismiss: () -> Unit,
     onSubmit: (Int) -> Unit,
 ) {
@@ -77,7 +80,9 @@ internal fun ManualDhikrSheet(
     } else {
         customText.toIntOrNull() ?: 0
     }
-    val canSubmit = effectiveCount > 0 && witnessChecked
+    // Front-end cap: a manual batch that would exceed the day's remaining allowance is rejected.
+    val exceedsCap = effectiveCount > remaining
+    val canSubmit = effectiveCount > 0 && witnessChecked && !exceedsCap
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -192,8 +197,7 @@ internal fun ManualDhikrSheet(
                 OutlinedTextField(
                     value = customText,
                     onValueChange = { raw ->
-                        val digits = raw.filter { it.isDigit() }
-                        customText = digits
+                        customText = raw.filter { it.isDigit() }
                         selectedPreset = null
                     },
                     placeholder = {
@@ -218,6 +222,17 @@ internal fun ManualDhikrSheet(
                     ),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.weight(1f),
+                )
+            }
+
+            // Daily manual-entry cap error — shown only when the entry exceeds the limit
+            if (exceedsCap) {
+                Text(
+                    text = stringResource(Res.string.manual_challenge_cap_error, CHALLENGE_MANUAL_DAILY_CAP),
+                    color = Color(0xFFDC503C),
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
                 )
             }
 

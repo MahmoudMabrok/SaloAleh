@@ -1,5 +1,6 @@
 package tools.mo3ta.salo.presentation
 
+import tools.mo3ta.salo.domain.CHALLENGE_MANUAL_DAILY_CAP
 import tools.mo3ta.salo.domain.ISTIGHFAR_CHALLENGE_DAILY_GOAL
 import tools.mo3ta.salo.domain.IstighfarLeaderboardEntry
 
@@ -18,6 +19,7 @@ data class IstighfarChallengeUiState(
     val showLeaderboard: Boolean = false,
     val showManualIstighfarSheet: Boolean = false,
     val isSubmittingManualIstighfar: Boolean = false,
+    val manualRemainingToday: Int = CHALLENGE_MANUAL_DAILY_CAP,
     val leaderboard: List<IstighfarLeaderboardEntry> = emptyList(),
     val isLeaderboardLoading: Boolean = false,
     val currentUid: String = "",

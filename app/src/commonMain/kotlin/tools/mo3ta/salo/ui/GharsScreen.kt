@@ -200,6 +200,7 @@ fun GharsScreen(onBack: () -> Unit, viewModel: GharsChallengeViewModel = koinVie
     }
     ManualGharsSheet(
         isOpen = state.showManualGharsSheet,
+        remaining = state.manualRemainingToday,
         onDismiss = viewModel::dismissManualGharsSheet,
         onSubmit = viewModel::submitManualGhars,
     )
