@@ -600,12 +600,12 @@
     <string name="heroes_sheet_title">今日英雄 🌟</string>
     <string name="heroes_sheet_subtitle">今日各项挑战的领先者</string>
     <string name="heroes_challenge_salawat">为先知 ﷺ 祝祷</string>
-    <string name="heroes_challenge_dhikr">100 赞念挑战</string>
-    <string name="heroes_challenge_baqiyat">永存的善功</string>
-    <string name="heroes_challenge_istighfar">求恕</string>
+    <string name="heroes_challenge_dhikr">اهل لا اله الا الله</string>
+    <string name="heroes_challenge_baqiyat">永恒的善功</string>
+    <string name="heroes_challenge_istighfar">واستغفروه</string>
     <string name="heroes_challenge_quran">古兰经</string>
     <string name="heroes_challenge_zabad">百次赞颂</string>
-    <string name="heroes_challenge_ghars">栽种</string>
+    <string name="heroes_challenge_ghars">种一棵棕榈树</string>
     <string name="heroes_challenge_empty">暂无领先者</string>
 
     <!-- Subscription encouragement -->

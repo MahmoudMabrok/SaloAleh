@@ -638,12 +638,12 @@
     <string name="heroes_sheet_title">Today\'s heroes 🌟</string>
     <string name="heroes_sheet_subtitle">The champions of our challenges today</string>
     <string name="heroes_challenge_salawat">Salawat upon the Prophet ﷺ</string>
-    <string name="heroes_challenge_dhikr">The 100 dhikr challenge</string>
-    <string name="heroes_challenge_baqiyat">Baqiyat as-Salihat</string>
-    <string name="heroes_challenge_istighfar">Istighfar</string>
-    <string name="heroes_challenge_quran">Quran</string>
+    <string name="heroes_challenge_dhikr">اهل لا اله الا الله</string>
+    <string name="heroes_challenge_baqiyat">Everlasting Good Deeds</string>
+    <string name="heroes_challenge_istighfar">Seek His Forgiveness</string>
+    <string name="heroes_challenge_quran">The Holy Quran</string>
     <string name="heroes_challenge_zabad">The Hundred</string>
-    <string name="heroes_challenge_ghars">The Planting</string>
+    <string name="heroes_challenge_ghars">Plant a Palm</string>
     <string name="heroes_challenge_empty">No champions yet</string>
 
     <!-- Subscription encouragement -->

@@ -600,12 +600,12 @@
     <string name="heroes_sheet_title">آج کے ہیروز 🌟</string>
     <string name="heroes_sheet_subtitle">آج ہمارے چیلنجز میں سرفہرست</string>
     <string name="heroes_challenge_salawat">نبی ﷺ پر درود</string>
-    <string name="heroes_challenge_dhikr">۱۰۰ ذکر چیلنج</string>
+    <string name="heroes_challenge_dhikr">اهل لا اله الا الله</string>
     <string name="heroes_challenge_baqiyat">باقیات صالحات</string>
-    <string name="heroes_challenge_istighfar">استغفار</string>
-    <string name="heroes_challenge_quran">قرآن</string>
+    <string name="heroes_challenge_istighfar">واستغفروه</string>
+    <string name="heroes_challenge_quran">قرآن کریم</string>
     <string name="heroes_challenge_zabad">سو تسبیحات</string>
-    <string name="heroes_challenge_ghars">شجرکاری</string>
+    <string name="heroes_challenge_ghars">ایک کھجور لگائیں</string>
     <string name="heroes_challenge_empty">ابھی کوئی سرفہرست نہیں</string>
 
     <!-- Subscription encouragement -->
