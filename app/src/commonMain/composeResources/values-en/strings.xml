@@ -119,6 +119,27 @@
     <string name="dhikr_leaderboard_empty">No data yet</string>
     <string name="dhikr_rank_unranked">Tap to see the leaderboard</string>
     <string name="dhikr_manual_entry_button">📿 Log external dhikr</string>
+
+    <!-- Dhikr gains UI (Concept 1 — the emancipation engine) -->
+    <string name="dhikr_gains_tap_hint">Tap anywhere to remember — every 10 breaks a shackle</string>
+    <string name="dhikr_gains_count_unit">times today</string>
+    <string name="dhikr_necks_freed_partial">%1$d necks freed — %2$d to go</string>
+    <string name="dhikr_necks_freed_all">All ten necks freed — Allahu akbar</string>
+    <string name="dhikr_gains_receipt_title">Today\'s spoils</string>
+    <string name="dhikr_gains_receipt_sub">With a hundred tahlils — as in the agreed-upon hadith</string>
+    <string name="dhikr_gain_freed">The worth of ten lives freed</string>
+    <string name="dhikr_gain_freed_qty">10</string>
+    <string name="dhikr_gain_written">100 good deeds written for you</string>
+    <string name="dhikr_gain_written_qty">100</string>
+    <string name="dhikr_gain_erased">100 sins erased from you</string>
+    <string name="dhikr_gain_erased_qty">100</string>
+    <string name="dhikr_gain_shield">A shield from Shaytan</string>
+    <string name="dhikr_gain_shield_qty">until evening</string>
+    <string name="dhikr_gains_crown">“None brought better than what you brought, save one who did more”</string>
+    <string name="dhikr_share_gains">Share your spoils</string>
+    <string name="dhikr_keep_going">Keep going</string>
+    <string name="dhikr_gains_share_text">Today I freed the worth of ten lives with a hundred tahlils 🕊\nLa ilaha illa Allah, alone with no partner; His is the dominion and the praise, and He is capable of all things</string>
+
     <string name="manual_dhikr_title">📿 Log External Dhikr</string>
     <string name="manual_dhikr_subtitle">Remembered Allah silently, on your fingers, or with a tasbih?\nLog what you recited — don\'t stop your dhikr just because you\'re away from the app</string>
     <string name="manual_dhikr_count">Count:</string>

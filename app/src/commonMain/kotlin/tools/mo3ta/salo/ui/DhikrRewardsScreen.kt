@@ -61,7 +61,6 @@ import tools.mo3ta.salo.generated.resources.dhikr_add
 import tools.mo3ta.salo.generated.resources.dhikr_back_cd
 import tools.mo3ta.salo.generated.resources.dhikr_daily_goal
 import tools.mo3ta.salo.generated.resources.dhikr_freed_today
-import tools.mo3ta.salo.generated.resources.dhikr_manual_entry_button
 import tools.mo3ta.salo.generated.resources.dhikr_phrase
 import tools.mo3ta.salo.generated.resources.dhikr_progress_count
 import tools.mo3ta.salo.generated.resources.dhikr_rank_number
@@ -80,14 +79,22 @@ import tools.mo3ta.salo.generated.resources.dhikr_today
 import tools.mo3ta.salo.presentation.DhikrChallengeViewModel
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.dhikr.DhikrColors
+import tools.mo3ta.salo.ui.dhikr.DhikrEmancipationZone
 import tools.mo3ta.salo.ui.dhikr.DhikrLeaderboardSheet
 import tools.mo3ta.salo.ui.dhikr.DhikrLinearProgress
+import tools.mo3ta.salo.ui.dhikr.DhikrManualEntryButton
 import tools.mo3ta.salo.ui.dhikr.DhikrMilestoneCelebration
 import tools.mo3ta.salo.ui.dhikr.DhikrPanel
 import tools.mo3ta.salo.ui.dhikr.DhikrProgressRing
 import tools.mo3ta.salo.ui.dhikr.DhikrSpacing
+import tools.mo3ta.salo.ui.dhikr.DhikrSpoilsReceipt
 import tools.mo3ta.salo.ui.dhikr.ManualDhikrSheet
 
+
+// Concept 1 (عتق الرقاب) — the emancipation-engine hero for the 100-dhikr challenge, which
+// rebuilds the counter out of the hadith's gains and ends on the غنائم اليوم spoils receipt.
+// Flip to false to fall back to the original progress-ring hero.
+private const val DHIKR_GAINS_UI_ENABLED = true
 
 private val DhikrHeroBackground = Brush.verticalGradient(
     colors = listOf(
@@ -146,26 +153,41 @@ fun DhikrRewardsScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            DhikrImmersiveZone(
-                count = state.todayCount,
-                target = state.dailyGoal,
-                rank = state.rank,
-                participantCount = state.participantCount,
-                canCount = !state.isLoading,
-                onTap = {
-                    viewModel.onDhikrTap()
-                    analyticsManager.logAction(
-                        AppAnalytics.DHIKR_TAP,
-                        mapOf(AppAnalytics.PARAM_COUNT to (state.todayCount + 1).toString()),
-                    )
-                },
-                onBack = onBack,
-                onRankClick = { viewModel.onLeaderboardOpened() },
-                onManualEntryClick = {
-                    analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_DHIKR)
-                    viewModel.showManualDhikrSheet()
-                },
-            )
+            val onHeroTap: () -> Unit = {
+                viewModel.onDhikrTap()
+                analyticsManager.logAction(
+                    AppAnalytics.DHIKR_TAP,
+                    mapOf(AppAnalytics.PARAM_COUNT to (state.todayCount + 1).toString()),
+                )
+            }
+            val onHeroManualEntry: () -> Unit = {
+                analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_DHIKR)
+                viewModel.showManualDhikrSheet()
+            }
+            if (DHIKR_GAINS_UI_ENABLED) {
+                DhikrEmancipationZone(
+                    count = state.todayCount,
+                    rank = state.rank,
+                    participantCount = state.participantCount,
+                    canCount = !state.isLoading,
+                    onTap = onHeroTap,
+                    onBack = onBack,
+                    onRankClick = { viewModel.onLeaderboardOpened() },
+                    onManualEntryClick = onHeroManualEntry,
+                )
+            } else {
+                DhikrImmersiveZone(
+                    count = state.todayCount,
+                    target = state.dailyGoal,
+                    rank = state.rank,
+                    participantCount = state.participantCount,
+                    canCount = !state.isLoading,
+                    onTap = onHeroTap,
+                    onBack = onBack,
+                    onRankClick = { viewModel.onLeaderboardOpened() },
+                    onManualEntryClick = onHeroManualEntry,
+                )
+            }
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
@@ -189,12 +211,21 @@ fun DhikrRewardsScreen(
             }
         }
 
-        DhikrMilestoneCelebration(
-            milestone = state.celebrationMilestone,
-            visible = state.showCelebration,
-            onDismiss = { viewModel.onCelebrationDismissed() },
-            modifier = Modifier.fillMaxSize(),
-        )
+        val isHundredMilestone = state.celebrationMilestone > 0 && state.celebrationMilestone % 100 == 0
+        if (DHIKR_GAINS_UI_ENABLED && isHundredMilestone) {
+            DhikrSpoilsReceipt(
+                visible = state.showCelebration,
+                onDismiss = { viewModel.onCelebrationDismissed() },
+                modifier = Modifier.fillMaxSize(),
+            )
+        } else {
+            DhikrMilestoneCelebration(
+                milestone = state.celebrationMilestone,
+                visible = state.showCelebration,
+                onDismiss = { viewModel.onCelebrationDismissed() },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 
     if (state.showLeaderboard) {
@@ -214,48 +245,6 @@ fun DhikrRewardsScreen(
         onDismiss = { viewModel.dismissManualDhikrSheet() },
         onSubmit = { count -> viewModel.submitManualDhikr(count) },
     )
-}
-
-@Composable
-private fun DhikrManualEntryButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier.fillMaxWidth(),
-    onDarkBackground: Boolean = false,
-) {
-    val containerColor = if (onDarkBackground) {
-        Color.White.copy(alpha = 0.14f)
-    } else {
-        DhikrColors.Green.copy(alpha = 0.08f)
-    }
-    val borderColor = if (onDarkBackground) {
-        Color.White.copy(alpha = 0.24f)
-    } else {
-        DhikrColors.LightGreen.copy(alpha = 0.4f)
-    }
-    val textColor = if (onDarkBackground) {
-        Color.White.copy(alpha = 0.92f)
-    } else {
-        DhikrColors.Green
-    }
-
-    Surface(
-        onClick = onClick,
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        color = containerColor,
-        border = BorderStroke(1.dp, borderColor),
-    ) {
-        Text(
-            text = stringResource(Res.string.dhikr_manual_entry_button),
-            color = textColor,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 14.dp, horizontal = 12.dp),
-        )
-    }
 }
 
 @Composable

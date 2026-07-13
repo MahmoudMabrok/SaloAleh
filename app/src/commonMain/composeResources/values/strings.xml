@@ -119,6 +119,27 @@
     <string name="dhikr_leaderboard_empty">لا توجد بيانات بعد</string>
     <string name="dhikr_rank_unranked">اضغط لرؤية المتصدرين</string>
     <string name="dhikr_manual_entry_button">📿 تسجيل أذكار خارجية</string>
+
+    <!-- Dhikr gains UI (Concept 1 — عتق الرقاب / emancipation engine) -->
+    <string name="dhikr_gains_tap_hint">اضغط في أي مكان للذكر — كل 10 تفكّ قيدًا</string>
+    <string name="dhikr_gains_count_unit">مرة اليوم</string>
+    <string name="dhikr_necks_freed_partial">أُعتقت %1$d من الرقاب — بقيت %2$d</string>
+    <string name="dhikr_necks_freed_all">أُعتقت الرقاب العشر — الله أكبر</string>
+    <string name="dhikr_gains_receipt_title">غنائم اليوم</string>
+    <string name="dhikr_gains_receipt_sub">بمئةٍ من التهليل — كما في الحديث المتفق عليه</string>
+    <string name="dhikr_gain_freed">عَدْل عَشْر رقاب أُعتقت</string>
+    <string name="dhikr_gain_freed_qty">١٠</string>
+    <string name="dhikr_gain_written">مئة حسنة كُتبت لك</string>
+    <string name="dhikr_gain_written_qty">١٠٠</string>
+    <string name="dhikr_gain_erased">مئة سيئة مُحيت عنك</string>
+    <string name="dhikr_gain_erased_qty">١٠٠</string>
+    <string name="dhikr_gain_shield">حِرز من الشيطان</string>
+    <string name="dhikr_gain_shield_qty">حتى تُمسي</string>
+    <string name="dhikr_gains_crown">«ولم يأتِ أحدٌ بأفضلَ مما جئتَ به إلا رجلٌ عَمِلَ أكثر»</string>
+    <string name="dhikr_share_gains">شارك غنيمتك</string>
+    <string name="dhikr_keep_going">واصل الذكر</string>
+    <string name="dhikr_gains_share_text">أعتقتُ اليوم عَدْلَ عشرِ رقابٍ بمئةٍ من التهليل 🕊\nلا إله إلا الله وحده لا شريك له، له الملك وله الحمد وهو على كل شيء قدير</string>
+
     <string name="manual_dhikr_title">📿 تسجيل أذكار خارجية</string>
     <string name="manual_dhikr_subtitle">ذكرت الله بصمت أو على أصابعك أو بالمسبحة؟\nسجّل ما ذكرت — لا تتوقف عن الذكر لأنك بعيد عن التطبيق</string>
     <string name="manual_dhikr_count">العدد:</string>

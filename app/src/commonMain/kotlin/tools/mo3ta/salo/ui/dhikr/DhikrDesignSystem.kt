@@ -35,6 +35,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.jetbrains.compose.resources.stringResource
+import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.dhikr_manual_entry_button
 
 internal object DhikrColors {
     val Ink = Color(0xFF064B2A)
@@ -198,3 +201,45 @@ internal fun DhikrLinearProgress(
 
 internal fun Modifier.dhikrCardBorder(shape: RoundedCornerShape = DhikrShapes.Panel): Modifier =
     border(1.dp, DhikrColors.Stroke, shape)
+
+@Composable
+internal fun DhikrManualEntryButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier.fillMaxWidth(),
+    onDarkBackground: Boolean = false,
+) {
+    val containerColor = if (onDarkBackground) {
+        Color.White.copy(alpha = 0.14f)
+    } else {
+        DhikrColors.Green.copy(alpha = 0.08f)
+    }
+    val borderColor = if (onDarkBackground) {
+        Color.White.copy(alpha = 0.24f)
+    } else {
+        DhikrColors.LightGreen.copy(alpha = 0.4f)
+    }
+    val textColor = if (onDarkBackground) {
+        Color.White.copy(alpha = 0.92f)
+    } else {
+        DhikrColors.Green
+    }
+
+    Surface(
+        onClick = onClick,
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        color = containerColor,
+        border = BorderStroke(1.dp, borderColor),
+    ) {
+        Text(
+            text = stringResource(Res.string.dhikr_manual_entry_button),
+            color = textColor,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 14.dp, horizontal = 12.dp),
+        )
+    }
+}
