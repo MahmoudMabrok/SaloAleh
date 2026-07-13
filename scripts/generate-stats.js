@@ -282,8 +282,8 @@ async function sendDhikrChallengeRank1Notification(db) {
     ? winner.nickname.trim()
     : rank1Uid.slice(-6).toUpperCase();
 
-  const title = 'بطل اليوم في تحدي الـ١٠٠ 🏆';
-  const body = `تهانينا لـ ${name} على التصدر في تحدي الـ١٠٠ ذكر اليوم بـ ${rank1Count} ذكراً — جزاك الله خيراً!`;
+  const title = 'بطل اليوم في تحدي أهل لا إله إلا الله 🏆';
+  const body = `تهانينا لـ ${name} على التصدر في تحدي أهل لا إله إلا الله اليوم بـ ${rank1Count} ذكراً — جزاك الله خيراً!`;
 
   try {
     const msgId = await admin.messaging().send({
@@ -315,7 +315,7 @@ async function sendBaqiyatChallengeRank1Notification(db) {
     ? winner.nickname.trim()
     : rank1Uid.slice(-6).toUpperCase();
 
-  const title = 'بطل اليوم في الباقيات الصالحات 🏆';
+  const title = 'بطل اليوم في تحدي الباقيات الصالحات 🏆';
   const body = `تهانينا لـ ${name} على التصدر في تحدي الباقيات الصالحات اليوم بـ ${rank1Count} دورة — جزاك الله خيراً!`;
 
   try {
@@ -348,8 +348,8 @@ async function sendIstighfarChallengeRank1Notification(db) {
     ? winner.nickname.trim()
     : rank1Uid.slice(-6).toUpperCase();
 
-  const title = 'بطل اليوم في الاستغفار 🏆';
-  const body = `تهانينا لـ ${name} على التصدر في تحدي الاستغفار اليوم بـ ${rank1Count} مرة — غفر الله لك!`;
+  const title = 'بطل اليوم في تحدي واستغفروه 🏆';
+  const body = `تهانينا لـ ${name} على التصدر في تحدي واستغفروه اليوم بـ ${rank1Count} مرة — غفر الله لك!`;
 
   try {
     const msgId = await admin.messaging().send({
@@ -381,8 +381,8 @@ async function sendQuranChallengeRank1Notification(db) {
     ? winner.nickname.trim()
     : rank1Uid.slice(-6).toUpperCase();
 
-  const title = 'بطل اليوم في تلاوة القرآن 🏆';
-  const body = `تهانينا لـ ${name} على التصدر في تحدي تلاوة القرآن اليوم بـ ${rank1Count} صفحة — بارك الله فيك!`;
+  const title = 'بطل اليوم في تحدي القرآن الكريم 🏆';
+  const body = `تهانينا لـ ${name} على التصدر في تحدي القرآن الكريم اليوم بـ ${rank1Count} صفحة — بارك الله فيك!`;
 
   try {
     const msgId = await admin.messaging().send({
@@ -417,8 +417,8 @@ async function sendZabadChallengeRank1Notification(db) {
     ? winner.nickname.trim()
     : rank1Uid.slice(-6).toUpperCase();
 
-  const title = 'بطل اليوم في تسبيح المئة 🏆';
-  const body = `تهانينا لـ ${name} على التصدر في تحدي سبحان الله وبحمده اليوم بـ ${rank1Count} تسبيحة!`;
+  const title = 'بطل اليوم في تحدي تسبيح المئة 🏆';
+  const body = `تهانينا لـ ${name} على التصدر في تحدي تسبيح المئة اليوم بـ ${rank1Count} تسبيحة!`;
 
   try {
     const msgId = await admin.messaging().send({
@@ -450,8 +450,8 @@ async function sendGharsChallengeRank1Notification(db) {
     ? winner.nickname.trim()
     : rank1Uid.slice(-6).toUpperCase();
 
-  const title = 'غارس اليوم في تحدي الغَرْس 🌴';
-  const body = `تهانينا لـ ${name} على التصدر في تحدي سبحان الله العظيم وبحمده اليوم بـ ${rank1Count} نخلة!`;
+  const title = 'غارس اليوم في تحدي اغرس نخلة 🌴';
+  const body = `تهانينا لـ ${name} على التصدر في تحدي اغرس نخلة اليوم بـ ${rank1Count} نخلة!`;
 
   try {
     const msgId = await admin.messaging().send({

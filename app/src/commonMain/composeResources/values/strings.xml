@@ -648,12 +648,12 @@
     <string name="heroes_sheet_title">أبطال اليوم 🌟</string>
     <string name="heroes_sheet_subtitle">المتصدرون في تحدياتنا اليوم</string>
     <string name="heroes_challenge_salawat">الصلاة على النبي ﷺ</string>
-    <string name="heroes_challenge_dhikr">تحدي الـ١٠٠ ذكر</string>
+    <string name="heroes_challenge_dhikr">أهل لا إله إلا الله</string>
     <string name="heroes_challenge_baqiyat">الباقيات الصالحات</string>
-    <string name="heroes_challenge_istighfar">الاستغفار</string>
-    <string name="heroes_challenge_quran">القرآن</string>
+    <string name="heroes_challenge_istighfar">واستغفروه</string>
+    <string name="heroes_challenge_quran">القرآن الكريم</string>
     <string name="heroes_challenge_zabad">تسبيح المئة</string>
-    <string name="heroes_challenge_ghars">الغَرْس</string>
+    <string name="heroes_challenge_ghars">اغرس نخلة</string>
     <string name="heroes_challenge_empty">لا يوجد متصدرون بعد</string>
 
     <!-- Subscription encouragement -->
