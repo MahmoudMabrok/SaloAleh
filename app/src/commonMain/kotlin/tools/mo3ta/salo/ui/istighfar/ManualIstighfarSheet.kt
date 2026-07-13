@@ -46,7 +46,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.stringResource
+import tools.mo3ta.salo.domain.CHALLENGE_MANUAL_DAILY_CAP
+import tools.mo3ta.salo.ui.manual.clampToRemaining
 import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.manual_challenge_cap_reached
+import tools.mo3ta.salo.generated.resources.manual_challenge_cap_remaining
 import tools.mo3ta.salo.generated.resources.manual_istighfar_count
 import tools.mo3ta.salo.generated.resources.manual_istighfar_enter_count
 import tools.mo3ta.salo.generated.resources.manual_istighfar_submit
@@ -58,6 +62,7 @@ import tools.mo3ta.salo.generated.resources.manual_istighfar_witness
 @Composable
 internal fun ManualIstighfarSheet(
     isOpen: Boolean,
+    remaining: Int = CHALLENGE_MANUAL_DAILY_CAP,
     onDismiss: () -> Unit,
     onSubmit: (Int) -> Unit,
 ) {
@@ -67,7 +72,8 @@ internal fun ManualIstighfarSheet(
     var customText by remember { mutableStateOf("") }
     var witnessChecked by remember { mutableStateOf(false) }
 
-    val effectiveCount = customText.toIntOrNull() ?: 0
+    // Front-end cap: never let a manual batch exceed what's left for the day.
+    val effectiveCount = (customText.toIntOrNull() ?: 0).coerceAtMost(remaining)
     val canSubmit = effectiveCount > 0 && witnessChecked
 
     ModalBottomSheet(
@@ -159,7 +165,7 @@ internal fun ManualIstighfarSheet(
                     value = customText,
                     onValueChange = { raw ->
                         val digits = raw.filter { it.isDigit() }
-                        customText = digits
+                        customText = clampToRemaining(digits, remaining)
                     },
                     placeholder = {
                         Text(
@@ -185,6 +191,19 @@ internal fun ManualIstighfarSheet(
                     modifier = Modifier.weight(1f),
                 )
             }
+
+            // Daily manual-entry cap hint
+            Text(
+                text = if (remaining > 0) {
+                    stringResource(Res.string.manual_challenge_cap_remaining, remaining)
+                } else {
+                    stringResource(Res.string.manual_challenge_cap_reached)
+                },
+                color = if (remaining > 0) IstighfarColors.Muted else Color(0xFFDC503C),
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+            )
 
             // Quranic verse card
             Column(

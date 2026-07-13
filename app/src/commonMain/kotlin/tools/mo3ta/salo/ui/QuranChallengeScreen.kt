@@ -199,6 +199,7 @@ fun QuranChallengeScreen(
 
     ManualQuranSheet(
         isOpen = state.showManualQuranSheet,
+        remaining = state.manualRemainingToday,
         onDismiss = { viewModel.dismissManualQuranSheet() },
         onSubmit = { count -> viewModel.submitManualQuran(count) },
     )

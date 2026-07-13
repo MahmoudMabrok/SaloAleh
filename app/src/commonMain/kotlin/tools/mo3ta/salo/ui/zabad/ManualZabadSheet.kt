@@ -45,9 +45,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.stringResource
+import tools.mo3ta.salo.domain.CHALLENGE_MANUAL_DAILY_CAP
 import tools.mo3ta.salo.ui.ghars.arefRuqaaFamily
 import tools.mo3ta.salo.ui.ghars.ibmPlexArabicFamily
+import tools.mo3ta.salo.ui.manual.clampToRemaining
 import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.manual_challenge_cap_reached
+import tools.mo3ta.salo.generated.resources.manual_challenge_cap_remaining
 import tools.mo3ta.salo.generated.resources.manual_zabad_count
 import tools.mo3ta.salo.generated.resources.manual_zabad_enter_count
 import tools.mo3ta.salo.generated.resources.manual_zabad_submit
@@ -59,6 +63,7 @@ import tools.mo3ta.salo.generated.resources.manual_zabad_witness
 @Composable
 internal fun ManualZabadSheet(
     isOpen: Boolean,
+    remaining: Int = CHALLENGE_MANUAL_DAILY_CAP,
     onDismiss: () -> Unit,
     onSubmit: (Int) -> Unit,
 ) {
@@ -68,7 +73,8 @@ internal fun ManualZabadSheet(
     var customText by remember { mutableStateOf("") }
     var witnessChecked by remember { mutableStateOf(false) }
 
-    val effectiveCount = customText.toIntOrNull() ?: 0
+    // Front-end cap: never let a manual batch exceed what's left for the day.
+    val effectiveCount = (customText.toIntOrNull() ?: 0).coerceAtMost(remaining)
     val canSubmit = effectiveCount > 0 && witnessChecked
 
     ModalBottomSheet(
@@ -161,7 +167,7 @@ internal fun ManualZabadSheet(
                     value = customText,
                     onValueChange = { raw ->
                         val digits = raw.filter { it.isDigit() }
-                        customText = digits
+                        customText = clampToRemaining(digits, remaining)
                     },
                     placeholder = {
                         Text(
@@ -187,6 +193,20 @@ internal fun ManualZabadSheet(
                     modifier = Modifier.weight(1f),
                 )
             }
+
+            // Daily manual-entry cap hint
+            Text(
+                text = if (remaining > 0) {
+                    stringResource(Res.string.manual_challenge_cap_remaining, remaining)
+                } else {
+                    stringResource(Res.string.manual_challenge_cap_reached)
+                },
+                color = if (remaining > 0) ZabadColors.Muted else Color(0xFFDC503C),
+                fontSize = 12.sp,
+                fontFamily = ibmPlexArabicFamily(),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+            )
 
             // Quranic verse card
             Column(

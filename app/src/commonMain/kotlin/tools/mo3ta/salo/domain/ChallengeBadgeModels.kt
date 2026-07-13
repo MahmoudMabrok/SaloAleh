@@ -1,6 +1,14 @@
 package tools.mo3ta.salo.domain
 
 /**
+ * Maximum amount a user may add per Cairo day, per challenge, through manual
+ * ("external") entry — the sheet where a count reached on fingers/tasbih is typed in.
+ * Regular tapping is uncapped; only these external batches are limited so a single
+ * manual entry can't flood the leaderboard. Applied per challenge, resets each day.
+ */
+const val CHALLENGE_MANUAL_DAILY_CAP = 10_000
+
+/**
  * The daily challenges that award a repeatable achievement badge. A "win" is
  * reaching the challenge's daily goal; each win increments that badge's count by 1
  * (at most once per Cairo day).

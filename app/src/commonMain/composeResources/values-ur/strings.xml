@@ -101,6 +101,8 @@
     <string name="manual_dhikr_enter_count">تعداد درج کریں</string>
     <string name="manual_dhikr_witness">میں گواہی دیتا ہوں کہ یہ تعداد درست اور حقیقی ہے، اور اللہ میری نیت سے باخبر ہے</string>
     <string name="manual_dhikr_submit">✦ اذکار درج کریں ✦</string>
+    <string name="manual_challenge_cap_remaining">آج دستی اندراج کے لیے باقی: %1$d</string>
+    <string name="manual_challenge_cap_reached">آپ آج کی دستی اندراج کی حد کو پہنچ گئے ہیں</string>
 
     <!-- Istighfar Challenge Screen -->
     <string name="istighfar_title">استغفار</string>

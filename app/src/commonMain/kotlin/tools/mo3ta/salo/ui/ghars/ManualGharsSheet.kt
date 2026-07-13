@@ -44,7 +44,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.stringResource
+import tools.mo3ta.salo.domain.CHALLENGE_MANUAL_DAILY_CAP
+import tools.mo3ta.salo.ui.manual.clampToRemaining
 import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.manual_challenge_cap_reached
+import tools.mo3ta.salo.generated.resources.manual_challenge_cap_remaining
 import tools.mo3ta.salo.generated.resources.manual_ghars_count
 import tools.mo3ta.salo.generated.resources.manual_ghars_enter_count
 import tools.mo3ta.salo.generated.resources.manual_ghars_submit
@@ -56,6 +60,7 @@ import tools.mo3ta.salo.generated.resources.manual_ghars_witness
 @Composable
 internal fun ManualGharsSheet(
     isOpen: Boolean,
+    remaining: Int = CHALLENGE_MANUAL_DAILY_CAP,
     onDismiss: () -> Unit,
     onSubmit: (Int) -> Unit,
 ) {
@@ -65,7 +70,8 @@ internal fun ManualGharsSheet(
     var customText by remember { mutableStateOf("") }
     var witnessChecked by remember { mutableStateOf(false) }
 
-    val effectiveCount = customText.toIntOrNull() ?: 0
+    // Front-end cap: never let a manual batch exceed what's left for the day.
+    val effectiveCount = (customText.toIntOrNull() ?: 0).coerceAtMost(remaining)
     val canSubmit = effectiveCount > 0 && witnessChecked
     val danger = Color(0xFFDC503C)
 
@@ -155,7 +161,7 @@ internal fun ManualGharsSheet(
                 Spacer(Modifier.width(10.dp))
                 OutlinedTextField(
                     value = customText,
-                    onValueChange = { raw -> customText = raw.filter { it.isDigit() } },
+                    onValueChange = { raw -> customText = clampToRemaining(raw.filter { it.isDigit() }, remaining) },
                     placeholder = {
                         Text(
                             stringResource(Res.string.manual_ghars_enter_count),
@@ -182,6 +188,20 @@ internal fun ManualGharsSheet(
                     modifier = Modifier.weight(1f),
                 )
             }
+
+            // Daily manual-entry cap hint
+            Text(
+                text = if (remaining > 0) {
+                    stringResource(Res.string.manual_challenge_cap_remaining, remaining)
+                } else {
+                    stringResource(Res.string.manual_challenge_cap_reached)
+                },
+                color = if (remaining > 0) GharsColors.SheetMuted else danger,
+                fontSize = 12.sp,
+                fontFamily = ibmPlexArabicFamily(),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+            )
 
             // Hadith card — the source of the mechanic
             Column(

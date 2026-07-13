@@ -2,6 +2,7 @@ package tools.mo3ta.salo.data.zabad
 
 import com.russhwolf.settings.Settings
 import kotlinx.datetime.LocalDate
+import tools.mo3ta.salo.domain.CHALLENGE_MANUAL_DAILY_CAP
 
 class ZabadChallengeStore(private val settings: Settings) {
 
@@ -53,15 +54,28 @@ class ZabadChallengeStore(private val settings: Settings) {
 
     /**
      * Add [count] pending taps at once (manual external entry) and return the new total
-     * (remote + pending). Never touches network. Non-positive counts are ignored.
+     * (remote + pending). Never touches network. Non-positive counts are ignored, and the
+     * amount actually applied is clamped so cumulative manual entry never exceeds
+     * [CHALLENGE_MANUAL_DAILY_CAP] for the day. Regular taps ([incrementToday]) are not counted
+     * against this cap.
      */
     fun addToday(today: LocalDate, count: Int): Int {
         ensureToday(today)
         if (count > 0) {
-            val newPending = settings.getInt(KEY_PENDING, 0) + count
-            settings.putInt(KEY_PENDING, newPending)
+            val usedManual = settings.getInt(KEY_MANUAL, 0)
+            val applied = count.coerceAtMost((CHALLENGE_MANUAL_DAILY_CAP - usedManual).coerceAtLeast(0))
+            if (applied > 0) {
+                settings.putInt(KEY_PENDING, settings.getInt(KEY_PENDING, 0) + applied)
+                settings.putInt(KEY_MANUAL, usedManual + applied)
+            }
         }
         return settings.getInt(KEY_REMOTE, 0) + settings.getInt(KEY_PENDING, 0)
+    }
+
+    /** How much more may still be added via manual entry today (cap minus what's used). */
+    fun manualRemainingToday(today: LocalDate): Int {
+        if (settings.getStringOrNull(KEY_DATE) != today.toString()) return CHALLENGE_MANUAL_DAILY_CAP
+        return (CHALLENGE_MANUAL_DAILY_CAP - settings.getInt(KEY_MANUAL, 0)).coerceAtLeast(0)
     }
 
     /**
@@ -93,6 +107,7 @@ class ZabadChallengeStore(private val settings: Settings) {
         ensureToday(today)
         settings.putInt(KEY_REMOTE, 0)
         settings.putInt(KEY_PENDING, 0)
+        settings.putInt(KEY_MANUAL, 0)
         return 0
     }
 
@@ -102,6 +117,7 @@ class ZabadChallengeStore(private val settings: Settings) {
         settings.putString(KEY_DATE, date)
         settings.putInt(KEY_REMOTE, 0)
         settings.putInt(KEY_PENDING, 0)
+        settings.putInt(KEY_MANUAL, 0)
     }
 
     private companion object {
@@ -111,5 +127,7 @@ class ZabadChallengeStore(private val settings: Settings) {
         const val KEY_LAST_WASH_TS = "zabad_last_wash_ts"
         const val KEY_ROUNDS_TODAY = "zabad_rounds_today"
         const val KEY_ROUNDS_DATE = "zabad_rounds_date"
+        // Cumulative manual ("external") entry today — the daily-cap ledger.
+        const val KEY_MANUAL = "zabad_challenge_manual"
     }
 }
