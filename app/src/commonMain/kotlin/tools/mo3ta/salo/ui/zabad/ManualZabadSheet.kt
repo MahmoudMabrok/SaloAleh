@@ -48,10 +48,8 @@ import org.jetbrains.compose.resources.stringResource
 import tools.mo3ta.salo.domain.CHALLENGE_MANUAL_DAILY_CAP
 import tools.mo3ta.salo.ui.ghars.arefRuqaaFamily
 import tools.mo3ta.salo.ui.ghars.ibmPlexArabicFamily
-import tools.mo3ta.salo.ui.manual.clampToRemaining
 import tools.mo3ta.salo.generated.resources.Res
-import tools.mo3ta.salo.generated.resources.manual_challenge_cap_reached
-import tools.mo3ta.salo.generated.resources.manual_challenge_cap_remaining
+import tools.mo3ta.salo.generated.resources.manual_challenge_cap_error
 import tools.mo3ta.salo.generated.resources.manual_zabad_count
 import tools.mo3ta.salo.generated.resources.manual_zabad_enter_count
 import tools.mo3ta.salo.generated.resources.manual_zabad_submit
@@ -73,9 +71,10 @@ internal fun ManualZabadSheet(
     var customText by remember { mutableStateOf("") }
     var witnessChecked by remember { mutableStateOf(false) }
 
-    // Front-end cap: never let a manual batch exceed what's left for the day.
-    val effectiveCount = (customText.toIntOrNull() ?: 0).coerceAtMost(remaining)
-    val canSubmit = effectiveCount > 0 && witnessChecked
+    val effectiveCount = customText.toIntOrNull() ?: 0
+    // Front-end cap: a manual batch that would exceed the day's remaining allowance is rejected.
+    val exceedsCap = effectiveCount > remaining
+    val canSubmit = effectiveCount > 0 && witnessChecked && !exceedsCap
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -166,8 +165,7 @@ internal fun ManualZabadSheet(
                 OutlinedTextField(
                     value = customText,
                     onValueChange = { raw ->
-                        val digits = raw.filter { it.isDigit() }
-                        customText = clampToRemaining(digits, remaining)
+                        customText = raw.filter { it.isDigit() }
                     },
                     placeholder = {
                         Text(
@@ -194,19 +192,17 @@ internal fun ManualZabadSheet(
                 )
             }
 
-            // Daily manual-entry cap hint
-            Text(
-                text = if (remaining > 0) {
-                    stringResource(Res.string.manual_challenge_cap_remaining, remaining)
-                } else {
-                    stringResource(Res.string.manual_challenge_cap_reached)
-                },
-                color = if (remaining > 0) ZabadColors.Muted else Color(0xFFDC503C),
-                fontSize = 12.sp,
-                fontFamily = ibmPlexArabicFamily(),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-            )
+            // Daily manual-entry cap error — shown only when the entry exceeds the limit
+            if (exceedsCap) {
+                Text(
+                    text = stringResource(Res.string.manual_challenge_cap_error, CHALLENGE_MANUAL_DAILY_CAP),
+                    color = Color(0xFFDC503C),
+                    fontSize = 12.sp,
+                    fontFamily = ibmPlexArabicFamily(),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                )
+            }
 
             // Quranic verse card
             Column(

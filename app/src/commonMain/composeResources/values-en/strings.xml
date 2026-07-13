@@ -126,8 +126,7 @@
     <string name="manual_dhikr_enter_count">Enter count</string>
     <string name="manual_dhikr_witness">I testify that this count is true and accurate, and that Allah is aware of my intention</string>
     <string name="manual_dhikr_submit">✦ Log Dhikr ✦</string>
-    <string name="manual_challenge_cap_remaining">Remaining manual entries today: %1$d</string>
-    <string name="manual_challenge_cap_reached">You\'ve reached today\'s manual entry limit</string>
+    <string name="manual_challenge_cap_error">You can\'t add more than %1$d manually per day</string>
 
     <!-- Istighfar Challenge Screen -->
     <string name="istighfar_title">Istighfar</string>
