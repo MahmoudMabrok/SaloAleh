@@ -3,22 +3,20 @@ package tools.mo3ta.salo.ui
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,17 +27,18 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -61,33 +60,34 @@ import tools.mo3ta.salo.generated.resources.dhikr_add
 import tools.mo3ta.salo.generated.resources.dhikr_back_cd
 import tools.mo3ta.salo.generated.resources.dhikr_daily_goal
 import tools.mo3ta.salo.generated.resources.dhikr_freed_today
-import tools.mo3ta.salo.generated.resources.dhikr_manual_entry_button
 import tools.mo3ta.salo.generated.resources.dhikr_phrase
 import tools.mo3ta.salo.generated.resources.dhikr_progress_count
 import tools.mo3ta.salo.generated.resources.dhikr_rank_number
 import tools.mo3ta.salo.generated.resources.dhikr_rank_subtitle
 import tools.mo3ta.salo.generated.resources.dhikr_rank_unranked
-import tools.mo3ta.salo.generated.resources.dhikr_reward_book
-import tools.mo3ta.salo.generated.resources.dhikr_reward_cage
-import tools.mo3ta.salo.generated.resources.dhikr_reward_crown
-import tools.mo3ta.salo.generated.resources.dhikr_reward_crown_label
-import tools.mo3ta.salo.generated.resources.dhikr_reward_feather
-import tools.mo3ta.salo.generated.resources.dhikr_reward_shield
-import tools.mo3ta.salo.generated.resources.dhikr_rewards_title
 import tools.mo3ta.salo.generated.resources.dhikr_tap_hint
 import tools.mo3ta.salo.generated.resources.dhikr_times
 import tools.mo3ta.salo.generated.resources.dhikr_today
 import tools.mo3ta.salo.presentation.DhikrChallengeViewModel
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.dhikr.DhikrColors
+import tools.mo3ta.salo.ui.dhikr.DhikrEmancipationZone
 import tools.mo3ta.salo.ui.dhikr.DhikrLeaderboardSheet
 import tools.mo3ta.salo.ui.dhikr.DhikrLinearProgress
+import tools.mo3ta.salo.ui.dhikr.DhikrManualEntryButton
 import tools.mo3ta.salo.ui.dhikr.DhikrMilestoneCelebration
 import tools.mo3ta.salo.ui.dhikr.DhikrPanel
 import tools.mo3ta.salo.ui.dhikr.DhikrProgressRing
 import tools.mo3ta.salo.ui.dhikr.DhikrSpacing
+import tools.mo3ta.salo.ui.dhikr.DhikrSpoilsReceipt
 import tools.mo3ta.salo.ui.dhikr.ManualDhikrSheet
+import tools.mo3ta.salo.ui.ghars.ibmPlexArabicFamily
 
+
+// Concept 1 (عتق الرقاب) — the emancipation-engine hero for the 100-dhikr challenge, which
+// rebuilds the counter out of the hadith's gains and ends on the غنائم اليوم spoils receipt.
+// Flip to false to fall back to the original progress-ring hero.
+private const val DHIKR_GAINS_UI_ENABLED = true
 
 private val DhikrHeroBackground = Brush.verticalGradient(
     colors = listOf(
@@ -134,67 +134,97 @@ fun DhikrRewardsScreen(
         }
     }
 
+    val onHeroTap: () -> Unit = {
+        viewModel.onDhikrTap()
+        analyticsManager.logAction(
+            AppAnalytics.DHIKR_TAP,
+            mapOf(AppAnalytics.PARAM_COUNT to (state.todayCount + 1).toString()),
+        )
+    }
+    val onHeroManualEntry: () -> Unit = {
+        analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_DHIKR)
+        viewModel.showManualDhikrSheet()
+    }
+    // The spoils sheet can open on demand (the "what you gain" button) as well as on completion.
+    var showGainsSheet by remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(DhikrHeroBackground),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.systemBars)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            DhikrImmersiveZone(
+        if (DHIKR_GAINS_UI_ENABLED) {
+            DhikrEmancipationZone(
                 count = state.todayCount,
-                target = state.dailyGoal,
                 rank = state.rank,
                 participantCount = state.participantCount,
                 canCount = !state.isLoading,
-                onTap = {
-                    viewModel.onDhikrTap()
-                    analyticsManager.logAction(
-                        AppAnalytics.DHIKR_TAP,
-                        mapOf(AppAnalytics.PARAM_COUNT to (state.todayCount + 1).toString()),
-                    )
-                },
+                onTap = onHeroTap,
                 onBack = onBack,
                 onRankClick = { viewModel.onLeaderboardOpened() },
-                onManualEntryClick = {
-                    analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_DHIKR)
-                    viewModel.showManualDhikrSheet()
-                },
+                onManualEntryClick = onHeroManualEntry,
+                onViewGains = { showGainsSheet = true },
+                modifier = Modifier.fillMaxSize(),
             )
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                color = DhikrColors.Cream,
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = DhikrSpacing.ScreenHorizontal)
-                        .padding(top = DhikrSpacing.PanelGap, bottom = DhikrSpacing.PanelGap),
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                DhikrImmersiveZone(
+                    count = state.todayCount,
+                    target = state.dailyGoal,
+                    rank = state.rank,
+                    participantCount = state.participantCount,
+                    canCount = !state.isLoading,
+                    onTap = onHeroTap,
+                    onBack = onBack,
+                    onRankClick = { viewModel.onLeaderboardOpened() },
+                    onManualEntryClick = onHeroManualEntry,
+                )
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                    color = DhikrColors.Cream,
                 ) {
-                    DhikrRewardsGridCard()
-                    Spacer(Modifier.height(DhikrSpacing.PanelGap))
-                    DhikrStatsRow(
-                        freedCount = state.todayCount / 10,
-                        todayCount = state.todayCount,
-                        target = state.dailyGoal,
-                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .padding(horizontal = DhikrSpacing.ScreenHorizontal)
+                            .padding(top = DhikrSpacing.PanelGap, bottom = DhikrSpacing.PanelGap),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        DhikrStatsRow(
+                            freedCount = state.todayCount / 10,
+                            todayCount = state.todayCount,
+                            target = state.dailyGoal,
+                        )
+                    }
                 }
             }
         }
 
-        DhikrMilestoneCelebration(
-            milestone = state.celebrationMilestone,
-            visible = state.showCelebration,
-            onDismiss = { viewModel.onCelebrationDismissed() },
-            modifier = Modifier.fillMaxSize(),
-        )
+        val isHundredMilestone = state.celebrationMilestone > 0 && state.celebrationMilestone % 100 == 0
+        if (DHIKR_GAINS_UI_ENABLED) {
+            DhikrSpoilsReceipt(
+                visible = showGainsSheet || (state.showCelebration && isHundredMilestone),
+                onDismiss = {
+                    showGainsSheet = false
+                    if (state.showCelebration) viewModel.onCelebrationDismissed()
+                },
+                modifier = Modifier.fillMaxSize(),
+            )
+        } else {
+            DhikrMilestoneCelebration(
+                milestone = state.celebrationMilestone,
+                visible = state.showCelebration,
+                onDismiss = { viewModel.onCelebrationDismissed() },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 
     if (state.showLeaderboard) {
@@ -215,48 +245,6 @@ fun DhikrRewardsScreen(
         onSubmit = { count -> viewModel.submitManualDhikr(count) },
         onSubtract = { count -> viewModel.subtractManualDhikr(count) },
     )
-}
-
-@Composable
-private fun DhikrManualEntryButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier.fillMaxWidth(),
-    onDarkBackground: Boolean = false,
-) {
-    val containerColor = if (onDarkBackground) {
-        Color.White.copy(alpha = 0.14f)
-    } else {
-        DhikrColors.Green.copy(alpha = 0.08f)
-    }
-    val borderColor = if (onDarkBackground) {
-        Color.White.copy(alpha = 0.24f)
-    } else {
-        DhikrColors.LightGreen.copy(alpha = 0.4f)
-    }
-    val textColor = if (onDarkBackground) {
-        Color.White.copy(alpha = 0.92f)
-    } else {
-        DhikrColors.Green
-    }
-
-    Surface(
-        onClick = onClick,
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        color = containerColor,
-        border = BorderStroke(1.dp, borderColor),
-    ) {
-        Text(
-            text = stringResource(Res.string.dhikr_manual_entry_button),
-            color = textColor,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 14.dp, horizontal = 12.dp),
-        )
-    }
 }
 
 @Composable
@@ -300,6 +288,7 @@ private fun DhikrImmersiveZone(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .statusBarsPadding()
                 .padding(horizontal = DhikrSpacing.ScreenHorizontal),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -398,46 +387,6 @@ private fun DhikrImmersiveZone(
 }
 
 @Composable
-private fun DhikrRewardsGridCard() {
-    val rewards = listOf(
-        DhikrReward("🕊", stringResource(Res.string.dhikr_reward_cage)),
-        DhikrReward("📖", stringResource(Res.string.dhikr_reward_book)),
-        DhikrReward("🛡", stringResource(Res.string.dhikr_reward_shield)),
-        DhikrReward("🌿", stringResource(Res.string.dhikr_reward_feather)),
-        DhikrReward("👑", stringResource(Res.string.dhikr_reward_crown), isHero = true),
-    )
-
-    DhikrPanel(modifier = Modifier.fillMaxWidth(), topOverlap = true) {
-        Text(
-            text = stringResource(Res.string.dhikr_rewards_title),
-            color = DhikrColors.Ink,
-            fontSize = 19.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(18.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Top,
-        ) {
-            rewards.forEachIndexed { index, reward ->
-                if (reward.isHero) {
-                    HeroRewardColumn(reward = reward, modifier = Modifier.weight(1f))
-                } else {
-                    RewardColumn(reward = reward, modifier = Modifier.weight(1f))
-                }
-                if (index != rewards.lastIndex) {
-                    VerticalDivider(
-                        modifier = Modifier.height(96.dp),
-                        color = DhikrColors.Stroke,
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun DhikrStatsRow(
     freedCount: Int,
     todayCount: Int,
@@ -452,7 +401,8 @@ private fun DhikrStatsRow(
                 text = freedCount.toString(),
                 color = DhikrColors.Green,
                 fontSize = 40.sp,
-                fontWeight = FontWeight.Black,
+                fontWeight = FontWeight.Light,
+                fontFamily = ibmPlexArabicFamily(),
                 lineHeight = 42.sp,
             )
             Spacer(Modifier.height(4.dp))
@@ -460,6 +410,7 @@ private fun DhikrStatsRow(
                 text = stringResource(Res.string.dhikr_freed_today),
                 color = DhikrColors.Muted,
                 fontSize = 12.sp,
+                fontFamily = ibmPlexArabicFamily(),
                 textAlign = TextAlign.Center,
                 lineHeight = 18.sp,
             )
@@ -469,7 +420,8 @@ private fun DhikrStatsRow(
                 text = stringResource(Res.string.dhikr_progress_count, todayCount, target),
                 color = DhikrColors.Ink,
                 fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = ibmPlexArabicFamily(),
             )
             Spacer(Modifier.height(8.dp))
             DhikrLinearProgress(
@@ -481,78 +433,10 @@ private fun DhikrStatsRow(
                 text = stringResource(Res.string.dhikr_daily_goal, target),
                 color = DhikrColors.Muted,
                 fontSize = 12.sp,
+                fontFamily = ibmPlexArabicFamily(),
                 textAlign = TextAlign.Center,
             )
         }
-    }
-}
-
-private data class DhikrReward(
-    val icon: String,
-    val text: String,
-    val isHero: Boolean = false,
-)
-
-@Composable
-private fun RewardColumn(
-    reward: DhikrReward,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier.padding(horizontal = 4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = reward.icon,
-            fontSize = 30.sp,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = reward.text,
-            color = DhikrColors.Ink,
-            fontSize = 13.sp,
-            lineHeight = 20.sp,
-            fontWeight = FontWeight.Medium,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
-
-@Composable
-private fun HeroRewardColumn(
-    reward: DhikrReward,
-    modifier: Modifier = Modifier,
-) {
-    val shape = RoundedCornerShape(12.dp)
-    Column(
-        modifier = modifier
-            .clip(shape)
-            .background(DhikrColors.Green.copy(alpha = 0.09f))
-            .border(1.dp, DhikrColors.LightGreen.copy(alpha = 0.35f), shape)
-            .padding(vertical = 8.dp, horizontal = 4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = stringResource(Res.string.dhikr_reward_crown_label),
-            color = DhikrColors.Green,
-            fontSize = 9.sp,
-            fontWeight = FontWeight.ExtraBold,
-        )
-        Text(
-            text = reward.icon,
-            fontSize = 30.sp,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = reward.text,
-            color = DhikrColors.Ink,
-            fontSize = 13.sp,
-            lineHeight = 20.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-        )
     }
 }
 
