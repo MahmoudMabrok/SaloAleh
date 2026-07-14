@@ -101,6 +101,8 @@ private val DhikrHeroBackground = Brush.verticalGradient(
 @Composable
 fun DhikrRewardsScreen(
     onBack: () -> Unit,
+    openLeaderboard: Boolean = false,
+    onLeaderboardAutoOpened: () -> Unit = {},
     viewModel: DhikrChallengeViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -110,6 +112,13 @@ fun DhikrRewardsScreen(
     LaunchedEffect(Unit) {
         viewModel.onScreenEntered()
         analyticsManager.logAction(AppAnalytics.DHIKR_SCREEN_VIEW)
+    }
+
+    LaunchedEffect(openLeaderboard) {
+        if (openLeaderboard) {
+            viewModel.onLeaderboardOpened()
+            onLeaderboardAutoOpened()
+        }
     }
 
     DisposableEffect(lifecycleOwner, viewModel) {

@@ -46,9 +46,22 @@ import tools.mo3ta.salo.ui.ghars.ibmPlexArabicFamily
 import tools.mo3ta.salo.ui.zabad.*
 
 @Composable
-fun ZabadScreen(onBack: () -> Unit, viewModel: ZabadChallengeViewModel = koinViewModel()) {
+fun ZabadScreen(
+    onBack: () -> Unit,
+    openLeaderboard: Boolean = false,
+    onLeaderboardAutoOpened: () -> Unit = {},
+    viewModel: ZabadChallengeViewModel = koinViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val analyticsManager: AnalyticsManager = koinInject()
+
+    LaunchedEffect(openLeaderboard) {
+        if (openLeaderboard) {
+            viewModel.onLeaderboardOpened()
+            onLeaderboardAutoOpened()
+        }
+    }
+
     var phase by remember { mutableFloatStateOf(0f) }
     var washProgress by remember { mutableFloatStateOf(0f) }
     val ripples = remember { mutableStateListOf<Ripple>() }

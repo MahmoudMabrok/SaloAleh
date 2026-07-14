@@ -149,6 +149,9 @@ fun App(
         var showZabadChallenge by remember { mutableStateOf(false) }
         var showGharsChallenge by remember { mutableStateOf(false) }
         var showQuranChallenge by remember { mutableStateOf(false) }
+        // Set when a challenge push is tapped: the just-opened challenge screen auto-opens
+        // its leaderboard sheet once, then clears the flag.
+        var openChallengeLeaderboard by remember { mutableStateOf(false) }
         var showExtensionQr by remember { mutableStateOf(false) }
         var showReferral by remember { mutableStateOf(false) }
         var showPaywall by remember { mutableStateOf(false) }
@@ -259,17 +262,33 @@ fun App(
             )
             showDhikrRewards -> DhikrRewardsScreen(
                 onBack = { showDhikrRewards = false },
+                openLeaderboard = openChallengeLeaderboard,
+                onLeaderboardAutoOpened = { openChallengeLeaderboard = false },
             )
             showBaqiyatChallenge -> BaqiyatScreen(
                 onBack = { showBaqiyatChallenge = false },
+                openLeaderboard = openChallengeLeaderboard,
+                onLeaderboardAutoOpened = { openChallengeLeaderboard = false },
             )
             showIstighfarChallenge -> IstighfarRewardsScreen(
                 onBack = { showIstighfarChallenge = false },
+                openLeaderboard = openChallengeLeaderboard,
+                onLeaderboardAutoOpened = { openChallengeLeaderboard = false },
             )
-            showZabadChallenge -> ZabadScreen(onBack = { showZabadChallenge = false })
-            showGharsChallenge -> GharsScreen(onBack = { showGharsChallenge = false })
+            showZabadChallenge -> ZabadScreen(
+                onBack = { showZabadChallenge = false },
+                openLeaderboard = openChallengeLeaderboard,
+                onLeaderboardAutoOpened = { openChallengeLeaderboard = false },
+            )
+            showGharsChallenge -> GharsScreen(
+                onBack = { showGharsChallenge = false },
+                openLeaderboard = openChallengeLeaderboard,
+                onLeaderboardAutoOpened = { openChallengeLeaderboard = false },
+            )
             showQuranChallenge -> QuranChallengeScreen(
                 onBack = { showQuranChallenge = false },
+                openLeaderboard = openChallengeLeaderboard,
+                onLeaderboardAutoOpened = { openChallengeLeaderboard = false },
             )
             else -> SaloTabScaffold(
                 selectedTab = selectedTab,
@@ -581,6 +600,30 @@ fun App(
                             openLeaderboardSheet = true
                         }
                         NotificationAction.OPEN_ACHIEVEMENTS -> selectedTab = SaloTab.Achievements
+                        NotificationAction.OPEN_DHIKR_CHALLENGE -> {
+                            showDhikrRewards = true
+                            openChallengeLeaderboard = true
+                        }
+                        NotificationAction.OPEN_BAQIYAT_CHALLENGE -> {
+                            showBaqiyatChallenge = true
+                            openChallengeLeaderboard = true
+                        }
+                        NotificationAction.OPEN_ISTIGHFAR_CHALLENGE -> {
+                            showIstighfarChallenge = true
+                            openChallengeLeaderboard = true
+                        }
+                        NotificationAction.OPEN_QURAN_CHALLENGE -> {
+                            showQuranChallenge = true
+                            openChallengeLeaderboard = true
+                        }
+                        NotificationAction.OPEN_ZABAD_CHALLENGE -> {
+                            showZabadChallenge = true
+                            openChallengeLeaderboard = true
+                        }
+                        NotificationAction.OPEN_GHARS_CHALLENGE -> {
+                            showGharsChallenge = true
+                            openChallengeLeaderboard = true
+                        }
                         NotificationAction.NONE -> Unit
                     }
                 },
