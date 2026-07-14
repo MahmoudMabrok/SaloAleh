@@ -463,6 +463,10 @@
     <string name="manual_salawat_enter_count">输入数量</string>
     <string name="manual_salawat_witness">我证明这个数量是真实准确的，真主了解我的意图</string>
     <string name="manual_salawat_submit">✦ 记录祈祷 ✦</string>
+    <string name="manual_mode_add">➕ 添加</string>
+    <string name="manual_mode_subtract">➖ 扣除</string>
+    <string name="manual_subtract_submit">✦ 从计数中扣除 ✦</string>
+    <string name="manual_subtract_hint">用于修正误加的数目 — 将从当前总数中扣除，且不会低于零</string>
 
     <!-- Share Card -->
     <string name="share_card_out_of_participants">共 %1$d 位参与者</string>

@@ -492,6 +492,10 @@
     <string name="manual_salawat_enter_count">Enter count</string>
     <string name="manual_salawat_witness">I testify that this count is true and accurate, and that Allah is aware of my intention</string>
     <string name="manual_salawat_submit">✦ Log Prayers ✦</string>
+    <string name="manual_mode_add">➕ Add</string>
+    <string name="manual_mode_subtract">➖ Subtract</string>
+    <string name="manual_subtract_submit">✦ Subtract from count ✦</string>
+    <string name="manual_subtract_hint">To fix a count added by mistake — it is subtracted from your current total and never goes below zero</string>
 
     <!-- Share Card -->
     <string name="share_card_out_of_participants">out of %1$d participants</string>

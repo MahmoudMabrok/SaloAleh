@@ -49,6 +49,10 @@ import org.jetbrains.compose.resources.stringResource
 import tools.mo3ta.salo.domain.CHALLENGE_MANUAL_DAILY_CAP
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.manual_challenge_cap_error
+import tools.mo3ta.salo.generated.resources.manual_mode_add
+import tools.mo3ta.salo.generated.resources.manual_mode_subtract
+import tools.mo3ta.salo.generated.resources.manual_subtract_hint
+import tools.mo3ta.salo.generated.resources.manual_subtract_submit
 import tools.mo3ta.salo.generated.resources.manual_dhikr_count
 import tools.mo3ta.salo.generated.resources.manual_dhikr_enter_count
 import tools.mo3ta.salo.generated.resources.manual_dhikr_other_count
@@ -67,6 +71,7 @@ internal fun ManualDhikrSheet(
     remaining: Int = CHALLENGE_MANUAL_DAILY_CAP,
     onDismiss: () -> Unit,
     onSubmit: (Int) -> Unit,
+    onSubtract: (Int) -> Unit = {},
 ) {
     if (!isOpen) return
 
@@ -74,6 +79,7 @@ internal fun ManualDhikrSheet(
     var selectedPreset by remember { mutableStateOf<Int?>(null) }
     var customText by remember { mutableStateOf("") }
     var witnessChecked by remember { mutableStateOf(false) }
+    var isSubtractMode by remember { mutableStateOf(false) }
 
     val effectiveCount = if (showPresetChips) {
         selectedPreset ?: customText.toIntOrNull() ?: 0
@@ -81,8 +87,10 @@ internal fun ManualDhikrSheet(
         customText.toIntOrNull() ?: 0
     }
     // Front-end cap: a manual batch that would exceed the day's remaining allowance is rejected.
-    val exceedsCap = effectiveCount > remaining
-    val canSubmit = effectiveCount > 0 && witnessChecked && !exceedsCap
+    // The cap only applies when adding — a correction can subtract any amount.
+    val exceedsCap = !isSubtractMode && effectiveCount > remaining
+    // In subtract (correction) mode there is nothing to witness — the gate is just a positive amount.
+    val canSubmit = effectiveCount > 0 && (isSubtractMode || (witnessChecked && !exceedsCap))
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -126,6 +134,12 @@ internal fun ManualDhikrSheet(
                 textAlign = TextAlign.Center,
                 lineHeight = 22.sp,
                 modifier = Modifier.fillMaxWidth(),
+            )
+
+            // Add / Subtract mode toggle — subtract lets the user correct a mistaken count.
+            ManualModeToggle(
+                isSubtractMode = isSubtractMode,
+                onModeChange = { isSubtractMode = it },
             )
 
             // Tasbih beads decoration
@@ -236,6 +250,17 @@ internal fun ManualDhikrSheet(
                 )
             }
 
+            if (isSubtractMode) {
+                // Correction hint — replaces the witness gate when subtracting.
+                Text(
+                    text = stringResource(Res.string.manual_subtract_hint),
+                    color = DhikrColors.Muted,
+                    fontSize = 13.sp,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 22.sp,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                )
+            } else {
             // Quranic verse card
             Column(
                 modifier = Modifier
@@ -323,35 +348,48 @@ internal fun ManualDhikrSheet(
                     lineHeight = 24.sp,
                 )
             }
+            }
 
             // Submit button
             val submitAlpha = if (canSubmit) 1f else 0.35f
+            val submitStart = if (isSubtractMode) Color(0xFFE07A5F) else DhikrColors.LightGreen
+            val submitEnd = if (isSubtractMode) Color(0xFFB23A2A) else DhikrColors.Green
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
                     .background(
                         Brush.linearGradient(
-                            listOf(DhikrColors.LightGreen, DhikrColors.Green),
+                            listOf(submitStart, submitEnd),
                         ).takeIf { canSubmit }
                             ?: Brush.linearGradient(
                                 listOf(
-                                    DhikrColors.LightGreen.copy(alpha = 0.3f),
-                                    DhikrColors.Green.copy(alpha = 0.3f),
+                                    submitStart.copy(alpha = 0.3f),
+                                    submitEnd.copy(alpha = 0.3f),
                                 ),
                             ),
                     )
                     .border(
                         1.dp,
-                        DhikrColors.Green.copy(alpha = submitAlpha),
+                        submitEnd.copy(alpha = submitAlpha),
                         RoundedCornerShape(14.dp),
                     )
-                    .then(if (canSubmit) Modifier.clickable { onSubmit(effectiveCount) } else Modifier)
+                    .then(
+                        if (canSubmit) {
+                            Modifier.clickable {
+                                if (isSubtractMode) onSubtract(effectiveCount) else onSubmit(effectiveCount)
+                            }
+                        } else {
+                            Modifier
+                        },
+                    )
                     .padding(vertical = 14.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = stringResource(Res.string.manual_dhikr_submit),
+                    text = stringResource(
+                        if (isSubtractMode) Res.string.manual_subtract_submit else Res.string.manual_dhikr_submit,
+                    ),
                     color = if (canSubmit) Color.White else DhikrColors.Muted,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.W700,
@@ -360,6 +398,66 @@ internal fun ManualDhikrSheet(
 
             Spacer(Modifier.height(8.dp))
         }
+    }
+}
+
+@Composable
+private fun ManualModeToggle(
+    isSubtractMode: Boolean,
+    onModeChange: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(DhikrColors.Card)
+            .border(1.dp, DhikrColors.Stroke, RoundedCornerShape(12.dp))
+            .padding(3.dp),
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        ManualModeSegment(
+            label = stringResource(Res.string.manual_mode_add),
+            isSelected = !isSubtractMode,
+            selectedColor = DhikrColors.Green,
+            modifier = Modifier.weight(1f),
+            onClick = { onModeChange(false) },
+        )
+        ManualModeSegment(
+            label = stringResource(Res.string.manual_mode_subtract),
+            isSelected = isSubtractMode,
+            selectedColor = Color(0xFFB23A2A),
+            modifier = Modifier.weight(1f),
+            onClick = { onModeChange(true) },
+        )
+    }
+}
+
+@Composable
+private fun ManualModeSegment(
+    label: String,
+    isSelected: Boolean,
+    selectedColor: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val bg by animateColorAsState(
+        targetValue = if (isSelected) selectedColor else Color.Transparent,
+        animationSpec = tween(200),
+    )
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(bg)
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            color = if (isSelected) Color.White else DhikrColors.Muted,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.W700,
+        )
     }
 }
 
