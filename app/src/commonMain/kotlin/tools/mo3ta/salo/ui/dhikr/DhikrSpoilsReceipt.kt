@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -52,6 +53,8 @@ import tools.mo3ta.salo.generated.resources.dhikr_gains_receipt_title
 import tools.mo3ta.salo.generated.resources.dhikr_gains_share_text
 import tools.mo3ta.salo.generated.resources.dhikr_keep_going
 import tools.mo3ta.salo.generated.resources.dhikr_share_gains
+import tools.mo3ta.salo.ui.ghars.arefRuqaaFamily
+import tools.mo3ta.salo.ui.ghars.ibmPlexArabicFamily
 import tools.mo3ta.salo.ui.shareText
 
 private object ReceiptColors {
@@ -137,14 +140,15 @@ private fun SpoilsCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .navigationBarsPadding()
                 .padding(horizontal = 24.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 text = stringResource(Res.string.dhikr_gains_receipt_title),
                 color = ReceiptColors.Accent,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.ExtraBold,
+                fontSize = 24.sp,
+                fontFamily = arefRuqaaFamily(),
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(2.dp))
@@ -152,6 +156,7 @@ private fun SpoilsCard(
                 text = stringResource(Res.string.dhikr_gains_receipt_sub),
                 color = ReceiptColors.Ink.copy(alpha = 0.7f),
                 fontSize = 12.sp,
+                fontFamily = ibmPlexArabicFamily(),
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(16.dp))
@@ -185,6 +190,7 @@ private fun SpoilsCard(
                     color = ReceiptColors.Ink,
                     fontSize = 13.sp,
                     lineHeight = 22.sp,
+                    fontFamily = ibmPlexArabicFamily(),
                     textAlign = TextAlign.Center,
                 )
             }
@@ -230,14 +236,16 @@ private fun GainRow(label: String, qty: String) {
             text = label,
             color = ReceiptColors.Ink,
             fontSize = 15.sp,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = FontWeight.Medium,
+            fontFamily = ibmPlexArabicFamily(),
             modifier = Modifier.weight(1f),
         )
         Text(
             text = qty,
             color = ReceiptColors.Accent,
             fontSize = 15.sp,
-            fontWeight = FontWeight.ExtraBold,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = ibmPlexArabicFamily(),
         )
     }
 }
@@ -261,7 +269,8 @@ private fun ReceiptButton(
             text = text,
             color = if (filled) Color(0xFF1A2415) else ReceiptColors.Accent,
             fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = ibmPlexArabicFamily(),
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .fillMaxWidth()

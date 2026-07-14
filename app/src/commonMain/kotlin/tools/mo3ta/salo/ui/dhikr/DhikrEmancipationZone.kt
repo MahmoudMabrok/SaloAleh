@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -59,6 +60,8 @@ import tools.mo3ta.salo.generated.resources.dhikr_phrase
 import tools.mo3ta.salo.generated.resources.dhikr_rank_number
 import tools.mo3ta.salo.generated.resources.dhikr_rank_subtitle
 import tools.mo3ta.salo.generated.resources.dhikr_rank_unranked
+import tools.mo3ta.salo.ui.ghars.arefRuqaaFamily
+import tools.mo3ta.salo.ui.ghars.ibmPlexArabicFamily
 import kotlin.random.Random
 
 /**
@@ -163,6 +166,7 @@ internal fun DhikrEmancipationZone(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .statusBarsPadding()
                 .padding(horizontal = DhikrSpacing.ScreenHorizontal),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -195,6 +199,7 @@ internal fun DhikrEmancipationZone(
                         text = chipText,
                         color = Color.White.copy(alpha = 0.65f),
                         fontSize = 12.sp,
+                        fontFamily = ibmPlexArabicFamily(),
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
                     )
                 }
@@ -215,10 +220,10 @@ internal fun DhikrEmancipationZone(
 
             Text(
                 text = stringResource(Res.string.dhikr_phrase),
-                color = Color.White.copy(alpha = 0.9f),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                lineHeight = 26.sp,
+                color = Color.White.copy(alpha = 0.92f),
+                fontSize = 19.sp,
+                fontFamily = arefRuqaaFamily(),
+                lineHeight = 32.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 12.dp),
             )
@@ -233,14 +238,15 @@ internal fun DhikrEmancipationZone(
                 text = count.toString(),
                 color = Color(0xFFF4F8F0),
                 fontSize = 56.sp,
-                fontWeight = FontWeight.Black,
+                fontWeight = FontWeight.Light,
+                fontFamily = ibmPlexArabicFamily(),
                 lineHeight = 58.sp,
             )
             Text(
                 text = stringResource(Res.string.dhikr_gains_count_unit),
                 color = Color(0xFFF4F8F0).copy(alpha = 0.5f),
                 fontSize = 13.sp,
-                fontWeight = FontWeight.Medium,
+                fontFamily = ibmPlexArabicFamily(),
             )
 
             Spacer(Modifier.height(10.dp))
@@ -248,6 +254,7 @@ internal fun DhikrEmancipationZone(
                 text = stringResource(Res.string.dhikr_gains_tap_hint),
                 color = Color.White.copy(alpha = 0.4f),
                 fontSize = 12.sp,
+                fontFamily = ibmPlexArabicFamily(),
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(18.dp))
@@ -268,7 +275,8 @@ private fun FreedLabel(freedNecks: Int) {
                 text = text,
                 color = EmancipationColors.RingBroken,
                 fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = ibmPlexArabicFamily(),
                 textAlign = TextAlign.Center,
             )
         }
