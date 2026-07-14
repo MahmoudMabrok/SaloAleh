@@ -463,6 +463,10 @@
     <string name="manual_salawat_enter_count">تعداد درج کریں</string>
     <string name="manual_salawat_witness">میں گواہی دیتا ہوں کہ یہ تعداد درست اور حقیقی ہے، اور اللہ میری نیت سے باخبر ہے</string>
     <string name="manual_salawat_submit">✦ صلوات درج کریں ✦</string>
+    <string name="manual_mode_add">➕ اضافہ</string>
+    <string name="manual_mode_subtract">➖ کمی</string>
+    <string name="manual_subtract_submit">✦ تعداد سے کم کریں ✦</string>
+    <string name="manual_subtract_hint">غلطی سے شامل کیے گئے عدد کو درست کرنے کے لیے — یہ آپ کے موجودہ مجموعے سے کم ہوگا اور کبھی صفر سے نیچے نہیں جائے گا</string>
 
     <!-- Share Card -->
     <string name="share_card_out_of_participants">%1$d شرکاء میں سے</string>

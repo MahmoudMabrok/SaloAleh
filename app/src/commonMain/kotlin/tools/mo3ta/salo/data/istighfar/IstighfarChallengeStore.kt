@@ -58,6 +58,30 @@ class IstighfarChallengeStore(private val settings: Settings) {
         return settings.getInt(KEY_REMOTE, 0) + settings.getInt(KEY_PENDING, 0)
     }
 
+    /**
+     * Subtract [count] from today's total to correct a mistaken entry, and return the new total.
+     * The total is floored at 0 — it never goes negative. Never touches network.
+     *
+     * The reduction is kept in the pending ledger (which is allowed to go negative) rather than the
+     * remote baseline, so a later remote fetch that re-advances the baseline does not silently undo
+     * the correction: the negative pending preserves the lowered total until a write succeeds.
+     * Any amount removed is also refunded to the manual-entry cap ledger so a corrected mistake
+     * frees the daily allowance again.
+     */
+    fun subtractToday(today: LocalDate, count: Int): Int {
+        ensureToday(today)
+        if (count > 0) {
+            val remote = settings.getInt(KEY_REMOTE, 0)
+            val current = remote + settings.getInt(KEY_PENDING, 0)
+            val newTotal = (current - count).coerceAtLeast(0)
+            settings.putInt(KEY_PENDING, newTotal - remote)
+            val removed = current - newTotal
+            val usedManual = settings.getInt(KEY_MANUAL, 0)
+            settings.putInt(KEY_MANUAL, (usedManual - removed).coerceAtLeast(0))
+        }
+        return settings.getInt(KEY_REMOTE, 0) + settings.getInt(KEY_PENDING, 0)
+    }
+
     /** How much more may still be added via manual entry today (cap minus what's used). */
     fun manualRemainingToday(today: LocalDate): Int {
         if (settings.getStringOrNull(KEY_DATE) != today.toString()) return CHALLENGE_MANUAL_DAILY_CAP

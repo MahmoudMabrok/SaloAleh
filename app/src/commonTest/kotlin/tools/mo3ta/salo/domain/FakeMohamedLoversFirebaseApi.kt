@@ -77,6 +77,15 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
     override suspend fun incrementExternalCount(roundKey: String, uid: String, count: Int): Result<Unit> =
         Result.success(Unit)
 
+    data class DecrementScoreCall(val roundKey: String, val uid: String, val amount: Int)
+
+    val decrementScoreCalls = mutableListOf<DecrementScoreCall>()
+
+    override suspend fun decrementScore(roundKey: String, uid: String, amount: Int): Result<Int> {
+        decrementScoreCalls.add(DecrementScoreCall(roundKey, uid, amount))
+        return Result.success(amount.coerceAtLeast(0))
+    }
+
     override suspend fun setSupporter(roundKey: String, uid: String, supporter: Boolean): Result<Unit> =
         Result.success(Unit)
 

@@ -497,6 +497,10 @@
     <string name="manual_salawat_enter_count">أدخل العدد</string>
     <string name="manual_salawat_witness">أشهد أن هذا العدد صحيح وحقيقي، وأن الله مطّلع على نيّتي</string>
     <string name="manual_salawat_submit">✦ تسجيل الصلوات ✦</string>
+    <string name="manual_mode_add">➕ إضافة</string>
+    <string name="manual_mode_subtract">➖ خصم</string>
+    <string name="manual_subtract_submit">✦ خصم من العدد ✦</string>
+    <string name="manual_subtract_hint">لتصحيح عدد أُضيف بالخطأ — سيُخصم من رصيدك الحالي ولن ينزل تحت الصفر</string>
 
     <!-- Share Card -->
     <string name="share_card_out_of_participants">من أصل %1$d مشارك</string>

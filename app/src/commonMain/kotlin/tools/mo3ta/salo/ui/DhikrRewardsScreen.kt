@@ -213,6 +213,7 @@ fun DhikrRewardsScreen(
         remaining = state.manualRemainingToday,
         onDismiss = { viewModel.dismissManualDhikrSheet() },
         onSubmit = { count -> viewModel.submitManualDhikr(count) },
+        onSubtract = { count -> viewModel.subtractManualDhikr(count) },
     )
 }
 

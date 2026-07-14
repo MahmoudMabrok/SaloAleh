@@ -28,6 +28,11 @@ interface MohamedLoversFirebaseApi {
     ): Result<Unit>
     suspend fun fetchUserAchievements(uid: String): Result<Map<String, UserAchievement>>
     suspend fun incrementExternalCount(roundKey: String, uid: String, count: Int): Result<Unit>
+    /**
+     * Lower the player's saved competition score by [amount] to correct a mistaken entry.
+     * The score is floored at 0 (never negative). Returns the reduction actually applied.
+     */
+    suspend fun decrementScore(roundKey: String, uid: String, amount: Int): Result<Int>
     suspend fun resetPlayerScore(roundKey: String, uid: String): Result<Unit>
     suspend fun setScoreMasked(roundKey: String, uid: String, masked: Boolean): Result<Unit>
     suspend fun setSupporter(roundKey: String, uid: String, supporter: Boolean): Result<Unit>

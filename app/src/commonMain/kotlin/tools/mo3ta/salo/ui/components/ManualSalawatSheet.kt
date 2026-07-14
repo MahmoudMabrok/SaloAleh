@@ -57,6 +57,7 @@ internal fun ManualSalawatSheet(
     isOpen: Boolean,
     onDismiss: () -> Unit,
     onSubmit: (Int) -> Unit,
+    onSubtract: (Int) -> Unit = {},
 ) {
     if (!isOpen) return
 
@@ -64,9 +65,11 @@ internal fun ManualSalawatSheet(
     var selectedPreset by remember { mutableStateOf<Int?>(null) }
     var customText by remember { mutableStateOf("") }
     var witnessChecked by remember { mutableStateOf(false) }
+    var isSubtractMode by remember { mutableStateOf(false) }
 
     val effectiveCount = selectedPreset ?: customText.toIntOrNull() ?: 0
-    val canSubmit = effectiveCount > 0 && witnessChecked
+    // In subtract (correction) mode there is nothing to witness — the gate is just a positive amount.
+    val canSubmit = effectiveCount > 0 && (isSubtractMode || witnessChecked)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -112,6 +115,12 @@ internal fun ManualSalawatSheet(
                 textAlign = TextAlign.Center,
                 lineHeight = 22.sp,
                 modifier = Modifier.fillMaxWidth(),
+            )
+
+            // Add / Subtract mode toggle — subtract lets the user correct a mistaken count.
+            ManualModeToggle(
+                isSubtractMode = isSubtractMode,
+                onModeChange = { isSubtractMode = it },
             )
 
             // Tasbih beads decoration
@@ -206,6 +215,18 @@ internal fun ManualSalawatSheet(
                 )
             }
 
+            if (isSubtractMode) {
+                // Correction hint — replaces the witness gate when subtracting.
+                Text(
+                    text = stringResource(Res.string.manual_subtract_hint),
+                    color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
+                    fontSize = 13.sp,
+                    fontFamily = MohamedLoversFonts.body,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 22.sp,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                )
+            } else {
             // Quranic verse card
             Column(
                 modifier = Modifier
@@ -303,21 +324,24 @@ internal fun ManualSalawatSheet(
                     lineHeight = 24.sp,
                 )
             }
+            }
 
             // Submit button
             val submitAlpha = if (canSubmit) 1f else 0.35f
+            val submitStart = if (isSubtractMode) Color(0xFFB23A2A) else MohamedLoversPalette.GoldBase
+            val submitEnd = if (isSubtractMode) Color(0xFF7A2618) else Color(0xFF8B6914)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
                     .background(
                         Brush.linearGradient(
-                            listOf(MohamedLoversPalette.GoldBase, Color(0xFF8B6914))
+                            listOf(submitStart, submitEnd)
                         ).takeIf { canSubmit }
                             ?: Brush.linearGradient(
                                 listOf(
-                                    MohamedLoversPalette.GoldBase.copy(alpha = 0.3f),
-                                    Color(0xFF8B6914).copy(alpha = 0.3f),
+                                    submitStart.copy(alpha = 0.3f),
+                                    submitEnd.copy(alpha = 0.3f),
                                 )
                             )
                     )
@@ -326,12 +350,22 @@ internal fun ManualSalawatSheet(
                         MohamedLoversPalette.GoldHighlight.copy(alpha = submitAlpha),
                         RoundedCornerShape(14.dp),
                     )
-                    .then(if (canSubmit) Modifier.clickable { onSubmit(effectiveCount) } else Modifier)
+                    .then(
+                        if (canSubmit) {
+                            Modifier.clickable {
+                                if (isSubtractMode) onSubtract(effectiveCount) else onSubmit(effectiveCount)
+                            }
+                        } else {
+                            Modifier
+                        }
+                    )
                     .padding(vertical = 14.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = stringResource(Res.string.manual_salawat_submit),
+                    text = stringResource(
+                        if (isSubtractMode) Res.string.manual_subtract_submit else Res.string.manual_salawat_submit
+                    ),
                     color = if (canSubmit) MohamedLoversPalette.SkyTop else MohamedLoversPalette.GoldGlow.copy(alpha = 0.4f),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.W700,
@@ -341,6 +375,67 @@ internal fun ManualSalawatSheet(
 
             Spacer(Modifier.height(8.dp))
         }
+    }
+}
+
+@Composable
+private fun ManualModeToggle(
+    isSubtractMode: Boolean,
+    onModeChange: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(MohamedLoversPalette.GoldGlow.copy(alpha = 0.05f))
+            .border(1.dp, MohamedLoversPalette.GoldBase.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
+            .padding(3.dp),
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        ManualModeSegment(
+            label = stringResource(Res.string.manual_mode_add),
+            isSelected = !isSubtractMode,
+            selectedColor = MohamedLoversPalette.GoldBase,
+            modifier = Modifier.weight(1f),
+            onClick = { onModeChange(false) },
+        )
+        ManualModeSegment(
+            label = stringResource(Res.string.manual_mode_subtract),
+            isSelected = isSubtractMode,
+            selectedColor = Color(0xFFB23A2A),
+            modifier = Modifier.weight(1f),
+            onClick = { onModeChange(true) },
+        )
+    }
+}
+
+@Composable
+private fun ManualModeSegment(
+    label: String,
+    isSelected: Boolean,
+    selectedColor: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val bg by animateColorAsState(
+        targetValue = if (isSelected) selectedColor else Color.Transparent,
+        animationSpec = tween(200),
+    )
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(bg)
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            color = if (isSelected) MohamedLoversPalette.SkyTop else MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
+            fontSize = 15.sp,
+            fontWeight = FontWeight.W700,
+            fontFamily = MohamedLoversFonts.body,
+        )
     }
 }
 

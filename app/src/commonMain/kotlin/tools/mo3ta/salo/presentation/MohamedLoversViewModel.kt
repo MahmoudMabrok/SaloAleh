@@ -380,6 +380,48 @@ class MohamedLoversViewModel(
         sessionStore.saveLastSalawatTimestamp(nowMs)
     }
 
+    /**
+     * Subtract a mistakenly-added batch from the player's competition score, flooring at 0.
+     * Reduces the un-flushed local pending first (always safe and instant), then lowers the saved
+     * server score for the remainder. The heart index, daily goal and streak are intentionally left
+     * untouched — they record activity, not the leaderboard total the user is correcting.
+     */
+    fun subtractManualSalawat(count: Int) {
+        val roundKey = state.value.roundKey ?: return
+        if (count <= 0) return
+
+        val serverTotal = remoteSelfPlayer?.totalCount ?: 0
+        val pendingClicks = repository.getPendingSession(roundKey).clickCount
+        val pendingNet = (pendingClicks - inFlightFlush).coerceAtLeast(0)
+        val currentScore = serverTotal + pendingNet
+        val applied = count.coerceAtMost(currentScore)
+        if (applied <= 0) {
+            _state.update { it.copy(showManualSalawatSheet = false) }
+            return
+        }
+
+        val pendingReduction = applied.coerceAtMost(pendingClicks)
+        if (pendingReduction > 0) repository.decrementPendingClick(roundKey, pendingReduction)
+        val serverReduction = applied - pendingReduction
+
+        val pending = repository.getPendingSession(roundKey)
+        _state.update {
+            it.copy(
+                sessionClicks = pending.clickCount,
+                showManualSalawatSheet = false,
+                isSubmittingManualSalawat = serverReduction > 0,
+            )
+        }
+        applyLeaderboard()
+
+        if (serverReduction > 0) {
+            viewModelScope.launch {
+                repository.decrementScore(roundKey, serverReduction)
+                _state.update { it.copy(isSubmittingManualSalawat = false) }
+            }
+        }
+    }
+
     private fun settleHeartDecay(nowTs: Long = Clock.System.now().toEpochMilliseconds()) {
         val storedScore = heartStore.getScore()
         val storedAnchor = heartStore.getAnchorTs()

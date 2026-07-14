@@ -223,6 +223,33 @@ class MohamedLoversFirebaseClient(
         }
     }
 
+    override suspend fun decrementScore(roundKey: String, uid: String, amount: Int): Result<Int> {
+        log.d { "decrementScore[$roundKey/$uid] amount=$amount" }
+        if (amount <= 0) return Result.success(0)
+        return runCatching {
+            val playerRef = Firebase.database.reference(playersPath(roundKey)).child(uid)
+            val current = (playerRef.child(TOTAL_COUNT_KEY).valueEvents.first().value as? Number)?.toInt() ?: 0
+            // Floor at 0: a correction can never push the saved score below zero.
+            val newTotal = (current - amount).coerceAtLeast(0)
+            val applied = current - newTotal
+            if (applied > 0) {
+                playerRef.updateChildren(mapOf(TOTAL_COUNT_KEY to newTotal))
+            }
+            newTotal to applied
+        }.also { result ->
+            result.fold(
+                onSuccess = { (newTotal, applied) ->
+                    log.d { "decrementScore[$roundKey/$uid] ok newTotal=$newTotal applied=$applied" }
+                    if (applied > 0) mirror.mirrorPlayerField(roundKey, uid, TOTAL_COUNT_KEY, newTotal)
+                },
+                onFailure = { error ->
+                    log.e(error) { "decrementScore[$roundKey/$uid] failed" }
+                    trackWriteFailure("decrement_score", error)
+                },
+            )
+        }.map { it.second }
+    }
+
     override suspend fun resetPlayerScore(roundKey: String, uid: String): Result<Unit> {
         log.d { "resetPlayerScore[$roundKey/$uid]" }
         return runCatching {

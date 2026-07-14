@@ -59,6 +59,18 @@ class MohamedLoversRepository(
 
     fun clearAllPendingRounds() = sessionStore.clearAllPendingRounds()
 
+    fun decrementPendingClick(roundKey: String, delta: Int) =
+        sessionStore.decrementPendingClick(roundKey, delta)
+
+    /**
+     * Lower the player's saved competition score by [amount] to correct a mistaken entry,
+     * flooring at 0. Returns the reduction actually applied on the server.
+     */
+    suspend fun decrementScore(roundKey: String, amount: Int): Result<Int> {
+        val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
+        return firebaseClient.decrementScore(roundKey, uid, amount)
+    }
+
     suspend fun resetPlayerScore(roundKey: String): Result<Unit> {
         val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
         sessionStore.clearPendingRound(roundKey)
