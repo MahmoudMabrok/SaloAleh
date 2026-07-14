@@ -31,6 +31,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -131,40 +134,45 @@ fun DhikrRewardsScreen(
         }
     }
 
+    val onHeroTap: () -> Unit = {
+        viewModel.onDhikrTap()
+        analyticsManager.logAction(
+            AppAnalytics.DHIKR_TAP,
+            mapOf(AppAnalytics.PARAM_COUNT to (state.todayCount + 1).toString()),
+        )
+    }
+    val onHeroManualEntry: () -> Unit = {
+        analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_DHIKR)
+        viewModel.showManualDhikrSheet()
+    }
+    // The spoils sheet can open on demand (the "what you gain" button) as well as on completion.
+    var showGainsSheet by remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(DhikrHeroBackground),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            val onHeroTap: () -> Unit = {
-                viewModel.onDhikrTap()
-                analyticsManager.logAction(
-                    AppAnalytics.DHIKR_TAP,
-                    mapOf(AppAnalytics.PARAM_COUNT to (state.todayCount + 1).toString()),
-                )
-            }
-            val onHeroManualEntry: () -> Unit = {
-                analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_DHIKR)
-                viewModel.showManualDhikrSheet()
-            }
-            if (DHIKR_GAINS_UI_ENABLED) {
-                DhikrEmancipationZone(
-                    count = state.todayCount,
-                    rank = state.rank,
-                    participantCount = state.participantCount,
-                    canCount = !state.isLoading,
-                    onTap = onHeroTap,
-                    onBack = onBack,
-                    onRankClick = { viewModel.onLeaderboardOpened() },
-                    onManualEntryClick = onHeroManualEntry,
-                )
-            } else {
+        if (DHIKR_GAINS_UI_ENABLED) {
+            DhikrEmancipationZone(
+                count = state.todayCount,
+                rank = state.rank,
+                participantCount = state.participantCount,
+                canCount = !state.isLoading,
+                onTap = onHeroTap,
+                onBack = onBack,
+                onRankClick = { viewModel.onLeaderboardOpened() },
+                onManualEntryClick = onHeroManualEntry,
+                onViewGains = { showGainsSheet = true },
+                modifier = Modifier.fillMaxSize(),
+            )
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 DhikrImmersiveZone(
                     count = state.todayCount,
                     target = state.dailyGoal,
@@ -176,34 +184,37 @@ fun DhikrRewardsScreen(
                     onRankClick = { viewModel.onLeaderboardOpened() },
                     onManualEntryClick = onHeroManualEntry,
                 )
-            }
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                color = DhikrColors.Cream,
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .padding(horizontal = DhikrSpacing.ScreenHorizontal)
-                        .padding(top = DhikrSpacing.PanelGap, bottom = DhikrSpacing.PanelGap),
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                    color = DhikrColors.Cream,
                 ) {
-                    DhikrStatsRow(
-                        freedCount = state.todayCount / 10,
-                        todayCount = state.todayCount,
-                        target = state.dailyGoal,
-                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .padding(horizontal = DhikrSpacing.ScreenHorizontal)
+                            .padding(top = DhikrSpacing.PanelGap, bottom = DhikrSpacing.PanelGap),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        DhikrStatsRow(
+                            freedCount = state.todayCount / 10,
+                            todayCount = state.todayCount,
+                            target = state.dailyGoal,
+                        )
+                    }
                 }
             }
         }
 
         val isHundredMilestone = state.celebrationMilestone > 0 && state.celebrationMilestone % 100 == 0
-        if (DHIKR_GAINS_UI_ENABLED && isHundredMilestone) {
+        if (DHIKR_GAINS_UI_ENABLED) {
             DhikrSpoilsReceipt(
-                visible = state.showCelebration,
-                onDismiss = { viewModel.onCelebrationDismissed() },
+                visible = showGainsSheet || (state.showCelebration && isHundredMilestone),
+                onDismiss = {
+                    showGainsSheet = false
+                    if (state.showCelebration) viewModel.onCelebrationDismissed()
+                },
                 modifier = Modifier.fillMaxSize(),
             )
         } else {

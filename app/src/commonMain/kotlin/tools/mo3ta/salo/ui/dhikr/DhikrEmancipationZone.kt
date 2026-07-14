@@ -60,6 +60,7 @@ import tools.mo3ta.salo.generated.resources.dhikr_phrase
 import tools.mo3ta.salo.generated.resources.dhikr_rank_number
 import tools.mo3ta.salo.generated.resources.dhikr_rank_subtitle
 import tools.mo3ta.salo.generated.resources.dhikr_rank_unranked
+import tools.mo3ta.salo.generated.resources.dhikr_view_gains
 import tools.mo3ta.salo.ui.ghars.arefRuqaaFamily
 import tools.mo3ta.salo.ui.ghars.ibmPlexArabicFamily
 import kotlin.random.Random
@@ -109,14 +110,21 @@ internal fun DhikrEmancipationZone(
     onBack: () -> Unit,
     onRankClick: () -> Unit,
     onManualEntryClick: () -> Unit,
+    onViewGains: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val cappedForSky = count.coerceAtMost(HUNDRED)
+    // The chain and sky live inside the *current* hundred, so every hundred is a fresh
+    // emancipation. A completed hundred (count is a positive multiple of 100) shows a full
+    // chain rather than snapping back to an empty one.
+    val withinHundred = if (count > 0 && count % HUNDRED == 0) HUNDRED else count % HUNDRED
+    // The freed-necks tally is cumulative and unbounded — it keeps climbing past the first 100.
+    val totalNecks = count / DECADES
+    val currentNecks = withinHundred / DECADES
     val dawnAlpha by animateFloatAsState(
-        targetValue = cappedForSky.toFloat() / HUNDRED,
+        targetValue = withinHundred.toFloat() / HUNDRED,
         animationSpec = tween(600, easing = FastOutSlowInEasing),
         label = "dawn",
     )
-    val freedNecks = (count / DECADES).coerceAtMost(DECADES)
 
     val stars = remember {
         val random = Random(0x5A10)
@@ -131,8 +139,8 @@ internal fun DhikrEmancipationZone(
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
+            .fillMaxSize()
             .background(Brush.verticalGradient(*EmancipationColors.NightStops))
             .clickable(
                 enabled = canCount,
@@ -165,8 +173,9 @@ internal fun DhikrEmancipationZone(
 
         Column(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxSize()
                 .statusBarsPadding()
+                .navigationBarsPadding()
                 .padding(horizontal = DhikrSpacing.ScreenHorizontal),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -210,11 +219,11 @@ internal fun DhikrEmancipationZone(
                 onDarkBackground = true,
             )
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.weight(1f))
 
-            FreedSoulsWire(freedNecks = freedNecks)
+            FreedSoulsWire(freedNecks = currentNecks)
 
-            FreedLabel(freedNecks = freedNecks)
+            FreedLabel(totalNecks = totalNecks, currentNecks = currentNecks)
 
             Spacer(Modifier.height(6.dp))
 
@@ -230,7 +239,7 @@ internal fun DhikrEmancipationZone(
 
             Spacer(Modifier.height(14.dp))
 
-            ShackleChain(count = count)
+            ShackleChain(count = withinHundred)
 
             Spacer(Modifier.height(16.dp))
 
@@ -249,6 +258,10 @@ internal fun DhikrEmancipationZone(
                 fontFamily = ibmPlexArabicFamily(),
             )
 
+            Spacer(Modifier.weight(1f))
+
+            ViewGainsButton(onClick = onViewGains)
+
             Spacer(Modifier.height(10.dp))
             Text(
                 text = stringResource(Res.string.dhikr_gains_tap_hint),
@@ -262,12 +275,32 @@ internal fun DhikrEmancipationZone(
     }
 }
 
+/** "What you gain" — opens the غنائم اليوم spoils sheet on demand, before reaching the hundred. */
 @Composable
-private fun FreedLabel(freedNecks: Int) {
+private fun ViewGainsButton(onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = EmancipationColors.RingBroken.copy(alpha = 0.14f),
+        border = BorderStroke(1.dp, EmancipationColors.RingBroken.copy(alpha = 0.55f)),
+    ) {
+        Text(
+            text = stringResource(Res.string.dhikr_view_gains),
+            color = EmancipationColors.RingBroken,
+            fontSize = 13.sp,
+            fontFamily = ibmPlexArabicFamily(),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 9.dp),
+        )
+    }
+}
+
+@Composable
+private fun FreedLabel(totalNecks: Int, currentNecks: Int) {
     val text = when {
-        freedNecks <= 0 -> ""
-        freedNecks >= DECADES -> stringResource(Res.string.dhikr_necks_freed_all)
-        else -> stringResource(Res.string.dhikr_necks_freed_partial, freedNecks, DECADES - freedNecks)
+        totalNecks <= 0 -> ""
+        currentNecks >= DECADES -> stringResource(Res.string.dhikr_necks_freed_all)
+        else -> stringResource(Res.string.dhikr_necks_freed_partial, totalNecks, DECADES - currentNecks)
     }
     Box(modifier = Modifier.height(22.dp), contentAlignment = Alignment.Center) {
         if (text.isNotEmpty()) {
