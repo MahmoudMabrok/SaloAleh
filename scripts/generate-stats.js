@@ -289,7 +289,7 @@ async function sendDhikrChallengeRank1Notification(db) {
     const msgId = await admin.messaging().send({
       topic: 'challenges',
       notification: { title, body },
-      data: { title, body, notification_type: 'dhikr_challenge_rank1' },
+      data: { title, body, notification_type: 'dhikr_challenge_rank1', notification_action: 'open_dhikr_challenge' },
     });
     console.log(`[dhikr-rank1] sent to topic "challenges" uid=${rank1Uid} name="${name}" count=${rank1Count} msgId=${msgId}`);
   } catch (e) {
@@ -322,7 +322,7 @@ async function sendBaqiyatChallengeRank1Notification(db) {
     const msgId = await admin.messaging().send({
       topic: 'challenges',
       notification: { title, body },
-      data: { title, body, notification_type: 'baqiyat_challenge_rank1' },
+      data: { title, body, notification_type: 'baqiyat_challenge_rank1', notification_action: 'open_baqiyat_challenge' },
     });
     console.log(`[baqiyat-rank1] sent to topic "challenges" uid=${rank1Uid} name="${name}" count=${rank1Count} msgId=${msgId}`);
   } catch (e) {
@@ -355,7 +355,7 @@ async function sendIstighfarChallengeRank1Notification(db) {
     const msgId = await admin.messaging().send({
       topic: 'challenges',
       notification: { title, body },
-      data: { title, body, notification_type: 'istighfar_challenge_rank1' },
+      data: { title, body, notification_type: 'istighfar_challenge_rank1', notification_action: 'open_istighfar_challenge' },
     });
     console.log(`[istighfar-rank1] sent to topic "challenges" uid=${rank1Uid} name="${name}" count=${rank1Count} msgId=${msgId}`);
   } catch (e) {
@@ -388,7 +388,7 @@ async function sendQuranChallengeRank1Notification(db) {
     const msgId = await admin.messaging().send({
       topic: 'challenges',
       notification: { title, body },
-      data: { title, body, notification_type: 'quran_challenge_rank1' },
+      data: { title, body, notification_type: 'quran_challenge_rank1', notification_action: 'open_quran_challenge' },
     });
     console.log(`[quran-rank1] sent to topic "challenges" uid=${rank1Uid} name="${name}" count=${rank1Count} msgId=${msgId}`);
   } catch (e) {
@@ -424,7 +424,7 @@ async function sendZabadChallengeRank1Notification(db) {
     const msgId = await admin.messaging().send({
       topic: 'challenges',
       notification: { title, body },
-      data: { title, body, notification_type: 'zabad_challenge_rank1' },
+      data: { title, body, notification_type: 'zabad_challenge_rank1', notification_action: 'open_zabad_challenge' },
     });
     console.log(`[zabad-rank1] sent to topic "challenges" uid=${rank1Uid} name="${name}" count=${rank1Count} msgId=${msgId}`);
   } catch (e) {
@@ -457,7 +457,7 @@ async function sendGharsChallengeRank1Notification(db) {
     const msgId = await admin.messaging().send({
       topic: 'challenges',
       notification: { title, body },
-      data: { title, body, notification_type: 'ghars_challenge_rank1' },
+      data: { title, body, notification_type: 'ghars_challenge_rank1', notification_action: 'open_ghars_challenge' },
     });
     console.log(`[ghars-rank1] sent to topic "challenges" uid=${rank1Uid} name="${name}" count=${rank1Count} msgId=${msgId}`);
   } catch (e) {

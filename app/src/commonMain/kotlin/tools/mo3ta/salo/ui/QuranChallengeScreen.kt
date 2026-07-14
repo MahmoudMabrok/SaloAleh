@@ -98,6 +98,8 @@ private val QuranHeroBackground = Brush.verticalGradient(
 @Composable
 fun QuranChallengeScreen(
     onBack: () -> Unit,
+    openLeaderboard: Boolean = false,
+    onLeaderboardAutoOpened: () -> Unit = {},
     viewModel: QuranChallengeViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -107,6 +109,13 @@ fun QuranChallengeScreen(
     LaunchedEffect(Unit) {
         viewModel.onScreenEntered()
         analyticsManager.logAction(AppAnalytics.QURAN_SCREEN_VIEW)
+    }
+
+    LaunchedEffect(openLeaderboard) {
+        if (openLeaderboard) {
+            viewModel.onLeaderboardOpened()
+            onLeaderboardAutoOpened()
+        }
     }
 
     DisposableEffect(lifecycleOwner, viewModel) {

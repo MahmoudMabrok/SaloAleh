@@ -100,6 +100,8 @@ private val IstighfarHeroBackground = Brush.verticalGradient(
 @Composable
 fun IstighfarRewardsScreen(
     onBack: () -> Unit,
+    openLeaderboard: Boolean = false,
+    onLeaderboardAutoOpened: () -> Unit = {},
     viewModel: IstighfarChallengeViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -109,6 +111,13 @@ fun IstighfarRewardsScreen(
     LaunchedEffect(Unit) {
         viewModel.onScreenEntered()
         analyticsManager.logAction(AppAnalytics.ISTIGHFAR_SCREEN_VIEW)
+    }
+
+    LaunchedEffect(openLeaderboard) {
+        if (openLeaderboard) {
+            viewModel.onLeaderboardOpened()
+            onLeaderboardAutoOpened()
+        }
     }
 
     DisposableEffect(lifecycleOwner, viewModel) {

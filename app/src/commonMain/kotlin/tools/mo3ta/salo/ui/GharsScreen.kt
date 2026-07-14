@@ -71,7 +71,12 @@ import tools.mo3ta.salo.ui.ghars.arefRuqaaFamily
 import tools.mo3ta.salo.ui.ghars.ibmPlexArabicFamily
 
 @Composable
-fun GharsScreen(onBack: () -> Unit, viewModel: GharsChallengeViewModel = koinViewModel()) {
+fun GharsScreen(
+    onBack: () -> Unit,
+    openLeaderboard: Boolean = false,
+    onLeaderboardAutoOpened: () -> Unit = {},
+    viewModel: GharsChallengeViewModel = koinViewModel(),
+) {
     val analyticsManager: AnalyticsManager = koinInject()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val tapInteraction = remember { MutableInteractionSource() }
@@ -79,6 +84,12 @@ fun GharsScreen(onBack: () -> Unit, viewModel: GharsChallengeViewModel = koinVie
     LaunchedEffect(Unit) {
         analyticsManager.logAction(AppAnalytics.GHARS_SCREEN_VIEW)
         viewModel.onScreenEntered()
+    }
+    LaunchedEffect(openLeaderboard) {
+        if (openLeaderboard) {
+            viewModel.onLeaderboardOpened()
+            onLeaderboardAutoOpened()
+        }
     }
     DisposableEffect(Unit) { onDispose { viewModel.onScreenLeft() } }
     LaunchedEffect(state.groveToastNumber) {

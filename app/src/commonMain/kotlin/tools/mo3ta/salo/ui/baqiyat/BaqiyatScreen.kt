@@ -69,6 +69,8 @@ private val BaqiyatGold = Color(0xFFF5D97A)
 @Composable
 fun BaqiyatScreen(
     onBack: () -> Unit,
+    openLeaderboard: Boolean = false,
+    onLeaderboardAutoOpened: () -> Unit = {},
     viewModel: BaqiyatViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -78,6 +80,13 @@ fun BaqiyatScreen(
     LaunchedEffect(Unit) {
         viewModel.onScreenEntered()
         analyticsManager.logAction(AppAnalytics.BAQIYAT_SCREEN_VIEW)
+    }
+
+    LaunchedEffect(openLeaderboard) {
+        if (openLeaderboard) {
+            viewModel.onLeaderboardOpened()
+            onLeaderboardAutoOpened()
+        }
     }
 
     DisposableEffect(lifecycleOwner, viewModel) {
