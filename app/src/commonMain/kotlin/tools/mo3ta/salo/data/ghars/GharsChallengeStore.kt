@@ -30,11 +30,24 @@ class GharsChallengeStore(private val settings: Settings) {
         return storedDate to (settings.getInt(KEY_REMOTE, 0) + pending)
     }
 
+    /**
+     * Lifetime total of palms this device has planted — never resets on day rollover.
+     * Accumulates every locally-grown palm (taps + applied manual entries) so the user can
+     * see the overall number of palms they've grown across all days.
+     */
+    fun lifetimeCount(): Int = settings.getInt(KEY_LIFETIME, 0)
+
+    private fun addLifetime(delta: Int) {
+        if (delta <= 0) return
+        settings.putInt(KEY_LIFETIME, settings.getInt(KEY_LIFETIME, 0) + delta)
+    }
+
     /** Increment pending and return new total (remote + pending). Never touches network. */
     fun incrementToday(today: LocalDate): Int {
         ensureToday(today)
         val newPending = settings.getInt(KEY_PENDING, 0) + 1
         settings.putInt(KEY_PENDING, newPending)
+        addLifetime(1)
         return settings.getInt(KEY_REMOTE, 0) + newPending
     }
 
@@ -53,6 +66,7 @@ class GharsChallengeStore(private val settings: Settings) {
             if (applied > 0) {
                 settings.putInt(KEY_PENDING, settings.getInt(KEY_PENDING, 0) + applied)
                 settings.putInt(KEY_MANUAL, usedManual + applied)
+                addLifetime(applied)
             }
         }
         return settings.getInt(KEY_REMOTE, 0) + settings.getInt(KEY_PENDING, 0)
@@ -112,5 +126,7 @@ class GharsChallengeStore(private val settings: Settings) {
         const val KEY_PENDING = "ghars_challenge_pending"
         // Cumulative manual ("external") entry today — the daily-cap ledger.
         const val KEY_MANUAL = "ghars_challenge_manual"
+        // Lifetime accumulator — survives day rollover; total palms ever grown on this device.
+        const val KEY_LIFETIME = "ghars_challenge_lifetime"
     }
 }

@@ -728,6 +728,7 @@
   <string name="ghars_unit">کھجوریں</string>
   <string name="ghars_goal_label">روزانہ ہدف</string>
   <string name="ghars_groves_label">مکمل باغ</string>
+  <string name="ghars_lifetime_label">آپ کی کل کھجوریں</string>
   <string name="ghars_grove_complete">باغ مکمل</string>
   <string name="ghars_remaining">باغ مکمل ہونے میں %1$d باقی</string>
   <string name="ghars_grove_toast">آپ کا باغ نمبر %1$d مکمل ہوا</string>

@@ -54,6 +54,7 @@ import tools.mo3ta.salo.generated.resources.ghars_goal_label
 import tools.mo3ta.salo.generated.resources.ghars_grove_complete
 import tools.mo3ta.salo.generated.resources.ghars_grove_toast
 import tools.mo3ta.salo.generated.resources.ghars_groves_label
+import tools.mo3ta.salo.generated.resources.ghars_lifetime_label
 import tools.mo3ta.salo.generated.resources.ghars_phrase
 import tools.mo3ta.salo.generated.resources.ghars_remaining
 import tools.mo3ta.salo.generated.resources.ghars_tap_hint
@@ -195,6 +196,7 @@ fun GharsScreen(
             todayCount = state.todayCount,
             dailyGoal = state.dailyGoal,
             completedGroves = state.completedGroves,
+            lifetimePalms = state.lifetimePalms,
             onLeaderboard = viewModel::onLeaderboardOpened,
             onManual = viewModel::showManualGharsSheet,
         )
@@ -222,6 +224,7 @@ private fun GharsSheet(
     todayCount: Int,
     dailyGoal: Int,
     completedGroves: Int,
+    lifetimePalms: Int,
     onLeaderboard: () -> Unit,
     onManual: () -> Unit,
 ) {
@@ -287,6 +290,44 @@ private fun GharsSheet(
                     fontSize = 40.sp,
                     fontWeight = FontWeight.Light,
                     fontFamily = ibmPlexArabicFamily(),
+                )
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        // Lifetime accumulator — the overall number of palms grown across every day.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(GharsColors.SheetTrack.copy(alpha = 0.5f))
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = stringResource(Res.string.ghars_lifetime_label),
+                color = GharsColors.SheetMuted,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                fontFamily = ibmPlexArabicFamily(),
+            )
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    text = lifetimePalms.toString(),
+                    color = GharsColors.Accent,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = ibmPlexArabicFamily(),
+                )
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    text = stringResource(Res.string.ghars_unit),
+                    color = GharsColors.SheetMuted,
+                    fontSize = 12.sp,
+                    fontFamily = ibmPlexArabicFamily(),
+                    modifier = Modifier.padding(bottom = 2.dp),
                 )
             }
         }
