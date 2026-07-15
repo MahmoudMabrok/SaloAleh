@@ -8,12 +8,14 @@ const {
   ZABAD_CHALLENGE_ROOT,
   GHARS_CHALLENGE_ROOT,
   QURAN_CHALLENGE_ROOT,
+  ALBAQARA_CHALLENGE_ROOT,
   buildBaqiyatChallengeDailyRanking,
   buildDhikrChallengeDailyRanking,
   buildIstighfarChallengeDailyRanking,
   buildZabadChallengeDailyRanking,
   buildGharsChallengeDailyRanking,
   buildQuranChallengeDailyRanking,
+  buildAlBaqaraChallengeDailyRanking,
   buildOldRankMap,
   computeRankChange,
   computeTop3Changes,
@@ -29,6 +31,7 @@ const {
   mirrorZabadChallenge,
   mirrorGharsChallenge,
   mirrorQuranChallenge,
+  mirrorAlBaqaraChallenge,
 } = require('./firestore-utils');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -376,6 +379,71 @@ async function populateQuranChallengeToday(db) {
   await sendTop3ChangeNotifications(db, admin, top3Notifs, CHALLENGE_TOP3_MESSAGES.quran, 'quran');
 }
 
+// Al-Baqara reading challenge. Populates ranks + leaderboard + participant totals
+// so the app can read them, but sends NO FCM (no top-3 change notifications) — this
+// challenge is intentionally push-free; it only surfaces in the app leaderboard and
+// the daily "heroes" board.
+async function populateAlBaqaraChallengeToday(db) {
+  const dateKey = cairoToday();
+  console.log(`\n--- Al-Baqara Challenge [${dateKey}] ---`);
+
+  const usersSnap = await db.ref(`${ALBAQARA_CHALLENGE_ROOT}/${dateKey}/users`).get();
+  const users = [];
+
+  if (usersSnap.exists()) {
+    usersSnap.forEach(child => {
+      const data = child.val() || {};
+      const metadata = data.data || {};
+      const uid = typeof metadata.uid === 'string' && metadata.uid.length > 0
+        ? metadata.uid
+        : child.key;
+      const currentRank = typeof data.rank === 'number' && data.rank > 0 ? data.rank : null;
+      const countryCode = typeof metadata.countryCode === 'string' ? metadata.countryCode.toUpperCase() : '';
+      const nickname = typeof metadata.nickname === 'string' ? metadata.nickname.trim() : '';
+      users.push({ uid, count: data.count, countryCode, nickname, currentRank });
+    });
+  }
+
+  const oldLbSnap = await db.ref(`${ALBAQARA_CHALLENGE_ROOT}/${dateKey}/leaderboard`).get();
+  const oldRanks = buildOldRankMap(oldLbSnap);
+  const dailyRanking = buildAlBaqaraChallengeDailyRanking(dateKey, users);
+
+  const leaderboardEntries = dailyRanking.rankedUsers.slice(0, 10).map((user, i) => {
+    const entry = {
+      uid: user.uid,
+      countryCode: user.countryCode,
+      count: user.count,
+      rank: user.rank,
+      rankChange: computeRankChange(user.uid, user.rank, oldRanks),
+    };
+    if (user.nickname) entry.nickname = user.nickname;
+    return [String(i), entry];
+  });
+
+  const updates = {
+    ...dailyRanking.rankUpdates,
+    [`${ALBAQARA_CHALLENGE_ROOT}/${dateKey}/participantCount`]: dailyRanking.participantCount,
+    [`${ALBAQARA_CHALLENGE_ROOT}/${dateKey}/totalTodayAlBaqara`]: dailyRanking.totalTodayAlBaqara,
+    [`${ALBAQARA_CHALLENGE_ROOT}/${dateKey}/lastRankedAt`]: admin.database.ServerValue.TIMESTAMP,
+    [`${ALBAQARA_CHALLENGE_ROOT}/${dateKey}/leaderboard`]: Object.fromEntries(leaderboardEntries),
+  };
+
+  await db.ref('/').update(updates);
+  console.log(
+    `Wrote albaqara ranks + leaderboard(${leaderboardEntries.length}) for ${dailyRanking.participantCount} participant(s). totalTodayAlBaqara=${dailyRanking.totalTodayAlBaqara}`,
+  );
+
+  // Phase 1: mirror to Firestore
+  await mirrorAlBaqaraChallenge(admin.firestore(), dateKey, {
+    rankedUsers: dailyRanking.rankedUsers,
+    participantCount: dailyRanking.participantCount,
+    totalTodayAlBaqara: dailyRanking.totalTodayAlBaqara,
+    leaderboardEntries,
+  });
+
+  // No FCM for this challenge — intentionally no top-3 change notifications.
+}
+
 async function populateZabadChallengeToday(db) {
   const dateKey = cairoToday();
   console.log(`\n--- Zabad Challenge [${dateKey}] ---`);
@@ -519,6 +587,7 @@ async function main() {
   await populateZabadChallengeToday(db);
   await populateGharsChallengeToday(db);
   await populateQuranChallengeToday(db);
+  await populateAlBaqaraChallengeToday(db);
 
   await populateMohamedLoversRound(db, admin, roundKey, isFinal);
 

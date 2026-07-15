@@ -86,6 +86,20 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Al-Baqara reading challenge
+    match /albaqara_challenge/{dateKey} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /albaqara_challenge/{dateKey}/users/{uid} {
+      allow read: if true;
+      allow write: if request.resource.data.keys().hasAny(['count', 'data']);
+    }
+    match /albaqara_challenge/{dateKey}/leaderboard/{entry} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Zabad challenge
     match /zabad_challenge/{dateKey} {
       allow read: if true;

@@ -85,6 +85,8 @@
     <string name="challenge_istighfar_body">حبیب مصطفیٰ ﷺ روزانہ ستر مرتبہ استغفار کرتے تھے، آپ کہاں ہیں؟</string>
     <string name="challenge_quran_title">قرآن کریم</string>
     <string name="challenge_quran_body">میری قوم نے اس قرآن کو چھوڑ دیا ہے</string>
+    <string name="challenge_albaqara_title">سورۃ البقرہ</string>
+    <string name="challenge_albaqara_body">سورۃ البقرہ پڑھو؛ اس کا پڑھنا برکت اور چھوڑنا حسرت ہے</string>
     <string name="dhikr_title">ذکر</string>
 
     <string name="dhikr_milestone_title">%1$d بار مکمل!</string>
@@ -154,6 +156,22 @@
     <string name="istighfar_leaderboard_empty">ابھی کوئی ڈیٹا نہیں</string>
     <string name="istighfar_rank_unranked">لیڈر بورڈ دیکھنے کے لیے ٹیپ کریں</string>
     <string name="istighfar_manual_entry_button">🤲 بیرونی استغفار درج کریں</string>
+
+    <!-- Al-Baqara Reading Challenge -->
+    <string name="albaqara_back_cd">واپس</string>
+    <string name="albaqara_phrase">سورۃ البقرہ پڑھو؛ اس کا پڑھنا برکت ہے، اور اسے چھوڑنا حسرت ہے، اور جادوگر اس پر قابو نہیں پا سکتے</string>
+    <string name="albaqara_today">آج</string>
+    <string name="albaqara_times">مرتبہ</string>
+    <string name="albaqara_add">میں نے سورۃ البقرہ پڑھی</string>
+    <string name="albaqara_undo">آخری اندراج واپس لیں</string>
+    <string name="albaqara_tap_hint">پوری سورت مکمل پڑھنے کے بعد بٹن دبائیں</string>
+    <string name="albaqara_count_unit">مرتبہ</string>
+    <string name="albaqara_rank_number"># %1$d</string>
+    <string name="albaqara_rank_subtitle">%1$d قارئین میں سے</string>
+    <string name="albaqara_rank_unranked">سرفہرست دیکھنے کے لیے دبائیں</string>
+    <string name="albaqara_leaderboard_title">سورۃ البقرہ پڑھنے میں سرفہرست</string>
+    <string name="albaqara_leaderboard_rank_new">نیا</string>
+    <string name="albaqara_leaderboard_empty">ابھی کوئی قاری نہیں</string>
 
     <string name="quran_back_cd">واپس</string>
     <string name="quran_phrase">میری قوم نے اس قرآن کو چھوڑ دیا ہے</string>
@@ -637,6 +655,7 @@
     <string name="heroes_challenge_quran">قرآن کریم</string>
     <string name="heroes_challenge_zabad">سو تسبیحات</string>
     <string name="heroes_challenge_ghars">ایک کھجور لگائیں</string>
+    <string name="heroes_challenge_albaqara">سورۃ البقرہ</string>
     <string name="heroes_challenge_empty">ابھی کوئی سرفہرست نہیں</string>
 
     <!-- Subscription encouragement -->

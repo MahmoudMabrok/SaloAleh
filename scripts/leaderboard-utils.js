@@ -6,6 +6,7 @@ const ISTIGHFAR_CHALLENGE_ROOT = 'istighfar_challenge';
 const ZABAD_CHALLENGE_ROOT = 'zabad_challenge';
 const GHARS_CHALLENGE_ROOT = 'ghars_challenge';
 const QURAN_CHALLENGE_ROOT = 'quran_challenge';
+const ALBAQARA_CHALLENGE_ROOT = 'albaqara_challenge';
 const MOHAMED_LOVERS_ROOT = 'mohamed_lovers';
 
 function buildOldRankMap(source) {
@@ -261,6 +262,20 @@ function buildIstighfarChallengeDailyRanking(dateKey, users, rootPath = ISTIGHFA
   };
 }
 
+function buildAlBaqaraChallengeDailyRanking(dateKey, users, rootPath = ALBAQARA_CHALLENGE_ROOT) {
+  const ranking = buildDailyCountChallengeRanking({
+    dateKey,
+    players: users,
+    rootPath,
+    playersPath: 'users',
+  });
+
+  return {
+    ...ranking,
+    totalTodayAlBaqara: ranking.totalCount,
+  };
+}
+
 function buildZabadChallengeDailyRanking(dateKey, users, rootPath = ZABAD_CHALLENGE_ROOT) {
   const result = buildDailyCountChallengeRanking({ dateKey, players: users, rootPath, playersPath: 'users' });
   return { ...result, totalTodayZabad: result.totalCount };
@@ -297,6 +312,7 @@ const CHALLENGE_PARTICIPANT_CONFIG = {
   [ZABAD_CHALLENGE_ROOT]:     { playersPath: 'users',   nested: true,  build: buildZabadChallengeDailyRanking },
   [GHARS_CHALLENGE_ROOT]:     { playersPath: 'users',   nested: true,  build: buildGharsChallengeDailyRanking },
   [QURAN_CHALLENGE_ROOT]:     { playersPath: 'users',   nested: true,  build: buildQuranChallengeDailyRanking },
+  [ALBAQARA_CHALLENGE_ROOT]:  { playersPath: 'users',   nested: true,  build: buildAlBaqaraChallengeDailyRanking },
 };
 
 // Reads a daily count-challenge's raw participant node and returns the users
@@ -559,6 +575,7 @@ module.exports = {
   ZABAD_CHALLENGE_ROOT,
   GHARS_CHALLENGE_ROOT,
   QURAN_CHALLENGE_ROOT,
+  ALBAQARA_CHALLENGE_ROOT,
   MOHAMED_LOVERS_ROOT,
   buildOldRankMap,
   computeRankChange,
@@ -573,6 +590,7 @@ module.exports = {
   buildZabadChallengeDailyRanking,
   buildGharsChallengeDailyRanking,
   buildQuranChallengeDailyRanking,
+  buildAlBaqaraChallengeDailyRanking,
   readChallengeRankedUsers,
   cairoToday,
   addDaysToDateKey,
