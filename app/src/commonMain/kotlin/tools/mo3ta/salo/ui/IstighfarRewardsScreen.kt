@@ -3,42 +3,39 @@ package tools.mo3ta.salo.ui
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -66,24 +63,17 @@ import tools.mo3ta.salo.generated.resources.istighfar_progress_count
 import tools.mo3ta.salo.generated.resources.istighfar_rank_number
 import tools.mo3ta.salo.generated.resources.istighfar_rank_subtitle
 import tools.mo3ta.salo.generated.resources.istighfar_rank_unranked
-import tools.mo3ta.salo.generated.resources.istighfar_reward_ease
-import tools.mo3ta.salo.generated.resources.istighfar_reward_provision
-import tools.mo3ta.salo.generated.resources.istighfar_reward_record
-import tools.mo3ta.salo.generated.resources.istighfar_reward_relief
-import tools.mo3ta.salo.generated.resources.istighfar_reward_sunnah
-import tools.mo3ta.salo.generated.resources.istighfar_reward_sunnah_label
-import tools.mo3ta.salo.generated.resources.istighfar_rewards_title
 import tools.mo3ta.salo.generated.resources.istighfar_tap_hint
 import tools.mo3ta.salo.generated.resources.istighfar_times
 import tools.mo3ta.salo.generated.resources.istighfar_today
+import tools.mo3ta.salo.generated.resources.istighfar_view_rewards
 import tools.mo3ta.salo.presentation.IstighfarChallengeViewModel
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.istighfar.IstighfarColors
 import tools.mo3ta.salo.ui.istighfar.IstighfarLeaderboardSheet
-import tools.mo3ta.salo.ui.istighfar.IstighfarLinearProgress
 import tools.mo3ta.salo.ui.istighfar.IstighfarMilestoneCelebration
-import tools.mo3ta.salo.ui.istighfar.IstighfarPanel
 import tools.mo3ta.salo.ui.istighfar.IstighfarProgressRing
+import tools.mo3ta.salo.ui.istighfar.IstighfarRewardsSheet
 import tools.mo3ta.salo.ui.istighfar.IstighfarSpacing
 import tools.mo3ta.salo.ui.istighfar.ManualIstighfarSheet
 
@@ -135,65 +125,47 @@ fun IstighfarRewardsScreen(
         }
     }
 
+    // The virtues live behind a button now — the sheet opens on demand instead of filling the screen.
+    var showRewardsSheet by remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(IstighfarHeroBackground),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.systemBars)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            IstighfarImmersiveZone(
-                count = state.todayCount,
-                target = state.dailyGoal,
-                rank = state.rank,
-                participantCount = state.participantCount,
-                canCount = !state.isLoading,
-                onTap = {
-                    viewModel.onIstighfarTap()
-                    analyticsManager.logAction(
-                        AppAnalytics.ISTIGHFAR_TAP,
-                        mapOf(AppAnalytics.PARAM_COUNT to (state.todayCount + 1).toString()),
-                    )
-                },
-                onBack = onBack,
-                onRankClick = { viewModel.onLeaderboardOpened() },
-                onManualEntryClick = {
-                    analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_ISTIGHFAR)
-                    viewModel.showManualIstighfarSheet()
-                },
-            )
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                color = IstighfarColors.Cream,
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = IstighfarSpacing.ScreenHorizontal)
-                        .padding(top = IstighfarSpacing.PanelGap, bottom = IstighfarSpacing.PanelGap),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    IstighfarRewardsGridCard()
-                    Spacer(Modifier.height(IstighfarSpacing.PanelGap))
-                    IstighfarStatsRow(
-                        cyclesCompleted = state.todayCount / state.dailyGoal,
-                        todayCount = state.todayCount,
-                        target = state.dailyGoal,
-                    )
-                }
-            }
-        }
+        IstighfarImmersiveZone(
+            count = state.todayCount,
+            target = state.dailyGoal,
+            rank = state.rank,
+            participantCount = state.participantCount,
+            canCount = !state.isLoading,
+            onTap = {
+                viewModel.onIstighfarTap()
+                analyticsManager.logAction(
+                    AppAnalytics.ISTIGHFAR_TAP,
+                    mapOf(AppAnalytics.PARAM_COUNT to (state.todayCount + 1).toString()),
+                )
+            },
+            onBack = onBack,
+            onRankClick = { viewModel.onLeaderboardOpened() },
+            onManualEntryClick = {
+                analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_ISTIGHFAR)
+                viewModel.showManualIstighfarSheet()
+            },
+            onViewRewards = { showRewardsSheet = true },
+            modifier = Modifier.fillMaxSize(),
+        )
 
         IstighfarMilestoneCelebration(
             milestone = state.celebrationMilestone,
             visible = state.showCelebration,
             onDismiss = { viewModel.onCelebrationDismissed() },
+            modifier = Modifier.fillMaxSize(),
+        )
+
+        IstighfarRewardsSheet(
+            visible = showRewardsSheet,
+            onDismiss = { showRewardsSheet = false },
             modifier = Modifier.fillMaxSize(),
         )
     }
@@ -221,34 +193,17 @@ fun IstighfarRewardsScreen(
 private fun IstighfarManualEntryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier.fillMaxWidth(),
-    onDarkBackground: Boolean = false,
 ) {
-    val containerColor = if (onDarkBackground) {
-        Color.White.copy(alpha = 0.14f)
-    } else {
-        IstighfarColors.Amber.copy(alpha = 0.08f)
-    }
-    val borderColor = if (onDarkBackground) {
-        Color.White.copy(alpha = 0.24f)
-    } else {
-        IstighfarColors.LightAmber.copy(alpha = 0.4f)
-    }
-    val textColor = if (onDarkBackground) {
-        Color.White.copy(alpha = 0.92f)
-    } else {
-        IstighfarColors.Amber
-    }
-
     Surface(
         onClick = onClick,
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
-        color = containerColor,
-        border = BorderStroke(1.dp, borderColor),
+        color = Color.White.copy(alpha = 0.14f),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.24f)),
     ) {
         Text(
             text = stringResource(Res.string.istighfar_manual_entry_button),
-            color = textColor,
+            color = Color.White.copy(alpha = 0.92f),
             fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
@@ -270,12 +225,15 @@ private fun IstighfarImmersiveZone(
     onBack: () -> Unit,
     onRankClick: () -> Unit,
     onManualEntryClick: () -> Unit,
+    onViewRewards: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val fraction = (count.toFloat() / target.toFloat()).coerceIn(0f, 1f)
+    val cyclesCompleted = if (target > 0) count / target else 0
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
+            .fillMaxSize()
             .background(IstighfarHeroBackground)
             .clickable(
                 enabled = canCount,
@@ -299,7 +257,9 @@ private fun IstighfarImmersiveZone(
 
         Column(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
                 .padding(horizontal = IstighfarSpacing.ScreenHorizontal),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -337,12 +297,9 @@ private fun IstighfarImmersiveZone(
                 }
             }
 
-            IstighfarManualEntryButton(
-                onClick = onManualEntryClick,
-                onDarkBackground = true,
-            )
+            IstighfarManualEntryButton(onClick = onManualEntryClick)
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.weight(1f))
 
             Text(
                 text = stringResource(Res.string.istighfar_phrase),
@@ -353,7 +310,7 @@ private fun IstighfarImmersiveZone(
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .padding(horizontal = 12.dp)
-                    .padding(top = 2.dp, bottom = 12.dp),
+                    .padding(top = 2.dp, bottom = 16.dp),
             )
 
             IstighfarProgressRing(
@@ -385,6 +342,14 @@ private fun IstighfarImmersiveZone(
                 }
             }
 
+            Spacer(Modifier.height(12.dp))
+
+            IstighfarStatChips(
+                cyclesCompleted = cyclesCompleted,
+                todayCount = count,
+                target = target,
+            )
+
             Spacer(Modifier.height(8.dp))
             Text(
                 text = stringResource(Res.string.istighfar_tap_hint),
@@ -392,166 +357,82 @@ private fun IstighfarImmersiveZone(
                 fontSize = 12.sp,
                 textAlign = TextAlign.Center,
             )
-            Spacer(Modifier.height(16.dp))
+
+            Spacer(Modifier.weight(1f))
+
+            ViewRewardsButton(onClick = onViewRewards)
+
+            Spacer(Modifier.height(18.dp))
         }
     }
 }
 
 @Composable
-private fun IstighfarRewardsGridCard() {
-    val rewards = listOf(
-        IstighfarReward("🚪", stringResource(Res.string.istighfar_reward_relief)),
-        IstighfarReward("🌤", stringResource(Res.string.istighfar_reward_ease)),
-        IstighfarReward("🎁", stringResource(Res.string.istighfar_reward_provision)),
-        IstighfarReward("📖", stringResource(Res.string.istighfar_reward_record)),
-        IstighfarReward("👑", stringResource(Res.string.istighfar_reward_sunnah), isHero = true),
-    )
-
-    IstighfarPanel(modifier = Modifier.fillMaxWidth(), topOverlap = true) {
-        Text(
-            text = stringResource(Res.string.istighfar_rewards_title),
-            color = IstighfarColors.Ink,
-            fontSize = 19.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(18.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Top,
-        ) {
-            rewards.forEachIndexed { index, reward ->
-                if (reward.isHero) {
-                    HeroRewardColumn(reward = reward, modifier = Modifier.weight(1f))
-                } else {
-                    RewardColumn(reward = reward, modifier = Modifier.weight(1f))
-                }
-                if (index != rewards.lastIndex) {
-                    VerticalDivider(
-                        modifier = Modifier.height(96.dp),
-                        color = IstighfarColors.Stroke,
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun IstighfarStatsRow(
+private fun IstighfarStatChips(
     cyclesCompleted: Int,
     todayCount: Int,
     target: Int,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(IstighfarSpacing.PanelGap),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        IstighfarPanel(modifier = Modifier.weight(1f), topOverlap = true) {
+        HeroStatChip(
+            value = stringResource(Res.string.istighfar_progress_count, todayCount, target),
+            label = stringResource(Res.string.istighfar_daily_goal, target),
+        )
+        HeroStatChip(
+            value = cyclesCompleted.toString(),
+            label = stringResource(Res.string.istighfar_cycles_label),
+        )
+    }
+}
+
+/** Compact translucent stat pill on the dark hero — replaces the old cream stats panel. */
+@Composable
+private fun HeroStatChip(value: String, label: String) {
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = Color.White.copy(alpha = 0.08f),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.14f)),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             Text(
-                text = cyclesCompleted.toString(),
-                color = IstighfarColors.Amber,
-                fontSize = 40.sp,
-                fontWeight = FontWeight.Black,
-                lineHeight = 42.sp,
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = stringResource(Res.string.istighfar_cycles_label),
-                color = IstighfarColors.Muted,
-                fontSize = 12.sp,
-                textAlign = TextAlign.Center,
-                lineHeight = 18.sp,
-            )
-        }
-        IstighfarPanel(modifier = Modifier.weight(1f), topOverlap = true) {
-            Text(
-                text = stringResource(Res.string.istighfar_progress_count, todayCount, target),
-                color = IstighfarColors.Ink,
-                fontSize = 20.sp,
+                text = value,
+                color = Color.White,
+                fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
             )
-            Spacer(Modifier.height(8.dp))
-            IstighfarLinearProgress(
-                fraction = todayCount.toFloat() / target.toFloat(),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(2.dp))
             Text(
-                text = stringResource(Res.string.istighfar_daily_goal, target),
-                color = IstighfarColors.Muted,
-                fontSize = 12.sp,
+                text = label,
+                color = Color.White.copy(alpha = 0.55f),
+                fontSize = 11.sp,
                 textAlign = TextAlign.Center,
             )
         }
     }
 }
 
-private data class IstighfarReward(
-    val icon: String,
-    val text: String,
-    val isHero: Boolean = false,
-)
-
+/** "What do you gain" — opens the virtues sheet on demand. */
 @Composable
-private fun RewardColumn(
-    reward: IstighfarReward,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier.padding(horizontal = 4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+private fun ViewRewardsButton(onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = IstighfarColors.LightAmber.copy(alpha = 0.16f),
+        border = BorderStroke(1.dp, IstighfarColors.LightAmber.copy(alpha = 0.55f)),
     ) {
         Text(
-            text = reward.icon,
-            fontSize = 30.sp,
+            text = stringResource(Res.string.istighfar_view_rewards),
+            color = IstighfarColors.LightAmber,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = reward.text,
-            color = IstighfarColors.Ink,
-            fontSize = 13.sp,
-            lineHeight = 20.sp,
-            fontWeight = FontWeight.Medium,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
-
-@Composable
-private fun HeroRewardColumn(
-    reward: IstighfarReward,
-    modifier: Modifier = Modifier,
-) {
-    val shape = RoundedCornerShape(12.dp)
-    Column(
-        modifier = modifier
-            .clip(shape)
-            .background(IstighfarColors.Amber.copy(alpha = 0.09f))
-            .border(1.dp, IstighfarColors.LightAmber.copy(alpha = 0.35f), shape)
-            .padding(vertical = 8.dp, horizontal = 4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = stringResource(Res.string.istighfar_reward_sunnah_label),
-            color = IstighfarColors.Amber,
-            fontSize = 9.sp,
-            fontWeight = FontWeight.ExtraBold,
-        )
-        Text(
-            text = reward.icon,
-            fontSize = 30.sp,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = reward.text,
-            color = IstighfarColors.Ink,
-            fontSize = 13.sp,
-            lineHeight = 20.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 11.dp),
         )
     }
 }

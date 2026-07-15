@@ -160,6 +160,8 @@
     <string name="istighfar_daily_goal">الهدف اليومي: %1$d مرة</string>
     <string name="istighfar_progress_count">%1$d / %2$d</string>
     <string name="istighfar_rewards_title">ماذا تنال من الاستغفار؟</string>
+    <string name="istighfar_view_rewards">🎁 ماذا تنال؟</string>
+    <string name="istighfar_rewards_close">حسناً</string>
     <string name="istighfar_reward_relief">جعل الله له من كل ضيق مخرجًا</string>
     <string name="istighfar_reward_ease">ومن كل همّ فرجًا</string>
     <string name="istighfar_reward_provision">ورزقه من حيث لا يحتسب</string>
@@ -186,6 +188,8 @@
     <string name="quran_daily_goal">الهدف اليومي: %1$d صفحات</string>
     <string name="quran_progress_count">%1$d / %2$d</string>
     <string name="quran_rewards_title">فضائل قراءة القرآن</string>
+    <string name="quran_view_rewards">🎁 الفضائل</string>
+    <string name="quran_rewards_close">حسناً</string>
     <string name="quran_reward_light">نور لصاحبه يوم القيامة</string>
     <string name="quran_reward_cure">شفاء لما في الصدور</string>
     <string name="quran_reward_intercession">يشفع لصاحبه يوم القيامة</string>

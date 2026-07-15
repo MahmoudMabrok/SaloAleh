@@ -160,6 +160,8 @@
     <string name="istighfar_daily_goal">Daily goal: %1$d times</string>
     <string name="istighfar_progress_count">%1$d / %2$d</string>
     <string name="istighfar_rewards_title">What do you receive from istighfar?</string>
+    <string name="istighfar_view_rewards">🎁 What you gain</string>
+    <string name="istighfar_rewards_close">Got it</string>
     <string name="istighfar_reward_relief">Allah makes for him a way out of every hardship</string>
     <string name="istighfar_reward_ease">and relief from every distress</string>
     <string name="istighfar_reward_provision">and provides for him from where he does not expect</string>
@@ -186,6 +188,8 @@
     <string name="quran_daily_goal">Daily goal: %1$d pages</string>
     <string name="quran_progress_count">%1$d / %2$d</string>
     <string name="quran_rewards_title">Virtues of reciting the Quran</string>
+    <string name="quran_view_rewards">🎁 Virtues</string>
+    <string name="quran_rewards_close">Got it</string>
     <string name="quran_reward_light">A light for its companion on the Day of Judgment</string>
     <string name="quran_reward_cure">A cure for what is in the hearts</string>
     <string name="quran_reward_intercession">It will intercede for its companion on the Day of Judgment</string>

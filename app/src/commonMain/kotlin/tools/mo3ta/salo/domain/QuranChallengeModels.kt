@@ -1,6 +1,6 @@
 package tools.mo3ta.salo.domain
 
-const val QURAN_CHALLENGE_DAILY_GOAL = 5
+const val QURAN_CHALLENGE_DAILY_GOAL = 1
 
 data class QuranChallengeDayStats(
     val rank: Int = 0,
