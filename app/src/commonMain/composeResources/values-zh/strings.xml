@@ -135,6 +135,8 @@
     <string name="istighfar_daily_goal">每日目标：%1$d 次</string>
     <string name="istighfar_progress_count">%1$d / %2$d</string>
     <string name="istighfar_rewards_title">求饶（讨白）能获得什么？</string>
+    <string name="istighfar_view_rewards">🎁 有何回赐？</string>
+    <string name="istighfar_rewards_close">好的</string>
     <string name="istighfar_reward_relief">真主为他打开走出困境的出路</string>
     <string name="istighfar_reward_ease">并从每种忧愁中解脱</string>
     <string name="istighfar_reward_provision">并从意想不到的地方赐予给养</string>
@@ -161,6 +163,8 @@
     <string name="quran_daily_goal">每日目标：%1$d 页</string>
     <string name="quran_progress_count">%1$d / %2$d</string>
     <string name="quran_rewards_title">诵读古兰经的美德</string>
+    <string name="quran_view_rewards">🎁 美德</string>
+    <string name="quran_rewards_close">好的</string>
     <string name="quran_reward_light">在审判日为其伴侣带来光明</string>
     <string name="quran_reward_cure">治愈心灵之疾</string>
     <string name="quran_reward_intercession">在审判日为其伴侣求情</string>

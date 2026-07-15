@@ -135,6 +135,8 @@
     <string name="istighfar_daily_goal">روزانہ ہدف: %1$d بار</string>
     <string name="istighfar_progress_count">%1$d / %2$d</string>
     <string name="istighfar_rewards_title">استغفار سے کیا ملتا ہے؟</string>
+    <string name="istighfar_view_rewards">🎁 کیا ملتا ہے؟</string>
+    <string name="istighfar_rewards_close">ٹھیک ہے</string>
     <string name="istighfar_reward_relief">اللہ اس کے لیے ہر تنگی سے نکلنے کا راستہ بنا دیتا ہے</string>
     <string name="istighfar_reward_ease">اور ہر غم سے راحت</string>
     <string name="istighfar_reward_provision">اور اسے وہاں سے رزق دیتا ہے جہاں سے اسے گمان بھی نہ ہو</string>
@@ -161,6 +163,8 @@
     <string name="quran_daily_goal">روزانہ ہدف: %1$d صفحات</string>
     <string name="quran_progress_count">%1$d / %2$d</string>
     <string name="quran_rewards_title">قرآن پڑھنے کے فضائل</string>
+    <string name="quran_view_rewards">🎁 فضائل</string>
+    <string name="quran_rewards_close">ٹھیک ہے</string>
     <string name="quran_reward_light">قیامت کے دن اپنے ساتھی کے لیے نور</string>
     <string name="quran_reward_cure">سینوں میں جو ہے اس کے لیے شفا</string>
     <string name="quran_reward_intercession">قیامت کے دن اپنے ساتھی کی شفاعت کرے گا</string>
