@@ -772,6 +772,7 @@
   <string name="ghars_unit">نخلة</string>
   <string name="ghars_goal_label">الهدف اليومي</string>
   <string name="ghars_groves_label">بساتين مكتملة</string>
+  <string name="ghars_lifetime_label">إجمالي نخيلك</string>
   <string name="ghars_grove_complete">اكتمل البستان</string>
   <string name="ghars_remaining">باقٍ %1$d لاكتمال البستان</string>
   <string name="ghars_grove_toast">اكتمل بستانك رقم %1$d</string>

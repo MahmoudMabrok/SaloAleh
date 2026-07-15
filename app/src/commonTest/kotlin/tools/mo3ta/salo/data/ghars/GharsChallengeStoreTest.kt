@@ -82,6 +82,41 @@ class GharsChallengeStoreTest {
         assertEquals(0, store.manualRemainingToday(day))
     }
 
+    @Test fun lifetimeAccumulatesAcrossDaysAndSurvivesRollover() {
+        val store = GharsChallengeStore(MapSettings())
+        val first = LocalDate(2026, 7, 12)
+        val next = LocalDate(2026, 7, 13)
+        repeat(5) { store.incrementToday(first) }
+        store.addToday(first, 10)
+        assertEquals(15, store.lifetimeCount())
+        // Day rollover zeroes the daily count but never the lifetime accumulator.
+        assertEquals(0, store.todayCount(next))
+        assertEquals(15, store.lifetimeCount())
+        repeat(3) { store.incrementToday(next) }
+        assertEquals(18, store.lifetimeCount())
+    }
+
+    @Test fun lifetimeCountsOnlyAppliedManualAmount() {
+        val store = GharsChallengeStore(MapSettings())
+        val day = LocalDate(2026, 7, 12)
+        // Over-cap batch is clamped; lifetime credits only the applied amount, not the request.
+        store.addToday(day, CHALLENGE_MANUAL_DAILY_CAP + 5000)
+        assertEquals(CHALLENGE_MANUAL_DAILY_CAP, store.lifetimeCount())
+        // A further batch past the cap applies nothing and adds nothing to lifetime.
+        store.addToday(day, 100)
+        assertEquals(CHALLENGE_MANUAL_DAILY_CAP, store.lifetimeCount())
+    }
+
+    @Test fun lifetimeUnaffectedByRemoteBaseline() {
+        val store = GharsChallengeStore(MapSettings())
+        val day = LocalDate(2026, 7, 12)
+        repeat(2) { store.incrementToday(day) }
+        // A higher remote baseline advances the daily total but not the local lifetime tally.
+        store.updateRemoteBaseline(day, 50)
+        assertEquals(52, store.todayCount(day))
+        assertEquals(2, store.lifetimeCount())
+    }
+
     @Test fun manualCapResetsNextDay() {
         val store = GharsChallengeStore(MapSettings())
         val first = LocalDate(2026, 7, 12)

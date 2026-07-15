@@ -9,6 +9,8 @@ data class GharsChallengeUiState(
     val todayCount: Int = 0,
     val dailyGoal: Int = GHARS_CHALLENGE_DAILY_GOAL,
     val completedGroves: Int = 0,
+    // Lifetime total of palms grown on this device — accumulates across all days.
+    val lifetimePalms: Int = 0,
     val rank: Int = 0,
     val participantCount: Int = 0,
     val totalTodayGhars: Int = 0,

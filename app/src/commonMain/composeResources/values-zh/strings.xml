@@ -724,6 +724,7 @@
   <string name="ghars_unit">棵</string>
   <string name="ghars_goal_label">每日目标</string>
   <string name="ghars_groves_label">已完成的棕榈园</string>
+  <string name="ghars_lifetime_label">您的棕榈总数</string>
   <string name="ghars_grove_complete">棕榈园已完成</string>
   <string name="ghars_remaining">还差 %1$d 棵完成棕榈园</string>
   <string name="ghars_grove_toast">您的第 %1$d 座棕榈园已完成</string>

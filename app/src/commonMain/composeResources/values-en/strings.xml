@@ -762,6 +762,7 @@
   <string name="ghars_unit">palms</string>
   <string name="ghars_goal_label">Daily goal</string>
   <string name="ghars_groves_label">Groves completed</string>
+  <string name="ghars_lifetime_label">Your total palms</string>
   <string name="ghars_grove_complete">Grove complete</string>
   <string name="ghars_remaining">%1$d more to complete the grove</string>
   <string name="ghars_grove_toast">Your grove no. %1$d is complete</string>
