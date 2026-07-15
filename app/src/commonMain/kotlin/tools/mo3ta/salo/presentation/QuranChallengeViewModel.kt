@@ -103,7 +103,8 @@ class QuranChallengeViewModel(
         val today = today()
         val updated = store.incrementToday(today)
         maybeRecordWin(today, updated)
-        val isMilestone = updated > 0 && updated % QURAN_CHALLENGE_DAILY_GOAL == 0
+        // Celebrate once when today's goal is first reached, not on every extra page.
+        val isMilestone = updated == QURAN_CHALLENGE_DAILY_GOAL
         _state.update {
             it.copy(
                 dateKey = today.toString(),
@@ -134,8 +135,8 @@ class QuranChallengeViewModel(
         val before = store.todayCount(today)
         val updated = store.addToday(today, count)
         maybeRecordWin(today, updated)
-        val crossedMilestone = updated / QURAN_CHALLENGE_DAILY_GOAL > before / QURAN_CHALLENGE_DAILY_GOAL
-        val milestone = updated / QURAN_CHALLENGE_DAILY_GOAL * QURAN_CHALLENGE_DAILY_GOAL
+        val crossedMilestone = before < QURAN_CHALLENGE_DAILY_GOAL && updated >= QURAN_CHALLENGE_DAILY_GOAL
+        val milestone = QURAN_CHALLENGE_DAILY_GOAL
         _state.update {
             it.copy(
                 dateKey = today.toString(),
