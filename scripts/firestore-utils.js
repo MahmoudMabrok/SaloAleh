@@ -11,6 +11,7 @@ const ISTIGHFAR_COLLECTION = 'istighfar_challenge';
 const ZABAD_COLLECTION = 'zabad_challenge';
 const GHARS_COLLECTION = 'ghars_challenge';
 const QURAN_COLLECTION = 'quran_challenge';
+const ALBAQARA_COLLECTION = 'albaqara_challenge';
 const TEN_DAYS_COLLECTION = 'ten_days';
 
 async function mirrorMohamedLoversRound(firestore, roundKey, {
@@ -168,6 +169,39 @@ async function mirrorIstighfarChallenge(firestore, dateKey, {
     console.log(`[firestore-mirror] istighfar ${dateKey} mirrored`);
   } catch (e) {
     console.error(`[firestore-mirror] istighfar ${dateKey} failed: ${e.message}`);
+  }
+}
+
+async function mirrorAlBaqaraChallenge(firestore, dateKey, {
+  rankedUsers,
+  participantCount,
+  totalTodayAlBaqara,
+  leaderboardEntries,
+}) {
+  try {
+    const dayRef = firestore.collection(ALBAQARA_COLLECTION).doc(dateKey);
+    await dayRef.set({ participantCount, totalTodayAlBaqara }, { merge: true });
+
+    const batch = firestore.batch();
+
+    for (const user of rankedUsers) {
+      batch.set(
+        dayRef.collection('users').doc(user.uid),
+        { rank: user.rank },
+        { merge: true },
+      );
+    }
+
+    if (leaderboardEntries) {
+      for (const [key, entry] of leaderboardEntries) {
+        batch.set(dayRef.collection('leaderboard').doc(key), entry);
+      }
+    }
+
+    await batch.commit();
+    console.log(`[firestore-mirror] albaqara ${dateKey} mirrored`);
+  } catch (e) {
+    console.error(`[firestore-mirror] albaqara ${dateKey} failed: ${e.message}`);
   }
 }
 
@@ -436,6 +470,19 @@ async function mirrorIstighfarAggregateAndClean(firestore, dateKey, todayTotal, 
   }
 }
 
+async function mirrorAlBaqaraAggregateAndClean(firestore, dateKey, todayTotal, newGlobalTotal) {
+  try {
+    await firestore.collection(ALBAQARA_COLLECTION).doc('_totals').set(
+      { totalAlBaqara: newGlobalTotal },
+      { merge: true },
+    );
+    await firestore.collection(ALBAQARA_COLLECTION).doc(dateKey).delete();
+    console.log(`[firestore-mirror] albaqara aggregate+clean for ${dateKey} done`);
+  } catch (e) {
+    console.error(`[firestore-mirror] albaqara aggregate+clean failed: ${e.message}`);
+  }
+}
+
 async function mirrorQuranAggregateAndClean(firestore, dateKey, todayTotal, newGlobalTotal) {
   try {
     await firestore.collection(QURAN_COLLECTION).doc('_totals').set(
@@ -485,11 +532,13 @@ module.exports = {
   ZABAD_COLLECTION,
   GHARS_COLLECTION,
   QURAN_COLLECTION,
+  ALBAQARA_COLLECTION,
   TEN_DAYS_COLLECTION,
   mirrorMohamedLoversRound,
   mirrorDhikrChallenge,
   mirrorBaqiyatChallenge,
   mirrorIstighfarChallenge,
+  mirrorAlBaqaraChallenge,
   mirrorZabadChallenge,
   mirrorGharsChallenge,
   mirrorQuranChallenge,
@@ -502,6 +551,7 @@ module.exports = {
   mirrorDhikrAggregateAndClean,
   mirrorBaqiyatAggregateAndClean,
   mirrorIstighfarAggregateAndClean,
+  mirrorAlBaqaraAggregateAndClean,
   mirrorQuranAggregateAndClean,
   mirrorUserAllTimeTotals,
 };

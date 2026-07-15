@@ -85,6 +85,8 @@
     <string name="challenge_istighfar_body">先知穆斯塔法 ﷺ 每天寻求真主饶恕七十次，你呢？</string>
     <string name="challenge_quran_title">古兰经</string>
     <string name="challenge_quran_body">我的族人已经抛弃了这部古兰经</string>
+    <string name="challenge_albaqara_title">黄牛章</string>
+    <string name="challenge_albaqara_body">诵读黄牛章；诵读它是福分，舍弃它是遗憾</string>
     <string name="dhikr_title">赞念</string>
 
     <string name="dhikr_milestone_title">完成 %1$d 次!</string>
@@ -152,6 +154,22 @@
     <string name="istighfar_leaderboard_empty">暂无数据</string>
     <string name="istighfar_rank_unranked">点击查看排行榜</string>
     <string name="istighfar_manual_entry_button">🤲 记录外部求饶</string>
+
+    <!-- Al-Baqara Reading Challenge -->
+    <string name="albaqara_back_cd">返回</string>
+    <string name="albaqara_phrase">诵读黄牛章；诵读它是福分，舍弃它是遗憾，术士也无法胜过它</string>
+    <string name="albaqara_today">今天</string>
+    <string name="albaqara_times">次</string>
+    <string name="albaqara_add">我读了黄牛章</string>
+    <string name="albaqara_undo">撤销上次记录</string>
+    <string name="albaqara_tap_hint">完整诵读整章后点击按钮</string>
+    <string name="albaqara_count_unit">次</string>
+    <string name="albaqara_rank_number"># %1$d</string>
+    <string name="albaqara_rank_subtitle">共 %1$d 位诵读者</string>
+    <string name="albaqara_rank_unranked">点击查看领先者</string>
+    <string name="albaqara_leaderboard_title">黄牛章诵读领先者</string>
+    <string name="albaqara_leaderboard_rank_new">新</string>
+    <string name="albaqara_leaderboard_empty">暂无诵读者</string>
 
     <string name="quran_back_cd">返回</string>
     <string name="quran_phrase">我的族人已经抛弃了这部古兰经</string>
@@ -633,6 +651,7 @@
     <string name="heroes_challenge_quran">古兰经</string>
     <string name="heroes_challenge_zabad">百次赞颂</string>
     <string name="heroes_challenge_ghars">种一棵棕榈树</string>
+    <string name="heroes_challenge_albaqara">黄牛章</string>
     <string name="heroes_challenge_empty">暂无领先者</string>
 
     <!-- Subscription encouragement -->

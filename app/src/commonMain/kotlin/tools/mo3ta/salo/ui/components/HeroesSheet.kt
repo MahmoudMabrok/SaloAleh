@@ -32,6 +32,7 @@ import tools.mo3ta.salo.domain.HeroChallengeType
 import tools.mo3ta.salo.domain.HeroEntry
 import tools.mo3ta.salo.domain.HeroesBoard
 import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.heroes_challenge_albaqara
 import tools.mo3ta.salo.generated.resources.heroes_challenge_baqiyat
 import tools.mo3ta.salo.generated.resources.heroes_challenge_dhikr
 import tools.mo3ta.salo.generated.resources.heroes_challenge_empty
@@ -194,6 +195,7 @@ private fun challengeTitleRes(type: HeroChallengeType): StringResource = when (t
     HeroChallengeType.Quran -> Res.string.heroes_challenge_quran
     HeroChallengeType.Zabad -> Res.string.heroes_challenge_zabad
     HeroChallengeType.Ghars -> Res.string.heroes_challenge_ghars
+    HeroChallengeType.AlBaqara -> Res.string.heroes_challenge_albaqara
 }
 
 private fun medalFor(rank: Int): String = when (rank) {

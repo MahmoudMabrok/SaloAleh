@@ -87,6 +87,8 @@
     <string name="challenge_istighfar_body">كان الحبيب المصطفي يستغفر ٧٠ مره فاين انت</string>
     <string name="challenge_quran_title">القرآن الكريم</string>
     <string name="challenge_quran_body">إن قومي اتخذوا هذا القرآن مهجورا</string>
+    <string name="challenge_albaqara_title">سورة البقرة</string>
+    <string name="challenge_albaqara_body">اقرؤوا سورة البقرة؛ فإن أخذها بركة وتركها حسرة</string>
 
     <!-- Dhikr Rewards Screen -->
     <string name="dhikr_title">الذكر</string>
@@ -177,6 +179,22 @@
     <string name="istighfar_leaderboard_empty">لا توجد بيانات بعد</string>
     <string name="istighfar_rank_unranked">اضغط لرؤية المتصدرين</string>
     <string name="istighfar_manual_entry_button">🤲 تسجيل استغفار خارجي</string>
+
+    <!-- Al-Baqara Reading Challenge -->
+    <string name="albaqara_back_cd">رجوع</string>
+    <string name="albaqara_phrase">اقرؤوا سورة البقرة؛ فإن أخذها بركة، وتركها حسرة، ولا تستطيعها البَطَلة</string>
+    <string name="albaqara_today">اليوم</string>
+    <string name="albaqara_times">مرة</string>
+    <string name="albaqara_add">قرأت سورة البقرة</string>
+    <string name="albaqara_undo">تراجع عن آخر إضافة</string>
+    <string name="albaqara_tap_hint">اضغط الزر بعد إتمام قراءة السورة كاملة</string>
+    <string name="albaqara_count_unit">مرة</string>
+    <string name="albaqara_rank_number"># %1$d</string>
+    <string name="albaqara_rank_subtitle">من بين %1$d قارئ</string>
+    <string name="albaqara_rank_unranked">اضغط لرؤية المتصدرين</string>
+    <string name="albaqara_leaderboard_title">المتصدرون في قراءة البقرة</string>
+    <string name="albaqara_leaderboard_rank_new">جديد</string>
+    <string name="albaqara_leaderboard_empty">لا يوجد قرّاء بعد</string>
 
     <string name="quran_back_cd">رجوع</string>
     <string name="quran_phrase">إِنَّ قَوْمِي اتَّخَذُوا هَٰذَا الْقُرْآنَ مَهْجُورًا</string>
@@ -681,6 +699,7 @@
     <string name="heroes_challenge_quran">القرآن الكريم</string>
     <string name="heroes_challenge_zabad">تسبيح المئة</string>
     <string name="heroes_challenge_ghars">اغرس نخلة</string>
+    <string name="heroes_challenge_albaqara">سورة البقرة</string>
     <string name="heroes_challenge_empty">لا يوجد متصدرون بعد</string>
 
     <!-- Subscription encouragement -->

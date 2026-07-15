@@ -87,6 +87,8 @@
     <string name="challenge_istighfar_body">The Beloved Prophet ﷺ sought forgiveness 70 times a day — where do you stand?</string>
     <string name="challenge_quran_title">The Holy Quran</string>
     <string name="challenge_quran_body">My people have abandoned this Quran</string>
+    <string name="challenge_albaqara_title">Surah Al-Baqara</string>
+    <string name="challenge_albaqara_body">Recite Surah Al-Baqara; taking it is a blessing and leaving it a regret</string>
 
     <!-- Dhikr Rewards Screen -->
     <string name="dhikr_title">Dhikr</string>
@@ -177,6 +179,22 @@
     <string name="istighfar_leaderboard_empty">No data yet</string>
     <string name="istighfar_rank_unranked">Tap to see the leaderboard</string>
     <string name="istighfar_manual_entry_button">🤲 Log external istighfar</string>
+
+    <!-- Al-Baqara Reading Challenge -->
+    <string name="albaqara_back_cd">Back</string>
+    <string name="albaqara_phrase">Recite Surah Al-Baqara; taking it is a blessing, leaving it a regret, and the sorcerers cannot overcome it</string>
+    <string name="albaqara_today">Today</string>
+    <string name="albaqara_times">times</string>
+    <string name="albaqara_add">I read Surah Al-Baqara</string>
+    <string name="albaqara_undo">Undo last entry</string>
+    <string name="albaqara_tap_hint">Tap the button after completing a full reading of the surah</string>
+    <string name="albaqara_count_unit">times</string>
+    <string name="albaqara_rank_number"># %1$d</string>
+    <string name="albaqara_rank_subtitle">of %1$d readers</string>
+    <string name="albaqara_rank_unranked">Tap to see the leaders</string>
+    <string name="albaqara_leaderboard_title">Al-Baqara Reading Leaders</string>
+    <string name="albaqara_leaderboard_rank_new">new</string>
+    <string name="albaqara_leaderboard_empty">No readers yet</string>
 
     <string name="quran_back_cd">Back</string>
     <string name="quran_phrase">My people have abandoned this Quran</string>
@@ -671,6 +689,7 @@
     <string name="heroes_challenge_quran">The Holy Quran</string>
     <string name="heroes_challenge_zabad">The Hundred</string>
     <string name="heroes_challenge_ghars">Plant a Palm</string>
+    <string name="heroes_challenge_albaqara">Surah Al-Baqara</string>
     <string name="heroes_challenge_empty">No champions yet</string>
 
     <!-- Subscription encouragement -->

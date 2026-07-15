@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Spa
 import androidx.compose.material.icons.filled.AutoStories
+import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Forest
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Waves
@@ -49,6 +50,8 @@ import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.challenge_albaqara_body
+import tools.mo3ta.salo.generated.resources.challenge_albaqara_title
 import tools.mo3ta.salo.generated.resources.challenge_baqiyat_body
 import tools.mo3ta.salo.generated.resources.challenge_baqiyat_title
 import tools.mo3ta.salo.generated.resources.challenge_dhikr_body
@@ -99,6 +102,7 @@ fun ChallengesScreen(
     onOpenZabadChallenge: () -> Unit,
     onOpenGharsChallenge: () -> Unit,
     onOpenQuranChallenge: () -> Unit,
+    onOpenAlBaqaraChallenge: () -> Unit,
 ) {
     val analyticsManager: AnalyticsManager = koinInject()
     val viewModel: ChallengesViewModel = koinViewModel()
@@ -192,6 +196,20 @@ fun ChallengesScreen(
                     mapOf(AppAnalytics.PARAM_SOURCE to "challenges"),
                 )
                 onOpenQuranChallenge()
+            },
+        ),
+        ChallengeItem(
+            titleRes = Res.string.challenge_albaqara_title,
+            bodyRes = Res.string.challenge_albaqara_body,
+            icon = Icons.Default.Book,
+            accent = Color(0xFF6C7BE0),
+            total = totals.albaqara,
+            onClick = {
+                analyticsManager.logAction(
+                    AppAnalytics.OPEN_ALBAQARA_CHALLENGE,
+                    mapOf(AppAnalytics.PARAM_SOURCE to "challenges"),
+                )
+                onOpenAlBaqaraChallenge()
             },
         ),
 //        ChallengeItem(
