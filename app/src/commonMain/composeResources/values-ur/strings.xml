@@ -396,6 +396,8 @@
     <string name="paywall_reward_spread_title">نبی ﷺ کا ذکر پھیلانا</string>
     <string name="paywall_reward_spread_subtitle">دنیا بھر میں حبیب مصطفی کی محبت پھیلانے میں حصہ لیں</string>
     <string name="paywall_choose_label">اپنی پسند کا انتخاب کریں</string>
+    <string name="paywall_start_subscription_header">تجدید ہونے والی سبسکرپشن شروع کریں</string>
+    <string name="paywall_start_subscription_subtitle">اپنی حمایت کو ایک جاری صدقہ میں بدلیں جو ہر مہینے آپ تک پہنچے</string>
     <string name="paywall_basic_tier_desc">سپورٹر بیج، جمعہ اسکور، لیڈربورڈ سے دوسروں کی کامیابیاں</string>
     <string name="paywall_premium_tier_desc">براہ راست لیڈربورڈ، اسکور چھپائیں، + تمام سپورٹر سہولتیں</string>
     <string name="paywall_support_now_from">ابھی مدد کریں — %1$s سے شروع</string>

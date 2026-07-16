@@ -396,6 +396,8 @@
     <string name="paywall_reward_spread_title">传播先知 ﷺ 的记念</string>
     <string name="paywall_reward_spread_subtitle">帮助在全世界传播对先知的爱</string>
     <string name="paywall_choose_label">选择适合你的</string>
+    <string name="paywall_start_subscription_header">开启可续订的订阅</string>
+    <string name="paywall_start_subscription_subtitle">将你的支持化为持续的施予，每月都能回馈于你</string>
     <string name="paywall_basic_tier_desc">支持者徽章、周五分数、排行榜中他人成就</string>
     <string name="paywall_premium_tier_desc">实时排行榜、隐藏分数、+ 所有支持者功能</string>
     <string name="paywall_support_now_from">立即支持 — 最低 %1$s</string>

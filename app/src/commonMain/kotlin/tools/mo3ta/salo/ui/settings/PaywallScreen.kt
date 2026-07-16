@@ -78,6 +78,9 @@ fun PaywallScreen(onBack: () -> Unit) {
 
     val currentTier = premiumStore.highestTier
     val isPremium = currentTier != null
+    // One-time purchasers still lack a renewing subscription; the subscription selection stays
+    // visible for them so they can start one, while active subscribers only manage their plan.
+    val hasActiveSubscription = premiumStore.hasActiveSubscription
     var scoreMasked by remember { mutableStateOf(premiumStore.isScoreMasked) }
     var selectedPeriod by remember { mutableStateOf(SubscriptionPeriod.MONTHLY) }
 
@@ -226,17 +229,42 @@ fun PaywallScreen(onBack: () -> Unit) {
                         )
                     }
                 }
-            } else {
-                // Tier selection
-                Text(
-                    text = stringResource(Res.string.paywall_choose_label),
-                    color = MohamedLoversPalette.GoldGlow,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Start,
-                )
-                Spacer(Modifier.height(12.dp))
+            }
+
+            // Subscription selection: shown for free users and for one-time purchasers who do not
+            // yet have a renewing subscription, so a past one-time payment does not block subscribing.
+            if (!hasActiveSubscription) {
+                if (isPremium) {
+                    Spacer(Modifier.height(28.dp))
+                    Text(
+                        text = stringResource(Res.string.paywall_start_subscription_header),
+                        color = MohamedLoversPalette.GoldGlow,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Start,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(Res.string.paywall_start_subscription_subtitle),
+                        color = Color.White.copy(alpha = 0.6f),
+                        fontSize = 13.sp,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Start,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                } else {
+                    // Tier selection
+                    Text(
+                        text = stringResource(Res.string.paywall_choose_label),
+                        color = MohamedLoversPalette.GoldGlow,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Start,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                }
 
                 if (basicTier != null) {
                     SpiritualTierCard(
