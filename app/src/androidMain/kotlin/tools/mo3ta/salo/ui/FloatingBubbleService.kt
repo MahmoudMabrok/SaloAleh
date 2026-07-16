@@ -32,19 +32,39 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import org.koin.android.ext.android.inject
+import tools.mo3ta.salo.data.dhikr.DhikrChallengeStore
+import tools.mo3ta.salo.data.engagement.ChallengeBadgeStore
 import tools.mo3ta.salo.data.engagement.DailyGoalStore
+import tools.mo3ta.salo.data.istighfar.IstighfarChallengeStore
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
+import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.notification.NotificationChannels
 
 class FloatingBubbleService : Service() {
 
+    /** Which activity the floating bubble counts. */
+    enum class BubbleType(val id: String) {
+        SALAWAT("salawat"),
+        DHIKR("dhikr"),
+        ISTIGHFAR("istighfar");
+
+        companion object {
+            fun from(id: String?): BubbleType = entries.firstOrNull { it.id == id } ?: SALAWAT
+        }
+    }
+
     companion object {
         const val EXTRA_ROUND_KEY = "round_key"
+        const val EXTRA_BUBBLE_TYPE = "bubble_type"
         private val _isRunning = MutableStateFlow(false)
         val isRunning: StateFlow<Boolean> = _isRunning
+        // Which bubble (by BubbleType.id) is currently on screen, or null when none.
+        private val _activeType = MutableStateFlow<String?>(null)
+        val activeType: StateFlow<String?> = _activeType
         private const val DRAG_THRESHOLD_PX = 10
         private const val TAP_THRESHOLD = 10
         private const val TAP_DURATION_MS = 300L
@@ -53,7 +73,12 @@ class FloatingBubbleService : Service() {
 
     private val sessionStore: MohamedLoversSessionStore by inject()
     private val dailyGoalStore: DailyGoalStore by inject()
+    private val dhikrStore: DhikrChallengeStore by inject()
+    private val istighfarStore: IstighfarChallengeStore by inject()
+    private val challengeBadgeStore: ChallengeBadgeStore by inject()
     private val analyticsManager: tools.mo3ta.salo.analytics.AnalyticsManager by inject()
+
+    private var bubbleType: BubbleType = BubbleType.SALAWAT
 
     private lateinit var windowManager: WindowManager
     private lateinit var bubbleView: FloatingBubbleView
@@ -80,13 +105,26 @@ class FloatingBubbleService : Service() {
     }
 
     private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == pendingCountKey() && ::bubbleView.isInitialized) {
-            mainHandler.post { bubbleView.updateCount(currentPendingCount()) }
+        if (key == watchedCountKey() && ::bubbleView.isInitialized) {
+            mainHandler.post { bubbleView.updateCount(currentCount()) }
         }
     }
 
-    private fun pendingCountKey() = "pending_count_$roundKey"
-    private fun currentPendingCount() = prefs.getInt(pendingCountKey(), 0)
+    private fun cairoToday(): LocalDate = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
+
+    // The SharedPreferences key whose changes should refresh the bubble's number.
+    private fun watchedCountKey(): String = when (bubbleType) {
+        BubbleType.SALAWAT -> "pending_count_$roundKey"
+        BubbleType.DHIKR -> "dhikr_challenge_pending"
+        BubbleType.ISTIGHFAR -> "istighfar_challenge_pending"
+    }
+
+    // The number shown inside the bubble for the current type.
+    private fun currentCount(): Int = when (bubbleType) {
+        BubbleType.SALAWAT -> prefs.getInt("pending_count_$roundKey", 0)
+        BubbleType.DHIKR -> dhikrStore.todayCount(cairoToday())
+        BubbleType.ISTIGHFAR -> istighfarStore.todayCount(cairoToday())
+    }
 
     private fun Int.dp(): Int =
         TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, this.toFloat(), resources.displayMetrics).toInt()
@@ -99,18 +137,71 @@ class FloatingBubbleService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (!::bubbleView.isInitialized) {
-            startForeground(NotificationChannels.NOTIF_ID_BUBBLE, buildNotification())
-        }
+        val newType = BubbleType.from(intent?.getStringExtra(EXTRA_BUBBLE_TYPE))
         intent?.getStringExtra(EXTRA_ROUND_KEY)?.let { roundKey = it }
-        if (roundKey.isBlank()) { stopSelf(); return START_NOT_STICKY }
-        if (!::bubbleView.isInitialized) {
-            setupBubble()
-            bubbleView.updateCount(currentPendingCount())
+        // Only the salawat bubble needs an active round; challenges run off the Cairo day.
+        if (newType == BubbleType.SALAWAT && roundKey.isBlank()) { stopSelf(); return START_NOT_STICKY }
+
+        val firstStart = !::bubbleView.isInitialized
+        bubbleType = newType
+        val theme = themeFor(newType)
+
+        if (firstStart) {
+            startForeground(NotificationChannels.NOTIF_ID_BUBBLE, buildNotification(theme))
+            setupBubble(theme)
+            bubbleView.updateCount(currentCount())
             prefs.registerOnSharedPreferenceChangeListener(prefListener)
             startReminderCycle()
+        } else {
+            // Switching type on an already-visible bubble: re-skin in place.
+            bubbleView.applyTheme(theme)
+            bubbleView.updateCount(currentCount())
+            startForeground(NotificationChannels.NOTIF_ID_BUBBLE, buildNotification(theme))
         }
+        _activeType.value = newType.id
         return START_NOT_STICKY
+    }
+
+    private fun themeFor(type: BubbleType): BubbleTheme = when (type) {
+        BubbleType.SALAWAT -> BubbleTheme(
+            gradientStart = Color.parseColor("#1B5E20"),
+            gradientEnd = Color.parseColor("#0D1B4B"),
+            ringColor = Color.parseColor("#FFD700"),
+            countColor = Color.parseColor("#FFD700"),
+            label = "صلوات",
+            contentDescription = "اضغط للصلاة على النبي",
+            tooltip = "اللهم صل علي محمد وال محمد",
+            notifTitle = "صلوات",
+            notifText = "اللهم صل علي محمد وال محمد",
+            goal = 0,
+            subtitle = BubbleSubtitle.NONE,
+        )
+        BubbleType.DHIKR -> BubbleTheme(
+            gradientStart = Color.parseColor("#0B6135"),
+            gradientEnd = Color.parseColor("#06301F"),
+            ringColor = Color.parseColor("#6FCF9E"),
+            countColor = Color.parseColor("#E9C97F"),
+            label = "تهليل",
+            contentDescription = "اضغط للتهليل",
+            tooltip = "لا إله إلا الله وحده لا شريك له",
+            notifTitle = "أهل لا إله إلا الله",
+            notifText = "لا إله إلا الله وحده لا شريك له",
+            goal = ChallengeType.DHIKR.dailyGoal,
+            subtitle = BubbleSubtitle.FREED_NECKS,
+        )
+        BubbleType.ISTIGHFAR -> BubbleTheme(
+            gradientStart = Color.parseColor("#5C3A1F"),
+            gradientEnd = Color.parseColor("#33200F"),
+            ringColor = Color.parseColor("#C08A3E"),
+            countColor = Color.parseColor("#E0B978"),
+            label = "استغفار",
+            contentDescription = "اضغط للاستغفار",
+            tooltip = "أستغفر الله العظيم وأتوب إليه",
+            notifTitle = "واستغفروه",
+            notifText = "أستغفر الله العظيم وأتوب إليه",
+            goal = ChallengeType.ISTIGHFAR.dailyGoal,
+            subtitle = BubbleSubtitle.NONE,
+        )
     }
 
     // ── WindowManager helpers ─────────────────────────────────────────────────
@@ -141,8 +232,8 @@ class FloatingBubbleService : Service() {
 
     // ── Bubble setup ──────────────────────────────────────────────────────────
 
-    private fun setupBubble() {
-        bubbleView = FloatingBubbleView(this)
+    private fun setupBubble(theme: BubbleTheme) {
+        bubbleView = FloatingBubbleView(this, theme)
 
         val bubbleSize = 72.dp()
         bubbleParams = overlayParams(
@@ -355,7 +446,7 @@ class FloatingBubbleService : Service() {
     private fun showTooltip() {
         if (tooltipView != null) return
         val card = TextView(this).apply {
-            text = "اللهم صل علي محمد وال محمد"
+            text = themeFor(bubbleType).tooltip
             textDirection = android.view.View.TEXT_DIRECTION_RTL
             gravity = Gravity.CENTER
             setTextColor(Color.WHITE)
@@ -413,13 +504,38 @@ class FloatingBubbleService : Service() {
     }
 
     private fun handleTap() {
-        if (roundKey.isBlank()) return
-        val pending = sessionStore.incrementPendingClick(roundKey, 1)
-        val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
-        dailyGoalStore.recordTap(today, 1)
-        bubbleView.updateCount(pending.clickCount)
-        bubbleView.animateTap()
-        analyticsManager.logAction("bubble_tap", mapOf("count" to pending.clickCount.toString()))
+        val today = cairoToday()
+        when (bubbleType) {
+            BubbleType.SALAWAT -> {
+                if (roundKey.isBlank()) return
+                val pending = sessionStore.incrementPendingClick(roundKey, 1)
+                dailyGoalStore.recordTap(today, 1)
+                bubbleView.updateCount(pending.clickCount)
+                bubbleView.animateTap()
+                analyticsManager.logAction(
+                    "bubble_tap",
+                    mapOf("count" to pending.clickCount.toString(), "type" to bubbleType.id),
+                )
+            }
+            BubbleType.DHIKR ->
+                recordChallengeTap(dhikrStore.incrementToday(today), ChallengeType.DHIKR, today)
+            BubbleType.ISTIGHFAR ->
+                recordChallengeTap(istighfarStore.incrementToday(today), ChallengeType.ISTIGHFAR, today)
+        }
+    }
+
+    private fun recordChallengeTap(updated: Int, challenge: ChallengeType, today: LocalDate) {
+        // Crossing the daily goal earns (idempotently) that challenge's achievement badge.
+        if (updated >= challenge.dailyGoal) challengeBadgeStore.recordWin(challenge, today)
+        bubbleView.updateCount(updated)
+        // Flash on each freed neck (dhikr, every 10) and when the daily goal is reached.
+        val isMilestone = updated == challenge.dailyGoal ||
+            (challenge == ChallengeType.DHIKR && updated > 0 && updated % 10 == 0)
+        if (isMilestone) bubbleView.animateMilestone() else bubbleView.animateTap()
+        analyticsManager.logAction(
+            "bubble_tap",
+            mapOf("count" to updated.toString(), "type" to challenge.id),
+        )
     }
 
     private fun launchApp() {
@@ -444,10 +560,10 @@ class FloatingBubbleService : Service() {
         }
     }
 
-    private fun buildNotification(): Notification =
+    private fun buildNotification(theme: BubbleTheme): Notification =
         NotificationCompat.Builder(this, NotificationChannels.CHANNEL_BUBBLE)
-            .setContentTitle("صلوات")
-            .setContentText("اللهم صل علي محمد وال محمد")
+            .setContentTitle(theme.notifTitle)
+            .setContentText(theme.notifText)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setOngoing(true)
             .setSilent(true)
@@ -455,6 +571,7 @@ class FloatingBubbleService : Service() {
 
     override fun onDestroy() {
         _isRunning.value = false
+        _activeType.value = null
         mainHandler.removeCallbacks(longPressRunnable)
         prefs.unregisterOnSharedPreferenceChangeListener(prefListener)
         scope.cancel()

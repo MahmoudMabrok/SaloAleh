@@ -31,5 +31,12 @@ expect fun FloatingBubbleButton(roundKey: String?)
 @Composable
 expect fun BubbleFeaturePromo(roundKey: String?)
 
+/**
+ * Toggle for a challenge-specific floating bubble (Android overlay). [challengeType] is a
+ * [tools.mo3ta.salo.domain.ChallengeType] id such as "dhikr" or "istighfar". No-op on iOS.
+ */
+@Composable
+expect fun ChallengeBubbleButton(challengeType: String)
+
 @Composable
 expect fun TakbeerOverlayButton(autoRemind: Boolean, intervalMinutes: Int, repeatCount: Int)

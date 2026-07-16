@@ -466,6 +466,8 @@
     <string name="bubble_promo_description">现在您可以在使用任何应用时为先知 ﷺ 祈祷！\n\n• 一个小气泡显示在其他应用上方\n• 点击它来计算您的祈祷\n• 每10分钟提醒为先知 ﷺ 祈祷</string>
     <string name="bubble_promo_try_now">立即试用</string>
     <string name="bubble_promo_later">以后再说</string>
+    <string name="challenge_bubble_start_cd">开启悬浮气泡</string>
+    <string name="challenge_bubble_stop_cd">关闭悬浮气泡</string>
 
     <!-- Daily Leaderboard Promo Dialog -->
     <string name="daily_leaderboard_promo_title">新功能：每日排名</string>

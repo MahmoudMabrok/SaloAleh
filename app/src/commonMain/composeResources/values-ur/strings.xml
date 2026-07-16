@@ -466,6 +466,8 @@
     <string name="bubble_promo_description">اب آپ کسی بھی ایپ کے استعمال کے دوران نبی ﷺ پر درود بھیج سکتے ہیں!\n\n• ایک چھوٹا بلبلہ دوسری ایپس کے اوپر ظاہر ہوتا ہے\n• اپنی صلوات شمار کرنے کے لیے ٹیپ کریں\n• ہر ١٠ منٹ میں نبی ﷺ پر درود کی یاد دہانی</string>
     <string name="bubble_promo_try_now">ابھی آزمائیں</string>
     <string name="bubble_promo_later">بعد میں</string>
+    <string name="challenge_bubble_start_cd">فلوٹنگ ببل شروع کریں</string>
+    <string name="challenge_bubble_stop_cd">فلوٹنگ ببل بند کریں</string>
 
     <!-- Daily Leaderboard Promo Dialog -->
     <string name="daily_leaderboard_promo_title">نئی خصوصیت: روزانہ درجہ بندی</string>

@@ -188,6 +188,9 @@ actual fun FloatingBubbleButton(roundKey: String?) {}
 actual fun BubbleFeaturePromo(roundKey: String?) {}
 
 @Composable
+actual fun ChallengeBubbleButton(challengeType: String) {}
+
+@Composable
 actual fun TakbeerOverlayButton(autoRemind: Boolean, intervalMinutes: Int, repeatCount: Int) {
     val isActive by remember { IosTakbeerScheduler.isRunning }
     val label = if (isActive) "إيقاف التكبير" else "تشغيل التكبير"
