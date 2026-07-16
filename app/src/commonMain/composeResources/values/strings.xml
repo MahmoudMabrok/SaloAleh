@@ -326,6 +326,8 @@
     <string name="achievements_badge_challenge_istighfar_how">أكمل هدف اليوم (%1$d استغفاراً) — تزيد الشارة 1 مع كل يوم فوز</string>
     <string name="achievements_badge_challenge_quran_how">أكمل هدف اليوم (%1$d صفحات) — تزيد الشارة 1 مع كل يوم فوز</string>
     <string name="achievements_badge_challenge_zabad_how">أكمل هدف اليوم (%1$d تسبيحة) — تزيد الشارة 1 مع كل يوم فوز</string>
+    <string name="achievements_challenge_streak_days">%1$d يوم متتالي</string>
+    <string name="achievements_challenge_streak_best">أطول سلسلة: %1$d يوم</string>
     <string name="achievements_badge_rank_title">المركز %1$d</string>
     <string name="achievements_badge_rank_how">احصل على المركز %1$d في أي جولة تنافسية</string>
     <string name="achievements_badge_how_label">كيف تحصل عليها:</string>
