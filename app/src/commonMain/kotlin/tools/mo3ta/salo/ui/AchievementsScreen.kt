@@ -497,7 +497,7 @@ fun AchievementsScreen(
                     if (bestStreak > 0) {
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "🔥 " + stringResource(Res.string.achievements_challenge_streak_current, currentStreak),
+                            "🔥 " + stringResource(Res.string.achievements_challenge_streak_days, currentStreak),
                             color = Color.White,
                             fontSize = 13.sp,
                         )
@@ -868,7 +868,7 @@ private fun ChallengeBadgeCard(
                         .padding(horizontal = 8.dp, vertical = 3.dp),
                 ) {
                     Text(
-                        text = stringResource(Res.string.achievements_challenge_streak_pill, streak),
+                        text = "🔥 " + stringResource(Res.string.achievements_challenge_streak_days, streak),
                         color = MohamedLoversPalette.Gold,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,

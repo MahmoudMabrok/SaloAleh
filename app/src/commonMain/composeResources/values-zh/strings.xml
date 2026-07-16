@@ -292,8 +292,7 @@
     <string name="achievements_badge_challenge_istighfar_how">一天内完成 %1$d 次求恕 — 每个获胜日徽章计数加 1</string>
     <string name="achievements_badge_challenge_quran_how">一天内完成 %1$d 页 — 每个获胜日徽章计数加 1</string>
     <string name="achievements_badge_challenge_zabad_how">一天内完成 %1$d 次赞念 — 每个获胜日徽章计数加 1</string>
-    <string name="achievements_challenge_streak_pill">🔥 %1$d</string>
-    <string name="achievements_challenge_streak_current">当前连续：%1$d 天</string>
+    <string name="achievements_challenge_streak_days">连续 %1$d 天</string>
     <string name="achievements_challenge_streak_best">最长连续：%1$d 天</string>
     <string name="achievements_badge_rank_title">第%1$d名</string>
     <string name="achievements_badge_rank_how">在任意竞赛轮次中获得第%1$d名</string>

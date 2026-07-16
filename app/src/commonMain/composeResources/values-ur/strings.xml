@@ -292,8 +292,7 @@
     <string name="achievements_badge_challenge_istighfar_how">ایک دن میں %1$d استغفار مکمل کریں — ہر جیتنے والے دن پر بیج کی گنتی 1 بڑھتی ہے</string>
     <string name="achievements_badge_challenge_quran_how">ایک دن میں %1$d صفحات مکمل کریں — ہر جیتنے والے دن پر بیج کی گنتی 1 بڑھتی ہے</string>
     <string name="achievements_badge_challenge_zabad_how">ایک دن میں %1$d تسبیحات مکمل کریں — ہر جیتنے والے دن پر بیج کی گنتی 1 بڑھتی ہے</string>
-    <string name="achievements_challenge_streak_pill">🔥 %1$d</string>
-    <string name="achievements_challenge_streak_current">موجودہ سلسلہ: %1$d دن مسلسل</string>
+    <string name="achievements_challenge_streak_days">%1$d دن مسلسل</string>
     <string name="achievements_challenge_streak_best">سب سے طویل سلسلہ: %1$d دن</string>
     <string name="achievements_badge_rank_title">درجہ %1$d</string>
     <string name="achievements_badge_rank_how">کسی بھی مقابلے کے راؤنڈ میں درجہ %1$d حاصل کریں</string>

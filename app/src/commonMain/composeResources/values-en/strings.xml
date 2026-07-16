@@ -321,8 +321,7 @@
     <string name="achievements_badge_challenge_istighfar_how">Reach the daily goal of %1$d istighfar — the badge count grows by 1 for every winning day</string>
     <string name="achievements_badge_challenge_quran_how">Reach the daily goal of %1$d pages — the badge count grows by 1 for every winning day</string>
     <string name="achievements_badge_challenge_zabad_how">Reach the daily goal of %1$d tasbeehat — the badge count grows by 1 for every winning day</string>
-    <string name="achievements_challenge_streak_pill">🔥 %1$d</string>
-    <string name="achievements_challenge_streak_current">Current streak: %1$d days in a row</string>
+    <string name="achievements_challenge_streak_days">%1$d days in a row</string>
     <string name="achievements_challenge_streak_best">Longest streak: %1$d days</string>
     <string name="achievements_badge_rank_title">Rank %1$d</string>
     <string name="achievements_badge_rank_how">Achieve rank %1$d in any competitive round</string>
