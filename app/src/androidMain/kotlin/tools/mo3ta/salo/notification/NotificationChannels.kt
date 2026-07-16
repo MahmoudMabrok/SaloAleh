@@ -10,12 +10,14 @@ object NotificationChannels {
     const val CHANNEL_DAILY = "channel_daily"
     const val CHANNEL_RETENTION = "channel_retention"
     const val CHANNEL_FRIDAY = "channel_friday"
+    const val CHANNEL_EVENING = "channel_evening"
     const val CHANNEL_PUSH = "channel_push"
     const val CHANNEL_PROTECTION = "channel_protection"
 
     const val NOTIF_ID_DAILY = 1001
     const val NOTIF_ID_RETENTION = 1002
     const val NOTIF_ID_FRIDAY = 1003
+    const val NOTIF_ID_EVENING = 1007
     const val NOTIF_ID_PUSH = 1004
     const val CHANNEL_BUBBLE = "channel_bubble"
     const val NOTIF_ID_BUBBLE = 1005
@@ -36,6 +38,10 @@ object NotificationChannels {
             manager.createNotificationChannel(
                 NotificationChannel(CHANNEL_FRIDAY, "إشعارات الجمعة", NotificationManager.IMPORTANCE_DEFAULT)
                     .apply { description = "تذكير بالصلاة على النبي كل ساعة يوم الجمعة" }
+            )
+            manager.createNotificationChannel(
+                NotificationChannel(CHANNEL_EVENING, "تذكير المساء والتحديات", NotificationManager.IMPORTANCE_DEFAULT)
+                    .apply { description = "تذكير الساعة العاشرة مساءً بالصلاة على النبي وتحديات اليوم" }
             )
             manager.createNotificationChannel(
                 NotificationChannel(CHANNEL_PUSH, "إشعارات عامة", NotificationManager.IMPORTANCE_DEFAULT)

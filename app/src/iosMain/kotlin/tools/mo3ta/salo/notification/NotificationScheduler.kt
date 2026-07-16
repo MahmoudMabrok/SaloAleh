@@ -21,6 +21,7 @@ actual object NotificationScheduler {
 
     private const val TAG = "[NotifScheduler]"
     private const val ID_DAILY = "notif_daily"
+    private const val ID_EVENING = "notif_evening"
     private val FRIDAY_IDS = (9..17).map { "notif_friday_$it" }
 
     private val foregroundDelegate = object : NSObject(), UNUserNotificationCenterDelegateProtocol {
@@ -38,8 +39,8 @@ actual object NotificationScheduler {
         }
     }
 
-    actual fun apply(dailyEnabled: Boolean, fridayEnabled: Boolean) {
-        println("$TAG apply() called — daily=$dailyEnabled friday=$fridayEnabled")
+    actual fun apply(dailyEnabled: Boolean, fridayEnabled: Boolean, eveningEnabled: Boolean) {
+        println("$TAG apply() called — daily=$dailyEnabled friday=$fridayEnabled evening=$eveningEnabled")
         val center = UNUserNotificationCenter.currentNotificationCenter()
         center.delegate = foregroundDelegate
         println("$TAG delegate set")
@@ -64,6 +65,28 @@ actual object NotificationScheduler {
         } else {
             center.removePendingNotificationRequestsWithIdentifiers(listOf(ID_DAILY))
             println("$TAG daily notification removed")
+        }
+
+        if (eveningEnabled) {
+            val content = UNMutableNotificationContent().apply {
+                setTitle("اختم يومك بالطاعة 🌙")
+                setBody("هل صلّيت على النبي ﷺ اليوم؟ ولا تنسَ تحديات اليوم: تسبيح المئة، اغرس نخلة، وقراءة سورة البقرة")
+                setSound(UNNotificationSound.defaultSound())
+            }
+            val components = NSDateComponents().apply {
+                hour = 22L
+                minute = 0L
+                timeZone = NSTimeZone.timeZoneWithName("Africa/Cairo")
+            }
+            val trigger = UNCalendarNotificationTrigger.triggerWithDateMatchingComponents(components, repeats = true)
+            val request = UNNotificationRequest.requestWithIdentifier(ID_EVENING, content, trigger)
+            center.addNotificationRequest(request) { error ->
+                if (error != null) println("$TAG evening add error: ${error.localizedDescription}")
+                else println("$TAG evening notification scheduled OK (10 PM Cairo)")
+            }
+        } else {
+            center.removePendingNotificationRequestsWithIdentifiers(listOf(ID_EVENING))
+            println("$TAG evening notification removed")
         }
 
         if (fridayEnabled) {

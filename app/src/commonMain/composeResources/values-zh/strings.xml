@@ -422,6 +422,8 @@
     <string name="settings_enable_exact_alarm_toast">启用精确定时以确保提醒准时送达</string>
     <string name="settings_friday_notifications">周五通知</string>
     <string name="settings_friday_notifications_subtitle">每小时一次，上午9点至下午5点</string>
+    <string name="settings_evening_reminder">晚间提醒与挑战</string>
+    <string name="settings_evening_reminder_subtitle">每天晚上10点提醒赞念先知和当日挑战</string>
     <string name="settings_server_reminders">提醒通知</string>
     <string name="settings_server_reminders_subtitle">在本轮结束前提醒你回来诵读</string>
     <string name="settings_leaderboard_notifs">排行榜通知</string>
