@@ -47,6 +47,10 @@ import org.jetbrains.compose.resources.stringResource
 import tools.mo3ta.salo.domain.CHALLENGE_MANUAL_DAILY_CAP
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.manual_challenge_cap_error
+import tools.mo3ta.salo.generated.resources.manual_mode_add
+import tools.mo3ta.salo.generated.resources.manual_mode_subtract
+import tools.mo3ta.salo.generated.resources.manual_subtract_hint
+import tools.mo3ta.salo.generated.resources.manual_subtract_submit
 import tools.mo3ta.salo.generated.resources.manual_ghars_count
 import tools.mo3ta.salo.generated.resources.manual_ghars_enter_count
 import tools.mo3ta.salo.generated.resources.manual_ghars_submit
@@ -61,17 +65,21 @@ internal fun ManualGharsSheet(
     remaining: Int = CHALLENGE_MANUAL_DAILY_CAP,
     onDismiss: () -> Unit,
     onSubmit: (Int) -> Unit,
+    onSubtract: (Int) -> Unit = {},
 ) {
     if (!isOpen) return
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var customText by remember { mutableStateOf("") }
     var witnessChecked by remember { mutableStateOf(false) }
+    var isSubtractMode by remember { mutableStateOf(false) }
 
     val effectiveCount = customText.toIntOrNull() ?: 0
     // Front-end cap: a manual batch that would exceed the day's remaining allowance is rejected.
-    val exceedsCap = effectiveCount > remaining
-    val canSubmit = effectiveCount > 0 && witnessChecked && !exceedsCap
+    // The cap only applies when adding — a correction can subtract any amount.
+    val exceedsCap = !isSubtractMode && effectiveCount > remaining
+    // In subtract (correction) mode there is nothing to witness — the gate is just a positive amount.
+    val canSubmit = effectiveCount > 0 && (isSubtractMode || (witnessChecked && !exceedsCap))
     val danger = Color(0xFFDC503C)
 
     ModalBottomSheet(
@@ -115,6 +123,12 @@ internal fun ManualGharsSheet(
                 textAlign = TextAlign.Center,
                 lineHeight = 22.sp,
                 modifier = Modifier.fillMaxWidth(),
+            )
+
+            // Add / Subtract mode toggle — subtract lets the user correct a mistaken count.
+            ManualModeToggle(
+                isSubtractMode = isSubtractMode,
+                onModeChange = { isSubtractMode = it },
             )
 
             // Sapling beads decoration
@@ -200,6 +214,18 @@ internal fun ManualGharsSheet(
                 )
             }
 
+            if (isSubtractMode) {
+                // Correction hint — replaces the witness gate when subtracting.
+                Text(
+                    text = stringResource(Res.string.manual_subtract_hint),
+                    color = GharsColors.SheetMuted,
+                    fontSize = 13.sp,
+                    fontFamily = ibmPlexArabicFamily(),
+                    textAlign = TextAlign.Center,
+                    lineHeight = 22.sp,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                )
+            } else {
             // Hadith card — the source of the mechanic
             Column(
                 modifier = Modifier
@@ -289,34 +315,47 @@ internal fun ManualGharsSheet(
                     lineHeight = 24.sp,
                 )
             }
+            }
 
             val submitAlpha = if (canSubmit) 1f else 0.35f
+            val submitStart = if (isSubtractMode) Color(0xFFE07A5F) else GharsColors.Accent
+            val submitEnd = if (isSubtractMode) Color(0xFFB23A2A) else GharsColors.PalmDeep
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
                     .background(
                         Brush.linearGradient(
-                            listOf(GharsColors.Accent, GharsColors.PalmDeep),
+                            listOf(submitStart, submitEnd),
                         ).takeIf { canSubmit }
                             ?: Brush.linearGradient(
                                 listOf(
-                                    GharsColors.Accent.copy(alpha = 0.3f),
-                                    GharsColors.PalmDeep.copy(alpha = 0.3f),
+                                    submitStart.copy(alpha = 0.3f),
+                                    submitEnd.copy(alpha = 0.3f),
                                 ),
                             ),
                     )
                     .border(
                         1.dp,
-                        GharsColors.Accent.copy(alpha = submitAlpha),
+                        submitEnd.copy(alpha = submitAlpha),
                         RoundedCornerShape(14.dp),
                     )
-                    .then(if (canSubmit) Modifier.clickable { onSubmit(effectiveCount) } else Modifier)
+                    .then(
+                        if (canSubmit) {
+                            Modifier.clickable {
+                                if (isSubtractMode) onSubtract(effectiveCount) else onSubmit(effectiveCount)
+                            }
+                        } else {
+                            Modifier
+                        },
+                    )
                     .padding(vertical = 14.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = stringResource(Res.string.manual_ghars_submit),
+                    text = stringResource(
+                        if (isSubtractMode) Res.string.manual_subtract_submit else Res.string.manual_ghars_submit,
+                    ),
                     color = if (canSubmit) Color.White else GharsColors.SheetMuted,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.W700,
@@ -326,6 +365,67 @@ internal fun ManualGharsSheet(
 
             Spacer(Modifier.height(8.dp))
         }
+    }
+}
+
+@Composable
+private fun ManualModeToggle(
+    isSubtractMode: Boolean,
+    onModeChange: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(GharsColors.Accent.copy(alpha = 0.05f))
+            .border(1.dp, GharsColors.SheetStroke, RoundedCornerShape(12.dp))
+            .padding(3.dp),
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        ManualModeSegment(
+            label = stringResource(Res.string.manual_mode_add),
+            isSelected = !isSubtractMode,
+            selectedColor = GharsColors.Accent,
+            modifier = Modifier.weight(1f),
+            onClick = { onModeChange(false) },
+        )
+        ManualModeSegment(
+            label = stringResource(Res.string.manual_mode_subtract),
+            isSelected = isSubtractMode,
+            selectedColor = Color(0xFFB23A2A),
+            modifier = Modifier.weight(1f),
+            onClick = { onModeChange(true) },
+        )
+    }
+}
+
+@Composable
+private fun ManualModeSegment(
+    label: String,
+    isSelected: Boolean,
+    selectedColor: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val bg by animateColorAsState(
+        targetValue = if (isSelected) selectedColor else Color.Transparent,
+        animationSpec = tween(200),
+    )
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(bg)
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            color = if (isSelected) Color.White else GharsColors.SheetMuted,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.W700,
+            fontFamily = ibmPlexArabicFamily(),
+        )
     }
 }
 
