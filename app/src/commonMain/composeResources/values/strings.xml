@@ -501,6 +501,10 @@
     <string name="bubble_promo_try_now">جربها الآن</string>
     <string name="bubble_promo_later">لاحقاً</string>
 
+    <!-- Challenge floating bubble toggle -->
+    <string name="challenge_bubble_start_cd">تشغيل الفقاعة العائمة</string>
+    <string name="challenge_bubble_stop_cd">إيقاف الفقاعة العائمة</string>
+
     <!-- Daily Leaderboard Promo Dialog -->
     <string name="daily_leaderboard_promo_title">ميزة جديدة: الترتيب اليومي</string>
     <string name="daily_leaderboard_promo_description">الآن يمكنك متابعة ترتيبك اليومي بين المصلّين على النبي ﷺ\n\nتابع تقدّمك يومًا بيوم وتنافس مع المحبين!</string>

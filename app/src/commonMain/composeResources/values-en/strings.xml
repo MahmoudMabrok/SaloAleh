@@ -495,6 +495,8 @@
     <string name="bubble_promo_description">Now you can send blessings upon the Prophet ﷺ while using any app!\n\n• A small bubble appears over other apps\n• Tap it to count your prayers\n• A reminder every 10 minutes to pray upon the Prophet ﷺ</string>
     <string name="bubble_promo_try_now">Try It Now</string>
     <string name="bubble_promo_later">Later</string>
+    <string name="challenge_bubble_start_cd">Start floating bubble</string>
+    <string name="challenge_bubble_stop_cd">Stop floating bubble</string>
 
     <!-- Daily Leaderboard Promo Dialog -->
     <string name="daily_leaderboard_promo_title">New Feature: Daily Ranking</string>

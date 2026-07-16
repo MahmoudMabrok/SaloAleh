@@ -52,9 +52,15 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.jetbrains.compose.resources.stringResource
+import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.challenge_bubble_start_cd
+import tools.mo3ta.salo.generated.resources.challenge_bubble_stop_cd
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import tools.mo3ta.salo.ui.tendays.TenDaysPalette
@@ -205,7 +211,8 @@ actual fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit) {
 @Composable
 actual fun FloatingBubbleButton(roundKey: String?) {
     val context = LocalContext.current
-    val isActive by FloatingBubbleService.isRunning.collectAsState()
+    val activeType by FloatingBubbleService.activeType.collectAsState()
+    val isActive = activeType == FloatingBubbleService.BubbleType.SALAWAT.id
     var showPermissionDialog by remember { mutableStateOf(false) }
 
     if (showPermissionDialog) {
@@ -239,6 +246,10 @@ actual fun FloatingBubbleButton(roundKey: String?) {
                 context,
                 Intent(context, FloatingBubbleService::class.java)
                     .putExtra(FloatingBubbleService.EXTRA_ROUND_KEY, roundKey)
+                    .putExtra(
+                        FloatingBubbleService.EXTRA_BUBBLE_TYPE,
+                        FloatingBubbleService.BubbleType.SALAWAT.id,
+                    )
             )
             (context as? Activity)?.moveTaskToBack(true)
         }
@@ -376,6 +387,126 @@ actual fun BubbleFeaturePromo(roundKey: String?) {
                 showPromo = false
             },
         )
+    }
+}
+
+@Composable
+actual fun ChallengeBubbleButton(challengeType: String) {
+    val context = LocalContext.current
+    val activeType by FloatingBubbleService.activeType.collectAsState()
+    val isActive = activeType == challengeType
+    var showPermissionDialog by remember { mutableStateOf(false) }
+
+    if (showPermissionDialog) {
+        OverlayPermissionRationaleDialog(
+            onAllow = {
+                showPermissionDialog = false
+                context.startActivity(
+                    Intent(
+                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:${context.packageName}")
+                    )
+                )
+            },
+            onDismiss = { showPermissionDialog = false },
+        )
+    }
+
+    val analyticsManager: tools.mo3ta.salo.analytics.AnalyticsManager = org.koin.compose.koinInject()
+
+    val accent = when (challengeType) {
+        FloatingBubbleService.BubbleType.DHIKR.id -> Color(0xFF6FCF9E)
+        FloatingBubbleService.BubbleType.ISTIGHFAR.id -> Color(0xFFC08A3E)
+        else -> MohamedLoversPalette.GoldHighlight
+    }
+
+    val onClick: () -> Unit = {
+        if (isActive) {
+            context.stopService(Intent(context, FloatingBubbleService::class.java))
+            analyticsManager.logAction("bubble_deactivate", mapOf("type" to challengeType))
+        } else if (!Settings.canDrawOverlays(context)) {
+            showPermissionDialog = true
+        } else {
+            analyticsManager.logAction("bubble_activate", mapOf("type" to challengeType))
+            ContextCompat.startForegroundService(
+                context,
+                Intent(context, FloatingBubbleService::class.java)
+                    .putExtra(FloatingBubbleService.EXTRA_BUBBLE_TYPE, challengeType)
+            )
+            (context as? Activity)?.moveTaskToBack(true)
+        }
+    }
+
+    val infiniteTransition = rememberInfiniteTransition()
+    val glowAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.15f,
+        targetValue = 0.4f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+    )
+
+    val contentDesc = if (isActive) {
+        stringResource(Res.string.challenge_bubble_stop_cd)
+    } else {
+        stringResource(Res.string.challenge_bubble_start_cd)
+    }
+
+    Box(contentAlignment = Alignment.Center) {
+        if (!isActive) {
+            Canvas(
+                modifier = Modifier
+                    .size(44.dp)
+                    .graphicsLayer { alpha = glowAlpha },
+            ) {
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(accent.copy(alpha = 0.6f), Color.Transparent),
+                        center = center,
+                        radius = size.minDimension / 1.6f,
+                    ),
+                )
+            }
+        }
+
+        Surface(
+            shape = androidx.compose.foundation.shape.CircleShape,
+            color = if (isActive) Color(0xFFE53935).copy(alpha = 0.18f) else accent.copy(alpha = 0.14f),
+            modifier = Modifier
+                .size(40.dp)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onClick,
+                ),
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Canvas(modifier = Modifier.size(18.dp).semantics { contentDescription = contentDesc }) {
+                    if (isActive) {
+                        drawRoundRect(
+                            color = Color(0xFFE53935),
+                            topLeft = Offset(size.width * 0.25f, size.height * 0.25f),
+                            size = Size(size.width * 0.5f, size.height * 0.5f),
+                            cornerRadius = CornerRadius(2f, 2f),
+                        )
+                    } else {
+                        drawCircle(
+                            brush = Brush.radialGradient(
+                                colors = listOf(accent, accent.copy(alpha = 0.55f)),
+                                center = Offset(size.width * 0.4f, size.height * 0.38f),
+                                radius = size.minDimension / 2,
+                            ),
+                        )
+                        drawCircle(
+                            color = Color.White.copy(alpha = 0.35f),
+                            radius = size.minDimension * 0.15f,
+                            center = Offset(size.width * 0.35f, size.height * 0.32f),
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

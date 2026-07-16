@@ -67,6 +67,7 @@ import tools.mo3ta.salo.generated.resources.istighfar_tap_hint
 import tools.mo3ta.salo.generated.resources.istighfar_times
 import tools.mo3ta.salo.generated.resources.istighfar_today
 import tools.mo3ta.salo.generated.resources.istighfar_view_rewards
+import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.presentation.IstighfarChallengeViewModel
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.istighfar.IstighfarColors
@@ -277,6 +278,7 @@ private fun IstighfarImmersiveZone(
                         tint = Color.White.copy(alpha = 0.6f),
                     )
                 }
+                ChallengeBubbleButton(ChallengeType.ISTIGHFAR.id)
                 Surface(
                     onClick = onRankClick,
                     shape = CircleShape,

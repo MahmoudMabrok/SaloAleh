@@ -62,6 +62,8 @@ import tools.mo3ta.salo.generated.resources.dhikr_rank_number
 import tools.mo3ta.salo.generated.resources.dhikr_rank_subtitle
 import tools.mo3ta.salo.generated.resources.dhikr_rank_unranked
 import tools.mo3ta.salo.generated.resources.dhikr_view_gains
+import tools.mo3ta.salo.domain.ChallengeType
+import tools.mo3ta.salo.ui.ChallengeBubbleButton
 import tools.mo3ta.salo.ui.ghars.arefRuqaaFamily
 import tools.mo3ta.salo.ui.ghars.ibmPlexArabicFamily
 import kotlin.random.Random
@@ -194,6 +196,7 @@ internal fun DhikrEmancipationZone(
                         tint = Color.White.copy(alpha = 0.6f),
                     )
                 }
+                ChallengeBubbleButton(ChallengeType.DHIKR.id)
                 Surface(
                     onClick = onRankClick,
                     shape = CircleShape,
