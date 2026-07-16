@@ -425,6 +425,8 @@
     <string name="paywall_reward_spread_title">Spreading the Prophet\'s ﷺ Remembrance</string>
     <string name="paywall_reward_spread_subtitle">Help spread the love of the Chosen One worldwide</string>
     <string name="paywall_choose_label">Choose what suits you</string>
+    <string name="paywall_start_subscription_header">Start a renewing subscription</string>
+    <string name="paywall_start_subscription_subtitle">Turn your support into an ongoing charity that reaches you every month</string>
     <string name="paywall_basic_tier_desc">Supporter badge, Friday scores, others\' achievements from leaderboard</string>
     <string name="paywall_premium_tier_desc">Live leaderboard, hide your score, + all Supporter features</string>
     <string name="paywall_support_now_from">Support Now — starting from %1$s</string>

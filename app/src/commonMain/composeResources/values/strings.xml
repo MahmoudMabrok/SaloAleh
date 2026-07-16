@@ -430,6 +430,8 @@
     <string name="paywall_reward_spread_title">نشر ذكر النبي ﷺ</string>
     <string name="paywall_reward_spread_subtitle">ساهم في نشر محبة الحبيب المصطفى حول العالم</string>
     <string name="paywall_choose_label">اختر ما يناسبك</string>
+    <string name="paywall_start_subscription_header">ابدأ اشتراكاً متجدداً</string>
+    <string name="paywall_start_subscription_subtitle">حوّل دعمك إلى صدقة جارية متجددة تصلك ثمرتها كل شهر</string>
     <string name="paywall_basic_tier_desc">شارة الداعم، نتائج يوم الجمعة، إنجازات الآخرين من المتصدرين</string>
     <string name="paywall_premium_tier_desc">المتصدرين مباشرة، إخفاء نتيجتك، + جميع مزايا الداعم</string>
     <string name="paywall_support_now_from">ادعم الآن — ابدأ من %1$s</string>
