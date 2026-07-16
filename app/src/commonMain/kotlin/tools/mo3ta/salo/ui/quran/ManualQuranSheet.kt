@@ -46,6 +46,10 @@ import org.jetbrains.compose.resources.stringResource
 import tools.mo3ta.salo.domain.CHALLENGE_MANUAL_DAILY_CAP
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.manual_challenge_cap_error
+import tools.mo3ta.salo.generated.resources.manual_mode_add
+import tools.mo3ta.salo.generated.resources.manual_mode_subtract
+import tools.mo3ta.salo.generated.resources.manual_subtract_hint
+import tools.mo3ta.salo.generated.resources.manual_subtract_submit
 import tools.mo3ta.salo.generated.resources.manual_quran_count
 import tools.mo3ta.salo.generated.resources.manual_quran_enter_count
 import tools.mo3ta.salo.generated.resources.manual_quran_submit
@@ -60,17 +64,21 @@ internal fun ManualQuranSheet(
     remaining: Int = CHALLENGE_MANUAL_DAILY_CAP,
     onDismiss: () -> Unit,
     onSubmit: (Int) -> Unit,
+    onSubtract: (Int) -> Unit = {},
 ) {
     if (!isOpen) return
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var customText by remember { mutableStateOf("") }
     var witnessChecked by remember { mutableStateOf(false) }
+    var isSubtractMode by remember { mutableStateOf(false) }
 
     val effectiveCount = customText.toIntOrNull() ?: 0
     // Front-end cap: a manual batch that would exceed the day's remaining allowance is rejected.
-    val exceedsCap = effectiveCount > remaining
-    val canSubmit = effectiveCount > 0 && witnessChecked && !exceedsCap
+    // The cap only applies when adding — a correction can subtract any amount.
+    val exceedsCap = !isSubtractMode && effectiveCount > remaining
+    // In subtract (correction) mode there is nothing to witness — the gate is just a positive amount.
+    val canSubmit = effectiveCount > 0 && (isSubtractMode || (witnessChecked && !exceedsCap))
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -116,6 +124,13 @@ internal fun ManualQuranSheet(
                 modifier = Modifier.fillMaxWidth(),
             )
 
+            // Add / Subtract mode toggle — subtract lets the user correct a mistaken count.
+            ManualModeToggle(
+                isSubtractMode = isSubtractMode,
+                onModeChange = { isSubtractMode = it },
+            )
+
+            if (!isSubtractMode) {
             // Quranic verse card
             Column(
                 modifier = Modifier
@@ -143,6 +158,7 @@ internal fun ManualQuranSheet(
                     color = QuranColors.Teal.copy(alpha = 0.8f),
                     fontSize = 12.sp,
                 )
+            }
             }
 
             Spacer(Modifier.height(2.dp))
@@ -199,6 +215,17 @@ internal fun ManualQuranSheet(
                 )
             }
 
+            if (isSubtractMode) {
+                // Correction hint — replaces the witness gate when subtracting.
+                Text(
+                    text = stringResource(Res.string.manual_subtract_hint),
+                    color = QuranColors.Muted,
+                    fontSize = 13.sp,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 22.sp,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                )
+            } else {
             // Witness checkbox
             val witnessBackground by animateColorAsState(
                 targetValue = if (witnessChecked)
@@ -257,35 +284,48 @@ internal fun ManualQuranSheet(
                     lineHeight = 24.sp,
                 )
             }
+            }
 
             // Submit button
             val submitAlpha = if (canSubmit) 1f else 0.35f
+            val submitStart = if (isSubtractMode) Color(0xFFE07A5F) else QuranColors.LightTeal
+            val submitEnd = if (isSubtractMode) Color(0xFFB23A2A) else QuranColors.Teal
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
                     .background(
                         Brush.linearGradient(
-                            listOf(QuranColors.LightTeal, QuranColors.Teal),
+                            listOf(submitStart, submitEnd),
                         ).takeIf { canSubmit }
                             ?: Brush.linearGradient(
                                 listOf(
-                                    QuranColors.LightTeal.copy(alpha = 0.3f),
-                                    QuranColors.Teal.copy(alpha = 0.3f),
+                                    submitStart.copy(alpha = 0.3f),
+                                    submitEnd.copy(alpha = 0.3f),
                                 ),
                             ),
                     )
                     .border(
                         1.dp,
-                        QuranColors.Teal.copy(alpha = submitAlpha),
+                        submitEnd.copy(alpha = submitAlpha),
                         RoundedCornerShape(14.dp),
                     )
-                    .then(if (canSubmit) Modifier.clickable { onSubmit(effectiveCount) } else Modifier)
+                    .then(
+                        if (canSubmit) {
+                            Modifier.clickable {
+                                if (isSubtractMode) onSubtract(effectiveCount) else onSubmit(effectiveCount)
+                            }
+                        } else {
+                            Modifier
+                        },
+                    )
                     .padding(vertical = 14.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = stringResource(Res.string.manual_quran_submit),
+                    text = stringResource(
+                        if (isSubtractMode) Res.string.manual_subtract_submit else Res.string.manual_quran_submit,
+                    ),
                     color = if (canSubmit) Color.White else QuranColors.Muted,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.W700,
@@ -294,5 +334,65 @@ internal fun ManualQuranSheet(
 
             Spacer(Modifier.height(8.dp))
         }
+    }
+}
+
+@Composable
+private fun ManualModeToggle(
+    isSubtractMode: Boolean,
+    onModeChange: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(QuranColors.Teal.copy(alpha = 0.05f))
+            .border(1.dp, QuranColors.Stroke, RoundedCornerShape(12.dp))
+            .padding(3.dp),
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        ManualModeSegment(
+            label = stringResource(Res.string.manual_mode_add),
+            isSelected = !isSubtractMode,
+            selectedColor = QuranColors.Teal,
+            modifier = Modifier.weight(1f),
+            onClick = { onModeChange(false) },
+        )
+        ManualModeSegment(
+            label = stringResource(Res.string.manual_mode_subtract),
+            isSelected = isSubtractMode,
+            selectedColor = Color(0xFFB23A2A),
+            modifier = Modifier.weight(1f),
+            onClick = { onModeChange(true) },
+        )
+    }
+}
+
+@Composable
+private fun ManualModeSegment(
+    label: String,
+    isSelected: Boolean,
+    selectedColor: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val bg by animateColorAsState(
+        targetValue = if (isSelected) selectedColor else Color.Transparent,
+        animationSpec = tween(200),
+    )
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(bg)
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            color = if (isSelected) Color.White else QuranColors.Muted,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.W700,
+        )
     }
 }

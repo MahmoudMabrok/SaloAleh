@@ -203,6 +203,7 @@ fun GharsScreen(onBack: () -> Unit, viewModel: GharsChallengeViewModel = koinVie
         remaining = state.manualRemainingToday,
         onDismiss = viewModel::dismissManualGharsSheet,
         onSubmit = viewModel::submitManualGhars,
+        onSubtract = viewModel::subtractManualGhars,
     )
 }
 

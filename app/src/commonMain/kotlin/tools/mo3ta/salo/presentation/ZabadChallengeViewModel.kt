@@ -189,6 +189,44 @@ class ZabadChallengeViewModel(
         }
     }
 
+    /** Subtract a mistakenly-entered batch from today's count. Floored at 0; syncs the corrected total. */
+    fun subtractManualZabad(count: Int) {
+        if (count <= 0) return
+        val today = today()
+        val updated = store.subtractToday(today, count)
+        _state.update {
+            it.copy(
+                dateKey = today.toString(),
+                todayCount = updated,
+                manualRemainingToday = store.manualRemainingToday(today),
+                showManualZabadSheet = false,
+                isSubmittingManualZabad = true,
+                errorMessage = null,
+            )
+        }
+        recalculateLocalLeaderboard()
+        viewModelScope.launch {
+            syncMutex.withLock {
+                if (!firebaseClient.isConfigured()) {
+                    _state.update { it.copy(isSubmittingManualZabad = false) }
+                    return@withLock
+                }
+                val total = store.todayCount(today)
+                val uid = sessionStore.getOrCreateUid()
+                val countryCode = countryCodeProvider.get()
+                val result = firebaseClient.writeUserDay(today.toString(), uid, total, countryCode, sessionStore.getPublishedName())
+                if (result.isSuccess) store.onSyncSuccess(today, total)
+                refreshStats(today.toString(), uid)
+                _state.update {
+                    it.copy(
+                        isSubmittingManualZabad = false,
+                        errorMessage = result.exceptionOrNull()?.message,
+                    )
+                }
+            }
+        }
+    }
+
     fun resetToday() {
         val today = today()
         val updated = store.resetToday(today)
