@@ -76,6 +76,8 @@ import tools.mo3ta.salo.generated.resources.achievements_badge_repeatable
 import tools.mo3ta.salo.generated.resources.achievements_badge_challenge_baqiyat_how
 import tools.mo3ta.salo.generated.resources.achievements_badge_challenge_dhikr_how
 import tools.mo3ta.salo.generated.resources.achievements_badge_challenge_istighfar_how
+import tools.mo3ta.salo.generated.resources.achievements_challenge_streak_best
+import tools.mo3ta.salo.generated.resources.achievements_challenge_streak_days
 import tools.mo3ta.salo.generated.resources.achievements_badge_round_streak_how
 import tools.mo3ta.salo.generated.resources.achievements_badge_round_streak_title
 import tools.mo3ta.salo.generated.resources.achievements_section_challenge_badges
