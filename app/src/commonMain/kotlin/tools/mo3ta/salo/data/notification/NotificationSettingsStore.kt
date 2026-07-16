@@ -12,6 +12,15 @@ class NotificationSettingsStore(private val settings: Settings) {
         set(v) = settings.putBoolean(KEY_FRIDAY_ENABLED, v)
 
     /**
+     * Controls the local (device-scheduled) evening reminder that fires daily at
+     * 22:00 Africa/Cairo, nudging the user to send salawat and complete the daily
+     * challenges (تسبيح المئة، اغرس نخلة، سورة البقرة).
+     */
+    var eveningEnabled: Boolean
+        get() = settings.getBoolean(KEY_EVENING_ENABLED, true)
+        set(v) = settings.putBoolean(KEY_EVENING_ENABLED, v)
+
+    /**
      * Controls server-sent engagement/reminder push notifications (notify-users.js):
      * day-1 lapsed, mid-week inactive, round-end recap, streak-at-risk, rival alerts,
      * and the ten-days reminders. Synced to RTDB so the server script honours it.
@@ -33,6 +42,7 @@ class NotificationSettingsStore(private val settings: Settings) {
     fun initializeToOff() {
         settings.putBoolean(KEY_DAILY_ENABLED, false)
         settings.putBoolean(KEY_FRIDAY_ENABLED, false)
+        settings.putBoolean(KEY_EVENING_ENABLED, false)
     }
 
     var showRankChip: Boolean
@@ -62,6 +72,7 @@ class NotificationSettingsStore(private val settings: Settings) {
     private companion object {
         const val KEY_DAILY_ENABLED = "notif_daily_enabled"
         const val KEY_FRIDAY_ENABLED = "notif_friday_enabled"
+        const val KEY_EVENING_ENABLED = "notif_evening_enabled"
         const val KEY_SERVER_REMINDERS_ENABLED = "notif_server_reminders_enabled"
         const val KEY_LEADERBOARD_NOTIFS_ENABLED = "notif_leaderboard_enabled"
         const val KEY_SHOW_RANK_CHIP = "show_rank_chip"

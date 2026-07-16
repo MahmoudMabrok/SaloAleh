@@ -458,6 +458,8 @@
     <string name="settings_enable_exact_alarm_toast">فعّل التوقيت الدقيق ليصل التذكير في موعده بالضبط</string>
     <string name="settings_friday_notifications">إشعارات الجمعة</string>
     <string name="settings_friday_notifications_subtitle">كل ساعة من 9ص – 5م</string>
+    <string name="settings_evening_reminder">تذكير المساء والتحديات</string>
+    <string name="settings_evening_reminder_subtitle">كل يوم 10م بالصلاة على النبي وتحديات اليوم</string>
     <string name="settings_server_reminders">إشعارات التذكير</string>
     <string name="settings_server_reminders_subtitle">تذكير بالعودة والصلاة قبل انتهاء الجولة</string>
     <string name="settings_leaderboard_notifs">إشعارات الترتيب والمنافسة</string>

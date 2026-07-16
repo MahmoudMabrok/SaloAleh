@@ -25,15 +25,22 @@ actual object NotificationScheduler {
     private const val TAG = "NotifScheduler"
     private const val TAG_DAILY = "daily_notification"
     private const val TAG_FRIDAY = "friday_notification"
+    private const val TAG_EVENING = "evening_notification"
     private const val TAG_RETENTION = "retention_check"
     internal const val ACTION_DAILY_EXACT = "tools.mo3ta.salo.notification.ACTION_DAILY_EXACT"
     internal const val ACTION_FRIDAY_EXACT = "tools.mo3ta.salo.notification.ACTION_FRIDAY_EXACT"
+    internal const val ACTION_EVENING_EXACT = "tools.mo3ta.salo.notification.ACTION_EVENING_EXACT"
     private const val REQUEST_DAILY_EXACT = 2001
     private const val REQUEST_FRIDAY_EXACT = 2002
+    private const val REQUEST_EVENING_EXACT = 2003
+    private const val EVENING_HOUR = 22
+    // Mirrors RoundStreakStore.KEY_LAST_ACTIVE — the Cairo LocalDate (ISO) of the last
+    // day the user sent salawat. Read directly here to gate the evening reminder.
+    private const val KEY_ROUND_STREAK_LAST_ACTIVE = "round_streak_last_active"
     private val cairoZone: ZoneId = ZoneId.of("Africa/Cairo")
 
-    actual fun apply(dailyEnabled: Boolean, fridayEnabled: Boolean) {
-        applyInternal(AndroidAppContext.get(), dailyEnabled, fridayEnabled)
+    actual fun apply(dailyEnabled: Boolean, fridayEnabled: Boolean, eveningEnabled: Boolean) {
+        applyInternal(AndroidAppContext.get(), dailyEnabled, fridayEnabled, eveningEnabled)
     }
 
     actual fun scheduleTest(afterSeconds: Double) {
@@ -52,7 +59,7 @@ actual object NotificationScheduler {
                 context.getSharedPreferences("ml_session", Context.MODE_PRIVATE),
             ),
         )
-        applyInternal(context, store.dailyEnabled, store.fridayEnabled)
+        applyInternal(context, store.dailyEnabled, store.fridayEnabled, store.eveningEnabled)
     }
 
     internal fun onExactAlarmTriggered(context: Context, action: String?) {
@@ -66,11 +73,20 @@ actual object NotificationScheduler {
                 AndroidReminderNotifier.postFriday(context)
                 rescheduleFridayAfterTrigger(context)
             }
+
+            ACTION_EVENING_EXACT -> {
+                if (hasSentSalawatToday(context)) {
+                    Log.d(TAG, "evening reminder skipped — salawat already sent today")
+                } else {
+                    AndroidReminderNotifier.postEvening(context)
+                }
+                rescheduleEveningAfterTrigger(context)
+            }
         }
     }
 
-    private fun applyInternal(context: Context, dailyEnabled: Boolean, fridayEnabled: Boolean) {
-        Log.d(TAG, "apply() daily=$dailyEnabled friday=$fridayEnabled")
+    private fun applyInternal(context: Context, dailyEnabled: Boolean, fridayEnabled: Boolean, eveningEnabled: Boolean) {
+        Log.d(TAG, "apply() daily=$dailyEnabled friday=$fridayEnabled evening=$eveningEnabled")
         val workManager = WorkManager.getInstance(context)
 
         cancelApproximateReminderWork(workManager)
@@ -82,6 +98,10 @@ actual object NotificationScheduler {
 
         if (fridayEnabled) {
             scheduleFridayReminder(context, workManager)
+        }
+
+        if (eveningEnabled) {
+            scheduleEveningReminder(context, workManager)
         }
 
         workManager.enqueueUniquePeriodicWork(
@@ -137,6 +157,53 @@ actual object NotificationScheduler {
         Log.d(TAG, "friday fallback work scheduled")
     }
 
+    private fun scheduleEveningReminder(context: Context, workManager: WorkManager) {
+        if (canScheduleExactAlarms(context)) {
+            scheduleExactAlarm(
+                context = context,
+                action = ACTION_EVENING_EXACT,
+                requestCode = REQUEST_EVENING_EXACT,
+                triggerAtMillis = nextEveningTriggerAtMillis(),
+            )
+            Log.d(TAG, "evening exact alarm scheduled")
+            return
+        }
+
+        workManager.enqueueUniquePeriodicWork(
+            TAG_EVENING,
+            ExistingPeriodicWorkPolicy.REPLACE,
+            PeriodicWorkRequestBuilder<EveningNotificationWorker>(1, TimeUnit.DAYS)
+                .setInitialDelay(delayUntilNextEveningMillis(), TimeUnit.MILLISECONDS)
+                .build(),
+        )
+        Log.d(TAG, "evening fallback work scheduled")
+    }
+
+    private fun rescheduleEveningAfterTrigger(context: Context) {
+        val store = currentSettings(context)
+        if (!store.eveningEnabled) {
+            cancelExactAlarm(context, ACTION_EVENING_EXACT, REQUEST_EVENING_EXACT)
+            return
+        }
+
+        if (canScheduleExactAlarms(context)) {
+            scheduleExactAlarm(
+                context = context,
+                action = ACTION_EVENING_EXACT,
+                requestCode = REQUEST_EVENING_EXACT,
+                triggerAtMillis = nextEveningTriggerAtMillis(),
+            )
+        } else {
+            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                TAG_EVENING,
+                ExistingPeriodicWorkPolicy.REPLACE,
+                PeriodicWorkRequestBuilder<EveningNotificationWorker>(1, TimeUnit.DAYS)
+                    .setInitialDelay(delayUntilNextEveningMillis(), TimeUnit.MILLISECONDS)
+                    .build(),
+            )
+        }
+    }
+
     private fun rescheduleDailyAfterTrigger(context: Context) {
         val store = currentSettings(context)
         if (!store.dailyEnabled) {
@@ -190,11 +257,13 @@ actual object NotificationScheduler {
     private fun cancelApproximateReminderWork(workManager: WorkManager) {
         workManager.cancelUniqueWork(TAG_DAILY)
         workManager.cancelUniqueWork(TAG_FRIDAY)
+        workManager.cancelUniqueWork(TAG_EVENING)
     }
 
     private fun cancelExactReminderAlarms(context: Context) {
         cancelExactAlarm(context, ACTION_DAILY_EXACT, REQUEST_DAILY_EXACT)
         cancelExactAlarm(context, ACTION_FRIDAY_EXACT, REQUEST_FRIDAY_EXACT)
+        cancelExactAlarm(context, ACTION_EVENING_EXACT, REQUEST_EVENING_EXACT)
     }
 
     private fun cancelExactAlarm(context: Context, action: String, requestCode: Int) {
@@ -238,6 +307,21 @@ actual object NotificationScheduler {
             ),
         )
 
+    /**
+     * True when the user has already sent at least one salawat today (Africa/Cairo).
+     * Reads [RoundStreakStore]'s last-active day, which every salawat path (tap, manual
+     * entry, extension sync) records. Used to suppress the evening reminder for users
+     * who are already engaged today.
+     */
+    internal fun hasSentSalawatToday(context: Context): Boolean {
+        val lastActive = context
+            .getSharedPreferences("ml_session", Context.MODE_PRIVATE)
+            .getString(KEY_ROUND_STREAK_LAST_ACTIVE, null)
+            ?: return false
+        val today = ZonedDateTime.now(cairoZone).toLocalDate().toString()
+        return lastActive == today
+    }
+
     private fun canScheduleExactAlarms(context: Context): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return true
         return context.getSystemService<AlarmManager>()?.canScheduleExactAlarms() == true
@@ -251,6 +335,23 @@ actual object NotificationScheduler {
     private fun delayUntilNextFridayMillis(): Long {
         val now = ZonedDateTime.now(cairoZone)
         return Duration.between(now, nextFridayTrigger(now)).toMillis().coerceAtLeast(1L)
+    }
+
+    private fun delayUntilNextEveningMillis(): Long {
+        val now = ZonedDateTime.now(cairoZone)
+        return Duration.between(now, nextEveningTrigger(now)).toMillis().coerceAtLeast(1L)
+    }
+
+    private fun nextEveningTriggerAtMillis(): Long =
+        nextEveningTrigger(ZonedDateTime.now(cairoZone)).toInstant().toEpochMilli()
+
+    private fun nextEveningTrigger(now: ZonedDateTime): ZonedDateTime {
+        val candidate = now
+            .withHour(EVENING_HOUR)
+            .withMinute(0)
+            .withSecond(0)
+            .withNano(0)
+        return if (candidate.isAfter(now)) candidate else candidate.plusDays(1)
     }
 
     private fun nextDailyTriggerAtMillis(): Long =

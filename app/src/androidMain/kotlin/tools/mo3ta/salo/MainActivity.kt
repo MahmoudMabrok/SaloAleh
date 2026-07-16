@@ -219,6 +219,7 @@ class MainActivity : ComponentActivity() {
         NotificationScheduler.apply(
             notificationSettingsStore.dailyEnabled,
             notificationSettingsStore.fridayEnabled,
+            notificationSettingsStore.eveningEnabled,
         )
     }
 }

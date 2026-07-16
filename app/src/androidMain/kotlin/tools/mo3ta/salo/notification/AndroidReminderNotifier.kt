@@ -27,6 +27,24 @@ object AndroidReminderNotifier {
         )
     }
 
+    fun postEvening(context: Context) {
+        if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return
+
+        val title = "اختم يومك بالطاعة 🌙"
+        val body = "هل صلّيت على النبي ﷺ اليوم؟ ولا تنسَ تحديات اليوم: تسبيح المئة، اغرس نخلة، وقراءة سورة البقرة"
+        NotificationManagerCompat.from(context).notify(
+            NotificationChannels.NOTIF_ID_EVENING,
+            NotificationCompat.Builder(context, NotificationChannels.CHANNEL_EVENING)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+                .setAutoCancel(true)
+                .setContentIntent(openAppIntent(context, NotificationChannels.NOTIF_ID_EVENING, title, body))
+                .build(),
+        )
+    }
+
     fun postFriday(context: Context) {
         if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return
 

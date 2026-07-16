@@ -101,6 +101,7 @@ fun SettingsScreen(
     val viewModel: MohamedLoversViewModel = koinViewModel()
     var dailyEnabled by remember { mutableStateOf(store.dailyEnabled) }
     var fridayEnabled by remember { mutableStateOf(store.fridayEnabled) }
+    var eveningEnabled by remember { mutableStateOf(store.eveningEnabled) }
     var hadithOnStartup by remember { mutableStateOf(hadithStore.showOnStartup) }
     var showRankChip by remember { mutableStateOf(store.showRankChip) }
     var serverRemindersEnabled by remember { mutableStateOf(store.serverRemindersEnabled) }
@@ -243,7 +244,7 @@ fun SettingsScreen(
                     } else {
                         dailyEnabled = checked
                         store.dailyEnabled = checked
-                        NotificationScheduler.apply(checked, store.fridayEnabled)
+                        NotificationScheduler.apply(checked, store.fridayEnabled, store.eveningEnabled)
                         if (checked && !exactAlarmGranted) {
                             showPlatformToast(enableExactAlarmToast)
                             requestExactAlarmPermission()
@@ -263,7 +264,27 @@ fun SettingsScreen(
                     } else {
                         fridayEnabled = checked
                         store.fridayEnabled = checked
-                        NotificationScheduler.apply(store.dailyEnabled, checked)
+                        NotificationScheduler.apply(store.dailyEnabled, checked, store.eveningEnabled)
+                        if (checked && !exactAlarmGranted) {
+                            showPlatformToast(enableExactAlarmToast)
+                            requestExactAlarmPermission()
+                        }
+                    }
+                },
+            )
+
+            SettingToggleRow(
+                label = stringResource(Res.string.settings_evening_reminder),
+                subtitle = stringResource(Res.string.settings_evening_reminder_subtitle),
+                checked = eveningEnabled,
+                onToggle = { checked ->
+                    if (checked && !notifPermGranted) {
+                        showPlatformToast(enableNotifToast)
+                        openNotificationSettings()
+                    } else {
+                        eveningEnabled = checked
+                        store.eveningEnabled = checked
+                        NotificationScheduler.apply(store.dailyEnabled, store.fridayEnabled, checked)
                         if (checked && !exactAlarmGranted) {
                             showPlatformToast(enableExactAlarmToast)
                             requestExactAlarmPermission()
