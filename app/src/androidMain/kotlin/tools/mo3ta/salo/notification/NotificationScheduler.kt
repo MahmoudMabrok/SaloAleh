@@ -34,6 +34,9 @@ actual object NotificationScheduler {
     private const val REQUEST_FRIDAY_EXACT = 2002
     private const val REQUEST_EVENING_EXACT = 2003
     private const val EVENING_HOUR = 22
+    // Mirrors RoundStreakStore.KEY_LAST_ACTIVE — the Cairo LocalDate (ISO) of the last
+    // day the user sent salawat. Read directly here to gate the evening reminder.
+    private const val KEY_ROUND_STREAK_LAST_ACTIVE = "round_streak_last_active"
     private val cairoZone: ZoneId = ZoneId.of("Africa/Cairo")
 
     actual fun apply(dailyEnabled: Boolean, fridayEnabled: Boolean, eveningEnabled: Boolean) {
@@ -72,7 +75,11 @@ actual object NotificationScheduler {
             }
 
             ACTION_EVENING_EXACT -> {
-                AndroidReminderNotifier.postEvening(context)
+                if (hasSentSalawatToday(context)) {
+                    Log.d(TAG, "evening reminder skipped — salawat already sent today")
+                } else {
+                    AndroidReminderNotifier.postEvening(context)
+                }
                 rescheduleEveningAfterTrigger(context)
             }
         }
@@ -299,6 +306,21 @@ actual object NotificationScheduler {
                 context.getSharedPreferences("ml_session", Context.MODE_PRIVATE),
             ),
         )
+
+    /**
+     * True when the user has already sent at least one salawat today (Africa/Cairo).
+     * Reads [RoundStreakStore]'s last-active day, which every salawat path (tap, manual
+     * entry, extension sync) records. Used to suppress the evening reminder for users
+     * who are already engaged today.
+     */
+    internal fun hasSentSalawatToday(context: Context): Boolean {
+        val lastActive = context
+            .getSharedPreferences("ml_session", Context.MODE_PRIVATE)
+            .getString(KEY_ROUND_STREAK_LAST_ACTIVE, null)
+            ?: return false
+        val today = ZonedDateTime.now(cairoZone).toLocalDate().toString()
+        return lastActive == today
+    }
 
     private fun canScheduleExactAlarms(context: Context): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return true
