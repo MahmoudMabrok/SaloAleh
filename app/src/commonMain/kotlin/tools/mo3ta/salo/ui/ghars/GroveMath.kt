@@ -11,8 +11,8 @@ import kotlin.math.pow
  * palms, so render cost is a constant independent of the score.
  */
 
-const val GROVE_SIZE = 25 // palms per grove; hard drawing ceiling
-val ROW_CAPACITY = intArrayOf(7, 8, 10) // palms per depth row, nearest first; sums to 25
+const val GROVE_SIZE = 50 // palms per grove; hard drawing ceiling
+val ROW_CAPACITY = intArrayOf(8, 10, 14, 18) // palms per depth row, nearest first; sums to 50
 const val ROW_DEPTH_FALLOFF = 0.72f // scale multiplier per row back
 const val HAZE_FALLOFF = 0.855f // atmospheric haze falloff base per row back
 const val HAZE_MAX = 0.62f // atmospheric haze cap on the furthest row
@@ -81,7 +81,7 @@ fun gardensOwned(lifetimePalms: Int): Int = if (lifetimePalms <= 0) 0 else lifet
  * Absolute index of the first palm of garden [garden] (0-based). Feeding this + a slot
  * (0 until [GROVE_SIZE]) into [palmParams] reproduces the exact palms that were planted when
  * that grove was grown, so garden N looks the same on every device, forever — and its final
- * palm always bears dates, since `(gardenFirstPalmIndex(garden) + 24 + 1) % GROVE_SIZE == 0`.
+ * palm always bears dates, since `(gardenFirstPalmIndex(garden) + (GROVE_SIZE - 1) + 1) % GROVE_SIZE == 0`.
  */
 fun gardenFirstPalmIndex(garden: Int): Int = garden * GROVE_SIZE
 

@@ -23,10 +23,10 @@ import kotlin.math.sqrt
 import androidx.compose.ui.graphics.Canvas as GraphicsCanvas
 
 /**
- * Renders a single *finished* garden — a completed grove of [GROVE_SIZE] palms — for the gardens
- * gallery and the walkable garden view. Unlike [PalmGroveCanvas], which draws the day's live,
- * partially-filled grove, this draws all 25 palms of one specific grove by absolute index, so
- * garden N always shows the very palms that were planted when that grove was grown.
+ * Renders a single *finished* garden — a completed grove of [GROVE_SIZE] palms — as a walkable scene.
+ * Unlike [PalmGroveCanvas], which draws the day's live, partially-filled grove, this draws all the
+ * palms of one specific grove by absolute index, so garden N always shows the very palms that were
+ * planted when that grove was grown.
  *
  * It reuses the live screen's palm and backdrop drawing verbatim (via the `internal` primitives in
  * [PalmGroveCanvas]) so a stored garden looks identical to the grove it was grown as.
@@ -34,44 +34,24 @@ import androidx.compose.ui.graphics.Canvas as GraphicsCanvas
 
 // ---- walker (the user's avatar strolling the garden) ----
 private const val WALKER_STRIDE = 22f // logical dp travelled per half gait cycle
-private const val WALKER_DEPTH = 0.8f // depth scale: <1 sits the walker just behind the front row
+private const val WALKER_HEIGHT = 96f // logical dp, at front-row scale; shrinks with depth
 private val ROBE = Color(0xFF1B2A34) // cool dark robe, a shade off the palm silhouettes
 private val ROBE_HEM = Color(0xFF12202A)
 private val WALKER_RIM = Color(0xFFF5D97A) // dawn backlight catching the head and shoulder edge
 private val WALKER_SKIN = Color(0xFF6B4A32) // face, kept in shadow
 
 /**
- * A static thumbnail of garden [gardenIndex] — the whole grove at a glance. The scene is drawn at
- * half density so all three rows fit inside a small card instead of a full screen.
- */
-@Composable
-internal fun GardenThumbnail(gardenIndex: Int, modifier: Modifier = Modifier) {
-    Canvas(modifier) {
-        if (size.minDimension <= 0f) return@Canvas
-        val shrink = 0.5f
-        val eff = density * shrink
-        scale(eff, eff, pivot = Offset.Zero) {
-            val w = size.width / eff
-            val h = size.height / eff
-            val reserve = h * 0.14f
-            drawBackdrop(w, h, groves = 0, reserve = reserve)
-            val g = GroveGeometry(w, h, reserve)
-            val scratch = GroveScratch()
-            drawWholeGrove(g, gardenIndex, scratch, bands = intArrayOf(2, 1, 0))
-        }
-    }
-}
-
-/**
- * The walkable garden: garden [gardenIndex]'s grove with the user's avatar weaving through it.
+ * The walkable garden: garden [gardenIndex]'s grove with the user's avatar walking through it.
  *
- * The grove is split into two cached layers — everything behind the walker (sky, ground and the two
- * back rows) and the nearest row in front of it — so the walker is drawn *between* them and the front
- * palms genuinely occlude it as it passes, selling the "walking among the palms" read. Only the two
- * bitmaps are rebuilt (on resize / garden change); every animation frame just blits them and repaints
- * the one figure.
+ * Each depth row is rasterised into its own transparent bitmap once (on resize / garden change),
+ * layered over a cached backdrop. Every animation frame blits the backdrop, then the rows back-to-
+ * front, dropping the avatar in at the point its depth falls between two rows — so the figure is
+ * occluded by every row nearer than it and occludes every row behind it, at *any* depth. That lets
+ * it stroll from the front row all the way into the haze while staying correctly among the trunks,
+ * for the cost of a handful of blits plus one repainted figure.
  *
  * @param avatarFraction 0..1 position across the usable width
+ * @param avatarDepth 0 = furthest row, 1 = front row
  * @param gaitDistance logical distance the walker has travelled — phases the leg swing and bob
  * @param moving whether the walker is currently in motion (feet settle together when false)
  * @param facingRight which way the walker faces
@@ -80,26 +60,48 @@ internal fun GardenThumbnail(gardenIndex: Int, modifier: Modifier = Modifier) {
 internal fun GardenWalkCanvas(
     gardenIndex: Int,
     avatarFraction: Float,
+    avatarDepth: Float,
     gaitDistance: Float,
     moving: Boolean,
     facingRight: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val scratch = remember { GardenLayers() }
+    val layers = remember { GardenLayers() }
     Canvas(modifier) {
         val wPx = size.width.toInt()
         val hPx = size.height.toInt()
         if (wPx <= 0 || hPx <= 0) return@Canvas
-        scratch.ensure(gardenIndex, wPx, hPx, density, layoutDirection)
+        layers.ensure(gardenIndex, wPx, hPx, density, layoutDirection)
 
-        scratch.back?.let { drawImage(it) }
-        scale(density, density, pivot = Offset.Zero) {
-            val w = size.width / density
-            val h = size.height / density
-            val g = GroveGeometry(w, h)
-            drawWalker(g, w, avatarFraction, gaitDistance, moving, facingRight)
+        layers.backdrop?.let { drawImage(it) }
+
+        val w = size.width / density
+        val h = size.height / density
+        val g = GroveGeometry(w, h)
+        val rows = layers.rows
+        val n = rows.size
+        if (n == 0) return@Canvas
+
+        val nearScale = rowScale(0)
+        val farScale = rowScale(n - 1)
+        val scaleA = farScale + (nearScale - farScale) * avatarDepth.coerceIn(0f, 1f)
+        val avatarBaseY = g.hz + (g.nr - g.hz) * scaleA
+
+        var drawn = false
+        for (band in n - 1 downTo 0) {
+            if (!drawn && g.baseY(band) > avatarBaseY) {
+                scale(density, density, pivot = Offset.Zero) {
+                    drawWalker(g, w, avatarFraction, scaleA, gaitDistance, moving, facingRight)
+                }
+                drawn = true
+            }
+            drawImage(rows[band])
         }
-        scratch.front?.let { drawImage(it) }
+        if (!drawn) {
+            scale(density, density, pivot = Offset.Zero) {
+                drawWalker(g, w, avatarFraction, scaleA, gaitDistance, moving, facingRight)
+            }
+        }
     }
 }
 
@@ -119,24 +121,24 @@ private fun DrawScope.drawWholeGrove(
     }
 }
 
-/** Cached back/front bitmaps for [GardenWalkCanvas], rebuilt only when the garden or size changes. */
+/** Cached backdrop + one bitmap per depth row, rebuilt only when the garden or size changes. */
 private class GardenLayers {
-    var back: ImageBitmap? = null
-    var front: ImageBitmap? = null
+    var backdrop: ImageBitmap? = null
+    var rows: List<ImageBitmap> = emptyList()
     private var w = 0
     private var h = 0
     private var garden = -1
 
     fun ensure(gardenIndex: Int, wPx: Int, hPx: Int, density: Float, ld: LayoutDirection) {
-        if (back != null && w == wPx && h == hPx && garden == gardenIndex) return
-        back = rasterize(wPx, hPx, density, ld) {
+        if (backdrop != null && w == wPx && h == hPx && garden == gardenIndex) return
+        backdrop = rasterize(wPx, hPx, density, ld) {
             drawBackdrop(size.width / density, size.height / density, groves = 0)
-            val gg = GroveGeometry(size.width / density, size.height / density)
-            drawWholeGrove(gg, gardenIndex, GroveScratch(), bands = intArrayOf(2, 1))
         }
-        front = rasterize(wPx, hPx, density, ld) {
-            val gg = GroveGeometry(size.width / density, size.height / density)
-            drawWholeGrove(gg, gardenIndex, GroveScratch(), bands = intArrayOf(0))
+        rows = ROW_CAPACITY.indices.map { band ->
+            rasterize(wPx, hPx, density, ld) {
+                val gg = GroveGeometry(size.width / density, size.height / density)
+                drawWholeGrove(gg, gardenIndex, GroveScratch(), bands = intArrayOf(band))
+            }
         }
         w = wPx; h = hPx; garden = gardenIndex
     }
@@ -161,20 +163,22 @@ private fun rasterize(
  * The avatar: a robed figure in near-silhouette, backlit by the dawn so only the crown of the head
  * and one shoulder catch a hairline of gold — the same light that rims the palms. It walks with a
  * distance-driven gait: legs swing and the body bobs in step with how far it has actually moved, so
- * it stands still the instant the user stops dragging.
+ * it stands still the instant the user stops dragging. Its size follows [scaleA] so it shrinks as it
+ * walks deeper into the grove.
  */
 private fun DrawScope.drawWalker(
     g: GroveGeometry,
     w: Float,
     fraction: Float,
+    scaleA: Float,
     gaitDistance: Float,
     moving: Boolean,
     facingRight: Boolean,
 ) {
     val margin = w * 0.06f
     val x = margin + fraction.coerceIn(0f, 1f) * (w - 2f * margin)
-    val groundY = g.hz + (g.nr - g.hz) * WALKER_DEPTH
-    val h = 86f * WALKER_DEPTH
+    val groundY = g.hz + (g.nr - g.hz) * scaleA
+    val h = WALKER_HEIGHT * scaleA
     val dir = if (facingRight) 1f else -1f
     val phase = gaitDistance / WALKER_STRIDE
     // The gait phases off distance travelled, but only expresses while moving; a stopped walker

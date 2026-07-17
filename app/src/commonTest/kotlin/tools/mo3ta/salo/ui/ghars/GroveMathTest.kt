@@ -19,11 +19,11 @@ class GroveMathTest {
         assertTrue(palmParams(11) != palmParams(12))
     }
 
-    @Test fun everyTwentyFifthPalmBearsDates() {
-        assertTrue(palmParams(24).bearsDates) // 25th palm (index 24)
-        assertTrue(palmParams(49).bearsDates) // 50th palm
+    @Test fun everyFiftiethPalmBearsDates() {
+        assertTrue(palmParams(49).bearsDates) // 50th palm (index 49) — completes a grove
+        assertTrue(palmParams(99).bearsDates) // 100th palm
         assertFalse(palmParams(0).bearsDates)
-        assertFalse(palmParams(23).bearsDates)
+        assertFalse(palmParams(48).bearsDates)
     }
 
     @Test fun frondCountStaysInRange() {
@@ -42,23 +42,23 @@ class GroveMathTest {
     @Test fun wrapArithmetic() {
         assertEquals(0, shownPalms(0))
         assertEquals(1, shownPalms(1))
-        assertEquals(25, shownPalms(25))
-        assertEquals(1, shownPalms(26)) // the wrap: fresh soil after a completed grove
-        assertEquals(25, shownPalms(50))
+        assertEquals(50, shownPalms(50))
+        assertEquals(1, shownPalms(51)) // the wrap: fresh soil after a completed grove
+        assertEquals(50, shownPalms(100))
 
         assertEquals(0, groveStartIndex(1))
-        assertEquals(0, groveStartIndex(25))
-        assertEquals(25, groveStartIndex(26))
-        assertEquals(25, groveStartIndex(50))
+        assertEquals(0, groveStartIndex(50))
+        assertEquals(50, groveStartIndex(51))
+        assertEquals(50, groveStartIndex(100))
 
-        assertEquals(0, completedGroves(24))
-        assertEquals(1, completedGroves(25))
-        assertEquals(1, completedGroves(26))
-        assertEquals(3, completedGroves(83))
+        assertEquals(0, completedGroves(49))
+        assertEquals(1, completedGroves(50))
+        assertEquals(1, completedGroves(51))
+        assertEquals(3, completedGroves(150))
 
-        assertFalse(completesGrove(25))
-        assertTrue(completesGrove(26)) // first tasbeeh after a full grove sends it receding
-        assertTrue(completesGrove(51))
+        assertFalse(completesGrove(50))
+        assertTrue(completesGrove(51)) // first tasbeeh after a full grove sends it receding
+        assertTrue(completesGrove(101))
         assertFalse(completesGrove(1))
     }
 
@@ -79,12 +79,13 @@ class GroveMathTest {
     }
 
     @Test fun rowsFillFrontFirst() {
-        // With 10 palms: the front row is full (slots 0..6) and the row behind has taken 3.
+        // With 10 palms: the front row is full (slots 0..7) and the row behind has taken 2.
         val take = rowOccupancy(10)
-        assertEquals(listOf(7, 3, 0), take.toList())
+        assertEquals(listOf(8, 2, 0, 0), take.toList())
         assertEquals(0, rowStart(0))
-        assertEquals(7, rowStart(1))
-        assertEquals(15, rowStart(2))
+        assertEquals(8, rowStart(1))
+        assertEquals(18, rowStart(2))
+        assertEquals(32, rowStart(3))
     }
 
     @Test fun aPlantedPalmNeverMoves() {
@@ -103,28 +104,29 @@ class GroveMathTest {
     }
 
     @Test fun newestPalmIsTheLastSlotOfTheCurrentRow() {
-        // Palm 8 (slot 7) opens the middle row; palm 15 (slot 14) is the last of that row.
-        assertEquals(0, rowOfSlot(6))
-        assertEquals(1, rowOfSlot(7))
-        assertEquals(0, slotInRow(7))
-        assertEquals(1, rowOfSlot(14))
-        assertEquals(7, slotInRow(14))
-        assertEquals(2, rowOfSlot(15))
-        assertEquals(9, slotInRow(GROVE_SIZE - 1))
+        // Rows are [8, 10, 14, 18]: band 0 = slots 0..7, band 1 = 8..17, band 2 = 18..31, band 3 = 32..49.
+        assertEquals(0, rowOfSlot(7))
+        assertEquals(1, rowOfSlot(8))
+        assertEquals(0, slotInRow(8))
+        assertEquals(1, rowOfSlot(17))
+        assertEquals(9, slotInRow(17))
+        assertEquals(2, rowOfSlot(18))
+        assertEquals(3, rowOfSlot(GROVE_SIZE - 1))
+        assertEquals(17, slotInRow(GROVE_SIZE - 1))
     }
 
     @Test fun gardensOwnedIsLifetimeFloorDividedByGroveSize() {
         assertEquals(0, gardensOwned(0))
-        assertEquals(0, gardensOwned(24))
-        assertEquals(1, gardensOwned(25))
-        assertEquals(1, gardensOwned(49))
-        assertEquals(2, gardensOwned(50))
-        assertEquals(4, gardensOwned(100)) // the daily goal is exactly four gardens
+        assertEquals(0, gardensOwned(49))
+        assertEquals(1, gardensOwned(50))
+        assertEquals(1, gardensOwned(99))
+        assertEquals(2, gardensOwned(100)) // the daily goal is exactly two gardens
+        assertEquals(3, gardensOwned(160))
         assertEquals(0, gardensOwned(-5))
     }
 
     @Test fun everyGardenEndsOnADatePalm() {
-        // A garden is a full grove, so its 25th palm (slot 24) must always be the date-bearer.
+        // A garden is a full grove, so its 50th palm (slot 49) must always be the date-bearer.
         for (garden in 0 until 6) {
             val lastSlotIndex = gardenFirstPalmIndex(garden) + (GROVE_SIZE - 1)
             assertTrue(palmParams(lastSlotIndex).bearsDates, "garden $garden did not end on a date palm")
@@ -133,7 +135,7 @@ class GroveMathTest {
     }
 
     @Test fun gardensTileWithoutGapsOrOverlap() {
-        // Walking garden g must reproduce exactly the palms count g*25+1 .. (g+1)*25 were grown as.
+        // Walking garden g must reproduce exactly the palms grown as count g*GROVE_SIZE+1 .. (g+1)*GROVE_SIZE.
         for (garden in 0 until 4) {
             val first = gardenFirstPalmIndex(garden)
             val next = gardenFirstPalmIndex(garden + 1)
