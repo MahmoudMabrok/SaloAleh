@@ -95,11 +95,25 @@ Per-challenge achievement badges: each daily challenge (dhikr, baqiyat, istighfa
 - RTDB rules for each challenge's per-user node validate only the essentials — write-auth (`uid`/`data.uid` === `$uid`), `count` (`>= 0` within its bound), `streak` (`>= 0`), and server-owned `rank`. The `goal`/`completed`/`date`/`countryCode`/`nickname`/`updatedAt` fields and the `hasChildren`/`$other` schema locks were removed, so the client still writes those fields but they are no longer validated.
 - Tests: `commonTest/data/engagement/ChallengeBadgeStoreTest.kt`.
 
+### Remote update prompt
+
+Startup "new version available" dialog driven by a remote-config value (RTDB, not Firebase Remote Config — the latter is unused).
+
+- Core files: `domain/AppUpdateConfig.kt` (`AppUpdateConfig`, `isNewerVersion`), `data/update/UpdatePromptStore.kt`, `data/update/UpdateChecker.kt`, `data/firebase/MohamedLoversFirebaseClient.kt` (`fetchAppConfig`), `App.kt`, `ui/VersionUpdateDialog.kt`.
+- Config lives at RTDB `mohamed_lovers/app_config/latestVersion` (a versionName string like `3.9.2`); `.read: true` in `database.rules.json`, client-read-only. Absent/unreadable node ⇒ no prompt.
+- On startup `UpdateChecker.check(getAppVersion())` compares `latestVersion` to the running versionName via `isNewerVersion` (numeric, component-wise — `3.10` beats `3.9`; build suffixes ignored) and shows `VersionUpdateDialog` when strictly newer.
+- Dismissal is per-version: "Later" persists the version (`multiplatform-settings` key `update_prompt_dismissed_version`) so it never shows again for that release; a higher `latestVersion` prompts again. "Update now" only opens the store (not a dismissal), so an incomplete update still reminds next launch.
+- Gated by its own `UPDATE_PROMPT_ENABLED` flag in `App.kt`, independent of the globally-suppressed `APP_ANNOUNCEMENTS_ENABLED`; suppressed during onboarding and while the legacy FCM-driven `pendingVersionUpdate` dialog is showing.
+- Reuses the existing `version_update_*` string keys (all four locales) and the current cross-platform `getAppVersion()` expect/actual.
+- Tests: `commonTest/domain/AppUpdateConfigTest.kt`, `commonTest/data/update/UpdatePromptStoreTest.kt`, `commonTest/data/update/UpdateCheckerTest.kt`.
+
 ## Firebase RTDB structure
 
 ```
 mohamed_lovers/
 ├── allTimeTotal                          # aggregate across all rounds (read-only to client)
+├── app_config/                           # remote config (read-only to client)
+│   └── latestVersion                     # latest published versionName; drives the startup update prompt
 ├── users/{uid}/                          # per-device user data
 │   ├── fcmToken, installDate, lastOpenDate, lastRivalNotifDate
 │   ├── reminderNotifsEnabled            # client opt-in for notify-users.js push (Settings; absent = on)

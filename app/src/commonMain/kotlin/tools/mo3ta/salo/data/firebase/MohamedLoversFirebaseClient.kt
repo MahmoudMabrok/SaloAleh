@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.onEach
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.logFirebaseError
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
+import tools.mo3ta.salo.domain.AppUpdateConfig
 import tools.mo3ta.salo.domain.FirebaseLeaderboard
 import tools.mo3ta.salo.domain.FirebaseLeaderboardEntry
 import tools.mo3ta.salo.domain.HeroesBoard
@@ -99,6 +100,26 @@ class MohamedLoversFirebaseClient(
                 onFailure = { error ->
                     log.e(error) { "fetchRoundTotal[$roundKey] failed" }
                     trackReadFailure("fetch_round_total", error)
+                },
+            )
+        }
+    }
+
+    override suspend fun fetchAppConfig(): Result<AppUpdateConfig?> {
+        log.d { "fetchAppConfig" }
+        return runCatching {
+            val snapshot = Firebase.database.reference("$ROOT_PATH/$APP_CONFIG_PATH")
+                .valueEvents.first()
+            if (!snapshot.exists) return@runCatching null
+            val map = snapshot.value as? Map<*, *> ?: return@runCatching null
+            val latest = map[LATEST_VERSION_KEY] as? String ?: return@runCatching null
+            AppUpdateConfig(latestVersion = latest)
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "fetchAppConfig=$it" } },
+                onFailure = { error ->
+                    log.e(error) { "fetchAppConfig failed" }
+                    trackReadFailure("fetch_app_config", error)
                 },
             )
         }
@@ -715,6 +736,8 @@ class MohamedLoversFirebaseClient(
         const val ROUND_TOTAL_PATH = "roundTotal"
         const val ROUND_PLAYER_COUNT_PATH = "roundPlayerCount"
         const val ALL_TIME_TOTAL_PATH = "allTimeTotal"
+        const val APP_CONFIG_PATH = "app_config"
+        const val LATEST_VERSION_KEY = "latestVersion"
         const val HEROES_PATH = "heroes"
         const val USERS_PATH = "users"
         const val REMINDER_NOTIFS_ENABLED_KEY = "reminderNotifsEnabled"

@@ -58,6 +58,7 @@ import tools.mo3ta.salo.ui.OnboardingScreen
 import tools.mo3ta.salo.ui.PlatformBackHandler
 import tools.mo3ta.salo.ui.ReviewDialog
 import tools.mo3ta.salo.ui.VersionUpdateDialog
+import tools.mo3ta.salo.ui.getAppVersion
 import tools.mo3ta.salo.ui.openStorePage
 import tools.mo3ta.salo.ui.settings.ExtensionQrScreen
 import tools.mo3ta.salo.data.billing.BillingManager
@@ -84,6 +85,7 @@ import tools.mo3ta.salo.data.MilestoneTracker
 import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseApi
 import tools.mo3ta.salo.data.referral.ReferralStore
+import tools.mo3ta.salo.data.update.UpdateChecker
 import tools.mo3ta.salo.analytics.BillingAnalytics
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -107,6 +109,11 @@ private const val APP_ANNOUNCEMENTS_ENABLED = false
 // The per-round streak badge announcement ships independently of the global suppression
 // above so the new feature is surfaced once. Flip to false to hide it.
 private const val STREAK_BADGE_ANNOUNCEMENT_ENABLED = true
+
+// The remote-config-driven "update available" prompt is independent of the global
+// announcement suppression above: it must reach every user when a newer release ships.
+// Flip to false to disable the startup version check entirely.
+private const val UPDATE_PROMPT_ENABLED = true
 
 @Composable
 fun App(
@@ -662,6 +669,38 @@ fun App(
                     openStorePage()
                 },
                 onDismiss = { pendingVersionUpdate = null },
+            )
+        }
+
+        // Remote-config-driven update prompt: at startup, compare the latest published
+        // version to this build and offer an update when it is newer. Dismissing marks
+        // the version so it is never shown again for the same release. Independent of the
+        // suppressed app announcements above so it always reaches users on old versions.
+        val updateChecker = koinInject<UpdateChecker>()
+        var pendingAppUpdate by remember { mutableStateOf<String?>(null) }
+        LaunchedEffect(Unit) {
+            if (UPDATE_PROMPT_ENABLED) {
+                pendingAppUpdate = updateChecker.check(getAppVersion())
+            }
+        }
+        if (
+            UPDATE_PROMPT_ENABLED &&
+            !showOnboarding &&
+            pendingVersionUpdate == null
+        ) pendingAppUpdate?.let { version ->
+            VersionUpdateDialog(
+                version = version,
+                // "Update now" only opens the store; it is not a dismissal, so a user who
+                // doesn't complete the update is still reminded on the next launch.
+                onUpdate = {
+                    pendingAppUpdate = null
+                    openStorePage()
+                },
+                // "Later" suppresses this exact version forever.
+                onDismiss = {
+                    updateChecker.markDismissed(version)
+                    pendingAppUpdate = null
+                },
             )
         }
     }

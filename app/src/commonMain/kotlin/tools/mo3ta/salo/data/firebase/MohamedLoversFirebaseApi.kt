@@ -1,6 +1,7 @@
 package tools.mo3ta.salo.data.firebase
 
 import kotlinx.coroutines.flow.Flow
+import tools.mo3ta.salo.domain.AppUpdateConfig
 import tools.mo3ta.salo.domain.FirebaseLeaderboard
 import tools.mo3ta.salo.domain.HeroesBoard
 import tools.mo3ta.salo.domain.MohamedLoversPlayer
@@ -11,6 +12,8 @@ data class ReferralStats(val referralCount: Int, val salawatTotal: Long)
 interface MohamedLoversFirebaseApi {
     fun isConfigured(): Boolean
     suspend fun ensureSignedInAnonymously(): Result<String>
+    /** Reads the remote app-update config; null when it is absent. */
+    suspend fun fetchAppConfig(): Result<AppUpdateConfig?>
     fun observeSelfPlayer(roundKey: String, uid: String): Flow<Result<MohamedLoversPlayer?>>
     suspend fun fetchRoundPlayerCount(roundKey: String): Result<Int>
     suspend fun fetchRoundTotal(roundKey: String): Result<Int>
