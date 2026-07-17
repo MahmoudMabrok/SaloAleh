@@ -90,8 +90,8 @@ android {
         applicationId = "tools.mo3ta.salo"
         minSdk = 24
         targetSdk = 36
-        versionCode = 110
-        versionName = "3.8.0"
+        versionCode = 111
+        versionName = "ghytff"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
