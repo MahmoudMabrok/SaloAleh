@@ -28,7 +28,10 @@ data class BubbleTheme(
     val gradientEnd: Int,
     val ringColor: Int,
     val countColor: Int,
+    /** Compact word shown inside the 72dp bubble circle (e.g. "تهليل"). */
     val label: String,
+    /** Full challenge name shown on the type-switch chips (e.g. "أهل لا إله إلا الله"). */
+    val name: String,
     val contentDescription: String,
     val tooltip: String,
     val notifTitle: String,

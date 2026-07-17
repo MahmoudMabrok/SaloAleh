@@ -26,6 +26,7 @@ import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -56,6 +57,19 @@ class FloatingBubbleService : Service() {
         ZABAD("zabad"),
         GHARS("ghars");
 
+        /**
+         * NotificationAction id for this type's challenge screen, or null for salawat
+         * (which just opens the main screen). Matches NotificationAction.from() strings.
+         */
+        val openChallengeAction: String?
+            get() = when (this) {
+                SALAWAT -> null
+                DHIKR -> "open_dhikr_challenge"
+                ISTIGHFAR -> "open_istighfar_challenge"
+                ZABAD -> "open_zabad_challenge"
+                GHARS -> "open_ghars_challenge"
+            }
+
         companion object {
             fun from(id: String?): BubbleType = entries.firstOrNull { it.id == id } ?: SALAWAT
         }
@@ -73,6 +87,10 @@ class FloatingBubbleService : Service() {
         private const val TAP_THRESHOLD = 10
         private const val TAP_DURATION_MS = 300L
         private const val LONG_PRESS_MS = 400L
+        private const val SWITCH_TOOLTIP_MS = 4_000L
+        // Intent extra naming the challenge screen to open when the bubble is
+        // dragged onto "open app". Value matches NotificationAction.from() strings.
+        const val EXTRA_OPEN_CHALLENGE = "bubble_open_challenge"
     }
 
     private val sessionStore: MohamedLoversSessionStore by inject()
@@ -105,6 +123,8 @@ class FloatingBubbleService : Service() {
 
     // Separate overlay for tooltip — FLAG_NOT_TOUCHABLE, positioned above bubble
     private var tooltipView: LinearLayout? = null
+    // Auto-hide timer for the zikr tooltip flashed when the type is switched.
+    private var switchTooltipJob: Job? = null
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var roundKey: String = ""
@@ -190,10 +210,25 @@ class FloatingBubbleService : Service() {
         bubbleView.updateCount(currentCount())
         startForeground(NotificationChannels.NOTIF_ID_BUBBLE, buildNotification(theme))
         _activeType.value = newType.id
+        // Surface the new type's zikr above the bubble so the user knows what to recite.
+        flashSwitchTooltip()
         analyticsManager.logAction(
             "bubble_switch_type",
             mapOf("from" to previous.id, "to" to newType.id),
         )
+    }
+
+    /** Briefly show the current type's zikr tooltip above the bubble, then auto-hide it. */
+    private fun flashSwitchTooltip() {
+        switchTooltipJob?.cancel()
+        // Remove any tooltip already on screen so the new zikr text is shown.
+        tooltipView?.let { runCatching { windowManager.removeView(it) } }
+        tooltipView = null
+        showTooltip()
+        switchTooltipJob = scope.launch {
+            delay(SWITCH_TOOLTIP_MS)
+            hideTooltip()
+        }
     }
 
     // Bubble types the on-screen picker offers: salawat only when a round is active.
@@ -207,6 +242,7 @@ class FloatingBubbleService : Service() {
             ringColor = Color.parseColor("#FFD700"),
             countColor = Color.parseColor("#FFD700"),
             label = "صلوات",
+            name = "صلوات",
             contentDescription = "اضغط للصلاة على النبي",
             tooltip = "اللهم صل علي محمد وال محمد",
             notifTitle = "صلوات",
@@ -220,6 +256,7 @@ class FloatingBubbleService : Service() {
             ringColor = Color.parseColor("#6FCF9E"),
             countColor = Color.parseColor("#E9C97F"),
             label = "تهليل",
+            name = "أهل لا إله إلا الله",
             contentDescription = "اضغط للتهليل",
             tooltip = "لا إله إلا الله وحده لا شريك له",
             notifTitle = "أهل لا إله إلا الله",
@@ -233,6 +270,7 @@ class FloatingBubbleService : Service() {
             ringColor = Color.parseColor("#C08A3E"),
             countColor = Color.parseColor("#E0B978"),
             label = "استغفار",
+            name = "واستغفروه",
             contentDescription = "اضغط للاستغفار",
             tooltip = "أستغفر الله العظيم وأتوب إليه",
             notifTitle = "واستغفروه",
@@ -246,6 +284,7 @@ class FloatingBubbleService : Service() {
             ringColor = Color.parseColor("#2ED3C4"),
             countColor = Color.parseColor("#E9C46A"),
             label = "زبد",
+            name = "تسبيح المئة",
             contentDescription = "اضغط للتسبيح",
             tooltip = "سبحان الله وبحمده",
             notifTitle = "زبد البحر",
@@ -259,6 +298,7 @@ class FloatingBubbleService : Service() {
             ringColor = Color.parseColor("#C4762A"),
             countColor = Color.parseColor("#F5D97A"),
             label = "غرس",
+            name = "اغرس نخلة",
             contentDescription = "اضغط للغرس",
             tooltip = "سبحان الله العظيم وبحمده",
             notifTitle = "الغَرْس",
@@ -457,7 +497,8 @@ class FloatingBubbleService : Service() {
 
         val (screenW, _) = screenSize()
         val rowW = screenW - 32.dp()
-        val rowH = 56.dp()
+        // Taller row so full challenge names can wrap onto a second line.
+        val rowH = 64.dp()
         val chipsTopY = 48.dp()
 
         val row = LinearLayout(this).apply {
@@ -478,12 +519,14 @@ class FloatingBubbleService : Service() {
             val theme = themeFor(type)
             val isCurrent = type == bubbleType
             val chip = TextView(this).apply {
-                text = theme.label
+                text = theme.name
                 textDirection = android.view.View.TEXT_DIRECTION_RTL
                 setTextColor(if (isCurrent) Color.WHITE else Color.argb(200, 255, 255, 255))
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
                 gravity = Gravity.CENTER
-                setPadding(12.dp(), 6.dp(), 12.dp(), 6.dp())
+                maxLines = 2
+                ellipsize = android.text.TextUtils.TruncateAt.END
+                setPadding(8.dp(), 4.dp(), 8.dp(), 4.dp())
                 background = GradientDrawable().apply {
                     shape = GradientDrawable.RECTANGLE
                     cornerRadius = 999f
@@ -727,9 +770,14 @@ class FloatingBubbleService : Service() {
     private fun launchApp() {
         val intent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            // A challenge bubble opens straight to its challenge screen.
+            bubbleType.openChallengeAction?.let { putExtra(EXTRA_OPEN_CHALLENGE, it) }
         }
         intent?.let { startActivity(it) }
-        analyticsManager.logAction("bubble_open_app", emptyMap())
+        analyticsManager.logAction(
+            "bubble_open_app",
+            mapOf("type" to bubbleType.id),
+        )
     }
 
     private fun startReminderCycle() {
@@ -759,6 +807,7 @@ class FloatingBubbleService : Service() {
         _isRunning.value = false
         _activeType.value = null
         mainHandler.removeCallbacks(longPressRunnable)
+        switchTooltipJob?.cancel()
         prefs.unregisterOnSharedPreferenceChangeListener(prefListener)
         scope.cancel()
         runCatching { if (::bubbleView.isInitialized) windowManager.removeView(bubbleView) }

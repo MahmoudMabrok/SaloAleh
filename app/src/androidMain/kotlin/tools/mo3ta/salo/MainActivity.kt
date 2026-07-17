@@ -32,6 +32,7 @@ import tools.mo3ta.salo.notification.NotificationAction
 import tools.mo3ta.salo.notification.NotificationChannels
 import tools.mo3ta.salo.notification.NotificationMessage
 import tools.mo3ta.salo.notification.NotificationScheduler
+import tools.mo3ta.salo.ui.FloatingBubbleService
 
 class MainActivity : ComponentActivity() {
 
@@ -49,6 +50,8 @@ class MainActivity : ComponentActivity() {
     private val notificationMessageState = mutableStateOf<NotificationMessage?>(null)
     private val newVersionState = mutableStateOf<String?>(null)
     private val referralCodeState = mutableStateOf<String?>(null)
+    // Challenge screen requested by dragging a challenge bubble onto "open app".
+    private val openChallengeState = mutableStateOf<NotificationAction?>(null)
 
     private val notifPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -99,6 +102,7 @@ class MainActivity : ComponentActivity() {
         InstallReferrerHelper.checkInstallReferrer(this, referralStore)
         newVersionState.value = extractNewVersionFromIntent(intent)
         notificationMessageState.value = extractNotificationMessageFromIntent(intent)
+        openChallengeState.value = extractOpenChallengeFromIntent(intent)
         handleReferralIntent(intent)
 
         setContent {
@@ -110,6 +114,8 @@ class MainActivity : ComponentActivity() {
                 newVersionAvailable = newVersionState.value,
                 notificationMessage = notificationMessageState.value,
                 referralCode = referralCodeState.value,
+                openChallenge = openChallengeState.value,
+                onOpenChallengeHandled = { openChallengeState.value = null },
             )
         }
     }
@@ -119,7 +125,13 @@ class MainActivity : ComponentActivity() {
         setIntent(intent)
         newVersionState.value = extractNewVersionFromIntent(intent)
         notificationMessageState.value = extractNotificationMessageFromIntent(intent)
+        openChallengeState.value = extractOpenChallengeFromIntent(intent)
         handleReferralIntent(intent)
+    }
+
+    private fun extractOpenChallengeFromIntent(intent: Intent?): NotificationAction? {
+        val value = intent?.getStringExtra(FloatingBubbleService.EXTRA_OPEN_CHALLENGE) ?: return null
+        return NotificationAction.from(value)
     }
 
     private fun extractNewVersionFromIntent(intent: Intent?): String? {
