@@ -155,8 +155,14 @@ class BaqiyatViewModel(
         }
     }
 
-    /** Reaching the daily cycles goal wins the day: the challenge badge count goes up by 1 (once per day). */
+    /**
+     * Any activity (a single completed cycle) keeps the daily streak alive; reaching the daily
+     * cycles goal additionally wins the day, bumping the challenge badge count by 1 (once per day).
+     */
     private fun maybeRecordWin(today: LocalDate, cycles: Int) {
+        if (cycles > 0) {
+            challengeBadgeStore.recordActivity(ChallengeType.BAQIYAT, today)
+        }
         if (cycles >= BAQIYAT_CHALLENGE_DAILY_GOAL) {
             challengeBadgeStore.recordWin(ChallengeType.BAQIYAT, today)
         }

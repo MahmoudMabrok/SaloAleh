@@ -307,8 +307,14 @@ class GharsChallengeViewModel(
             }
     }
 
-    /** Reaching the daily goal wins the day: the challenge badge count goes up by 1 (once per day). */
+    /**
+     * Any activity (a single tap/count) keeps the daily streak alive; reaching the daily goal
+     * additionally wins the day, bumping the challenge badge count by 1 (once per day).
+     */
     private fun maybeRecordWin(today: LocalDate, total: Int) {
+        if (total > 0) {
+            challengeBadgeStore.recordActivity(ChallengeType.GHARS, today)
+        }
         if (total >= GHARS_CHALLENGE_DAILY_GOAL) {
             challengeBadgeStore.recordWin(ChallengeType.GHARS, today)
         }

@@ -289,6 +289,9 @@ class QuranChallengeViewModel(
     }
 
     private fun maybeRecordWin(today: LocalDate, total: Int) {
+        if (total > 0) {
+            challengeBadgeStore.recordActivity(ChallengeType.QURAN, today)
+        }
         if (total >= QURAN_CHALLENGE_DAILY_GOAL) {
             challengeBadgeStore.recordWin(ChallengeType.QURAN, today)
         }
