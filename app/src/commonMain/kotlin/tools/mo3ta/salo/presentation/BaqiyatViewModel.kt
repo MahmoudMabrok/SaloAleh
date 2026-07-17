@@ -20,6 +20,7 @@ import tools.mo3ta.salo.data.country.CountryCodeProvider
 import tools.mo3ta.salo.data.engagement.ChallengeBadgeStore
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.domain.BAQIYAT_CHALLENGE_DAILY_GOAL
+import tools.mo3ta.salo.domain.BaqiyatLeaderboardEntry
 import tools.mo3ta.salo.domain.ChallengeType
 
 class BaqiyatViewModel(
@@ -100,6 +101,7 @@ class BaqiyatViewModel(
                 celebrationMilestone = updated,
             )
         }
+        recalculateLocalLeaderboard()
     }
 
     fun onCelebrationDismissed() {
@@ -153,6 +155,39 @@ class BaqiyatViewModel(
                 errorMessage = statsResult.exceptionOrNull()?.message ?: leaderboardResult.exceptionOrNull()?.message,
             )
         }
+    }
+
+    /**
+     * Patch the current user's row into the in-memory leaderboard from local state so tapping
+     * reflects on the board immediately, without waiting for a remote fetch. Mirrors the other
+     * challenges: update the existing row (or insert a synthetic "new" one) with the local count
+     * and streak, then re-sort by count and re-assign ranks.
+     */
+    private fun recalculateLocalLeaderboard() {
+        val current = _state.value
+        val uid = current.currentUid
+        if (uid.isEmpty()) return
+
+        val localCount = current.cyclesCompleted
+        val localStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.BAQIYAT, today())
+        val entries = current.leaderboard.toMutableList()
+
+        val existingIndex = entries.indexOfFirst { it.uid == uid }
+        if (existingIndex >= 0) {
+            entries[existingIndex] = entries[existingIndex].copy(count = localCount, streak = localStreak)
+        } else if (localCount > 0) {
+            entries.add(
+                BaqiyatLeaderboardEntry(
+                    uid = uid, countryCode = "", count = localCount,
+                    rank = 0, rankChange = "new", streak = localStreak,
+                )
+            )
+        }
+
+        val ranked = entries.sortedByDescending { it.count }
+            .mapIndexed { index, entry -> entry.copy(rank = index + 1) }
+        val newRank = ranked.firstOrNull { it.uid == uid }?.rank ?: current.rank
+        _state.update { it.copy(leaderboard = ranked, rank = newRank) }
     }
 
     /**
