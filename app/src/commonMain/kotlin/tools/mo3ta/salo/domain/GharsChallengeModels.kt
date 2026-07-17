@@ -1,7 +1,7 @@
 package tools.mo3ta.salo.domain
 
-const val GHARS_CHALLENGE_DAILY_GOAL = 100 // four complete groves
-const val GHARS_GROVE_SIZE = 25 // palms per grove; hard drawing ceiling
+const val GHARS_CHALLENGE_DAILY_GOAL = 100 // two complete groves
+const val GHARS_GROVE_SIZE = 50 // palms per grove; hard drawing ceiling
 
 data class GharsChallengeDayStats(
     val rank: Int = 0,

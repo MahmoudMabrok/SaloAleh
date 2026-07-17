@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -13,19 +14,20 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Forest
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -39,14 +41,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
-import kotlin.math.abs
+import kotlin.math.sqrt
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.ghars_garden_label
 import tools.mo3ta.salo.generated.resources.ghars_gardens_count
@@ -57,8 +58,9 @@ import tools.mo3ta.salo.generated.resources.ghars_walk_hint
 
 /**
  * "My Groves" — the user's completed gardens. A garden is one finished grove of [GROVE_SIZE] palms;
- * the number owned is the lifetime palm total divided by the grove size. The gallery lists them, and
- * tapping one drops the user into a full-screen walk through that exact grove.
+ * the number owned is the lifetime palm total divided by the grove size. The gallery is a plain text
+ * list (rendering a grove per row was far too heavy), and tapping a row drops the user into a
+ * full-screen walk through that exact grove.
  *
  * Both levels live here as an overlay driven by view-model flags (like the leaderboard/manual sheets),
  * so no app-level navigation is involved.
@@ -146,15 +148,13 @@ private fun GardensGallery(
         } else {
             // Newest grove first — the one the user just finished sits at the top.
             val gardens = remember(gardenCount) { (gardenCount - 1 downTo 0).toList() }
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 24.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+            LazyColumn(
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.fillMaxSize().navigationBarsPadding(),
             ) {
                 items(gardens, key = { it }) { gardenIndex ->
-                    GardenCard(gardenIndex = gardenIndex, onClick = { onOpenGarden(gardenIndex) })
+                    GardenListRow(gardenIndex = gardenIndex, onClick = { onOpenGarden(gardenIndex) })
                 }
             }
         }
@@ -162,74 +162,88 @@ private fun GardensGallery(
 }
 
 @Composable
-private fun GardenCard(gardenIndex: Int, onClick: () -> Unit) {
-    Box(
+private fun GardenListRow(gardenIndex: Int, onClick: () -> Unit) {
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(1.05f)
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick),
+            .clip(RoundedCornerShape(14.dp))
+            .background(GharsColors.PalmDeep.copy(alpha = 0.55f))
+            .border(1.dp, GharsColors.Accent.copy(alpha = 0.35f), RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        GardenThumbnail(gardenIndex = gardenIndex, modifier = Modifier.fillMaxSize())
         Box(
             modifier = Modifier
-                .align(Alignment.BottomStart)
-                .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(Color.Transparent, Color(0xFF0B0A1E).copy(alpha = 0.72f)),
-                    ),
-                )
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .size(34.dp)
+                .clip(CircleShape)
+                .background(GharsColors.Accent.copy(alpha = 0.25f)),
+            contentAlignment = Alignment.Center,
         ) {
-            Text(
-                text = stringResource(Res.string.ghars_garden_label, gardenIndex + 1),
-                color = GharsColors.TextOnSky,
-                fontSize = 14.sp,
-                fontFamily = arefRuqaaFamily(),
-            )
+            Icon(Icons.Default.Forest, null, tint = GharsColors.FrondLit, modifier = Modifier.size(20.dp))
         }
+        Spacer(Modifier.size(12.dp))
+        Text(
+            text = stringResource(Res.string.ghars_garden_label, gardenIndex + 1),
+            color = GharsColors.TextOnSky,
+            fontSize = 17.sp,
+            fontFamily = arefRuqaaFamily(),
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 
+// Vertical band of the canvas that maps to walkable ground, as fractions of height: touching near
+// the top (horizon) sends the avatar to the furthest row, near the bottom brings it to the front.
+private const val GROUND_TOP_FRACTION = 0.55f
+private const val GROUND_BOTTOM_FRACTION = 0.82f
+
 @Composable
 private fun GardenWalkView(gardenIndex: Int, onBack: () -> Unit) {
-    // The avatar chases a target fraction the user sets by dragging/tapping. Movement is constant
-    // speed (duration scales with distance), and the gait is driven off the live position so the
-    // figure stands still the moment it arrives.
+    // The avatar chases a target position (across the width and in depth) the user sets by dragging or
+    // tapping. Movement is constant speed, and the gait is driven off the live position so the figure
+    // stands still the moment it arrives.
     val avatarX = remember(gardenIndex) { Animatable(0.5f) }
-    var target by remember(gardenIndex) { mutableFloatStateOf(0.5f) }
+    val avatarDepth = remember(gardenIndex) { Animatable(1f) }
+    var targetX by remember(gardenIndex) { mutableFloatStateOf(0.5f) }
+    var targetDepth by remember(gardenIndex) { mutableFloatStateOf(1f) }
     var facingRight by remember(gardenIndex) { mutableStateOf(true) }
 
-    LaunchedEffect(target) {
-        val dist = abs(target - avatarX.value)
+    LaunchedEffect(targetX, targetDepth) {
+        val dx = targetX - avatarX.value
+        val dd = targetDepth - avatarDepth.value
+        val dist = sqrt(dx * dx + dd * dd)
         if (dist < 0.001f) return@LaunchedEffect
-        avatarX.animateTo(target, tween((dist * 2600f).toInt().coerceAtLeast(120), easing = LinearEasing))
+        val dur = (dist * 2600f).toInt().coerceAtLeast(120)
+        launch { avatarX.animateTo(targetX, tween(dur, easing = LinearEasing)) }
+        avatarDepth.animateTo(targetDepth, tween(dur, easing = LinearEasing))
+    }
+
+    fun aim(px: Float, py: Float, width: Int, heightPx: Int) {
+        val fx = (px / width).coerceIn(0f, 1f)
+        val fy = (py / heightPx)
+        val depth = ((fy - GROUND_TOP_FRACTION) / (GROUND_BOTTOM_FRACTION - GROUND_TOP_FRACTION)).coerceIn(0f, 1f)
+        facingRight = fx >= avatarX.value
+        targetX = fx
+        targetDepth = depth
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .pointerInput(gardenIndex) {
-                detectTapGestures { pos ->
-                    val f = (pos.x / size.width).coerceIn(0f, 1f)
-                    facingRight = f >= avatarX.value
-                    target = f
-                }
+                detectTapGestures { pos -> aim(pos.x, pos.y, size.width, size.height) }
             }
             .pointerInput(gardenIndex) {
-                detectDragGestures { change, _ ->
-                    val f = (change.position.x / size.width).coerceIn(0f, 1f)
-                    facingRight = f >= avatarX.value
-                    target = f
-                }
+                detectDragGestures { change, _ -> aim(change.position.x, change.position.y, size.width, size.height) }
             },
     ) {
         GardenWalkCanvas(
             gardenIndex = gardenIndex,
             avatarFraction = avatarX.value,
-            gaitDistance = avatarX.value * 600f,
-            moving = avatarX.isRunning,
+            avatarDepth = avatarDepth.value,
+            gaitDistance = avatarX.value * 600f + avatarDepth.value * 300f,
+            moving = avatarX.isRunning || avatarDepth.isRunning,
             facingRight = facingRight,
             modifier = Modifier.fillMaxSize(),
         )
