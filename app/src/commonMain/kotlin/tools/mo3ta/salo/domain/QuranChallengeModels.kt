@@ -15,4 +15,5 @@ data class QuranLeaderboardEntry(
     val rank: Int,
     val rankChange: String,
     val nickname: String = "",
+    val streak: Int = 0,
 )

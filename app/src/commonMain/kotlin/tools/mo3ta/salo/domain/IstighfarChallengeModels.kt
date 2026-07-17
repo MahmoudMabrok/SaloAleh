@@ -15,4 +15,5 @@ data class IstighfarLeaderboardEntry(
     val rank: Int,
     val rankChange: String, // "up" | "down" | "same" | "new"
     val nickname: String = "",
+    val streak: Int = 0,
 )

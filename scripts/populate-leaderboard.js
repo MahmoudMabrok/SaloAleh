@@ -138,7 +138,8 @@ async function populateDhikrChallengeToday(db) {
       const currentRank = typeof data.rank === 'number' && data.rank > 0 ? data.rank : null;
       const countryCode = typeof metadata.countryCode === 'string' ? metadata.countryCode.toUpperCase() : '';
       const nickname = typeof metadata.nickname === 'string' ? metadata.nickname.trim() : '';
-      users.push({ uid, count: data.count, countryCode, nickname, currentRank });
+      const streak = typeof data.streak === 'number' && data.streak > 0 ? data.streak : 0;
+      users.push({ uid, count: data.count, countryCode, nickname, currentRank, streak });
     });
   }
 
@@ -159,6 +160,7 @@ async function populateDhikrChallengeToday(db) {
     }
     const entry = { uid: user.uid, countryCode: user.countryCode, count: user.count, rank: user.rank, rankChange };
     if (user.nickname) entry.nickname = user.nickname;
+    if (user.streak) entry.streak = user.streak;
     return [String(i), entry];
   });
 
@@ -206,6 +208,7 @@ async function populateBaqiyatChallengeToday(db) {
         count: data.count,
         countryCode: typeof data.countryCode === 'string' ? data.countryCode.toUpperCase() : '',
         nickname: typeof data.nickname === 'string' ? data.nickname.trim() : '',
+        streak: typeof data.streak === 'number' && data.streak > 0 ? data.streak : 0,
         currentRank: typeof data.rank === 'number' && data.rank > 0 ? data.rank : null,
       });
     });
@@ -224,6 +227,7 @@ async function populateBaqiyatChallengeToday(db) {
       rankChange: computeRankChange(user.uid, user.rank, oldRanks),
     };
     if (user.nickname) entry.nickname = user.nickname;
+    if (user.streak) entry.streak = user.streak;
     return [String(i), entry];
   });
 
@@ -270,7 +274,8 @@ async function populateIstighfarChallengeToday(db) {
       const currentRank = typeof data.rank === 'number' && data.rank > 0 ? data.rank : null;
       const countryCode = typeof metadata.countryCode === 'string' ? metadata.countryCode.toUpperCase() : '';
       const nickname = typeof metadata.nickname === 'string' ? metadata.nickname.trim() : '';
-      users.push({ uid, count: data.count, countryCode, nickname, currentRank });
+      const streak = typeof data.streak === 'number' && data.streak > 0 ? data.streak : 0;
+      users.push({ uid, count: data.count, countryCode, nickname, currentRank, streak });
     });
   }
 
@@ -287,6 +292,7 @@ async function populateIstighfarChallengeToday(db) {
       rankChange: computeRankChange(user.uid, user.rank, oldRanks),
     };
     if (user.nickname) entry.nickname = user.nickname;
+    if (user.streak) entry.streak = user.streak;
     return [String(i), entry];
   });
 
@@ -333,7 +339,8 @@ async function populateQuranChallengeToday(db) {
       const currentRank = typeof data.rank === 'number' && data.rank > 0 ? data.rank : null;
       const countryCode = typeof metadata.countryCode === 'string' ? metadata.countryCode.toUpperCase() : '';
       const nickname = typeof metadata.nickname === 'string' ? metadata.nickname.trim() : '';
-      users.push({ uid, count: data.count, countryCode, nickname, currentRank });
+      const streak = typeof data.streak === 'number' && data.streak > 0 ? data.streak : 0;
+      users.push({ uid, count: data.count, countryCode, nickname, currentRank, streak });
     });
   }
 
@@ -350,6 +357,7 @@ async function populateQuranChallengeToday(db) {
       rankChange: computeRankChange(user.uid, user.rank, oldRanks),
     };
     if (user.nickname) entry.nickname = user.nickname;
+    if (user.streak) entry.streak = user.streak;
     return [String(i), entry];
   });
 
@@ -400,7 +408,8 @@ async function populateAlBaqaraChallengeToday(db) {
       const currentRank = typeof data.rank === 'number' && data.rank > 0 ? data.rank : null;
       const countryCode = typeof metadata.countryCode === 'string' ? metadata.countryCode.toUpperCase() : '';
       const nickname = typeof metadata.nickname === 'string' ? metadata.nickname.trim() : '';
-      users.push({ uid, count: data.count, countryCode, nickname, currentRank });
+      const streak = typeof data.streak === 'number' && data.streak > 0 ? data.streak : 0;
+      users.push({ uid, count: data.count, countryCode, nickname, currentRank, streak });
     });
   }
 
@@ -417,6 +426,7 @@ async function populateAlBaqaraChallengeToday(db) {
       rankChange: computeRankChange(user.uid, user.rank, oldRanks),
     };
     if (user.nickname) entry.nickname = user.nickname;
+    if (user.streak) entry.streak = user.streak;
     return [String(i), entry];
   });
 
@@ -461,7 +471,8 @@ async function populateZabadChallengeToday(db) {
       const currentRank = typeof data.rank === 'number' && data.rank > 0 ? data.rank : null;
       const countryCode = typeof metadata.countryCode === 'string' ? metadata.countryCode.toUpperCase() : '';
       const nickname = typeof metadata.nickname === 'string' ? metadata.nickname.trim() : '';
-      users.push({ uid, count: data.count, countryCode, nickname, currentRank });
+      const streak = typeof data.streak === 'number' && data.streak > 0 ? data.streak : 0;
+      users.push({ uid, count: data.count, countryCode, nickname, currentRank, streak });
     });
   }
 
@@ -478,6 +489,7 @@ async function populateZabadChallengeToday(db) {
       rankChange: computeRankChange(user.uid, user.rank, oldRanks),
     };
     if (user.nickname) entry.nickname = user.nickname;
+    if (user.streak) entry.streak = user.streak;
     return [String(i), entry];
   });
 
@@ -524,7 +536,8 @@ async function populateGharsChallengeToday(db) {
       const currentRank = typeof data.rank === 'number' && data.rank > 0 ? data.rank : null;
       const countryCode = typeof metadata.countryCode === 'string' ? metadata.countryCode.toUpperCase() : '';
       const nickname = typeof metadata.nickname === 'string' ? metadata.nickname.trim() : '';
-      users.push({ uid, count: data.count, countryCode, nickname, currentRank });
+      const streak = typeof data.streak === 'number' && data.streak > 0 ? data.streak : 0;
+      users.push({ uid, count: data.count, countryCode, nickname, currentRank, streak });
     });
   }
 
@@ -541,6 +554,7 @@ async function populateGharsChallengeToday(db) {
       rankChange: computeRankChange(user.uid, user.rank, oldRanks),
     };
     if (user.nickname) entry.nickname = user.nickname;
+    if (user.streak) entry.streak = user.streak;
     return [String(i), entry];
   });
 

@@ -186,6 +186,7 @@ function buildDailyCountChallengeRanking({
       count: normalizeDhikrCount(user.count),
       countryCode: typeof user.countryCode === 'string' ? user.countryCode.toUpperCase().slice(0, 3) : '',
       nickname: typeof user.nickname === 'string' ? user.nickname.trim().slice(0, 20) : '',
+      streak: typeof user.streak === 'number' && user.streak > 0 ? user.streak : 0,
       currentRank: typeof user.currentRank === 'number' && user.currentRank > 0 ? user.currentRank : null,
     }))
     .filter(user => user.uid.length > 0);

@@ -159,7 +159,7 @@ class QuranChallengeViewModel(
                 val total = store.todayCount(today)
                 val uid = sessionStore.getOrCreateUid()
                 val countryCode = countryCodeProvider.get()
-                val result = firebaseClient.writeUserDay(today.toString(), uid, total, countryCode, sessionStore.getPublishedName())
+                val result = firebaseClient.writeUserDay(today.toString(), uid, total, countryCode, sessionStore.getPublishedName(), challengeBadgeStore.getCurrentStreak(ChallengeType.QURAN, today))
                 if (result.isSuccess) store.onSyncSuccess(today, total)
                 refreshStats(today.toString(), uid)
                 _state.update {
@@ -197,7 +197,7 @@ class QuranChallengeViewModel(
                 val total = store.todayCount(today)
                 val uid = sessionStore.getOrCreateUid()
                 val countryCode = countryCodeProvider.get()
-                val result = firebaseClient.writeUserDay(today.toString(), uid, total, countryCode, sessionStore.getPublishedName())
+                val result = firebaseClient.writeUserDay(today.toString(), uid, total, countryCode, sessionStore.getPublishedName(), challengeBadgeStore.getCurrentStreak(ChallengeType.QURAN, today))
                 if (result.isSuccess) store.onSyncSuccess(today, total)
                 refreshStats(today.toString(), uid)
                 _state.update {
@@ -233,7 +233,7 @@ class QuranChallengeViewModel(
                 val uid = sessionStore.getOrCreateUid()
                 val countryCode = countryCodeProvider.get()
                 _state.update { it.copy(isSyncing = true) }
-                val result = firebaseClient.writeUserDay(today.toString(), uid, total, countryCode, sessionStore.getPublishedName())
+                val result = firebaseClient.writeUserDay(today.toString(), uid, total, countryCode, sessionStore.getPublishedName(), challengeBadgeStore.getCurrentStreak(ChallengeType.QURAN, today))
                 if (result.isSuccess) store.onSyncSuccess(today, total)
                 _state.update {
                     it.copy(
@@ -251,16 +251,17 @@ class QuranChallengeViewModel(
         if (uid.isEmpty()) return
 
         val localCount = current.todayCount
+        val localStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.QURAN, today())
         val entries = current.leaderboard.toMutableList()
 
         val existingIndex = entries.indexOfFirst { it.uid == uid }
         if (existingIndex >= 0) {
-            entries[existingIndex] = entries[existingIndex].copy(count = localCount)
+            entries[existingIndex] = entries[existingIndex].copy(count = localCount, streak = localStreak)
         } else if (localCount > 0) {
             entries.add(
                 QuranLeaderboardEntry(
                     uid = uid, countryCode = "", count = localCount,
-                    rank = 0, rankChange = "new",
+                    rank = 0, rankChange = "new", streak = localStreak,
                 )
             )
         }

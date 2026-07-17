@@ -214,8 +214,8 @@ private fun LeaderboardRow(
         Spacer(Modifier.width(12.dp))
 
         // Nickname (if present)
-        if (entry.nickname.isNotBlank()) {
-            Column(modifier = Modifier.weight(1f)) {
+        Column(modifier = Modifier.weight(1f)) {
+            if (entry.nickname.isNotBlank()) {
                 Text(
                     text = entry.nickname,
                     color = if (isCurrentUser) ZabadColors.Amber else ZabadColors.Ink,
@@ -223,8 +223,19 @@ private fun LeaderboardRow(
                     fontWeight = FontWeight.Medium,
                 )
             }
-        } else {
-            Spacer(Modifier.weight(1f))
+            if (entry.streak > 0) {
+                Text(
+                    text = "🔥${entry.streak}",
+                    color = Gold,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .padding(top = 2.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Gold.copy(alpha = 0.15f))
+                        .padding(horizontal = 5.dp, vertical = 1.dp),
+                )
+            }
         }
 
         // Score (right-aligned, pushed to end)

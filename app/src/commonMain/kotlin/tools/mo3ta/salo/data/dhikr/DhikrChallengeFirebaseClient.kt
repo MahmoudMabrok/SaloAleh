@@ -16,6 +16,7 @@ private const val ROOT_PATH = "100_challenge"
 private const val USERS_PATH = "users"
 private const val LEADERBOARD_PATH = "leaderboard"
 private const val COUNT_KEY = "count"
+private const val STREAK_KEY = "streak"
 private const val RANK_KEY = "rank"
 private const val RANK_CHANGE_KEY = "rankChange"
 private const val DATA_KEY = "data"
@@ -44,6 +45,7 @@ class DhikrChallengeFirebaseClient(
         count: Int,
         countryCode: String,
         nickname: String = "",
+        streak: Int = 0,
     ): Result<Unit> {
         val safeNickname = nickname.trim().take(20)
         log.d { "writeUserDay[$dateKey/$uid] count=$count hasNickname=${safeNickname.isNotBlank()}" }
@@ -51,6 +53,7 @@ class DhikrChallengeFirebaseClient(
             Firebase.database.reference(userPath(dateKey, uid)).updateChildren(
                 mapOf(
                     COUNT_KEY to count.coerceAtLeast(0),
+                    STREAK_KEY to streak.coerceAtLeast(0),
                     DATA_KEY to mapOf(
                         UID_KEY to uid,
                         DATE_KEY to dateKey,
@@ -68,7 +71,7 @@ class DhikrChallengeFirebaseClient(
                     log.d { "writeUserDay[$dateKey/$uid] ok" }
                     mirror.mirrorDhikrUserDay(
                         dateKey, uid, count, countryCode, safeNickname,
-                        DHIKR_CHALLENGE_DAILY_GOAL, count >= DHIKR_CHALLENGE_DAILY_GOAL,
+                        DHIKR_CHALLENGE_DAILY_GOAL, count >= DHIKR_CHALLENGE_DAILY_GOAL, streak,
                     )
                 },
                 onFailure = { error ->
@@ -199,6 +202,7 @@ private fun Any?.toDhikrLeaderboardEntry(): DhikrLeaderboardEntry? {
         rank = (entry[RANK_KEY] as? Number)?.toInt() ?: 0,
         rankChange = entry[RANK_CHANGE_KEY] as? String ?: "same",
         nickname = entry[NICKNAME_KEY] as? String ?: "",
+        streak = (entry[STREAK_KEY] as? Number)?.toInt() ?: 0,
     )
 }
 

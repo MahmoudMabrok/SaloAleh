@@ -124,7 +124,7 @@ class BaqiyatViewModel(
                 val uid = sessionStore.getOrCreateUid()
                 val countryCode = countryCodeProvider.get()
                 _state.update { it.copy(isSyncing = true) }
-                val result = firebaseClient.writeUserDay(today.toString(), uid, total, countryCode, sessionStore.getPublishedName())
+                val result = firebaseClient.writeUserDay(today.toString(), uid, total, countryCode, sessionStore.getPublishedName(), challengeBadgeStore.getCurrentStreak(ChallengeType.BAQIYAT, today))
                 if (result.isSuccess) store.onSyncSuccess(today, total)
                 _state.update {
                     it.copy(

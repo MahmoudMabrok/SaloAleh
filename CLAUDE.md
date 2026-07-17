@@ -91,6 +91,7 @@ Per-challenge achievement badges: each daily challenge (dhikr, baqiyat, istighfa
 - Local-only persistence via `multiplatform-settings` keys `challenge_badge_last_win_{id}`, `challenge_badge_count_{id}`. No Firebase schema/rules changes.
 - At most one win per Cairo day per challenge (`recordWin` is idempotent within a day). Wins are checked on every count change — taps, manual entry sheets, and remote-baseline sync on screen enter.
 - UI: "challenge badges" section on `AchievementsScreen` with a gold count pill per badge; counts also feed the badges stat card.
+- Each challenge also tracks a consecutive-day **streak** in `ChallengeBadgeStore` (`getCurrentStreak`, keys `challenge_streak_count_{id}`, `challenge_streak_best_{id}`). The live streak is published to that challenge's own player node (`{challenge}/{dateKey}/users|players/{uid}/streak`, top-level next to `count`) on every sync via each challenge's `FirebaseClient.writeUserDay` + `FirestoreMirror`. `scripts/populate-leaderboard.js` carries `streak` into each challenge's server-computed `leaderboard` entries, the client parses it in each `to…LeaderboardEntry`, and each `*LeaderboardSheet` renders a 🔥+count pill next to the name (each board shows only its own challenge's streak). Requires a `streak` validator per challenge in `database.rules.json`. No stale-clearing cron needed — challenge leaderboards are rebuilt per Cairo day from that day's active participants.
 - Tests: `commonTest/data/engagement/ChallengeBadgeStoreTest.kt`.
 
 ## Firebase RTDB structure
