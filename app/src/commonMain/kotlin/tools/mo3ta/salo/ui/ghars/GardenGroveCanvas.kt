@@ -15,8 +15,14 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.sp
 import kotlin.math.abs
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -55,6 +61,7 @@ private val WALKER_SKIN = Color(0xFF6B4A32) // face, kept in shadow
  * @param gaitDistance logical distance the walker has travelled — phases the leg swing and bob
  * @param moving whether the walker is currently in motion (feet settle together when false)
  * @param facingRight which way the walker faces
+ * @param textMeasurer measures the per-palm order-number labels
  */
 @Composable
 internal fun GardenWalkCanvas(
@@ -64,6 +71,7 @@ internal fun GardenWalkCanvas(
     gaitDistance: Float,
     moving: Boolean,
     facingRight: Boolean,
+    textMeasurer: TextMeasurer,
     modifier: Modifier = Modifier,
 ) {
     val layers = remember { GardenLayers() }
@@ -71,7 +79,7 @@ internal fun GardenWalkCanvas(
         val wPx = size.width.toInt()
         val hPx = size.height.toInt()
         if (wPx <= 0 || hPx <= 0) return@Canvas
-        layers.ensure(gardenIndex, wPx, hPx, density, layoutDirection)
+        layers.ensure(gardenIndex, wPx, hPx, density, layoutDirection, textMeasurer)
 
         layers.backdrop?.let { drawImage(it) }
 
@@ -102,6 +110,9 @@ internal fun GardenWalkCanvas(
                 drawWalker(g, w, avatarFraction, scaleA, gaitDistance, moving, facingRight)
             }
         }
+
+        // Each palm's order number, baked once and laid over the scene as labels.
+        layers.labels?.let { drawImage(it) }
     }
 }
 
@@ -121,15 +132,16 @@ private fun DrawScope.drawWholeGrove(
     }
 }
 
-/** Cached backdrop + one bitmap per depth row, rebuilt only when the garden or size changes. */
+/** Cached backdrop + one bitmap per depth row + a labels layer, rebuilt when garden or size changes. */
 private class GardenLayers {
     var backdrop: ImageBitmap? = null
     var rows: List<ImageBitmap> = emptyList()
+    var labels: ImageBitmap? = null
     private var w = 0
     private var h = 0
     private var garden = -1
 
-    fun ensure(gardenIndex: Int, wPx: Int, hPx: Int, density: Float, ld: LayoutDirection) {
+    fun ensure(gardenIndex: Int, wPx: Int, hPx: Int, density: Float, ld: LayoutDirection, textMeasurer: TextMeasurer) {
         if (backdrop != null && w == wPx && h == hPx && garden == gardenIndex) return
         backdrop = rasterize(wPx, hPx, density, ld) {
             drawBackdrop(size.width / density, size.height / density, groves = 0)
@@ -138,6 +150,25 @@ private class GardenLayers {
             rasterize(wPx, hPx, density, ld) {
                 val gg = GroveGeometry(size.width / density, size.height / density)
                 drawWholeGrove(gg, gardenIndex, GroveScratch(), bands = intArrayOf(band))
+            }
+        }
+        labels = rasterizeRaw(wPx, hPx, density, ld) {
+            // Labels are drawn in device-pixel space (no density scale) so the measured text isn't
+            // scaled a second time; palm positions come from the logical geometry times the density.
+            val g = GroveGeometry(size.width / density, size.height / density)
+            val start = gardenFirstPalmIndex(gardenIndex)
+            for (band in ROW_CAPACITY.indices) {
+                val lo = rowStart(band)
+                for (slot in lo until lo + ROW_CAPACITY[band]) {
+                    drawPalmNumber(
+                        textMeasurer,
+                        number = start + slot + 1,
+                        cx = g.slotX(slot, start) * density,
+                        baseY = g.baseY(band) * density,
+                        rowScale = rowScale(band),
+                        density = density,
+                    )
+                }
             }
         }
         w = wPx; h = hPx; garden = gardenIndex
@@ -157,6 +188,51 @@ private fun rasterize(
         scale(density, density, pivot = Offset.Zero) { block() }
     }
     return image
+}
+
+/** Like [rasterize] but leaves the draw scope in raw device-pixel space (used for measured text). */
+private fun rasterizeRaw(
+    wPx: Int,
+    hPx: Int,
+    density: Float,
+    ld: LayoutDirection,
+    block: DrawScope.() -> Unit,
+): ImageBitmap {
+    val image = ImageBitmap(wPx, hPx)
+    CanvasDrawScope().draw(Density(density), ld, GraphicsCanvas(image), Size(wPx.toFloat(), hPx.toFloat())) {
+        block()
+    }
+    return image
+}
+
+/** A palm's order number, on a small dark chip so it stays legible against the grove. */
+private fun DrawScope.drawPalmNumber(
+    textMeasurer: TextMeasurer,
+    number: Int,
+    cx: Float,
+    baseY: Float,
+    rowScale: Float,
+    density: Float,
+) {
+    val fontSize = (10f * rowScale).coerceIn(6.5f, 12f)
+    val layout = textMeasurer.measure(
+        number.toString(),
+        style = TextStyle(color = Color(0xFFFBF2DE), fontSize = fontSize.sp, fontWeight = FontWeight.SemiBold),
+    )
+    val tw = layout.size.width.toFloat()
+    val th = layout.size.height.toFloat()
+    val padX = 3f * density
+    val padY = 1.5f * density
+    // Sit the label just above the palm's base, centred on its trunk.
+    val left = cx - tw / 2f
+    val top = baseY - th - 2f * density
+    drawRoundRect(
+        color = Color(0xFF0B0A1E).copy(alpha = 0.62f),
+        topLeft = Offset(left - padX, top - padY),
+        size = Size(tw + 2f * padX, th + 2f * padY),
+        cornerRadius = CornerRadius(4f * density, 4f * density),
+    )
+    drawText(layout, topLeft = Offset(left, top))
 }
 
 /**

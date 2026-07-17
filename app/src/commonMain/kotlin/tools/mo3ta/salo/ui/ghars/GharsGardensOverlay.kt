@@ -42,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -208,6 +209,7 @@ private fun GardenWalkView(gardenIndex: Int, onBack: () -> Unit) {
     var targetX by remember(gardenIndex) { mutableFloatStateOf(0.5f) }
     var targetDepth by remember(gardenIndex) { mutableFloatStateOf(1f) }
     var facingRight by remember(gardenIndex) { mutableStateOf(true) }
+    val textMeasurer = rememberTextMeasurer()
 
     LaunchedEffect(targetX, targetDepth) {
         val dx = targetX - avatarX.value
@@ -245,6 +247,7 @@ private fun GardenWalkView(gardenIndex: Int, onBack: () -> Unit) {
             gaitDistance = avatarX.value * 600f + avatarDepth.value * 300f,
             moving = avatarX.isRunning || avatarDepth.isRunning,
             facingRight = facingRight,
+            textMeasurer = textMeasurer,
             modifier = Modifier.fillMaxSize(),
         )
 
