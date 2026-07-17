@@ -73,10 +73,10 @@ Main-screen emotional gauge for salawat momentum.
 
 ### Round streak badge ("perfect week")
 
-Per-round streak earned by sending salawat every day of a competition round without missing a day.
+Continuous daily-activity streak earned by sending salawat every day without missing a day.
 
 - Core files: `data/engagement/RoundStreakStore.kt`, `domain/EngagementModels.kt` (`Achievement.RoundStreakBadge`, `ROUND_STREAK_TARGET = 7`), `presentation/MohamedLoversViewModel.kt`, `ui/AchievementsScreen.kt`, `ui/StreakBadgeAnnouncementDialog.kt`.
-- Local persistence via `multiplatform-settings` keys `round_streak_round_key`, `round_streak_last_active`, `round_streak_count`, `round_streak_badges`. Resets each round; a missed day restarts the streak at 1. Earns one repeatable badge per round at 7 consecutive active days.
+- Local persistence via `multiplatform-settings` keys `round_streak_last_active`, `round_streak_count`, `round_streak_badges`. The streak is **continuous across rounds** — it is never reset on a round boundary and only a missed day restarts it at 1. The `roundKey` passed to `recordActivity` is used solely to award one repeatable badge per round at 7 consecutive active days. (Legacy installs may still carry an orphaned `round_streak_round_key` key; it is no longer read.)
 - Every salawat path (tap, manual sheet, extension sync) records activity and **publishes the current streak to `players/{uid}/roundStreak`** (client, fire-and-forget, only on change) so it shows next to the name on the leaderboard. Hidden when `0`/absent.
 - Leaderboard plumbing mirrors `dailyBadge`: `leaderboard-utils.js` carries `roundStreak` into `leaderboard`/`dailyLeaderboard` entries; the client parses it in `toLeaderboardEntry`; the UI renders a 🔥+count pill in `MohamedLoversInfoSheet`.
 - The daily cron `generate-stats.js` **breaks streaks for users inactive that day** — if `totalCount <= yesterdayTotalScore` (no salawat since the last run) it clears `roundStreak` in `players` and `leaderboard`, so a stale badge disappears even if the client never reopens.

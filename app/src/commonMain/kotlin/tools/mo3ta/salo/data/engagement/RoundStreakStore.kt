@@ -11,27 +11,23 @@ import tools.mo3ta.salo.domain.ROUND_STREAK_TARGET
 import tools.mo3ta.salo.domain.RoundStreakResult
 
 /**
- * Tracks the per-round "perfect week" streak: the number of consecutive days within
- * the current competition round on which the user sent at least one salawat.
+ * Tracks the salawat activity streak: the number of consecutive days on which the user
+ * sent at least one salawat.
  *
- * The streak restarts on a new round and breaks (restarts at 1) whenever a day is
- * missed. Reaching [ROUND_STREAK_TARGET] consecutive active days without a miss earns
- * that round's [Achievement.RoundStreakBadge] — repeatable, one badge per round.
+ * The streak is continuous — it carries across competition rounds and breaks (restarts
+ * at 1) only when a day is missed. Reaching [ROUND_STREAK_TARGET] consecutive active days
+ * without a miss earns the current round's [Achievement.RoundStreakBadge] — repeatable,
+ * one badge per round.
  */
 class RoundStreakStore(private val settings: Settings) {
 
     /**
-     * Records salawat activity for [today] in [roundKey]. Idempotent within a day.
+     * Records salawat activity for [today]. Idempotent within a day. The streak persists
+     * across rounds and only breaks on a missed day; [roundKey] is used solely to award
+     * at most one [Achievement.RoundStreakBadge] per round.
      * Returns the up-to-date streak and any badge earned by this call.
      */
     fun recordActivity(roundKey: String, today: LocalDate): RoundStreakResult {
-        if (settings.getStringOrNull(KEY_ROUND) != roundKey) {
-            // New round — start fresh.
-            settings.putString(KEY_ROUND, roundKey)
-            settings.remove(KEY_LAST_ACTIVE)
-            settings.putInt(KEY_COUNT, 0)
-        }
-
         val lastActive = settings.getStringOrNull(KEY_LAST_ACTIVE)?.let { LocalDate.parse(it) }
         val storedCount = settings.getInt(KEY_COUNT, 0)
 
@@ -61,12 +57,12 @@ class RoundStreakStore(private val settings: Settings) {
     }
 
     /**
-     * The current live streak for [roundKey] as of [today]. Returns 0 when the round
-     * differs, no activity has been recorded, or a day has already been missed (the
-     * last active day is older than yesterday).
+     * The current live streak as of [today]. Returns 0 when no activity has been recorded
+     * or a day has already been missed (the last active day is older than yesterday). The
+     * [roundKey] is accepted for call-site symmetry but does not gate the streak, which is
+     * continuous across rounds.
      */
     fun getCurrentStreak(roundKey: String, today: LocalDate): Int {
-        if (settings.getStringOrNull(KEY_ROUND) != roundKey) return 0
         val lastActive = settings.getStringOrNull(KEY_LAST_ACTIVE)?.let { LocalDate.parse(it) } ?: return 0
         return if (lastActive == today || lastActive == today.minusDays(1)) {
             settings.getInt(KEY_COUNT, 0)
@@ -100,7 +96,6 @@ class RoundStreakStore(private val settings: Settings) {
         LocalDate.fromEpochDays(toEpochDays() - n)
 
     private companion object {
-        const val KEY_ROUND = "round_streak_round_key"
         const val KEY_LAST_ACTIVE = "round_streak_last_active"
         const val KEY_COUNT = "round_streak_count"
         const val KEY_BADGES = "round_streak_badges"
