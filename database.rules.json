@@ -378,6 +378,10 @@
         ".read": true,
         ".write": false
       },
+      "app_config": {
+        ".read": true,
+        ".write": false
+      },
       "heroes": {
         ".read": true,
         ".write": false

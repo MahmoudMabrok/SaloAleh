@@ -21,6 +21,9 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
 
     override suspend fun ensureSignedInAnonymously(): Result<String> = signInResult
 
+    var appConfigResult: Result<AppUpdateConfig?> = Result.success(null)
+    override suspend fun fetchAppConfig(): Result<AppUpdateConfig?> = appConfigResult
+
     override fun observeSelfPlayer(roundKey: String, uid: String): Flow<Result<MohamedLoversPlayer?>> =
         selfPlayerFlow ?: flowOf(Result.success(null))
 
