@@ -26,22 +26,12 @@
           ".indexOn": ["count"],
           "$uid": {
             ".write": "newData.child('uid').val() === $uid",
-            ".validate": "newData.hasChildren(['uid','count','countryCode','updatedAt'])",
 
             "uid": {
               ".validate": "newData.isString() && newData.val() === $uid"
             },
             "count": {
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2000"
-            },
-            "countryCode": {
-              ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 3"
-            },
-            "nickname": {
-              ".validate": "newData.isString() && newData.val().length <= 20"
-            },
-            "updatedAt": {
-              ".validate": "newData.val() === now"
             },
             "streak": {
               ".read": true,
@@ -50,9 +40,7 @@
             "rank": {
               ".read": true,
               ".validate": "newData.val() === data.val()"
-            },
-
-            "$other": { ".validate": false }
+            }
           }
         }
       }
@@ -122,7 +110,6 @@
         "users": {
           "$uid": {
             ".write": "newData.child('data').child('uid').val() === $uid",
-            ".validate": "newData.hasChildren(['count','data'])",
 
             "count": {
               ".read": true,
@@ -137,32 +124,10 @@
               ".validate": "newData.val() === data.val()"
             },
             "data": {
-              ".validate": "newData.hasChildren(['uid','date','countryCode','goal','completed','updatedAt'])",
               "uid": {
                 ".validate": "newData.isString() && newData.val() === $uid"
-              },
-              "date": {
-                ".validate": "newData.isString() && newData.val() === $date"
-              },
-              "countryCode": {
-                ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 3"
-              },
-              "nickname": {
-                ".validate": "newData.isString() && newData.val().length <= 20"
-              },
-              "goal": {
-                ".validate": "newData.isNumber() && newData.val() === 100"
-              },
-              "completed": {
-                ".validate": "newData.isBoolean()"
-              },
-              "updatedAt": {
-                ".validate": "newData.val() === now"
-              },
-              "$other": { ".validate": false }
-            },
-
-            "$other": { ".validate": false }
+              }
+            }
           }
         }
       }
@@ -193,7 +158,6 @@
         "users": {
           "$uid": {
             ".write": "newData.child('data').child('uid').val() === $uid",
-            ".validate": "newData.hasChildren(['count','data'])",
 
             "count": {
               ".read": true,
@@ -208,32 +172,10 @@
               ".validate": "newData.val() === data.val()"
             },
             "data": {
-              ".validate": "newData.hasChildren(['uid','date','countryCode','goal','completed','updatedAt'])",
               "uid": {
                 ".validate": "newData.isString() && newData.val() === $uid"
-              },
-              "date": {
-                ".validate": "newData.isString() && newData.val() === $date"
-              },
-              "countryCode": {
-                ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 3"
-              },
-              "nickname": {
-                ".validate": "newData.isString() && newData.val().length <= 20"
-              },
-              "goal": {
-                ".validate": "newData.isNumber() && newData.val() === 70"
-              },
-              "completed": {
-                ".validate": "newData.isBoolean()"
-              },
-              "updatedAt": {
-                ".validate": "newData.val() === now"
-              },
-              "$other": { ".validate": false }
-            },
-
-            "$other": { ".validate": false }
+              }
+            }
           }
         }
       }
@@ -264,7 +206,6 @@
         "users": {
           "$uid": {
             ".write": "newData.child('data').child('uid').val() === $uid",
-            ".validate": "newData.hasChildren(['count','data'])",
 
             "count": {
               ".read": true,
@@ -279,32 +220,10 @@
               ".validate": "newData.val() === data.val()"
             },
             "data": {
-              ".validate": "newData.hasChildren(['uid','date','countryCode','goal','completed','updatedAt'])",
               "uid": {
                 ".validate": "newData.isString() && newData.val() === $uid"
-              },
-              "date": {
-                ".validate": "newData.isString() && newData.val() === $date"
-              },
-              "countryCode": {
-                ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 3"
-              },
-              "nickname": {
-                ".validate": "newData.isString() && newData.val().length <= 20"
-              },
-              "goal": {
-                ".validate": "newData.isNumber() && newData.val() === 1"
-              },
-              "completed": {
-                ".validate": "newData.isBoolean()"
-              },
-              "updatedAt": {
-                ".validate": "newData.val() === now"
-              },
-              "$other": { ".validate": false }
-            },
-
-            "$other": { ".validate": false }
+              }
+            }
           }
         }
       }
@@ -335,7 +254,6 @@
         "users": {
           "$uid": {
             ".write": "newData.child('data').child('uid').val() === $uid",
-            ".validate": "newData.hasChildren(['count','data'])",
 
             "count": {
               ".read": true,
@@ -350,32 +268,10 @@
               ".validate": "newData.val() === data.val()"
             },
             "data": {
-              ".validate": "newData.hasChildren(['uid','date','countryCode','goal','completed','updatedAt'])",
               "uid": {
                 ".validate": "newData.isString() && newData.val() === $uid"
-              },
-              "date": {
-                ".validate": "newData.isString() && newData.val() === $date"
-              },
-              "countryCode": {
-                ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 3"
-              },
-              "nickname": {
-                ".validate": "newData.isString() && newData.val().length <= 20"
-              },
-              "goal": {
-                ".validate": "newData.isNumber() && newData.val() === 100"
-              },
-              "completed": {
-                ".validate": "newData.isBoolean()"
-              },
-              "updatedAt": {
-                ".validate": "newData.val() === now"
-              },
-              "$other": { ".validate": false }
-            },
-
-            "$other": { ".validate": false }
+              }
+            }
           }
         }
       }
@@ -406,7 +302,6 @@
         "users": {
           "$uid": {
             ".write": "newData.child('data').child('uid').val() === $uid",
-            ".validate": "newData.hasChildren(['count','data'])",
 
             "count": {
               ".read": true,
@@ -421,32 +316,10 @@
               ".validate": "newData.val() === data.val()"
             },
             "data": {
-              ".validate": "newData.hasChildren(['uid','date','countryCode','goal','completed','updatedAt'])",
               "uid": {
                 ".validate": "newData.isString() && newData.val() === $uid"
-              },
-              "date": {
-                ".validate": "newData.isString() && newData.val() === $date"
-              },
-              "countryCode": {
-                ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 3"
-              },
-              "nickname": {
-                ".validate": "newData.isString() && newData.val().length <= 20"
-              },
-              "goal": {
-                ".validate": "newData.isNumber() && newData.val() === 100"
-              },
-              "completed": {
-                ".validate": "newData.isBoolean()"
-              },
-              "updatedAt": {
-                ".validate": "newData.val() === now"
-              },
-              "$other": { ".validate": false }
-            },
-
-            "$other": { ".validate": false }
+              }
+            }
           }
         }
       }
@@ -477,7 +350,6 @@
         "users": {
           "$uid": {
             ".write": "newData.child('data').child('uid').val() === $uid",
-            ".validate": "newData.hasChildren(['count','data'])",
 
             "count": {
               ".read": true,
@@ -492,32 +364,10 @@
               ".validate": "newData.val() === data.val()"
             },
             "data": {
-              ".validate": "newData.hasChildren(['uid','date','countryCode','goal','completed','updatedAt'])",
               "uid": {
                 ".validate": "newData.isString() && newData.val() === $uid"
-              },
-              "date": {
-                ".validate": "newData.isString() && newData.val() === $date"
-              },
-              "countryCode": {
-                ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 3"
-              },
-              "nickname": {
-                ".validate": "newData.isString() && newData.val().length <= 20"
-              },
-              "goal": {
-                ".validate": "newData.isNumber() && newData.val() >= 0"
-              },
-              "completed": {
-                ".validate": "newData.isBoolean()"
-              },
-              "updatedAt": {
-                ".validate": "newData.val() === now"
-              },
-              "$other": { ".validate": false }
-            },
-
-            "$other": { ".validate": false }
+              }
+            }
           }
         }
       }
