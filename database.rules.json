@@ -506,7 +506,7 @@
                 ".validate": "newData.isString() && newData.val().length <= 20"
               },
               "goal": {
-                ".validate": "newData.isNumber() && newData.val() === 5"
+                ".validate": "newData.isNumber() && newData.val() === 1"
               },
               "completed": {
                 ".validate": "newData.isBoolean()"
