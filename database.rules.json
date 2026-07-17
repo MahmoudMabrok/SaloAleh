@@ -43,6 +43,10 @@
             "updatedAt": {
               ".validate": "newData.val() === now"
             },
+            "streak": {
+              ".read": true,
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
             "rank": {
               ".read": true,
               ".validate": "newData.val() === data.val()"
@@ -124,6 +128,10 @@
               ".read": true,
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
             },
+            "streak": {
+              ".read": true,
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
             "rank": {
               ".read": true,
               ".validate": "newData.val() === data.val()"
@@ -190,6 +198,10 @@
             "count": {
               ".read": true,
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
+            },
+            "streak": {
+              ".read": true,
+              ".validate": "newData.isNumber() && newData.val() >= 0"
             },
             "rank": {
               ".read": true,
@@ -258,6 +270,10 @@
               ".read": true,
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
             },
+            "streak": {
+              ".read": true,
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
             "rank": {
               ".read": true,
               ".validate": "newData.val() === data.val()"
@@ -324,6 +340,10 @@
             "count": {
               ".read": true,
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
+            },
+            "streak": {
+              ".read": true,
+              ".validate": "newData.isNumber() && newData.val() >= 0"
             },
             "rank": {
               ".read": true,
@@ -392,6 +412,10 @@
               ".read": true,
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
             },
+            "streak": {
+              ".read": true,
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
             "rank": {
               ".read": true,
               ".validate": "newData.val() === data.val()"
@@ -458,6 +482,10 @@
             "count": {
               ".read": true,
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
+            },
+            "streak": {
+              ".read": true,
+              ".validate": "newData.isNumber() && newData.val() >= 0"
             },
             "rank": {
               ".read": true,

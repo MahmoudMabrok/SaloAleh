@@ -121,12 +121,14 @@ class FirestoreMirror {
         nickname: String,
         goal: Int,
         completed: Boolean,
+        streak: Int = 0,
     ) = mirror("dhikr-user[$dateKey/$uid]") {
         fs.collection(DHIKR_COLLECTION).document(dateKey)
             .collection(USERS_SUBCOLLECTION).document(uid)
             .set(
                 mapOf(
                     "count" to count.coerceAtLeast(0),
+                    "streak" to streak.coerceAtLeast(0),
                     "data" to mapOf(
                         "uid" to uid,
                         "date" to dateKey,
@@ -149,12 +151,14 @@ class FirestoreMirror {
         nickname: String,
         goal: Int,
         completed: Boolean,
+        streak: Int = 0,
     ) = mirror("istighfar-user[$dateKey/$uid]") {
         fs.collection(ISTIGHFAR_COLLECTION).document(dateKey)
             .collection(USERS_SUBCOLLECTION).document(uid)
             .set(
                 mapOf(
                     "count" to count.coerceAtLeast(0),
+                    "streak" to streak.coerceAtLeast(0),
                     "data" to mapOf(
                         "uid" to uid,
                         "date" to dateKey,
@@ -201,12 +205,14 @@ class FirestoreMirror {
         nickname: String,
         goal: Int,
         completed: Boolean,
+        streak: Int = 0,
     ) = mirror("zabad-user[$dateKey/$uid]") {
         fs.collection(ZABAD_COLLECTION).document(dateKey)
             .collection(USERS_SUBCOLLECTION).document(uid)
             .set(
                 mapOf(
                     "count" to count.coerceAtLeast(0),
+                    "streak" to streak.coerceAtLeast(0),
                     "data" to mapOf(
                         "uid" to uid, "date" to dateKey, "countryCode" to countryCode,
                         "nickname" to nickname, "goal" to goal, "completed" to completed,
@@ -225,12 +231,14 @@ class FirestoreMirror {
         nickname: String,
         goal: Int,
         completed: Boolean,
+        streak: Int = 0,
     ) = mirror("ghars-user[$dateKey/$uid]") {
         fs.collection(GHARS_COLLECTION).document(dateKey)
             .collection(USERS_SUBCOLLECTION).document(uid)
             .set(
                 mapOf(
                     "count" to count.coerceAtLeast(0),
+                    "streak" to streak.coerceAtLeast(0),
                     "data" to mapOf(
                         "uid" to uid, "date" to dateKey, "countryCode" to countryCode,
                         "nickname" to nickname, "goal" to goal, "completed" to completed,
@@ -249,12 +257,14 @@ class FirestoreMirror {
         nickname: String,
         goal: Int,
         completed: Boolean,
+        streak: Int = 0,
     ) = mirror("quran-user[$dateKey/$uid]") {
         fs.collection(QURAN_COLLECTION).document(dateKey)
             .collection(USERS_SUBCOLLECTION).document(uid)
             .set(
                 mapOf(
                     "count" to count.coerceAtLeast(0),
+                    "streak" to streak.coerceAtLeast(0),
                     "data" to mapOf(
                         "uid" to uid,
                         "date" to dateKey,
@@ -275,6 +285,7 @@ class FirestoreMirror {
         count: Int,
         countryCode: String,
         nickname: String,
+        streak: Int = 0,
     ) = mirror("baqiyat-player[$dateKey/$uid]") {
         fs.collection(BAQIYAT_COLLECTION).document(dateKey)
             .collection(PLAYERS_SUBCOLLECTION).document(uid)
@@ -282,6 +293,7 @@ class FirestoreMirror {
                 mapOf(
                     "uid" to uid,
                     "count" to count.coerceAtLeast(0),
+                    "streak" to streak.coerceAtLeast(0),
                     "countryCode" to countryCode,
                     "nickname" to nickname,
                     "updatedAt" to FieldValue.serverTimestamp,

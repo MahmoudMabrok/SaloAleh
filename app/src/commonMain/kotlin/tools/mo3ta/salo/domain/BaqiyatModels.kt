@@ -10,6 +10,7 @@ data class BaqiyatLeaderboardEntry(
     val rank: Int,
     val rankChange: String = "same",
     val nickname: String = "",
+    val streak: Int = 0,
 )
 
 data class BaqiyatDayStats(

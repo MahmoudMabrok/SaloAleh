@@ -16,6 +16,7 @@ private const val PLAYERS_PATH = "players"
 private const val LEADERBOARD_PATH = "leaderboard"
 private const val UID_KEY = "uid"
 private const val COUNT_KEY = "count"
+private const val STREAK_KEY = "streak"
 private const val RANK_KEY = "rank"
 private const val RANK_CHANGE_KEY = "rankChange"
 private const val COUNTRY_CODE_KEY = "countryCode"
@@ -39,6 +40,7 @@ class BaqiyatFirebaseClient(
         count: Int,
         countryCode: String,
         nickname: String = "",
+        streak: Int = 0,
     ): Result<Unit> {
         val safeNickname = nickname.trim().take(20)
         log.d { "writeUserDay[$dateKey/$uid] count=$count" }
@@ -47,6 +49,7 @@ class BaqiyatFirebaseClient(
                 mapOf(
                     UID_KEY to uid,
                     COUNT_KEY to count.coerceAtLeast(0),
+                    STREAK_KEY to streak.coerceAtLeast(0),
                     COUNTRY_CODE_KEY to countryCode,
                     NICKNAME_KEY to safeNickname,
                     UPDATED_AT_KEY to ServerValue.TIMESTAMP,
@@ -56,7 +59,7 @@ class BaqiyatFirebaseClient(
             result.fold(
                 onSuccess = {
                     log.d { "writeUserDay[$dateKey/$uid] ok" }
-                    mirror.mirrorBaqiyatUserDay(dateKey, uid, count, countryCode, safeNickname)
+                    mirror.mirrorBaqiyatUserDay(dateKey, uid, count, countryCode, safeNickname, streak)
                 },
                 onFailure = { error ->
                     log.e(error) { "writeUserDay[$dateKey/$uid] failed" }
@@ -186,6 +189,7 @@ private fun Any?.toBaqiyatLeaderboardEntry(): BaqiyatLeaderboardEntry? {
         rank = (entry[RANK_KEY] as? Number)?.toInt() ?: 0,
         rankChange = entry[RANK_CHANGE_KEY] as? String ?: "same",
         nickname = entry[NICKNAME_KEY] as? String ?: "",
+        streak = (entry[STREAK_KEY] as? Number)?.toInt() ?: 0,
     )
 }
 
