@@ -115,6 +115,10 @@ fun App(
     newVersionAvailable: String? = null,
     notificationMessage: NotificationMessage? = null,
     referralCode: String? = null,
+    // Set when a challenge bubble is dragged onto "open app": jump straight to that
+    // challenge's screen (no dialog, no leaderboard). Cleared via [onOpenChallengeHandled].
+    openChallenge: NotificationAction? = null,
+    onOpenChallengeHandled: () -> Unit = {},
 ) {
     val languageStore = koinInject<LanguageStore>()
     val storedLang = languageStore.language
@@ -200,6 +204,17 @@ fun App(
         val referralStore = koinInject<ReferralStore>()
         val firebaseApi = koinInject<MohamedLoversFirebaseApi>()
         LaunchedEffect(Unit) { analyticsManager.setUserId(sessionStoreApp.getOrCreateUid()) }
+        // A challenge bubble dragged onto "open app" jumps directly to its screen.
+        LaunchedEffect(openChallenge) {
+            when (openChallenge ?: return@LaunchedEffect) {
+                NotificationAction.OPEN_DHIKR_CHALLENGE -> showDhikrRewards = true
+                NotificationAction.OPEN_ISTIGHFAR_CHALLENGE -> showIstighfarChallenge = true
+                NotificationAction.OPEN_ZABAD_CHALLENGE -> showZabadChallenge = true
+                NotificationAction.OPEN_GHARS_CHALLENGE -> showGharsChallenge = true
+                else -> Unit
+            }
+            onOpenChallengeHandled()
+        }
         LaunchedEffect(referralCode) {
             val code = referralCode
                 ?: referralStore.getPendingReferralCode()
