@@ -94,6 +94,8 @@
     <string name="dhikr_title">الذكر</string>
     <string name="dhikr_back_cd">رجوع</string>
     <string name="dhikr_phrase">لا إله إلا الله وحده لا شريك له\nله الملك وله الحمد وهو على كل شيء قدير.</string>
+    <string name="dhikr_reward_hadith">مَن قالها في يومٍ مئةَ مرّةٍ كانت له عَدْلَ عَشْرِ رِقابٍ</string>
+    <string name="dhikr_reward_hadith_ref">متفق عليه</string>
     <string name="dhikr_today">اليوم</string>
     <string name="dhikr_times">مرة</string>
     <string name="dhikr_add">ذكر</string>
@@ -799,6 +801,8 @@
   <string name="challenge_ghars_body">مَن قال: سبحان الله العظيم وبحمده، غُرست له نخلة في الجنة</string>
   <string name="ghars_title">الغَرْس</string>
   <string name="ghars_phrase">سُبْحَانَ اللهِ الْعَظِيمِ وَبِحَمْدِهِ</string>
+  <string name="ghars_reward_hadith">مَن قالها غُرِسَت له نخلةٌ في الجنّة</string>
+  <string name="ghars_reward_hadith_ref">رواه الترمذي</string>
   <string name="ghars_tap_hint">اضغط في أيّ مكان لتُغرَس لك نخلة</string>
   <string name="ghars_empty_hint">الأرض مُهيّأة. سبِّح لتُغرَس أوّل نخلة</string>
   <string name="ghars_today_label">غُرِسَ لك اليوم</string>

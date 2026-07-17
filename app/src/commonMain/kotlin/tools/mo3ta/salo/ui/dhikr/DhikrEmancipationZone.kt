@@ -61,6 +61,8 @@ import tools.mo3ta.salo.generated.resources.dhikr_phrase
 import tools.mo3ta.salo.generated.resources.dhikr_rank_number
 import tools.mo3ta.salo.generated.resources.dhikr_rank_subtitle
 import tools.mo3ta.salo.generated.resources.dhikr_rank_unranked
+import tools.mo3ta.salo.generated.resources.dhikr_reward_hadith
+import tools.mo3ta.salo.generated.resources.dhikr_reward_hadith_ref
 import tools.mo3ta.salo.generated.resources.dhikr_view_gains
 import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.ui.ChallengeBubbleButton
@@ -241,6 +243,13 @@ internal fun DhikrEmancipationZone(
                 modifier = Modifier.padding(horizontal = 12.dp),
             )
 
+            Spacer(Modifier.height(8.dp))
+
+            RewardHadith(
+                text = stringResource(Res.string.dhikr_reward_hadith),
+                reference = stringResource(Res.string.dhikr_reward_hadith_ref),
+            )
+
             Spacer(Modifier.height(14.dp))
 
             ShackleChain(count = withinHundred)
@@ -276,6 +285,32 @@ internal fun DhikrEmancipationZone(
             )
             Spacer(Modifier.height(18.dp))
         }
+    }
+}
+
+/** The hadith of reward, shown just under the dhikr phrase — the fadl behind the tapping. */
+@Composable
+private fun RewardHadith(text: String, reference: String) {
+    Column(
+        modifier = Modifier.padding(horizontal = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = text,
+            color = EmancipationColors.RingBroken.copy(alpha = 0.9f),
+            fontSize = 13.sp,
+            fontFamily = ibmPlexArabicFamily(),
+            lineHeight = 21.sp,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(3.dp))
+        Text(
+            text = reference,
+            color = Color.White.copy(alpha = 0.4f),
+            fontSize = 11.sp,
+            fontFamily = ibmPlexArabicFamily(),
+            textAlign = TextAlign.Center,
+        )
     }
 }
 

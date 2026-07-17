@@ -102,6 +102,8 @@
     <string name="dhikr_gains_count_unit">آج کی بار</string>
     <string name="dhikr_necks_freed_partial">%1$d گردنیں آزاد ہوئیں — %2$d باقی</string>
     <string name="dhikr_necks_freed_all">دسوں گردنیں آزاد ہوئیں — اللہ اکبر</string>
+    <string name="dhikr_reward_hadith">جو اسے دن میں سو مرتبہ کہے، یہ دس گردنیں آزاد کرنے کے برابر ہے</string>
+    <string name="dhikr_reward_hadith_ref">متفق علیہ</string>
     <string name="dhikr_gains_receipt_title">آج کی غنیمت</string>
     <string name="dhikr_gains_receipt_sub">سو بار تہلیل کے ساتھ — جیسا کہ متفق علیہ حدیث میں ہے</string>
     <string name="dhikr_gain_freed">دس گردنیں آزاد کرنے کے برابر</string>
@@ -749,6 +751,8 @@
   <string name="challenge_ghars_body">جس نے کہا: سبحان اللہ العظیم وبحمدہ، اس کے لیے جنت میں ایک کھجور کا درخت لگایا جاتا ہے</string>
   <string name="ghars_title">شجرکاری</string>
   <string name="ghars_phrase">سُبْحَانَ اللہِ الْعَظِیمِ وَبِحَمْدِہِ</string>
+  <string name="ghars_reward_hadith">جو اسے کہے، اس کے لیے جنت میں ایک کھجور کا درخت لگایا جاتا ہے</string>
+  <string name="ghars_reward_hadith_ref">ترمذی نے روایت کیا</string>
   <string name="ghars_tap_hint">کہیں بھی دبائیں، آپ کے لیے ایک کھجور لگائی جائے گی</string>
   <string name="ghars_empty_hint">زمین تیار ہے۔ تسبیح کریں تاکہ پہلی کھجور لگے</string>
   <string name="ghars_today_label">آج آپ کے لیے لگائی گئیں</string>

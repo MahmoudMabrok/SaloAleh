@@ -94,6 +94,8 @@
     <string name="dhikr_title">Dhikr</string>
     <string name="dhikr_back_cd">Back</string>
     <string name="dhikr_phrase">There is no deity but Allah alone, with no partner.\nHis is the dominion and His is the praise, and He has power over all things.</string>
+    <string name="dhikr_reward_hadith">Whoever says it a hundred times a day, it equals freeing ten slaves</string>
+    <string name="dhikr_reward_hadith_ref">Bukhari &amp; Muslim</string>
     <string name="dhikr_today">Today</string>
     <string name="dhikr_times">times</string>
     <string name="dhikr_add">Dhikr</string>
@@ -787,6 +789,8 @@
   <string name="challenge_ghars_body">Whoever says "Glory to Allah the Magnificent, and praise be to Him" has a palm planted for them in Paradise</string>
   <string name="ghars_title">The Planting</string>
   <string name="ghars_phrase">Glory to Allah the Magnificent, and praise be to Him</string>
+  <string name="ghars_reward_hadith">Whoever says it, a palm tree is planted for him in Paradise</string>
+  <string name="ghars_reward_hadith_ref">Reported by al-Tirmidhi</string>
   <string name="ghars_tap_hint">Tap anywhere and a palm is planted for you</string>
   <string name="ghars_empty_hint">The soil is ready. Glorify Allah to plant your first palm</string>
   <string name="ghars_today_label">Planted for you today</string>
