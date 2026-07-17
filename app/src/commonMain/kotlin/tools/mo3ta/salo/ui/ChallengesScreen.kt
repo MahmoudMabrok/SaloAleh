@@ -72,7 +72,9 @@ import tools.mo3ta.salo.generated.resources.challenges_subtitle
 import tools.mo3ta.salo.generated.resources.challenges_title
 import tools.mo3ta.salo.generated.resources.takbeer_session_title
 import tools.mo3ta.salo.generated.resources.tendays_title
+import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.presentation.ChallengesViewModel
+import tools.mo3ta.salo.ui.components.ChallengeStreakChip
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 
 private fun formatNumber(value: Int): String {
@@ -89,6 +91,7 @@ private data class ChallengeItem(
     val icon: ImageVector,
     val accent: Color,
     val total: Int,
+    val streak: Int = 0,
     val onClick: () -> Unit,
 )
 
@@ -107,6 +110,7 @@ fun ChallengesScreen(
     val analyticsManager: AnalyticsManager = koinInject()
     val viewModel: ChallengesViewModel = koinViewModel()
     val totals by viewModel.totals.collectAsState()
+    val streaks by viewModel.streaks.collectAsState()
 
     LaunchedEffect(Unit) {
         analyticsManager.logView("ChallengesScreen")
@@ -120,6 +124,7 @@ fun ChallengesScreen(
             icon = Icons.Default.Forest,
             accent = Color(0xFF1F5C40),
             total = totals.ghars,
+            streak = streaks[ChallengeType.GHARS] ?: 0,
             onClick = {
                 analyticsManager.logAction(
                     AppAnalytics.OPEN_GHARS_CHALLENGE,
@@ -134,6 +139,7 @@ fun ChallengesScreen(
             icon = Icons.Default.Spa,
             accent = Color(0xFF7DD3A8),
             total = totals.dhikr,
+            streak = streaks[ChallengeType.DHIKR] ?: 0,
             onClick = {
                 analyticsManager.logAction(
                     AppAnalytics.OPEN_DHIKR_REWARDS,
@@ -148,6 +154,7 @@ fun ChallengesScreen(
             icon = Icons.Default.Waves,
             accent = Color(0xFF2ED3C4),
             total = totals.zabad,
+            streak = streaks[ChallengeType.ZABAD] ?: 0,
             onClick = {
                 analyticsManager.logAction(
                     AppAnalytics.OPEN_ZABAD_CHALLENGE,
@@ -162,6 +169,7 @@ fun ChallengesScreen(
             icon = Icons.Default.AutoAwesome,
             accent = Color(0xFFB68CE0),
             total = totals.baqiyat,
+            streak = streaks[ChallengeType.BAQIYAT] ?: 0,
             onClick = {
                 analyticsManager.logAction(
                     AppAnalytics.OPEN_BAQIYAT_CHALLENGE,
@@ -176,6 +184,7 @@ fun ChallengesScreen(
             icon = Icons.Default.AutoStories,
             accent = Color(0xFFC08A3E),
             total = totals.istighfar,
+            streak = streaks[ChallengeType.ISTIGHFAR] ?: 0,
             onClick = {
                 analyticsManager.logAction(
                     AppAnalytics.OPEN_ISTIGHFAR_CHALLENGE,
@@ -190,6 +199,7 @@ fun ChallengesScreen(
             icon = Icons.Default.MenuBook,
             accent = Color(0xFF1F7A5C),
             total = totals.quran,
+            streak = streaks[ChallengeType.QURAN] ?: 0,
             onClick = {
                 analyticsManager.logAction(
                     AppAnalytics.OPEN_QURAN_CHALLENGE,
@@ -318,6 +328,10 @@ private fun ChallengeCard(item: ChallengeItem) {
                     fontSize = 12.sp,
                     lineHeight = 17.sp,
                 )
+                if (item.streak > 0) {
+                    Spacer(Modifier.height(6.dp))
+                    ChallengeStreakChip(streak = item.streak, color = item.accent)
+                }
             }
 
             if (item.total > 0) {
