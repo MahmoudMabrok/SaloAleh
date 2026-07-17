@@ -115,6 +115,20 @@ fun ChallengesScreen(
 
     val items = listOf(
         ChallengeItem(
+            titleRes = Res.string.challenge_ghars_title,
+            bodyRes = Res.string.challenge_ghars_body,
+            icon = Icons.Default.Forest,
+            accent = Color(0xFF1F5C40),
+            total = totals.ghars,
+            onClick = {
+                analyticsManager.logAction(
+                    AppAnalytics.OPEN_GHARS_CHALLENGE,
+                    mapOf(AppAnalytics.PARAM_SOURCE to "challenges"),
+                )
+                onOpenGharsChallenge()
+            },
+        ),
+        ChallengeItem(
             titleRes = Res.string.challenge_dhikr_title,
             bodyRes = Res.string.challenge_dhikr_body,
             icon = Icons.Default.Spa,
@@ -126,6 +140,20 @@ fun ChallengesScreen(
                     mapOf(AppAnalytics.PARAM_SOURCE to "challenges"),
                 )
                 onOpenDhikrChallenge()
+            },
+        ),
+        ChallengeItem(
+            titleRes = Res.string.challenge_zabad_title,
+            bodyRes = Res.string.challenge_zabad_body,
+            icon = Icons.Default.Waves,
+            accent = Color(0xFF2ED3C4),
+            total = totals.zabad,
+            onClick = {
+                analyticsManager.logAction(
+                    AppAnalytics.OPEN_ZABAD_CHALLENGE,
+                    mapOf(AppAnalytics.PARAM_SOURCE to "challenges"),
+                )
+                onOpenZabadChallenge()
             },
         ),
         ChallengeItem(
@@ -154,34 +182,6 @@ fun ChallengesScreen(
                     mapOf(AppAnalytics.PARAM_SOURCE to "challenges"),
                 )
                 onOpenIstighfarChallenge()
-            },
-        ),
-        ChallengeItem(
-            titleRes = Res.string.challenge_zabad_title,
-            bodyRes = Res.string.challenge_zabad_body,
-            icon = Icons.Default.Waves,
-            accent = Color(0xFF2ED3C4),
-            total = totals.zabad,
-            onClick = {
-                analyticsManager.logAction(
-                    AppAnalytics.OPEN_ZABAD_CHALLENGE,
-                    mapOf(AppAnalytics.PARAM_SOURCE to "challenges"),
-                )
-                onOpenZabadChallenge()
-            },
-        ),
-        ChallengeItem(
-            titleRes = Res.string.challenge_ghars_title,
-            bodyRes = Res.string.challenge_ghars_body,
-            icon = Icons.Default.Forest,
-            accent = Color(0xFF1F5C40),
-            total = totals.ghars,
-            onClick = {
-                analyticsManager.logAction(
-                    AppAnalytics.OPEN_GHARS_CHALLENGE,
-                    mapOf(AppAnalytics.PARAM_SOURCE to "challenges"),
-                )
-                onOpenGharsChallenge()
             },
         ),
         ChallengeItem(
