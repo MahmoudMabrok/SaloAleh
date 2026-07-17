@@ -39,6 +39,8 @@ object AppAnalytics {
     const val OPEN_GHARS_CHALLENGE = "open_ghars_challenge"
     const val GHARS_TAP = "ghars_tap"
     const val GHARS_SCREEN_VIEW = "ghars_screen_view"
+    const val OPEN_GHARS_GARDENS = "open_ghars_gardens"
+    const val OPEN_GHARS_GARDEN = "open_ghars_garden"
 
     const val PARAM_COUNT = "count"
     const val LANGUAGE_CHANGED = "language_changed"

@@ -113,6 +113,34 @@ class GroveMathTest {
         assertEquals(9, slotInRow(GROVE_SIZE - 1))
     }
 
+    @Test fun gardensOwnedIsLifetimeFloorDividedByGroveSize() {
+        assertEquals(0, gardensOwned(0))
+        assertEquals(0, gardensOwned(24))
+        assertEquals(1, gardensOwned(25))
+        assertEquals(1, gardensOwned(49))
+        assertEquals(2, gardensOwned(50))
+        assertEquals(4, gardensOwned(100)) // the daily goal is exactly four gardens
+        assertEquals(0, gardensOwned(-5))
+    }
+
+    @Test fun everyGardenEndsOnADatePalm() {
+        // A garden is a full grove, so its 25th palm (slot 24) must always be the date-bearer.
+        for (garden in 0 until 6) {
+            val lastSlotIndex = gardenFirstPalmIndex(garden) + (GROVE_SIZE - 1)
+            assertTrue(palmParams(lastSlotIndex).bearsDates, "garden $garden did not end on a date palm")
+            assertEquals(garden * GROVE_SIZE, gardenFirstPalmIndex(garden))
+        }
+    }
+
+    @Test fun gardensTileWithoutGapsOrOverlap() {
+        // Walking garden g must reproduce exactly the palms count g*25+1 .. (g+1)*25 were grown as.
+        for (garden in 0 until 4) {
+            val first = gardenFirstPalmIndex(garden)
+            val next = gardenFirstPalmIndex(garden + 1)
+            assertEquals(GROVE_SIZE, next - first, "garden $garden is not $GROVE_SIZE palms wide")
+        }
+    }
+
     @Test fun palmsInARowNeverShareASlot() {
         for (band in ROW_CAPACITY.indices) {
             val lo = rowStart(band)
