@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import tools.mo3ta.salo.domain.ChallengeType
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
@@ -122,8 +123,14 @@ fun ZabadScreen(
         IconButton(onClick = onBack, modifier = Modifier.statusBarsPadding().padding(12.dp).align(Alignment.TopStart)) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color(0xFFEAF6F4))
         }
-        IconButton(onClick = viewModel::onLeaderboardOpened, modifier = Modifier.statusBarsPadding().padding(12.dp).align(Alignment.TopEnd)) {
-            Icon(Icons.Default.EmojiEvents, null, tint = Color(0xFFE9C46A))
+        Row(
+            modifier = Modifier.statusBarsPadding().padding(8.dp).align(Alignment.TopEnd),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ChallengeBubbleButton(ChallengeType.ZABAD.id)
+            IconButton(onClick = viewModel::onLeaderboardOpened) {
+                Icon(Icons.Default.EmojiEvents, null, tint = Color(0xFFE9C46A))
+            }
         }
         Column(Modifier.fillMaxWidth().padding(horizontal = 28.dp).align(Alignment.Center).alpha(counterAlpha), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(stringResource(Res.string.zabad_phrase), color = Color(0xFFEAF6F4), fontSize = 28.sp, fontWeight = FontWeight.Bold, fontFamily = arefRuqaaFamily(), textAlign = TextAlign.Center, lineHeight = 42.sp)

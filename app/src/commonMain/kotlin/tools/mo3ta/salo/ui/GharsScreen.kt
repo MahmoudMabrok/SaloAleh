@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
+import tools.mo3ta.salo.domain.ChallengeType
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -139,8 +140,11 @@ fun GharsScreen(
                     fontSize = 21.sp,
                     fontFamily = arefRuqaaFamily(),
                 )
-                IconButton(onClick = viewModel::onLeaderboardOpened) {
-                    Icon(Icons.Default.EmojiEvents, null, tint = GharsColors.Gold)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    ChallengeBubbleButton(ChallengeType.GHARS.id)
+                    IconButton(onClick = viewModel::onLeaderboardOpened) {
+                        Icon(Icons.Default.EmojiEvents, null, tint = GharsColors.Gold)
+                    }
                 }
             }
 

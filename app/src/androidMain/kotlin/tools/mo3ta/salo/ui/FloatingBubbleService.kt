@@ -40,6 +40,8 @@ import tools.mo3ta.salo.data.dhikr.DhikrChallengeStore
 import tools.mo3ta.salo.data.engagement.ChallengeBadgeStore
 import tools.mo3ta.salo.data.engagement.DailyGoalStore
 import tools.mo3ta.salo.data.istighfar.IstighfarChallengeStore
+import tools.mo3ta.salo.data.zabad.ZabadChallengeStore
+import tools.mo3ta.salo.data.ghars.GharsChallengeStore
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.notification.NotificationChannels
@@ -50,7 +52,9 @@ class FloatingBubbleService : Service() {
     enum class BubbleType(val id: String) {
         SALAWAT("salawat"),
         DHIKR("dhikr"),
-        ISTIGHFAR("istighfar");
+        ISTIGHFAR("istighfar"),
+        ZABAD("zabad"),
+        GHARS("ghars");
 
         companion object {
             fun from(id: String?): BubbleType = entries.firstOrNull { it.id == id } ?: SALAWAT
@@ -75,6 +79,8 @@ class FloatingBubbleService : Service() {
     private val dailyGoalStore: DailyGoalStore by inject()
     private val dhikrStore: DhikrChallengeStore by inject()
     private val istighfarStore: IstighfarChallengeStore by inject()
+    private val zabadStore: ZabadChallengeStore by inject()
+    private val gharsStore: GharsChallengeStore by inject()
     private val challengeBadgeStore: ChallengeBadgeStore by inject()
     private val analyticsManager: tools.mo3ta.salo.analytics.AnalyticsManager by inject()
 
@@ -88,6 +94,14 @@ class FloatingBubbleService : Service() {
     private var actionOverlayView: LinearLayout? = null
     private var closeTargetView: TextView? = null
     private var openTargetView: TextView? = null
+
+    // Type-switch picker — a row of chips at the top; drag the bubble onto one to switch.
+    private var typePickerView: LinearLayout? = null
+    private val chipViews = mutableListOf<Pair<BubbleType, TextView>>()
+    private var pickerRowLeft = 0
+    private var pickerRowRight = 0
+    private var pickerBandBottom = 0
+    private var pickerSegWidth = 0
 
     // Separate overlay for tooltip — FLAG_NOT_TOUCHABLE, positioned above bubble
     private var tooltipView: LinearLayout? = null
@@ -117,6 +131,8 @@ class FloatingBubbleService : Service() {
         BubbleType.SALAWAT -> "pending_count_$roundKey"
         BubbleType.DHIKR -> "dhikr_challenge_pending"
         BubbleType.ISTIGHFAR -> "istighfar_challenge_pending"
+        BubbleType.ZABAD -> "zabad_challenge_pending"
+        BubbleType.GHARS -> "ghars_challenge_pending"
     }
 
     // The number shown inside the bubble for the current type.
@@ -124,6 +140,8 @@ class FloatingBubbleService : Service() {
         BubbleType.SALAWAT -> prefs.getInt("pending_count_$roundKey", 0)
         BubbleType.DHIKR -> dhikrStore.todayCount(cairoToday())
         BubbleType.ISTIGHFAR -> istighfarStore.todayCount(cairoToday())
+        BubbleType.ZABAD -> zabadStore.todayCount(cairoToday())
+        BubbleType.GHARS -> gharsStore.todayCount(cairoToday())
     }
 
     private fun Int.dp(): Int =
@@ -143,24 +161,44 @@ class FloatingBubbleService : Service() {
         if (newType == BubbleType.SALAWAT && roundKey.isBlank()) { stopSelf(); return START_NOT_STICKY }
 
         val firstStart = !::bubbleView.isInitialized
-        bubbleType = newType
-        val theme = themeFor(newType)
 
         if (firstStart) {
+            bubbleType = newType
+            val theme = themeFor(newType)
             startForeground(NotificationChannels.NOTIF_ID_BUBBLE, buildNotification(theme))
             setupBubble(theme)
             bubbleView.updateCount(currentCount())
             prefs.registerOnSharedPreferenceChangeListener(prefListener)
             startReminderCycle()
+            _activeType.value = newType.id
         } else {
             // Switching type on an already-visible bubble: re-skin in place.
-            bubbleView.applyTheme(theme)
-            bubbleView.updateCount(currentCount())
-            startForeground(NotificationChannels.NOTIF_ID_BUBBLE, buildNotification(theme))
+            switchType(newType)
         }
-        _activeType.value = newType.id
         return START_NOT_STICKY
     }
+
+    /** Re-skin the live bubble to [newType] in place: theme, count, foreground notification. */
+    private fun switchType(newType: BubbleType) {
+        if (!::bubbleView.isInitialized || newType == bubbleType) return
+        // Salawat needs an active round; a challenge-started bubble has none, so ignore it.
+        if (newType == BubbleType.SALAWAT && roundKey.isBlank()) return
+        val previous = bubbleType
+        bubbleType = newType
+        val theme = themeFor(newType)
+        bubbleView.applyTheme(theme)
+        bubbleView.updateCount(currentCount())
+        startForeground(NotificationChannels.NOTIF_ID_BUBBLE, buildNotification(theme))
+        _activeType.value = newType.id
+        analyticsManager.logAction(
+            "bubble_switch_type",
+            mapOf("from" to previous.id, "to" to newType.id),
+        )
+    }
+
+    // Bubble types the on-screen picker offers: salawat only when a round is active.
+    private fun switchableTypes(): List<BubbleType> =
+        BubbleType.entries.filter { it != BubbleType.SALAWAT || roundKey.isNotBlank() }
 
     private fun themeFor(type: BubbleType): BubbleTheme = when (type) {
         BubbleType.SALAWAT -> BubbleTheme(
@@ -200,6 +238,32 @@ class FloatingBubbleService : Service() {
             notifTitle = "واستغفروه",
             notifText = "أستغفر الله العظيم وأتوب إليه",
             goal = ChallengeType.ISTIGHFAR.dailyGoal,
+            subtitle = BubbleSubtitle.NONE,
+        )
+        BubbleType.ZABAD -> BubbleTheme(
+            gradientStart = Color.parseColor("#12708A"),
+            gradientEnd = Color.parseColor("#04121C"),
+            ringColor = Color.parseColor("#2ED3C4"),
+            countColor = Color.parseColor("#E9C46A"),
+            label = "زبد",
+            contentDescription = "اضغط للتسبيح",
+            tooltip = "سبحان الله وبحمده",
+            notifTitle = "زبد البحر",
+            notifText = "سبحان الله وبحمده",
+            goal = ChallengeType.ZABAD.dailyGoal,
+            subtitle = BubbleSubtitle.NONE,
+        )
+        BubbleType.GHARS -> BubbleTheme(
+            gradientStart = Color.parseColor("#2E7D4F"),
+            gradientEnd = Color.parseColor("#0B2A22"),
+            ringColor = Color.parseColor("#C4762A"),
+            countColor = Color.parseColor("#F5D97A"),
+            label = "غرس",
+            contentDescription = "اضغط للغرس",
+            tooltip = "سبحان الله العظيم وبحمده",
+            notifTitle = "الغَرْس",
+            notifText = "سبحان الله العظيم وبحمده",
+            goal = ChallengeType.GHARS.dailyGoal,
             subtitle = BubbleSubtitle.NONE,
         )
     }
@@ -367,10 +431,13 @@ class FloatingBubbleService : Service() {
         actionOverlayView = bar
 
         bar.animate().alpha(1f).translationY(0f).setDuration(280).start()
+
+        showTypePicker()
     }
 
     private fun dismissActionOverlay() {
         targetsVisible = false
+        dismissTypePicker()
         val overlay = actionOverlayView ?: return
         overlay.animate().alpha(0f).translationY(40.dp().toFloat()).setDuration(220)
             .withEndAction {
@@ -379,6 +446,108 @@ class FloatingBubbleService : Service() {
                 closeTargetView = null
                 openTargetView = null
             }.start()
+    }
+
+    // ── Type-switch picker (chip row at top; drag the bubble onto a chip) ────────
+
+    private fun showTypePicker() {
+        if (typePickerView != null) return
+        val types = switchableTypes()
+        if (types.size < 2) return
+
+        val (screenW, _) = screenSize()
+        val rowW = screenW - 32.dp()
+        val rowH = 56.dp()
+        val chipsTopY = 48.dp()
+
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            layoutDirection = android.view.View.LAYOUT_DIRECTION_LTR
+            background = GradientDrawable().apply {
+                setColor(Color.argb(220, 8, 18, 35))
+                cornerRadius = (rowH / 2).toFloat()
+                setStroke(1.dp(), Color.argb(80, 255, 215, 0))
+            }
+            elevation = 14.dp().toFloat()
+            setPadding(8.dp(), 0, 8.dp(), 0)
+        }
+
+        chipViews.clear()
+        types.forEach { type ->
+            val theme = themeFor(type)
+            val isCurrent = type == bubbleType
+            val chip = TextView(this).apply {
+                text = theme.label
+                textDirection = android.view.View.TEXT_DIRECTION_RTL
+                setTextColor(if (isCurrent) Color.WHITE else Color.argb(200, 255, 255, 255))
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+                gravity = Gravity.CENTER
+                setPadding(12.dp(), 6.dp(), 12.dp(), 6.dp())
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.RECTANGLE
+                    cornerRadius = 999f
+                    setColor(withAlpha(theme.ringColor, if (isCurrent) 90 else 30))
+                    setStroke(1.dp(), withAlpha(theme.ringColor, if (isCurrent) 220 else 90))
+                }
+                layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f).apply {
+                    marginStart = 4.dp()
+                    marginEnd = 4.dp()
+                }
+            }
+            row.addView(chip)
+            chipViews.add(type to chip)
+        }
+
+        row.alpha = 0f
+        row.translationY = (-24).dp().toFloat()
+
+        val params = overlayParams(
+            rowW, rowH,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+        ).apply {
+            gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+            y = chipsTopY
+        }
+
+        windowManager.addView(row, params)
+        typePickerView = row
+
+        pickerRowLeft = (screenW - rowW) / 2
+        pickerRowRight = pickerRowLeft + rowW
+        pickerBandBottom = chipsTopY + rowH + 24.dp()
+        pickerSegWidth = if (types.isNotEmpty()) rowW / types.size else rowW
+
+        row.animate().alpha(1f).translationY(0f).setDuration(280).start()
+    }
+
+    private fun dismissTypePicker() {
+        val picker = typePickerView ?: return
+        chipViews.clear()
+        picker.animate().alpha(0f).translationY((-24).dp().toFloat()).setDuration(220)
+            .withEndAction {
+                runCatching { windowManager.removeView(picker) }
+                typePickerView = null
+            }.start()
+    }
+
+    // Which chip the bubble is over, or null. Uses the same geometry showTypePicker laid out.
+    private fun chipHitType(rawX: Float, rawY: Float): BubbleType? {
+        if (typePickerView == null || chipViews.isEmpty()) return null
+        if (rawY > pickerBandBottom) return null
+        if (rawX < pickerRowLeft || rawX > pickerRowRight) return null
+        val index = ((rawX - pickerRowLeft) / pickerSegWidth).toInt()
+            .coerceIn(0, chipViews.size - 1)
+        return chipViews[index].first
+    }
+
+    private fun highlightChips(rawX: Float, rawY: Float) {
+        val hit = chipHitType(rawX, rawY)
+        chipViews.forEach { (type, chip) ->
+            val scale = if (type == hit && type != bubbleType) 1.15f else 1f
+            chip.animate().scaleX(scale).scaleY(scale).setDuration(80).start()
+        }
     }
 
     private fun buildDockIcon(icon: String, bgColor: Int, size: Int): TextView =
@@ -431,15 +600,28 @@ class FloatingBubbleService : Service() {
         val openScale = if (hit == DockHit.OPEN) 1.2f else 1f
         closeTargetView?.animate()?.scaleX(closeScale)?.scaleY(closeScale)?.setDuration(80)?.start()
         openTargetView?.animate()?.scaleX(openScale)?.scaleY(openScale)?.setDuration(80)?.start()
+        highlightChips(rawX, rawY)
     }
 
     private fun handleTargetRelease(rawX: Float, rawY: Float) {
+        // A chip hit switches type; otherwise fall back to the close/open dock.
+        val chipType = chipHitType(rawX, rawY)
+        if (chipType != null) {
+            dismissActionOverlay()
+            clampBubble()
+            windowManager.updateViewLayout(bubbleView, bubbleParams)
+            switchType(chipType)
+            return
+        }
         when (dockHitResult(rawX, rawY)) {
             DockHit.CLOSE -> { dismissActionOverlay(); stopSelf() }
             DockHit.OPEN  -> { dismissActionOverlay(); launchApp() }
             DockHit.NONE  -> { dismissActionOverlay(); clampBubble(); windowManager.updateViewLayout(bubbleView, bubbleParams) }
         }
     }
+
+    private fun withAlpha(color: Int, alpha: Int): Int =
+        Color.argb(alpha, Color.red(color), Color.green(color), Color.blue(color))
 
     // ── Tooltip (separate WM view, FLAG_NOT_TOUCHABLE) ────────────────────────
 
@@ -521,6 +703,10 @@ class FloatingBubbleService : Service() {
                 recordChallengeTap(dhikrStore.incrementToday(today), ChallengeType.DHIKR, today)
             BubbleType.ISTIGHFAR ->
                 recordChallengeTap(istighfarStore.incrementToday(today), ChallengeType.ISTIGHFAR, today)
+            BubbleType.ZABAD ->
+                recordChallengeTap(zabadStore.incrementToday(today), ChallengeType.ZABAD, today)
+            BubbleType.GHARS ->
+                recordChallengeTap(gharsStore.incrementToday(today), ChallengeType.GHARS, today)
         }
     }
 
@@ -577,6 +763,7 @@ class FloatingBubbleService : Service() {
         scope.cancel()
         runCatching { if (::bubbleView.isInitialized) windowManager.removeView(bubbleView) }
         actionOverlayView?.let { runCatching { windowManager.removeView(it) } }
+        typePickerView?.let { runCatching { windowManager.removeView(it) } }
         tooltipView?.let { runCatching { windowManager.removeView(it) } }
         super.onDestroy()
     }
