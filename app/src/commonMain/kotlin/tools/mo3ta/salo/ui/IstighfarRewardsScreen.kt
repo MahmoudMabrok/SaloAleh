@@ -69,6 +69,7 @@ import tools.mo3ta.salo.generated.resources.istighfar_today
 import tools.mo3ta.salo.generated.resources.istighfar_view_rewards
 import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.presentation.IstighfarChallengeViewModel
+import tools.mo3ta.salo.ui.components.ChallengeStreakChip
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.istighfar.IstighfarColors
 import tools.mo3ta.salo.ui.istighfar.IstighfarLeaderboardSheet
@@ -139,6 +140,7 @@ fun IstighfarRewardsScreen(
             target = state.dailyGoal,
             rank = state.rank,
             participantCount = state.participantCount,
+            streak = state.currentStreak,
             canCount = !state.isLoading,
             onTap = {
                 viewModel.onIstighfarTap()
@@ -221,6 +223,7 @@ private fun IstighfarImmersiveZone(
     target: Int,
     rank: Int,
     participantCount: Int,
+    streak: Int,
     canCount: Boolean,
     onTap: () -> Unit,
     onBack: () -> Unit,
@@ -351,6 +354,11 @@ private fun IstighfarImmersiveZone(
                 todayCount = count,
                 target = target,
             )
+
+            if (streak > 0) {
+                Spacer(Modifier.height(10.dp))
+                ChallengeStreakChip(streak = streak, color = IstighfarColors.LightAmber)
+            }
 
             Spacer(Modifier.height(8.dp))
             Text(

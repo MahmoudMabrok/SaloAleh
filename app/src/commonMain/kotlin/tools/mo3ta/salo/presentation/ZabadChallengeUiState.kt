@@ -26,4 +26,5 @@ data class ZabadChallengeUiState(
     val elapsedSinceWashMillis: Long = 0L,
     val roundsToday: Int = 0,
     val isWashing: Boolean = false,
+    val currentStreak: Int = 0,
 )

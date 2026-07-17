@@ -23,4 +23,5 @@ data class QuranChallengeUiState(
     val leaderboard: List<QuranLeaderboardEntry> = emptyList(),
     val isLeaderboardLoading: Boolean = false,
     val currentUid: String = "",
+    val currentStreak: Int = 0,
 )

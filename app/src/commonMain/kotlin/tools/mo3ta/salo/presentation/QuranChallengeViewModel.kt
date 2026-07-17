@@ -81,6 +81,7 @@ class QuranChallengeViewModel(
                     dateKey = today.toString(),
                     todayCount = store.todayCount(today),
                     manualRemainingToday = store.manualRemainingToday(today),
+                    currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.QURAN, today),
                     isLoading = false,
                     errorMessage = null,
                 )
@@ -295,6 +296,7 @@ class QuranChallengeViewModel(
         if (total >= QURAN_CHALLENGE_DAILY_GOAL) {
             challengeBadgeStore.recordWin(ChallengeType.QURAN, today)
         }
+        _state.update { it.copy(currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.QURAN, today)) }
     }
 
     private fun today(): LocalDate = Clock.System.todayIn(cairoZone)

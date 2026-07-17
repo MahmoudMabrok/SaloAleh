@@ -23,4 +23,5 @@ data class IstighfarChallengeUiState(
     val leaderboard: List<IstighfarLeaderboardEntry> = emptyList(),
     val isLeaderboardLoading: Boolean = false,
     val currentUid: String = "",
+    val currentStreak: Int = 0,
 )

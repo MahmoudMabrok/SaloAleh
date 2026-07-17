@@ -83,6 +83,7 @@ class DhikrChallengeViewModel(
                     dateKey = today.toString(),
                     todayCount = store.todayCount(today),
                     manualRemainingToday = store.manualRemainingToday(today),
+                    currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.DHIKR, today),
                     isLoading = false,
                     errorMessage = null,
                 )
@@ -303,6 +304,7 @@ class DhikrChallengeViewModel(
         if (total >= DHIKR_CHALLENGE_DAILY_GOAL) {
             challengeBadgeStore.recordWin(ChallengeType.DHIKR, today)
         }
+        _state.update { it.copy(currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.DHIKR, today)) }
     }
 
     private fun today(): LocalDate = Clock.System.todayIn(cairoZone)
