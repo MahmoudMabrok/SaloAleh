@@ -33,6 +33,7 @@ const {
   mirrorQuranChallenge,
   mirrorAlBaqaraChallenge,
 } = require('./firestore-utils');
+const { publishLatestVersion } = require('./app-config-utils');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 const databaseURL = process.env.FIREBASE_DATABASE_URL;
@@ -116,6 +117,10 @@ async function sendDueBuildNotification(db) {
     console.error(`[build-notif] topic send failed: ${e.message} — leaving node for retry`);
     return;
   }
+
+  // Publish the version to remote config so clients on older builds show the
+  // in-app update prompt, timed with the broadcast the user just received.
+  await publishLatestVersion(db, version);
 
   await ref.remove();
   console.log('[build-notif] done — node cleared');
