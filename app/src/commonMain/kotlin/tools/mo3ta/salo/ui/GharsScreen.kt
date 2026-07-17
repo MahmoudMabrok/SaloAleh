@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Forest
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
@@ -66,6 +67,7 @@ import tools.mo3ta.salo.generated.resources.manual_ghars_title
 import tools.mo3ta.salo.generated.resources.zabad_leaderboard_title
 import tools.mo3ta.salo.presentation.GharsChallengeViewModel
 import tools.mo3ta.salo.ui.ghars.GharsColors
+import tools.mo3ta.salo.ui.ghars.GharsGardensOverlay
 import tools.mo3ta.salo.ui.ghars.GharsLeaderboardSheet
 import tools.mo3ta.salo.ui.ghars.ManualGharsSheet
 import tools.mo3ta.salo.ui.ghars.PalmGroveCanvas
@@ -141,6 +143,14 @@ fun GharsScreen(
                     fontFamily = arefRuqaaFamily(),
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = {
+                            analyticsManager.logAction(AppAnalytics.OPEN_GHARS_GARDENS)
+                            viewModel.onGardensOpened()
+                        },
+                    ) {
+                        Icon(Icons.Default.Forest, null, tint = GharsColors.FrondLit)
+                    }
                     ChallengeBubbleButton(ChallengeType.GHARS.id)
                     IconButton(onClick = viewModel::onLeaderboardOpened) {
                         Icon(Icons.Default.EmojiEvents, null, tint = GharsColors.Gold)
@@ -222,6 +232,22 @@ fun GharsScreen(
         onSubmit = viewModel::submitManualGhars,
         onSubtract = viewModel::subtractManualGhars,
     )
+
+    if (state.showGardens) {
+        GharsGardensOverlay(
+            lifetimePalms = state.lifetimePalms,
+            openGardenIndex = state.openGardenIndex,
+            onOpenGarden = { index ->
+                analyticsManager.logAction(AppAnalytics.OPEN_GHARS_GARDEN)
+                viewModel.onGardenOpened(index)
+            },
+            onCloseGarden = viewModel::onGardenClosed,
+            onDismiss = viewModel::onGardensClosed,
+        )
+        PlatformBackHandler(enabled = true) {
+            if (state.openGardenIndex >= 0) viewModel.onGardenClosed() else viewModel.onGardensClosed()
+        }
+    }
 }
 
 @Composable

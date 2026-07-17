@@ -81,7 +81,7 @@ private const val RECEDE_MS = 1600
  * objects per frame. The sway is gone (nothing animates between taps, so the canvas now
  * issues no frames at all when idle) and what still gets drawn reuses the buffers below.
  */
-private class GroveScratch {
+internal class GroveScratch {
     // The backdrop (sky, stars, sun, ground, tree-line) only changes when the canvas resizes
     // or a grove completes, so it is rasterised once and blitted after that.
     var backdrop: ImageBitmap? = null
@@ -194,10 +194,7 @@ private fun skyAt(t: Float): Color {
     return SKY_STOPS.last().second
 }
 
-private fun horizonY(h: Float): Float = h * 0.545f
-
-/** Near/foreground soil line — where the front row is planted. */
-private fun soilY(h: Float): Float = h - FOREGROUND_RESERVE
+internal fun horizonY(h: Float): Float = h * 0.545f
 
 /**
  * The mockup draws in CSS pixels (`g.setTransform(dpr, …)`), so every constant in this file
@@ -319,10 +316,14 @@ private fun DrawScope.drawLiveLayer(
     }
 }
 
-/** Where the grove stands, in logical dp. */
-private class GroveGeometry(w: Float, h: Float) {
+/**
+ * Where the grove stands, in logical dp. [reserve] is the space kept clear at the foot of the
+ * canvas; the full-screen grove reserves room for the tasbeeh overlay, while a small thumbnail
+ * passes a shorter reserve so the soil line stays below the horizon on a short canvas.
+ */
+internal class GroveGeometry(w: Float, h: Float, reserve: Float = FOREGROUND_RESERVE) {
     val hz = horizonY(h)
-    val nr = soilY(h)
+    val nr = h - reserve
     private val margin = w * 0.04f
     private val span = w - 2f * margin
 
@@ -333,7 +334,7 @@ private class GroveGeometry(w: Float, h: Float) {
 }
 
 /** One palm at its fixed place in the grove, with the soil shadow it casts. */
-private fun DrawScope.drawPlantedPalm(
+internal fun DrawScope.drawPlantedPalm(
     g: GroveGeometry,
     slot: Int,
     groveStart: Int,
@@ -415,9 +416,9 @@ private fun rasterizeBackdrop(
     return image
 }
 
-private fun DrawScope.drawBackdrop(w: Float, h: Float, groves: Int) {
+internal fun DrawScope.drawBackdrop(w: Float, h: Float, groves: Int, reserve: Float = FOREGROUND_RESERVE) {
     val hz = horizonY(h)
-    val nr = soilY(h)
+    val nr = h - reserve
 
     // ---- sky ----
     drawRect(

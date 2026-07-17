@@ -130,6 +130,26 @@ class GharsChallengeViewModel(
         _state.update { it.copy(groveToastNumber = 0) }
     }
 
+    /** Open the "My Groves" gallery (the grid of completed gardens). */
+    fun onGardensOpened() {
+        _state.update { it.copy(showGardens = true, openGardenIndex = -1) }
+    }
+
+    /** Close the gallery entirely, back to the grove screen. */
+    fun onGardensClosed() {
+        _state.update { it.copy(showGardens = false, openGardenIndex = -1) }
+    }
+
+    /** Enter a single garden's walkable view. */
+    fun onGardenOpened(index: Int) {
+        _state.update { it.copy(openGardenIndex = index) }
+    }
+
+    /** Leave the walkable view, back to the gallery grid. */
+    fun onGardenClosed() {
+        _state.update { it.copy(openGardenIndex = -1) }
+    }
+
     fun showManualGharsSheet() {
         _state.update { it.copy(showManualGharsSheet = true) }
     }
