@@ -50,11 +50,21 @@ class RoundStreakStoreTest {
     }
 
     @Test
-    fun newRound_streakResets() {
+    fun newRound_streakContinues() {
         val s = store()
         s.recordActivity(round, LocalDate(2026, 7, 11))
         s.recordActivity(round, LocalDate(2026, 7, 12))
-        // Next round begins
+        // Next round begins the following day — the streak carries across the round boundary.
+        val result = s.recordActivity("2026-07-24", LocalDate(2026, 7, 13))
+        assertEquals(3, result.currentStreak)
+    }
+
+    @Test
+    fun newRound_missedDay_streakStillRestarts() {
+        val s = store()
+        s.recordActivity(round, LocalDate(2026, 7, 11))
+        s.recordActivity(round, LocalDate(2026, 7, 12))
+        // New round, but days were missed in between → streak restarts regardless of round.
         val result = s.recordActivity("2026-07-24", LocalDate(2026, 7, 18))
         assertEquals(1, result.currentStreak)
     }
@@ -111,10 +121,11 @@ class RoundStreakStoreTest {
     }
 
     @Test
-    fun getCurrentStreak_zeroForDifferentRound() {
+    fun getCurrentStreak_survivesRoundChange() {
         val s = store()
         s.recordActivity(round, LocalDate(2026, 7, 11))
-        assertEquals(0, s.getCurrentStreak("2026-07-24", LocalDate(2026, 7, 11)))
+        // A new round key does not reset the live streak — it persists across rounds.
+        assertEquals(1, s.getCurrentStreak("2026-07-24", LocalDate(2026, 7, 11)))
     }
 
     @Test
