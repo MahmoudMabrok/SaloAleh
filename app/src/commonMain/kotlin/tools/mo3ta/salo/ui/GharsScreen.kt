@@ -59,6 +59,8 @@ import tools.mo3ta.salo.generated.resources.ghars_groves_label
 import tools.mo3ta.salo.generated.resources.ghars_lifetime_label
 import tools.mo3ta.salo.generated.resources.ghars_phrase
 import tools.mo3ta.salo.generated.resources.ghars_remaining
+import tools.mo3ta.salo.generated.resources.ghars_reward_hadith
+import tools.mo3ta.salo.generated.resources.ghars_reward_hadith_ref
 import tools.mo3ta.salo.generated.resources.ghars_tap_hint
 import tools.mo3ta.salo.generated.resources.ghars_title
 import tools.mo3ta.salo.generated.resources.ghars_today_label
@@ -192,6 +194,23 @@ fun GharsScreen(
                     fontFamily = arefRuqaaFamily(),
                     textAlign = TextAlign.Center,
                     lineHeight = 40.sp,
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = stringResource(Res.string.ghars_reward_hadith),
+                    color = GharsColors.Gold,
+                    fontSize = 13.sp,
+                    fontFamily = ibmPlexArabicFamily(),
+                    textAlign = TextAlign.Center,
+                    lineHeight = 21.sp,
+                )
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    text = stringResource(Res.string.ghars_reward_hadith_ref),
+                    color = GharsColors.TextOnSky.copy(alpha = 0.5f),
+                    fontSize = 11.sp,
+                    fontFamily = ibmPlexArabicFamily(),
+                    textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(

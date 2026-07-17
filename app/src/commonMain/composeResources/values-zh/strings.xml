@@ -102,6 +102,8 @@
     <string name="dhikr_gains_count_unit">今日次数</string>
     <string name="dhikr_necks_freed_partial">已释放 %1$d 个奴仆 — 还剩 %2$d</string>
     <string name="dhikr_necks_freed_all">十个奴仆全部获释 — 真主至大</string>
+    <string name="dhikr_reward_hadith">谁若每日诵念一百遍，即相当于释放十个奴隶</string>
+    <string name="dhikr_reward_hadith_ref">布哈里与穆斯林圣训集</string>
     <string name="dhikr_gains_receipt_title">今日的战利品</string>
     <string name="dhikr_gains_receipt_sub">以百次的清真言 — 正如两大圣训集所载</string>
     <string name="dhikr_gain_freed">相当于释放十个生命</string>
@@ -749,6 +751,8 @@
   <string name="challenge_ghars_body">谁诵念"赞颂伟大的真主并赞美他"，就为他在天园里种下一棵棕榈树</string>
   <string name="ghars_title">栽种</string>
   <string name="ghars_phrase">赞颂伟大的真主，并赞美他</string>
+  <string name="ghars_reward_hadith">谁诵念它，真主便在乐园中为他栽种一棵棕榈树</string>
+  <string name="ghars_reward_hadith_ref">提尔米济辑录</string>
   <string name="ghars_tap_hint">点击任意处，为您种下一棵棕榈树</string>
   <string name="ghars_empty_hint">土地已备好。赞颂真主以种下第一棵棕榈树</string>
   <string name="ghars_today_label">今日为您种下</string>
