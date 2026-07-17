@@ -417,6 +417,8 @@ actual fun ChallengeBubbleButton(challengeType: String) {
     val accent = when (challengeType) {
         FloatingBubbleService.BubbleType.DHIKR.id -> Color(0xFF6FCF9E)
         FloatingBubbleService.BubbleType.ISTIGHFAR.id -> Color(0xFFC08A3E)
+        FloatingBubbleService.BubbleType.ZABAD.id -> Color(0xFF2ED3C4)
+        FloatingBubbleService.BubbleType.GHARS.id -> Color(0xFFC4762A)
         else -> MohamedLoversPalette.GoldHighlight
     }
 
