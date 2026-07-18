@@ -86,6 +86,7 @@ import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseApi
 import tools.mo3ta.salo.data.referral.ReferralStore
 import tools.mo3ta.salo.data.update.UpdateChecker
+import tools.mo3ta.salo.domain.isNewerVersion
 import tools.mo3ta.salo.analytics.BillingAnalytics
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -617,9 +618,6 @@ fun App(
             }
         }
 
-        var pendingVersionUpdate by remember(newVersionAvailable) {
-            mutableStateOf(newVersionAvailable)
-        }
         pendingNotificationMessage?.let { msg ->
             NotificationMessageDialog(
                 message = msg,
@@ -661,32 +659,25 @@ fun App(
             )
         }
 
-        if (canShowAppAnnouncements) pendingVersionUpdate?.let { version ->
-            VersionUpdateDialog(
-                version = version,
-                onUpdate = {
-                    pendingVersionUpdate = null
-                    openStorePage()
-                },
-                onDismiss = { pendingVersionUpdate = null },
-            )
-        }
-
-        // Remote-config-driven update prompt: at startup, compare the latest published
-        // version to this build and offer an update when it is newer. Dismissing marks
-        // the version so it is never shown again for the same release. Independent of the
-        // suppressed app announcements above so it always reaches users on old versions.
+        // Update prompt, fed by two sources into one dialog. Tapping a "new version"
+        // FCM notification shows it immediately for the pushed version — an explicit
+        // tap outranks an earlier "Later" for that release. On a plain launch the
+        // remote-config check (app_config/latestVersion) decides instead, honoring the
+        // per-version dismissal. Either way the dialog only appears when the version is
+        // strictly newer than this build, and it is independent of the suppressed app
+        // announcements above so it always reaches users on old versions.
         val updateChecker = koinInject<UpdateChecker>()
         var pendingAppUpdate by remember { mutableStateOf<String?>(null) }
-        LaunchedEffect(Unit) {
-            if (UPDATE_PROMPT_ENABLED) {
-                pendingAppUpdate = updateChecker.check(getAppVersion())
-            }
+        LaunchedEffect(newVersionAvailable) {
+            if (!UPDATE_PROMPT_ENABLED) return@LaunchedEffect
+            val current = getAppVersion()
+            pendingAppUpdate = newVersionAvailable
+                ?.takeIf { it.isNotBlank() && isNewerVersion(it, current) }
+                ?: updateChecker.check(current)
         }
         if (
             UPDATE_PROMPT_ENABLED &&
-            !showOnboarding &&
-            pendingVersionUpdate == null
+            !showOnboarding
         ) pendingAppUpdate?.let { version ->
             VersionUpdateDialog(
                 version = version,
