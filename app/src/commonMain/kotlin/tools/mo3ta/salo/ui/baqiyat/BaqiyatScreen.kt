@@ -58,7 +58,6 @@ import tools.mo3ta.salo.generated.resources.dhikr_rank_subtitle
 import tools.mo3ta.salo.generated.resources.dhikr_rank_unranked
 import tools.mo3ta.salo.generated.resources.dhikr_times
 import tools.mo3ta.salo.presentation.BaqiyatViewModel
-import tools.mo3ta.salo.ui.components.ChallengeStreakChip
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.dhikr.DhikrMilestoneCelebration
 
@@ -153,11 +152,6 @@ fun BaqiyatScreen(
             Spacer(Modifier.height(20.dp))
 
             CyclesCounterCard(cyclesCompleted = state.cyclesCompleted)
-
-            if (state.currentStreak > 0) {
-                Spacer(Modifier.height(12.dp))
-                ChallengeStreakChip(streak = state.currentStreak, color = BaqiyatGold)
-            }
 
             Spacer(Modifier.height(24.dp))
 
