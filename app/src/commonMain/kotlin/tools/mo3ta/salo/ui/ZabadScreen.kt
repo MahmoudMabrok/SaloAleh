@@ -42,6 +42,7 @@ import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.generated.resources.*
 import tools.mo3ta.salo.presentation.ZabadChallengeViewModel
+import tools.mo3ta.salo.ui.components.ChallengeStreakChip
 import tools.mo3ta.salo.ui.ghars.arefRuqaaFamily
 import tools.mo3ta.salo.ui.ghars.ibmPlexArabicFamily
 import tools.mo3ta.salo.ui.zabad.*
@@ -155,6 +156,10 @@ fun ZabadScreen(
             Text("${state.todayCount % 100}", color = Color.White, fontSize = 60.sp, fontWeight = FontWeight.Light, fontFamily = ibmPlexArabicFamily())
             Text(stringResource(Res.string.zabad_progress), color = Color(0xB3EAF6F4), fontSize = 14.sp, fontFamily = ibmPlexArabicFamily())
             LinearProgressIndicator(progress = { (state.todayCount % 100) / 100f }, modifier = Modifier.fillMaxWidth(.55f).padding(top = 10.dp), color = Color(0xFF2ED3C4), trackColor = Color.White.copy(alpha = .15f))
+            if (state.currentStreak > 0) {
+                Spacer(Modifier.height(14.dp))
+                ChallengeStreakChip(streak = state.currentStreak, color = Color(0xFF2ED3C4))
+            }
             if (!state.isWashing && state.elapsedSinceWashMillis > 0L) {
                 val totalMinutes = state.elapsedSinceWashMillis / 60_000L
                 Spacer(Modifier.height(18.dp))

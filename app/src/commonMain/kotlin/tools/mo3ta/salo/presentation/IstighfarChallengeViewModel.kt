@@ -83,6 +83,7 @@ class IstighfarChallengeViewModel(
                     dateKey = today.toString(),
                     todayCount = store.todayCount(today),
                     manualRemainingToday = store.manualRemainingToday(today),
+                    currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.ISTIGHFAR, today),
                     isLoading = false,
                     errorMessage = null,
                 )
@@ -303,6 +304,7 @@ class IstighfarChallengeViewModel(
         if (total >= ISTIGHFAR_CHALLENGE_DAILY_GOAL) {
             challengeBadgeStore.recordWin(ChallengeType.ISTIGHFAR, today)
         }
+        _state.update { it.copy(currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.ISTIGHFAR, today)) }
     }
 
     private fun today(): LocalDate = Clock.System.todayIn(cairoZone)

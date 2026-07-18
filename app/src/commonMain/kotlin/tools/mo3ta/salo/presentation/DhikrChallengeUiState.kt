@@ -23,4 +23,5 @@ data class DhikrChallengeUiState(
     val leaderboard: List<DhikrLeaderboardEntry> = emptyList(),
     val isLeaderboardLoading: Boolean = false,
     val currentUid: String = "",
+    val currentStreak: Int = 0,
 )

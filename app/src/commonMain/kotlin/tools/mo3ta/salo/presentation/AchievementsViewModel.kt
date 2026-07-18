@@ -4,9 +4,6 @@ import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.todayIn
 import tools.mo3ta.salo.data.engagement.ChallengeBadgeStore
 import tools.mo3ta.salo.data.engagement.EngagementStore
 import tools.mo3ta.salo.data.engagement.RoundStreakStore
@@ -19,8 +16,6 @@ class AchievementsViewModel(
     challengeBadgeStore: ChallengeBadgeStore,
 ) : ViewModel() {
 
-    private val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
-
     private val _achievements = MutableStateFlow<List<Achievement>>(
         engagementStore.getAllAchievements() + roundStreakStore.getEarnedBadges(),
     )
@@ -31,10 +26,4 @@ class AchievementsViewModel(
 
     private val _challengeBadgeCounts = MutableStateFlow(challengeBadgeStore.getWinCounts())
     val challengeBadgeCounts: StateFlow<Map<ChallengeType, Int>> = _challengeBadgeCounts.asStateFlow()
-
-    private val _challengeStreaks = MutableStateFlow(challengeBadgeStore.getCurrentStreaks(today))
-    val challengeStreaks: StateFlow<Map<ChallengeType, Int>> = _challengeStreaks.asStateFlow()
-
-    private val _challengeBestStreaks = MutableStateFlow(challengeBadgeStore.getBestStreaks())
-    val challengeBestStreaks: StateFlow<Map<ChallengeType, Int>> = _challengeBestStreaks.asStateFlow()
 }

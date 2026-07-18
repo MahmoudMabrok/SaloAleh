@@ -20,4 +20,5 @@ data class BaqiyatUiState(
     val leaderboard: List<BaqiyatLeaderboardEntry> = emptyList(),
     val isLeaderboardLoading: Boolean = false,
     val currentUid: String = "",
+    val currentStreak: Int = 0,
 )

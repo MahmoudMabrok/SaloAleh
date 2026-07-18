@@ -14,6 +14,8 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
+import tools.mo3ta.salo.data.engagement.ChallengeBadgeStore
+import tools.mo3ta.salo.domain.ChallengeType
 
 data class ChallengesTotals(
     val dhikr: Int = 0,
@@ -25,14 +27,21 @@ data class ChallengesTotals(
     val albaqara: Int = 0,
 )
 
-class ChallengesViewModel : ViewModel() {
+class ChallengesViewModel(
+    private val challengeBadgeStore: ChallengeBadgeStore,
+) : ViewModel() {
 
     private val cairoZone = TimeZone.of("Africa/Cairo")
 
     private val _totals = MutableStateFlow(ChallengesTotals())
     val totals: StateFlow<ChallengesTotals> = _totals.asStateFlow()
 
+    // Per-challenge live daily streaks (local, synchronous) shown as a pill on each card.
+    private val _streaks = MutableStateFlow(challengeBadgeStore.getCurrentStreaks(Clock.System.todayIn(cairoZone)))
+    val streaks: StateFlow<Map<ChallengeType, Int>> = _streaks.asStateFlow()
+
     fun onScreenEntered() {
+        _streaks.value = challengeBadgeStore.getCurrentStreaks(Clock.System.todayIn(cairoZone))
         viewModelScope.launch {
             val dateKey = Clock.System.todayIn(cairoZone).toString()
             val db = runCatching { Firebase.database }.getOrNull() ?: return@launch

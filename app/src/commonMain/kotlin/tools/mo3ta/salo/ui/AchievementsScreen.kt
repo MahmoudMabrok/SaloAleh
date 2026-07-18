@@ -76,8 +76,6 @@ import tools.mo3ta.salo.generated.resources.achievements_badge_repeatable
 import tools.mo3ta.salo.generated.resources.achievements_badge_challenge_baqiyat_how
 import tools.mo3ta.salo.generated.resources.achievements_badge_challenge_dhikr_how
 import tools.mo3ta.salo.generated.resources.achievements_badge_challenge_istighfar_how
-import tools.mo3ta.salo.generated.resources.achievements_challenge_streak_best
-import tools.mo3ta.salo.generated.resources.achievements_challenge_streak_days
 import tools.mo3ta.salo.generated.resources.achievements_badge_round_streak_how
 import tools.mo3ta.salo.generated.resources.achievements_badge_round_streak_title
 import tools.mo3ta.salo.generated.resources.achievements_section_challenge_badges
@@ -208,8 +206,6 @@ fun AchievementsScreen(
     val achievements by viewModel.achievements.collectAsStateWithLifecycle()
     val currentStreak by viewModel.currentStreak.collectAsStateWithLifecycle()
     val challengeBadgeCounts by viewModel.challengeBadgeCounts.collectAsStateWithLifecycle()
-    val challengeStreaks by viewModel.challengeStreaks.collectAsStateWithLifecycle()
-    val challengeBestStreaks by viewModel.challengeBestStreaks.collectAsStateWithLifecycle()
 
     val analyticsManager: AnalyticsManager = koinInject()
     LaunchedEffect(Unit) { analyticsManager.logView("AchievementsScreen") }
@@ -336,7 +332,6 @@ fun AchievementsScreen(
                 ChallengeBadgeCard(
                     spec = spec,
                     count = challengeBadgeCounts[spec.type] ?: 0,
-                    streak = challengeStreaks[spec.type] ?: 0,
                     onClick = { selectedChallengeBadge = spec },
                 )
             }
@@ -494,21 +489,6 @@ fun AchievementsScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(stringResource(Res.string.achievements_badge_how_label), color = Color.White.copy(alpha = 0.55f), fontSize = 13.sp)
                     Text(stringResource(spec.howToEarnRes, spec.type.dailyGoal), color = Color.White, fontSize = 15.sp, lineHeight = 22.sp)
-                    val currentStreak = challengeStreaks[spec.type] ?: 0
-                    val bestStreak = challengeBestStreaks[spec.type] ?: 0
-                    if (bestStreak > 0) {
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            "🔥 " + stringResource(Res.string.achievements_challenge_streak_days, currentStreak),
-                            color = Color.White,
-                            fontSize = 13.sp,
-                        )
-                        Text(
-                            "🏅 " + stringResource(Res.string.achievements_challenge_streak_best, bestStreak),
-                            color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 13.sp,
-                        )
-                    }
                     Spacer(Modifier.height(4.dp))
                     Text(
                         "✨ " + stringResource(Res.string.achievements_badge_repeatable),
@@ -815,7 +795,6 @@ private fun RoundStreakBadgeCard(
 private fun ChallengeBadgeCard(
     spec: ChallengeBadgeSpec,
     count: Int,
-    streak: Int,
     onClick: () -> Unit,
 ) {
     val achieved = count > 0
@@ -862,21 +841,6 @@ private fun ChallengeBadgeCard(
                 fontSize = 11.sp,
                 lineHeight = 16.sp,
             )
-            if (streak >= 2) {
-                Spacer(Modifier.height(5.dp))
-                Box(
-                    modifier = Modifier
-                        .background(MohamedLoversPalette.Gold.copy(alpha = 0.16f), RoundedCornerShape(8.dp))
-                        .padding(horizontal = 8.dp, vertical = 3.dp),
-                ) {
-                    Text(
-                        text = "🔥 " + stringResource(Res.string.achievements_challenge_streak_days, streak),
-                        color = MohamedLoversPalette.Gold,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
-            }
         }
         if (achieved) {
             Box(

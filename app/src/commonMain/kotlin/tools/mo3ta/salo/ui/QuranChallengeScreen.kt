@@ -66,6 +66,7 @@ import tools.mo3ta.salo.generated.resources.quran_today
 import tools.mo3ta.salo.generated.resources.quran_tap_hint
 import tools.mo3ta.salo.generated.resources.quran_view_rewards
 import tools.mo3ta.salo.presentation.QuranChallengeViewModel
+import tools.mo3ta.salo.ui.components.ChallengeStreakChip
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.quran.QuranColors
 import tools.mo3ta.salo.ui.quran.QuranLeaderboardSheet
@@ -136,6 +137,7 @@ fun QuranChallengeScreen(
             target = state.dailyGoal,
             rank = state.rank,
             participantCount = state.participantCount,
+            streak = state.currentStreak,
             canCount = !state.isLoading,
             onPageTap = {
                 viewModel.onQuranPageTap()
@@ -245,6 +247,7 @@ private fun QuranImmersiveZone(
     target: Int,
     rank: Int,
     participantCount: Int,
+    streak: Int,
     canCount: Boolean,
     onPageTap: () -> Unit,
     onBack: () -> Unit,
@@ -368,6 +371,11 @@ private fun QuranImmersiveZone(
                 todayCount = count,
                 target = target,
             )
+
+            if (streak > 0) {
+                Spacer(Modifier.height(10.dp))
+                ChallengeStreakChip(streak = streak, color = QuranColors.LightTeal)
+            }
 
             Spacer(Modifier.height(8.dp))
             Text(

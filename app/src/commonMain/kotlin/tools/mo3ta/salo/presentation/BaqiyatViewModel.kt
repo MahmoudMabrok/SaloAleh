@@ -59,6 +59,7 @@ class BaqiyatViewModel(
                     cyclesCompleted = store.todayCount(today),
                     phraseOrder = activePhrases,
                     tappedPhrases = emptySet(),
+                    currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.BAQIYAT, today),
                     isLoading = false,
                     errorMessage = null,
                 )
@@ -201,6 +202,7 @@ class BaqiyatViewModel(
         if (cycles >= BAQIYAT_CHALLENGE_DAILY_GOAL) {
             challengeBadgeStore.recordWin(ChallengeType.BAQIYAT, today)
         }
+        _state.update { it.copy(currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.BAQIYAT, today)) }
     }
 
     private fun today(): LocalDate = Clock.System.todayIn(cairoZone)

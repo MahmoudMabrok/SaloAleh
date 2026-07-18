@@ -102,7 +102,7 @@ val appModule = module {
     viewModel { QuranChallengeViewModel(get(), get(), get(), get(), get()) }
     viewModel { BaqiyatViewModel(get(), get(), get(), get(), get()) }
     viewModel { AchievementsViewModel(get(), get(), get()) }
-    viewModel { ChallengesViewModel() }
+    viewModel { ChallengesViewModel(get()) }
     viewModel { HadithListViewModel(get()) }
     single { TenDaysStore(get()) }
     single { TenDaysFirebaseClient(get(), get(), get()) }

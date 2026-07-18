@@ -84,6 +84,7 @@ class ZabadChallengeViewModel(
                     dateKey = today.toString(),
                     todayCount = store.todayCount(today),
                     manualRemainingToday = store.manualRemainingToday(today),
+                    currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.ZABAD, today),
                     isLoading = false,
                     errorMessage = null,
                 )
@@ -333,6 +334,7 @@ class ZabadChallengeViewModel(
         if (total >= ZABAD_CHALLENGE_DAILY_GOAL) {
             challengeBadgeStore.recordWin(ChallengeType.ZABAD, today)
         }
+        _state.update { it.copy(currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.ZABAD, today)) }
     }
 
     private fun today(): LocalDate = Clock.System.todayIn(cairoZone)

@@ -66,6 +66,7 @@ import tools.mo3ta.salo.generated.resources.dhikr_reward_hadith_ref
 import tools.mo3ta.salo.generated.resources.dhikr_view_gains
 import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.ui.ChallengeBubbleButton
+import tools.mo3ta.salo.ui.components.ChallengeStreakChip
 import tools.mo3ta.salo.ui.ghars.arefRuqaaFamily
 import tools.mo3ta.salo.ui.ghars.ibmPlexArabicFamily
 import kotlin.random.Random
@@ -110,6 +111,7 @@ internal fun DhikrEmancipationZone(
     count: Int,
     rank: Int,
     participantCount: Int,
+    streak: Int,
     canCount: Boolean,
     onTap: () -> Unit,
     onBack: () -> Unit,
@@ -224,6 +226,11 @@ internal fun DhikrEmancipationZone(
                 onClick = onManualEntryClick,
                 onDarkBackground = true,
             )
+
+            if (streak > 0) {
+                Spacer(Modifier.height(10.dp))
+                ChallengeStreakChip(streak = streak, color = EmancipationColors.RingBroken)
+            }
 
             Spacer(Modifier.weight(1f))
 

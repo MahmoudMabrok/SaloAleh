@@ -167,6 +167,7 @@ fun DhikrRewardsScreen(
                 count = state.todayCount,
                 rank = state.rank,
                 participantCount = state.participantCount,
+                streak = state.currentStreak,
                 canCount = !state.isLoading,
                 onTap = onHeroTap,
                 onBack = onBack,
