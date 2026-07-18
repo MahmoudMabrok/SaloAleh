@@ -79,7 +79,7 @@ class BaqiyatViewModel(
         }
     }
 
-    /** Hides [phrase]; once all phrases are hidden, a full cycle completes: +1 to the counter, all shown again. */
+    /** Marks [phrase] green; once all phrases are marked, a full cycle completes: +1 to the counter, all reset. */
     fun onPhraseTap(phrase: BaqiyatPhrase) {
         val current = _state.value
         if (phrase in current.tappedPhrases) return
@@ -96,13 +96,17 @@ class BaqiyatViewModel(
         _state.update {
             it.copy(
                 tappedPhrases = emptySet(),
-                phraseOrder = shuffledActivePhrases(current.phraseOrder),
                 cyclesCompleted = updated,
                 showCelebration = true,
                 celebrationMilestone = updated,
             )
         }
         recalculateLocalLeaderboard()
+    }
+
+    /** Reshuffles the card order on user request, preserving any already-marked phrases. */
+    fun onShuffle() {
+        _state.update { it.copy(phraseOrder = shuffledActivePhrases(it.phraseOrder)) }
     }
 
     fun onCelebrationDismissed() {
