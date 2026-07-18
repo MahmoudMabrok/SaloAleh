@@ -1,10 +1,6 @@
 package tools.mo3ta.salo.ui.baqiyat
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +19,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -52,6 +49,7 @@ import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.baqiyat_ayah
 import tools.mo3ta.salo.generated.resources.baqiyat_ayah_ref
 import tools.mo3ta.salo.generated.resources.baqiyat_cycles_label
+import tools.mo3ta.salo.generated.resources.baqiyat_shuffle
 import tools.mo3ta.salo.generated.resources.baqiyat_tap_hint
 import tools.mo3ta.salo.generated.resources.challenge_baqiyat_title
 import tools.mo3ta.salo.generated.resources.dhikr_back_cd
@@ -66,6 +64,7 @@ import tools.mo3ta.salo.ui.dhikr.DhikrMilestoneCelebration
 
 
 private val BaqiyatGold = Color(0xFFF5D97A)
+private val BaqiyatGreen = Color(0xFF57C77A)
 
 @Composable
 fun BaqiyatScreen(
@@ -170,6 +169,13 @@ fun BaqiyatScreen(
                     viewModel.onPhraseTap(phrase)
                     analyticsManager.logAction(AppAnalytics.BAQIYAT_PHRASE_TAP)
                 },
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            ShuffleButton(
+                enabled = !state.isLoading,
+                onClick = { viewModel.onShuffle() },
             )
         }
     }
@@ -282,7 +288,7 @@ private fun PhraseGrid(
             phraseOrder.take(2).forEach { phrase ->
                 PhraseSlot(
                     phrase = phrase,
-                    visible = phrase !in tappedPhrases,
+                    tapped = phrase in tappedPhrases,
                     enabled = enabled,
                     onTap = onTap,
                     modifier = Modifier.weight(1f),
@@ -293,7 +299,7 @@ private fun PhraseGrid(
             phraseOrder.drop(2).take(2).forEach { phrase ->
                 PhraseSlot(
                     phrase = phrase,
-                    visible = phrase !in tappedPhrases,
+                    tapped = phrase in tappedPhrases,
                     enabled = enabled,
                     onTap = onTap,
                     modifier = Modifier.weight(1f),
@@ -302,7 +308,7 @@ private fun PhraseGrid(
         }
         PhraseSlot(
             phrase = BaqiyatPhrase.LaHawla,
-            visible = BaqiyatPhrase.LaHawla !in tappedPhrases,
+            tapped = BaqiyatPhrase.LaHawla in tappedPhrases,
             enabled = enabled,
             onTap = onTap,
             modifier = Modifier.fillMaxWidth(),
@@ -313,38 +319,74 @@ private fun PhraseGrid(
 @Composable
 private fun PhraseSlot(
     phrase: BaqiyatPhrase,
-    visible: Boolean,
+    tapped: Boolean,
     enabled: Boolean,
     onTap: (BaqiyatPhrase) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val backgroundColor by animateColorAsState(
+        targetValue = if (tapped) BaqiyatGreen.copy(alpha = 0.28f) else Color.White.copy(alpha = 0.07f),
+    )
+    val borderColor by animateColorAsState(
+        targetValue = if (tapped) BaqiyatGreen else BaqiyatGold.copy(alpha = 0.35f),
+    )
+    val textColor by animateColorAsState(
+        targetValue = if (tapped) BaqiyatGreen else MohamedLoversPalette.GoldGlow,
+    )
     Box(modifier = modifier.height(96.dp)) {
-        AnimatedVisibility(
-            visible = visible,
-            enter = scaleIn() + fadeIn(),
-            exit = scaleOut() + fadeOut(),
+        Surface(
+            onClick = { onTap(phrase) },
+            enabled = enabled,
+            modifier = Modifier.fillMaxSize(),
+            shape = RoundedCornerShape(18.dp),
+            color = backgroundColor,
+            border = BorderStroke(1.dp, borderColor),
         ) {
-            Surface(
-                onClick = { onTap(phrase) },
-                enabled = enabled,
-                modifier = Modifier.fillMaxSize(),
-                shape = RoundedCornerShape(18.dp),
-                color = Color.White.copy(alpha = 0.07f),
-                border = BorderStroke(1.dp, BaqiyatGold.copy(alpha = 0.35f)),
+            Box(
+                modifier = Modifier.fillMaxSize().padding(10.dp),
+                contentAlignment = Alignment.Center,
             ) {
-                Box(
-                    modifier = Modifier.fillMaxSize().padding(10.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = stringResource(phrase.labelRes),
-                        color = MohamedLoversPalette.GoldGlow,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.Center,
-                    )
-                }
+                Text(
+                    text = stringResource(phrase.labelRes),
+                    color = textColor,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                )
             }
+        }
+    }
+}
+
+@Composable
+private fun ShuffleButton(
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        shape = RoundedCornerShape(50),
+        color = Color.White.copy(alpha = 0.06f),
+        border = BorderStroke(1.dp, BaqiyatGold.copy(alpha = 0.3f)),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Shuffle,
+                contentDescription = null,
+                tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.8f),
+                modifier = Modifier.height(18.dp).width(18.dp),
+            )
+            Text(
+                text = stringResource(Res.string.baqiyat_shuffle),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+            )
         }
     }
 }
