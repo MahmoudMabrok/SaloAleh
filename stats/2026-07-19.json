@@ -1,0 +1,125 @@
+{
+  "allTimeSalawat": 1495724,
+  "weekSalawat": 97012,
+  "todaySalawat": 34392,
+  "activePlayers": 180,
+  "countriesCount": 15,
+  "countries": [
+    "CF",
+    "DZ",
+    "EG",
+    "ET",
+    "GM",
+    "GN",
+    "IQ",
+    "IT",
+    "LY",
+    "MA",
+    "MR",
+    "SA",
+    "SD",
+    "TR",
+    "YE"
+  ],
+  "topScore": 12445,
+  "roundKey": "2026-07-24",
+  "leaderboard": [
+    {
+      "countryCode": "EG",
+      "dailyBadge": "crescent",
+      "nickname": "أميمة جبر",
+      "rank": 1,
+      "rankChange": "same",
+      "roundStreak": 3,
+      "score": 12405,
+      "uid": "e477222c0701dd0f1939150e456079f547c978120b2eaf3977fbcfb14349a880"
+    },
+    {
+      "countryCode": "IQ",
+      "nickname": "أيه",
+      "rank": 2,
+      "rankChange": "same",
+      "score": 11173,
+      "uid": "cf3399ac165ebe96bdb0c712e288129296e6ce4ee0902c0627dfe2f06cdbc7d0"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "crescent",
+      "nickname": "يونس",
+      "rank": 3,
+      "rankChange": "same",
+      "roundStreak": 3,
+      "score": 9458,
+      "uid": "5a4b1d0ed314c539aefe3fedeb07054b2acf361dd98189761e80e047fbf80305"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "nickname": "عبدالله محمد",
+      "rank": 4,
+      "rankChange": "same",
+      "roundStreak": 3,
+      "score": 6319,
+      "uid": "9a8d47a5f46688edcc715431637456c4753fe8e0020810a09a560afc7026b756"
+    },
+    {
+      "countryCode": "IQ",
+      "nickname": "أيه",
+      "rank": 5,
+      "rankChange": "same",
+      "roundStreak": 3,
+      "score": 5422,
+      "uid": "838b86640799db5aa260318e527cb827e97995cc4a736f1d9acbd865f61e68c5"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "tasbih",
+      "nickname": "ندي",
+      "rank": 6,
+      "rankChange": "same",
+      "roundStreak": 3,
+      "score": 4838,
+      "uid": "0926210745f2a34cafa7af727ac4edfed0136dded6fa21820ae9dbfce25be04a"
+    },
+    {
+      "countryCode": "EG",
+      "nickname": "اميرة سيد",
+      "rank": 7,
+      "rankChange": "same",
+      "roundStreak": 3,
+      "score": 4516,
+      "uid": "e2744a86b923ccdcf606c32dd25fce0d1052ac3a597d6c59f172ae468a2d04d6"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "crescent",
+      "isSupporter": true,
+      "nickname": "f8f48a",
+      "rank": 8,
+      "rankChange": "same",
+      "roundStreak": 3,
+      "score": 4190,
+      "uid": "d37ab9ff8d45a9931d24389990545bdb773791e2873b2d23534c26bdcef8f48a"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "crescent",
+      "nickname": "أحمد الكتاتني",
+      "rank": 9,
+      "rankChange": "same",
+      "score": 3001,
+      "uid": "f1212054cfcbb5d4c79dc6fbfce8992189402e067794f7cc326722541c41b7d2"
+    },
+    {
+      "countryCode": "SA",
+      "dailyBadge": "sprout",
+      "nickname": "M.A.L",
+      "rank": 10,
+      "rankChange": "same",
+      "roundStreak": 2,
+      "score": 2661,
+      "uid": "092d20eeafb6b68719e19fcd41f072811d333b4f561862f7b13734d0d633db00"
+    }
+  ],
+  "updatedAt": "2026-07-19T20:58:10.411Z"
+}
