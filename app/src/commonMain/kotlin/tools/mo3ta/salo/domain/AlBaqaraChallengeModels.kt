@@ -7,6 +7,12 @@ package tools.mo3ta.salo.domain
  */
 const val ALBAQARA_CHALLENGE_DAILY_GOAL = 1
 
+/**
+ * Surah Al-Baqara spans 48 pages of the Mushaf, so a single completed reading is,
+ * by definition, 48 Quran pages. Crediting a reading to the Quran challenge adds this many.
+ */
+const val ALBAQARA_PAGE_COUNT = 48
+
 data class AlBaqaraChallengeDayStats(
     val rank: Int = 0,
     val participantCount: Int = 0,

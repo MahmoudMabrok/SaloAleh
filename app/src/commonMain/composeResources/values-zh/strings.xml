@@ -174,6 +174,12 @@
     <string name="albaqara_leaderboard_title">黄牛章诵读领先者</string>
     <string name="albaqara_leaderboard_rank_new">新</string>
     <string name="albaqara_leaderboard_empty">暂无诵读者</string>
+    <string name="albaqara_quran_credit_title">将黄牛章的页数计入《古兰经》挑战？</string>
+    <string name="albaqara_quran_credit_body">诵读黄牛章相当于《古兰经》%1$d 页。如果你已在《古兰经》挑战中记录，请忽略此提示，以免重复计算。</string>
+    <string name="albaqara_quran_credit_current">当前</string>
+    <string name="albaqara_quran_credit_after">添加后</string>
+    <string name="albaqara_quran_credit_confirm">是的，添加 %1$d 页</string>
+    <string name="albaqara_quran_credit_dismiss">已经记录过了</string>
 
     <string name="quran_back_cd">返回</string>
     <string name="quran_phrase">我的族人已经抛弃了这部古兰经</string>

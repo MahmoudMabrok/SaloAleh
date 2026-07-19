@@ -30,16 +30,16 @@ private const val UPDATED_AT_KEY = "updatedAt"
 private const val PARTICIPANT_COUNT_KEY = "participantCount"
 private const val TOTAL_TODAY_QURAN_KEY = "totalTodayQuran"
 
-class QuranChallengeFirebaseClient(
+open class QuranChallengeFirebaseClient(
     private val mirror: FirestoreMirror,
     private val analyticsManager: AnalyticsManager,
 ) {
 
     private val log = Logger.withTag("QuranChallengeFirebase")
 
-    fun isConfigured(): Boolean = runCatching { Firebase.database }.isSuccess
+    open fun isConfigured(): Boolean = runCatching { Firebase.database }.isSuccess
 
-    suspend fun writeUserDay(
+    open suspend fun writeUserDay(
         dateKey: String,
         uid: String,
         count: Int,
@@ -82,7 +82,7 @@ class QuranChallengeFirebaseClient(
         }
     }
 
-    suspend fun fetchUserCount(dateKey: String, uid: String): Result<Int?> {
+    open suspend fun fetchUserCount(dateKey: String, uid: String): Result<Int?> {
         log.d { "fetchUserCount[$dateKey/$uid]" }
         return runCatching {
             val snapshot = Firebase.database.reference(userPath(dateKey, uid))

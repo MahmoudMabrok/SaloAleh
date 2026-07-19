@@ -17,4 +17,9 @@ data class AlBaqaraChallengeUiState(
     val leaderboard: List<AlBaqaraLeaderboardEntry> = emptyList(),
     val isLeaderboardLoading: Boolean = false,
     val currentUid: String = "",
+    // Quran-credit prompt: offered after each reading so the 48 pages of Al-Baqara
+    // can be added to the Quran challenge.
+    val showQuranCreditDialog: Boolean = false,
+    val quranTodayCount: Int = 0,
+    val isCreditingQuran: Boolean = false,
 )
