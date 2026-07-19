@@ -87,6 +87,14 @@ class ChallengeBadgeStore(private val settings: Settings) {
     fun getBestStreak(challenge: ChallengeType): Int =
         settings.getInt(bestStreakKey(challenge), 0)
 
+    /** Whether the user did any activity for [challenge] on [date] — i.e. participated that day. */
+    fun wasActiveOn(challenge: ChallengeType, date: LocalDate): Boolean =
+        settings.getStringOrNull(lastActiveKey(challenge))?.let { LocalDate.parse(it) } == date
+
+    /** The challenges the user participated in on [today], for marking their cards. */
+    fun getActiveChallenges(today: LocalDate): Set<ChallengeType> =
+        ChallengeType.entries.filterTo(mutableSetOf()) { wasActiveOn(it, today) }
+
     /** Live daily streaks for every challenge as of [today], for the achievements screen. */
     fun getCurrentStreaks(today: LocalDate): Map<ChallengeType, Int> =
         ChallengeType.entries.associateWith { getCurrentStreak(it, today) }

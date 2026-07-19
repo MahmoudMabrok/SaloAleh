@@ -5,7 +5,9 @@ import kotlinx.datetime.LocalDate
 import tools.mo3ta.salo.domain.ChallengeType
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class ChallengeBadgeStoreTest {
 
@@ -185,5 +187,45 @@ class ChallengeBadgeStoreTest {
         s.recordWin(ChallengeType.DHIKR, day)
         assertEquals(1, s.getWinCount(ChallengeType.DHIKR))
         assertEquals(0, s.getCurrentStreak(ChallengeType.DHIKR, day))
+    }
+
+    // ── today's participation ────────────────────────────────────────────────────
+    // Card border highlight: a challenge counts as participated only on its last active day.
+
+    @Test
+    fun activityToday_marksChallengeActiveToday() {
+        val s = store()
+        val day = LocalDate(2026, 7, 10)
+        s.recordActivity(ChallengeType.DHIKR, day)
+        assertTrue(s.wasActiveOn(ChallengeType.DHIKR, day))
+        assertEquals(setOf(ChallengeType.DHIKR), s.getActiveChallenges(day))
+    }
+
+    @Test
+    fun activityYesterday_notActiveToday() {
+        val s = store()
+        s.recordActivity(ChallengeType.DHIKR, LocalDate(2026, 7, 10))
+        val today = LocalDate(2026, 7, 11)
+        assertFalse(s.wasActiveOn(ChallengeType.DHIKR, today))
+        assertEquals(emptySet(), s.getActiveChallenges(today))
+        // The streak is still alive even though today has no activity yet.
+        assertEquals(1, s.getCurrentStreak(ChallengeType.DHIKR, today))
+    }
+
+    @Test
+    fun noActivityEver_nothingActiveToday() {
+        val s = store()
+        assertFalse(s.wasActiveOn(ChallengeType.DHIKR, LocalDate(2026, 7, 10)))
+        assertEquals(emptySet(), s.getActiveChallenges(LocalDate(2026, 7, 10)))
+    }
+
+    @Test
+    fun getActiveChallenges_collectsOnlyTodaysParticipants() {
+        val s = store()
+        val day = LocalDate(2026, 7, 10)
+        s.recordActivity(ChallengeType.DHIKR, day)
+        s.recordActivity(ChallengeType.ZABAD, day)
+        s.recordActivity(ChallengeType.BAQIYAT, LocalDate(2026, 7, 9))
+        assertEquals(setOf(ChallengeType.DHIKR, ChallengeType.ZABAD), s.getActiveChallenges(day))
     }
 }

@@ -40,8 +40,14 @@ class ChallengesViewModel(
     private val _streaks = MutableStateFlow(challengeBadgeStore.getCurrentStreaks(Clock.System.todayIn(cairoZone)))
     val streaks: StateFlow<Map<ChallengeType, Int>> = _streaks.asStateFlow()
 
+    // Challenges the user already participated in today (Cairo), for the card border highlight.
+    private val _participatedToday = MutableStateFlow(challengeBadgeStore.getActiveChallenges(Clock.System.todayIn(cairoZone)))
+    val participatedToday: StateFlow<Set<ChallengeType>> = _participatedToday.asStateFlow()
+
     fun onScreenEntered() {
-        _streaks.value = challengeBadgeStore.getCurrentStreaks(Clock.System.todayIn(cairoZone))
+        val today = Clock.System.todayIn(cairoZone)
+        _streaks.value = challengeBadgeStore.getCurrentStreaks(today)
+        _participatedToday.value = challengeBadgeStore.getActiveChallenges(today)
         viewModelScope.launch {
             val dateKey = Clock.System.todayIn(cairoZone).toString()
             val db = runCatching { Firebase.database }.getOrNull() ?: return@launch

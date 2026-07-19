@@ -92,6 +92,7 @@ private data class ChallengeItem(
     val accent: Color,
     val total: Int,
     val streak: Int = 0,
+    val participatedToday: Boolean = false,
     val onClick: () -> Unit,
 )
 
@@ -111,6 +112,7 @@ fun ChallengesScreen(
     val viewModel: ChallengesViewModel = koinViewModel()
     val totals by viewModel.totals.collectAsState()
     val streaks by viewModel.streaks.collectAsState()
+    val participatedToday by viewModel.participatedToday.collectAsState()
 
     LaunchedEffect(Unit) {
         analyticsManager.logView("ChallengesScreen")
@@ -125,6 +127,7 @@ fun ChallengesScreen(
             accent = Color(0xFF1F5C40),
             total = totals.ghars,
             streak = streaks[ChallengeType.GHARS] ?: 0,
+            participatedToday = ChallengeType.GHARS in participatedToday,
             onClick = {
                 analyticsManager.logAction(
                     AppAnalytics.OPEN_GHARS_CHALLENGE,
@@ -140,6 +143,7 @@ fun ChallengesScreen(
             accent = Color(0xFF7DD3A8),
             total = totals.dhikr,
             streak = streaks[ChallengeType.DHIKR] ?: 0,
+            participatedToday = ChallengeType.DHIKR in participatedToday,
             onClick = {
                 analyticsManager.logAction(
                     AppAnalytics.OPEN_DHIKR_REWARDS,
@@ -155,6 +159,7 @@ fun ChallengesScreen(
             accent = Color(0xFF2ED3C4),
             total = totals.zabad,
             streak = streaks[ChallengeType.ZABAD] ?: 0,
+            participatedToday = ChallengeType.ZABAD in participatedToday,
             onClick = {
                 analyticsManager.logAction(
                     AppAnalytics.OPEN_ZABAD_CHALLENGE,
@@ -170,6 +175,7 @@ fun ChallengesScreen(
             accent = Color(0xFFB68CE0),
             total = totals.baqiyat,
             streak = streaks[ChallengeType.BAQIYAT] ?: 0,
+            participatedToday = ChallengeType.BAQIYAT in participatedToday,
             onClick = {
                 analyticsManager.logAction(
                     AppAnalytics.OPEN_BAQIYAT_CHALLENGE,
@@ -185,6 +191,7 @@ fun ChallengesScreen(
             accent = Color(0xFFC08A3E),
             total = totals.istighfar,
             streak = streaks[ChallengeType.ISTIGHFAR] ?: 0,
+            participatedToday = ChallengeType.ISTIGHFAR in participatedToday,
             onClick = {
                 analyticsManager.logAction(
                     AppAnalytics.OPEN_ISTIGHFAR_CHALLENGE,
@@ -200,6 +207,7 @@ fun ChallengesScreen(
             accent = Color(0xFF1F7A5C),
             total = totals.quran,
             streak = streaks[ChallengeType.QURAN] ?: 0,
+            participatedToday = ChallengeType.QURAN in participatedToday,
             onClick = {
                 analyticsManager.logAction(
                     AppAnalytics.OPEN_QURAN_CHALLENGE,
@@ -290,7 +298,11 @@ private fun ChallengeCard(item: ChallengeItem) {
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         color = Color(0xFF101C33),
-        border = BorderStroke(1.dp, item.accent.copy(alpha = 0.22f)),
+        border = if (item.participatedToday) {
+            BorderStroke(2.dp, item.accent.copy(alpha = 0.85f))
+        } else {
+            BorderStroke(1.dp, item.accent.copy(alpha = 0.22f))
+        },
         tonalElevation = 0.dp,
     ) {
         Row(
