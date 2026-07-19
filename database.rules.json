@@ -532,7 +532,7 @@
               ".validate": "newData.isString() && (newData.val() === 'sprout' || newData.val() === 'heart' || newData.val() === 'tasbih' || newData.val() === 'dome' || newData.val() === 'crescent' || newData.val() === 'crown')"
             },
             "roundStreak": {
-              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10"
+              ".validate": "newData.isNumber() && newData.val() >= 0"
             },
             "isSupporter": {
               ".validate": "newData.isBoolean()"

@@ -8,7 +8,6 @@ Weekly salawat tap competition — Kotlin Multiplatform (Android + iOS) with Com
 |------|-------|
 | Package | `tools.mo3ta.salo` |
 | Firebase project | `kamapp-3b3ac` |
-| RTDB URL | `https://kamapp-3b3ac-default-rtdb.firebaseio.com` |
 | GitHub repo | `MahmoudMabrok/SaloAleh` |
 | Min SDK | Android 24 / iOS 15+ |
 | JDK | 17 |
