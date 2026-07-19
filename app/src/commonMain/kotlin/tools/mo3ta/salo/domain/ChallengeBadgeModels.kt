@@ -6,7 +6,7 @@ package tools.mo3ta.salo.domain
  * Regular tapping is uncapped; only these external batches are limited so a single
  * manual entry can't flood the leaderboard. Applied per challenge, resets each day.
  */
-const val CHALLENGE_MANUAL_DAILY_CAP = 10_000
+const val CHALLENGE_MANUAL_DAILY_CAP = 5_000
 
 /**
  * The daily challenges that award a repeatable achievement badge. A "win" is
