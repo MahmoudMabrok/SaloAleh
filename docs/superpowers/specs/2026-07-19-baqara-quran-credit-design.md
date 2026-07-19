@@ -56,6 +56,9 @@ state would also be set but never rendered.
 
 ### Credit path (order matters)
 
+The whole method runs under the ViewModel's existing `syncMutex` — see
+"Concurrent credits" below.
+
 1. **Fetch the Quran remote baseline** via `fetchUserCount`, then
    `updateRemoteBaseline`. This is the correctness constraint: without it, a
    stale local count overwrites a higher remote total.
@@ -64,13 +67,48 @@ state would also be set but never rendered.
 3. `challengeBadgeStore.recordActivity(ChallengeType.QURAN, today)` and
    `recordWin(...)` — 48 clears `QURAN_CHALLENGE_DAILY_GOAL` (1), so this earns
    the badge and keeps the Quran streak alive.
-4. `writeUserDay(...)` with the current streak; `onSyncSuccess` on success.
+4. **Only if step 1 succeeded**, `writeUserDay(...)` with the current streak;
+   `onSyncSuccess` on success.
+5. Refresh `quranTodayCount` from the store so a subsequent dialog is accurate.
+
+### Baseline fetch failure must not write
+
+`writeUserDay` is a blind overwrite — `updateChildren(COUNT_KEY to count)`, no
+transaction and no server-side max. So writing on a stale baseline destroys
+data: local 0, remote 30, credit 48 → writes 48, and the user loses 30 pages.
+
+Therefore **a failed baseline fetch skips the immediate write entirely.** The 48
+pages still land in the local pending ledger via `addToday`; the next visit to
+the Quran screen reconciles them through the normal
+`onScreenEntered` → `updateRemoteBaseline` → `onScreenLeft` path. This mirrors
+how the app already treats offline taps and loses nothing.
+
+### Concurrent credits
+
+`creditQuranPages` writes asynchronously, so without serialization two credits
+can corrupt the pending ledger: confirm dialog 1 → dismiss → tap → confirm
+dialog 2 while write 1 is in flight. Both call `addToday` (pending 96), then
+write 1's `onSyncSuccess` does `putInt(KEY_PENDING, 0)` and wipes write 2's 48.
+
+Guard with the ViewModel's existing `syncMutex`. It also guards Baqara's
+`onScreenLeft`, which is harmless — that write targets a different node, and
+serializing the two costs nothing. This is the same reason `QuranChallengeViewModel`
+wraps its own writes in a mutex.
 
 ### Keeping the before→after row fresh
 
 `onScreenEntered` reads `quranStore.todayCount` into UI state and refreshes it
-from remote in the background, so the dialog opens against an accurate number
-rather than a stale one.
+from remote in the background, so the dialog opens against an accurate number.
+
+`creditQuranPages` must also re-read it after crediting (step 5). Without that,
+the second reading's dialog still shows `30 → 78` instead of `78 → 126` —
+stale precisely when the row is doing its job.
+
+### Badge count on repeat credits
+
+`recordWin` is idempotent per Cairo day, so two credits in one day award **+1**
+Quran badge, not +2. Streak and activity are unaffected. This is intended, not a
+bug — it matches how every other challenge counts a daily win.
 
 ## State
 
@@ -100,13 +138,20 @@ Given a local Quran count of 0 and a remote count of 30, crediting 48 must write
 78 — not 48. This is the failure mode that silently destroys user data, and it
 is the reason the second-ViewModel approach was rejected.
 
+The second data-loss case: **a failed baseline fetch must not write.** Given a
+remote count of 30 and a `fetchUserCount` that fails, crediting 48 must issue no
+`writeUserDay` at all — the pages stay pending locally. Asserting on the absence
+of the write is the point.
+
 Supporting cases:
 
 - Credit adds exactly 48 to today's Quran total
 - Credit records a Quran win and keeps the streak alive
 - Dismissing leaves the Quran count untouched
 - `onUndoTap` after a credit reduces Baqara but not the Quran count
-- Two readings, both credited, yield 96 pages
+- Two readings, both credited, yield 96 pages **and** `quranTodayCount` updates
+  between the two dialogs (48 after the first, not still 0)
+- Two credits in one day award +1 badge, not +2
 
 ## Out of scope
 
