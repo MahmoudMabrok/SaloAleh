@@ -498,7 +498,7 @@
           ".indexOn": ["totalCount"],
           "$uid": {
             ".write": "newData.child('uid').val() === $uid",
-            ".validate": "newData.hasChildren(['uid','totalCount','updatedAt','countryCode'])",
+            ".validate": "newData.hasChildren(['uid'])",
 
             "uid": {
               ".validate": "newData.isString() && newData.val() === $uid"

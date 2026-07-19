@@ -228,7 +228,7 @@ class MohamedLoversFirebaseClient(
         log.d { "incrementExternalCount[$roundKey/$uid] count=$count" }
         return runCatching {
             Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(
-                mapOf(TOTAL_EXTERNAL_KEY to ServerValue.increment(count.toDouble()))
+                playerPatch(uid, TOTAL_EXTERNAL_KEY to ServerValue.increment(count.toDouble()))
             )
         }.also { result ->
             result.fold(
@@ -254,7 +254,7 @@ class MohamedLoversFirebaseClient(
             val newTotal = (current - amount).coerceAtLeast(0)
             val applied = current - newTotal
             if (applied > 0) {
-                playerRef.updateChildren(mapOf(TOTAL_COUNT_KEY to newTotal))
+                playerRef.updateChildren(playerPatch(uid, TOTAL_COUNT_KEY to newTotal))
             }
             newTotal to applied
         }.also { result ->
@@ -275,7 +275,7 @@ class MohamedLoversFirebaseClient(
         log.d { "resetPlayerScore[$roundKey/$uid]" }
         return runCatching {
             Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(
-                mapOf(TOTAL_COUNT_KEY to 0)
+                playerPatch(uid, TOTAL_COUNT_KEY to 0)
             )
         }.also { result ->
             result.fold(
@@ -392,7 +392,7 @@ class MohamedLoversFirebaseClient(
         log.d { "setScoreMasked[$roundKey/$uid] masked=$masked" }
         return runCatching {
             Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(
-                mapOf(SCORE_MASKED_KEY to masked)
+                playerPatch(uid, SCORE_MASKED_KEY to masked)
             )
         }.also { result ->
             result.fold(
@@ -412,7 +412,7 @@ class MohamedLoversFirebaseClient(
         log.d { "setSupporter[$roundKey/$uid] supporter=$supporter" }
         return runCatching {
             Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(
-                mapOf(IS_SUPPORTER_KEY to supporter)
+                playerPatch(uid, IS_SUPPORTER_KEY to supporter)
             )
         }.also { result ->
             result.fold(
@@ -432,7 +432,7 @@ class MohamedLoversFirebaseClient(
         log.d { "writeDailyBadge[$roundKey/$uid] badge=$badgeKey" }
         return runCatching {
             Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(
-                mapOf(DAILY_BADGE_KEY to badgeKey)
+                playerPatch(uid, DAILY_BADGE_KEY to badgeKey)
             )
         }.also { result ->
             result.fold(
@@ -455,7 +455,7 @@ class MohamedLoversFirebaseClient(
         log.d { "writeRoundStreak[$roundKey/$uid] streak=$value" }
         return runCatching {
             Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(
-                mapOf(ROUND_STREAK_KEY to value)
+                playerPatch(uid, ROUND_STREAK_KEY to value)
             )
         }.also { result ->
             result.fold(
@@ -526,7 +526,7 @@ class MohamedLoversFirebaseClient(
         val value = nickname.ifBlank { "" }
         return runCatching {
             Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(
-                mapOf(NICKNAME_KEY to value)
+                playerPatch(uid, NICKNAME_KEY to value)
             )
         }.also { result ->
             result.fold(
@@ -672,6 +672,16 @@ class MohamedLoversFirebaseClient(
             )
         }
     }
+
+    /**
+     * Every partial write to a player node must carry [UID_KEY]. RTDB evaluates the node's
+     * `.write` rule (`newData.child('uid').val() === $uid`) against the merged post-write
+     * state, so a patch that omits `uid` is denied whenever the node does not exist yet —
+     * i.e. any user who has not tapped in the current round. Patches that omit `totalCount`
+     * stay invisible to the server aggregates, which all require it.
+     */
+    private fun playerPatch(uid: String, vararg fields: Pair<String, Any?>): Map<String, Any?> =
+        mapOf(UID_KEY to uid, *fields)
 
     private fun playersPath(roundKey: String) = "$ROOT_PATH/$roundKey/$PLAYERS_PATH"
     private fun leaderboardPath(roundKey: String, daily: Boolean = false): String {
