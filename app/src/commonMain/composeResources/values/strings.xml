@@ -199,6 +199,12 @@
     <string name="albaqara_leaderboard_title">المتصدرون في قراءة البقرة</string>
     <string name="albaqara_leaderboard_rank_new">جديد</string>
     <string name="albaqara_leaderboard_empty">لا يوجد قرّاء بعد</string>
+    <string name="albaqara_quran_credit_title">نضيف صفحات البقرة إلى تحدّي القرآن؟</string>
+    <string name="albaqara_quran_credit_body">قراءتك لسورة البقرة تعادل %1$d صفحة من المصحف. إن كنت قد سجّلتها في تحدّي القرآن فتجاهل هذه الرسالة حتى لا تُحتسب مرّتين.</string>
+    <string name="albaqara_quran_credit_current">الآن</string>
+    <string name="albaqara_quran_credit_after">بعد الإضافة</string>
+    <string name="albaqara_quran_credit_confirm">نعم، أضِف %1$d صفحة</string>
+    <string name="albaqara_quran_credit_dismiss">سجّلتها بالفعل</string>
 
     <string name="quran_back_cd">رجوع</string>
     <string name="quran_phrase">إِنَّ قَوْمِي اتَّخَذُوا هَٰذَا الْقُرْآنَ مَهْجُورًا</string>

@@ -174,6 +174,12 @@
     <string name="albaqara_leaderboard_title">سورۃ البقرہ پڑھنے میں سرفہرست</string>
     <string name="albaqara_leaderboard_rank_new">نیا</string>
     <string name="albaqara_leaderboard_empty">ابھی کوئی قاری نہیں</string>
+    <string name="albaqara_quran_credit_title">بقرہ کے صفحات قرآن چیلنج میں شامل کریں؟</string>
+    <string name="albaqara_quran_credit_body">سورہ بقرہ کی تلاوت مصحف کے %1$d صفحات کے برابر ہے۔ اگر آپ اسے قرآن چیلنج میں پہلے ہی درج کر چکے ہیں تو اس پیغام کو نظرانداز کریں تاکہ دوہرا شمار نہ ہو۔</string>
+    <string name="albaqara_quran_credit_current">اب</string>
+    <string name="albaqara_quran_credit_after">اضافے کے بعد</string>
+    <string name="albaqara_quran_credit_confirm">ہاں، %1$d صفحات شامل کریں</string>
+    <string name="albaqara_quran_credit_dismiss">پہلے ہی درج کر چکا ہوں</string>
 
     <string name="quran_back_cd">واپس</string>
     <string name="quran_phrase">میری قوم نے اس قرآن کو چھوڑ دیا ہے</string>

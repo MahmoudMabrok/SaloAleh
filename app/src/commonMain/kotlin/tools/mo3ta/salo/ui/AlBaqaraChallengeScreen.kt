@@ -63,6 +63,7 @@ import tools.mo3ta.salo.ui.albaqara.AlBaqaraColors
 import tools.mo3ta.salo.ui.albaqara.AlBaqaraHeroBackground
 import tools.mo3ta.salo.ui.albaqara.AlBaqaraLeaderboardSheet
 import tools.mo3ta.salo.ui.albaqara.AlBaqaraProgressRing
+import tools.mo3ta.salo.ui.albaqara.AlBaqaraQuranCreditDialog
 import tools.mo3ta.salo.ui.albaqara.AlBaqaraSpacing
 
 @Composable
@@ -276,6 +277,15 @@ fun AlBaqaraChallengeScreen(
             participantCount = state.participantCount,
             isLoading = state.isLeaderboardLoading,
             onDismiss = { viewModel.onLeaderboardClosed() },
+        )
+    }
+
+    if (state.showQuranCreditDialog) {
+        AlBaqaraQuranCreditDialog(
+            quranTodayCount = state.quranTodayCount,
+            isCrediting = state.isCreditingQuran,
+            onConfirm = { viewModel.creditQuranPages() },
+            onDismiss = { viewModel.onQuranCreditDismissed() },
         )
     }
 }

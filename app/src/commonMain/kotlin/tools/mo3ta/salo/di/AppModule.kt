@@ -96,7 +96,7 @@ val appModule = module {
     viewModel { MohamedLoversViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { DhikrChallengeViewModel(get(), get(), get(), get(), get()) }
     viewModel { IstighfarChallengeViewModel(get(), get(), get(), get(), get()) }
-    viewModel { AlBaqaraChallengeViewModel(get(), get(), get(), get()) }
+    viewModel { AlBaqaraChallengeViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { ZabadChallengeViewModel(get(), get(), get(), get(), get()) }
     viewModel { GharsChallengeViewModel(get(), get(), get(), get(), get()) }
     viewModel { QuranChallengeViewModel(get(), get(), get(), get(), get()) }

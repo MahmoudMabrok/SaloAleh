@@ -199,6 +199,12 @@
     <string name="albaqara_leaderboard_title">Al-Baqara Reading Leaders</string>
     <string name="albaqara_leaderboard_rank_new">new</string>
     <string name="albaqara_leaderboard_empty">No readers yet</string>
+    <string name="albaqara_quran_credit_title">Add Al-Baqara pages to the Quran challenge?</string>
+    <string name="albaqara_quran_credit_body">Reading Surah Al-Baqara equals %1$d pages of the Mushaf. If you already logged them in the Quran challenge, dismiss this so they aren\'t counted twice.</string>
+    <string name="albaqara_quran_credit_current">Now</string>
+    <string name="albaqara_quran_credit_after">After</string>
+    <string name="albaqara_quran_credit_confirm">Yes, add %1$d pages</string>
+    <string name="albaqara_quran_credit_dismiss">Already logged it</string>
 
     <string name="quran_back_cd">Back</string>
     <string name="quran_phrase">My people have abandoned this Quran</string>
