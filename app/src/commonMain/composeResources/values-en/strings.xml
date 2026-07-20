@@ -77,6 +77,7 @@
     <string name="challenges_title">Challenges</string>
     <string name="challenges_subtitle">Choose a deed and compete in it, so you may be among its people before Allah.</string>
     <string name="challenges_cairo_time_note">All timings are based on Cairo time</string>
+    <string name="challenges_day_countdown_label">Today ends in</string>
     <string name="challenge_dhikr_title">اهل لا اله الا الله</string>
     <string name="challenge_dhikr_body">How many necks will you free today?</string>
     <string name="challenge_ten_days_body">Track the Ten Days deeds: dhikr, takbeer, fasting, and charity.</string>

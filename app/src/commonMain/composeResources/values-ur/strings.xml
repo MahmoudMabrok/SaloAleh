@@ -75,6 +75,7 @@
     <string name="challenges_title">چیلنجز</string>
     <string name="challenges_subtitle">اپنے لیے کوئی عمل چنیں اور اس میں مقابلہ کریں تاکہ اللہ کے ہاں اس کے اہل میں سے ہو جائیں۔</string>
     <string name="challenges_cairo_time_note">تمام اوقات قاہرہ ٹائم کے مطابق ہیں</string>
+    <string name="challenges_day_countdown_label">آج ختم ہونے میں</string>
     <string name="challenge_dhikr_title">اهل لا اله الا الله</string>
     <string name="challenge_dhikr_body">آج آپ کتنی گردنیں آزاد کریں گے؟</string>
     <string name="challenge_ten_days_body">ذوالحجہ کے دس دنوں کے اذکار، تکبیر، روزہ اور صدقہ درج کریں۔</string>

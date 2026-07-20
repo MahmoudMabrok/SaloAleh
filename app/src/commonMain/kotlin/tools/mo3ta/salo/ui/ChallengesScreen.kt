@@ -33,16 +33,30 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atTime
+import kotlinx.datetime.plus
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
@@ -70,6 +84,10 @@ import tools.mo3ta.salo.generated.resources.challenges_all_lovers_total
 import tools.mo3ta.salo.generated.resources.challenges_overall_total
 import tools.mo3ta.salo.generated.resources.challenges_today_total_inline
 import tools.mo3ta.salo.generated.resources.challenges_cairo_time_note
+import tools.mo3ta.salo.generated.resources.challenges_day_countdown_label
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_hour
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_minute
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_second
 import tools.mo3ta.salo.generated.resources.challenges_subtitle
 import tools.mo3ta.salo.generated.resources.challenges_title
 import tools.mo3ta.salo.generated.resources.heroes_chip_label
@@ -302,6 +320,8 @@ fun ChallengesScreen(
                     color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.45f),
                     fontSize = 11.sp,
                 )
+                Spacer(Modifier.height(10.dp))
+                DayCountdownCard()
                 Spacer(Modifier.height(8.dp))
             }
         }
@@ -380,6 +400,88 @@ private fun HeroOfYesterdayCard(onClick: () -> Unit) {
                 tint = accent.copy(alpha = 0.6f),
             )
         }
+    }
+}
+
+/**
+ * Live countdown to the end of the current Cairo day (midnight Africa/Cairo), when all daily
+ * challenges reset. Ticks every second while the screen is visible.
+ */
+@Composable
+private fun DayCountdownCard() {
+    val cairoZone = remember { TimeZone.of("Africa/Cairo") }
+    var remainingSeconds by remember { mutableStateOf(0L) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            val now = Clock.System.now()
+            val today = now.toLocalDateTime(cairoZone).date
+            val endOfDay = today.plus(1, DateTimeUnit.DAY).atTime(0, 0).toInstant(cairoZone)
+            val diff = (endOfDay - now).inWholeSeconds
+            remainingSeconds = if (diff > 0) diff else 0
+            delay(1000)
+        }
+    }
+
+    val hours = (remainingSeconds / 3600).toInt()
+    val minutes = ((remainingSeconds % 3600) / 60).toInt()
+    val seconds = (remainingSeconds % 60).toInt()
+
+    val accent = MohamedLoversPalette.GoldHighlight
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = Color(0xFF101C33),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.25f)),
+        tonalElevation = 0.dp,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = stringResource(Res.string.challenges_day_countdown_label),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+            )
+            Spacer(Modifier.height(8.dp))
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+                ) {
+                    CountdownUnit(hours, stringResource(Res.string.mohamed_lovers_countdown_hour), accent)
+                    CountdownUnit(minutes, stringResource(Res.string.mohamed_lovers_countdown_minute), accent)
+                    CountdownUnit(seconds, stringResource(Res.string.mohamed_lovers_countdown_second), accent)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CountdownUnit(value: Int, label: String, accent: Color) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Surface(
+            shape = RoundedCornerShape(10.dp),
+            color = accent.copy(alpha = 0.12f),
+        ) {
+            Text(
+                text = value.toString().padStart(2, '0'),
+                color = accent,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = label,
+            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.6f),
+            fontSize = 10.sp,
+        )
     }
 }
 
