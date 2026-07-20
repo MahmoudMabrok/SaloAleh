@@ -711,10 +711,10 @@
     <string name="heart_index_dialog_dismiss">فهمت</string>
 
     <!-- Heroes / champions of the day -->
-    <string name="heroes_chip_label">أبطال</string>
-    <string name="heroes_chip_content_description">أبطال</string>
-    <string name="heroes_sheet_title">أبطال اليوم 🌟</string>
-    <string name="heroes_sheet_subtitle">المتصدرون في تحدياتنا اليوم</string>
+    <string name="heroes_chip_label">بطل الأمس</string>
+    <string name="heroes_chip_content_description">بطل الأمس</string>
+    <string name="heroes_sheet_title">بطل الأمس 🌟</string>
+    <string name="heroes_sheet_subtitle">المتصدرون في تحدياتنا أمس</string>
     <string name="heroes_challenge_salawat">الصلاة على النبي ﷺ</string>
     <string name="heroes_challenge_dhikr">أهل لا إله إلا الله</string>
     <string name="heroes_challenge_baqiyat">الباقيات الصالحات</string>

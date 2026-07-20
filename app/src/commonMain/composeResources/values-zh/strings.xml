@@ -661,10 +661,10 @@
     <string name="heart_refill_nudge">为先知 ﷺ 祝祷，重新填满你的心</string>
 
     <!-- Heroes / champions of the day -->
-    <string name="heroes_chip_label">英雄</string>
-    <string name="heroes_chip_content_description">英雄</string>
-    <string name="heroes_sheet_title">今日英雄 🌟</string>
-    <string name="heroes_sheet_subtitle">今日各项挑战的领先者</string>
+    <string name="heroes_chip_label">昨日英雄</string>
+    <string name="heroes_chip_content_description">昨日英雄</string>
+    <string name="heroes_sheet_title">昨日英雄 🌟</string>
+    <string name="heroes_sheet_subtitle">昨日各项挑战的领先者</string>
     <string name="heroes_challenge_salawat">为先知 ﷺ 祝祷</string>
     <string name="heroes_challenge_dhikr">اهل لا اله الا الله</string>
     <string name="heroes_challenge_baqiyat">永恒的善功</string>

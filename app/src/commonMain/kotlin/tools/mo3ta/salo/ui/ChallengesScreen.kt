@@ -72,11 +72,14 @@ import tools.mo3ta.salo.generated.resources.challenges_today_total_inline
 import tools.mo3ta.salo.generated.resources.challenges_cairo_time_note
 import tools.mo3ta.salo.generated.resources.challenges_subtitle
 import tools.mo3ta.salo.generated.resources.challenges_title
+import tools.mo3ta.salo.generated.resources.heroes_chip_label
+import tools.mo3ta.salo.generated.resources.heroes_sheet_subtitle
 import tools.mo3ta.salo.generated.resources.takbeer_session_title
 import tools.mo3ta.salo.generated.resources.tendays_title
 import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.presentation.ChallengesViewModel
 import tools.mo3ta.salo.ui.components.ChallengeStreakChip
+import tools.mo3ta.salo.ui.components.HeroesSheet
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 
 private fun formatNumber(value: Int): String {
@@ -121,6 +124,9 @@ fun ChallengesScreen(
     val overallTotals by viewModel.overallTotals.collectAsState()
     val streaks by viewModel.streaks.collectAsState()
     val participatedToday by viewModel.participatedToday.collectAsState()
+    val heroesBoard by viewModel.heroesBoard.collectAsState()
+    val heroesLoading by viewModel.heroesLoading.collectAsState()
+    val showHeroesSheet by viewModel.showHeroesSheet.collectAsState()
 
     LaunchedEffect(Unit) {
         analyticsManager.logView("ChallengesScreen")
@@ -300,8 +306,79 @@ fun ChallengesScreen(
             }
         }
 
+        if (heroesBoard != null) {
+            item {
+                HeroOfYesterdayCard(onClick = { viewModel.openHeroesSheet() })
+            }
+        }
+
         items(items) { item ->
             ChallengeCard(item = item)
+        }
+    }
+
+    if (showHeroesSheet) {
+        HeroesSheet(
+            board = heroesBoard,
+            isLoading = heroesLoading,
+            onDismiss = { viewModel.dismissHeroesSheet() },
+        )
+    }
+}
+
+@Composable
+private fun HeroOfYesterdayCard(onClick: () -> Unit) {
+    val accent = MohamedLoversPalette.GoldHighlight
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = Color(0xFF1A2338),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.35f)),
+        tonalElevation = 0.dp,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(accent.copy(alpha = 0.15f), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.EmojiEvents,
+                    contentDescription = null,
+                    tint = accent,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(Res.string.heroes_chip_label),
+                    color = accent,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = stringResource(Res.string.heroes_sheet_subtitle),
+                    color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.58f),
+                    fontSize = 12.sp,
+                    lineHeight = 17.sp,
+                )
+            }
+
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = accent.copy(alpha = 0.6f),
+            )
         }
     }
 }

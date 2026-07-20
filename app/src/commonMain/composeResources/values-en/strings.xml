@@ -699,10 +699,10 @@
     <string name="heart_refill_nudge">Refill your heart — send salawat upon the Prophet ﷺ</string>
 
     <!-- Heroes / champions of the day -->
-    <string name="heroes_chip_label">Heroes</string>
-    <string name="heroes_chip_content_description">Heroes</string>
-    <string name="heroes_sheet_title">Today\'s heroes 🌟</string>
-    <string name="heroes_sheet_subtitle">The champions of our challenges today</string>
+    <string name="heroes_chip_label">Hero of yesterday</string>
+    <string name="heroes_chip_content_description">Hero of yesterday</string>
+    <string name="heroes_sheet_title">Hero of yesterday 🌟</string>
+    <string name="heroes_sheet_subtitle">The champions of our challenges yesterday</string>
     <string name="heroes_challenge_salawat">Salawat upon the Prophet ﷺ</string>
     <string name="heroes_challenge_dhikr">اهل لا اله الا الله</string>
     <string name="heroes_challenge_baqiyat">Everlasting Good Deeds</string>

@@ -16,6 +16,8 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import tools.mo3ta.salo.data.engagement.ChallengeBadgeStore
 import tools.mo3ta.salo.domain.ChallengeType
+import tools.mo3ta.salo.domain.HeroesBoard
+import tools.mo3ta.salo.domain.parseHeroesBoard
 
 data class ChallengesTotals(
     val dhikr: Int = 0,
@@ -53,6 +55,26 @@ class ChallengesViewModel(
     private val _overallTotals = MutableStateFlow(ChallengesOverallTotals())
     val overallTotals: StateFlow<ChallengesOverallTotals> = _overallTotals.asStateFlow()
 
+    // "Hero of yesterday" — the day's champions across every challenge, read-only from
+    // RTDB `mohamed_lovers/heroes` (server-written, overwritten daily). Prefetched on screen
+    // entry so the sheet opens instantly; null when there are no champions yet.
+    private val _heroesBoard = MutableStateFlow<HeroesBoard?>(null)
+    val heroesBoard: StateFlow<HeroesBoard?> = _heroesBoard.asStateFlow()
+
+    private val _heroesLoading = MutableStateFlow(false)
+    val heroesLoading: StateFlow<Boolean> = _heroesLoading.asStateFlow()
+
+    private val _showHeroesSheet = MutableStateFlow(false)
+    val showHeroesSheet: StateFlow<Boolean> = _showHeroesSheet.asStateFlow()
+
+    fun openHeroesSheet() {
+        _showHeroesSheet.value = true
+    }
+
+    fun dismissHeroesSheet() {
+        _showHeroesSheet.value = false
+    }
+
     // Per-challenge live daily streaks (local, synchronous) shown as a pill on each card.
     private val _streaks = MutableStateFlow(challengeBadgeStore.getCurrentStreaks(Clock.System.todayIn(cairoZone)))
     val streaks: StateFlow<Map<ChallengeType, Int>> = _streaks.asStateFlow()
@@ -65,9 +87,15 @@ class ChallengesViewModel(
         val today = Clock.System.todayIn(cairoZone)
         _streaks.value = challengeBadgeStore.getCurrentStreaks(today)
         _participatedToday.value = challengeBadgeStore.getActiveChallenges(today)
+        _heroesLoading.value = _heroesBoard.value == null
         viewModelScope.launch {
             val dateKey = Clock.System.todayIn(cairoZone).toString()
-            val db = runCatching { Firebase.database }.getOrNull() ?: return@launch
+            val db = runCatching { Firebase.database }.getOrNull() ?: run {
+                _heroesLoading.value = false
+                return@launch
+            }
+
+            val heroes = async { readHeroes(db) }
 
             val dhikr = async { readTotal(db, "100_challenge/$dateKey/totalTodayDhikr") }
             val baqiyat = async { readTotal(db, "baqiyat_saliha/$dateKey/totalTodayBaqiyat") }
@@ -109,7 +137,17 @@ class ChallengesViewModel(
                     albaqara = albaqaraAll.await(),
                 )
             }
+
+            _heroesBoard.value = heroes.await()
+            _heroesLoading.value = false
         }
+    }
+
+    private suspend fun readHeroes(db: dev.gitlive.firebase.database.FirebaseDatabase): HeroesBoard? {
+        return runCatching {
+            val snapshot = db.reference("mohamed_lovers/heroes").valueEvents.first()
+            if (!snapshot.exists) null else parseHeroesBoard(snapshot.value)?.takeIf { it.hasAny }
+        }.getOrNull()
     }
 
     private suspend fun readTotal(db: dev.gitlive.firebase.database.FirebaseDatabase, path: String): Int {
