@@ -464,14 +464,9 @@
           },
           "medals": {
             ".read": true,
-            "gold": {
-              ".validate": "newData.isNumber() && newData.val() >= 0"
-            },
-            "silver": {
-              ".validate": "newData.isNumber() && newData.val() >= 0"
-            },
-            "bronze": {
-              ".validate": "newData.isNumber() && newData.val() >= 0"
+            ".validate": false,
+            "$medalType": {
+              ".validate": false
             }
           },
           "purchases": {
