@@ -661,10 +661,10 @@
     <string name="heart_refill_nudge">اپنے دل کو نبی ﷺ پر درود بھیج کر بھر دیں</string>
 
     <!-- Heroes / champions of the day -->
-    <string name="heroes_chip_label">ہیروز</string>
-    <string name="heroes_chip_content_description">ہیروز</string>
-    <string name="heroes_sheet_title">آج کے ہیروز 🌟</string>
-    <string name="heroes_sheet_subtitle">آج ہمارے چیلنجز میں سرفہرست</string>
+    <string name="heroes_chip_label">کل کا ہیرو</string>
+    <string name="heroes_chip_content_description">کل کا ہیرو</string>
+    <string name="heroes_sheet_title">کل کا ہیرو 🌟</string>
+    <string name="heroes_sheet_subtitle">کل ہمارے چیلنجز میں سرفہرست</string>
     <string name="heroes_challenge_salawat">نبی ﷺ پر درود</string>
     <string name="heroes_challenge_dhikr">اهل لا اله الا الله</string>
     <string name="heroes_challenge_baqiyat">باقیات صالحات</string>
@@ -730,6 +730,8 @@
     <string name="referral_announcement_dismiss">بعد میں</string>
     <string name="challenge_community_total">آج کا کل: %1$s</string>
     <string name="challenges_all_lovers_total">آج کا کل</string>
+    <string name="challenges_overall_total">مجموعی کل</string>
+    <string name="challenges_today_total_inline">آج: %1$s</string>
     <string name="zabad_rank_number"># %1$d</string>
     <string name="zabad_rank_subtitle">%1$d شرکاء میں سے</string>
     <string name="zabad_leaderboard_title">سرفہرست</string>

@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -73,8 +72,6 @@ import tools.mo3ta.salo.generated.resources.heart_index_dialog_body
 import tools.mo3ta.salo.generated.resources.heart_index_dialog_dismiss
 import tools.mo3ta.salo.generated.resources.heart_index_dialog_title
 import tools.mo3ta.salo.generated.resources.heart_refill_nudge
-import tools.mo3ta.salo.generated.resources.heroes_chip_label
-import tools.mo3ta.salo.generated.resources.heroes_chip_content_description
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_blocked_firebase_off
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_blocked_waiting_network
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_code_copied
@@ -109,7 +106,6 @@ import tools.mo3ta.salo.ui.components.MohamedLoversArchShrine
 import tools.mo3ta.salo.ui.components.ManualSalawatSheet
 import tools.mo3ta.salo.ui.components.MohamedLoversFonts
 import tools.mo3ta.salo.ui.components.MohamedLoversCounter
-import tools.mo3ta.salo.ui.components.HeroesSheet
 import tools.mo3ta.salo.ui.components.MohamedLoversHadithBanner
 import tools.mo3ta.salo.ui.components.MohamedLoversInfoSheet
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
@@ -304,9 +300,6 @@ fun MohamedLoversScreen(
                                     showHeartInfoDialog = true
                                 },
                             )
-                            if (state.status == MohamedLoversStatus.Open) {
-                                HeroesChip(onClick = { viewModel.openHeroesSheet() })
-                            }
                         }
 
                         Column(
@@ -509,13 +502,6 @@ fun MohamedLoversScreen(
         if (showHeartInfoDialog) {
             HeartIndexInfoDialog(onDismiss = { showHeartInfoDialog = false })
         }
-        if (state.showHeroesSheet) {
-            HeroesSheet(
-                board = state.heroesBoard,
-                isLoading = state.heroesLoading,
-                onDismiss = { viewModel.dismissHeroesSheet() },
-            )
-        }
         if (state.showHadithDialog) {
             DailyHadithDialog(
                 onDismiss = { viewModel.dismissHadithDialog() },
@@ -699,38 +685,6 @@ private fun CountdownCell(value: Int, label: String) {
             color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
             fontSize = 11.sp,
         )
-    }
-}
-
-@Composable
-private fun HeroesChip(onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(20.dp),
-        color = MohamedLoversPalette.SkyTop.copy(alpha = 0.58f),
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            MohamedLoversPalette.GoldHighlight.copy(alpha = 0.32f),
-        ),
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(7.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Star,
-                contentDescription = stringResource(Res.string.heroes_chip_content_description),
-                tint = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.9f),
-                modifier = Modifier.size(18.dp),
-            )
-            Text(
-                text = stringResource(Res.string.heroes_chip_label),
-                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.9f),
-                fontSize = 13.sp,
-                fontFamily = MohamedLoversFonts.body,
-            )
-        }
     }
 }
 

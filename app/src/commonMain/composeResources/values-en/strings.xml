@@ -699,10 +699,10 @@
     <string name="heart_refill_nudge">Refill your heart — send salawat upon the Prophet ﷺ</string>
 
     <!-- Heroes / champions of the day -->
-    <string name="heroes_chip_label">Heroes</string>
-    <string name="heroes_chip_content_description">Heroes</string>
-    <string name="heroes_sheet_title">Today\'s heroes 🌟</string>
-    <string name="heroes_sheet_subtitle">The champions of our challenges today</string>
+    <string name="heroes_chip_label">Hero of yesterday</string>
+    <string name="heroes_chip_content_description">Hero of yesterday</string>
+    <string name="heroes_sheet_title">Hero of yesterday 🌟</string>
+    <string name="heroes_sheet_subtitle">The champions of our challenges yesterday</string>
     <string name="heroes_challenge_salawat">Salawat upon the Prophet ﷺ</string>
     <string name="heroes_challenge_dhikr">اهل لا اله الا الله</string>
     <string name="heroes_challenge_baqiyat">Everlasting Good Deeds</string>
@@ -768,6 +768,8 @@
     <string name="referral_announcement_dismiss">Later</string>
     <string name="challenge_community_total">Today\'s total: %1$s</string>
     <string name="challenges_all_lovers_total">Today\'s total</string>
+    <string name="challenges_overall_total">Overall total</string>
+    <string name="challenges_today_total_inline">Today: %1$s</string>
     <string name="zabad_rank_number"># %1$d</string>
     <string name="zabad_rank_subtitle">among %1$d participants</string>
     <string name="zabad_leaderboard_title">Top Players</string>

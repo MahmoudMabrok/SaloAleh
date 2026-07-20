@@ -711,10 +711,10 @@
     <string name="heart_index_dialog_dismiss">فهمت</string>
 
     <!-- Heroes / champions of the day -->
-    <string name="heroes_chip_label">أبطال</string>
-    <string name="heroes_chip_content_description">أبطال</string>
-    <string name="heroes_sheet_title">أبطال اليوم 🌟</string>
-    <string name="heroes_sheet_subtitle">المتصدرون في تحدياتنا اليوم</string>
+    <string name="heroes_chip_label">بطل الأمس</string>
+    <string name="heroes_chip_content_description">بطل الأمس</string>
+    <string name="heroes_sheet_title">بطل الأمس 🌟</string>
+    <string name="heroes_sheet_subtitle">المتصدرون في تحدياتنا أمس</string>
     <string name="heroes_challenge_salawat">الصلاة على النبي ﷺ</string>
     <string name="heroes_challenge_dhikr">أهل لا إله إلا الله</string>
     <string name="heroes_challenge_baqiyat">الباقيات الصالحات</string>
@@ -780,6 +780,8 @@
     <string name="referral_announcement_dismiss">لاحقًا</string>
     <string name="challenge_community_total">الإجمالي اليوم: %1$s</string>
     <string name="challenges_all_lovers_total">إجمالي اليوم</string>
+    <string name="challenges_overall_total">الإجمالي الكلي</string>
+    <string name="challenges_today_total_inline">اليوم: %1$s</string>
     <string name="zabad_rank_number"># %1$d</string>
     <string name="zabad_rank_subtitle">من بين %1$d مشارك</string>
     <string name="zabad_leaderboard_title">المتصدرون</string>
