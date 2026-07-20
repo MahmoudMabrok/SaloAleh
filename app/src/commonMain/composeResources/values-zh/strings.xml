@@ -227,6 +227,13 @@
     <string name="baqiyat_tap_hint">依次点击每句赞词，直到完成一轮</string>
     <string name="baqiyat_shuffle">打乱顺序</string>
     <string name="baqiyat_cycles_label">今日完成轮数</string>
+    <string name="baqiyat_manual_entry_button">📿 记录外部永恒善功</string>
+    <string name="manual_baqiyat_title">📿 记录外部永恒善功</string>
+    <string name="manual_baqiyat_subtitle">在应用之外完成了永恒善功的轮次？\n记录您所诵念的 - 不要因为不在应用中就停止念诵</string>
+    <string name="manual_baqiyat_count">数量：</string>
+    <string name="manual_baqiyat_enter_count">输入数量</string>
+    <string name="manual_baqiyat_witness">我证明这个数量是真实准确的，真主了解我的意图</string>
+    <string name="manual_baqiyat_submit">✦ 记录永恒善功 ✦</string>
     <string name="baqiyat_phrase_subhanallah">赞主清净</string>
     <string name="baqiyat_phrase_alhamdulillah">一切赞颂归安拉</string>
     <string name="baqiyat_phrase_allahuakbar">安拉至大</string>

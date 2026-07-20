@@ -227,6 +227,13 @@
     <string name="baqiyat_tap_hint">ہر ذکر پر ٹیپ کریں یہاں تک کہ دور مکمل ہو جائے</string>
     <string name="baqiyat_shuffle">ترتیب بدلیں</string>
     <string name="baqiyat_cycles_label">آج مکمل ہونے والے دور</string>
+    <string name="baqiyat_manual_entry_button">📿 بیرونی باقیات درج کریں</string>
+    <string name="manual_baqiyat_title">📿 بیرونی باقیات درج کریں</string>
+    <string name="manual_baqiyat_subtitle">ایپ سے باہر باقیات صالحات کے دور مکمل کیے؟\nجو پڑھا اسے درج کریں — ایپ سے دور ہونے کی وجہ سے ذکر نہ چھوڑیں</string>
+    <string name="manual_baqiyat_count">تعداد:</string>
+    <string name="manual_baqiyat_enter_count">تعداد درج کریں</string>
+    <string name="manual_baqiyat_witness">میں گواہی دیتا ہوں کہ یہ تعداد درست اور حقیقی ہے، اور اللہ میری نیت سے باخبر ہے</string>
+    <string name="manual_baqiyat_submit">✦ باقیات درج کریں ✦</string>
     <string name="baqiyat_phrase_subhanallah">سبحان اللہ</string>
     <string name="baqiyat_phrase_alhamdulillah">الحمد للہ</string>
     <string name="baqiyat_phrase_allahuakbar">اللہ اکبر</string>

@@ -9,6 +9,13 @@ package tools.mo3ta.salo.domain
 const val CHALLENGE_MANUAL_DAILY_CAP = 5_000
 
 /**
+ * Baqiyat's own, lower manual-entry daily cap. Baqiyat is counted in full cycles
+ * (one pass over all phrases), so its external batches are limited to a tighter
+ * ceiling than the per-count challenges above.
+ */
+const val BAQIYAT_MANUAL_DAILY_CAP = 2_000
+
+/**
  * The daily challenges that award a repeatable achievement badge. A "win" is
  * reaching the challenge's daily goal; each win increments that badge's count by 1
  * (at most once per Cairo day).
