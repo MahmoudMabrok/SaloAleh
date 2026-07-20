@@ -22,7 +22,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.Forest
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
@@ -52,6 +51,7 @@ import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.domain.GHARS_GROVE_SIZE
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.ghars_empty_hint
+import tools.mo3ta.salo.generated.resources.ghars_gardens_entry
 import tools.mo3ta.salo.generated.resources.ghars_goal_label
 import tools.mo3ta.salo.generated.resources.ghars_grove_complete
 import tools.mo3ta.salo.generated.resources.ghars_grove_toast
@@ -66,7 +66,6 @@ import tools.mo3ta.salo.generated.resources.ghars_title
 import tools.mo3ta.salo.generated.resources.ghars_today_label
 import tools.mo3ta.salo.generated.resources.ghars_unit
 import tools.mo3ta.salo.generated.resources.manual_ghars_title
-import tools.mo3ta.salo.generated.resources.zabad_leaderboard_title
 import tools.mo3ta.salo.presentation.GharsChallengeViewModel
 import tools.mo3ta.salo.ui.ghars.GharsColors
 import tools.mo3ta.salo.ui.ghars.GharsGardensOverlay
@@ -145,14 +144,6 @@ fun GharsScreen(
                     fontFamily = arefRuqaaFamily(),
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(
-                        onClick = {
-                            analyticsManager.logAction(AppAnalytics.OPEN_GHARS_GARDENS)
-                            viewModel.onGardensOpened()
-                        },
-                    ) {
-                        Icon(Icons.Default.Forest, null, tint = GharsColors.FrondLit)
-                    }
                     ChallengeBubbleButton(ChallengeType.GHARS.id)
                     IconButton(onClick = viewModel::onLeaderboardOpened) {
                         Icon(Icons.Default.EmojiEvents, null, tint = GharsColors.Gold)
@@ -230,7 +221,10 @@ fun GharsScreen(
             dailyGoal = state.dailyGoal,
             completedGroves = state.completedGroves,
             lifetimePalms = state.lifetimePalms,
-            onLeaderboard = viewModel::onLeaderboardOpened,
+            onGardens = {
+                analyticsManager.logAction(AppAnalytics.OPEN_GHARS_GARDENS)
+                viewModel.onGardensOpened()
+            },
             onManual = viewModel::showManualGharsSheet,
         )
     }
@@ -275,7 +269,7 @@ private fun GharsSheet(
     dailyGoal: Int,
     completedGroves: Int,
     lifetimePalms: Int,
-    onLeaderboard: () -> Unit,
+    onGardens: () -> Unit,
     onManual: () -> Unit,
 ) {
     val inGrove = todayCount % GHARS_GROVE_SIZE
@@ -453,10 +447,10 @@ private fun GharsSheet(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             SheetAction(
-                label = stringResource(Res.string.zabad_leaderboard_title),
+                label = stringResource(Res.string.ghars_gardens_entry),
                 primary = true,
                 modifier = Modifier.weight(1f),
-                onClick = onLeaderboard,
+                onClick = onGardens,
             )
             SheetAction(
                 label = stringResource(Res.string.manual_ghars_title),
