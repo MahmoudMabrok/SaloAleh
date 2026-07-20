@@ -27,6 +27,20 @@ data class ChallengesTotals(
     val albaqara: Int = 0,
 )
 
+/**
+ * All-time community totals per challenge (cumulative across every day). Server-maintained by
+ * `generate-stats.js` at each challenge root and client-read-only.
+ */
+data class ChallengesOverallTotals(
+    val dhikr: Int = 0,
+    val baqiyat: Int = 0,
+    val istighfar: Int = 0,
+    val zabad: Int = 0,
+    val ghars: Int = 0,
+    val quran: Int = 0,
+    val albaqara: Int = 0,
+)
+
 class ChallengesViewModel(
     private val challengeBadgeStore: ChallengeBadgeStore,
 ) : ViewModel() {
@@ -35,6 +49,9 @@ class ChallengesViewModel(
 
     private val _totals = MutableStateFlow(ChallengesTotals())
     val totals: StateFlow<ChallengesTotals> = _totals.asStateFlow()
+
+    private val _overallTotals = MutableStateFlow(ChallengesOverallTotals())
+    val overallTotals: StateFlow<ChallengesOverallTotals> = _overallTotals.asStateFlow()
 
     // Per-challenge live daily streaks (local, synchronous) shown as a pill on each card.
     private val _streaks = MutableStateFlow(challengeBadgeStore.getCurrentStreaks(Clock.System.todayIn(cairoZone)))
@@ -60,6 +77,15 @@ class ChallengesViewModel(
             val quran = async { readTotal(db, "quran_challenge/$dateKey/totalTodayQuran") }
             val albaqara = async { readTotal(db, "albaqara_challenge/$dateKey/totalTodayAlBaqara") }
 
+            // All-time community totals (challenge root, not per-day).
+            val dhikrAll = async { readTotal(db, "100_challenge/totalDhkr") }
+            val baqiyatAll = async { readTotal(db, "baqiyat_saliha/totalBaqiyat") }
+            val istighfarAll = async { readTotal(db, "istighfar_challenge/totalIstighfar") }
+            val zabadAll = async { readTotal(db, "zabad_challenge/totalZabad") }
+            val gharsAll = async { readTotal(db, "ghars_challenge/totalGhars") }
+            val quranAll = async { readTotal(db, "quran_challenge/totalQuran") }
+            val albaqaraAll = async { readTotal(db, "albaqara_challenge/totalAlBaqara") }
+
             _totals.update {
                 ChallengesTotals(
                     dhikr = dhikr.await(),
@@ -69,6 +95,18 @@ class ChallengesViewModel(
                     ghars = ghars.await(),
                     quran = quran.await(),
                     albaqara = albaqara.await(),
+                )
+            }
+
+            _overallTotals.update {
+                ChallengesOverallTotals(
+                    dhikr = dhikrAll.await(),
+                    baqiyat = baqiyatAll.await(),
+                    istighfar = istighfarAll.await(),
+                    zabad = zabadAll.await(),
+                    ghars = gharsAll.await(),
+                    quran = quranAll.await(),
+                    albaqara = albaqaraAll.await(),
                 )
             }
         }

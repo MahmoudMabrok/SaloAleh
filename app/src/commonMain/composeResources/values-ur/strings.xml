@@ -730,6 +730,8 @@
     <string name="referral_announcement_dismiss">بعد میں</string>
     <string name="challenge_community_total">آج کا کل: %1$s</string>
     <string name="challenges_all_lovers_total">آج کا کل</string>
+    <string name="challenges_overall_total">مجموعی کل</string>
+    <string name="challenges_today_total_inline">آج: %1$s</string>
     <string name="zabad_rank_number"># %1$d</string>
     <string name="zabad_rank_subtitle">%1$d شرکاء میں سے</string>
     <string name="zabad_leaderboard_title">سرفہرست</string>

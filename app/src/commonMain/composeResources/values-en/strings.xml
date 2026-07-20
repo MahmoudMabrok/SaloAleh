@@ -768,6 +768,8 @@
     <string name="referral_announcement_dismiss">Later</string>
     <string name="challenge_community_total">Today\'s total: %1$s</string>
     <string name="challenges_all_lovers_total">Today\'s total</string>
+    <string name="challenges_overall_total">Overall total</string>
+    <string name="challenges_today_total_inline">Today: %1$s</string>
     <string name="zabad_rank_number"># %1$d</string>
     <string name="zabad_rank_subtitle">among %1$d participants</string>
     <string name="zabad_leaderboard_title">Top Players</string>

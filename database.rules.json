@@ -4,6 +4,10 @@
     ".write": false,
 
     "baqiyat_saliha": {
+      "totalBaqiyat": {
+        ".read": true,
+        ".write": false
+      },
       "$dateKey": {
         "participantCount": {
           ".read": true,
