@@ -814,7 +814,7 @@
   <string name="ghars_garden_label">Grove %1$d</string>
   <string name="ghars_gardens_count">%1$d groves complete</string>
   <string name="ghars_gardens_empty_title">No groves yet</string>
-  <string name="ghars_gardens_empty_body">Plant 25 palms to complete your first grove</string>
+  <string name="ghars_gardens_empty_body">Plant 50 palms to complete your first grove</string>
   <string name="ghars_walk_hint">Drag to walk among the palms</string>
   <string name="manual_ghars_title">🌴 Log External Tasbeeh</string>
   <string name="manual_ghars_subtitle">Glorified Allah silently, on your fingers, or with a tasbih?\nLog what you recited — palms are planted for you even when you\'re away from the app</string>
