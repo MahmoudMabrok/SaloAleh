@@ -824,7 +824,7 @@
   <string name="ghars_garden_label">بستان %1$d</string>
   <string name="ghars_gardens_count">%1$d بستان مكتمل</string>
   <string name="ghars_gardens_empty_title">لا بساتين بعد</string>
-  <string name="ghars_gardens_empty_body">اغرس ٢٥ نخلة ليكتمل أوّل بستان لك</string>
+  <string name="ghars_gardens_empty_body">اغرس ٥٠ نخلة ليكتمل أوّل بستان لك</string>
   <string name="ghars_walk_hint">اسحب لتتنقّل بين النخيل</string>
   <string name="manual_ghars_title">🌴 تسجيل تسبيح خارجي</string>
   <string name="manual_ghars_subtitle">سبّحت بصمت أو على أصابعك أو بالمسبحة؟\nسجّل ما سبّحت — لتُغرَس لك النخل ولو كنت بعيدًا عن التطبيق</string>

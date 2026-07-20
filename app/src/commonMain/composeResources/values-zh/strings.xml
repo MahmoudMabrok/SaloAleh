@@ -774,7 +774,7 @@
   <string name="ghars_garden_label">第 %1$d 座棕榈园</string>
   <string name="ghars_gardens_count">已完成 %1$d 座棕榈园</string>
   <string name="ghars_gardens_empty_title">还没有棕榈园</string>
-  <string name="ghars_gardens_empty_body">种下 25 棵棕榈树以完成您的第一座棕榈园</string>
+  <string name="ghars_gardens_empty_body">种下 50 棵棕榈树以完成您的第一座棕榈园</string>
   <string name="ghars_walk_hint">拖动以在棕榈树间漫步</string>
   <string name="manual_ghars_title">🌴 记录外部赞颂</string>
   <string name="manual_ghars_subtitle">默默地、用手指或用念珠赞颂了真主？\n记录您所诵念的——即使不在应用中，也会为您种下棕榈树</string>

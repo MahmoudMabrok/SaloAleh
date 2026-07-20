@@ -71,7 +71,7 @@ fun completedGroves(count: Int): Int = if (count <= 0) 0 else count / GROVE_SIZE
 
 /**
  * How many complete groves (بساتين) the user owns for a given lifetime palm total.
- * A grove is finished the moment its 25th palm goes in, so this is a plain floor-divide —
+ * A grove is finished the moment its 50th palm goes in, so this is a plain floor-divide —
  * the same arithmetic as [completedGroves] but applied to the lifetime accumulator so the
  * gardens gallery can show every grove ever grown, not just today's.
  */
