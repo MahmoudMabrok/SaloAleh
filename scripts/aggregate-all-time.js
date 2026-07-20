@@ -101,6 +101,10 @@ async function main() {
       players.sort((a, b) => b.score - a.score || b.updatedAt - a.updatedAt);
 
       const writes = {};
+      // Podium medal increments, keyed by uid: gold (rank 1), silver (rank 2), bronze (rank 3).
+      // Kept in a separate map from `writes` so the achievements Firestore mirror never
+      // mistakes a medal path for an achievement entry.
+      const medalWinners = [];
       players.forEach((player, i) => {
         const rank = i + 1;
         const winnerCode = rank <= 5 ? generateWinnerCode() : undefined;
@@ -112,6 +116,9 @@ async function main() {
           ...(winnerCode !== undefined && { winnerCode }),
         };
         console.log(`  History: uid=${player.uid} rank=${rank} score=${player.score}${winnerCode ? ` winnerCode=${winnerCode}` : ''}`);
+
+        const medalType = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : null;
+        if (medalType) medalWinners.push({ uid: player.uid, medalType });
       });
 
       await db.ref('/').update(writes);
@@ -119,6 +126,35 @@ async function main() {
 
       // Phase 1: mirror achievements to Firestore
       await mirrorAchievements(admin.firestore(), writes);
+
+      // Increment the podium winners' cumulative medal counts on their user node.
+      // The leaderboard cron copies each winner's gold count into leaderboard entries.
+      if (medalWinners.length > 0) {
+        const medalWrites = {};
+        for (const { uid, medalType } of medalWinners) {
+          medalWrites[`mohamed_lovers/users/${uid}/medals/${medalType}`] =
+            admin.database.ServerValue.increment(1);
+        }
+        await db.ref('/').update(medalWrites);
+        console.log(`Incremented medals for ${medalWinners.length} podium winner(s).`);
+
+        // Phase 1: mirror medal increments to Firestore (non-blocking).
+        try {
+          const firestore = admin.firestore();
+          const FieldValue = admin.firestore.FieldValue;
+          const batch = firestore.batch();
+          for (const { uid, medalType } of medalWinners) {
+            batch.set(
+              firestore.collection('mohamed_lovers_users').doc(uid),
+              { medals: { [medalType]: FieldValue.increment(1) } },
+              { merge: true },
+            );
+          }
+          await batch.commit();
+        } catch (err) {
+          console.warn('Medal Firestore mirror failed (non-blocking):', err.message);
+        }
+      }
 
       // Close the round: write final per-player ranks + leaderboard + dailyLeaderboard
       // (isFinal: true) via the same builder used for the periodic in-round runs.

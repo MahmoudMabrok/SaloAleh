@@ -700,8 +700,9 @@ class MohamedLoversFirebaseClient(
         val isSupporter = map[IS_SUPPORTER_KEY] as? Boolean ?: false
         val dailyBadge = map[DAILY_BADGE_KEY] as? String
         val roundStreak = (map[ROUND_STREAK_KEY] as? Number)?.toInt()?.takeIf { it > 0 }
+        val goldMedals = (map[GOLD_MEDALS_KEY] as? Number)?.toInt()?.takeIf { it > 0 }
         val nickname = map[NICKNAME_KEY] as? String ?: ""
-        return FirebaseLeaderboardEntry(rank = rank, uid = uid, score = score, countryCode = countryCode, rankChange = rankChange, scoreMasked = scoreMasked, isSupporter = isSupporter, dailyBadge = dailyBadge, roundStreak = roundStreak, nickname = nickname)
+        return FirebaseLeaderboardEntry(rank = rank, uid = uid, score = score, countryCode = countryCode, rankChange = rankChange, scoreMasked = scoreMasked, isSupporter = isSupporter, dailyBadge = dailyBadge, roundStreak = roundStreak, goldMedals = goldMedals, nickname = nickname)
     }
 
     private fun dev.gitlive.firebase.database.DataSnapshot.toPlayer(): MohamedLoversPlayer? {
@@ -741,6 +742,7 @@ class MohamedLoversFirebaseClient(
         const val IS_SUPPORTER_KEY = "isSupporter"
         const val DAILY_BADGE_KEY = "dailyBadge"
         const val ROUND_STREAK_KEY = "roundStreak"
+        const val GOLD_MEDALS_KEY = "goldMedals"
         const val NICKNAME_KEY = "nickname"
         const val YESTERDAY_TOTAL_SCORE_KEY = "yesterdayTotalScore"
         const val ROUND_TOTAL_PATH = "roundTotal"

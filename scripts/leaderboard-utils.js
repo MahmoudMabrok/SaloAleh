@@ -441,6 +441,23 @@ async function populateMohamedLoversRound(db, admin, roundKey, isFinal) {
     dailyLeaderboard[String(i + 1)] = entry;
   });
 
+  // Copy each leaderboard participant's gold medal count (from their user node) onto
+  // the entry so the app can render a 🥇 pill. Medals live under users/{uid}/medals,
+  // not on the player node, so they're fetched per-uid for the top-10 weekly + daily set.
+  const medalUids = [...new Set([...top10, ...dailyTop10].map(p => p.uid))];
+  const goldMedalByUid = {};
+  await Promise.all(medalUids.map(async uid => {
+    const snap = await db.ref(`${MOHAMED_LOVERS_ROOT}/users/${uid}/medals/gold`).get();
+    const gold = snap.val();
+    if (typeof gold === 'number' && gold > 0) goldMedalByUid[uid] = gold;
+  }));
+  top10.forEach((player, i) => {
+    if (goldMedalByUid[player.uid]) leaderboard[String(i + 1)].goldMedals = goldMedalByUid[player.uid];
+  });
+  dailyTop10.forEach((player, i) => {
+    if (goldMedalByUid[player.uid]) dailyLeaderboard[String(i + 1)].goldMedals = goldMedalByUid[player.uid];
+  });
+
   // Read old leaderboards before overwriting — used for rank-diff and drop-out detection.
   let droppedUids = [];
   const oldLbSnap = await db.ref(`${MOHAMED_LOVERS_ROOT}/${roundKey}/leaderboard`).get();

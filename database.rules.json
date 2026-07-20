@@ -462,6 +462,18 @@
               ".validate": "newData.hasChildren(['rank', 'score', 'date'])"
             }
           },
+          "medals": {
+            ".read": true,
+            "gold": {
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "silver": {
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "bronze": {
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            }
+          },
           "purchases": {
             "$productId": {
               ".validate": "newData.hasChildren(['productId', 'productType', 'purchaseDate'])",
