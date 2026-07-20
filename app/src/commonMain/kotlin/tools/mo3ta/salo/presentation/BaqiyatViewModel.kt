@@ -57,6 +57,7 @@ class BaqiyatViewModel(
                 it.copy(
                     dateKey = today.toString(),
                     cyclesCompleted = store.todayCount(today),
+                    manualRemainingToday = store.manualRemainingToday(today),
                     phraseOrder = activePhrases,
                     tappedPhrases = emptySet(),
                     currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.BAQIYAT, today),
@@ -111,6 +112,77 @@ class BaqiyatViewModel(
 
     fun onCelebrationDismissed() {
         _state.update { it.copy(showCelebration = false) }
+    }
+
+    fun showManualBaqiyatSheet() {
+        _state.update { it.copy(showManualBaqiyatSheet = true) }
+    }
+
+    fun dismissManualBaqiyatSheet() {
+        _state.update { it.copy(showManualBaqiyatSheet = false) }
+    }
+
+    /** Record a batch of Baqiyat cycles counted outside the app (on fingers, with a tasbih). */
+    fun submitManualBaqiyat(count: Int) {
+        if (count <= 0) return
+        val today = today()
+        val updated = store.addToday(today, count)
+        maybeRecordWin(today, updated)
+        _state.update {
+            it.copy(
+                dateKey = today.toString(),
+                cyclesCompleted = updated,
+                manualRemainingToday = store.manualRemainingToday(today),
+                showManualBaqiyatSheet = false,
+                isSubmittingManualBaqiyat = true,
+                errorMessage = null,
+            )
+        }
+        recalculateLocalLeaderboard()
+        syncManualEntry(today)
+    }
+
+    /** Subtract a mistakenly-entered batch from today's count. Floored at 0; syncs the corrected total. */
+    fun subtractManualBaqiyat(count: Int) {
+        if (count <= 0) return
+        val today = today()
+        val updated = store.subtractToday(today, count)
+        _state.update {
+            it.copy(
+                dateKey = today.toString(),
+                cyclesCompleted = updated,
+                manualRemainingToday = store.manualRemainingToday(today),
+                showManualBaqiyatSheet = false,
+                isSubmittingManualBaqiyat = true,
+                errorMessage = null,
+            )
+        }
+        recalculateLocalLeaderboard()
+        syncManualEntry(today)
+    }
+
+    /** Push the corrected local total to Firebase after a manual add/subtract. */
+    private fun syncManualEntry(today: LocalDate) {
+        viewModelScope.launch {
+            syncMutex.withLock {
+                if (!firebaseClient.isConfigured()) {
+                    _state.update { it.copy(isSubmittingManualBaqiyat = false) }
+                    return@withLock
+                }
+                val total = store.todayCount(today)
+                val uid = sessionStore.getOrCreateUid()
+                val countryCode = countryCodeProvider.get()
+                val result = firebaseClient.writeUserDay(today.toString(), uid, total, countryCode, sessionStore.getPublishedName(), challengeBadgeStore.getCurrentStreak(ChallengeType.BAQIYAT, today))
+                if (result.isSuccess) store.onSyncSuccess(today, total)
+                refreshLeaderboard(today.toString(), uid)
+                _state.update {
+                    it.copy(
+                        isSubmittingManualBaqiyat = false,
+                        errorMessage = result.exceptionOrNull()?.message,
+                    )
+                }
+            }
+        }
     }
 
     fun onLeaderboardOpened() {

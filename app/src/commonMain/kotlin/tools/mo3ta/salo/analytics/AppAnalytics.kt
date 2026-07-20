@@ -17,6 +17,7 @@ object AppAnalytics {
     const val BAQIYAT_SCREEN_VIEW = "baqiyat_screen_view"
     const val BAQIYAT_PHRASE_TAP = "baqiyat_phrase_tap"
     const val BAQIYAT_CYCLE_COMPLETE = "baqiyat_cycle_complete"
+    const val OPEN_MANUAL_BAQIYAT = "open_manual_baqiyat"
     const val OPEN_ISTIGHFAR_CHALLENGE = "open_istighfar_challenge"
     const val OPEN_MANUAL_ISTIGHFAR = "open_manual_istighfar"
     const val ISTIGHFAR_TAP = "istighfar_tap"

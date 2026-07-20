@@ -16,7 +16,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Shuffle
@@ -49,6 +51,7 @@ import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.baqiyat_ayah
 import tools.mo3ta.salo.generated.resources.baqiyat_ayah_ref
 import tools.mo3ta.salo.generated.resources.baqiyat_cycles_label
+import tools.mo3ta.salo.generated.resources.baqiyat_manual_entry_button
 import tools.mo3ta.salo.generated.resources.baqiyat_shuffle
 import tools.mo3ta.salo.generated.resources.baqiyat_tap_hint
 import tools.mo3ta.salo.generated.resources.challenge_baqiyat_title
@@ -108,6 +111,7 @@ fun BaqiyatScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.systemBars)
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -171,6 +175,17 @@ fun BaqiyatScreen(
                 enabled = !state.isLoading,
                 onClick = { viewModel.onShuffle() },
             )
+
+            Spacer(Modifier.height(12.dp))
+
+            BaqiyatManualEntryButton(
+                onClick = {
+                    analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_BAQIYAT)
+                    viewModel.showManualBaqiyatSheet()
+                },
+            )
+
+            Spacer(Modifier.height(12.dp))
         }
     }
 
@@ -181,6 +196,39 @@ fun BaqiyatScreen(
             participantCount = state.participantCount,
             isLoading = state.isLeaderboardLoading,
             onDismiss = { viewModel.onLeaderboardClosed() },
+        )
+    }
+
+    ManualBaqiyatSheet(
+        isOpen = state.showManualBaqiyatSheet,
+        remaining = state.manualRemainingToday,
+        onDismiss = { viewModel.dismissManualBaqiyatSheet() },
+        onSubmit = { count -> viewModel.submitManualBaqiyat(count) },
+        onSubtract = { count -> viewModel.subtractManualBaqiyat(count) },
+    )
+}
+
+@Composable
+private fun BaqiyatManualEntryButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier.fillMaxWidth(),
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        color = Color.White.copy(alpha = 0.14f),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.24f)),
+    ) {
+        Text(
+            text = stringResource(Res.string.baqiyat_manual_entry_button),
+            color = Color.White.copy(alpha = 0.92f),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 14.dp, horizontal = 12.dp),
         )
     }
 }

@@ -253,6 +253,13 @@
     <string name="baqiyat_tap_hint">اضغط على كل ذكر حتى تكتمل الدورة</string>
     <string name="baqiyat_shuffle">خلط الترتيب</string>
     <string name="baqiyat_cycles_label">الدورات المكتملة اليوم</string>
+    <string name="baqiyat_manual_entry_button">📿 تسجيل باقيات خارجية</string>
+    <string name="manual_baqiyat_title">📿 تسجيل باقيات خارجية</string>
+    <string name="manual_baqiyat_subtitle">أتممت دورات من الباقيات الصالحات خارج التطبيق؟\nسجّل ما أتممته — لا تتوقف عن الذكر لأنك بعيد عن التطبيق</string>
+    <string name="manual_baqiyat_count">العدد:</string>
+    <string name="manual_baqiyat_enter_count">أدخل العدد</string>
+    <string name="manual_baqiyat_witness">أشهد أن هذا العدد صحيح وحقيقي، وأن الله مطّلع على نيّتي</string>
+    <string name="manual_baqiyat_submit">✦ تسجيل الباقيات ✦</string>
     <string name="baqiyat_phrase_subhanallah">سبحان الله</string>
     <string name="baqiyat_phrase_alhamdulillah">الحمد لله</string>
     <string name="baqiyat_phrase_allahuakbar">الله أكبر</string>

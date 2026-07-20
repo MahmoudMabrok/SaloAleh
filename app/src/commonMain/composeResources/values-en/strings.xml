@@ -253,6 +253,13 @@
     <string name="baqiyat_tap_hint">Tap each phrase until the cycle completes</string>
     <string name="baqiyat_shuffle">Shuffle order</string>
     <string name="baqiyat_cycles_label">Cycles completed today</string>
+    <string name="baqiyat_manual_entry_button">📿 Log external baqiyat</string>
+    <string name="manual_baqiyat_title">📿 Log External Baqiyat</string>
+    <string name="manual_baqiyat_subtitle">Completed cycles of the everlasting good deeds outside the app?\nLog what you recited — don\'t stop your dhikr just because you\'re away from the app</string>
+    <string name="manual_baqiyat_count">Count:</string>
+    <string name="manual_baqiyat_enter_count">Enter count</string>
+    <string name="manual_baqiyat_witness">I testify that this count is true and accurate, and that Allah is aware of my intention</string>
+    <string name="manual_baqiyat_submit">✦ Log Baqiyat ✦</string>
     <string name="baqiyat_phrase_subhanallah">Subhan Allah</string>
     <string name="baqiyat_phrase_alhamdulillah">Alhamdulillah</string>
     <string name="baqiyat_phrase_allahuakbar">Allahu Akbar</string>
