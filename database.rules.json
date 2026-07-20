@@ -462,6 +462,13 @@
               ".validate": "newData.hasChildren(['rank', 'score', 'date'])"
             }
           },
+          "medals": {
+            ".read": true,
+            ".validate": false,
+            "$medalType": {
+              ".validate": false
+            }
+          },
           "purchases": {
             "$productId": {
               ".validate": "newData.hasChildren(['productId', 'productType', 'purchaseDate'])",
