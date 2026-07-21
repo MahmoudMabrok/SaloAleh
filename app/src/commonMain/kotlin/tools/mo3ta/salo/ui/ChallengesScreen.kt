@@ -81,8 +81,7 @@ import tools.mo3ta.salo.generated.resources.challenge_quran_title
 import tools.mo3ta.salo.generated.resources.challenge_takbeer_body
 import tools.mo3ta.salo.generated.resources.challenge_ten_days_body
 import tools.mo3ta.salo.generated.resources.challenges_all_lovers_total
-import tools.mo3ta.salo.generated.resources.challenges_overall_total
-import tools.mo3ta.salo.generated.resources.challenges_today_total_inline
+import tools.mo3ta.salo.generated.resources.challenges_overall_total_inline
 import tools.mo3ta.salo.generated.resources.challenges_cairo_time_note
 import tools.mo3ta.salo.generated.resources.challenges_day_countdown_label
 import tools.mo3ta.salo.generated.resources.challenges_subtitle
@@ -490,7 +489,6 @@ private fun ChallengeCard(item: ChallengeItem) {
             }
 
             if (item.overallTotal > 0 || item.total > 0) {
-                val showOverall = item.overallTotal > 0
                 Column(
                     modifier = Modifier
                         .background(
@@ -501,26 +499,23 @@ private fun ChallengeCard(item: ChallengeItem) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
-                        text = formatNumber(if (showOverall) item.overallTotal else item.total),
+                        text = formatNumber(item.total),
                         color = item.accent,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.ExtraBold,
                     )
                     Text(
-                        text = stringResource(
-                            if (showOverall) Res.string.challenges_overall_total
-                            else Res.string.challenges_all_lovers_total,
-                        ),
+                        text = stringResource(Res.string.challenges_all_lovers_total),
                         color = item.accent.copy(alpha = 0.7f),
-                        fontSize = 9.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                     )
-                    if (showOverall && item.total > 0) {
+                    if (item.overallTotal > 0) {
                         Spacer(Modifier.height(2.dp))
                         Text(
-                            text = stringResource(Res.string.challenges_today_total_inline, formatNumber(item.total)),
+                            text = stringResource(Res.string.challenges_overall_total_inline, formatNumber(item.overallTotal)),
                             color = item.accent.copy(alpha = 0.55f),
-                            fontSize = 9.sp,
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Medium,
                         )
                     }

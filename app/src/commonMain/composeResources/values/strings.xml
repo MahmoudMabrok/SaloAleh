@@ -795,6 +795,7 @@
     <string name="challenges_all_lovers_total">إجمالي اليوم</string>
     <string name="challenges_overall_total">الإجمالي الكلي</string>
     <string name="challenges_today_total_inline">اليوم: %1$s</string>
+    <string name="challenges_overall_total_inline">الكلي: %1$s</string>
     <string name="zabad_rank_number"># %1$d</string>
     <string name="zabad_rank_subtitle">من بين %1$d مشارك</string>
     <string name="zabad_leaderboard_title">المتصدرون</string>

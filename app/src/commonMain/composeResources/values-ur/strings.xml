@@ -745,6 +745,7 @@
     <string name="challenges_all_lovers_total">آج کا کل</string>
     <string name="challenges_overall_total">مجموعی کل</string>
     <string name="challenges_today_total_inline">آج: %1$s</string>
+    <string name="challenges_overall_total_inline">مجموعی: %1$s</string>
     <string name="zabad_rank_number"># %1$d</string>
     <string name="zabad_rank_subtitle">%1$d شرکاء میں سے</string>
     <string name="zabad_leaderboard_title">سرفہرست</string>
