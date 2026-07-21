@@ -35,6 +35,7 @@ import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.domain.DailyBadge
 import tools.mo3ta.salo.domain.FirebaseLeaderboard
 import tools.mo3ta.salo.domain.MohamedLoversCompetitionWindow
+import tools.mo3ta.salo.domain.MohamedLoversMedals
 import tools.mo3ta.salo.domain.MohamedLoversPlayer
 import tools.mo3ta.salo.domain.MohamedLoversRepository
 import tools.mo3ta.salo.domain.buildMohamedLoversDisplayTag
@@ -62,6 +63,12 @@ class MohamedLoversViewModel(
     private var leaderboardModeSwitchJob: Job? = null
     private var remoteLeaderboard: FirebaseLeaderboard = FirebaseLeaderboard(emptyList(), false)
     private var remoteSelfPlayer: MohamedLoversPlayer? = null
+    // Server-authoritative podium medals for the current user, fetched once per uid.
+    // Medals live on the user node (not the player node) and are only attached to the
+    // server-populated top-N leaderboard entries, so the self row needs them separately
+    // to render when the user is outside the top-N. Null until the first fetch resolves.
+    private var selfMedals: MohamedLoversMedals? = null
+    private var selfMedalsFetchedForUid: String? = null
     private var authUid: String? = null
     private var achievementsFetchedFromRtdb = false
     private var currentWindow: MohamedLoversCompetitionWindow = MohamedLoversCompetitionWindow()
@@ -682,6 +689,16 @@ class MohamedLoversViewModel(
                 }
             }
 
+            if (selfMedalsFetchedForUid != uid) {
+                selfMedalsFetchedForUid = uid
+                launch {
+                    repository.fetchSelfMedals(uid).onSuccess { medals ->
+                        selfMedals = medals
+                        applyLeaderboard()
+                    }
+                }
+            }
+
             selfJob?.cancel()
             selfJob = launch {
                 repository.observeSelfPlayer(roundKey, uid).collectLatest { result ->
@@ -783,6 +800,12 @@ class MohamedLoversViewModel(
         val selfDisplayScore = if (isDaily) selfProjectedDaily else selfProjectedTotal
 
         val selfPublishedName = sessionStore.getPublishedName()
+        // Self medals/badge come from local/self-fetched sources rather than the leaderboard
+        // entry: the daily badge is computed locally (and can outrun the periodically-rebuilt
+        // server entry), and medals are only attached to the top-N entries server-side. Once
+        // self medals have been fetched (non-null), trust them; before that, fall back to the
+        // entry's values so a top-ranked current user still shows medals during the fetch.
+        val fetchedMedals = selfMedals
         val topEntries = remoteLeaderboard.entries.map { entry ->
             val isCurrentUser = entry.uid == uid
             val score = if (isCurrentUser) selfDisplayScore else entry.score
@@ -796,11 +819,11 @@ class MohamedLoversViewModel(
                 rankChange = entry.rankChange,
                 scoreMasked = entry.scoreMasked,
                 isSupporter = entry.isSupporter,
-                dailyBadge = entry.dailyBadge,
+                dailyBadge = if (isCurrentUser) state.value.currentDailyBadge else entry.dailyBadge,
                 roundStreak = if (isCurrentUser) state.value.roundStreak.takeIf { it > 0 } else entry.roundStreak,
-                goldMedals = entry.goldMedals,
-                silverMedals = entry.silverMedals,
-                bronzeMedals = entry.bronzeMedals,
+                goldMedals = if (isCurrentUser && fetchedMedals != null) fetchedMedals.gold.takeIf { it > 0 } else entry.goldMedals,
+                silverMedals = if (isCurrentUser && fetchedMedals != null) fetchedMedals.silver.takeIf { it > 0 } else entry.silverMedals,
+                bronzeMedals = if (isCurrentUser && fetchedMedals != null) fetchedMedals.bronze.takeIf { it > 0 } else entry.bronzeMedals,
             )
         }.sortedByDescending { it.totalCount }
             .mapIndexed { index, entry -> entry.copy(rank = index + 1) }
@@ -822,6 +845,9 @@ class MohamedLoversViewModel(
                 isCurrentUser = true,
                 dailyBadge = state.value.currentDailyBadge,
                 roundStreak = state.value.roundStreak.takeIf { it > 0 },
+                goldMedals = fetchedMedals?.gold?.takeIf { it > 0 },
+                silverMedals = fetchedMedals?.silver?.takeIf { it > 0 },
+                bronzeMedals = fetchedMedals?.bronze?.takeIf { it > 0 },
                 uid = uid,
             )
         }

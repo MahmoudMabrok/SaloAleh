@@ -19,6 +19,7 @@ import tools.mo3ta.salo.domain.HeroesBoard
 import tools.mo3ta.salo.domain.parseHeroesBoard
 import tools.mo3ta.salo.domain.MOHAMED_LOVERS_TOP_LIMIT
 import tools.mo3ta.salo.domain.MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE
+import tools.mo3ta.salo.domain.MohamedLoversMedals
 import tools.mo3ta.salo.domain.MohamedLoversPlayer
 import tools.mo3ta.salo.domain.UserAchievement
 
@@ -383,6 +384,29 @@ class MohamedLoversFirebaseClient(
                 onFailure = { error ->
                     log.e(error) { "fetchUserAchievements[$uid] failed" }
                     trackReadFailure("fetch_user_achievements", error)
+                },
+            )
+        }
+    }
+
+    override suspend fun fetchSelfMedals(uid: String): Result<MohamedLoversMedals> {
+        log.d { "fetchSelfMedals[$uid]" }
+        return runCatching {
+            val snapshot = Firebase.database
+                .reference("$ROOT_PATH/$USERS_PATH/$uid/$MEDALS_PATH")
+                .valueEvents.first()
+            val map = snapshot.value as? Map<*, *> ?: return@runCatching MohamedLoversMedals()
+            MohamedLoversMedals(
+                gold = (map[MEDAL_GOLD_KEY] as? Number)?.toInt()?.coerceAtLeast(0) ?: 0,
+                silver = (map[MEDAL_SILVER_KEY] as? Number)?.toInt()?.coerceAtLeast(0) ?: 0,
+                bronze = (map[MEDAL_BRONZE_KEY] as? Number)?.toInt()?.coerceAtLeast(0) ?: 0,
+            )
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "fetchSelfMedals[$uid] = $it" } },
+                onFailure = { error ->
+                    log.e(error) { "fetchSelfMedals[$uid] failed" }
+                    trackReadFailure("fetch_self_medals", error)
                 },
             )
         }
@@ -759,6 +783,10 @@ class MohamedLoversFirebaseClient(
         const val REMINDER_NOTIFS_ENABLED_KEY = "reminderNotifsEnabled"
         const val LEADERBOARD_NOTIFS_ENABLED_KEY = "leaderboardNotifsEnabled"
         const val ACHIEVEMENTS_PATH = "achievements"
+        const val MEDALS_PATH = "medals"
+        const val MEDAL_GOLD_KEY = "gold"
+        const val MEDAL_SILVER_KEY = "silver"
+        const val MEDAL_BRONZE_KEY = "bronze"
         const val REFERRAL_CODES_PATH = "referral_codes"
         const val REFERRAL_STATS_PATH = "referral_stats"
         const val REFERRAL_CODE_KEY = "referralCode"

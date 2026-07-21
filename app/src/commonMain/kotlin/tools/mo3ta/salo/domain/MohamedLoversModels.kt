@@ -15,6 +15,18 @@ data class MohamedLoversPlayer(
     val nickname: String = "",
 )
 
+/**
+ * Cumulative podium medals for a single user, read from the server-authoritative
+ * `mohamed_lovers/users/{uid}/medals` node. Used to render the current user's own
+ * medals on the leaderboard even when they are outside the server-populated top-N
+ * (where medals are only attached to the ranked entries).
+ */
+data class MohamedLoversMedals(
+    val gold: Int = 0,
+    val silver: Int = 0,
+    val bronze: Int = 0,
+)
+
 data class MohamedLoversPendingSession(
     val roundKey: String? = null,
     val clickCount: Int = 0,
