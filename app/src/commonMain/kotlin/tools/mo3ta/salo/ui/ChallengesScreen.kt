@@ -507,7 +507,7 @@ private fun ChallengeCard(item: ChallengeItem) {
                     Text(
                         text = stringResource(Res.string.challenges_all_lovers_total),
                         color = item.accent.copy(alpha = 0.7f),
-                        fontSize = 9.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                     )
                     if (item.overallTotal > 0) {
@@ -515,7 +515,7 @@ private fun ChallengeCard(item: ChallengeItem) {
                         Text(
                             text = stringResource(Res.string.challenges_overall_total_inline, formatNumber(item.overallTotal)),
                             color = item.accent.copy(alpha = 0.55f),
-                            fontSize = 9.sp,
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Medium,
                         )
                     }
