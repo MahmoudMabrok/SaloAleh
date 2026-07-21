@@ -14,9 +14,6 @@ import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
-import com.android.billingclient.api.acknowledgePurchase
-import com.android.billingclient.api.queryProductDetails
-import com.android.billingclient.api.queryPurchasesAsync
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -24,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
 class SaloBillingClient(context: Context) {
@@ -96,9 +94,7 @@ class SaloBillingClient(context: Context) {
                 )
             )
             .build()
-        // Billing Library 8+: the queryProductDetails extension resolves to a
-        // QueryProductDetailsResult; expose just the product list to callers.
-        return client.queryProductDetails(params).productDetailsList ?: emptyList()
+        return awaitProductDetails(params)
     }
 
     fun launchBillingFlow(activity: Activity, productId: String, productType: String = BillingClient.ProductType.INAPP) {
@@ -128,23 +124,11 @@ class SaloBillingClient(context: Context) {
         }
     }
 
-    suspend fun queryPurchases(): List<Purchase> {
-        val result = client.queryPurchasesAsync(
-            QueryPurchasesParams.newBuilder()
-                .setProductType(BillingClient.ProductType.INAPP)
-                .build()
-        )
-        return result.purchasesList
-    }
+    suspend fun queryPurchases(): List<Purchase> =
+        awaitPurchases(BillingClient.ProductType.INAPP)
 
-    suspend fun querySubscriptions(): List<Purchase> {
-        val result = client.queryPurchasesAsync(
-            QueryPurchasesParams.newBuilder()
-                .setProductType(BillingClient.ProductType.SUBS)
-                .build()
-        )
-        return result.purchasesList
-    }
+    suspend fun querySubscriptions(): List<Purchase> =
+        awaitPurchases(BillingClient.ProductType.SUBS)
 
     private suspend fun handlePurchase(purchase: Purchase) {
         if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
@@ -154,31 +138,48 @@ class SaloBillingClient(context: Context) {
                 val ackParams = AcknowledgePurchaseParams.newBuilder()
                     .setPurchaseToken(purchase.purchaseToken)
                     .build()
-                val ackResult = client.acknowledgePurchase(ackParams)
+                val ackResult = awaitAcknowledge(ackParams)
                 log.d { "Acknowledge result: ${ackResult.responseCode}" }
             }
         }
     }
 
     private suspend fun processPendingPurchases() {
-        val result = client.queryPurchasesAsync(
-            QueryPurchasesParams.newBuilder()
-                .setProductType(BillingClient.ProductType.INAPP)
-                .build()
-        )
-        for (purchase in result.purchasesList) {
+        for (purchase in awaitPurchases(BillingClient.ProductType.INAPP)) {
             handlePurchase(purchase)
         }
     }
 
     private suspend fun processPendingSubscriptions() {
-        val result = client.queryPurchasesAsync(
-            QueryPurchasesParams.newBuilder()
-                .setProductType(BillingClient.ProductType.SUBS)
-                .build()
-        )
-        for (purchase in result.purchasesList) {
+        for (purchase in awaitPurchases(BillingClient.ProductType.SUBS)) {
             handlePurchase(purchase)
         }
     }
+
+    // Suspend wrappers over the callback-based Billing APIs. The pure-Java
+    // `billing` artifact (not `billing-ktx`) is used so the library's own
+    // Kotlin version stays decoupled from the app's compiler version.
+    private suspend fun awaitProductDetails(params: QueryProductDetailsParams): List<ProductDetails> =
+        suspendCancellableCoroutine { cont ->
+            client.queryProductDetailsAsync(params) { _, result ->
+                cont.resume(result.productDetailsList)
+            }
+        }
+
+    private suspend fun awaitPurchases(productType: String): List<Purchase> =
+        suspendCancellableCoroutine { cont ->
+            val params = QueryPurchasesParams.newBuilder()
+                .setProductType(productType)
+                .build()
+            client.queryPurchasesAsync(params) { _, purchases ->
+                cont.resume(purchases)
+            }
+        }
+
+    private suspend fun awaitAcknowledge(params: AcknowledgePurchaseParams): BillingResult =
+        suspendCancellableCoroutine { cont ->
+            client.acknowledgePurchase(params) { result ->
+                cont.resume(result)
+            }
+        }
 }
