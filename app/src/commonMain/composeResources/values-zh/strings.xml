@@ -745,6 +745,7 @@
     <string name="challenges_all_lovers_total">今日总计</string>
     <string name="challenges_overall_total">累计总数</string>
     <string name="challenges_today_total_inline">今日：%1$s</string>
+    <string name="challenges_overall_total_inline">累计：%1$s</string>
     <string name="zabad_rank_number"># %1$d</string>
     <string name="zabad_rank_subtitle">共 %1$d 位参与者中</string>
     <string name="zabad_leaderboard_title">排行榜</string>
