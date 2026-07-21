@@ -793,7 +793,8 @@ private fun LeaderboardRow(
                     )
                 }
             }
-            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                // Top line: name + supporter tag + daily badge
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(5.dp),
@@ -826,7 +827,16 @@ private fun LeaderboardRow(
                             modifier = Modifier.clickable { onBadgeClick(entry.dailyBadge) },
                         )
                     }
-                    entry.roundStreak?.let { streak ->
+                }
+
+                // Bottom line: round streak + hero (medal) badges
+                val streak = entry.roundStreak ?: 0
+                val medals = entry.goldMedals ?: 0
+                if (streak > 0 || medals > 0) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    ) {
                         if (streak > 0) {
                             Text(
                                 text = "🔥$streak",
@@ -840,8 +850,6 @@ private fun LeaderboardRow(
                                     .padding(horizontal = 5.dp, vertical = 2.dp),
                             )
                         }
-                    }
-                    entry.goldMedals?.let { medals ->
                         if (medals > 0) {
                             Text(
                                 text = "🥇$medals",
