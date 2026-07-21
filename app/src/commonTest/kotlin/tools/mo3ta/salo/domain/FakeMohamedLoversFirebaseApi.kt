@@ -71,6 +71,9 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
     override suspend fun fetchUserAchievements(uid: String): Result<Map<String, UserAchievement>> =
         Result.success(emptyMap())
 
+    var selfMedalsResult: Result<MohamedLoversMedals> = Result.success(MohamedLoversMedals())
+    override suspend fun fetchSelfMedals(uid: String): Result<MohamedLoversMedals> = selfMedalsResult
+
     override suspend fun resetPlayerScore(roundKey: String, uid: String): Result<Unit> =
         Result.success(Unit)
 

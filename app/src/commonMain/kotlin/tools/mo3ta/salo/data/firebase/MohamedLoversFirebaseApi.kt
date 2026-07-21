@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import tools.mo3ta.salo.domain.AppUpdateConfig
 import tools.mo3ta.salo.domain.FirebaseLeaderboard
 import tools.mo3ta.salo.domain.HeroesBoard
+import tools.mo3ta.salo.domain.MohamedLoversMedals
 import tools.mo3ta.salo.domain.MohamedLoversPlayer
 import tools.mo3ta.salo.domain.UserAchievement
 
@@ -30,6 +31,8 @@ interface MohamedLoversFirebaseApi {
         leaderboardEnabled: Boolean,
     ): Result<Unit>
     suspend fun fetchUserAchievements(uid: String): Result<Map<String, UserAchievement>>
+    /** Reads the current user's cumulative podium medals from `users/{uid}/medals`. */
+    suspend fun fetchSelfMedals(uid: String): Result<MohamedLoversMedals>
     suspend fun incrementExternalCount(roundKey: String, uid: String, count: Int): Result<Unit>
     /**
      * Lower the player's saved competition score by [amount] to correct a mistaken entry.
