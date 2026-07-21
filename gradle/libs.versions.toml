@@ -23,7 +23,7 @@ firebaseAnalytics = "21.5.0"
 firebaseAppCheck = "18.0.0"
 firebaseMessaging = "24.1.0"
 gmsCodeScanner = "16.1.0"
-billing = "7.1.1"
+billing = "9.1.0"
 installReferrer = "2.2"
 
 [libraries]

@@ -3,10 +3,6 @@ package tools.mo3ta.salo.data.billing
 import android.app.Activity
 import co.touchlab.kermit.Logger
 import com.android.billingclient.api.BillingClient
-import com.android.billingclient.api.QueryProductDetailsParams
-import com.android.billingclient.api.QueryPurchasesParams
-import com.android.billingclient.api.queryProductDetails
-import com.android.billingclient.api.queryPurchasesAsync
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -112,15 +108,17 @@ class AndroidBillingManager(
     private suspend fun loadProductPrices() {
         val prices = _productPrices.value.toMutableMap()
         for (productId in ProductRegistry.oneTimeProductIds) {
-            val result = billingClient.queryProductDetails(productId, BillingClient.ProductType.INAPP)
-            val details = result.productDetailsList?.firstOrNull() ?: continue
-            val price = details.oneTimePurchaseOfferDetails?.formattedPrice ?: continue
+            val details = billingClient.queryProductDetails(productId, BillingClient.ProductType.INAPP)
+                .firstOrNull() ?: continue
+            val price = details.oneTimePurchaseOfferDetailsList
+                ?.firstOrNull()
+                ?.formattedPrice ?: continue
             prices[productId] = price
             log.d { "Price loaded: $productId = $price" }
         }
         for (productId in ProductRegistry.subscriptionProductIds) {
-            val result = billingClient.queryProductDetails(productId, BillingClient.ProductType.SUBS)
-            val details = result.productDetailsList?.firstOrNull() ?: continue
+            val details = billingClient.queryProductDetails(productId, BillingClient.ProductType.SUBS)
+                .firstOrNull() ?: continue
             val price = details.subscriptionOfferDetails
                 ?.firstOrNull()
                 ?.pricingPhases

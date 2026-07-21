@@ -9,7 +9,7 @@ import com.android.billingclient.api.PendingPurchasesParams
 import com.android.billingclient.api.BillingFlowParams
 import com.android.billingclient.api.BillingResult
 import com.android.billingclient.api.AcknowledgePurchaseParams
-import com.android.billingclient.api.ProductDetailsResult
+import com.android.billingclient.api.ProductDetails
 import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryProductDetailsParams
@@ -85,7 +85,7 @@ class SaloBillingClient(context: Context) {
         _isConnected.value = false
     }
 
-    suspend fun queryProductDetails(productId: String, productType: String = BillingClient.ProductType.INAPP): ProductDetailsResult {
+    suspend fun queryProductDetails(productId: String, productType: String = BillingClient.ProductType.INAPP): List<ProductDetails> {
         val params = QueryProductDetailsParams.newBuilder()
             .setProductList(
                 listOf(
@@ -96,13 +96,14 @@ class SaloBillingClient(context: Context) {
                 )
             )
             .build()
-        return client.queryProductDetails(params)
+        // Billing Library 8+: the queryProductDetails extension resolves to a
+        // QueryProductDetailsResult; expose just the product list to callers.
+        return client.queryProductDetails(params).productDetailsList ?: emptyList()
     }
 
     fun launchBillingFlow(activity: Activity, productId: String, productType: String = BillingClient.ProductType.INAPP) {
         scope.launch {
-            val result = queryProductDetails(productId, productType)
-            val details = result.productDetailsList?.firstOrNull() ?: run {
+            val details = queryProductDetails(productId, productType).firstOrNull() ?: run {
                 log.w { "Product $productId not found" }
                 return@launch
             }
