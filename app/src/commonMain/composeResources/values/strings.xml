@@ -766,6 +766,11 @@
     <string name="streak_badge_announcement_dismiss">ليس الآن</string>
     <string name="leaderboard_streak_info_title">شعلة المداومة</string>
     <string name="leaderboard_streak_info_desc">عدد الأيام المتتالية التي صلّى فيها هذا المشارك على النبي ﷺ خلال الجولة الحالية دون انقطاع. من يُكمل %1$d أيام متتالية يفوز بشارة «الأسبوع المكتمل».</string>
+    <string name="leaderboard_medals_info_title">أوسمة المسابقة</string>
+    <string name="leaderboard_medals_info_desc">تُمنح الأوسمة كل جمعة عند انتهاء المسابقة الأسبوعية، حسب مركز المشارك في القائمة.</string>
+    <string name="leaderboard_medals_info_gold">عدد مرات الحصول على المركز الأول</string>
+    <string name="leaderboard_medals_info_silver">عدد مرات الحصول على المركز الثاني</string>
+    <string name="leaderboard_medals_info_bronze">عدد مرات الحصول على المركز الثالث</string>
     <string name="leaderboard_score_label">صلاة</string>
     <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">عرض المسابقة</string>

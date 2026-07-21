@@ -716,6 +716,11 @@
     <string name="streak_badge_announcement_dismiss">暂不</string>
     <string name="leaderboard_streak_info_title">坚持之火</string>
     <string name="leaderboard_streak_info_desc">该参与者在本轮次中连续为先知ﷺ祈福的天数，一天也未间断。连续坚持 %1$d 天即可获得「完美一周」徽章。</string>
+    <string name="leaderboard_medals_info_title">竞赛奖牌</string>
+    <string name="leaderboard_medals_info_desc">每周五竞赛结束时，根据参与者的最终排名颁发奖牌。</string>
+    <string name="leaderboard_medals_info_gold">获得第一名的次数</string>
+    <string name="leaderboard_medals_info_silver">获得第二名的次数</string>
+    <string name="leaderboard_medals_info_bronze">获得第三名的次数</string>
     <string name="leaderboard_score_label">次祈祷</string>
     <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">查看竞赛</string>

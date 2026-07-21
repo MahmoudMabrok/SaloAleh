@@ -85,13 +85,9 @@ import tools.mo3ta.salo.generated.resources.challenges_overall_total
 import tools.mo3ta.salo.generated.resources.challenges_today_total_inline
 import tools.mo3ta.salo.generated.resources.challenges_cairo_time_note
 import tools.mo3ta.salo.generated.resources.challenges_day_countdown_label
-import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_hour
-import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_minute
-import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_second
 import tools.mo3ta.salo.generated.resources.challenges_subtitle
 import tools.mo3ta.salo.generated.resources.challenges_title
 import tools.mo3ta.salo.generated.resources.heroes_chip_label
-import tools.mo3ta.salo.generated.resources.heroes_sheet_subtitle
 import tools.mo3ta.salo.generated.resources.takbeer_session_title
 import tools.mo3ta.salo.generated.resources.tendays_title
 import tools.mo3ta.salo.domain.ChallengeType
@@ -321,14 +317,18 @@ fun ChallengesScreen(
                     fontSize = 11.sp,
                 )
                 Spacer(Modifier.height(10.dp))
-                DayCountdownCard()
+                // Compact top-left chips: remaining time + yesterday's hero
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    DayCountdownChip()
+                    if (heroesBoard != null) {
+                        HeroOfYesterdayChip(onClick = { viewModel.openHeroesSheet() })
+                    }
+                }
                 Spacer(Modifier.height(8.dp))
-            }
-        }
-
-        if (heroesBoard != null) {
-            item {
-                HeroOfYesterdayCard(onClick = { viewModel.openHeroesSheet() })
             }
         }
 
@@ -346,69 +346,44 @@ fun ChallengesScreen(
     }
 }
 
+/** Compact top-left chip linking to yesterday's heroes sheet. */
 @Composable
-private fun HeroOfYesterdayCard(onClick: () -> Unit) {
+private fun HeroOfYesterdayChip(onClick: () -> Unit) {
     val accent = MohamedLoversPalette.GoldHighlight
     Surface(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        color = Color(0xFF1A2338),
-        border = BorderStroke(1.dp, accent.copy(alpha = 0.35f)),
+        shape = RoundedCornerShape(999.dp),
+        color = accent.copy(alpha = 0.12f),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.3f)),
         tonalElevation = 0.dp,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 14.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .background(accent.copy(alpha = 0.15f), CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = Icons.Default.EmojiEvents,
-                    contentDescription = null,
-                    tint = accent,
-                    modifier = Modifier.size(24.dp),
-                )
-            }
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(Res.string.heroes_chip_label),
-                    color = accent,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = stringResource(Res.string.heroes_sheet_subtitle),
-                    color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.58f),
-                    fontSize = 12.sp,
-                    lineHeight = 17.sp,
-                )
-            }
-
             Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                imageVector = Icons.Default.EmojiEvents,
                 contentDescription = null,
-                tint = accent.copy(alpha = 0.6f),
+                tint = accent,
+                modifier = Modifier.size(14.dp),
+            )
+            Text(
+                text = stringResource(Res.string.heroes_chip_label),
+                color = accent,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
             )
         }
     }
 }
 
 /**
- * Live countdown to the end of the current Cairo day (midnight Africa/Cairo), when all daily
- * challenges reset. Ticks every second while the screen is visible.
+ * Compact top-left chip: live countdown to the end of the current Cairo day (midnight
+ * Africa/Cairo), when all daily challenges reset. Ticks every second while the screen is visible.
  */
 @Composable
-private fun DayCountdownCard() {
+private fun DayCountdownChip() {
     val cairoZone = remember { TimeZone.of("Africa/Cairo") }
     var remainingSeconds by remember { mutableStateOf(0L) }
 
@@ -426,62 +401,36 @@ private fun DayCountdownCard() {
     val hours = (remainingSeconds / 3600).toInt()
     val minutes = ((remainingSeconds % 3600) / 60).toInt()
     val seconds = (remainingSeconds % 60).toInt()
+    val timeText = "${hours.toString().padStart(2, '0')}:" +
+        "${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}"
 
     val accent = MohamedLoversPalette.GoldHighlight
     Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = Color(0xFF101C33),
-        border = BorderStroke(1.dp, accent.copy(alpha = 0.25f)),
+        shape = RoundedCornerShape(999.dp),
+        color = accent.copy(alpha = 0.1f),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.22f)),
         tonalElevation = 0.dp,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
             Text(
                 text = stringResource(Res.string.challenges_day_countdown_label),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
-                fontSize = 12.sp,
+                fontSize = 10.sp,
                 fontWeight = FontWeight.Medium,
             )
-            Spacer(Modifier.height(8.dp))
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
-                ) {
-                    CountdownUnit(hours, stringResource(Res.string.mohamed_lovers_countdown_hour), accent)
-                    CountdownUnit(minutes, stringResource(Res.string.mohamed_lovers_countdown_minute), accent)
-                    CountdownUnit(seconds, stringResource(Res.string.mohamed_lovers_countdown_second), accent)
-                }
+                Text(
+                    text = timeText,
+                    color = accent,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                )
             }
         }
-    }
-}
-
-@Composable
-private fun CountdownUnit(value: Int, label: String, accent: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Surface(
-            shape = RoundedCornerShape(10.dp),
-            color = accent.copy(alpha = 0.12f),
-        ) {
-            Text(
-                text = value.toString().padStart(2, '0'),
-                color = accent,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            )
-        }
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = label,
-            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.6f),
-            fontSize = 10.sp,
-        )
     }
 }
 

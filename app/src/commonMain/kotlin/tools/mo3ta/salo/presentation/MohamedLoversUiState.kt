@@ -16,6 +16,8 @@ data class MohamedLoversLeaderboardEntry(
     val dailyBadge: String? = null,
     val roundStreak: Int? = null,
     val goldMedals: Int? = null,
+    val silverMedals: Int? = null,
+    val bronzeMedals: Int? = null,
 ){
     val displayedRank = if (rank > 0) "#$rank " else ""
 }

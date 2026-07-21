@@ -799,6 +799,8 @@ class MohamedLoversViewModel(
                 dailyBadge = entry.dailyBadge,
                 roundStreak = if (isCurrentUser) state.value.roundStreak.takeIf { it > 0 } else entry.roundStreak,
                 goldMedals = entry.goldMedals,
+                silverMedals = entry.silverMedals,
+                bronzeMedals = entry.bronzeMedals,
             )
         }.sortedByDescending { it.totalCount }
             .mapIndexed { index, entry -> entry.copy(rank = index + 1) }
