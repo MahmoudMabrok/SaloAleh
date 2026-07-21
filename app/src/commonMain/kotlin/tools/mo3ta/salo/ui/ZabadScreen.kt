@@ -2,14 +2,15 @@ package tools.mo3ta.salo.ui
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.withInfiniteAnimationFrameNanos
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -128,8 +129,24 @@ fun ZabadScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             ChallengeBubbleButton(ChallengeType.ZABAD.id)
-            IconButton(onClick = viewModel::onLeaderboardOpened) {
-                Icon(Icons.Default.EmojiEvents, null, tint = Color(0xFFE9C46A))
+            Surface(
+                onClick = viewModel::onLeaderboardOpened,
+                shape = CircleShape,
+                color = Color(0xFFE9C46A).copy(alpha = 0.14f),
+                border = BorderStroke(1.dp, Color(0xFFE9C46A).copy(alpha = 0.35f)),
+            ) {
+                val chipText = if (state.rank > 0 && state.participantCount > 0) {
+                    "${stringResource(Res.string.zabad_rank_number, state.rank)} · ${stringResource(Res.string.zabad_rank_subtitle, state.participantCount)}"
+                } else {
+                    stringResource(Res.string.zabad_rank_unranked)
+                }
+                Text(
+                    text = chipText,
+                    color = Color(0xFFEAF6F4).copy(alpha = 0.85f),
+                    fontSize = 12.sp,
+                    fontFamily = ibmPlexArabicFamily(),
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+                )
             }
         }
         Column(Modifier.fillMaxWidth().padding(horizontal = 28.dp).align(Alignment.Center).alpha(counterAlpha), horizontalAlignment = Alignment.CenterHorizontally) {

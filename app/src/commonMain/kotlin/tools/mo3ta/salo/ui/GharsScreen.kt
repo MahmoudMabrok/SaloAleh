@@ -1,5 +1,6 @@
 package tools.mo3ta.salo.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,9 +22,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -58,6 +59,9 @@ import tools.mo3ta.salo.generated.resources.ghars_grove_toast
 import tools.mo3ta.salo.generated.resources.ghars_groves_label
 import tools.mo3ta.salo.generated.resources.ghars_lifetime_label
 import tools.mo3ta.salo.generated.resources.ghars_phrase
+import tools.mo3ta.salo.generated.resources.ghars_rank_number
+import tools.mo3ta.salo.generated.resources.ghars_rank_subtitle
+import tools.mo3ta.salo.generated.resources.ghars_rank_unranked
 import tools.mo3ta.salo.generated.resources.ghars_remaining
 import tools.mo3ta.salo.generated.resources.ghars_reward_hadith
 import tools.mo3ta.salo.generated.resources.ghars_reward_hadith_ref
@@ -145,8 +149,24 @@ fun GharsScreen(
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     ChallengeBubbleButton(ChallengeType.GHARS.id)
-                    IconButton(onClick = viewModel::onLeaderboardOpened) {
-                        Icon(Icons.Default.EmojiEvents, null, tint = GharsColors.Gold)
+                    Surface(
+                        onClick = viewModel::onLeaderboardOpened,
+                        shape = CircleShape,
+                        color = GharsColors.Gold.copy(alpha = 0.16f),
+                        border = BorderStroke(1.dp, GharsColors.Gold.copy(alpha = 0.4f)),
+                    ) {
+                        val chipText = if (state.rank > 0 && state.participantCount > 0) {
+                            "${stringResource(Res.string.ghars_rank_number, state.rank)} · ${stringResource(Res.string.ghars_rank_subtitle, state.participantCount)}"
+                        } else {
+                            stringResource(Res.string.ghars_rank_unranked)
+                        }
+                        Text(
+                            text = chipText,
+                            color = GharsColors.TextOnSky.copy(alpha = 0.85f),
+                            fontSize = 12.sp,
+                            fontFamily = ibmPlexArabicFamily(),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+                        )
                     }
                 }
             }

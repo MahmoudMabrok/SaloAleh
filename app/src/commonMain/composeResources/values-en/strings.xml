@@ -815,6 +815,9 @@
   <string name="ghars_reward_hadith">Whoever says it, a palm tree is planted for him in Paradise</string>
   <string name="ghars_reward_hadith_ref">Reported by al-Tirmidhi</string>
   <string name="ghars_tap_hint">Tap anywhere and a palm is planted for you</string>
+  <string name="ghars_rank_number"># %1$d</string>
+  <string name="ghars_rank_subtitle">among %1$d participants</string>
+  <string name="ghars_rank_unranked">Tap to see the leaderboard</string>
   <string name="ghars_empty_hint">The soil is ready. Glorify Allah to plant your first palm</string>
   <string name="ghars_today_label">Planted for you today</string>
   <string name="ghars_unit">palms</string>

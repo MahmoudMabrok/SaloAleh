@@ -777,6 +777,9 @@
   <string name="ghars_reward_hadith">谁诵念它，真主便在乐园中为他栽种一棵棕榈树</string>
   <string name="ghars_reward_hadith_ref">提尔米济辑录</string>
   <string name="ghars_tap_hint">点击任意处，为您种下一棵棕榈树</string>
+  <string name="ghars_rank_number"># %1$d</string>
+  <string name="ghars_rank_subtitle">共 %1$d 位参与者中</string>
+  <string name="ghars_rank_unranked">点击查看排行榜</string>
   <string name="ghars_empty_hint">土地已备好。赞颂真主以种下第一棵棕榈树</string>
   <string name="ghars_today_label">今日为您种下</string>
   <string name="ghars_unit">棵</string>

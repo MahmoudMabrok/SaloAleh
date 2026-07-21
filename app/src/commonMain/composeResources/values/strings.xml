@@ -827,6 +827,9 @@
   <string name="ghars_reward_hadith">مَن قالها غُرِسَت له نخلةٌ في الجنّة</string>
   <string name="ghars_reward_hadith_ref">رواه الترمذي</string>
   <string name="ghars_tap_hint">اضغط في أيّ مكان لتُغرَس لك نخلة</string>
+  <string name="ghars_rank_number"># %1$d</string>
+  <string name="ghars_rank_subtitle">من بين %1$d مشارك</string>
+  <string name="ghars_rank_unranked">اضغط لرؤية المتصدرين</string>
   <string name="ghars_empty_hint">الأرض مُهيّأة. سبِّح لتُغرَس أوّل نخلة</string>
   <string name="ghars_today_label">غُرِسَ لك اليوم</string>
   <string name="ghars_unit">نخلة</string>

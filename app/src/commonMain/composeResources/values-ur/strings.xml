@@ -777,6 +777,9 @@
   <string name="ghars_reward_hadith">جو اسے کہے، اس کے لیے جنت میں ایک کھجور کا درخت لگایا جاتا ہے</string>
   <string name="ghars_reward_hadith_ref">ترمذی نے روایت کیا</string>
   <string name="ghars_tap_hint">کہیں بھی دبائیں، آپ کے لیے ایک کھجور لگائی جائے گی</string>
+  <string name="ghars_rank_number"># %1$d</string>
+  <string name="ghars_rank_subtitle">%1$d شرکاء میں سے</string>
+  <string name="ghars_rank_unranked">لیڈر بورڈ دیکھنے کے لیے ٹیپ کریں</string>
   <string name="ghars_empty_hint">زمین تیار ہے۔ تسبیح کریں تاکہ پہلی کھجور لگے</string>
   <string name="ghars_today_label">آج آپ کے لیے لگائی گئیں</string>
   <string name="ghars_unit">کھجوریں</string>
