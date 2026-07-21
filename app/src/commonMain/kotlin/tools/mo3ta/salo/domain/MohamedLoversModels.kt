@@ -38,6 +38,8 @@ data class FirebaseLeaderboardEntry(
     val dailyBadge: String? = null,
     val roundStreak: Int? = null,
     val goldMedals: Int? = null,
+    val silverMedals: Int? = null,
+    val bronzeMedals: Int? = null,
     val nickname: String = "",
 )
 

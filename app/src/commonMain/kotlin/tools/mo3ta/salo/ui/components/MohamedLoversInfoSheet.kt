@@ -130,6 +130,7 @@ internal fun MohamedLoversInfoSheet(
     onUserClick: (uid: String, displayTag: String) -> Unit = { _, _ -> },
     onBadgeClick: (String) -> Unit = {},
     onStreakClick: (Int) -> Unit = {},
+    onMedalClick: () -> Unit = {},
 ) {
     if (!isOpen) return
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
@@ -222,6 +223,7 @@ internal fun MohamedLoversInfoSheet(
                 onUserClick = onUserClick,
                 onBadgeClick = onBadgeClick,
                 onStreakClick = onStreakClick,
+                onMedalClick = onMedalClick,
             )
             if (state.isWinner) {
                 WinnerCard(winnerCode = state.winnerCode, onCopyWinnerCode = onCopyWinnerCode)
@@ -576,6 +578,7 @@ private fun LeaderboardCard(
     onUserClick: (uid: String, displayTag: String) -> Unit = { _, _ -> },
     onBadgeClick: (String) -> Unit = {},
     onStreakClick: (Int) -> Unit = {},
+    onMedalClick: () -> Unit = {},
 ) {
     SheetCard {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -634,6 +637,7 @@ private fun LeaderboardCard(
                                 onUserClick = onUserClick,
                                 onBadgeClick = onBadgeClick,
                                 onStreakClick = onStreakClick,
+                                onMedalClick = onMedalClick,
                             )
                         }
                     }
@@ -661,6 +665,7 @@ private fun LeaderboardCard(
                             onUserClick = onUserClick,
                             onBadgeClick = onBadgeClick,
                             onStreakClick = onStreakClick,
+                            onMedalClick = onMedalClick,
                         )
                         Text(
                             text = stringResource(Res.string.mohamed_lovers_rank_pending_top),
@@ -715,6 +720,7 @@ private fun LeaderboardRow(
     onUserClick: (uid: String, displayTag: String) -> Unit = { _, _ -> },
     onBadgeClick: (String) -> Unit = {},
     onStreakClick: (Int) -> Unit = {},
+    onMedalClick: () -> Unit = {},
 ) {
     val rankColor = when (entry.rank) {
         1 -> MohamedLoversPalette.GoldHighlight
@@ -831,8 +837,10 @@ private fun LeaderboardRow(
 
                 // Bottom line: round streak + hero (medal) badges
                 val streak = entry.roundStreak ?: 0
-                val medals = entry.goldMedals ?: 0
-                if (streak > 0 || medals > 0) {
+                val gold = entry.goldMedals ?: 0
+                val silver = entry.silverMedals ?: 0
+                val bronze = entry.bronzeMedals ?: 0
+                if (streak > 0 || gold > 0 || silver > 0 || bronze > 0) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(5.dp),
@@ -850,18 +858,9 @@ private fun LeaderboardRow(
                                     .padding(horizontal = 5.dp, vertical = 2.dp),
                             )
                         }
-                        if (medals > 0) {
-                            Text(
-                                text = "🥇$medals",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.W700,
-                                color = MohamedLoversPalette.GoldHighlight,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(MohamedLoversPalette.GoldHighlight.copy(alpha = 0.15f))
-                                    .padding(horizontal = 5.dp, vertical = 2.dp),
-                            )
-                        }
+                        if (gold > 0) MedalPill(emoji = "🥇", count = gold, color = MohamedLoversPalette.GoldHighlight, onClick = onMedalClick)
+                        if (silver > 0) MedalPill(emoji = "🥈", count = silver, color = MohamedLoversPalette.RankSilver, onClick = onMedalClick)
+                        if (bronze > 0) MedalPill(emoji = "🥉", count = bronze, color = MohamedLoversPalette.RankBronze, onClick = onMedalClick)
                     }
                 }
             }
@@ -896,6 +895,21 @@ private fun LeaderboardRow(
             }
         }
     }
+}
+
+@Composable
+private fun MedalPill(emoji: String, count: Int, color: Color, onClick: () -> Unit) {
+    Text(
+        text = "$emoji$count",
+        fontSize = 10.sp,
+        fontWeight = FontWeight.W700,
+        color = color,
+        modifier = Modifier
+            .clip(RoundedCornerShape(4.dp))
+            .background(color.copy(alpha = 0.15f))
+            .clickable { onClick() }
+            .padding(horizontal = 5.dp, vertical = 2.dp),
+    )
 }
 
 @Composable

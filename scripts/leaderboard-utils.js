@@ -441,22 +441,25 @@ async function populateMohamedLoversRound(db, admin, roundKey, isFinal) {
     dailyLeaderboard[String(i + 1)] = entry;
   });
 
-  // Copy each leaderboard participant's gold medal count (from their user node) onto
-  // the entry so the app can render a 🥇 pill. Medals live under users/{uid}/medals,
+  // Copy each leaderboard participant's medal counts (from their user node) onto the
+  // entry so the app can render 🥇/🥈/🥉 pills. Medals live under users/{uid}/medals,
   // not on the player node, so they're fetched per-uid for the top-10 weekly + daily set.
   const medalUids = [...new Set([...top10, ...dailyTop10].map(p => p.uid))];
-  const goldMedalByUid = {};
+  const medalsByUid = {};
   await Promise.all(medalUids.map(async uid => {
-    const snap = await db.ref(`${MOHAMED_LOVERS_ROOT}/users/${uid}/medals/gold`).get();
-    const gold = snap.val();
-    if (typeof gold === 'number' && gold > 0) goldMedalByUid[uid] = gold;
+    const snap = await db.ref(`${MOHAMED_LOVERS_ROOT}/users/${uid}/medals`).get();
+    const medals = snap.val();
+    if (medals && typeof medals === 'object') medalsByUid[uid] = medals;
   }));
-  top10.forEach((player, i) => {
-    if (goldMedalByUid[player.uid]) leaderboard[String(i + 1)].goldMedals = goldMedalByUid[player.uid];
-  });
-  dailyTop10.forEach((player, i) => {
-    if (goldMedalByUid[player.uid]) dailyLeaderboard[String(i + 1)].goldMedals = goldMedalByUid[player.uid];
-  });
+  const attachMedals = (entry, uid) => {
+    const medals = medalsByUid[uid];
+    if (!medals) return;
+    if (typeof medals.gold === 'number' && medals.gold > 0) entry.goldMedals = medals.gold;
+    if (typeof medals.silver === 'number' && medals.silver > 0) entry.silverMedals = medals.silver;
+    if (typeof medals.bronze === 'number' && medals.bronze > 0) entry.bronzeMedals = medals.bronze;
+  };
+  top10.forEach((player, i) => attachMedals(leaderboard[String(i + 1)], player.uid));
+  dailyTop10.forEach((player, i) => attachMedals(dailyLeaderboard[String(i + 1)], player.uid));
 
   // Read old leaderboards before overwriting — used for rank-diff and drop-out detection.
   let droppedUids = [];

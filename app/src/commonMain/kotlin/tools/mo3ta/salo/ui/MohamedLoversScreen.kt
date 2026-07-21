@@ -118,6 +118,7 @@ import tools.mo3ta.salo.ui.components.MilestoneCelebration
 import tools.mo3ta.salo.domain.DailyBadge
 import tools.mo3ta.salo.ui.components.DailyBadgeInfoDialog
 import tools.mo3ta.salo.ui.components.DailyBadgeTiersSheet
+import tools.mo3ta.salo.ui.components.MedalInfoDialog
 import tools.mo3ta.salo.ui.components.RoundStreakInfoDialog
 import tools.mo3ta.salo.ui.components.DailyRankStrip
 import tools.mo3ta.salo.ui.components.RankMovementBanner
@@ -193,6 +194,7 @@ fun MohamedLoversScreen(
     var badgeTiersSheetOpen by remember { mutableStateOf(false) }
     var badgeDialogKey by remember { mutableStateOf<String?>(null) }
     var streakDialogCount by remember { mutableStateOf<Int?>(null) }
+    var showMedalInfo by remember { mutableStateOf(false) }
     var showRankTooltip by remember { mutableStateOf(false) }
     var showBubbleTooltip by remember { mutableStateOf(false) }
     var selectedUserAchievements by remember { mutableStateOf<Pair<String, String>?>(null) }
@@ -440,6 +442,7 @@ fun MohamedLoversScreen(
             },
             onBadgeClick = { key -> badgeDialogKey = key },
             onStreakClick = { streak -> streakDialogCount = streak },
+            onMedalClick = { showMedalInfo = true },
             onUserClick = { uid, tag ->
                 analyticsManager.logAction(AppAnalytics.LEADERBOARD_USER_CLICK)
                 val isSelf = uid.isNotBlank() && uid == currentUserEntry?.uid
@@ -463,6 +466,9 @@ fun MohamedLoversScreen(
                 streak = streak,
                 onDismiss = { streakDialogCount = null },
             )
+        }
+        if (showMedalInfo) {
+            MedalInfoDialog(onDismiss = { showMedalInfo = false })
         }
         if (badgeTiersSheetOpen) {
             DailyBadgeTiersSheet(
