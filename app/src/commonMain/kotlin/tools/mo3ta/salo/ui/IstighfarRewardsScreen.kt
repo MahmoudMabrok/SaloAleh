@@ -93,6 +93,7 @@ fun IstighfarRewardsScreen(
     onBack: () -> Unit,
     openLeaderboard: Boolean = false,
     onLeaderboardAutoOpened: () -> Unit = {},
+    manualEntryEnabled: Boolean = true,
     viewModel: IstighfarChallengeViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -153,6 +154,7 @@ fun IstighfarRewardsScreen(
                 analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_ISTIGHFAR)
                 viewModel.showManualIstighfarSheet()
             },
+            manualEntryVisible = manualEntryEnabled,
             onViewRewards = { showRewardsSheet = true },
             modifier = Modifier.fillMaxSize(),
         )
@@ -226,6 +228,7 @@ private fun IstighfarImmersiveZone(
     onBack: () -> Unit,
     onRankClick: () -> Unit,
     onManualEntryClick: () -> Unit,
+    manualEntryVisible: Boolean = true,
     onViewRewards: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -299,7 +302,9 @@ private fun IstighfarImmersiveZone(
                 }
             }
 
-            IstighfarManualEntryButton(onClick = onManualEntryClick)
+            if (manualEntryVisible) {
+                IstighfarManualEntryButton(onClick = onManualEntryClick)
+            }
 
             Spacer(Modifier.weight(1f))
 

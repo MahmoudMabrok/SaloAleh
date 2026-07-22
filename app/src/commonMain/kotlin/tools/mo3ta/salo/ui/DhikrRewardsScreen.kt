@@ -103,6 +103,7 @@ fun DhikrRewardsScreen(
     onBack: () -> Unit,
     openLeaderboard: Boolean = false,
     onLeaderboardAutoOpened: () -> Unit = {},
+    manualEntryEnabled: Boolean = true,
     viewModel: DhikrChallengeViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -172,6 +173,7 @@ fun DhikrRewardsScreen(
                 onBack = onBack,
                 onRankClick = { viewModel.onLeaderboardOpened() },
                 onManualEntryClick = onHeroManualEntry,
+                manualEntryVisible = manualEntryEnabled,
                 onViewGains = { showGainsSheet = true },
                 modifier = Modifier.fillMaxSize(),
             )
@@ -192,6 +194,7 @@ fun DhikrRewardsScreen(
                     onBack = onBack,
                     onRankClick = { viewModel.onLeaderboardOpened() },
                     onManualEntryClick = onHeroManualEntry,
+                    manualEntryVisible = manualEntryEnabled,
                 )
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
@@ -267,6 +270,7 @@ private fun DhikrImmersiveZone(
     onBack: () -> Unit,
     onRankClick: () -> Unit,
     onManualEntryClick: () -> Unit,
+    manualEntryVisible: Boolean = true,
 ) {
     val fraction = (count.toFloat() / target.toFloat()).coerceIn(0f, 1f)
 
@@ -335,10 +339,12 @@ private fun DhikrImmersiveZone(
                 }
             }
 
-            DhikrManualEntryButton(
-                onClick = onManualEntryClick,
-                onDarkBackground = true,
-            )
+            if (manualEntryVisible) {
+                DhikrManualEntryButton(
+                    onClick = onManualEntryClick,
+                    onDarkBackground = true,
+                )
+            }
 
             Spacer(Modifier.height(12.dp))
 
