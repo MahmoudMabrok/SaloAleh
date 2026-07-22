@@ -43,6 +43,7 @@ import tools.mo3ta.salo.data.engagement.EngagementStore
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.ui.AchievementCelebrationDialog
 import tools.mo3ta.salo.ui.AchievementsScreen
+import tools.mo3ta.salo.ui.AlKahfReminderDialog
 import tools.mo3ta.salo.ui.baqiyat.BaqiyatScreen
 import tools.mo3ta.salo.ui.ChallengesScreen
 import tools.mo3ta.salo.ui.DhikrRewardsScreen
@@ -85,6 +86,7 @@ import tools.mo3ta.salo.data.MilestoneTracker
 import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseApi
 import tools.mo3ta.salo.data.referral.ReferralStore
+import tools.mo3ta.salo.data.reminder.AlKahfReminderStore
 import tools.mo3ta.salo.data.update.UpdateChecker
 import tools.mo3ta.salo.domain.isNewerVersion
 import tools.mo3ta.salo.analytics.BillingAnalytics
@@ -115,6 +117,11 @@ private const val STREAK_BADGE_ANNOUNCEMENT_ENABLED = true
 // announcement suppression above: it must reach every user when a newer release ships.
 // Flip to false to disable the startup version check entirely.
 private const val UPDATE_PROMPT_ENABLED = true
+
+// The Friday "read Surah Al-Kahf" reminder is a devotional nudge shown once per Friday
+// (Cairo timezone), independent of the globally-suppressed app announcements above.
+// Flip to false to disable it.
+private const val ALKAHF_REMINDER_ENABLED = true
 
 @Composable
 fun App(
@@ -655,6 +662,29 @@ fun App(
                         }
                         NotificationAction.NONE -> Unit
                     }
+                },
+            )
+        }
+
+        // Friday reminder to read Surah Al-Kahf: shown at most once per day, and only on
+        // Fridays. Unlike the round/heart logic this uses the device's *local* day (not
+        // Cairo) so "Friday" matches the user's own calendar. Independent of the
+        // suppressed app announcements above so the devotional nudge always reaches
+        // users, but never over onboarding or the nickname prompt.
+        val alKahfReminderStore = koinInject<AlKahfReminderStore>()
+        val localToday = Clock.System.todayIn(TimeZone.currentSystemDefault())
+        var showAlKahfReminder by remember {
+            mutableStateOf(ALKAHF_REMINDER_ENABLED && alKahfReminderStore.shouldShow(localToday))
+        }
+        if (
+            showAlKahfReminder &&
+            !showOnboarding &&
+            !shouldShowNicknamePrompt
+        ) {
+            AlKahfReminderDialog(
+                onDismiss = {
+                    alKahfReminderStore.markShown(localToday)
+                    showAlKahfReminder = false
                 },
             )
         }

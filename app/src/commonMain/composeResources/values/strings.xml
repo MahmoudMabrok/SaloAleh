@@ -851,4 +851,7 @@
   <string name="manual_ghars_enter_count">أدخل العدد</string>
   <string name="manual_ghars_witness">أشهد أن هذا العدد صحيح وحقيقي، وأن الله مطّلع على نيّتي</string>
   <string name="manual_ghars_submit">✦ تسجيل التسبيح ✦</string>
+  <string name="alkahf_reminder_title">جمعة مباركة 🌿</string>
+  <string name="alkahf_reminder_body">لا تنسَ قراءة سورة الكهف اليوم، فمن قرأها يوم الجمعة أضاء له من النور ما بين الجمعتين.</string>
+  <string name="alkahf_reminder_cta">تمام</string>
 </resources>
