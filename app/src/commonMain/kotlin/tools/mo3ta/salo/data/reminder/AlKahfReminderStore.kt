@@ -6,7 +6,8 @@ import kotlinx.datetime.LocalDate
 
 /**
  * Gates the Friday "read Surah Al-Kahf" reminder dialog so it appears at most once
- * per day, and only on Fridays (Cairo timezone — the caller passes today's Cairo date).
+ * per day, and only on Fridays. The caller passes today's date in the device's local
+ * timezone so "Friday" matches the user's own calendar (not a fixed Cairo day).
  *
  * Reading Surah Al-Kahf on Friday is a well-known sunnah; this nudges the user each Friday.
  *

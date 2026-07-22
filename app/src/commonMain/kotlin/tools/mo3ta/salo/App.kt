@@ -666,13 +666,15 @@ fun App(
             )
         }
 
-        // Friday reminder to read Surah Al-Kahf: shown at most once per Cairo day, and
-        // only on Fridays. Independent of the suppressed app announcements above so the
-        // devotional nudge always reaches users, but never over onboarding or the
-        // nickname prompt.
+        // Friday reminder to read Surah Al-Kahf: shown at most once per day, and only on
+        // Fridays. Unlike the round/heart logic this uses the device's *local* day (not
+        // Cairo) so "Friday" matches the user's own calendar. Independent of the
+        // suppressed app announcements above so the devotional nudge always reaches
+        // users, but never over onboarding or the nickname prompt.
         val alKahfReminderStore = koinInject<AlKahfReminderStore>()
+        val localToday = Clock.System.todayIn(TimeZone.currentSystemDefault())
         var showAlKahfReminder by remember {
-            mutableStateOf(ALKAHF_REMINDER_ENABLED && alKahfReminderStore.shouldShow(today))
+            mutableStateOf(ALKAHF_REMINDER_ENABLED && alKahfReminderStore.shouldShow(localToday))
         }
         if (
             showAlKahfReminder &&
@@ -681,7 +683,7 @@ fun App(
         ) {
             AlKahfReminderDialog(
                 onDismiss = {
-                    alKahfReminderStore.markShown(today)
+                    alKahfReminderStore.markShown(localToday)
                     showAlKahfReminder = false
                 },
             )
