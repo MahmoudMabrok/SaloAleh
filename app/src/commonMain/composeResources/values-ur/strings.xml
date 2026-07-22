@@ -801,4 +801,7 @@
   <string name="manual_ghars_enter_count">تعداد درج کریں</string>
   <string name="manual_ghars_witness">میں گواہی دیتا ہوں کہ یہ تعداد درست اور حقیقی ہے، اور اللہ میری نیت سے باخبر ہے</string>
   <string name="manual_ghars_submit">✦ تسبیح درج کریں ✦</string>
+  <string name="alkahf_reminder_title">جمعہ مبارک 🌿</string>
+  <string name="alkahf_reminder_body">آج سورۃ الکہف پڑھنا نہ بھولیں۔ جو اسے جمعہ کے دن پڑھتا ہے، اس کے لیے دو جمعوں کے درمیان نور روشن ہو جاتا ہے۔</string>
+  <string name="alkahf_reminder_cta">ٹھیک ہے</string>
 </resources>

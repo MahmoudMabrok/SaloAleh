@@ -839,4 +839,7 @@
   <string name="manual_ghars_enter_count">Enter count</string>
   <string name="manual_ghars_witness">I testify that this count is true and accurate, and that Allah is aware of my intention</string>
   <string name="manual_ghars_submit">✦ Log Tasbeeh ✦</string>
+  <string name="alkahf_reminder_title">Blessed Friday 🌿</string>
+  <string name="alkahf_reminder_body">Don\'t forget to read Surah Al-Kahf today. Whoever reads it on Friday will have a light shining for them from one Friday to the next.</string>
+  <string name="alkahf_reminder_cta">Got it</string>
 </resources>

@@ -801,4 +801,7 @@
   <string name="manual_ghars_enter_count">输入数量</string>
   <string name="manual_ghars_witness">我证明这个数量是真实准确的，真主了解我的意图</string>
   <string name="manual_ghars_submit">✦ 记录赞颂 ✦</string>
+  <string name="alkahf_reminder_title">主麻吉庆 🌿</string>
+  <string name="alkahf_reminder_body">别忘了今天诵读《山洞章》。凡在主麻日诵读此章者，将从这个主麻日到下个主麻日之间被光照耀。</string>
+  <string name="alkahf_reminder_cta">好的</string>
 </resources>
