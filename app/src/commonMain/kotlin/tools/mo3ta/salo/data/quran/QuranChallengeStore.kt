@@ -2,7 +2,7 @@ package tools.mo3ta.salo.data.quran
 
 import com.russhwolf.settings.Settings
 import kotlinx.datetime.LocalDate
-import tools.mo3ta.salo.domain.CHALLENGE_MANUAL_DAILY_CAP
+import tools.mo3ta.salo.domain.QURAN_MANUAL_DAILY_CAP
 
 class QuranChallengeStore(private val settings: Settings) {
 
@@ -33,13 +33,13 @@ class QuranChallengeStore(private val settings: Settings) {
 
     /**
      * Manual ("external") entry. The applied amount is clamped so cumulative manual entry
-     * never exceeds [CHALLENGE_MANUAL_DAILY_CAP] for the day. Taps ([incrementToday]) are uncapped.
+     * never exceeds [QURAN_MANUAL_DAILY_CAP] for the day. Taps ([incrementToday]) are uncapped.
      */
     fun addToday(today: LocalDate, count: Int): Int {
         ensureToday(today)
         if (count > 0) {
             val usedManual = settings.getInt(KEY_MANUAL, 0)
-            val applied = count.coerceAtMost((CHALLENGE_MANUAL_DAILY_CAP - usedManual).coerceAtLeast(0))
+            val applied = count.coerceAtMost((QURAN_MANUAL_DAILY_CAP - usedManual).coerceAtLeast(0))
             if (applied > 0) {
                 settings.putInt(KEY_PENDING, settings.getInt(KEY_PENDING, 0) + applied)
                 settings.putInt(KEY_MANUAL, usedManual + applied)
@@ -74,8 +74,8 @@ class QuranChallengeStore(private val settings: Settings) {
 
     /** How much more may still be added via manual entry today (cap minus what's used). */
     fun manualRemainingToday(today: LocalDate): Int {
-        if (settings.getStringOrNull(KEY_DATE) != today.toString()) return CHALLENGE_MANUAL_DAILY_CAP
-        return (CHALLENGE_MANUAL_DAILY_CAP - settings.getInt(KEY_MANUAL, 0)).coerceAtLeast(0)
+        if (settings.getStringOrNull(KEY_DATE) != today.toString()) return QURAN_MANUAL_DAILY_CAP
+        return (QURAN_MANUAL_DAILY_CAP - settings.getInt(KEY_MANUAL, 0)).coerceAtLeast(0)
     }
 
     fun updateRemoteBaseline(today: LocalDate, remoteCount: Int) {

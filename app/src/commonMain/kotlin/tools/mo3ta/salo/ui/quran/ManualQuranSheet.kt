@@ -43,7 +43,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.stringResource
-import tools.mo3ta.salo.domain.CHALLENGE_MANUAL_DAILY_CAP
+import tools.mo3ta.salo.domain.QURAN_MANUAL_DAILY_CAP
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.manual_challenge_cap_error
 import tools.mo3ta.salo.generated.resources.manual_mode_add
@@ -61,7 +61,7 @@ import tools.mo3ta.salo.generated.resources.manual_quran_witness
 @Composable
 internal fun ManualQuranSheet(
     isOpen: Boolean,
-    remaining: Int = CHALLENGE_MANUAL_DAILY_CAP,
+    remaining: Int = QURAN_MANUAL_DAILY_CAP,
     onDismiss: () -> Unit,
     onSubmit: (Int) -> Unit,
     onSubtract: (Int) -> Unit = {},
@@ -207,7 +207,7 @@ internal fun ManualQuranSheet(
             // Daily manual-entry cap error — shown only when the entry exceeds the limit
             if (exceedsCap) {
                 Text(
-                    text = stringResource(Res.string.manual_challenge_cap_error, CHALLENGE_MANUAL_DAILY_CAP),
+                    text = stringResource(Res.string.manual_challenge_cap_error, QURAN_MANUAL_DAILY_CAP),
                     color = Color(0xFFDC503C),
                     fontSize = 12.sp,
                     textAlign = TextAlign.Center,

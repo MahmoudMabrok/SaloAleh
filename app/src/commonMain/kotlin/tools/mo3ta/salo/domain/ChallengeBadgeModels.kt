@@ -16,6 +16,13 @@ const val CHALLENGE_MANUAL_DAILY_CAP = 5_000
 const val BAQIYAT_MANUAL_DAILY_CAP = 2_000
 
 /**
+ * Quran's own, lower manual-entry daily cap. A juz'/khatma pass covers far more
+ * text per unit than a single dhikr, so its external batches are limited to a
+ * tighter ceiling than the per-count challenges above.
+ */
+const val QURAN_MANUAL_DAILY_CAP = 700
+
+/**
  * The daily challenges that award a repeatable achievement badge. A "win" is
  * reaching the challenge's daily goal; each win increments that badge's count by 1
  * (at most once per Cairo day).
