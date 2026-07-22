@@ -39,6 +39,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import tools.mo3ta.salo.domain.Achievement
 import tools.mo3ta.salo.domain.EngagementData
+import tools.mo3ta.salo.domain.ExternalCountsGate
 import tools.mo3ta.salo.data.engagement.EngagementStore
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.ui.AchievementCelebrationDialog
@@ -275,6 +276,7 @@ fun App(
         val installDate = remember {
             runCatching { LocalDate.parse(sessionStoreApp.getOrSetInstallDate(today)) }.getOrDefault(today)
         }
+        val manualEntryEnabled = ExternalCountsGate.canShowExternalCountsEntry(today, installDate)
         val shouldShowNicknamePrompt = !nicknamePromptBlocked &&
             sessionStoreApp.getNickname() == null &&
             (nicknamePromptRequested || (selectedTab == SaloTab.MohamedLovers && !nicknamePromptDismissedThisSession))
@@ -299,31 +301,37 @@ fun App(
                 onBack = { showDhikrRewards = false },
                 openLeaderboard = openChallengeLeaderboard,
                 onLeaderboardAutoOpened = { openChallengeLeaderboard = false },
+                manualEntryEnabled = manualEntryEnabled,
             )
             showBaqiyatChallenge -> BaqiyatScreen(
                 onBack = { showBaqiyatChallenge = false },
                 openLeaderboard = openChallengeLeaderboard,
                 onLeaderboardAutoOpened = { openChallengeLeaderboard = false },
+                manualEntryEnabled = manualEntryEnabled,
             )
             showIstighfarChallenge -> IstighfarRewardsScreen(
                 onBack = { showIstighfarChallenge = false },
                 openLeaderboard = openChallengeLeaderboard,
                 onLeaderboardAutoOpened = { openChallengeLeaderboard = false },
+                manualEntryEnabled = manualEntryEnabled,
             )
             showZabadChallenge -> ZabadScreen(
                 onBack = { showZabadChallenge = false },
                 openLeaderboard = openChallengeLeaderboard,
                 onLeaderboardAutoOpened = { openChallengeLeaderboard = false },
+                manualEntryEnabled = manualEntryEnabled,
             )
             showGharsChallenge -> GharsScreen(
                 onBack = { showGharsChallenge = false },
                 openLeaderboard = openChallengeLeaderboard,
                 onLeaderboardAutoOpened = { openChallengeLeaderboard = false },
+                manualEntryEnabled = manualEntryEnabled,
             )
             showQuranChallenge -> QuranChallengeScreen(
                 onBack = { showQuranChallenge = false },
                 openLeaderboard = openChallengeLeaderboard,
                 onLeaderboardAutoOpened = { openChallengeLeaderboard = false },
+                manualEntryEnabled = manualEntryEnabled,
             )
             showAlBaqaraChallenge -> AlBaqaraChallengeScreen(
                 onBack = { showAlBaqaraChallenge = false },
@@ -344,6 +352,7 @@ fun App(
                                 openInfoSheet = openLeaderboardSheet,
                                 onInfoSheetOpened = { openLeaderboardSheet = false },
                                 announcementsEnabled = APP_ANNOUNCEMENTS_ENABLED,
+                                manualEntryEnabled = manualEntryEnabled,
                             )
                             SaloTab.Challenges -> ChallengesScreen(
                                 onOpenDhikrChallenge = { showDhikrRewards = true },

@@ -90,6 +90,7 @@ fun QuranChallengeScreen(
     onBack: () -> Unit,
     openLeaderboard: Boolean = false,
     onLeaderboardAutoOpened: () -> Unit = {},
+    manualEntryEnabled: Boolean = true,
     viewModel: QuranChallengeViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -150,6 +151,7 @@ fun QuranChallengeScreen(
                 analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_QURAN)
                 viewModel.showManualQuranSheet()
             },
+            manualEntryVisible = manualEntryEnabled,
             onViewRewards = { showRewardsSheet = true },
             modifier = Modifier.fillMaxSize(),
         )
@@ -250,6 +252,7 @@ private fun QuranImmersiveZone(
     onBack: () -> Unit,
     onRankClick: () -> Unit,
     onManualEntryClick: () -> Unit,
+    manualEntryVisible: Boolean = true,
     onViewRewards: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -316,7 +319,9 @@ private fun QuranImmersiveZone(
                 }
             }
 
-            QuranManualEntryButton(onClick = onManualEntryClick)
+            if (manualEntryVisible) {
+                QuranManualEntryButton(onClick = onManualEntryClick)
+            }
 
             Spacer(Modifier.weight(1f))
 

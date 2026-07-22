@@ -133,6 +133,7 @@ fun MohamedLoversScreen(
     openInfoSheet: Boolean = false,
     onInfoSheetOpened: () -> Unit = {},
     announcementsEnabled: Boolean = true,
+    manualEntryEnabled: Boolean = true,
     viewModel: MohamedLoversViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -382,23 +383,25 @@ fun MohamedLoversScreen(
                     total = state.syncedTotal + state.sessionClicks,
                     pending = state.sessionClicks,
                 )
-                Spacer(Modifier.height(8.dp))
-                androidx.compose.material3.Surface(
-                    onClick = {
-                        analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_SALAWAT)
-                        viewModel.showManualSalawatSheet()
-                    },
-                    shape = RoundedCornerShape(20.dp),
-                    color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.08f),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MohamedLoversPalette.GoldBase.copy(alpha = 0.3f)),
-                ) {
-                    Text(
-                        text = stringResource(Res.string.main_screen_manual_salawat_button),
-                        color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
-                        fontSize = 12.sp,
-                        fontFamily = MohamedLoversFonts.body,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                    )
+                if (manualEntryEnabled) {
+                    Spacer(Modifier.height(8.dp))
+                    androidx.compose.material3.Surface(
+                        onClick = {
+                            analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_SALAWAT)
+                            viewModel.showManualSalawatSheet()
+                        },
+                        shape = RoundedCornerShape(20.dp),
+                        color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.08f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MohamedLoversPalette.GoldBase.copy(alpha = 0.3f)),
+                    ) {
+                        Text(
+                            text = stringResource(Res.string.main_screen_manual_salawat_button),
+                            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
+                            fontSize = 12.sp,
+                            fontFamily = MohamedLoversFonts.body,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                        )
+                    }
                 }
                 val elapsedMinutes = state.lastSalawatElapsedMinutes
                 if (elapsedMinutes != null && elapsedMinutes >= 1) {

@@ -52,6 +52,7 @@ fun ZabadScreen(
     onBack: () -> Unit,
     openLeaderboard: Boolean = false,
     onLeaderboardAutoOpened: () -> Unit = {},
+    manualEntryEnabled: Boolean = true,
     viewModel: ZabadChallengeViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -190,10 +191,12 @@ fun ZabadScreen(
         }
         Column(Modifier.fillMaxWidth().padding(28.dp).navigationBarsPadding().align(Alignment.BottomCenter), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(stringResource(Res.string.zabad_tap_hint), color = Color(0xB3EAF6F4), textAlign = TextAlign.Center, fontSize = 13.sp, fontFamily = ibmPlexArabicFamily())
-            TextButton(onClick = {
-                analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_ZABAD)
-                viewModel.showManualZabadSheet()
-            }) { Text(stringResource(Res.string.manual_zabad_title), color = Color(0xFF2ED3C4), fontFamily = ibmPlexArabicFamily()) }
+            if (manualEntryEnabled) {
+                TextButton(onClick = {
+                    analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_ZABAD)
+                    viewModel.showManualZabadSheet()
+                }) { Text(stringResource(Res.string.manual_zabad_title), color = Color(0xFF2ED3C4), fontFamily = ibmPlexArabicFamily()) }
+            }
         }
         if (state.isWashing) Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(stringResource(Res.string.zabad_verdict_title), color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold, fontFamily = arefRuqaaFamily())

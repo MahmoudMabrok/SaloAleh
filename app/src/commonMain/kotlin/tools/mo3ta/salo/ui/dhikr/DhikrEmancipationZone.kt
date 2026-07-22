@@ -115,6 +115,7 @@ internal fun DhikrEmancipationZone(
     onBack: () -> Unit,
     onRankClick: () -> Unit,
     onManualEntryClick: () -> Unit,
+    manualEntryVisible: Boolean = true,
     onViewGains: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -220,10 +221,12 @@ internal fun DhikrEmancipationZone(
                 }
             }
 
-            DhikrManualEntryButton(
-                onClick = onManualEntryClick,
-                onDarkBackground = true,
-            )
+            if (manualEntryVisible) {
+                DhikrManualEntryButton(
+                    onClick = onManualEntryClick,
+                    onDarkBackground = true,
+                )
+            }
 
             Spacer(Modifier.weight(1f))
 

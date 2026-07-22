@@ -84,6 +84,7 @@ fun GharsScreen(
     onBack: () -> Unit,
     openLeaderboard: Boolean = false,
     onLeaderboardAutoOpened: () -> Unit = {},
+    manualEntryEnabled: Boolean = true,
     viewModel: GharsChallengeViewModel = koinViewModel(),
 ) {
     val analyticsManager: AnalyticsManager = koinInject()
@@ -246,6 +247,7 @@ fun GharsScreen(
                 viewModel.onGardensOpened()
             },
             onManual = viewModel::showManualGharsSheet,
+            manualEntryVisible = manualEntryEnabled,
         )
     }
 
@@ -291,6 +293,7 @@ private fun GharsSheet(
     lifetimePalms: Int,
     onGardens: () -> Unit,
     onManual: () -> Unit,
+    manualEntryVisible: Boolean = true,
 ) {
     val inGrove = todayCount % GHARS_GROVE_SIZE
     val remaining = GHARS_GROVE_SIZE - inGrove
@@ -472,12 +475,14 @@ private fun GharsSheet(
                 modifier = Modifier.weight(1f),
                 onClick = onGardens,
             )
-            SheetAction(
-                label = stringResource(Res.string.manual_ghars_title),
-                primary = false,
-                modifier = Modifier.weight(1f),
-                onClick = onManual,
-            )
+            if (manualEntryVisible) {
+                SheetAction(
+                    label = stringResource(Res.string.manual_ghars_title),
+                    primary = false,
+                    modifier = Modifier.weight(1f),
+                    onClick = onManual,
+                )
+            }
         }
     }
 }

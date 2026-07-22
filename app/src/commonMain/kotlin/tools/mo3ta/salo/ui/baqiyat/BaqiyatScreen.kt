@@ -73,6 +73,7 @@ fun BaqiyatScreen(
     onBack: () -> Unit,
     openLeaderboard: Boolean = false,
     onLeaderboardAutoOpened: () -> Unit = {},
+    manualEntryEnabled: Boolean = true,
     viewModel: BaqiyatViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -178,14 +179,16 @@ fun BaqiyatScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            BaqiyatManualEntryButton(
-                onClick = {
-                    analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_BAQIYAT)
-                    viewModel.showManualBaqiyatSheet()
-                },
-            )
+            if (manualEntryEnabled) {
+                BaqiyatManualEntryButton(
+                    onClick = {
+                        analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_BAQIYAT)
+                        viewModel.showManualBaqiyatSheet()
+                    },
+                )
 
-            Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(12.dp))
+            }
         }
     }
 
