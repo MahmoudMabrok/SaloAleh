@@ -198,8 +198,12 @@ function buildDailyCountChallengeRanking({
   const rankUpdates = {};
   const activeUids = new Set(activeUsers.map(user => user.uid));
 
+  // Diff against the rank already stored in RTDB (currentRank): only clear a
+  // dropped user that actually has a rank, and only write an active user's rank
+  // when it changed — avoids re-writing unchanged ranks (and re-notifying every
+  // listening client) on every 30-min run.
   normalizedPlayers.forEach(user => {
-    if (!activeUids.has(user.uid)) {
+    if (!activeUids.has(user.uid) && user.currentRank != null) {
       rankUpdates[`${rootPath}/${dateKey}/${playersPath}/${user.uid}/rank`] = null;
     }
   });
@@ -210,7 +214,9 @@ function buildDailyCountChallengeRanking({
   }));
 
   rankedUsers.forEach(user => {
-    rankUpdates[`${rootPath}/${dateKey}/${playersPath}/${user.uid}/rank`] = user.rank;
+    if (user.rank !== user.currentRank) {
+      rankUpdates[`${rootPath}/${dateKey}/${playersPath}/${user.uid}/rank`] = user.rank;
+    }
   });
 
   return {
@@ -386,6 +392,7 @@ async function populateMohamedLoversRound(db, admin, roundKey, isFinal) {
         dailyBadge: typeof data.dailyBadge === 'string' ? data.dailyBadge : null,
         roundStreak: typeof data.roundStreak === 'number' && data.roundStreak > 0 ? data.roundStreak : null,
         nickname: typeof data.nickname === 'string' ? data.nickname : '',
+        currentRank: typeof data.rank === 'number' && data.rank > 0 ? data.rank : null,
       });
     }
   });
@@ -396,9 +403,14 @@ async function populateMohamedLoversRound(db, admin, roundKey, isFinal) {
   const roundPlayerCount = allPlayers.length;
 
   // Write rank into each player node, then build top-10 leaderboard.
+  // Diff against the rank already stored in RTDB (currentRank): only write ranks
+  // that changed since the last run.
   const rankUpdates = {};
   allPlayers.forEach((player, i) => {
-    rankUpdates[`${MOHAMED_LOVERS_ROOT}/${roundKey}/players/${player.uid}/rank`] = i + 1;
+    const newRank = i + 1;
+    if (newRank !== player.currentRank) {
+      rankUpdates[`${MOHAMED_LOVERS_ROOT}/${roundKey}/players/${player.uid}/rank`] = newRank;
+    }
   });
 
   const top10 = allPlayers.slice(0, 10);
@@ -470,7 +482,7 @@ async function populateMohamedLoversRound(db, admin, roundKey, isFinal) {
   }
 
   await Promise.all([
-    db.ref('/').update(rankUpdates),
+    Object.keys(rankUpdates).length ? db.ref('/').update(rankUpdates) : Promise.resolve(),
     db.ref(`${MOHAMED_LOVERS_ROOT}/${roundKey}/leaderboard`).set(leaderboard),
     db.ref(`${MOHAMED_LOVERS_ROOT}/${roundKey}/dailyLeaderboard`).set(dailyLeaderboard),
     db.ref(`${MOHAMED_LOVERS_ROOT}/${roundKey}/roundTotal`).set(roundTotal),

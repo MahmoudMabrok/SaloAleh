@@ -14,6 +14,91 @@ const QURAN_COLLECTION = 'quran_challenge';
 const ALBAQARA_COLLECTION = 'albaqara_challenge';
 const TEN_DAYS_COLLECTION = 'ten_days';
 
+// A quota-stalled Firestore commit retries RESOURCE_EXHAUSTED for its full
+// ~10-minute gRPC budget (there is no public knob to shorten it), which blocks
+// the cron's main() from ever reaching its process.exit(0). The dual-write is
+// non-critical (RTDB is the source of truth), so every mirror is time-boxed:
+// if it overruns we log and move on, and the script's process.exit(0) then
+// abandons the dangling retry. Never rejects — a failed/slow mirror must not
+// crash the caller (mirrors are fire-and-forget).
+const MIRROR_TIMEOUT_MS = 60000;
+
+function timeBoxMirror(promise, label, ms = MIRROR_TIMEOUT_MS) {
+  let timer;
+  const timeout = new Promise((resolve) => {
+    timer = setTimeout(() => {
+      console.error(
+        `[firestore-mirror] ${label} timed out after ${ms}ms — skipped (RTDB unaffected)`,
+      );
+      resolve();
+    }, ms);
+    if (timer.unref) timer.unref();
+  });
+  const guarded = Promise.resolve(promise).catch((e) => {
+    console.error(`[firestore-mirror] ${label} error: ${e && e.message}`);
+  });
+  return Promise.race([guarded, timeout]).finally(() => clearTimeout(timer));
+}
+
+// Wraps each mirror export so a stalled Firestore op can never block its caller.
+function timeBoxAll(mirrors) {
+  const wrapped = {};
+  for (const [name, fn] of Object.entries(mirrors)) {
+    wrapped[name] = (...args) => timeBoxMirror(fn(...args), name);
+  }
+  return wrapped;
+}
+
+// Writes only the per-user rank docs whose rank changed since the last mirror,
+// chunked at 490 to respect Firestore's 500-op batch limit. Diffs `newRanks`
+// ({ uid: rank }) against a per-board snapshot doc that stores the previous map
+// as a JSON string field (a plain map would trigger per-key auto-indexing on a
+// 600+ key object every run). The snapshot is overwritten only after all rank
+// writes succeed, so a partial failure simply re-writes those ranks next run.
+async function writeChangedRanks(userCollectionRef, snapshotDocRef, newRanks, label) {
+  const snap = await snapshotDocRef.get();
+  let oldRanks = {};
+  if (snap.exists) {
+    const raw = snap.data() && snap.data().ranksJson;
+    if (typeof raw === 'string') {
+      try {
+        oldRanks = JSON.parse(raw);
+      } catch (e) {
+        oldRanks = {};
+      }
+    }
+  }
+
+  const changedUids = Object.keys(newRanks).filter(
+    (uid) => newRanks[uid] !== oldRanks[uid],
+  );
+
+  let batch = null;
+  let count = 0;
+  for (const uid of changedUids) {
+    if (!batch) batch = userCollectionRef.firestore.batch();
+    batch.set(userCollectionRef.doc(uid), { rank: newRanks[uid] }, { merge: true });
+    count++;
+    if (count >= 490) {
+      await batch.commit();
+      batch = null;
+      count = 0;
+    }
+  }
+  if (batch && count > 0) await batch.commit();
+
+  // Snapshot is updated only after the rank writes above have committed.
+  await snapshotDocRef.set({
+    ranksJson: JSON.stringify(newRanks),
+    count: Object.keys(newRanks).length,
+    updatedAt: Date.now(),
+  });
+
+  console.log(
+    `[firestore-mirror] ${label} ranks: ${changedUids.length}/${Object.keys(newRanks).length} changed`,
+  );
+}
+
 async function mirrorMohamedLoversRound(firestore, roundKey, {
   leaderboard,
   dailyLeaderboard,
@@ -52,19 +137,22 @@ async function mirrorMohamedLoversRound(firestore, roundKey, {
       }
     }
 
-    // Write per-player ranks
+    await batch.commit();
+
+    // Write per-player ranks (diffed against the last mirror; chunked).
     if (allPlayers) {
-      for (let i = 0; i < allPlayers.length; i++) {
-        const player = allPlayers[i];
-        batch.set(
-          roundRef.collection('players').doc(player.uid),
-          { rank: i + 1 },
-          { merge: true },
-        );
-      }
+      const newRanks = {};
+      allPlayers.forEach((player, i) => {
+        newRanks[player.uid] = i + 1;
+      });
+      await writeChangedRanks(
+        roundRef.collection('players'),
+        roundRef.collection('_meta').doc('rankSnapshot'),
+        newRanks,
+        `mohamed_lovers round ${roundKey}`,
+      );
     }
 
-    await batch.commit();
     console.log(`[firestore-mirror] mohamed_lovers round ${roundKey} mirrored`);
   } catch (e) {
     console.error(`[firestore-mirror] mohamed_lovers round ${roundKey} failed: ${e.message}`);
@@ -83,15 +171,6 @@ async function mirrorDhikrChallenge(firestore, dateKey, {
 
     const batch = firestore.batch();
 
-    // Write per-user ranks
-    for (const user of rankedUsers) {
-      batch.set(
-        dayRef.collection('users').doc(user.uid),
-        { rank: user.rank },
-        { merge: true },
-      );
-    }
-
     // Write leaderboard
     if (leaderboardEntries) {
       for (const [key, entry] of leaderboardEntries) {
@@ -100,6 +179,17 @@ async function mirrorDhikrChallenge(firestore, dateKey, {
     }
 
     await batch.commit();
+
+    // Write per-user ranks (diffed against the last mirror; chunked).
+    const newRanks = {};
+    for (const user of rankedUsers) newRanks[user.uid] = user.rank;
+    await writeChangedRanks(
+      dayRef.collection('users'),
+      dayRef.collection('_meta').doc('rankSnapshot'),
+      newRanks,
+      `dhikr ${dateKey}`,
+    );
+
     console.log(`[firestore-mirror] dhikr ${dateKey} mirrored`);
   } catch (e) {
     console.error(`[firestore-mirror] dhikr ${dateKey} failed: ${e.message}`);
@@ -118,14 +208,6 @@ async function mirrorBaqiyatChallenge(firestore, dateKey, {
 
     const batch = firestore.batch();
 
-    for (const user of rankedUsers) {
-      batch.set(
-        dayRef.collection('players').doc(user.uid),
-        { rank: user.rank },
-        { merge: true },
-      );
-    }
-
     if (leaderboardEntries) {
       for (const [key, entry] of leaderboardEntries) {
         batch.set(dayRef.collection('leaderboard').doc(key), entry);
@@ -133,6 +215,17 @@ async function mirrorBaqiyatChallenge(firestore, dateKey, {
     }
 
     await batch.commit();
+
+    // Write per-user ranks (diffed against the last mirror; chunked).
+    const newRanks = {};
+    for (const user of rankedUsers) newRanks[user.uid] = user.rank;
+    await writeChangedRanks(
+      dayRef.collection('players'),
+      dayRef.collection('_meta').doc('rankSnapshot'),
+      newRanks,
+      `baqiyat ${dateKey}`,
+    );
+
     console.log(`[firestore-mirror] baqiyat ${dateKey} mirrored`);
   } catch (e) {
     console.error(`[firestore-mirror] baqiyat ${dateKey} failed: ${e.message}`);
@@ -151,14 +244,6 @@ async function mirrorIstighfarChallenge(firestore, dateKey, {
 
     const batch = firestore.batch();
 
-    for (const user of rankedUsers) {
-      batch.set(
-        dayRef.collection('users').doc(user.uid),
-        { rank: user.rank },
-        { merge: true },
-      );
-    }
-
     if (leaderboardEntries) {
       for (const [key, entry] of leaderboardEntries) {
         batch.set(dayRef.collection('leaderboard').doc(key), entry);
@@ -166,6 +251,17 @@ async function mirrorIstighfarChallenge(firestore, dateKey, {
     }
 
     await batch.commit();
+
+    // Write per-user ranks (diffed against the last mirror; chunked).
+    const newRanks = {};
+    for (const user of rankedUsers) newRanks[user.uid] = user.rank;
+    await writeChangedRanks(
+      dayRef.collection('users'),
+      dayRef.collection('_meta').doc('rankSnapshot'),
+      newRanks,
+      `istighfar ${dateKey}`,
+    );
+
     console.log(`[firestore-mirror] istighfar ${dateKey} mirrored`);
   } catch (e) {
     console.error(`[firestore-mirror] istighfar ${dateKey} failed: ${e.message}`);
@@ -184,14 +280,6 @@ async function mirrorAlBaqaraChallenge(firestore, dateKey, {
 
     const batch = firestore.batch();
 
-    for (const user of rankedUsers) {
-      batch.set(
-        dayRef.collection('users').doc(user.uid),
-        { rank: user.rank },
-        { merge: true },
-      );
-    }
-
     if (leaderboardEntries) {
       for (const [key, entry] of leaderboardEntries) {
         batch.set(dayRef.collection('leaderboard').doc(key), entry);
@@ -199,6 +287,17 @@ async function mirrorAlBaqaraChallenge(firestore, dateKey, {
     }
 
     await batch.commit();
+
+    // Write per-user ranks (diffed against the last mirror; chunked).
+    const newRanks = {};
+    for (const user of rankedUsers) newRanks[user.uid] = user.rank;
+    await writeChangedRanks(
+      dayRef.collection('users'),
+      dayRef.collection('_meta').doc('rankSnapshot'),
+      newRanks,
+      `albaqara ${dateKey}`,
+    );
+
     console.log(`[firestore-mirror] albaqara ${dateKey} mirrored`);
   } catch (e) {
     console.error(`[firestore-mirror] albaqara ${dateKey} failed: ${e.message}`);
@@ -217,14 +316,6 @@ async function mirrorZabadChallenge(firestore, dateKey, {
 
     const batch = firestore.batch();
 
-    for (const user of rankedUsers) {
-      batch.set(
-        dayRef.collection('users').doc(user.uid),
-        { rank: user.rank },
-        { merge: true },
-      );
-    }
-
     if (leaderboardEntries) {
       for (const [key, entry] of leaderboardEntries) {
         batch.set(dayRef.collection('leaderboard').doc(key), entry);
@@ -232,6 +323,17 @@ async function mirrorZabadChallenge(firestore, dateKey, {
     }
 
     await batch.commit();
+
+    // Write per-user ranks (diffed against the last mirror; chunked).
+    const newRanks = {};
+    for (const user of rankedUsers) newRanks[user.uid] = user.rank;
+    await writeChangedRanks(
+      dayRef.collection('users'),
+      dayRef.collection('_meta').doc('rankSnapshot'),
+      newRanks,
+      `zabad ${dateKey}`,
+    );
+
     console.log(`[firestore-mirror] zabad ${dateKey} mirrored`);
   } catch (e) {
     console.error(`[firestore-mirror] zabad ${dateKey} failed: ${e.message}`);
@@ -250,14 +352,6 @@ async function mirrorGharsChallenge(firestore, dateKey, {
 
     const batch = firestore.batch();
 
-    for (const user of rankedUsers) {
-      batch.set(
-        dayRef.collection('users').doc(user.uid),
-        { rank: user.rank },
-        { merge: true },
-      );
-    }
-
     if (leaderboardEntries) {
       for (const [key, entry] of leaderboardEntries) {
         batch.set(dayRef.collection('leaderboard').doc(key), entry);
@@ -265,6 +359,17 @@ async function mirrorGharsChallenge(firestore, dateKey, {
     }
 
     await batch.commit();
+
+    // Write per-user ranks (diffed against the last mirror; chunked).
+    const newRanks = {};
+    for (const user of rankedUsers) newRanks[user.uid] = user.rank;
+    await writeChangedRanks(
+      dayRef.collection('users'),
+      dayRef.collection('_meta').doc('rankSnapshot'),
+      newRanks,
+      `ghars ${dateKey}`,
+    );
+
     console.log(`[firestore-mirror] ghars ${dateKey} mirrored`);
   } catch (e) {
     console.error(`[firestore-mirror] ghars ${dateKey} failed: ${e.message}`);
@@ -283,14 +388,6 @@ async function mirrorQuranChallenge(firestore, dateKey, {
 
     const batch = firestore.batch();
 
-    for (const user of rankedUsers) {
-      batch.set(
-        dayRef.collection('users').doc(user.uid),
-        { rank: user.rank },
-        { merge: true },
-      );
-    }
-
     if (leaderboardEntries) {
       for (const [key, entry] of leaderboardEntries) {
         batch.set(dayRef.collection('leaderboard').doc(key), entry);
@@ -298,6 +395,17 @@ async function mirrorQuranChallenge(firestore, dateKey, {
     }
 
     await batch.commit();
+
+    // Write per-user ranks (diffed against the last mirror; chunked).
+    const newRanks = {};
+    for (const user of rankedUsers) newRanks[user.uid] = user.rank;
+    await writeChangedRanks(
+      dayRef.collection('users'),
+      dayRef.collection('_meta').doc('rankSnapshot'),
+      newRanks,
+      `quran ${dateKey}`,
+    );
+
     console.log(`[firestore-mirror] quran ${dateKey} mirrored`);
   } catch (e) {
     console.error(`[firestore-mirror] quran ${dateKey} failed: ${e.message}`);
@@ -534,24 +642,29 @@ module.exports = {
   QURAN_COLLECTION,
   ALBAQARA_COLLECTION,
   TEN_DAYS_COLLECTION,
-  mirrorMohamedLoversRound,
-  mirrorDhikrChallenge,
-  mirrorBaqiyatChallenge,
-  mirrorIstighfarChallenge,
-  mirrorAlBaqaraChallenge,
-  mirrorZabadChallenge,
-  mirrorGharsChallenge,
-  mirrorQuranChallenge,
-  mirrorAllTimeTotal,
-  mirrorHeroes,
-  mirrorAchievements,
-  mirrorYesterdayTotalScores,
-  mirrorDailyBadgeClear,
-  mirrorRoundStreakClear,
-  mirrorDhikrAggregateAndClean,
-  mirrorBaqiyatAggregateAndClean,
-  mirrorIstighfarAggregateAndClean,
-  mirrorAlBaqaraAggregateAndClean,
-  mirrorQuranAggregateAndClean,
-  mirrorUserAllTimeTotals,
+  timeBoxMirror, // exported for tests
+  writeChangedRanks, // exported for tests
+  // Every mirror is time-boxed so a quota-stalled commit can't hang the cron.
+  ...timeBoxAll({
+    mirrorMohamedLoversRound,
+    mirrorDhikrChallenge,
+    mirrorBaqiyatChallenge,
+    mirrorIstighfarChallenge,
+    mirrorAlBaqaraChallenge,
+    mirrorZabadChallenge,
+    mirrorGharsChallenge,
+    mirrorQuranChallenge,
+    mirrorAllTimeTotal,
+    mirrorHeroes,
+    mirrorAchievements,
+    mirrorYesterdayTotalScores,
+    mirrorDailyBadgeClear,
+    mirrorRoundStreakClear,
+    mirrorDhikrAggregateAndClean,
+    mirrorBaqiyatAggregateAndClean,
+    mirrorIstighfarAggregateAndClean,
+    mirrorAlBaqaraAggregateAndClean,
+    mirrorQuranAggregateAndClean,
+    mirrorUserAllTimeTotals,
+  }),
 };
