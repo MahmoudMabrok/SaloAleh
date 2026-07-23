@@ -40,13 +40,26 @@ function timeBoxMirror(promise, label, ms = MIRROR_TIMEOUT_MS) {
   return Promise.race([guarded, timeout]).finally(() => clearTimeout(timer));
 }
 
+// TEMP kill-switch — Firestore dual-write is disabled while the project is over
+// the Spark free-tier write quota. RTDB stays the source of truth and nothing
+// reads Firestore in Phase 1, so every mirror becoming a no-op is safe. Flip back
+// to `true` to re-enable the dual-write.
+const MIRROR_ENABLED = false;
+
 // Wraps each mirror export so a stalled Firestore op can never block its caller.
+// While MIRROR_ENABLED is false, every mirror export is a no-op (see kill-switch).
 function timeBoxAll(mirrors) {
   const wrapped = {};
   for (const [name, fn] of Object.entries(mirrors)) {
-    wrapped[name] = (...args) => timeBoxMirror(fn(...args), name);
+    wrapped[name] = MIRROR_ENABLED
+      ? (...args) => timeBoxMirror(fn(...args), name)
+      : async () => {};
   }
   return wrapped;
+}
+
+if (!MIRROR_ENABLED) {
+  console.log('[firestore-mirror] DISABLED via kill-switch — all mirrors are no-ops (RTDB unaffected)');
 }
 
 // Writes only the per-user rank docs whose rank changed since the last mirror,
