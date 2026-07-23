@@ -213,19 +213,20 @@ describe('dhikr challenge daily ranking', () => {
       { uid: 'user-b', count: 12 },
       { uid: 'user-a', count: 12 },
       { uid: 'user-c', count: 3 },
-      { uid: 'zero-user', count: 0 },
+      { uid: 'zero-user', count: 0, currentRank: 4 },
     ]);
 
     assert.equal(result.participantCount, 3);
     assert.equal(result.totalTodayDhikr, 27);
     assert.deepEqual(result.rankedUsers, [
-      { uid: 'user-a', count: 12, countryCode: '', nickname: '', currentRank: null, rank: 1 },
-      { uid: 'user-b', count: 12, countryCode: '', nickname: '', currentRank: null, rank: 2 },
-      { uid: 'user-c', count: 3, countryCode: '', nickname: '', currentRank: null, rank: 3 },
+      { uid: 'user-a', count: 12, countryCode: '', nickname: '', streak: 0, currentRank: null, rank: 1 },
+      { uid: 'user-b', count: 12, countryCode: '', nickname: '', streak: 0, currentRank: null, rank: 2 },
+      { uid: 'user-c', count: 3, countryCode: '', nickname: '', streak: 0, currentRank: null, rank: 3 },
     ]);
     assert.equal(result.rankUpdates['100_challenge/2026-06-25/users/user-a/rank'], 1);
     assert.equal(result.rankUpdates['100_challenge/2026-06-25/users/user-b/rank'], 2);
     assert.equal(result.rankUpdates['100_challenge/2026-06-25/users/user-c/rank'], 3);
+    // zero-user had rank 4 and dropped to 0 → cleared.
     assert.equal(result.rankUpdates['100_challenge/2026-06-25/users/zero-user/rank'], null);
   });
 
@@ -242,8 +243,9 @@ describe('dhikr challenge daily ranking', () => {
     assert.equal(result.participantCount, 0);
     assert.equal(result.totalTodayDhikr, 0);
     assert.deepEqual(result.rankedUsers, []);
-    assert.equal(result.rankUpdates['100_challenge/2026-06-25/users/bad-user/rank'], null);
-    assert.equal(result.rankUpdates['100_challenge/2026-06-25/users/negative-user/rank'], null);
+    // No prior rank (currentRank absent) → nothing to clear, so no write at all.
+    assert.equal(result.rankUpdates['100_challenge/2026-06-25/users/bad-user/rank'], undefined);
+    assert.equal(result.rankUpdates['100_challenge/2026-06-25/users/negative-user/rank'], undefined);
   });
 
   it('carries sanitized country code, nickname, and current rank into ranked users', () => {
@@ -252,7 +254,7 @@ describe('dhikr challenge daily ranking', () => {
     ]);
 
     assert.deepEqual(result.rankedUsers, [
-      { uid: 'user-a', count: 7, countryCode: 'EGP', nickname: 'Dhikr Friend', currentRank: 3, rank: 1 },
+      { uid: 'user-a', count: 7, countryCode: 'EGP', nickname: 'Dhikr Friend', streak: 0, currentRank: 3, rank: 1 },
     ]);
   });
 });
@@ -266,7 +268,7 @@ describe('generic daily count challenge ranking', () => {
       players: [
         { uid: 'b', count: 4 },
         { uid: 'a', count: 9 },
-        { uid: 'zero', count: 0 },
+        { uid: 'zero', count: 0, currentRank: 3 },
       ],
     });
 
@@ -276,6 +278,27 @@ describe('generic daily count challenge ranking', () => {
     assert.equal(result.rankUpdates['custom_challenge/2026-07-02/players/a/rank'], 1);
     assert.equal(result.rankUpdates['custom_challenge/2026-07-02/players/b/rank'], 2);
     assert.equal(result.rankUpdates['custom_challenge/2026-07-02/players/zero/rank'], null);
+  });
+
+  it('writes only ranks that differ from currentRank', () => {
+    const result = buildDailyCountChallengeRanking({
+      dateKey: '2026-07-02',
+      rootPath: 'custom_challenge',
+      playersPath: 'players',
+      players: [
+        { uid: 'stable', count: 9, currentRank: 1 },  // stays rank 1 → not written
+        { uid: 'moved', count: 4, currentRank: 5 },   // now rank 2 → written
+        { uid: 'dropped', count: 0, currentRank: 3 }, // inactive with rank → cleared
+        { uid: 'never', count: 0 },                   // inactive, no rank → not written
+      ],
+    });
+
+    const base = 'custom_challenge/2026-07-02/players';
+    assert.deepEqual(result.rankedUsers.map(u => u.uid), ['stable', 'moved']);
+    assert.equal(result.rankUpdates[`${base}/stable/rank`], undefined);
+    assert.equal(result.rankUpdates[`${base}/moved/rank`], 2);
+    assert.equal(result.rankUpdates[`${base}/dropped/rank`], null);
+    assert.equal(result.rankUpdates[`${base}/never/rank`], undefined);
   });
 });
 
@@ -289,8 +312,8 @@ describe('baqiyat challenge daily ranking', () => {
     assert.equal(result.participantCount, 2);
     assert.equal(result.totalTodayBaqiyat, 8);
     assert.deepEqual(result.rankedUsers, [
-      { uid: 'user-b', count: 5, countryCode: 'SA', nickname: '', currentRank: null, rank: 1 },
-      { uid: 'user-a', count: 3, countryCode: 'EG', nickname: 'Sabah', currentRank: null, rank: 2 },
+      { uid: 'user-b', count: 5, countryCode: 'SA', nickname: '', streak: 0, currentRank: null, rank: 1 },
+      { uid: 'user-a', count: 3, countryCode: 'EG', nickname: 'Sabah', streak: 0, currentRank: null, rank: 2 },
     ]);
     assert.equal(result.rankUpdates['baqiyat_saliha/2026-07-02/players/user-b/rank'], 1);
     assert.equal(result.rankUpdates['baqiyat_saliha/2026-07-02/players/user-a/rank'], 2);
@@ -302,17 +325,18 @@ describe('istighfar challenge daily ranking', () => {
     const result = buildIstighfarChallengeDailyRanking('2026-07-02', [
       { uid: 'user-a', count: 35, countryCode: 'eg', nickname: '  Taa\'ib  ' },
       { uid: 'user-b', count: 70, countryCode: 'sa' },
-      { uid: 'zero-user', count: 0 },
+      { uid: 'zero-user', count: 0, currentRank: 5 },
     ]);
 
     assert.equal(result.participantCount, 2);
     assert.equal(result.totalTodayIstighfar, 105);
     assert.deepEqual(result.rankedUsers, [
-      { uid: 'user-b', count: 70, countryCode: 'SA', nickname: '', currentRank: null, rank: 1 },
-      { uid: 'user-a', count: 35, countryCode: 'EG', nickname: "Taa'ib", currentRank: null, rank: 2 },
+      { uid: 'user-b', count: 70, countryCode: 'SA', nickname: '', streak: 0, currentRank: null, rank: 1 },
+      { uid: 'user-a', count: 35, countryCode: 'EG', nickname: "Taa'ib", streak: 0, currentRank: null, rank: 2 },
     ]);
     assert.equal(result.rankUpdates['istighfar_challenge/2026-07-02/users/user-b/rank'], 1);
     assert.equal(result.rankUpdates['istighfar_challenge/2026-07-02/users/user-a/rank'], 2);
+    // zero-user had rank 5 and dropped to 0 → cleared.
     assert.equal(result.rankUpdates['istighfar_challenge/2026-07-02/users/zero-user/rank'], null);
   });
 });
