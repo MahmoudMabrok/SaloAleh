@@ -43,6 +43,7 @@ import tools.mo3ta.salo.data.engagement.DailyGoalStore
 import tools.mo3ta.salo.data.istighfar.IstighfarChallengeStore
 import tools.mo3ta.salo.data.zabad.ZabadChallengeStore
 import tools.mo3ta.salo.data.ghars.GharsChallengeStore
+import tools.mo3ta.salo.input.isSyntheticTap
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.notification.NotificationChannels
@@ -360,6 +361,12 @@ class FloatingBubbleService : Service() {
         var isDragging = false
 
         bubbleView.setOnTouchListener { _, event ->
+            // The bubble is its own overlay window, so its taps bypass
+            // MainActivity.dispatchTouchEvent entirely and need guarding separately —
+            // otherwise it is a free route around the auto-click guard. Swallowed silently;
+            // a service has no UI to warn through, and the activity warns on its own.
+            TouchDiagnostics.log(event)
+            if (event.isSyntheticTap()) return@setOnTouchListener true
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     initialX = bubbleParams.x; initialY = bubbleParams.y

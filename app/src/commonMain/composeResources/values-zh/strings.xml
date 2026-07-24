@@ -804,4 +804,7 @@
   <string name="alkahf_reminder_title">主麻吉庆 🌿</string>
   <string name="alkahf_reminder_body">别忘了今天诵读《山洞章》。凡在主麻日诵读此章者，将从这个主麻日到下个主麻日之间被光照耀。</string>
   <string name="alkahf_reminder_cta">好的</string>
+  <string name="auto_click_detected_title">提示</string>
+  <string name="auto_click_detected_body">看起来有自动点击应用正在代替您发送赞词。这些点击不会被计入。功德在于内心与口舌的诵念，而非数字。</string>
+  <string name="auto_click_detected_cta">明白了</string>
 </resources>

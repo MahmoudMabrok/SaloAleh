@@ -165,6 +165,41 @@ All paths relative to `app/src/commonMain/kotlin/tools/mo3ta/salo/`.
 
 ---
 
+## Write Integrity & Abuse Surface
+
+Scores are competitive, so writes need to be trustworthy. There is **no Firebase Auth** — device identity is a SHA-256 of a locally persisted UUID, which is an identifier, not a credential. The integrity guarantee comes from App Check instead.
+
+### Firebase App Check (primary defense)
+
+`SaloApplication.onCreate()` installs an App Check provider before any Firebase use:
+
+| Build | Provider |
+|-------|----------|
+| Release | `PlayIntegrityAppCheckProviderFactory` |
+| Debug (`BuildConfig.DEBUG`) | `DebugAppCheckProviderFactory` |
+
+Play Integrity attests that the request comes from a genuine, unmodified, Play-installed build of `tools.mo3ta.salo` on a device that passes integrity checks. This closes the **off-device abuse vectors**: raw REST/curl writes to RTDB, scripted clients, and modded/repackaged APKs cannot obtain a valid App Check token, so their writes are rejected regardless of what the security rules allow.
+
+Two things this depends on, both outside the codebase:
+
+- **Enforcement must be enabled per-product in the Firebase console** (Realtime Database, Firestore). Installing the SDK alone only *sends* tokens; it does not reject unattested traffic until enforcement is switched on.
+- Devices without Play Services (Huawei / de-Googled ROMs) cannot mint a Play Integrity token, so enforcement is a real availability trade-off for those users. Surfaced historically via the `salo_firebase_error` permission-denied analytics event.
+
+### Defense in depth (rules)
+
+`database.rules.json` still bounds `players/$uid/totalCount` to `previous + 10000` per write. This is a blast-radius cap, not a rate limit — there is no time-based ceiling, so it does not stop sustained inflation.
+
+### What App Check does *not* cover
+
+App Check attests **the app**, not **the user's intent**. A genuine, unmodified build being driven abusively is fully attested and passes every check. The remaining surface is therefore entirely on-device:
+
+- **Auto-clicker apps** — third-party tools using `AccessibilityService.dispatchGesture` (or root `input tap`) to inject synthetic `MotionEvent`s into the real app. Indistinguishable from a real tap to Firebase.
+- **Sanctioned bulk-entry paths** — `MohamedLoversViewModel.submitManualSalawat()` (manual entry sheet) and `applyExtensionScore()` (Chrome extension sync) both inject counts with no tapping by design. Any tap-level defense can be routed around through these.
+
+Because these are on-device problems, they can only be addressed on-device — detection in the client, not in rules or App Check.
+
+---
+
 ## Expect/Actual Platform Pairs
 
 | Feature | Android | iOS |

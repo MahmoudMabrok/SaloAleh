@@ -854,4 +854,7 @@
   <string name="alkahf_reminder_title">جمعة مباركة 🌿</string>
   <string name="alkahf_reminder_body">لا تنسَ قراءة سورة الكهف اليوم، فمن قرأها يوم الجمعة أضاء له من النور ما بين الجمعتين.</string>
   <string name="alkahf_reminder_cta">تمام</string>
+  <string name="auto_click_detected_title">تنبيه</string>
+  <string name="auto_click_detected_body">يبدو أن تطبيق نقر تلقائي يرسل الصلوات نيابةً عنك. هذه الصلوات لن تُحتسب. الأجر في الذِّكر بقلبك ولسانك، لا في الرقم.</string>
+  <string name="auto_click_detected_cta">فهمت</string>
 </resources>
