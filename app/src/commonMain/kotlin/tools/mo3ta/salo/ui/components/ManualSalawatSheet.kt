@@ -46,6 +46,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.stringResource
+import tools.mo3ta.salo.domain.MOHAMED_LOVERS_MANUAL_DAILY_CAP
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.*
 
@@ -58,6 +59,7 @@ internal fun ManualSalawatSheet(
     onDismiss: () -> Unit,
     onSubmit: (Int) -> Unit,
     onSubtract: (Int) -> Unit = {},
+    remaining: Int = MOHAMED_LOVERS_MANUAL_DAILY_CAP,
 ) {
     if (!isOpen) return
 
@@ -68,8 +70,11 @@ internal fun ManualSalawatSheet(
     var isSubtractMode by remember { mutableStateOf(false) }
 
     val effectiveCount = selectedPreset ?: customText.toIntOrNull() ?: 0
+    // Front-end cap: a manual batch that would exceed the day's remaining allowance is rejected.
+    // The cap only applies when adding — a correction can subtract any amount.
+    val exceedsCap = !isSubtractMode && effectiveCount > remaining
     // In subtract (correction) mode there is nothing to witness — the gate is just a positive amount.
-    val canSubmit = effectiveCount > 0 && (isSubtractMode || witnessChecked)
+    val canSubmit = effectiveCount > 0 && (isSubtractMode || (witnessChecked && !exceedsCap))
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -212,6 +217,18 @@ internal fun ManualSalawatSheet(
                     ),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.weight(1f),
+                )
+            }
+
+            // Daily manual-entry cap error — shown only when the entry exceeds the day's allowance.
+            if (exceedsCap) {
+                Text(
+                    text = stringResource(Res.string.manual_challenge_cap_error, MOHAMED_LOVERS_MANUAL_DAILY_CAP),
+                    color = Color(0xFFDC503C),
+                    fontSize = 12.sp,
+                    fontFamily = MohamedLoversFonts.body,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
                 )
             }
 

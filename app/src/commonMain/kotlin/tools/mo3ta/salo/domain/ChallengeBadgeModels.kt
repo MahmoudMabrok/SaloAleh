@@ -16,6 +16,14 @@ const val CHALLENGE_MANUAL_DAILY_CAP = 5_000
 const val BAQIYAT_MANUAL_DAILY_CAP = 2_000
 
 /**
+ * Maximum salawat a user may credit to the weekly Mohamed Lovers competition per Cairo day
+ * through manual ("record external counts") entry — the sheet where salawat performed outside
+ * the app is typed in. Regular in-app tapping is uncapped; only these external batches are
+ * limited so a single manual entry can't flood the leaderboard. Resets each Cairo day.
+ */
+const val MOHAMED_LOVERS_MANUAL_DAILY_CAP = 10_000
+
+/**
  * The daily challenges that award a repeatable achievement badge. A "win" is
  * reaching the challenge's daily goal; each win increments that badge's count by 1
  * (at most once per Cairo day).
