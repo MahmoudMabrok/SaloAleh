@@ -4,15 +4,16 @@
  *
  * Runs once a day via GitHub Actions (delete-inactive-users.yml). Scans every
  * user under `mohamed_lovers/users/{uid}` and prunes the ones that have gone
- * inactive, using a two-tier threshold keyed on whether the user ever scored
- * (their lifetime `allTimeTotal`, accumulated at each round close):
+ * inactive, using a two-tier threshold keyed on the user's score in the CURRENT
+ * round only — their `totalCount` under `mohamed_lovers/{roundKey}/players/{uid}`:
  *
- *   - Never scored (allTimeTotal == 0) → the user opened the app but left / has
- *                            no salawat; delete when inactive for ZERO_SCORE_DAYS
- *                            days or more (default 3).
- *   - Has scored before (allTimeTotal > 0) → delete when inactive for MORE THAN
- *                            SCORED_DAYS days (default 7; users who contributed
- *                            get a longer grace period before they are pruned).
+ *   - No current-round score (totalCount == 0, or no player entry) → the user
+ *                            opened the app but left with no salawat this round;
+ *                            delete when inactive for ZERO_SCORE_DAYS days or more
+ *                            (default 3).
+ *   - Has a current-round score (totalCount > 0) → delete when inactive for MORE
+ *                            THAN SCORED_DAYS days (default 7; users who took part
+ *                            this round get a longer grace period before pruning).
  *
  * "Inactive" is measured in Cairo calendar days since the user's last activity:
  * `lastOpenDate` when present, otherwise `installDate`. A user with neither date
@@ -37,8 +38,8 @@
  * |--------------------------|--------|---------|--------------------------------------------------------|
  * | FIREBASE_SERVICE_ACCOUNT | string | —       | JSON service account key (required)                    |
  * | FIREBASE_DATABASE_URL    | string | —       | RTDB URL (required)                                    |
- * | ZERO_SCORE_DAYS          | number | 3       | Inactivity threshold (>=) for users who never scored   |
- * | SCORED_DAYS              | number | 7       | Inactivity threshold (>) for users who scored before   |
+ * | ZERO_SCORE_DAYS          | number | 3       | Inactivity threshold (>=) for 0 current-round score     |
+ * | SCORED_DAYS              | number | 7       | Inactivity threshold (>) for a positive current score   |
  * | DRY_RUN                  | string | "false" | When "true", logs what would be deleted without writing|
  */
 
@@ -93,16 +94,6 @@ function daysBetween(dateStr1, dateStr2) {
   return Math.round((d2 - d1) / 86400000);
 }
 
-/**
- * True when the user has ever scored — a positive lifetime `allTimeTotal`
- * (accumulated at each round close). Used to pick the inactivity threshold.
- * @param {object} user - the value of mohamed_lovers/users/{uid}
- * @returns {boolean}
- */
-function hasScored(user) {
-  return !!user && typeof user.allTimeTotal === 'number' && user.allTimeTotal > 0;
-}
-
 async function main() {
   console.log('[delete-inactive-users] ===== run start =====');
   const db = admin.database();
@@ -115,7 +106,10 @@ async function main() {
 
   console.log(`[delete-inactive-users] today=${today} round=${roundKey} zeroScoreDays>=${zeroScoreDays} scoredDays>${scoredDays} dryRun=${dryRun}`);
 
-  const usersSnap = await db.ref('mohamed_lovers/users').get();
+  const [usersSnap, playersSnap] = await Promise.all([
+    db.ref('mohamed_lovers/users').get(),
+    db.ref(`mohamed_lovers/${roundKey}/players`).get(),
+  ]);
   if (!usersSnap.exists()) {
     console.log('[delete-inactive-users] no users found — exiting');
     process.exit(0);
@@ -123,6 +117,15 @@ async function main() {
 
   const totalUsers = usersSnap.size;
   console.log(`[delete-inactive-users] loaded ${totalUsers} user(s)`);
+
+  // Map uid → current-round score (totalCount). "Scored" means the user has a
+  // positive count in the CURRENT round only — matching "total count is 0".
+  const roundScore = new Map();
+  if (playersSnap.exists()) {
+    playersSnap.forEach(playerSnap => {
+      roundScore.set(playerSnap.key, playerSnap.val()?.totalCount || 0);
+    });
+  }
 
   const deletions = {}; // RTDB multi-path update: node path → null
   const deletedUids = [];
@@ -133,7 +136,7 @@ async function main() {
     const user = userSnap.val() || {};
 
     const lastActive = user.lastOpenDate || user.installDate || null;
-    const scored = hasScored(user);
+    const scored = (roundScore.get(uid) || 0) > 0;
     const daysInactive = lastActive ? daysBetween(lastActive, today) : null;
 
     // No date recorded → no evidence of activity → eligible for deletion.
@@ -167,7 +170,6 @@ async function main() {
   // --- Current-round player cleanup ---------------------------------------
   // (a) cascade every deleted user out of the current round's players, and
   // (b) prune players sitting at 0 score for two days.
-  const playersSnap = await db.ref(`mohamed_lovers/${roundKey}/players`).get();
   const deletedUidSet = new Set(deletedUids);
   const deletedPlayerUids = [];
   const playerCounts = { cascade: 0, zero_two_days: 0 };

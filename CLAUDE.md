@@ -192,7 +192,7 @@ Two Node.js runtimes use `firebase-admin` v12; a third (Deno) only triggers a wo
 | `leaderboard-populate.yml` | Deno Deploy cron, every 30 min (workflow_dispatch only) | `scripts/populate-leaderboard.js` |
 | `notify-users.yml` | Cairo-aware schedule, Friday hourly | `scripts/notify-users.js` |
 | `update-stats.yml` | Daily 23:45 Cairo | `scripts/generate-stats.js` |
-| `delete-inactive-users.yml` | Daily 03:00 UTC (~05:00 Cairo) + workflow_dispatch | `scripts/delete-inactive-users.js` — prunes stale users (never-scored `allTimeTotal==0` ≥3d inactive; scored `allTimeTotal>0` >7d) and current-round players (cascade + 0 score for two days) |
+| `delete-inactive-users.yml` | Daily 03:00 UTC (~05:00 Cairo) + workflow_dispatch | `scripts/delete-inactive-users.js` — prunes stale users (0 current-round `totalCount` ≥3d inactive; positive current-round `totalCount` >7d) and current-round players (cascade + 0 score for two days) |
 | `aggregate-all-time.yml` | Deno Deploy cron, Fridays at 19:10 Cairo (workflow_dispatch only) — closes the round and seeds the new round's leaderboard | `scripts/aggregate-all-time.js` |
 
 All workflows use secrets: `FIREBASE_SERVICE_ACCOUNT`, `FIREBASE_DATABASE_URL`.
