@@ -3,6 +3,7 @@ package tools.mo3ta.salo.presentation
 import kotlinx.datetime.Instant
 import tools.mo3ta.salo.domain.Achievement
 import tools.mo3ta.salo.domain.HeroesBoard
+import tools.mo3ta.salo.domain.MOHAMED_LOVERS_MANUAL_DAILY_CAP
 
 data class MohamedLoversLeaderboardEntry(
     val rank: Int,
@@ -75,8 +76,8 @@ data class MohamedLoversUiState(
     // Manual salawat import
     val showManualSalawatSheet: Boolean = false,
     val isSubmittingManualSalawat: Boolean = false,
-    // Remaining manual-entry allowance for today (gradual new-user cap; only manual entries count).
-    val manualSalawatRemainingToday: Int = tools.mo3ta.salo.domain.SalawatManualCap.MAX_DAILY_CAP,
+    // Remaining manual ("record external") allowance for today (cap resets each Cairo day).
+    val manualRemaining: Int = MOHAMED_LOVERS_MANUAL_DAILY_CAP,
 
     // Daily goal
     val dailyGoalTarget: Int = 0,

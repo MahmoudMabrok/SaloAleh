@@ -3,6 +3,7 @@ package tools.mo3ta.salo.data.session
 import com.russhwolf.settings.Settings
 import kotlinx.datetime.LocalDate
 import tools.mo3ta.salo.data.crypto.sha256hex
+import tools.mo3ta.salo.domain.MOHAMED_LOVERS_MANUAL_DAILY_CAP
 import tools.mo3ta.salo.domain.MohamedLoversPendingSession
 
 class MohamedLoversSessionStore(private val settings: Settings) {
@@ -137,32 +138,50 @@ class MohamedLoversSessionStore(private val settings: Settings) {
     fun getLastSalawatTimestamp(): Long = settings.getLong(KEY_LAST_SALAWAT_TS, 0L)
     fun saveLastSalawatTimestamp(ts: Long) = settings.putLong(KEY_LAST_SALAWAT_TS, ts)
 
-    /** How many salawat have been recorded manually so far on [today] (0 on a new Cairo day). */
-    fun manualSalawatUsedToday(today: LocalDate): Int {
-        if (settings.getStringOrNull(KEY_MANUAL_SALAWAT_DATE) != today.toString()) return 0
-        return settings.getInt(KEY_MANUAL_SALAWAT_USED, 0)
+    /**
+     * How much more may still be credited to the competition today via manual ("record external")
+     * entry — [dailyCap] minus what has already been used this Cairo day. Regular taps are uncapped
+     * and do not count against this ledger.
+     *
+     * [dailyCap] defaults to the permanent [MOHAMED_LOVERS_MANUAL_DAILY_CAP]; callers pass a lower
+     * value to apply the gradual new-user ramp (see `SalawatManualCap`).
+     */
+    fun manualRemainingToday(today: LocalDate, dailyCap: Int = MOHAMED_LOVERS_MANUAL_DAILY_CAP): Int {
+        if (settings.getStringOrNull(KEY_MANUAL_DATE) != today.toString()) return dailyCap
+        return (dailyCap - settings.getInt(KEY_MANUAL_USED, 0)).coerceAtLeast(0)
     }
 
-    /** Add [amount] to today's manual-salawat ledger, resetting the ledger on a new Cairo day. */
-    fun addManualSalawatUsed(today: LocalDate, amount: Int) {
-        if (amount <= 0) return
-        ensureManualSalawatToday(today)
-        settings.putInt(KEY_MANUAL_SALAWAT_USED, settings.getInt(KEY_MANUAL_SALAWAT_USED, 0) + amount)
+    /**
+     * Record a manual external entry for [today], clamped so cumulative manual entry never exceeds
+     * [dailyCap] for the Cairo day. Returns the amount actually applied (0 once the day's allowance
+     * is exhausted). [dailyCap] defaults to the permanent [MOHAMED_LOVERS_MANUAL_DAILY_CAP]; a lower
+     * value applies the gradual new-user ramp.
+     */
+    fun recordManualEntry(today: LocalDate, count: Int, dailyCap: Int = MOHAMED_LOVERS_MANUAL_DAILY_CAP): Int {
+        ensureManualToday(today)
+        if (count <= 0) return 0
+        val used = settings.getInt(KEY_MANUAL_USED, 0)
+        val applied = count.coerceAtMost((dailyCap - used).coerceAtLeast(0))
+        if (applied > 0) settings.putInt(KEY_MANUAL_USED, used + applied)
+        return applied
     }
 
-    /** Give back [amount] of today's manual-salawat allowance after a correction (floored at 0). */
-    fun refundManualSalawatUsed(today: LocalDate, amount: Int) {
-        if (amount <= 0) return
-        if (settings.getStringOrNull(KEY_MANUAL_SALAWAT_DATE) != today.toString()) return
-        val used = settings.getInt(KEY_MANUAL_SALAWAT_USED, 0)
-        settings.putInt(KEY_MANUAL_SALAWAT_USED, (used - amount).coerceAtLeast(0))
+    /**
+     * Refund [count] to today's manual-entry allowance after a correction (subtract), so a
+     * corrected over-entry frees the daily allowance to be used again. Floored at 0.
+     */
+    fun refundManualEntry(today: LocalDate, count: Int) {
+        if (count <= 0) return
+        ensureManualToday(today)
+        val used = settings.getInt(KEY_MANUAL_USED, 0)
+        settings.putInt(KEY_MANUAL_USED, (used - count).coerceAtLeast(0))
     }
 
-    private fun ensureManualSalawatToday(today: LocalDate) {
+    private fun ensureManualToday(today: LocalDate) {
         val date = today.toString()
-        if (settings.getStringOrNull(KEY_MANUAL_SALAWAT_DATE) == date) return
-        settings.putString(KEY_MANUAL_SALAWAT_DATE, date)
-        settings.putInt(KEY_MANUAL_SALAWAT_USED, 0)
+        if (settings.getStringOrNull(KEY_MANUAL_DATE) == date) return
+        settings.putString(KEY_MANUAL_DATE, date)
+        settings.putInt(KEY_MANUAL_USED, 0)
     }
 
     fun getNickname(): String? = settings.getStringOrNull(KEY_NICKNAME)?.takeIf { it.isNotBlank() }
@@ -218,8 +237,9 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         const val KEY_LAST_MILESTONE_LEVEL = "last_milestone_level"
         const val KEY_LAST_KNOWN_RANK = "last_known_rank"
         const val KEY_LAST_SALAWAT_TS = "last_salawat_ts"
-        const val KEY_MANUAL_SALAWAT_DATE = "manual_salawat_date"
-        const val KEY_MANUAL_SALAWAT_USED = "manual_salawat_used"
+        // Per-Cairo-day ledger for manual ("record external") entry into the competition.
+        const val KEY_MANUAL_DATE = "ml_manual_date"
+        const val KEY_MANUAL_USED = "ml_manual_used"
         const val KEY_NICKNAME = "user_nickname"
         const val KEY_NICKNAME_ENABLED = "nickname_enabled"
         const val KEY_NICKNAME_ANNOUNCEMENT_SHOWN = "nickname_announcement_shown"

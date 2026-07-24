@@ -420,10 +420,10 @@ fun MohamedLoversScreen(
         }
         ManualSalawatSheet(
             isOpen = state.showManualSalawatSheet,
-            remaining = state.manualSalawatRemainingToday,
             onDismiss = { viewModel.dismissManualSalawatSheet() },
             onSubmit = { count -> viewModel.submitManualSalawat(count) },
             onSubtract = { count -> viewModel.subtractManualSalawat(count) },
+            remaining = state.manualRemaining,
         )
         MohamedLoversInfoSheet(
             isOpen = infoSheetOpen,

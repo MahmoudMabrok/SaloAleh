@@ -80,7 +80,7 @@ class MohamedLoversViewModelManualCapTest {
     @Test
     fun freshInstall_startsWithDayOneAllowance() = runTest {
         val vm = buildViewModel(FakeMohamedLoversFirebaseApi())
-        assertEquals(SalawatManualCap.RAMP_STEP, vm.state.value.manualSalawatRemainingToday)
+        assertEquals(SalawatManualCap.RAMP_STEP, vm.state.value.manualRemaining)
     }
 
     @Test
@@ -93,7 +93,7 @@ class MohamedLoversViewModelManualCapTest {
 
         // Day-1 cap is 1,000; asking for 5,000 only records 1,000 and empties the allowance.
         vm.submitManualSalawat(5_000)
-        assertEquals(0, vm.state.value.manualSalawatRemainingToday)
+        assertEquals(0, vm.state.value.manualRemaining)
     }
 
     @Test
@@ -105,14 +105,14 @@ class MohamedLoversViewModelManualCapTest {
         selfPlayerFlow.emit(Result.success(MohamedLoversPlayer(uid = "fake-uid", totalCount = 0)))
 
         vm.submitManualSalawat(300)
-        assertEquals(700, vm.state.value.manualSalawatRemainingToday)
+        assertEquals(700, vm.state.value.manualRemaining)
         vm.submitManualSalawat(300)
-        assertEquals(400, vm.state.value.manualSalawatRemainingToday)
+        assertEquals(400, vm.state.value.manualRemaining)
         // Further entries beyond the cap add nothing more.
         vm.submitManualSalawat(9_999)
-        assertEquals(0, vm.state.value.manualSalawatRemainingToday)
+        assertEquals(0, vm.state.value.manualRemaining)
         vm.submitManualSalawat(50)
-        assertEquals(0, vm.state.value.manualSalawatRemainingToday)
+        assertEquals(0, vm.state.value.manualRemaining)
     }
 
     @Test
@@ -124,11 +124,11 @@ class MohamedLoversViewModelManualCapTest {
         selfPlayerFlow.emit(Result.success(MohamedLoversPlayer(uid = "fake-uid", totalCount = 0)))
 
         vm.submitManualSalawat(1_000)
-        assertEquals(0, vm.state.value.manualSalawatRemainingToday)
+        assertEquals(0, vm.state.value.manualRemaining)
         // The manual batch is flushed to the server; reflect the new total back like the live flow would.
         selfPlayerFlow.emit(Result.success(MohamedLoversPlayer(uid = "fake-uid", totalCount = 1_000)))
         // Correcting the mistaken batch frees the allowance again.
         vm.subtractManualSalawat(1_000)
-        assertEquals(SalawatManualCap.RAMP_STEP, vm.state.value.manualSalawatRemainingToday)
+        assertEquals(SalawatManualCap.RAMP_STEP, vm.state.value.manualRemaining)
     }
 }

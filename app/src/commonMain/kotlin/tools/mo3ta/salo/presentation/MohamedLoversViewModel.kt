@@ -100,7 +100,7 @@ class MohamedLoversViewModel(
                 dailyGoalTarget = dailyGoalStore.todayTarget(today),
                 dailyGoalProgress = todayProgress,
                 currentDailyBadge = DailyBadge.fromTapCount(todayProgress)?.key,
-                manualSalawatRemainingToday = manualSalawatRemaining(today),
+                manualRemaining = sessionStore.manualRemainingToday(today, manualDailyCap(today)),
             )
         }
         settleHeartDecay()
@@ -349,7 +349,13 @@ class MohamedLoversViewModel(
     }
 
     fun showManualSalawatSheet() {
-        _state.update { it.copy(showManualSalawatSheet = true) }
+        val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
+        _state.update {
+            it.copy(
+                showManualSalawatSheet = true,
+                manualRemaining = sessionStore.manualRemainingToday(today),
+            )
+        }
     }
 
     fun dismissManualSalawatSheet() {
@@ -360,23 +366,25 @@ class MohamedLoversViewModel(
     private fun installDate(today: LocalDate): LocalDate =
         runCatching { LocalDate.parse(sessionStore.getOrSetInstallDate(today)) }.getOrDefault(today)
 
-    /** Manual salawat still addable today under the gradual new-user cap (only manual entries count). */
-    private fun manualSalawatRemaining(today: LocalDate): Int {
-        val cap = SalawatManualCap.dailyCap(today, installDate(today))
-        return (cap - sessionStore.manualSalawatUsedToday(today)).coerceAtLeast(0)
-    }
+    /**
+     * The manual ("record external") allowance for [today] under the gradual new-user ramp: 1,000 on
+     * install day climbing to the permanent cap by day 10. Never above the permanent cap.
+     */
+    private fun manualDailyCap(today: LocalDate): Int =
+        SalawatManualCap.dailyCap(today, installDate(today))
 
     fun submitManualSalawat(count: Int) {
         val roundKey = state.value.roundKey ?: return
         if (count <= 0) return
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
-        // Only as much as the day's remaining allowance is accepted; the rest is dropped.
-        val applied = count.coerceAtMost(manualSalawatRemaining(today))
+        // Clamp to the day's remaining external-entry allowance so a single manual batch can't
+        // flood the competition score. Regular taps are uncapped and never touch this ledger.
+        val cap = manualDailyCap(today)
+        val applied = sessionStore.recordManualEntry(today, count, cap)
         if (applied <= 0) {
-            _state.update { it.copy(showManualSalawatSheet = false) }
+            _state.update { it.copy(showManualSalawatSheet = false, manualRemaining = 0) }
             return
         }
-        sessionStore.addManualSalawatUsed(today, applied)
         val nowMs = Clock.System.now().toEpochMilliseconds()
         val heart = addHeartTap(nowMs, applied)
         repository.registerLocalTap(roundKey, applied)
@@ -395,7 +403,7 @@ class MohamedLoversViewModel(
                 showHeartRefillNudge = shouldShowHeartRefillNudge(heart.first, heart.second),
                 roundStreak = streakResult.currentStreak,
                 roundStreakCelebration = streakResult.newlyEarnedBadge ?: it.roundStreakCelebration,
-                manualSalawatRemainingToday = manualSalawatRemaining(today),
+                manualRemaining = sessionStore.manualRemainingToday(today, cap),
             )
         }
         publishRoundStreak(roundKey, streakResult.currentStreak, prevStreak)
@@ -428,13 +436,13 @@ class MohamedLoversViewModel(
             return
         }
 
+        // A correction frees the manual-entry allowance again so a mis-entry can be re-added.
+        val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
+        sessionStore.refundManualEntry(today, applied)
+
         val pendingReduction = applied.coerceAtMost(pendingClicks)
         if (pendingReduction > 0) repository.decrementPendingClick(roundKey, pendingReduction)
         val serverReduction = applied - pendingReduction
-
-        // A correction frees the manual-entry allowance it used up, so the day's cap isn't wasted.
-        val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
-        sessionStore.refundManualSalawatUsed(today, applied)
 
         val pending = repository.getPendingSession(roundKey)
         _state.update {
@@ -442,7 +450,7 @@ class MohamedLoversViewModel(
                 sessionClicks = pending.clickCount,
                 showManualSalawatSheet = false,
                 isSubmittingManualSalawat = serverReduction > 0,
-                manualSalawatRemainingToday = manualSalawatRemaining(today),
+                manualRemaining = sessionStore.manualRemainingToday(today, manualDailyCap(today)),
             )
         }
         applyLeaderboard()

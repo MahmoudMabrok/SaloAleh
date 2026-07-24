@@ -498,6 +498,7 @@
     <string name="settings_about_header">عن التطبيق</string>
     <string name="settings_app_guide">دليل التطبيق</string>
     <string name="settings_privacy_policy">سياسة الخصوصية</string>
+    <string name="settings_contact_us">تواصل معنا</string>
     <string name="settings_share_app">مشاركة التطبيق</string>
     <string name="settings_open_store_page">فتح صفحة المتجر</string>
     <string name="settings_app_version">إصدار التطبيق</string>

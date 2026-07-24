@@ -14,14 +14,14 @@ import kotlinx.datetime.LocalDate
  */
 object SalawatManualCap {
 
-    /** Extra allowance granted per additional day since install. */
-    const val RAMP_STEP = 1_000
-
     /** Days the ramp climbs before flattening (install day counts as day 1). */
     const val RAMP_DAYS = 10
 
-    /** Flat cap once the ramp is over (day 10 onward). */
-    const val MAX_DAILY_CAP = RAMP_STEP * RAMP_DAYS // 10_000
+    /** Flat cap once the ramp is over (day 10 onward) — the permanent daily external-entry cap. */
+    const val MAX_DAILY_CAP = MOHAMED_LOVERS_MANUAL_DAILY_CAP // 10_000
+
+    /** Extra allowance granted per additional day since install (MAX split evenly across the ramp). */
+    const val RAMP_STEP = MAX_DAILY_CAP / RAMP_DAYS // 1_000
 
     /**
      * @param today the current day in `Africa/Cairo`.

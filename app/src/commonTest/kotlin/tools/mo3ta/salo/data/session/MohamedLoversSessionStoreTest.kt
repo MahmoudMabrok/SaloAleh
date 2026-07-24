@@ -2,6 +2,7 @@ package tools.mo3ta.salo.data.session
 
 import com.russhwolf.settings.MapSettings
 import kotlinx.datetime.LocalDate
+import tools.mo3ta.salo.domain.MOHAMED_LOVERS_MANUAL_DAILY_CAP
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -154,50 +155,89 @@ class MohamedLoversSessionStoreTest {
         assertEquals(3, pending["R1"])
     }
 
-    // --- Manual-salawat daily ledger (gradual new-user cap) ---
+    // --- Manual ("record external") daily cap ledger ---
+
+    private val d1 = LocalDate(2026, 5, 1)
+    private val d2 = LocalDate(2026, 5, 2)
 
     @Test
-    fun manualSalawatUsed_initiallyZero() {
-        assertEquals(0, store.manualSalawatUsedToday(LocalDate(2026, 5, 8)))
+    fun manualRemaining_defaultsToFullCap() {
+        assertEquals(MOHAMED_LOVERS_MANUAL_DAILY_CAP, store.manualRemainingToday(d1))
     }
 
     @Test
-    fun manualSalawatUsed_accumulatesWithinDay() {
-        val day = LocalDate(2026, 5, 8)
-        store.addManualSalawatUsed(day, 300)
-        store.addManualSalawatUsed(day, 200)
-        assertEquals(500, store.manualSalawatUsedToday(day))
+    fun recordManualEntry_appliesFullAmountBelowCap() {
+        val applied = store.recordManualEntry(d1, 300)
+        assertEquals(300, applied)
+        assertEquals(MOHAMED_LOVERS_MANUAL_DAILY_CAP - 300, store.manualRemainingToday(d1))
     }
 
     @Test
-    fun manualSalawatUsed_resetsOnNewDay() {
-        store.addManualSalawatUsed(LocalDate(2026, 5, 8), 500)
-        assertEquals(0, store.manualSalawatUsedToday(LocalDate(2026, 5, 9)))
+    fun recordManualEntry_accumulatesWithinDay() {
+        store.recordManualEntry(d1, 4_000)
+        val applied = store.recordManualEntry(d1, 4_000)
+        assertEquals(4_000, applied)
+        assertEquals(MOHAMED_LOVERS_MANUAL_DAILY_CAP - 8_000, store.manualRemainingToday(d1))
     }
 
     @Test
-    fun manualSalawatUsed_ignoresNonPositive() {
-        val day = LocalDate(2026, 5, 8)
-        store.addManualSalawatUsed(day, 0)
-        store.addManualSalawatUsed(day, -5)
-        assertEquals(0, store.manualSalawatUsedToday(day))
+    fun recordManualEntry_clampsToRemainingCap() {
+        store.recordManualEntry(d1, 9_000)
+        // Only 1_000 of the requested 5_000 fits under the 10_000 cap.
+        val applied = store.recordManualEntry(d1, 5_000)
+        assertEquals(1_000, applied)
+        assertEquals(0, store.manualRemainingToday(d1))
     }
 
     @Test
-    fun refundManualSalawat_freesAllowance_flooredAtZero() {
-        val day = LocalDate(2026, 5, 8)
-        store.addManualSalawatUsed(day, 500)
-        store.refundManualSalawatUsed(day, 200)
-        assertEquals(300, store.manualSalawatUsedToday(day))
-        store.refundManualSalawatUsed(day, 1_000)
-        assertEquals(0, store.manualSalawatUsedToday(day))
+    fun recordManualEntry_returnsZeroWhenExhausted() {
+        store.recordManualEntry(d1, MOHAMED_LOVERS_MANUAL_DAILY_CAP)
+        assertEquals(0, store.recordManualEntry(d1, 500))
     }
 
     @Test
-    fun refundManualSalawat_noOpOnDifferentDay() {
-        store.addManualSalawatUsed(LocalDate(2026, 5, 8), 500)
-        store.refundManualSalawatUsed(LocalDate(2026, 5, 9), 200)
-        assertEquals(500, store.manualSalawatUsedToday(LocalDate(2026, 5, 8)))
+    fun recordManualEntry_resetsOnNewDay() {
+        store.recordManualEntry(d1, MOHAMED_LOVERS_MANUAL_DAILY_CAP)
+        assertEquals(0, store.manualRemainingToday(d1))
+        // A new Cairo day restores the full allowance.
+        assertEquals(MOHAMED_LOVERS_MANUAL_DAILY_CAP, store.manualRemainingToday(d2))
+        assertEquals(500, store.recordManualEntry(d2, 500))
+    }
+
+    @Test
+    fun refundManualEntry_restoresAllowance() {
+        store.recordManualEntry(d1, 8_000)
+        store.refundManualEntry(d1, 3_000)
+        assertEquals(MOHAMED_LOVERS_MANUAL_DAILY_CAP - 5_000, store.manualRemainingToday(d1))
+    }
+
+    @Test
+    fun refundManualEntry_flooredAtCap() {
+        store.recordManualEntry(d1, 1_000)
+        store.refundManualEntry(d1, 5_000)
+        assertEquals(MOHAMED_LOVERS_MANUAL_DAILY_CAP, store.manualRemainingToday(d1))
+    }
+
+    // --- Gradual new-user ramp: a lower dailyCap overrides the permanent cap ---
+
+    @Test
+    fun manualRemaining_respectsLowerDailyCap() {
+        assertEquals(1_000, store.manualRemainingToday(d1, dailyCap = 1_000))
+    }
+
+    @Test
+    fun recordManualEntry_clampsToLowerDailyCap() {
+        val applied = store.recordManualEntry(d1, 5_000, dailyCap = 1_000)
+        assertEquals(1_000, applied)
+        assertEquals(0, store.manualRemainingToday(d1, dailyCap = 1_000))
+    }
+
+    @Test
+    fun recordManualEntry_lowerCapSharesLedgerWithPermanentCap() {
+        // Under a day-2 ramp cap of 2_000, 2_000 is used; the permanent cap then sees 8_000 left.
+        store.recordManualEntry(d1, 5_000, dailyCap = 2_000)
+        assertEquals(0, store.manualRemainingToday(d1, dailyCap = 2_000))
+        assertEquals(MOHAMED_LOVERS_MANUAL_DAILY_CAP - 2_000, store.manualRemainingToday(d1))
     }
 
     // --- Legacy migration ---
