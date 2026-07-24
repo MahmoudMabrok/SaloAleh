@@ -10,6 +10,10 @@ import kotlinx.datetime.LocalDate
  * so on by [RAMP_STEP] each day, reaching [MAX_DAILY_CAP] on day 10. From then on the cap stays flat
  * at [MAX_DAILY_CAP] — the ceiling the ongoing "daily external records" cap builds on.
  *
+ * A new user who has already proven daily commitment short-circuits the ramp: once their round
+ * streak reaches [STREAK_CAP_UNLOCK] consecutive active days, the gradual ramp is skipped and the
+ * full [MAX_DAILY_CAP] is granted immediately.
+ *
  * Only manual entries count against this cap; in-app taps are never limited.
  */
 object SalawatManualCap {
@@ -24,12 +28,22 @@ object SalawatManualCap {
     const val RAMP_STEP = MAX_DAILY_CAP / RAMP_DAYS // 1_000
 
     /**
+     * Round-streak length that unlocks the full [MAX_DAILY_CAP] immediately, skipping the ramp.
+     * A new user active for this many consecutive days has earned the full manual allowance early.
+     */
+    const val STREAK_CAP_UNLOCK = 3
+
+    /**
      * @param today the current day in `Africa/Cairo`.
      * @param installDate the day the app was first opened (also in `Africa/Cairo`).
-     * @return how many salawat may be recorded manually on [today]: 1,000 on install day, climbing by
-     *   [RAMP_STEP] each day up to [MAX_DAILY_CAP] on day 10, then flat.
+     * @param currentStreak the user's current round streak (consecutive active days). When it reaches
+     *   [STREAK_CAP_UNLOCK] the ramp is skipped and [MAX_DAILY_CAP] is returned regardless of age.
+     * @return how many salawat may be recorded manually on [today]: [MAX_DAILY_CAP] once the streak
+     *   unlocks it, otherwise 1,000 on install day climbing by [RAMP_STEP] each day up to
+     *   [MAX_DAILY_CAP] on day 10, then flat.
      */
-    fun dailyCap(today: LocalDate, installDate: LocalDate): Int {
+    fun dailyCap(today: LocalDate, installDate: LocalDate, currentStreak: Int = 0): Int {
+        if (currentStreak >= STREAK_CAP_UNLOCK) return MAX_DAILY_CAP
         val daysSinceInstall = (today.toEpochDays() - installDate.toEpochDays()).coerceAtLeast(0)
         val step = (daysSinceInstall + 1).coerceIn(1, RAMP_DAYS)
         return step * RAMP_STEP
