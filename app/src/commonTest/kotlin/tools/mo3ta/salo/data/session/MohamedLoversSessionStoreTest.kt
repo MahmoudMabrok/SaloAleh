@@ -218,6 +218,28 @@ class MohamedLoversSessionStoreTest {
         assertEquals(MOHAMED_LOVERS_MANUAL_DAILY_CAP, store.manualRemainingToday(d1))
     }
 
+    // --- Gradual new-user ramp: a lower dailyCap overrides the permanent cap ---
+
+    @Test
+    fun manualRemaining_respectsLowerDailyCap() {
+        assertEquals(1_000, store.manualRemainingToday(d1, dailyCap = 1_000))
+    }
+
+    @Test
+    fun recordManualEntry_clampsToLowerDailyCap() {
+        val applied = store.recordManualEntry(d1, 5_000, dailyCap = 1_000)
+        assertEquals(1_000, applied)
+        assertEquals(0, store.manualRemainingToday(d1, dailyCap = 1_000))
+    }
+
+    @Test
+    fun recordManualEntry_lowerCapSharesLedgerWithPermanentCap() {
+        // Under a day-2 ramp cap of 2_000, 2_000 is used; the permanent cap then sees 8_000 left.
+        store.recordManualEntry(d1, 5_000, dailyCap = 2_000)
+        assertEquals(0, store.manualRemainingToday(d1, dailyCap = 2_000))
+        assertEquals(MOHAMED_LOVERS_MANUAL_DAILY_CAP - 2_000, store.manualRemainingToday(d1))
+    }
+
     // --- Legacy migration ---
 
     @Test

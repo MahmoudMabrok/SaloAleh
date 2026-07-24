@@ -352,7 +352,6 @@ fun App(
                                 openInfoSheet = openLeaderboardSheet,
                                 onInfoSheetOpened = { openLeaderboardSheet = false },
                                 announcementsEnabled = APP_ANNOUNCEMENTS_ENABLED,
-                                manualEntryEnabled = manualEntryEnabled,
                             )
                             SaloTab.Challenges -> ChallengesScreen(
                                 onOpenDhikrChallenge = { showDhikrRewards = true },

@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
@@ -38,6 +39,7 @@ import tools.mo3ta.salo.domain.MohamedLoversCompetitionWindow
 import tools.mo3ta.salo.domain.MohamedLoversMedals
 import tools.mo3ta.salo.domain.MohamedLoversPlayer
 import tools.mo3ta.salo.domain.MohamedLoversRepository
+import tools.mo3ta.salo.domain.SalawatManualCap
 import tools.mo3ta.salo.domain.buildMohamedLoversDisplayTag
 import tools.mo3ta.salo.ui.setLeaderboardTopicSubscription
 
@@ -98,7 +100,7 @@ class MohamedLoversViewModel(
                 dailyGoalTarget = dailyGoalStore.todayTarget(today),
                 dailyGoalProgress = todayProgress,
                 currentDailyBadge = DailyBadge.fromTapCount(todayProgress)?.key,
-                manualRemaining = sessionStore.manualRemainingToday(today),
+                manualRemaining = sessionStore.manualRemainingToday(today, manualDailyCap(today)),
             )
         }
         settleHeartDecay()
@@ -360,13 +362,25 @@ class MohamedLoversViewModel(
         _state.update { it.copy(showManualSalawatSheet = false) }
     }
 
+    /** Cairo install day, falling back to today when unset/unparseable. */
+    private fun installDate(today: LocalDate): LocalDate =
+        runCatching { LocalDate.parse(sessionStore.getOrSetInstallDate(today)) }.getOrDefault(today)
+
+    /**
+     * The manual ("record external") allowance for [today] under the gradual new-user ramp: 1,000 on
+     * install day climbing to the permanent cap by day 10. Never above the permanent cap.
+     */
+    private fun manualDailyCap(today: LocalDate): Int =
+        SalawatManualCap.dailyCap(today, installDate(today))
+
     fun submitManualSalawat(count: Int) {
         val roundKey = state.value.roundKey ?: return
         if (count <= 0) return
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
         // Clamp to the day's remaining external-entry allowance so a single manual batch can't
         // flood the competition score. Regular taps are uncapped and never touch this ledger.
-        val applied = sessionStore.recordManualEntry(today, count)
+        val cap = manualDailyCap(today)
+        val applied = sessionStore.recordManualEntry(today, count, cap)
         if (applied <= 0) {
             _state.update { it.copy(showManualSalawatSheet = false, manualRemaining = 0) }
             return
@@ -389,7 +403,7 @@ class MohamedLoversViewModel(
                 showHeartRefillNudge = shouldShowHeartRefillNudge(heart.first, heart.second),
                 roundStreak = streakResult.currentStreak,
                 roundStreakCelebration = streakResult.newlyEarnedBadge ?: it.roundStreakCelebration,
-                manualRemaining = sessionStore.manualRemainingToday(today),
+                manualRemaining = sessionStore.manualRemainingToday(today, cap),
             )
         }
         publishRoundStreak(roundKey, streakResult.currentStreak, prevStreak)
@@ -436,7 +450,7 @@ class MohamedLoversViewModel(
                 sessionClicks = pending.clickCount,
                 showManualSalawatSheet = false,
                 isSubmittingManualSalawat = serverReduction > 0,
-                manualRemaining = sessionStore.manualRemainingToday(today),
+                manualRemaining = sessionStore.manualRemainingToday(today, manualDailyCap(today)),
             )
         }
         applyLeaderboard()

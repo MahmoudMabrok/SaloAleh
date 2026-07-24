@@ -140,24 +140,28 @@ class MohamedLoversSessionStore(private val settings: Settings) {
 
     /**
      * How much more may still be credited to the competition today via manual ("record external")
-     * entry — [MOHAMED_LOVERS_MANUAL_DAILY_CAP] minus what has already been used this Cairo day.
-     * Regular taps are uncapped and do not count against this ledger.
+     * entry — [dailyCap] minus what has already been used this Cairo day. Regular taps are uncapped
+     * and do not count against this ledger.
+     *
+     * [dailyCap] defaults to the permanent [MOHAMED_LOVERS_MANUAL_DAILY_CAP]; callers pass a lower
+     * value to apply the gradual new-user ramp (see `SalawatManualCap`).
      */
-    fun manualRemainingToday(today: LocalDate): Int {
-        if (settings.getStringOrNull(KEY_MANUAL_DATE) != today.toString()) return MOHAMED_LOVERS_MANUAL_DAILY_CAP
-        return (MOHAMED_LOVERS_MANUAL_DAILY_CAP - settings.getInt(KEY_MANUAL_USED, 0)).coerceAtLeast(0)
+    fun manualRemainingToday(today: LocalDate, dailyCap: Int = MOHAMED_LOVERS_MANUAL_DAILY_CAP): Int {
+        if (settings.getStringOrNull(KEY_MANUAL_DATE) != today.toString()) return dailyCap
+        return (dailyCap - settings.getInt(KEY_MANUAL_USED, 0)).coerceAtLeast(0)
     }
 
     /**
      * Record a manual external entry for [today], clamped so cumulative manual entry never exceeds
-     * [MOHAMED_LOVERS_MANUAL_DAILY_CAP] for the Cairo day. Returns the amount actually applied
-     * (0 once the day's allowance is exhausted).
+     * [dailyCap] for the Cairo day. Returns the amount actually applied (0 once the day's allowance
+     * is exhausted). [dailyCap] defaults to the permanent [MOHAMED_LOVERS_MANUAL_DAILY_CAP]; a lower
+     * value applies the gradual new-user ramp.
      */
-    fun recordManualEntry(today: LocalDate, count: Int): Int {
+    fun recordManualEntry(today: LocalDate, count: Int, dailyCap: Int = MOHAMED_LOVERS_MANUAL_DAILY_CAP): Int {
         ensureManualToday(today)
         if (count <= 0) return 0
         val used = settings.getInt(KEY_MANUAL_USED, 0)
-        val applied = count.coerceAtMost((MOHAMED_LOVERS_MANUAL_DAILY_CAP - used).coerceAtLeast(0))
+        val applied = count.coerceAtMost((dailyCap - used).coerceAtLeast(0))
         if (applied > 0) settings.putInt(KEY_MANUAL_USED, used + applied)
         return applied
     }
