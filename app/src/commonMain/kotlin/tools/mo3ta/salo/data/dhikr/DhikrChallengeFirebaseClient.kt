@@ -24,6 +24,9 @@ private const val UID_KEY = "uid"
 private const val DATE_KEY = "date"
 private const val COUNTRY_CODE_KEY = "countryCode"
 private const val NICKNAME_KEY = "nickname"
+private const val GOLD_MEDALS_KEY = "goldMedals"
+private const val SILVER_MEDALS_KEY = "silverMedals"
+private const val BRONZE_MEDALS_KEY = "bronzeMedals"
 private const val GOAL_KEY = "goal"
 private const val COMPLETED_KEY = "completed"
 private const val UPDATED_AT_KEY = "updatedAt"
@@ -203,6 +206,9 @@ private fun Any?.toDhikrLeaderboardEntry(): DhikrLeaderboardEntry? {
         rankChange = entry[RANK_CHANGE_KEY] as? String ?: "same",
         nickname = entry[NICKNAME_KEY] as? String ?: "",
         streak = (entry[STREAK_KEY] as? Number)?.toInt() ?: 0,
+        goldMedals = (entry[GOLD_MEDALS_KEY] as? Number)?.toInt()?.coerceAtLeast(0) ?: 0,
+        silverMedals = (entry[SILVER_MEDALS_KEY] as? Number)?.toInt()?.coerceAtLeast(0) ?: 0,
+        bronzeMedals = (entry[BRONZE_MEDALS_KEY] as? Number)?.toInt()?.coerceAtLeast(0) ?: 0,
     )
 }
 

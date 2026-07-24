@@ -16,6 +16,7 @@ const {
   buildGharsChallengeDailyRanking,
   buildQuranChallengeDailyRanking,
   buildAlBaqaraChallengeDailyRanking,
+  attachChallengeMedals,
   buildOldRankMap,
   computeRankChange,
   computeTop3Changes,
@@ -169,6 +170,8 @@ async function populateDhikrChallengeToday(db) {
     return [String(i), entry];
   });
 
+  await attachChallengeMedals(db, DHIKR_CHALLENGE_ROOT, leaderboardEntries);
+
   const updates = {
     ...dailyRanking.rankUpdates,
     [`${DHIKR_CHALLENGE_ROOT}/${dateKey}/participantCount`]: dailyRanking.participantCount,
@@ -236,6 +239,8 @@ async function populateBaqiyatChallengeToday(db) {
     return [String(i), entry];
   });
 
+  await attachChallengeMedals(db, BAQIYAT_CHALLENGE_ROOT, leaderboardEntries);
+
   const updates = {
     ...dailyRanking.rankUpdates,
     [`${BAQIYAT_CHALLENGE_ROOT}/${dateKey}/participantCount`]: dailyRanking.participantCount,
@@ -301,6 +306,8 @@ async function populateIstighfarChallengeToday(db) {
     return [String(i), entry];
   });
 
+  await attachChallengeMedals(db, ISTIGHFAR_CHALLENGE_ROOT, leaderboardEntries);
+
   const updates = {
     ...dailyRanking.rankUpdates,
     [`${ISTIGHFAR_CHALLENGE_ROOT}/${dateKey}/participantCount`]: dailyRanking.participantCount,
@@ -365,6 +372,8 @@ async function populateQuranChallengeToday(db) {
     if (user.streak) entry.streak = user.streak;
     return [String(i), entry];
   });
+
+  await attachChallengeMedals(db, QURAN_CHALLENGE_ROOT, leaderboardEntries);
 
   const updates = {
     ...dailyRanking.rankUpdates,
@@ -435,6 +444,8 @@ async function populateAlBaqaraChallengeToday(db) {
     return [String(i), entry];
   });
 
+  await attachChallengeMedals(db, ALBAQARA_CHALLENGE_ROOT, leaderboardEntries);
+
   const updates = {
     ...dailyRanking.rankUpdates,
     [`${ALBAQARA_CHALLENGE_ROOT}/${dateKey}/participantCount`]: dailyRanking.participantCount,
@@ -497,6 +508,8 @@ async function populateZabadChallengeToday(db) {
     if (user.streak) entry.streak = user.streak;
     return [String(i), entry];
   });
+
+  await attachChallengeMedals(db, ZABAD_CHALLENGE_ROOT, leaderboardEntries);
 
   const updates = {
     ...dailyRanking.rankUpdates,
@@ -562,6 +575,8 @@ async function populateGharsChallengeToday(db) {
     if (user.streak) entry.streak = user.streak;
     return [String(i), entry];
   });
+
+  await attachChallengeMedals(db, GHARS_CHALLENGE_ROOT, leaderboardEntries);
 
   const updates = {
     ...dailyRanking.rankUpdates,

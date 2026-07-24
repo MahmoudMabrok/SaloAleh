@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.stringResource
 import tools.mo3ta.salo.domain.AlBaqaraLeaderboardEntry
+import tools.mo3ta.salo.ui.components.ChallengeMedalPills
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.albaqara_count_unit
 import tools.mo3ta.salo.generated.resources.albaqara_leaderboard_empty
@@ -224,6 +225,13 @@ private fun LeaderboardRow(
         } else {
             Spacer(Modifier.weight(1f))
         }
+
+        ChallengeMedalPills(
+            goldMedals = entry.goldMedals,
+            silverMedals = entry.silverMedals,
+            bronzeMedals = entry.bronzeMedals,
+            modifier = Modifier.padding(end = 6.dp),
+        )
 
         Column(
             horizontalAlignment = Alignment.End,

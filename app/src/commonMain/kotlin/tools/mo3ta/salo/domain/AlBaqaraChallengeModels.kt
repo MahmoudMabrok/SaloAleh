@@ -26,4 +26,7 @@ data class AlBaqaraLeaderboardEntry(
     val rank: Int,
     val rankChange: String, // "up" | "down" | "same" | "new"
     val nickname: String = "",
+    val goldMedals: Int = 0,
+    val silverMedals: Int = 0,
+    val bronzeMedals: Int = 0,
 )

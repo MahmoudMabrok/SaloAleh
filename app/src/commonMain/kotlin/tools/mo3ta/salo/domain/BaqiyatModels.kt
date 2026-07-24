@@ -11,6 +11,9 @@ data class BaqiyatLeaderboardEntry(
     val rankChange: String = "same",
     val nickname: String = "",
     val streak: Int = 0,
+    val goldMedals: Int = 0,
+    val silverMedals: Int = 0,
+    val bronzeMedals: Int = 0,
 )
 
 data class BaqiyatDayStats(

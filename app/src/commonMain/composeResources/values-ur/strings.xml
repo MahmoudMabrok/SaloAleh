@@ -722,6 +722,8 @@
     <string name="leaderboard_medals_info_gold">پہلی پوزیشن حاصل کرنے کی تعداد</string>
     <string name="leaderboard_medals_info_silver">دوسری پوزیشن حاصل کرنے کی تعداد</string>
     <string name="leaderboard_medals_info_bronze">تیسری پوزیشن حاصل کرنے کی تعداد</string>
+    <string name="challenge_medals_info_title">چیلنج کے تمغے</string>
+    <string name="challenge_medals_info_desc">تمغے ہر روز اس چیلنج کے پہلے تین سرفہرست شرکاء کو دیے جاتے ہیں اور وقت کے ساتھ جمع ہوتے رہتے ہیں۔</string>
     <string name="leaderboard_score_label">درود</string>
     <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">مقابلہ دیکھیں</string>

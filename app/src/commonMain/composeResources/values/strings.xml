@@ -772,6 +772,8 @@
     <string name="leaderboard_medals_info_gold">عدد مرات الحصول على المركز الأول</string>
     <string name="leaderboard_medals_info_silver">عدد مرات الحصول على المركز الثاني</string>
     <string name="leaderboard_medals_info_bronze">عدد مرات الحصول على المركز الثالث</string>
+    <string name="challenge_medals_info_title">أوسمة التحدي</string>
+    <string name="challenge_medals_info_desc">تُمنح الأوسمة كل يوم للمتصدرين الثلاثة الأوائل في هذا التحدي، وتتراكم مع مرور الأيام.</string>
     <string name="leaderboard_score_label">صلاة</string>
     <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">عرض المسابقة</string>

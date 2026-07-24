@@ -24,6 +24,7 @@ const {
   QURAN_CHALLENGE_ROOT,
   ALBAQARA_CHALLENGE_ROOT,
   readChallengeRankedUsers,
+  awardChallengeMedals,
   cairoToday,
 } = require('./leaderboard-utils');
 
@@ -220,6 +221,9 @@ async function main() {
   // Persist the day's champions BEFORE the per-challenge day nodes are deleted by
   // the aggregate-and-clean steps below (those remove 100_challenge/{today} etc).
   await persistHeroes(db, dailyLeaderboardSnap);
+  // Award each challenge's daily podium medals (🥇/🥈/🥉 to the day's top-3) from the
+  // live end-of-day counts, BEFORE the aggregate-and-clean steps delete the day nodes.
+  await awardAllChallengeMedals(db);
   await aggregateAndCleanDhikrChallenge(db);
   await aggregateAndCleanBaqiyatChallenge(db);
   await aggregateAndCleanIstighfarChallenge(db);
@@ -536,6 +540,28 @@ async function persistHeroes(db, dailyLeaderboardSnap) {
 
   // Phase 1: mirror to Firestore.
   await mirrorHeroes(admin.firestore(), heroes);
+}
+
+// Awards daily podium medals for every count challenge. Each award is guarded and
+// wrapped so one challenge's failure never blocks the others or the cleanup steps.
+async function awardAllChallengeMedals(db) {
+  const today = cairoToday();
+  const roots = [
+    DHIKR_CHALLENGE_ROOT,
+    BAQIYAT_CHALLENGE_ROOT,
+    ISTIGHFAR_CHALLENGE_ROOT,
+    ZABAD_CHALLENGE_ROOT,
+    GHARS_CHALLENGE_ROOT,
+    QURAN_CHALLENGE_ROOT,
+    ALBAQARA_CHALLENGE_ROOT,
+  ];
+  for (const root of roots) {
+    try {
+      await awardChallengeMedals(db, admin, root, today);
+    } catch (e) {
+      console.error(`[medals:${root}] award failed: ${e.message}`);
+    }
+  }
 }
 
 async function aggregateAndCleanDhikrChallenge(db) {

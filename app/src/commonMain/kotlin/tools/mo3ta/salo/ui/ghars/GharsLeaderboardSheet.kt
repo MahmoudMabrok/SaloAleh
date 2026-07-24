@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.stringResource
 import tools.mo3ta.salo.domain.GharsLeaderboardEntry
+import tools.mo3ta.salo.ui.components.ChallengeMedalPills
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.ghars_unit
 import tools.mo3ta.salo.generated.resources.zabad_leaderboard_empty
@@ -236,6 +237,12 @@ private fun LeaderboardRow(
                         .padding(horizontal = 5.dp, vertical = 1.dp),
                 )
             }
+            ChallengeMedalPills(
+                goldMedals = entry.goldMedals,
+                silverMedals = entry.silverMedals,
+                bronzeMedals = entry.bronzeMedals,
+                modifier = Modifier.padding(top = 3.dp),
+            )
         }
 
         Column(
