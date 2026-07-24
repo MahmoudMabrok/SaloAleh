@@ -45,4 +45,26 @@ class SalawatManualCapTest {
         assertEquals(2_000, SalawatManualCap.dailyCap(LocalDate(2026, 7, 31), julyInstall))
         assertEquals(3_000, SalawatManualCap.dailyCap(LocalDate(2026, 8, 1), julyInstall))
     }
+
+    @Test
+    fun streakOfThree_skipsRampToMaxOnInstallDay() {
+        // A brand-new user who already has a 3-day streak gets the full cap immediately.
+        assertEquals(SalawatManualCap.MAX_DAILY_CAP, SalawatManualCap.dailyCap(install, install, currentStreak = 3))
+    }
+
+    @Test
+    fun streakAboveThree_alsoUnlocksMax() {
+        assertEquals(SalawatManualCap.MAX_DAILY_CAP, SalawatManualCap.dailyCap(LocalDate(2026, 7, 24), install, currentStreak = 7))
+    }
+
+    @Test
+    fun streakBelowThree_stillRamps() {
+        assertEquals(1_000, SalawatManualCap.dailyCap(install, install, currentStreak = 2))
+        assertEquals(3_000, SalawatManualCap.dailyCap(LocalDate(2026, 7, 24), install, currentStreak = 2))
+    }
+
+    @Test
+    fun streakDefaultsToRamp_whenOmitted() {
+        assertEquals(1_000, SalawatManualCap.dailyCap(install, install))
+    }
 }

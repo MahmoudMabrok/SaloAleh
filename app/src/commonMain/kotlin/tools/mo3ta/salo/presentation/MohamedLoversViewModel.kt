@@ -353,7 +353,7 @@ class MohamedLoversViewModel(
         _state.update {
             it.copy(
                 showManualSalawatSheet = true,
-                manualRemaining = sessionStore.manualRemainingToday(today),
+                manualRemaining = sessionStore.manualRemainingToday(today, manualDailyCap(today)),
             )
         }
     }
@@ -368,10 +368,11 @@ class MohamedLoversViewModel(
 
     /**
      * The manual ("record external") allowance for [today] under the gradual new-user ramp: 1,000 on
-     * install day climbing to the permanent cap by day 10. Never above the permanent cap.
+     * install day climbing to the permanent cap by day 10. Never above the permanent cap. A round
+     * streak of [SalawatManualCap.STREAK_CAP_UNLOCK]+ skips the ramp and grants the full cap early.
      */
     private fun manualDailyCap(today: LocalDate): Int =
-        SalawatManualCap.dailyCap(today, installDate(today))
+        SalawatManualCap.dailyCap(today, installDate(today), state.value.roundStreak)
 
     fun submitManualSalawat(count: Int) {
         val roundKey = state.value.roundKey ?: return
