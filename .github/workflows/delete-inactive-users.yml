@@ -10,12 +10,12 @@ on:
         description: 'Log deletions without writing (true/false)'
         required: false
         default: 'false'
-      no_ach_days:
-        description: 'Inactivity days threshold (>=) for users with no achievement'
+      zero_score_days:
+        description: 'Inactivity days threshold (>=) for users who never scored'
         required: false
         default: '3'
-      with_ach_days:
-        description: 'Inactivity days threshold (>) for users with an achievement'
+      scored_days:
+        description: 'Inactivity days threshold (>) for users who scored before'
         required: false
         default: '7'
 
@@ -39,6 +39,6 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
-          NO_ACH_DAYS: ${{ github.event.inputs.no_ach_days || '3' }}
-          WITH_ACH_DAYS: ${{ github.event.inputs.with_ach_days || '7' }}
+          ZERO_SCORE_DAYS: ${{ github.event.inputs.zero_score_days || '3' }}
+          SCORED_DAYS: ${{ github.event.inputs.scored_days || '7' }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}

@@ -4,13 +4,15 @@
  *
  * Runs once a day via GitHub Actions (delete-inactive-users.yml). Scans every
  * user under `mohamed_lovers/users/{uid}` and prunes the ones that have gone
- * inactive, using a two-tier threshold that keeps engaged users longer:
+ * inactive, using a two-tier threshold keyed on whether the user ever scored
+ * (their lifetime `allTimeTotal`, accumulated at each round close):
  *
- *   - No achievement node  → delete when inactive for NO_ACH_DAYS days or more
- *                            (default 3; "did not open the app for N days or more").
- *   - Has achievement node → delete when inactive for MORE THAN WITH_ACH_DAYS
- *                            days (default 7; engaged users get a longer grace
- *                            period before they are pruned).
+ *   - Never scored (allTimeTotal == 0) → the user opened the app but left / has
+ *                            no salawat; delete when inactive for ZERO_SCORE_DAYS
+ *                            days or more (default 3).
+ *   - Has scored before (allTimeTotal > 0) → delete when inactive for MORE THAN
+ *                            SCORED_DAYS days (default 7; users who contributed
+ *                            get a longer grace period before they are pruned).
  *
  * "Inactive" is measured in Cairo calendar days since the user's last activity:
  * `lastOpenDate` when present, otherwise `installDate`. A user with neither date
@@ -35,8 +37,8 @@
  * |--------------------------|--------|---------|--------------------------------------------------------|
  * | FIREBASE_SERVICE_ACCOUNT | string | —       | JSON service account key (required)                    |
  * | FIREBASE_DATABASE_URL    | string | —       | RTDB URL (required)                                    |
- * | NO_ACH_DAYS              | number | 3       | Inactivity threshold (>=) for users with no achievement|
- * | WITH_ACH_DAYS            | number | 7       | Inactivity threshold (>) for users with an achievement |
+ * | ZERO_SCORE_DAYS          | number | 3       | Inactivity threshold (>=) for users who never scored   |
+ * | SCORED_DAYS              | number | 7       | Inactivity threshold (>) for users who scored before   |
  * | DRY_RUN                  | string | "false" | When "true", logs what would be deleted without writing|
  */
 
@@ -92,13 +94,13 @@ function daysBetween(dateStr1, dateStr2) {
 }
 
 /**
- * True when the user object carries at least one achievement entry.
+ * True when the user has ever scored — a positive lifetime `allTimeTotal`
+ * (accumulated at each round close). Used to pick the inactivity threshold.
  * @param {object} user - the value of mohamed_lovers/users/{uid}
  * @returns {boolean}
  */
-function hasAchievement(user) {
-  const ach = user && user.achievements;
-  return !!ach && typeof ach === 'object' && Object.keys(ach).length > 0;
+function hasScored(user) {
+  return !!user && typeof user.allTimeTotal === 'number' && user.allTimeTotal > 0;
 }
 
 async function main() {
@@ -107,11 +109,11 @@ async function main() {
   const today = cairoToday();
   const roundKey = cairoRoundKey();
 
-  const noAchDays = parseInt(process.env.NO_ACH_DAYS || '3', 10);
-  const withAchDays = parseInt(process.env.WITH_ACH_DAYS || '7', 10);
+  const zeroScoreDays = parseInt(process.env.ZERO_SCORE_DAYS || '3', 10);
+  const scoredDays = parseInt(process.env.SCORED_DAYS || '7', 10);
   const dryRun = process.env.DRY_RUN === 'true';
 
-  console.log(`[delete-inactive-users] today=${today} round=${roundKey} noAchDays>=${noAchDays} withAchDays>${withAchDays} dryRun=${dryRun}`);
+  console.log(`[delete-inactive-users] today=${today} round=${roundKey} zeroScoreDays>=${zeroScoreDays} scoredDays>${scoredDays} dryRun=${dryRun}`);
 
   const usersSnap = await db.ref('mohamed_lovers/users').get();
   if (!usersSnap.exists()) {
@@ -124,37 +126,38 @@ async function main() {
 
   const deletions = {}; // RTDB multi-path update: node path → null
   const deletedUids = [];
-  const counts = { deleted_no_ach: 0, deleted_with_ach: 0, kept: 0, no_dates: 0 };
+  const counts = { deleted_zero_score: 0, deleted_scored: 0, kept: 0, no_dates: 0 };
 
   usersSnap.forEach(userSnap => {
     const uid = userSnap.key;
     const user = userSnap.val() || {};
 
     const lastActive = user.lastOpenDate || user.installDate || null;
-    const withAch = hasAchievement(user);
+    const scored = hasScored(user);
     const daysInactive = lastActive ? daysBetween(lastActive, today) : null;
 
     // No date recorded → no evidence of activity → eligible for deletion.
     if (daysInactive === null) {
       counts.no_dates++;
-      console.log(`[delete-inactive-users] uid=${uid} no lastOpenDate/installDate → delete (withAch=${withAch})`);
+      console.log(`[delete-inactive-users] uid=${uid} no lastOpenDate/installDate → delete (scored=${scored})`);
       deletions[`mohamed_lovers/users/${uid}`] = null;
       deletedUids.push(uid);
-      if (withAch) counts.deleted_with_ach++; else counts.deleted_no_ach++;
+      if (scored) counts.deleted_scored++; else counts.deleted_zero_score++;
       return;
     }
 
-    // "or more" for no-achievement (>=); "more than" for achievement (>).
-    const eligible = withAch ? daysInactive > withAchDays : daysInactive >= noAchDays;
+    // Never scored: delete when inactive N days "or more" (>=).
+    // Scored before: delete when inactive "more than" M days (>).
+    const eligible = scored ? daysInactive > scoredDays : daysInactive >= zeroScoreDays;
 
     if (eligible) {
-      console.log(`[delete-inactive-users] uid=${uid} daysInactive=${daysInactive} withAch=${withAch} → delete`);
+      console.log(`[delete-inactive-users] uid=${uid} daysInactive=${daysInactive} scored=${scored} → delete`);
       deletions[`mohamed_lovers/users/${uid}`] = null;
       deletedUids.push(uid);
-      if (withAch) counts.deleted_with_ach++; else counts.deleted_no_ach++;
+      if (scored) counts.deleted_scored++; else counts.deleted_zero_score++;
     } else {
       counts.kept++;
-      console.log(`[delete-inactive-users] uid=${uid} daysInactive=${daysInactive} withAch=${withAch} → keep`);
+      console.log(`[delete-inactive-users] uid=${uid} daysInactive=${daysInactive} scored=${scored} → keep`);
     }
   });
 
