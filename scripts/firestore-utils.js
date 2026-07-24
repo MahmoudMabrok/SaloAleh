@@ -642,6 +642,33 @@ async function mirrorUsersDelete(firestore, uids) {
   }
 }
 
+// Deletes mirrored round-player docs (mohamed_lovers_rounds/{roundKey}/players/{uid})
+// for players pruned from the current round by delete-inactive-users.js. Chunked at
+// 490 to respect Firestore's 500-op batch limit.
+async function mirrorRoundPlayersDelete(firestore, roundKey, uids) {
+  try {
+    const playersRef = firestore
+      .collection(ROUNDS_COLLECTION)
+      .doc(roundKey)
+      .collection('players');
+    let batch = firestore.batch();
+    let count = 0;
+    for (const uid of uids) {
+      batch.delete(playersRef.doc(uid));
+      count++;
+      if (count >= 490) {
+        await batch.commit();
+        batch = firestore.batch();
+        count = 0;
+      }
+    }
+    if (count > 0) await batch.commit();
+    console.log(`[firestore-mirror] deleted ${uids.length} round-player doc(s) for ${roundKey}`);
+  } catch (e) {
+    console.error(`[firestore-mirror] round-player delete failed: ${e.message}`);
+  }
+}
+
 async function mirrorUserAllTimeTotals(firestore, writes) {
   try {
     const batch = firestore.batch();
@@ -705,5 +732,6 @@ module.exports = {
     mirrorQuranAggregateAndClean,
     mirrorUserAllTimeTotals,
     mirrorUsersDelete,
+    mirrorRoundPlayersDelete,
   }),
 };
