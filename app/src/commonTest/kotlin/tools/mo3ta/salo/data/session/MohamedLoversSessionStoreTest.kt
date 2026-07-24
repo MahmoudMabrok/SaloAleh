@@ -2,6 +2,7 @@ package tools.mo3ta.salo.data.session
 
 import com.russhwolf.settings.MapSettings
 import kotlinx.datetime.LocalDate
+import tools.mo3ta.salo.domain.MOHAMED_LOVERS_MANUAL_DAILY_CAP
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -152,6 +153,69 @@ class MohamedLoversSessionStoreTest {
         val pending = store.getAllPendingRounds()
         assertEquals(1, pending.size)
         assertEquals(3, pending["R1"])
+    }
+
+    // --- Manual ("record external") daily cap ledger ---
+
+    private val d1 = LocalDate(2026, 5, 1)
+    private val d2 = LocalDate(2026, 5, 2)
+
+    @Test
+    fun manualRemaining_defaultsToFullCap() {
+        assertEquals(MOHAMED_LOVERS_MANUAL_DAILY_CAP, store.manualRemainingToday(d1))
+    }
+
+    @Test
+    fun recordManualEntry_appliesFullAmountBelowCap() {
+        val applied = store.recordManualEntry(d1, 300)
+        assertEquals(300, applied)
+        assertEquals(MOHAMED_LOVERS_MANUAL_DAILY_CAP - 300, store.manualRemainingToday(d1))
+    }
+
+    @Test
+    fun recordManualEntry_accumulatesWithinDay() {
+        store.recordManualEntry(d1, 4_000)
+        val applied = store.recordManualEntry(d1, 4_000)
+        assertEquals(4_000, applied)
+        assertEquals(MOHAMED_LOVERS_MANUAL_DAILY_CAP - 8_000, store.manualRemainingToday(d1))
+    }
+
+    @Test
+    fun recordManualEntry_clampsToRemainingCap() {
+        store.recordManualEntry(d1, 9_000)
+        // Only 1_000 of the requested 5_000 fits under the 10_000 cap.
+        val applied = store.recordManualEntry(d1, 5_000)
+        assertEquals(1_000, applied)
+        assertEquals(0, store.manualRemainingToday(d1))
+    }
+
+    @Test
+    fun recordManualEntry_returnsZeroWhenExhausted() {
+        store.recordManualEntry(d1, MOHAMED_LOVERS_MANUAL_DAILY_CAP)
+        assertEquals(0, store.recordManualEntry(d1, 500))
+    }
+
+    @Test
+    fun recordManualEntry_resetsOnNewDay() {
+        store.recordManualEntry(d1, MOHAMED_LOVERS_MANUAL_DAILY_CAP)
+        assertEquals(0, store.manualRemainingToday(d1))
+        // A new Cairo day restores the full allowance.
+        assertEquals(MOHAMED_LOVERS_MANUAL_DAILY_CAP, store.manualRemainingToday(d2))
+        assertEquals(500, store.recordManualEntry(d2, 500))
+    }
+
+    @Test
+    fun refundManualEntry_restoresAllowance() {
+        store.recordManualEntry(d1, 8_000)
+        store.refundManualEntry(d1, 3_000)
+        assertEquals(MOHAMED_LOVERS_MANUAL_DAILY_CAP - 5_000, store.manualRemainingToday(d1))
+    }
+
+    @Test
+    fun refundManualEntry_flooredAtCap() {
+        store.recordManualEntry(d1, 1_000)
+        store.refundManualEntry(d1, 5_000)
+        assertEquals(MOHAMED_LOVERS_MANUAL_DAILY_CAP, store.manualRemainingToday(d1))
     }
 
     // --- Legacy migration ---

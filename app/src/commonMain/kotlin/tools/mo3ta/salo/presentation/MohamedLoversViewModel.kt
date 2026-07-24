@@ -98,6 +98,7 @@ class MohamedLoversViewModel(
                 dailyGoalTarget = dailyGoalStore.todayTarget(today),
                 dailyGoalProgress = todayProgress,
                 currentDailyBadge = DailyBadge.fromTapCount(todayProgress)?.key,
+                manualRemaining = sessionStore.manualRemainingToday(today),
             )
         }
         settleHeartDecay()
@@ -346,7 +347,13 @@ class MohamedLoversViewModel(
     }
 
     fun showManualSalawatSheet() {
-        _state.update { it.copy(showManualSalawatSheet = true) }
+        val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
+        _state.update {
+            it.copy(
+                showManualSalawatSheet = true,
+                manualRemaining = sessionStore.manualRemainingToday(today),
+            )
+        }
     }
 
     fun dismissManualSalawatSheet() {
@@ -356,12 +363,19 @@ class MohamedLoversViewModel(
     fun submitManualSalawat(count: Int) {
         val roundKey = state.value.roundKey ?: return
         if (count <= 0) return
-        val nowMs = Clock.System.now().toEpochMilliseconds()
-        val heart = addHeartTap(nowMs, count)
-        repository.registerLocalTap(roundKey, count)
-        val pending = repository.getPendingSession(roundKey)
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
-        dailyGoalStore.recordTap(today, count)
+        // Clamp to the day's remaining external-entry allowance so a single manual batch can't
+        // flood the competition score. Regular taps are uncapped and never touch this ledger.
+        val applied = sessionStore.recordManualEntry(today, count)
+        if (applied <= 0) {
+            _state.update { it.copy(showManualSalawatSheet = false, manualRemaining = 0) }
+            return
+        }
+        val nowMs = Clock.System.now().toEpochMilliseconds()
+        val heart = addHeartTap(nowMs, applied)
+        repository.registerLocalTap(roundKey, applied)
+        val pending = repository.getPendingSession(roundKey)
+        dailyGoalStore.recordTap(today, applied)
         val prevStreak = state.value.roundStreak
         val streakResult = roundStreakStore.recordActivity(roundKey, today)
         _state.update {
@@ -375,13 +389,14 @@ class MohamedLoversViewModel(
                 showHeartRefillNudge = shouldShowHeartRefillNudge(heart.first, heart.second),
                 roundStreak = streakResult.currentStreak,
                 roundStreakCelebration = streakResult.newlyEarnedBadge ?: it.roundStreakCelebration,
+                manualRemaining = sessionStore.manualRemainingToday(today),
             )
         }
         publishRoundStreak(roundKey, streakResult.currentStreak, prevStreak)
         applyLeaderboard()
         flushPendingSession()
         viewModelScope.launch {
-            repository.incrementExternalCount(roundKey, count)
+            repository.incrementExternalCount(roundKey, applied)
             _state.update { it.copy(isSubmittingManualSalawat = false) }
         }
         sessionStore.saveLastSalawatTimestamp(nowMs)
@@ -407,6 +422,10 @@ class MohamedLoversViewModel(
             return
         }
 
+        // A correction frees the manual-entry allowance again so a mis-entry can be re-added.
+        val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
+        sessionStore.refundManualEntry(today, applied)
+
         val pendingReduction = applied.coerceAtMost(pendingClicks)
         if (pendingReduction > 0) repository.decrementPendingClick(roundKey, pendingReduction)
         val serverReduction = applied - pendingReduction
@@ -417,6 +436,7 @@ class MohamedLoversViewModel(
                 sessionClicks = pending.clickCount,
                 showManualSalawatSheet = false,
                 isSubmittingManualSalawat = serverReduction > 0,
+                manualRemaining = sessionStore.manualRemainingToday(today),
             )
         }
         applyLeaderboard()
