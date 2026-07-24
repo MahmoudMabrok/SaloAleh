@@ -175,6 +175,8 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
+            val uriHandler = LocalUriHandler.current
+
             Text(
                 text = stringResource(Res.string.settings_language_header),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
@@ -207,6 +209,16 @@ fun SettingsScreen(
                 label = stringResource(Res.string.settings_invite_friends),
                 labelColor = MohamedLoversPalette.GoldGlow,
                 onClick = onOpenReferral,
+            )
+
+            SettingLinkRow(
+                label = stringResource(Res.string.settings_contact_us),
+                onClick = { uriHandler.openUri("mailto:mahmoudmabrok3579@gmail.com") },
+            )
+
+            SettingLinkRow(
+                label = stringResource(Res.string.settings_open_store_page),
+                onClick = { openStorePage() },
             )
 
             Text(
@@ -404,8 +416,6 @@ fun SettingsScreen(
                 modifier = Modifier.padding(top = 24.dp, bottom = 8.dp),
             )
 
-            val uriHandler = LocalUriHandler.current
-
             SettingLinkRow(
                 label = stringResource(Res.string.settings_sync_from_extension),
                 onClick = onOpenExtensionQr,
@@ -453,11 +463,6 @@ fun SettingsScreen(
             )
 
             SettingLinkRow(
-                label = stringResource(Res.string.settings_contact_us),
-                onClick = { uriHandler.openUri("mailto:mahmoudmabrok3579@gmail.com") },
-            )
-
-            SettingLinkRow(
                 label = stringResource(Res.string.settings_share_app),
                 onClick = { shareText(getStoreUrl()) },
             )
@@ -484,11 +489,6 @@ fun SettingsScreen(
                     },
                 )
             }
-
-            SettingLinkRow(
-                label = stringResource(Res.string.settings_open_store_page),
-                onClick = { openStorePage() },
-            )
 
             Row(
                 modifier = Modifier
