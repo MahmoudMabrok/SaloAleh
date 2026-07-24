@@ -16,4 +16,7 @@ data class DhikrLeaderboardEntry(
     val rankChange: String, // "up" | "down" | "same" | "new"
     val nickname: String = "",
     val streak: Int = 0,
+    val goldMedals: Int = 0,
+    val silverMedals: Int = 0,
+    val bronzeMedals: Int = 0,
 )

@@ -8,6 +8,17 @@
         ".read": true,
         ".write": false
       },
+      "users": {
+        "$uid": {
+          "medals": {
+            ".read": true,
+            ".validate": false,
+            "$medalType": {
+              ".validate": false
+            }
+          }
+        }
+      },
       "$dateKey": {
         "participantCount": {
           ".read": true,
@@ -94,6 +105,17 @@
         ".read": true,
         ".write": false
       },
+      "users": {
+        "$uid": {
+          "medals": {
+            ".read": true,
+            ".validate": false,
+            "$medalType": {
+              ".validate": false
+            }
+          }
+        }
+      },
       "$date": {
         "participantCount": {
           ".read": true,
@@ -141,6 +163,17 @@
       "totalIstighfar": {
         ".read": true,
         ".write": false
+      },
+      "users": {
+        "$uid": {
+          "medals": {
+            ".read": true,
+            ".validate": false,
+            "$medalType": {
+              ".validate": false
+            }
+          }
+        }
       },
       "$date": {
         "participantCount": {
@@ -190,6 +223,17 @@
         ".read": true,
         ".write": false
       },
+      "users": {
+        "$uid": {
+          "medals": {
+            ".read": true,
+            ".validate": false,
+            "$medalType": {
+              ".validate": false
+            }
+          }
+        }
+      },
       "$date": {
         "participantCount": {
           ".read": true,
@@ -237,6 +281,17 @@
       "totalZabad": {
         ".read": true,
         ".write": false
+      },
+      "users": {
+        "$uid": {
+          "medals": {
+            ".read": true,
+            ".validate": false,
+            "$medalType": {
+              ".validate": false
+            }
+          }
+        }
       },
       "$date": {
         "participantCount": {
@@ -286,6 +341,17 @@
         ".read": true,
         ".write": false
       },
+      "users": {
+        "$uid": {
+          "medals": {
+            ".read": true,
+            ".validate": false,
+            "$medalType": {
+              ".validate": false
+            }
+          }
+        }
+      },
       "$date": {
         "participantCount": {
           ".read": true,
@@ -333,6 +399,17 @@
       "totalQuran": {
         ".read": true,
         ".write": false
+      },
+      "users": {
+        "$uid": {
+          "medals": {
+            ".read": true,
+            ".validate": false,
+            "$medalType": {
+              ".validate": false
+            }
+          }
+        }
       },
       "$date": {
         "participantCount": {

@@ -760,6 +760,8 @@
     <string name="leaderboard_medals_info_gold">Number of first-place finishes</string>
     <string name="leaderboard_medals_info_silver">Number of second-place finishes</string>
     <string name="leaderboard_medals_info_bronze">Number of third-place finishes</string>
+    <string name="challenge_medals_info_title">Challenge medals</string>
+    <string name="challenge_medals_info_desc">Medals are awarded every day to the challenge\'s top three finishers, and accumulate over time.</string>
     <string name="leaderboard_score_label">prayers</string>
     <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">View competition</string>

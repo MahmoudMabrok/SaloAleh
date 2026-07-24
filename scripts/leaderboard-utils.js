@@ -353,6 +353,74 @@ async function readChallengeRankedUsers(db, rootPath, dateKey) {
   return config.build(dateKey, participants).rankedUsers;
 }
 
+// Awards a daily challenge's podium medals: gold to rank 1, silver to rank 2,
+// bronze to rank 3, mirroring the weekly mohamed_lovers medals. Cumulative counts
+// live at {rootPath}/users/{uid}/medals (server-owned; clients read-only), a
+// persistent sibling of the deleted-daily {dateKey} nodes. Ranking is recomputed
+// from the live per-user counts (same source as the winner notifications), so it
+// reflects the final end-of-day standings.
+//
+// Idempotent per Cairo day via a {rootPath}/{dateKey}/medalsAwarded marker: the
+// marker lives on the day node, so it is deleted along with it by the daily
+// aggregate-and-clean step — a normal re-run after cleanup finds no participants and
+// awards nothing, while a re-run after a crash between award and cleanup sees the
+// marker and skips. MUST run BEFORE the day node is deleted.
+async function awardChallengeMedals(db, admin, rootPath, dateKey) {
+  const markerRef = db.ref(`${rootPath}/${dateKey}/medalsAwarded`);
+  const markerSnap = await markerRef.get();
+  if (markerSnap.exists() && markerSnap.val() === true) {
+    console.log(`[medals:${rootPath}] ${dateKey} already awarded — skip`);
+    return;
+  }
+
+  const rankedUsers = await readChallengeRankedUsers(db, rootPath, dateKey);
+  const podium = rankedUsers.slice(0, 3).filter(u => u && typeof u.uid === 'string' && u.uid.length > 0 && u.count > 0);
+  if (podium.length === 0) {
+    console.log(`[medals:${rootPath}] ${dateKey} no eligible podium — skip`);
+    await markerRef.set(true);
+    return;
+  }
+
+  const medalTypes = ['gold', 'silver', 'bronze'];
+  const medalWrites = {};
+  podium.forEach((user, i) => {
+    medalWrites[`${rootPath}/users/${user.uid}/medals/${medalTypes[i]}`] =
+      admin.database.ServerValue.increment(1);
+  });
+  await db.ref('/').update(medalWrites);
+  await markerRef.set(true);
+  console.log(
+    `[medals:${rootPath}] ${dateKey} awarded to ${podium.length}: ${podium.map((u, i) => `${medalTypes[i]}=${u.uid}(${u.count})`).join(' ')}`,
+  );
+}
+
+// Copies each leaderboard entry's cumulative medal counts (from the participant's
+// {rootPath}/users/{uid}/medals node) onto the entry as goldMedals/silverMedals/
+// bronzeMedals so the app can render 🥇/🥈/🥉 pills. Mutates the entry objects in
+// place. `leaderboardEntries` is the array of [key, entry] pairs the populate step
+// builds; each entry carries a `uid`. Mirrors attachMedals in populateMohamedLoversRound.
+async function attachChallengeMedals(db, rootPath, leaderboardEntries) {
+  const uids = [...new Set(
+    leaderboardEntries.map(([, entry]) => entry && entry.uid).filter(uid => typeof uid === 'string' && uid.length > 0),
+  )];
+  if (uids.length === 0) return;
+
+  const medalsByUid = {};
+  await Promise.all(uids.map(async uid => {
+    const snap = await db.ref(`${rootPath}/users/${uid}/medals`).get();
+    const medals = snap.val();
+    if (medals && typeof medals === 'object') medalsByUid[uid] = medals;
+  }));
+
+  for (const [, entry] of leaderboardEntries) {
+    const medals = entry && medalsByUid[entry.uid];
+    if (!medals) continue;
+    if (typeof medals.gold === 'number' && medals.gold > 0) entry.goldMedals = medals.gold;
+    if (typeof medals.silver === 'number' && medals.silver > 0) entry.silverMedals = medals.silver;
+    if (typeof medals.bronze === 'number' && medals.bronze > 0) entry.bronzeMedals = medals.bronze;
+  }
+}
+
 // Builds/writes the mohamed_lovers leaderboard + dailyLeaderboard + per-player ranks
 // for a single round, and (when the round is not final) sends top-3/dropout/idle
 // notifications. Shared by populate-leaderboard.js (periodic runs against whichever
@@ -625,6 +693,8 @@ module.exports = {
   buildQuranChallengeDailyRanking,
   buildAlBaqaraChallengeDailyRanking,
   readChallengeRankedUsers,
+  awardChallengeMedals,
+  attachChallengeMedals,
   cairoToday,
   addDaysToDateKey,
   populateMohamedLoversRound,

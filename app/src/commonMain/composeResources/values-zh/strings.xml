@@ -722,6 +722,8 @@
     <string name="leaderboard_medals_info_gold">获得第一名的次数</string>
     <string name="leaderboard_medals_info_silver">获得第二名的次数</string>
     <string name="leaderboard_medals_info_bronze">获得第三名的次数</string>
+    <string name="challenge_medals_info_title">挑战奖牌</string>
+    <string name="challenge_medals_info_desc">奖牌每天颁发给该挑战当日前三名，并随时间累积。</string>
     <string name="leaderboard_score_label">次祈祷</string>
     <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">查看竞赛</string>
