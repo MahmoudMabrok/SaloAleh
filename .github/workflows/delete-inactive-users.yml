@@ -15,9 +15,9 @@ on:
         required: false
         default: '3'
       scored_days:
-        description: 'Inactivity days threshold (>) for users who scored before'
+        description: 'Inactivity days threshold (>) for users with a positive current-round score'
         required: false
-        default: '7'
+        default: '10'
 
 jobs:
   delete-inactive-users:
@@ -40,5 +40,5 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
           ZERO_SCORE_DAYS: ${{ github.event.inputs.zero_score_days || '3' }}
-          SCORED_DAYS: ${{ github.event.inputs.scored_days || '7' }}
+          SCORED_DAYS: ${{ github.event.inputs.scored_days || '10' }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}

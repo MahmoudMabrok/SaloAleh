@@ -12,8 +12,9 @@
  *                            delete when inactive for ZERO_SCORE_DAYS days or more
  *                            (default 3).
  *   - Has a current-round score (totalCount > 0) → delete when inactive for MORE
- *                            THAN SCORED_DAYS days (default 7; users who took part
- *                            this round get a longer grace period before pruning).
+ *                            THAN SCORED_DAYS days (default 10). A round is only
+ *                            7 days, so a >10-day threshold sits safely past the
+ *                            round length — an active participant is never pruned.
  *
  * "Inactive" is measured in Cairo calendar days since the user's last activity:
  * `lastOpenDate` when present, otherwise `installDate`. A user with neither date
@@ -39,7 +40,7 @@
  * | FIREBASE_SERVICE_ACCOUNT | string | —       | JSON service account key (required)                    |
  * | FIREBASE_DATABASE_URL    | string | —       | RTDB URL (required)                                    |
  * | ZERO_SCORE_DAYS          | number | 3       | Inactivity threshold (>=) for 0 current-round score     |
- * | SCORED_DAYS              | number | 7       | Inactivity threshold (>) for a positive current score   |
+ * | SCORED_DAYS              | number | 10      | Inactivity threshold (>) for a positive current score   |
  * | DRY_RUN                  | string | "false" | When "true", logs what would be deleted without writing|
  */
 
@@ -114,7 +115,7 @@ async function main() {
   const roundKey = cairoRoundKey();
 
   const zeroScoreDays = parseInt(process.env.ZERO_SCORE_DAYS || '3', 10);
-  const scoredDays = parseInt(process.env.SCORED_DAYS || '7', 10);
+  const scoredDays = parseInt(process.env.SCORED_DAYS || '10', 10);
   const dryRun = process.env.DRY_RUN === 'true';
 
   console.log(`[delete-inactive-users] today=${today} round=${roundKey} zeroScoreDays>=${zeroScoreDays} scoredDays>${scoredDays} dryRun=${dryRun}`);
