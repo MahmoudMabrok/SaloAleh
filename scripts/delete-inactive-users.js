@@ -94,6 +94,19 @@ function daysBetween(dateStr1, dateStr2) {
   return Math.round((d2 - d1) / 86400000);
 }
 
+/**
+ * Reads a round player's score. The canonical field is `totalCount`; `score`
+ * is accepted as a fallback for robustness.
+ * @param {object} player - the value of mohamed_lovers/{roundKey}/players/{uid}
+ * @returns {number}
+ */
+function playerScore(player) {
+  if (!player) return 0;
+  if (typeof player.totalCount === 'number') return player.totalCount;
+  if (typeof player.score === 'number') return player.score;
+  return 0;
+}
+
 async function main() {
   console.log('[delete-inactive-users] ===== run start =====');
   const db = admin.database();
@@ -123,7 +136,7 @@ async function main() {
   const roundScore = new Map();
   if (playersSnap.exists()) {
     playersSnap.forEach(playerSnap => {
-      roundScore.set(playerSnap.key, playerSnap.val()?.totalCount || 0);
+      roundScore.set(playerSnap.key, playerScore(playerSnap.val()));
     });
   }
 
@@ -196,7 +209,7 @@ async function main() {
       // (b) Zero score for two days: current total is 0 AND the previous daily
       // snapshot (yesterdayTotalScore, written by generate-stats.js) is also 0.
       // A player with no snapshot yet (joined today) is skipped — not two days.
-      const totalCount = player.totalCount || 0;
+      const totalCount = playerScore(player);
       const yesterday = player.yesterdayTotalScore;
       if (totalCount <= 0 && typeof yesterday === 'number' && yesterday <= 0) {
         playerCounts.zero_two_days++;
