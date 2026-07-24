@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import org.jetbrains.compose.resources.stringResource
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.auto_click_detected_body
@@ -35,7 +36,15 @@ import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 fun AutoClickDetectedDialog(
     onDismiss: () -> Unit,
 ) {
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        // The user has to acknowledge this one. Back press and outside-tap are both off, so it
+        // cannot be swiped away unread — the CTA below is the only way out.
+        properties = DialogProperties(
+            dismissOnBackPress = false,
+            dismissOnClickOutside = false,
+        ),
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()

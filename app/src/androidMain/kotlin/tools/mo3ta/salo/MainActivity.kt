@@ -21,6 +21,8 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import org.koin.android.ext.android.inject
+import tools.mo3ta.salo.analytics.AnalyticsManager
+import tools.mo3ta.salo.analytics.logAutoClickBlocked
 import tools.mo3ta.salo.data.engagement.EngagementStore
 import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseClient
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
@@ -51,6 +53,7 @@ class MainActivity : ComponentActivity() {
     private val billingManager: BillingManager by inject()
     private val referralStore: ReferralStore by inject()
     private val autoClickGuardStore: AutoClickGuardStore by inject()
+    private val analyticsManager: AnalyticsManager by inject()
 
     private val notificationMessageState = mutableStateOf<NotificationMessage?>(null)
     private val newVersionState = mutableStateOf<String?>(null)
@@ -177,6 +180,10 @@ class MainActivity : ComponentActivity() {
         private const val FCM_DATA_TITLE = "title"
         private const val FCM_DATA_BODY = "body"
         private const val FCM_DATA_ACTION = "notification_action"
+
+        // Matches the uid suffix already used as the leaderboard display-name fallback,
+        // so a flagged analytics event lines up with a visible leaderboard entry.
+        private const val UID_SUFFIX_LENGTH = 6
     }
 
     // Validates the FCM token at app start. After an Android Auto Backup restore,
@@ -243,6 +250,7 @@ class MainActivity : ComponentActivity() {
         if (autoClickGuardStore.hasWarned()) return
         autoClickGuardStore.markWarned()
         autoClickDetectedState.value = true
+        analyticsManager.logAutoClickBlocked(sessionStore.getOrCreateUid().takeLast(UID_SUFFIX_LENGTH))
     }
 
     private fun handleReferralIntent(intent: Intent?) {
