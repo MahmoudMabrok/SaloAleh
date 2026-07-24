@@ -805,4 +805,7 @@
   <string name="alkahf_reminder_title">جمعہ مبارک 🌿</string>
   <string name="alkahf_reminder_body">آج سورۃ الکہف پڑھنا نہ بھولیں۔ جو اسے جمعہ کے دن پڑھتا ہے، اس کے لیے دو جمعوں کے درمیان نور روشن ہو جاتا ہے۔</string>
   <string name="alkahf_reminder_cta">ٹھیک ہے</string>
+  <string name="auto_click_detected_title">توجہ فرمائیں</string>
+  <string name="auto_click_detected_body">ایسا لگتا ہے کہ کوئی آٹو کلک ایپ آپ کی جگہ درود بھیج رہی ہے۔ یہ شمار نہیں ہوں گے۔ اجر دل اور زبان کے ذکر میں ہے، عدد میں نہیں۔</string>
+  <string name="auto_click_detected_cta">سمجھ گیا</string>
 </resources>

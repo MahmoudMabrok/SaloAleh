@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.view.MotionEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -20,6 +21,8 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import org.koin.android.ext.android.inject
+import tools.mo3ta.salo.analytics.AnalyticsManager
+import tools.mo3ta.salo.analytics.logAutoClickBlocked
 import tools.mo3ta.salo.data.engagement.EngagementStore
 import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseClient
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
@@ -28,11 +31,14 @@ import tools.mo3ta.salo.data.billing.BillingManager
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.data.referral.InstallReferrerHelper
 import tools.mo3ta.salo.data.referral.ReferralStore
+import tools.mo3ta.salo.data.security.AutoClickGuardStore
+import tools.mo3ta.salo.input.isSyntheticTap
 import tools.mo3ta.salo.notification.NotificationAction
 import tools.mo3ta.salo.notification.NotificationChannels
 import tools.mo3ta.salo.notification.NotificationMessage
 import tools.mo3ta.salo.notification.NotificationScheduler
 import tools.mo3ta.salo.ui.FloatingBubbleService
+import tools.mo3ta.salo.ui.TouchDiagnostics
 
 class MainActivity : ComponentActivity() {
 
@@ -46,12 +52,15 @@ class MainActivity : ComponentActivity() {
     private val firebaseClient: MohamedLoversFirebaseClient by inject()
     private val billingManager: BillingManager by inject()
     private val referralStore: ReferralStore by inject()
+    private val autoClickGuardStore: AutoClickGuardStore by inject()
+    private val analyticsManager: AnalyticsManager by inject()
 
     private val notificationMessageState = mutableStateOf<NotificationMessage?>(null)
     private val newVersionState = mutableStateOf<String?>(null)
     private val referralCodeState = mutableStateOf<String?>(null)
     // Challenge screen requested by dragging a challenge bubble onto "open app".
     private val openChallengeState = mutableStateOf<NotificationAction?>(null)
+    private val autoClickDetectedState = mutableStateOf(false)
 
     private val notifPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -116,6 +125,8 @@ class MainActivity : ComponentActivity() {
                 referralCode = referralCodeState.value,
                 openChallenge = openChallengeState.value,
                 onOpenChallengeHandled = { openChallengeState.value = null },
+                autoClickDetected = autoClickDetectedState.value,
+                onAutoClickWarningDismissed = { autoClickDetectedState.value = false },
             )
         }
     }
@@ -169,6 +180,10 @@ class MainActivity : ComponentActivity() {
         private const val FCM_DATA_TITLE = "title"
         private const val FCM_DATA_BODY = "body"
         private const val FCM_DATA_ACTION = "notification_action"
+
+        // Matches the uid suffix already used as the leaderboard display-name fallback,
+        // so a flagged analytics event lines up with a visible leaderboard entry.
+        private const val UID_SUFFIX_LENGTH = 6
     }
 
     // Validates the FCM token at app start. After an Android Auto Backup restore,
@@ -210,6 +225,32 @@ class MainActivity : ComponentActivity() {
                 FirebaseMessaging.getInstance().unsubscribeFromTopic("leaderboard_notifs")
         }
         ensureFcmTokenSynced()
+    }
+
+    /**
+     * Every touch the app receives passes through here before reaching Compose, which makes it
+     * the one place the auto-click guard can see them all. Injected taps are swallowed here
+     * rather than un-counted later, so no counter, streak or badge ever observes them.
+     *
+     * Screen readers are unaffected: TalkBack activates controls through Compose's semantics
+     * `onClick`, which never produces a [MotionEvent]. Tools that tap via `dispatchGesture`
+     * — including Voice Access and Switch Access — are blocked along with auto-clickers.
+     */
+    override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
+        ev?.let(TouchDiagnostics::log)
+        if (ev != null && ev.isSyntheticTap()) {
+            onSyntheticTouchBlocked()
+            return true
+        }
+        return super.dispatchTouchEvent(ev)
+    }
+
+    /** Warns once per install, then stays quiet while continuing to drop the taps. */
+    private fun onSyntheticTouchBlocked() {
+        if (autoClickGuardStore.hasWarned()) return
+        autoClickGuardStore.markWarned()
+        autoClickDetectedState.value = true
+        analyticsManager.logAutoClickBlocked(sessionStore.getOrCreateUid().takeLast(UID_SUFFIX_LENGTH))
     }
 
     private fun handleReferralIntent(intent: Intent?) {

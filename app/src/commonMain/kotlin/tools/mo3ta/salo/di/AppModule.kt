@@ -38,6 +38,7 @@ import tools.mo3ta.salo.data.remote.createHttpClient
 import tools.mo3ta.salo.data.reminder.AlKahfReminderStore
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.data.update.UpdateChecker
+import tools.mo3ta.salo.data.security.AutoClickGuardStore
 import tools.mo3ta.salo.data.update.UpdatePromptStore
 import tools.mo3ta.salo.domain.MohamedLoversRepository
 import tools.mo3ta.salo.data.tendays.TenDaysStore
@@ -63,6 +64,7 @@ val appModule = module {
     single { MohamedLoversFirebaseClient(get(), get(), get()) } bind MohamedLoversFirebaseApi::class
     single { MohamedLoversSessionStore(get()) }
     single { UpdatePromptStore(get()) }
+    single { AutoClickGuardStore(get()) }
     single { AlKahfReminderStore(get()) }
     single { UpdateChecker(get(), get()) }
     single { EngagementStore(get()) }

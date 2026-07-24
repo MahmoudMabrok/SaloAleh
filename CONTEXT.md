@@ -165,6 +165,71 @@ All paths relative to `app/src/commonMain/kotlin/tools/mo3ta/salo/`.
 
 ---
 
+## Write Integrity & Abuse Surface
+
+Scores are competitive, so writes need to be trustworthy. There is **no Firebase Auth** — device identity is a SHA-256 of a locally persisted UUID, which is an identifier, not a credential. The integrity guarantee comes from App Check instead.
+
+### Firebase App Check (primary defense)
+
+`SaloApplication.onCreate()` installs an App Check provider before any Firebase use:
+
+| Build | Provider |
+|-------|----------|
+| Release | `PlayIntegrityAppCheckProviderFactory` |
+| Debug (`BuildConfig.DEBUG`) | `DebugAppCheckProviderFactory` |
+
+Play Integrity attests that the request comes from a genuine, unmodified, Play-installed build of `tools.mo3ta.salo` on a device that passes integrity checks. This closes the **off-device abuse vectors**: raw REST/curl writes to RTDB, scripted clients, and modded/repackaged APKs cannot obtain a valid App Check token, so their writes are rejected regardless of what the security rules allow.
+
+Two things this depends on, both outside the codebase:
+
+- **Enforcement must be enabled per-product in the Firebase console** (Realtime Database, Firestore). Installing the SDK alone only *sends* tokens; it does not reject unattested traffic until enforcement is switched on.
+- Devices without Play Services (Huawei / de-Googled ROMs) cannot mint a Play Integrity token, so enforcement is a real availability trade-off for those users. Surfaced historically via the `salo_firebase_error` permission-denied analytics event.
+
+### Defense in depth (rules)
+
+`database.rules.json` still bounds `players/$uid/totalCount` to `previous + 10000` per write. This is a blast-radius cap, not a rate limit — there is no time-based ceiling, so it does not stop sustained inflation.
+
+### What App Check does *not* cover
+
+App Check attests **the app**, not **the user's intent**. A genuine, unmodified build being driven abusively is fully attested and passes every check. The remaining surface is therefore entirely on-device:
+
+- **Auto-clicker apps** — third-party tools using `AccessibilityService.dispatchGesture` (or `adb shell input tap`) to inject synthetic `MotionEvent`s into the real app. Indistinguishable from a real tap to Firebase. Handled on-device by the auto-click guard below.
+- **Sanctioned bulk-entry paths** — `MohamedLoversViewModel.submitManualSalawat()` (manual entry sheet) and `applyExtensionScore()` (Chrome extension sync) both inject counts with no tapping by design. The auto-click guard does not touch these, so they remain a route around it.
+
+### Auto-click guard (Android)
+
+Rejects taps that no human made. Injected events are swallowed before Compose sees them, so no counter, streak or badge ever observes one.
+
+**Core files:** `androidMain/.../input/AutoClickHeuristic.kt` (pure rule + `MotionEvent.isSyntheticTap()`), `androidMain/.../MainActivity.kt` (`dispatchTouchEvent`), `androidMain/.../ui/FloatingBubbleService.kt`, `androidMain/.../ui/TouchDiagnostics.kt` (debug-only logger), `commonMain/.../data/security/AutoClickGuardStore.kt`, `commonMain/.../ui/AutoClickDetectedDialog.kt`, `commonMain/.../analytics/AutoClickAnalytics.kt`.
+
+**The signal.** Measured on an Android 16 device, a real auto-clicker against real finger taps:
+
+| | Injected | Real |
+|---|---|---|
+| `deviceId` | `-1` | `3` |
+| `isVirtual` | `true` | `false` |
+| `toolType` | `UNKNOWN` / `FINGER` | `FINGER` |
+| `flags` | `0x800` / `0x0` | `0x0` |
+| `source` | `0x1002` | `0x5002` |
+
+The rule keys on **device identity only** — `deviceId < 0 || isVirtual` — because that is the property injection cannot avoid. `toolType` and the hidden `FLAG_IS_ACCESSIBILITY_EVENT` (`0x800`) were observed to **vary between injection paths** (`dispatchGesture` vs `adb shell input tap` produced different values on the same device), so they are corroboration only, never independent triggers. `InputDevice.getDevice(-1)` returns a device named `Virtual` rather than null — presence of a device proves nothing.
+
+Non-touchscreen sources (mouse, stylus, gamepad) are ignored entirely so Chromebook and DeX users are unaffected.
+
+**Two enforcement points**, because the app has two independent tap-counting surfaces:
+- `MainActivity.dispatchTouchEvent` — main screen and all challenge screens.
+- `FloatingBubbleService`'s touch listener — the bubble is its own `TYPE_APPLICATION_OVERLAY` window whose taps never reach the activity and which increments counts directly. Without this it is a free bypass.
+
+**User-facing behavior.** First detection per install shows `AutoClickDetectedDialog` and fires analytics `salo_auto_click_blocked` with `uid_suffix` (last 6 chars of the uid, matching the leaderboard display-name fallback). The dialog sets `dismissOnBackPress = false` / `dismissOnClickOutside = false` — only its CTA closes it. Every later detection is silent; `AutoClickGuardStore` persists the one-time flag under `auto_click_warning_shown`.
+
+**Accessibility impact — deliberate, accepted tradeoff.** TalkBack is unaffected: screen readers activate controls through Compose's semantics `onClick`, which never produces a `MotionEvent`. But **Voice Access and Switch Access tap via `dispatchGesture` and are blocked along with auto-clickers.** Such a user sees the undismissable dialog once; because `markWarned()` is persisted at detection time while the dialog state is transient, force-closing the app clears it permanently, but their taps continue to be dropped.
+
+**Known limitation.** This only sees events injected above the input stack. A rooted clicker writing to `/dev/input` enters at the kernel evdev layer and is indistinguishable from real hardware.
+
+**Tests:** `app/src/test/java/tools/mo3ta/salo/input/AutoClickHeuristicTest.kt`.
+
+---
+
 ## Expect/Actual Platform Pairs
 
 | Feature | Android | iOS |

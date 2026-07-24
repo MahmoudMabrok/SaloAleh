@@ -843,4 +843,7 @@
   <string name="alkahf_reminder_title">Blessed Friday 🌿</string>
   <string name="alkahf_reminder_body">Don\'t forget to read Surah Al-Kahf today. Whoever reads it on Friday will have a light shining for them from one Friday to the next.</string>
   <string name="alkahf_reminder_cta">Got it</string>
+  <string name="auto_click_detected_title">Heads up</string>
+  <string name="auto_click_detected_body">It looks like an auto-clicker app is sending salawat for you. Those taps won't be counted. The reward is in the remembrance itself, not in the number.</string>
+  <string name="auto_click_detected_cta">Got it</string>
 </resources>

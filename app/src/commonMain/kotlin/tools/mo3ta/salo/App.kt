@@ -45,6 +45,7 @@ import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.ui.AchievementCelebrationDialog
 import tools.mo3ta.salo.ui.AchievementsScreen
 import tools.mo3ta.salo.ui.AlKahfReminderDialog
+import tools.mo3ta.salo.ui.AutoClickDetectedDialog
 import tools.mo3ta.salo.ui.baqiyat.BaqiyatScreen
 import tools.mo3ta.salo.ui.ChallengesScreen
 import tools.mo3ta.salo.ui.DhikrRewardsScreen
@@ -135,6 +136,9 @@ fun App(
     // challenge's screen (no dialog, no leaderboard). Cleared via [onOpenChallengeHandled].
     openChallenge: NotificationAction? = null,
     onOpenChallengeHandled: () -> Unit = {},
+    // Set when the auto-click guard blocks injected taps for the first time on this install.
+    autoClickDetected: Boolean = false,
+    onAutoClickWarningDismissed: () -> Unit = {},
 ) {
     val languageStore = koinInject<LanguageStore>()
     val storedLang = languageStore.language
@@ -695,6 +699,13 @@ fun App(
                     showAlKahfReminder = false
                 },
             )
+        }
+
+        // Shown the first time the app is driven by an auto-clicker. Not suppressed during
+        // onboarding — injected taps are being dropped right now, so the user needs to know
+        // why nothing is registering.
+        if (autoClickDetected) {
+            AutoClickDetectedDialog(onDismiss = onAutoClickWarningDismissed)
         }
 
         // Update prompt, fed by two sources into one dialog. Tapping a "new version"
