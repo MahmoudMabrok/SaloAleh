@@ -154,6 +154,52 @@ class MohamedLoversSessionStoreTest {
         assertEquals(3, pending["R1"])
     }
 
+    // --- Manual-salawat daily ledger (gradual new-user cap) ---
+
+    @Test
+    fun manualSalawatUsed_initiallyZero() {
+        assertEquals(0, store.manualSalawatUsedToday(LocalDate(2026, 5, 8)))
+    }
+
+    @Test
+    fun manualSalawatUsed_accumulatesWithinDay() {
+        val day = LocalDate(2026, 5, 8)
+        store.addManualSalawatUsed(day, 300)
+        store.addManualSalawatUsed(day, 200)
+        assertEquals(500, store.manualSalawatUsedToday(day))
+    }
+
+    @Test
+    fun manualSalawatUsed_resetsOnNewDay() {
+        store.addManualSalawatUsed(LocalDate(2026, 5, 8), 500)
+        assertEquals(0, store.manualSalawatUsedToday(LocalDate(2026, 5, 9)))
+    }
+
+    @Test
+    fun manualSalawatUsed_ignoresNonPositive() {
+        val day = LocalDate(2026, 5, 8)
+        store.addManualSalawatUsed(day, 0)
+        store.addManualSalawatUsed(day, -5)
+        assertEquals(0, store.manualSalawatUsedToday(day))
+    }
+
+    @Test
+    fun refundManualSalawat_freesAllowance_flooredAtZero() {
+        val day = LocalDate(2026, 5, 8)
+        store.addManualSalawatUsed(day, 500)
+        store.refundManualSalawatUsed(day, 200)
+        assertEquals(300, store.manualSalawatUsedToday(day))
+        store.refundManualSalawatUsed(day, 1_000)
+        assertEquals(0, store.manualSalawatUsedToday(day))
+    }
+
+    @Test
+    fun refundManualSalawat_noOpOnDifferentDay() {
+        store.addManualSalawatUsed(LocalDate(2026, 5, 8), 500)
+        store.refundManualSalawatUsed(LocalDate(2026, 5, 9), 200)
+        assertEquals(500, store.manualSalawatUsedToday(LocalDate(2026, 5, 8)))
+    }
+
     // --- Legacy migration ---
 
     @Test

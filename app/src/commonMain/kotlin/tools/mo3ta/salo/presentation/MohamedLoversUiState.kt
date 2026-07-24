@@ -75,6 +75,8 @@ data class MohamedLoversUiState(
     // Manual salawat import
     val showManualSalawatSheet: Boolean = false,
     val isSubmittingManualSalawat: Boolean = false,
+    // Remaining manual-entry allowance for today (gradual new-user cap; only manual entries count).
+    val manualSalawatRemainingToday: Int = tools.mo3ta.salo.domain.SalawatManualCap.MAX_DAILY_CAP,
 
     // Daily goal
     val dailyGoalTarget: Int = 0,

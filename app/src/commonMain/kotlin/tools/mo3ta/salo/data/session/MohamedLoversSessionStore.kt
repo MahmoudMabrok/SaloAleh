@@ -137,6 +137,34 @@ class MohamedLoversSessionStore(private val settings: Settings) {
     fun getLastSalawatTimestamp(): Long = settings.getLong(KEY_LAST_SALAWAT_TS, 0L)
     fun saveLastSalawatTimestamp(ts: Long) = settings.putLong(KEY_LAST_SALAWAT_TS, ts)
 
+    /** How many salawat have been recorded manually so far on [today] (0 on a new Cairo day). */
+    fun manualSalawatUsedToday(today: LocalDate): Int {
+        if (settings.getStringOrNull(KEY_MANUAL_SALAWAT_DATE) != today.toString()) return 0
+        return settings.getInt(KEY_MANUAL_SALAWAT_USED, 0)
+    }
+
+    /** Add [amount] to today's manual-salawat ledger, resetting the ledger on a new Cairo day. */
+    fun addManualSalawatUsed(today: LocalDate, amount: Int) {
+        if (amount <= 0) return
+        ensureManualSalawatToday(today)
+        settings.putInt(KEY_MANUAL_SALAWAT_USED, settings.getInt(KEY_MANUAL_SALAWAT_USED, 0) + amount)
+    }
+
+    /** Give back [amount] of today's manual-salawat allowance after a correction (floored at 0). */
+    fun refundManualSalawatUsed(today: LocalDate, amount: Int) {
+        if (amount <= 0) return
+        if (settings.getStringOrNull(KEY_MANUAL_SALAWAT_DATE) != today.toString()) return
+        val used = settings.getInt(KEY_MANUAL_SALAWAT_USED, 0)
+        settings.putInt(KEY_MANUAL_SALAWAT_USED, (used - amount).coerceAtLeast(0))
+    }
+
+    private fun ensureManualSalawatToday(today: LocalDate) {
+        val date = today.toString()
+        if (settings.getStringOrNull(KEY_MANUAL_SALAWAT_DATE) == date) return
+        settings.putString(KEY_MANUAL_SALAWAT_DATE, date)
+        settings.putInt(KEY_MANUAL_SALAWAT_USED, 0)
+    }
+
     fun getNickname(): String? = settings.getStringOrNull(KEY_NICKNAME)?.takeIf { it.isNotBlank() }
 
     fun getPublishedName(): String =
@@ -190,6 +218,8 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         const val KEY_LAST_MILESTONE_LEVEL = "last_milestone_level"
         const val KEY_LAST_KNOWN_RANK = "last_known_rank"
         const val KEY_LAST_SALAWAT_TS = "last_salawat_ts"
+        const val KEY_MANUAL_SALAWAT_DATE = "manual_salawat_date"
+        const val KEY_MANUAL_SALAWAT_USED = "manual_salawat_used"
         const val KEY_NICKNAME = "user_nickname"
         const val KEY_NICKNAME_ENABLED = "nickname_enabled"
         const val KEY_NICKNAME_ANNOUNCEMENT_SHOWN = "nickname_announcement_shown"
