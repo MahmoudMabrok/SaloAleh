@@ -617,6 +617,31 @@ async function mirrorQuranAggregateAndClean(firestore, dateKey, todayTotal, newG
   }
 }
 
+// Deletes the mirrored user profile docs (mohamed_lovers_users/{uid}) for users
+// pruned from RTDB by delete-inactive-users.js. Chunked at 490 to respect
+// Firestore's 500-op batch limit. Note: Firestore doc deletes do NOT cascade to
+// subcollections (e.g. achievements, purchases); those are orphaned harmlessly
+// while nothing reads Firestore in Phase 1. RTDB stays the source of truth.
+async function mirrorUsersDelete(firestore, uids) {
+  try {
+    let batch = firestore.batch();
+    let count = 0;
+    for (const uid of uids) {
+      batch.delete(firestore.collection(USERS_COLLECTION).doc(uid));
+      count++;
+      if (count >= 490) {
+        await batch.commit();
+        batch = firestore.batch();
+        count = 0;
+      }
+    }
+    if (count > 0) await batch.commit();
+    console.log(`[firestore-mirror] deleted ${uids.length} user doc(s)`);
+  } catch (e) {
+    console.error(`[firestore-mirror] user delete failed: ${e.message}`);
+  }
+}
+
 async function mirrorUserAllTimeTotals(firestore, writes) {
   try {
     const batch = firestore.batch();
@@ -679,5 +704,6 @@ module.exports = {
     mirrorAlBaqaraAggregateAndClean,
     mirrorQuranAggregateAndClean,
     mirrorUserAllTimeTotals,
+    mirrorUsersDelete,
   }),
 };

@@ -1,0 +1,44 @@
+name: Delete Inactive Users
+
+on:
+  schedule:
+    # Daily at 03:00 UTC (~05:00 Cairo) — low-traffic window, after nightly stats.
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Log deletions without writing (true/false)'
+        required: false
+        default: 'false'
+      no_ach_days:
+        description: 'Inactivity days threshold (>=) for users with no achievement'
+        required: false
+        default: '3'
+      with_ach_days:
+        description: 'Inactivity days threshold (>) for users with an achievement'
+        required: false
+        default: '7'
+
+jobs:
+  delete-inactive-users:
+    name: Prune stale user profiles
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install firebase-admin
+        run: npm install firebase-admin
+        working-directory: scripts
+
+      - name: Delete inactive users
+        run: node scripts/delete-inactive-users.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          NO_ACH_DAYS: ${{ github.event.inputs.no_ach_days || '3' }}
+          WITH_ACH_DAYS: ${{ github.event.inputs.with_ach_days || '7' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
