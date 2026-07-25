@@ -131,6 +131,16 @@ Startup update dialog driven by remote-config values (RTDB, not Firebase Remote 
 - Reuses the existing `version_update_*` string keys and adds `force_update_{title,description}` (all four locales); shares the cross-platform `getAppVersion()` expect/actual.
 - Tests: `commonTest/domain/AppUpdateConfigTest.kt`, `commonTest/data/update/UpdatePromptStoreTest.kt`, `commonTest/data/update/UpdateCheckerTest.kt`.
 
+### Required-field write gate (`schemaVersion`)
+
+Server-side hard backstop that pairs with the force-update prompt: builds that predate this field are **denied at the DB** on the main competition write path, so an obsolete client cannot save salawat even if it dodges the update dialog.
+
+- Core files: `database.rules.json` (`mohamed_lovers/$round/players/$uid`), `data/firebase/MohamedLoversFirebaseClient.kt` (`SCHEMA_VERSION_KEY`, `CLIENT_SCHEMA_VERSION`).
+- The player node's `.validate` requires `hasChildren(['uid', 'schemaVersion'])` and `schemaVersion` validates as `isNumber() && >= 1`. RTDB validates the **merged** post-write state, so any patch that omits `schemaVersion` is rejected once the node doesn't already carry it — i.e. every write from a build shipped before this change.
+- The client stamps `schemaVersion = CLIENT_SCHEMA_VERSION` (currently `1`) on **every** player write — both `playerPatch(...)` and the hand-built `fields` map in `incrementSession`. Bump `CLIENT_SCHEMA_VERSION` only when the player-write contract changes.
+- Scope is the **main competition only** (`mohamed_lovers` players); the 7 challenge nodes and `ten_days` are not gated. Admin scripts bypass rules (Admin SDK), so server writes need no `schemaVersion`.
+- **Rollout order matters** — deploying the rule denies all not-yet-updated clients immediately. Ship the new build first (it also carries the existing force-update code), publish and let the store propagate, set `mohamed_lovers/app_config/minSupportedVersion` to the new version (force-update UX), **then** `firebase deploy --only database` (the hard backstop).
+
 ## Firebase RTDB structure
 
 ```
@@ -147,7 +157,7 @@ mohamed_lovers/
 └── {roundKey}/                           # e.g. "2026-05-16" (next Friday Cairo date)
     ├── roundTotal, roundPlayerCount      # server-computed aggregates
     ├── leaderboard/                      # server-populated top-N
-    └── players/{uid}/                    # client-writable: uid, totalCount, updatedAt, countryCode, dailyBadge, roundStreak
+    └── players/{uid}/                    # client-writable: uid, schemaVersion, totalCount, updatedAt, countryCode, dailyBadge, roundStreak
 ```
 
 **Round key convention:** `YYYY-MM-DD` of the _next_ Friday in Cairo timezone (`Africa/Cairo`). Round resets at 19:00 Cairo time (16:00 UTC) on Friday.
