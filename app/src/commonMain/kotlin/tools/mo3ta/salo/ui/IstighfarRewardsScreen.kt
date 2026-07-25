@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -239,7 +240,11 @@ private fun IstighfarImmersiveZone(
         modifier = modifier
             .fillMaxSize()
             .background(IstighfarHeroBackground)
+            // No ripple: a tap on this full-screen surface only updates the counter and its
+            // related parts — never a full-screen ripple effect across the whole hero.
             .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
                 enabled = canCount,
                 onClickLabel = stringResource(Res.string.istighfar_add),
                 role = Role.Button,
