@@ -21,8 +21,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import org.jetbrains.compose.resources.stringResource
 import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.force_update_description
+import tools.mo3ta.salo.generated.resources.force_update_title
 import tools.mo3ta.salo.generated.resources.version_update_description
 import tools.mo3ta.salo.generated.resources.version_update_later
 import tools.mo3ta.salo.generated.resources.version_update_title
@@ -30,13 +33,25 @@ import tools.mo3ta.salo.generated.resources.version_update_update_now
 import tools.mo3ta.salo.generated.resources.version_update_version_label
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 
+/**
+ * Startup update dialog. When [forced] is true the running build is below the minimum
+ * supported version: the dialog cannot be dismissed (no back-press, no outside tap, no
+ * "Later"), so it blocks all app usage until the user updates.
+ */
 @Composable
 fun VersionUpdateDialog(
     version: String,
     onUpdate: () -> Unit,
     onDismiss: () -> Unit,
+    forced: Boolean = false,
 ) {
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = { if (!forced) onDismiss() },
+        properties = DialogProperties(
+            dismissOnBackPress = !forced,
+            dismissOnClickOutside = !forced,
+        ),
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -46,11 +61,13 @@ fun VersionUpdateDialog(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
-                text = "🎉",
+                text = if (forced) "⚠️" else "🎉",
                 fontSize = 48.sp,
             )
             Text(
-                text = stringResource(Res.string.version_update_title),
+                text = stringResource(
+                    if (forced) Res.string.force_update_title else Res.string.version_update_title,
+                ),
                 color = MohamedLoversPalette.Gold,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
@@ -66,7 +83,9 @@ fun VersionUpdateDialog(
                 )
             }
             Text(
-                text = stringResource(Res.string.version_update_description),
+                text = stringResource(
+                    if (forced) Res.string.force_update_description else Res.string.version_update_description,
+                ),
                 color = Color.White.copy(alpha = 0.8f),
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
@@ -85,12 +104,15 @@ fun VersionUpdateDialog(
                     fontWeight = FontWeight.Bold,
                 )
             }
-            TextButton(onClick = onDismiss) {
-                Text(
-                    stringResource(Res.string.version_update_later),
-                    color = Color.White.copy(alpha = 0.6f),
-                    fontSize = 13.sp,
-                )
+            // No "Later" on a forced update — the app stays blocked until the user updates.
+            if (!forced) {
+                TextButton(onClick = onDismiss) {
+                    Text(
+                        stringResource(Res.string.version_update_later),
+                        color = Color.White.copy(alpha = 0.6f),
+                        fontSize = 13.sp,
+                    )
+                }
             }
         }
     }

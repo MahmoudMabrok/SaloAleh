@@ -90,6 +90,7 @@ import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseApi
 import tools.mo3ta.salo.data.referral.ReferralStore
 import tools.mo3ta.salo.data.reminder.AlKahfReminderStore
 import tools.mo3ta.salo.data.update.UpdateChecker
+import tools.mo3ta.salo.data.update.UpdatePrompt
 import tools.mo3ta.salo.domain.isNewerVersion
 import tools.mo3ta.salo.analytics.BillingAnalytics
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
@@ -716,32 +717,43 @@ fun App(
         // strictly newer than this build, and it is independent of the suppressed app
         // announcements above so it always reaches users on old versions.
         val updateChecker = koinInject<UpdateChecker>()
-        var pendingAppUpdate by remember { mutableStateOf<String?>(null) }
+        var pendingAppUpdate by remember { mutableStateOf<UpdatePrompt?>(null) }
         LaunchedEffect(newVersionAvailable) {
             if (!UPDATE_PROMPT_ENABLED) return@LaunchedEffect
             val current = getAppVersion()
-            pendingAppUpdate = newVersionAvailable
-                ?.takeIf { it.isNotBlank() && isNewerVersion(it, current) }
-                ?: updateChecker.check(current)
+            val decision = updateChecker.check(current)
+            // A forced update (build below the minimum supported version) always wins,
+            // even over an explicit "new version" notification tap.
+            pendingAppUpdate = if (decision?.forced == true) {
+                decision
+            } else {
+                newVersionAvailable
+                    ?.takeIf { it.isNotBlank() && isNewerVersion(it, current) }
+                    ?.let { UpdatePrompt(it, forced = false) }
+                    ?: decision
+            }
         }
-        if (
-            UPDATE_PROMPT_ENABLED &&
-            !showOnboarding
-        ) pendingAppUpdate?.let { version ->
-            VersionUpdateDialog(
-                version = version,
-                // "Update now" only opens the store; it is not a dismissal, so a user who
-                // doesn't complete the update is still reminded on the next launch.
-                onUpdate = {
-                    pendingAppUpdate = null
-                    openStorePage()
-                },
-                // "Later" suppresses this exact version forever.
-                onDismiss = {
-                    updateChecker.markDismissed(version)
-                    pendingAppUpdate = null
-                },
-            )
+        // A forced update blocks the whole app, including onboarding; the soft prompt is
+        // still suppressed while onboarding is on screen.
+        if (UPDATE_PROMPT_ENABLED) pendingAppUpdate?.let { prompt ->
+            if (prompt.forced || !showOnboarding) {
+                VersionUpdateDialog(
+                    version = prompt.version,
+                    forced = prompt.forced,
+                    // "Update now" only opens the store; it is not a dismissal. For a soft
+                    // prompt the user who doesn't finish updating is reminded next launch;
+                    // for a forced one the dialog stays up so the app remains blocked.
+                    onUpdate = {
+                        if (!prompt.forced) pendingAppUpdate = null
+                        openStorePage()
+                    },
+                    // "Later" (soft only) suppresses this exact version forever.
+                    onDismiss = {
+                        updateChecker.markDismissed(prompt.version)
+                        pendingAppUpdate = null
+                    },
+                )
+            }
         }
     }
 }

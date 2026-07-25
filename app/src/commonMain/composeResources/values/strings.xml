@@ -561,6 +561,8 @@
     <string name="version_update_description">يوجد إصدار جديد من التطبيق. حدّث الآن لتحصل على أحدث التحسينات والميزات.</string>
     <string name="version_update_update_now">حدّث الآن</string>
     <string name="version_update_later">لاحقاً</string>
+    <string name="force_update_title">التحديث مطلوب</string>
+    <string name="force_update_description">هذا الإصدار لم يعد مدعوماً. يجب تحديث التطبيق إلى أحدث إصدار للمتابعة.</string>
 
     <!-- Manual Salawat Sheet -->
     <string name="manual_salawat_title">📿 تسجيل صلوات خارجية</string>
