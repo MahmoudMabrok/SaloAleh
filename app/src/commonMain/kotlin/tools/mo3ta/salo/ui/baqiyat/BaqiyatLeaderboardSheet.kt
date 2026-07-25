@@ -214,25 +214,31 @@ private fun LeaderboardRow(
                     fontWeight = FontWeight.Medium,
                 )
             }
-            if (entry.streak > 0) {
-                Text(
-                    text = "🔥${entry.streak}",
-                    color = Gold,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier
-                        .padding(top = 2.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(Gold.copy(alpha = 0.15f))
-                        .padding(horizontal = 5.dp, vertical = 1.dp),
-                )
+            if (entry.streak > 0 || entry.goldMedals > 0 || entry.silverMedals > 0 || entry.bronzeMedals > 0) {
+                Row(
+                    modifier = Modifier.padding(top = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                ) {
+                    if (entry.streak > 0) {
+                        Text(
+                            text = "🔥${entry.streak}",
+                            color = Gold,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(Gold.copy(alpha = 0.15f))
+                                .padding(horizontal = 5.dp, vertical = 1.dp),
+                        )
+                    }
+                    ChallengeMedalPills(
+                        goldMedals = entry.goldMedals,
+                        silverMedals = entry.silverMedals,
+                        bronzeMedals = entry.bronzeMedals,
+                    )
+                }
             }
-            ChallengeMedalPills(
-                goldMedals = entry.goldMedals,
-                silverMedals = entry.silverMedals,
-                bronzeMedals = entry.bronzeMedals,
-                modifier = Modifier.padding(top = 3.dp),
-            )
         }
 
         Text(
