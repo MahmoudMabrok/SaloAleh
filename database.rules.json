@@ -586,10 +586,13 @@
           ".indexOn": ["totalCount"],
           "$uid": {
             ".write": "newData.child('uid').val() === $uid",
-            ".validate": "newData.hasChildren(['uid'])",
+            ".validate": "newData.hasChildren(['uid', 'schemaVersion'])",
 
             "uid": {
               ".validate": "newData.isString() && newData.val() === $uid"
+            },
+            "schemaVersion": {
+              ".validate": "newData.isNumber() && newData.val() >= 1"
             },
             "countryCode": {
               ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 3"

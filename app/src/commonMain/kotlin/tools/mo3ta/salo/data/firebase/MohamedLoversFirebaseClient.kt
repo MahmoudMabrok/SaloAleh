@@ -205,6 +205,7 @@ class MohamedLoversFirebaseClient(
         val publishedName = sessionStore.getPublishedName()
         val fields = mutableMapOf<String, Any>(
             UID_KEY to uid,
+            SCHEMA_VERSION_KEY to CLIENT_SCHEMA_VERSION,
             COUNTRY_CODE_KEY to safeCode,
             TOTAL_COUNT_KEY to ServerValue.increment(delta.toDouble()),
             UPDATED_AT_KEY to ServerValue.TIMESTAMP,
@@ -703,14 +704,17 @@ class MohamedLoversFirebaseClient(
     }
 
     /**
-     * Every partial write to a player node must carry [UID_KEY]. RTDB evaluates the node's
-     * `.write` rule (`newData.child('uid').val() === $uid`) against the merged post-write
-     * state, so a patch that omits `uid` is denied whenever the node does not exist yet —
-     * i.e. any user who has not tapped in the current round. Patches that omit `totalCount`
+     * Every partial write to a player node must carry [UID_KEY] and [SCHEMA_VERSION_KEY].
+     * RTDB evaluates the node's `.write` rule (`newData.child('uid').val() === $uid`) and its
+     * `.validate` (`newData.hasChildren(['uid', 'schemaVersion'])`) against the merged
+     * post-write state, so a patch that omits either field is denied whenever the node does
+     * not exist yet — i.e. any user who has not tapped in the current round. `schemaVersion`
+     * is the required-field gate: builds that predate it never send it, so their writes are
+     * rejected server-side and the user is pushed to update. Patches that omit `totalCount`
      * stay invisible to the server aggregates, which all require it.
      */
     private fun playerPatch(uid: String, vararg fields: Pair<String, Any?>): Map<String, Any?> =
-        mapOf(UID_KEY to uid, *fields)
+        mapOf(UID_KEY to uid, SCHEMA_VERSION_KEY to CLIENT_SCHEMA_VERSION, *fields)
 
     private fun playersPath(roundKey: String) = "$ROOT_PATH/$roundKey/$PLAYERS_PATH"
     private fun leaderboardPath(roundKey: String, daily: Boolean = false): String {
@@ -760,6 +764,11 @@ class MohamedLoversFirebaseClient(
         const val DAILY_LEADERBOARD_PATH = "dailyLeaderboard"
         const val IS_FINAL_KEY = "isFinal"
         const val UID_KEY = "uid"
+        const val SCHEMA_VERSION_KEY = "schemaVersion"
+        // Schema version stamped on every player write. The RTDB rule requires this field
+        // (`hasChildren(['uid','schemaVersion'])`), so builds that predate it are denied and
+        // forced to update. Bump only when the player-write contract changes.
+        const val CLIENT_SCHEMA_VERSION = 1
         const val SCORE_KEY = "score"
         const val RANK_KEY = "rank"
         const val TOTAL_COUNT_KEY = "totalCount"
