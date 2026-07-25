@@ -556,6 +556,7 @@
     <string name="version_update_later">Later</string>
     <string name="force_update_title">Update Required</string>
     <string name="force_update_description">This version is no longer supported. You must update the app to the latest version to continue.</string>
+    <string name="permission_denied_update_message">Something went wrong, please update the app</string>
 
     <!-- Manual Salawat Sheet -->
     <string name="manual_salawat_title">📿 Log External Prayers</string>

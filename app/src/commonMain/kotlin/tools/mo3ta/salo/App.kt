@@ -58,6 +58,7 @@ import tools.mo3ta.salo.ui.MohamedLoversScreen
 import tools.mo3ta.salo.ui.FcmPermissionReminderDialog
 import tools.mo3ta.salo.ui.NotificationRationaleDialog
 import tools.mo3ta.salo.ui.OnboardingScreen
+import tools.mo3ta.salo.ui.PermissionDeniedSnackbar
 import tools.mo3ta.salo.ui.PlatformBackHandler
 import tools.mo3ta.salo.ui.ReviewDialog
 import tools.mo3ta.salo.ui.VersionUpdateDialog
@@ -755,6 +756,10 @@ fun App(
                 )
             }
         }
+
+        // App-wide overlay: shows an "update the app" snackbar when a Firebase permission-denied
+        // rejection is detected. Emitted last so it sits on top of the current screen.
+        PermissionDeniedSnackbar()
     }
 }
 

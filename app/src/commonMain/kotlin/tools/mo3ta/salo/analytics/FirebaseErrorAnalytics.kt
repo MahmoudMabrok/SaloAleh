@@ -15,4 +15,9 @@ fun AnalyticsManager.logFirebaseError(
             "error" to (error.message ?: error::class.simpleName ?: "unknown"),
         ),
     )
+    // A permission-denied rejection means the client is out of step with the deployed security
+    // rules — almost always an outdated build — so nudge the user to update the app.
+    if (isPermissionDeniedError(error)) {
+        PermissionDeniedNotifier.notifyPermissionDenied()
+    }
 }

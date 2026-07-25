@@ -527,6 +527,7 @@
     <string name="version_update_later">以后再说</string>
     <string name="force_update_title">需要更新</string>
     <string name="force_update_description">此版本已不再受支持。您必须将应用更新到最新版本才能继续使用。</string>
+    <string name="permission_denied_update_message">出了点问题，请更新应用</string>
 
     <!-- Manual Salawat Sheet -->
     <string name="manual_salawat_title">📿 记录外部祈祷</string>

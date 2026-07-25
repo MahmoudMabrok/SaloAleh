@@ -563,6 +563,7 @@
     <string name="version_update_later">لاحقاً</string>
     <string name="force_update_title">التحديث مطلوب</string>
     <string name="force_update_description">هذا الإصدار لم يعد مدعوماً. يجب تحديث التطبيق إلى أحدث إصدار للمتابعة.</string>
+    <string name="permission_denied_update_message">حدث خطأ ما، يُرجى تحديث التطبيق</string>
 
     <!-- Manual Salawat Sheet -->
     <string name="manual_salawat_title">📿 تسجيل صلوات خارجية</string>
