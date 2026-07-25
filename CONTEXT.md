@@ -187,7 +187,12 @@ Two things this depends on, both outside the codebase:
 
 ### Defense in depth (rules)
 
-`database.rules.json` still bounds `players/$uid/totalCount` to `previous + 10000` per write. This is a blast-radius cap, not a rate limit — there is no time-based ceiling, so it does not stop sustained inflation.
+`database.rules.json` bounds `players/$uid/totalCount` two ways per write:
+
+- **Blast-radius cap** — a single write may raise `totalCount` by at most `previous + 10000`.
+- **Pacing (rate limit)** — an *increase* must be earned by elapsed time, measured against the server-stamped `updatedAt`: `(newTotal − prevTotal) * 3 <= (newUpdatedAt − prevUpdatedAt) * 10`. In plain terms, ~3s of elapsed time per 10k of increase, i.e. a sustained ceiling of ~3,333/s. A full 10k jump therefore needs ≥3s since the last write; small tap-flushes always pass because they carry proportional elapsed time. The first write of a round (`!data.exists()`) and non-increasing writes (admin/`decrementScore`) are exempt, and the increase must strictly advance `updatedAt` (blocks same-timestamp replay).
+
+This closes the tight-loop "multiple 10k in rapid succession" exploit **for every client regardless of app version** — the check lives in the rules, not the client, so it also binds users who never updated. It is a soft rate limit deliberately tuned so a single legitimate manual/extension bulk entry (up to the 10k client-side daily cap) is never rejected; it caps *frequency*, not the per-day total. Because it relies on `updatedAt`, any future client that increments `totalCount` must keep writing `updatedAt` in the same update.
 
 ### What App Check does *not* cover
 
