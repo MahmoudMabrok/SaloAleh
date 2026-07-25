@@ -12,6 +12,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -72,9 +73,11 @@ import kotlin.random.Random
 
 /**
  * "The emancipation engine" (عتق الرقاب) — an alternative hero for the 100-dhikr challenge that
- * rebuilds the counter out of the hadith's own gains. The sky is the progress bar (night → dawn),
- * a chain of ten shackles fills and snaps open — one freed soul per ten dhikr — and the tap count
- * lives underneath. Gated behind [DHIKR_GAINS_UI_ENABLED] in DhikrRewardsScreen.
+ * rebuilds the counter out of the hadith's own gains. The sky is a fixed starlit night, a chain of
+ * ten shackles fills and snaps open — one freed soul per ten dhikr — and the tap count lives
+ * underneath. A tap only updates the counter and its related parts (shackles, freed souls); the
+ * full-screen background never re-renders, matching the istighfar screen. Gated behind
+ * [DHIKR_GAINS_UI_ENABLED] in DhikrRewardsScreen.
  */
 
 /** The hundred of the hadith. Ten shackles × ten dhikr — independent of the daily goal. */
@@ -86,12 +89,6 @@ private object EmancipationColors {
         0f to Color(0xFF02130C),
         0.58f to Color(0xFF06301F),
         1f to Color(0xFF0A3A26),
-    )
-    val DawnStops = arrayOf(
-        0f to Color(0xFF123F2E),
-        0.42f to Color(0xFF2E6B4E),
-        0.72f to Color(0xFF7C9A5D),
-        0.96f to Color(0xFFD9A84E),
     )
     val RingTrack = Color(0xFFD2E2D6).copy(alpha = 0.22f)
     val RingFill = Color(0xFF6FCF9E)
@@ -126,11 +123,6 @@ internal fun DhikrEmancipationZone(
     // The freed-necks tally is cumulative and unbounded — it keeps climbing past the first 100.
     val totalNecks = count / DECADES
     val currentNecks = withinHundred / DECADES
-    val dawnAlpha by animateFloatAsState(
-        targetValue = withinHundred.toFloat() / HUNDRED,
-        animationSpec = tween(600, easing = FastOutSlowInEasing),
-        label = "dawn",
-    )
 
     val stars = remember {
         val random = Random(0x5A10)
@@ -148,26 +140,20 @@ internal fun DhikrEmancipationZone(
         modifier = modifier
             .fillMaxSize()
             .background(Brush.verticalGradient(*EmancipationColors.NightStops))
+            // No ripple: a tap on this full-screen surface only updates the counter and its
+            // related parts — never a full-screen ripple effect across the whole hero.
             .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
                 enabled = canCount,
                 onClickLabel = stringResource(Res.string.dhikr_add),
                 role = Role.Button,
                 onClick = onTap,
             ),
     ) {
-        // Dawn rises over the night as the hundred approaches.
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer { alpha = dawnAlpha }
-                .background(Brush.verticalGradient(*EmancipationColors.DawnStops)),
-        )
-        // Stars fade out as dawn takes over.
-        Canvas(
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer { alpha = 1f - dawnAlpha },
-        ) {
+        // A fixed starfield — no full-screen animation on tap. Only the counter and its related
+        // parts (shackles, freed souls) update per tap, matching the istighfar screen.
+        Canvas(modifier = Modifier.fillMaxSize()) {
             stars.forEach { star ->
                 drawCircle(
                     color = EmancipationColors.Star.copy(alpha = star.alpha),
