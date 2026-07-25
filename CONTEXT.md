@@ -187,7 +187,16 @@ Two things this depends on, both outside the codebase:
 
 ### Defense in depth (rules)
 
-`database.rules.json` still bounds `players/$uid/totalCount` to `previous + 10000` per write. This is a blast-radius cap, not a rate limit — there is no time-based ceiling, so it does not stop sustained inflation.
+`database.rules.json` bounds `players/$uid/totalCount` two ways per write:
+
+- **Blast-radius cap** — a single write may raise `totalCount` by at most `previous + 10000`.
+- **Daily cap (rate limit)** — `totalCount` may not exceed `yesterdayTotalScore + 50000`. `yesterdayTotalScore` is a **server-only baseline** (`.write: false`) that `generate-stats.js` re-stamps to each player's current `totalCount` every day at 23:45 Cairo, so this caps a player's gain to **50,000 per Cairo day**. When the baseline is absent (a player's first day in a round, before the first cron stamp) it defaults to `0`, so the day-one ceiling is a flat 50,000 total — still bounded, never open.
+
+Together: at most **+10,000 per write and +50,000 per day**. The `50,000` is deliberately generous — the largest single-player daily gain ever observed in `stats/*.json` is ~16,500 (community-wide peak ~75,000/day across *all* players), so it clears any real user by ~3× while cutting the exploit ceiling from effectively unbounded to 50k/day.
+
+Why this works where the earlier attempt didn't: a pure time-pacing rule can't give a low daily ceiling while still allowing an instant 10k manual entry (the two are the same shape to a stateless rule). Anchoring to the server-stamped `yesterdayTotalScore` gives a real per-day accumulator the client can't forge, so the cap is enforced **for every client regardless of app version** — it binds users who never updated, and a single legitimate manual/extension 10k entry is never rejected.
+
+Notes: the cap governs *future* growth only — it does not retroactively shrink an already-inflated `totalCount` (clean those up with an admin recompute). Non-increasing writes (admin/`decrementScore`) always pass since they move below the ceiling. The rule depends on `generate-stats.js` continuing to stamp `yesterdayTotalScore` daily; if that cron is down for several consecutive days the baseline goes stale and the effective window widens (one missed day is still well within headroom).
 
 ### What App Check does *not* cover
 
