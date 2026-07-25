@@ -118,16 +118,17 @@ The same podium-medal concept as the weekly Winner medal badge, but awarded **da
 
 ### Remote update prompt
 
-Startup "new version available" dialog driven by a remote-config value (RTDB, not Firebase Remote Config — the latter is unused).
+Startup update dialog driven by remote-config values (RTDB, not Firebase Remote Config — the latter is unused). Two modes: a **soft** "new version available" nudge (`latestVersion`) and a **forced**, non-dismissable "update required" block (`minSupportedVersion`).
 
-- Core files: `domain/AppUpdateConfig.kt` (`AppUpdateConfig`, `isNewerVersion`), `data/update/UpdatePromptStore.kt`, `data/update/UpdateChecker.kt`, `data/firebase/MohamedLoversFirebaseClient.kt` (`fetchAppConfig`), `App.kt`, `ui/VersionUpdateDialog.kt`.
-- Config lives at RTDB `mohamed_lovers/app_config/latestVersion` (a versionName string like `3.9.2`); `.read: true` in `database.rules.json`, client-read-only (admin scripts bypass rules). Absent/unreadable node ⇒ no prompt.
+- Core files: `domain/AppUpdateConfig.kt` (`AppUpdateConfig`, `isNewerVersion`), `data/update/UpdatePromptStore.kt`, `data/update/UpdateChecker.kt` (`UpdatePrompt(version, forced)`), `data/firebase/MohamedLoversFirebaseClient.kt` (`fetchAppConfig`), `App.kt`, `ui/VersionUpdateDialog.kt`.
+- Config lives at RTDB `mohamed_lovers/app_config/{latestVersion, minSupportedVersion}` (versionName strings like `3.9.2`); `.read: true` in `database.rules.json`, client-read-only (admin scripts bypass rules). Absent/unreadable node ⇒ no prompt. No `database.rules.json` change was needed for `minSupportedVersion` — the existing `app_config` grant already reads the whole subtree and denies client writes.
+- **Force update:** when `minSupportedVersion` is strictly newer than the running build, `UpdateChecker.check` returns `UpdatePrompt(forced=true)` and `VersionUpdateDialog` renders in blocking mode — `DialogProperties(dismissOnBackPress=false, dismissOnClickOutside=false)`, no "Later", "Update now" opens the store but keeps the dialog up. It **ignores the per-version dismissal**, shows **even during onboarding**, and **takes precedence over** both the soft `latestVersion` prompt and the FCM notification path. Set `minSupportedVersion` by hand (console/admin script) to retire old builds — it is not auto-published like `latestVersion`. Note: only builds shipping this force-update code can be blocked; older installs still only have the soft prompt.
 - **`latestVersion` is published automatically, never by hand.** It is written at the same moment the "new version available" FCM `version_update` broadcast is sent, via `scripts/app-config-utils.js` `publishLatestVersion(db, version)`: the delayed production path (`populate-leaderboard.js` → `sendDueBuildNotification`, ~2h after deploy) and the manual `notify-new-build.js` both call it. Timing it with the broadcast keeps the prompt aligned with store propagation. The write never throws — a config-write failure won't abort the notification job.
 - On startup `UpdateChecker.check(getAppVersion())` compares `latestVersion` to the running versionName via `isNewerVersion` (numeric, component-wise — `3.10` beats `3.9`; build suffixes ignored) and shows `VersionUpdateDialog` when strictly newer.
 - Dismissal is per-version: "Later" persists the version (`multiplatform-settings` key `update_prompt_dismissed_version`) so it never shows again for that release; a higher `latestVersion` prompts again. "Update now" only opens the store (not a dismissal), so an incomplete update still reminds next launch.
-- Gated by its own `UPDATE_PROMPT_ENABLED` flag in `App.kt`, independent of the globally-suppressed `APP_ANNOUNCEMENTS_ENABLED`; suppressed during onboarding.
+- Gated by its own `UPDATE_PROMPT_ENABLED` flag in `App.kt`, independent of the globally-suppressed `APP_ANNOUNCEMENTS_ENABLED`; the soft prompt is suppressed during onboarding (the forced block is not).
 - Tapping the FCM `version_update` notification feeds the same dialog: `newVersionAvailable` (from the launch intent) shows the prompt immediately for the pushed version — the explicit tap bypasses an earlier per-version "Later" dismissal but still requires the version to be strictly newer than the running build; a blank/absent pushed version falls back to the remote-config check. The old announcement-gated `pendingVersionUpdate` dialog was removed (it was dead behind `APP_ANNOUNCEMENTS_ENABLED = false` and its non-null state also blocked the remote-config prompt).
-- Reuses the existing `version_update_*` string keys (all four locales) and the current cross-platform `getAppVersion()` expect/actual.
+- Reuses the existing `version_update_*` string keys and adds `force_update_{title,description}` (all four locales); shares the cross-platform `getAppVersion()` expect/actual.
 - Tests: `commonTest/domain/AppUpdateConfigTest.kt`, `commonTest/data/update/UpdatePromptStoreTest.kt`, `commonTest/data/update/UpdateCheckerTest.kt`.
 
 ## Firebase RTDB structure
@@ -136,7 +137,8 @@ Startup "new version available" dialog driven by a remote-config value (RTDB, no
 mohamed_lovers/
 ├── allTimeTotal                          # aggregate across all rounds (read-only to client)
 ├── app_config/                           # remote config (read-only to client)
-│   └── latestVersion                     # latest published versionName; drives the startup update prompt
+│   ├── latestVersion                     # latest published versionName; drives the soft startup update prompt
+│   └── minSupportedVersion               # lowest allowed versionName; older builds are force-blocked to update
 ├── users/{uid}/                          # per-device user data
 │   ├── fcmToken, installDate, lastOpenDate, lastRivalNotifDate
 │   ├── reminderNotifsEnabled            # client opt-in for notify-users.js push (Settings; absent = on)

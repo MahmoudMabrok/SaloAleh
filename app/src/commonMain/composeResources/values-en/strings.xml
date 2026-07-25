@@ -554,6 +554,8 @@
     <string name="version_update_description">A new version of the app is available. Update now to get the latest improvements and features.</string>
     <string name="version_update_update_now">Update Now</string>
     <string name="version_update_later">Later</string>
+    <string name="force_update_title">Update Required</string>
+    <string name="force_update_description">This version is no longer supported. You must update the app to the latest version to continue.</string>
 
     <!-- Manual Salawat Sheet -->
     <string name="manual_salawat_title">📿 Log External Prayers</string>

@@ -525,6 +525,8 @@
     <string name="version_update_description">ایپ کا نیا ورژن دستیاب ہے۔ تازہ ترین بہتری اور خصوصیات حاصل کرنے کے لیے ابھی اپڈیٹ کریں۔</string>
     <string name="version_update_update_now">ابھی اپڈیٹ کریں</string>
     <string name="version_update_later">بعد میں</string>
+    <string name="force_update_title">اپ ڈیٹ ضروری ہے</string>
+    <string name="force_update_description">یہ ورژن اب سپورٹ نہیں کیا جاتا۔ جاری رکھنے کے لیے آپ کو ایپ کو تازہ ترین ورژن پر اپ ڈیٹ کرنا ہوگا۔</string>
 
     <!-- Manual Salawat Sheet -->
     <string name="manual_salawat_title">📿 بیرونی صلوات درج کریں</string>
