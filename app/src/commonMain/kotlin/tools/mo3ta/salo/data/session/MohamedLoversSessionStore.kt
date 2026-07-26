@@ -131,6 +131,21 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         settings.putInt(KEY_LAST_MILESTONE_LEVEL, threshold)
     }
 
+    /**
+     * The highest daily-badge threshold that has been *successfully published to the server* today.
+     * Kept separate from [getLastMilestoneLevel] (which gates the one-time local celebration): a
+     * failed badge publish must not advance this guard, so the write is retried on the next flush.
+     */
+    fun getLastPublishedBadgeLevel(today: String): Int {
+        if (settings.getStringOrNull(KEY_LAST_PUBLISHED_BADGE_DATE) != today) return 0
+        return settings.getInt(KEY_LAST_PUBLISHED_BADGE_LEVEL, 0)
+    }
+
+    fun saveLastPublishedBadgeLevel(today: String, threshold: Int) {
+        settings.putString(KEY_LAST_PUBLISHED_BADGE_DATE, today)
+        settings.putInt(KEY_LAST_PUBLISHED_BADGE_LEVEL, threshold)
+    }
+
     fun getLastKnownRank(): Int = settings.getInt(KEY_LAST_KNOWN_RANK, 0)
 
     fun saveLastKnownRank(rank: Int) = settings.putInt(KEY_LAST_KNOWN_RANK, rank)
@@ -235,6 +250,8 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         const val KEY_LAST_QR_TS = "last_applied_qr_ts"
         const val KEY_LAST_MILESTONE_DATE = "last_milestone_date"
         const val KEY_LAST_MILESTONE_LEVEL = "last_milestone_level"
+        const val KEY_LAST_PUBLISHED_BADGE_DATE = "last_published_badge_date"
+        const val KEY_LAST_PUBLISHED_BADGE_LEVEL = "last_published_badge_level"
         const val KEY_LAST_KNOWN_RANK = "last_known_rank"
         const val KEY_LAST_SALAWAT_TS = "last_salawat_ts"
         // Per-Cairo-day ledger for manual ("record external") entry into the competition.

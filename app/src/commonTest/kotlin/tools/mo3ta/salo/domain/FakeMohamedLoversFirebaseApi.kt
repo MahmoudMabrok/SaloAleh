@@ -95,8 +95,15 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
     override suspend fun setSupporter(roundKey: String, uid: String, supporter: Boolean): Result<Unit> =
         Result.success(Unit)
 
-    override suspend fun writeDailyBadge(roundKey: String, uid: String, badgeKey: String?): Result<Unit> =
-        Result.success(Unit)
+    data class WriteDailyBadgeCall(val roundKey: String, val uid: String, val badgeKey: String?)
+
+    val writeDailyBadgeCalls = mutableListOf<WriteDailyBadgeCall>()
+    var writeDailyBadgeResult: Result<Unit> = Result.success(Unit)
+
+    override suspend fun writeDailyBadge(roundKey: String, uid: String, badgeKey: String?): Result<Unit> {
+        writeDailyBadgeCalls.add(WriteDailyBadgeCall(roundKey, uid, badgeKey))
+        return writeDailyBadgeResult
+    }
 
     override suspend fun writeRoundStreak(roundKey: String, uid: String, streak: Int): Result<Unit> =
         Result.success(Unit)
