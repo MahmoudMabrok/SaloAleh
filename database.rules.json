@@ -474,7 +474,7 @@
       "referral_codes": {
         "$code": {
           ".read": true,
-          ".write": "!data.exists()",
+          ".write": "!data.exists() || data.val() === newData.val()",
           ".validate": "newData.isString() && newData.val().length > 0"
         }
       },
