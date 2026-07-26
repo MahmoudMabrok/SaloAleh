@@ -199,8 +199,9 @@ class MohamedLoversFirebaseClient(
         uid: String,
         delta: Int,
         countryCode: String,
+        todayCount: Int,
     ): Result<Unit> {
-        log.d { "incrementSession[$roundKey/$uid] delta=$delta country=$countryCode" }
+        log.d { "incrementSession[$roundKey/$uid] delta=$delta country=$countryCode todayCount=$todayCount" }
         val safeCode = countryCode.takeIf { it.length >= 2 } ?: MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE
         val publishedName = sessionStore.getPublishedName()
         val fields = mutableMapOf<String, Any>(
@@ -208,6 +209,9 @@ class MohamedLoversFirebaseClient(
             SCHEMA_VERSION_KEY to CLIENT_SCHEMA_VERSION,
             COUNTRY_CODE_KEY to safeCode,
             TOTAL_COUNT_KEY to ServerValue.increment(delta.toDouble()),
+            // Absolute running day total (not an increment) so the daily leaderboard can rank on it
+            // directly instead of diffing against yesterday's server snapshot.
+            TODAY_COUNT_KEY to todayCount.coerceAtLeast(0),
             UPDATED_AT_KEY to ServerValue.TIMESTAMP,
             NICKNAME_KEY to publishedName,
         )
@@ -753,6 +757,7 @@ class MohamedLoversFirebaseClient(
             countryCode = map[COUNTRY_CODE_KEY] as? String ?: "",
             updatedAt = (map[UPDATED_AT_KEY] as? Number)?.toLong() ?: 0L,
             yesterdayTotalScore = (map[YESTERDAY_TOTAL_SCORE_KEY] as? Number)?.toInt() ?: 0,
+            todayCount = (map[TODAY_COUNT_KEY] as? Number)?.toInt() ?: 0,
             nickname = map[NICKNAME_KEY] as? String ?: "",
         )
     }
@@ -787,6 +792,7 @@ class MohamedLoversFirebaseClient(
         const val BRONZE_MEDALS_KEY = "bronzeMedals"
         const val NICKNAME_KEY = "nickname"
         const val YESTERDAY_TOTAL_SCORE_KEY = "yesterdayTotalScore"
+        const val TODAY_COUNT_KEY = "todayCount"
         const val ROUND_TOTAL_PATH = "roundTotal"
         const val ROUND_PLAYER_COUNT_PATH = "roundPlayerCount"
         const val ALL_TIME_TOTAL_PATH = "allTimeTotal"

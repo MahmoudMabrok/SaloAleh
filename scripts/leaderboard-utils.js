@@ -9,6 +9,50 @@ const QURAN_CHALLENGE_ROOT = 'quran_challenge';
 const ALBAQARA_CHALLENGE_ROOT = 'albaqara_challenge';
 const MOHAMED_LOVERS_ROOT = 'mohamed_lovers';
 
+// A day's salawat above this is treated as abnormal and recorded for admin review.
+const ABNORMAL_DAILY_THRESHOLD = 12000;
+
+// A player's competition score for the current Cairo day. Prefers the client-published absolute
+// `todayCount`; falls back to the yesterday-diff (`totalCount - yesterdayTotalScore`) for clients
+// that predate todayCount, so the daily leaderboard never zeroes out an un-updated user.
+function computeTodayScore({ total, today, yesterday }) {
+  if (typeof today === 'number' && today >= 0) return Math.floor(today);
+  return Math.max(0, (total || 0) - (yesterday || 0));
+}
+
+// Builds the per-user daily snapshots written at the daily close (generate-stats.js): a score
+// history entry per active user, an abnormal-user flag for anyone above the threshold, and a
+// todayCount reset so the next Cairo day starts from zero. Pure so it can be unit-tested.
+// `players` items: { uid, totalCount, todayCount, yesterdayTotalScore, countryCode }.
+function buildDailyScoreSnapshots({ players, dateKey, roundKey, threshold = ABNORMAL_DAILY_THRESHOLD }) {
+  const scoreHistoryUpdates = {};
+  const abnormalUpdates = {};
+  const todayCountResets = {};
+  for (const p of players || []) {
+    if (!p || !p.uid) continue;
+    const dayTotal = computeTodayScore({
+      total: p.totalCount,
+      today: p.todayCount,
+      yesterday: p.yesterdayTotalScore,
+    });
+    if (dayTotal > 0) {
+      scoreHistoryUpdates[`${MOHAMED_LOVERS_ROOT}/users/${p.uid}/scoreHistory/${dateKey}`] = dayTotal;
+    }
+    if (dayTotal > threshold) {
+      abnormalUpdates[`${MOHAMED_LOVERS_ROOT}/abnormal_users/${dateKey}/${p.uid}`] = {
+        count: dayTotal,
+        totalCount: p.totalCount || 0,
+        countryCode: typeof p.countryCode === 'string' ? p.countryCode : 'NA',
+      };
+    }
+    // Only reset players who actually carry a non-zero client-pushed todayCount.
+    if (typeof p.todayCount === 'number' && p.todayCount !== 0) {
+      todayCountResets[`${MOHAMED_LOVERS_ROOT}/${roundKey}/players/${p.uid}/todayCount`] = 0;
+    }
+  }
+  return { scoreHistoryUpdates, abnormalUpdates, todayCountResets };
+}
+
 function buildOldRankMap(source) {
   const entries = source && typeof source.exists === 'function'
     ? (source.exists() ? source.val() : {})
@@ -455,6 +499,7 @@ async function populateMohamedLoversRound(db, admin, roundKey, isFinal) {
         updatedAt: data.updatedAt || 0,
         countryCode: typeof data.countryCode === 'string' ? data.countryCode : 'NA',
         yesterdayTotalScore: typeof data.yesterdayTotalScore === 'number' ? data.yesterdayTotalScore : 0,
+        todayCount: typeof data.todayCount === 'number' ? data.todayCount : null,
         scoreMasked: data.scoreMasked === true,
         isSupporter: data.isSupporter === true,
         dailyBadge: typeof data.dailyBadge === 'string' ? data.dailyBadge : null,
@@ -498,10 +543,11 @@ async function populateMohamedLoversRound(db, admin, roundKey, isFinal) {
     leaderboard[String(i + 1)] = entry;
   });
 
-  // Daily leaderboard: rank by todayScore = totalCount - yesterdayTotalScore.
+  // Daily leaderboard: rank by the client-published todayCount (falls back to the
+  // yesterday-diff for clients that don't publish it yet).
   const dailyPlayers = allPlayers.map(p => ({
     ...p,
-    dailyScore: Math.max(0, p.score - (p.yesterdayTotalScore || 0)),
+    dailyScore: computeTodayScore({ total: p.score, today: p.todayCount, yesterday: p.yesterdayTotalScore }),
   }));
   dailyPlayers.sort((a, b) => b.dailyScore - a.dailyScore || b.updatedAt - a.updatedAt);
   const dailyTop10 = dailyPlayers.slice(0, 10);
@@ -678,6 +724,9 @@ module.exports = {
   QURAN_CHALLENGE_ROOT,
   ALBAQARA_CHALLENGE_ROOT,
   MOHAMED_LOVERS_ROOT,
+  ABNORMAL_DAILY_THRESHOLD,
+  computeTodayScore,
+  buildDailyScoreSnapshots,
   buildOldRankMap,
   computeRankChange,
   computeTop3Changes,

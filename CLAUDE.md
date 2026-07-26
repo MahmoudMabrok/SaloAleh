@@ -116,6 +116,16 @@ The same podium-medal concept as the weekly Winner medal badge, but awarded **da
 - Strings: reuses `leaderboard_medals_info_{gold,silver,bronze}`, adds `challenge_medals_info_{title,desc}` (all four locales).
 - Tests: `commonTest/data/dhikr/DhikrChallengeFirebaseClientTest.kt` (medal parse), `scripts/challenge-medals.test.js` (award + attach).
 
+### Daily today-count, score history & abnormal-user tracking
+
+Client-published per-Cairo-day salawat total that drives the daily leaderboard directly, plus a server-side daily audit trail and abnormal-usage flag.
+
+- Core files (client): `data/session/MohamedLoversSessionStore.kt` (`getTodayCount`/`addTodayCount`/`subtractTodayCount`, keys `ml_today_date`/`ml_today_count`), `presentation/MohamedLoversViewModel.kt`, `data/firebase/MohamedLoversFirebaseClient.kt` (`TODAY_COUNT_KEY`, stamped in `incrementSession`), `domain/MohamedLoversModels.kt` (`MohamedLoversPlayer.todayCount`). Core files (server): `scripts/leaderboard-utils.js` (`computeTodayScore`, `buildDailyScoreSnapshots`, `ABNORMAL_DAILY_THRESHOLD = 12000`), `scripts/generate-stats.js`.
+- **Today count:** the client tracks the running competition salawat total for the current Cairo day locally (taps + manual + extension; corrections subtract; not cleared on flush, reset only on Cairo day change) and publishes it as an **absolute** `todayCount` on the player node on every flush (via `incrementSession`). The daily leaderboard (`populateMohamedLoversRound`) now ranks on `computeTodayScore` — the client `todayCount` when present, falling back to the old `totalCount - yesterdayTotalScore` diff for un-updated clients. The self-row daily score uses the local `todayCount` (which already includes not-yet-flushed taps). `yesterdayTotalScore` is still written by `generate-stats.js` and still gates the `totalCount` write rule, so it is kept.
+- **Daily close (`generate-stats.js`, 23:45 Cairo):** `buildDailyScoreSnapshots` writes, per active player, `users/{uid}/scoreHistory/{dateKey}` = that day's total, flags anyone whose day total exceeds `ABNORMAL_DAILY_THRESHOLD` into `abnormal_users/{dateKey}/{uid}` = `{count,totalCount,countryCode}` (record-only; no automatic penalty), and resets each client-pushed `todayCount` to 0 so the next Cairo day starts fresh.
+- RTDB rules: `players/{uid}/todayCount` validates `isNumber() && >= 0` (client-writable, absolute). `users/{uid}/scoreHistory` and top-level `mohamed_lovers/abnormal_users` are server-only — `scoreHistory` uses the `.validate: false` pattern (the cascading `users/$uid` write grant reaches it, so `.write:false` would be useless); `abnormal_users` is an explicit named node (`.read:false`, `.write:false`) so it isn't shadowed by the `$round` wildcard, and the Admin SDK bypasses both. No Firestore mirror (RTDB is the source of truth for these).
+- Tests: `commonTest/data/session/MohamedLoversSessionStoreTest.kt` (today-count store), `scripts/abnormal-users.test.js` (`computeTodayScore` + `buildDailyScoreSnapshots`).
+
 ### Remote update prompt
 
 Startup update dialog driven by remote-config values (RTDB, not Firebase Remote Config — the latter is unused). Two modes: a **soft** "new version available" nudge (`latestVersion`) and a **forced**, non-dismissable "update required" block (`minSupportedVersion`).
@@ -149,15 +159,17 @@ mohamed_lovers/
 ├── app_config/                           # remote config (read-only to client)
 │   ├── latestVersion                     # latest published versionName; drives the soft startup update prompt
 │   └── minSupportedVersion               # lowest allowed versionName; older builds are force-blocked to update
+├── abnormal_users/{dateKey}/{uid}        # server-only: {count,totalCount,countryCode} for users > 12k/day
 ├── users/{uid}/                          # per-device user data
 │   ├── fcmToken, installDate, lastOpenDate, lastRivalNotifDate
 │   ├── reminderNotifsEnabled            # client opt-in for notify-users.js push (Settings; absent = on)
 │   ├── leaderboardNotifsEnabled         # client opt-in for populate-leaderboard.js push (Settings; absent = on)
+│   ├── scoreHistory/{dateKey}            # server-only daily per-user score snapshot (that day's total)
 │   └── achievements/{roundKey}/          # rank, score, date
 └── {roundKey}/                           # e.g. "2026-05-16" (next Friday Cairo date)
     ├── roundTotal, roundPlayerCount      # server-computed aggregates
     ├── leaderboard/                      # server-populated top-N
-    └── players/{uid}/                    # client-writable: uid, schemaVersion, totalCount, updatedAt, countryCode, dailyBadge, roundStreak
+    └── players/{uid}/                    # client-writable: uid, schemaVersion, totalCount, todayCount, updatedAt, countryCode, dailyBadge, roundStreak
 ```
 
 **Round key convention:** `YYYY-MM-DD` of the _next_ Friday in Cairo timezone (`Africa/Cairo`). Round resets at 19:00 Cairo time (16:00 UTC) on Friday.

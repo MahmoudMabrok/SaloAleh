@@ -12,6 +12,7 @@ data class MohamedLoversPlayer(
     val countryCode: String = "",
     val updatedAt: Long = 0L,
     val yesterdayTotalScore: Int = 0,
+    val todayCount: Int = 0,
     val nickname: String = "",
 )
 

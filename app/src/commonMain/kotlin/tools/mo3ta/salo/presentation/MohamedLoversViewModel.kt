@@ -101,6 +101,7 @@ class MohamedLoversViewModel(
                 dailyGoalProgress = todayProgress,
                 currentDailyBadge = DailyBadge.fromTapCount(todayProgress)?.key,
                 manualRemaining = sessionStore.manualRemainingToday(today, manualDailyCap(today)),
+                todayCount = sessionStore.getTodayCount(today),
             )
         }
         settleHeartDecay()
@@ -218,6 +219,7 @@ class MohamedLoversViewModel(
         dailyGoalStore.recordTap(today, 1)
         val isNowComplete = dailyGoalStore.isGoalComplete(today)
         val streakResult = roundStreakStore.recordActivity(roundKey, today)
+        val todayTotal = sessionStore.addTodayCount(today, 1)
         val todayStr = today.toString()
         val rawTaps = dailyGoalStore.todayProgress(today)
         val badge = DailyBadge.fromTapCount(rawTaps)
@@ -238,6 +240,7 @@ class MohamedLoversViewModel(
         _state.update {
             it.copy(
                 sessionClicks = pending.clickCount,
+                todayCount = todayTotal,
                 error = null,
                 dailyGoalProgress = rawTaps,
                 dailyGoalJustCompleted = !wasComplete && isNowComplete,
@@ -287,8 +290,10 @@ class MohamedLoversViewModel(
                 inFlightFlush = state.value.sessionClicks
                 _state.update { it.copy(isSavingSession = true, error = null) }
 
+                val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
                 val result = repository.flushPendingSession(
                     countryCode = state.value.countryCode,
+                    todayCount = sessionStore.getTodayCount(today),
                 )
                 val latestPending = repository.getPendingSession(roundKey)
                 inFlightFlush = 0
@@ -362,9 +367,11 @@ class MohamedLoversViewModel(
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
         val prevStreak = state.value.roundStreak
         val streakResult = roundStreakStore.recordActivity(round, today)
+        val todayTotal = sessionStore.addTodayCount(today, count)
         _state.update {
             it.copy(
                 sessionClicks = pending.clickCount,
+                todayCount = todayTotal,
                 heartScore = heart.first,
                 showHeartRefillNudge = shouldShowHeartRefillNudge(heart.first, heart.second),
                 roundStreak = streakResult.currentStreak,
@@ -421,9 +428,11 @@ class MohamedLoversViewModel(
         dailyGoalStore.recordTap(today, applied)
         val prevStreak = state.value.roundStreak
         val streakResult = roundStreakStore.recordActivity(roundKey, today)
+        val todayTotal = sessionStore.addTodayCount(today, applied)
         _state.update {
             it.copy(
                 sessionClicks = pending.clickCount,
+                todayCount = todayTotal,
                 showManualSalawatSheet = false,
                 isSubmittingManualSalawat = true,
                 dailyGoalProgress = dailyGoalStore.todayProgress(today),
@@ -468,6 +477,7 @@ class MohamedLoversViewModel(
         // A correction frees the manual-entry allowance again so a mis-entry can be re-added.
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
         sessionStore.refundManualEntry(today, applied)
+        val todayTotal = sessionStore.subtractTodayCount(today, applied)
 
         val pendingReduction = applied.coerceAtMost(pendingClicks)
         if (pendingReduction > 0) repository.decrementPendingClick(roundKey, pendingReduction)
@@ -477,6 +487,7 @@ class MohamedLoversViewModel(
         _state.update {
             it.copy(
                 sessionClicks = pending.clickCount,
+                todayCount = todayTotal,
                 showManualSalawatSheet = false,
                 isSubmittingManualSalawat = serverReduction > 0,
                 manualRemaining = sessionStore.manualRemainingToday(today, manualDailyCap(today)),
@@ -859,7 +870,10 @@ class MohamedLoversViewModel(
         val selfRemoteTotal = remoteSelfPlayer?.totalCount ?: 0
         val pendingNet = (state.value.sessionClicks - inFlightFlush).coerceAtLeast(0)
         val selfProjectedTotal = selfRemoteTotal + pendingNet
-        val selfProjectedDaily = (selfRemoteTotal - (remoteSelfPlayer?.yesterdayTotalScore ?: 0)).coerceAtLeast(0) + pendingNet
+        // Daily score is now the locally-tracked running day total (which already includes taps not
+        // yet flushed to the server); fall back to the server-published todayCount when local is
+        // behind (e.g. right after a reinstall).
+        val selfProjectedDaily = maxOf(state.value.todayCount, remoteSelfPlayer?.todayCount ?: 0)
         val selfDisplayScore = if (isDaily) selfProjectedDaily else selfProjectedTotal
 
         val selfPublishedName = sessionStore.getPublishedName()
