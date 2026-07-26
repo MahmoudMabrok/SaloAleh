@@ -227,8 +227,13 @@ class MohamedLoversViewModel(
         if (badge != null && badge.threshold > lastMilestone) {
             milestoneThreshold = badge.threshold
             milestoneBadgeKey = badge.key
+            // Local celebration guard advances immediately (fires the milestone dialog once).
             sessionStore.saveLastMilestoneLevel(todayStr, badge.threshold)
-            viewModelScope.launch { repository.writeDailyBadge(roundKey, badge.key) }
+            // The server badge is NOT written here. Flushing pushes the pending score first and
+            // then reconciles the badge (see flushPendingSession -> publishDailyBadgeIfChanged), so
+            // the badge never leads the score on the server and a failed publish is retried on the
+            // next flush instead of being lost.
+            flushPendingSession()
         }
         _state.update {
             it.copy(
@@ -298,7 +303,30 @@ class MohamedLoversViewModel(
                     )
                 }
                 applyLeaderboard()
+                // Reconcile the server daily badge only after the score reached the server, so the
+                // badge never leads the score. On a failed flush the score didn't move, so leave
+                // the badge alone.
+                if (result.isSuccess) publishDailyBadgeIfChanged(roundKey)
             }
+        }
+    }
+
+    /**
+     * Publishes the current local daily badge to the player's Firebase record, but only once the
+     * score has been flushed (this is called from [flushPendingSession] after the score write). The
+     * published level is persisted only on write success, so a failed publish is transparently
+     * retried on the next flush rather than being dropped. Never lowers the badge: the daily tap
+     * count only grows within a Cairo day and the guard resets with the date.
+     */
+    private fun publishDailyBadgeIfChanged(roundKey: String) {
+        if (!state.value.firebaseConfigured) return
+        val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
+        val todayStr = today.toString()
+        val badge = DailyBadge.fromTapCount(dailyGoalStore.todayProgress(today)) ?: return
+        if (badge.threshold <= sessionStore.getLastPublishedBadgeLevel(todayStr)) return
+        viewModelScope.launch {
+            repository.writeDailyBadge(roundKey, badge.key)
+                .onSuccess { sessionStore.saveLastPublishedBadgeLevel(todayStr, badge.threshold) }
         }
     }
 
