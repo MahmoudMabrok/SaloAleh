@@ -126,7 +126,7 @@ class MohamedLoversRepository(
         return firebaseClient.incrementExternalCount(roundKey, uid, count)
     }
 
-    suspend fun flushPendingSession(countryCode: String): Result<Unit> {
+    suspend fun flushPendingSession(countryCode: String, todayCount: Int = 0): Result<Unit> {
         val allPending = sessionStore.getAllPendingRounds()
         if (allPending.isEmpty()) return Result.success(Unit)
 
@@ -139,6 +139,7 @@ class MohamedLoversRepository(
                 uid = uid,
                 delta = count,
                 countryCode = countryCode,
+                todayCount = todayCount,
             )
             result.onSuccess { sessionStore.decrementPendingClick(roundKey, count) }
                 .onFailure { lastError = it }

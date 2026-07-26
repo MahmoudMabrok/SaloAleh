@@ -26,6 +26,8 @@ const {
   readChallengeRankedUsers,
   awardChallengeMedals,
   cairoToday,
+  buildDailyScoreSnapshots,
+  ABNORMAL_DAILY_THRESHOLD,
 } = require('./leaderboard-utils');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -86,6 +88,7 @@ async function main() {
   let topScore      = 0;
   const countries   = new Set();
   const yesterdayTotalScoreUpdates = {};
+  const playerSnapshots = [];
 
   if (playersSnap.exists()) {
     playersSnap.forEach(child => {
@@ -98,6 +101,15 @@ async function main() {
         yesterdayTotalScoreUpdates[
           `mohamed_lovers/${roundKey}/players/${child.key}/yesterdayTotalScore`
         ] = score;
+        playerSnapshots.push({
+          uid: child.key,
+          totalCount: score,
+          // Read BEFORE the yesterdayTotalScore update above is applied — still yesterday's value,
+          // so the todayCount fallback (totalCount - yesterdayTotalScore) stays correct.
+          todayCount: typeof data?.todayCount === 'number' ? data.todayCount : null,
+          yesterdayTotalScore: data?.yesterdayTotalScore || 0,
+          countryCode: typeof data?.countryCode === 'string' ? data.countryCode : 'NA',
+        });
       }
     });
   }
@@ -129,6 +141,21 @@ async function main() {
     console.log(`Updated yesterdayTotalScore for ${Object.keys(yesterdayTotalScoreUpdates).length} player(s).`);
     // Phase 1: mirror to Firestore
     await mirrorYesterdayTotalScores(admin.firestore(), roundKey, yesterdayTotalScoreUpdates);
+  }
+
+  // Per-user daily close: append a score-history snapshot for each active player, flag anyone who
+  // exceeded the abnormal daily threshold for admin review, and reset todayCount so the next Cairo
+  // day starts fresh (the daily leaderboard ranks on the client-pushed todayCount).
+  const { scoreHistoryUpdates, abnormalUpdates, todayCountResets } =
+    buildDailyScoreSnapshots({ players: playerSnapshots, dateKey: dateStr, roundKey });
+  const dailyCloseUpdates = { ...scoreHistoryUpdates, ...abnormalUpdates, ...todayCountResets };
+  if (Object.keys(dailyCloseUpdates).length > 0) {
+    await db.ref('/').update(dailyCloseUpdates);
+    console.log(
+      `Daily close: ${Object.keys(scoreHistoryUpdates).length} history snapshot(s), ` +
+      `${Object.keys(abnormalUpdates).length} abnormal user(s) (> ${ABNORMAL_DAILY_THRESHOLD}/day), ` +
+      `${Object.keys(todayCountResets).length} todayCount reset(s).`
+    );
   }
 
   // Clear dailyBadge for all players (midnight reset)

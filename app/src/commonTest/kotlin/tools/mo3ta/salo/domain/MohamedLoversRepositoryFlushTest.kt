@@ -106,9 +106,9 @@ class MohamedLoversRepositoryFlushTest {
         val originalIncrement = fake.incrementResult
 
         val fakeWithPartialFailure = object : FakeMohamedLoversFirebaseApi() {
-            override suspend fun incrementSession(roundKey: String, uid: String, delta: Int, countryCode: String): Result<Unit> {
+            override suspend fun incrementSession(roundKey: String, uid: String, delta: Int, countryCode: String, todayCount: Int): Result<Unit> {
                 callCount++
-                incrementCalls.add(IncrementCall(roundKey, uid, delta, countryCode))
+                incrementCalls.add(IncrementCall(roundKey, uid, delta, countryCode, todayCount))
                 return if (roundKey == "R1") Result.success(Unit)
                 else Result.failure(RuntimeException("fail R2"))
             }

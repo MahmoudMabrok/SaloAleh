@@ -45,6 +45,8 @@ data class MohamedLoversUiState(
     val canCount: Boolean = false,
     val syncedTotal: Int = 0,
     val sessionClicks: Int = 0,
+    // Running total of competition salawat credited this Cairo day (drives the daily leaderboard).
+    val todayCount: Int = 0,
     val isWinner: Boolean = false,
     val winnerCode: String = "",
     val selfEntry: MohamedLoversLeaderboardEntry? = null,

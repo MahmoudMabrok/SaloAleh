@@ -467,6 +467,10 @@
         ".read": true,
         ".write": false
       },
+      "abnormal_users": {
+        ".read": false,
+        ".write": false
+      },
       "referral_codes": {
         "$code": {
           ".read": true,
@@ -546,6 +550,12 @@
               ".validate": false
             }
           },
+          "scoreHistory": {
+            ".validate": false,
+            "$dateKey": {
+              ".validate": false
+            }
+          },
           "purchases": {
             "$productId": {
               ".validate": "newData.hasChildren(['productId', 'productType', 'purchaseDate'])",
@@ -603,6 +613,9 @@
             "yesterdayTotalScore": {
               ".read": true,
               ".write": false
+            },
+            "todayCount": {
+              ".validate": "newData.isNumber() && newData.val() >= 0"
             },
             "updatedAt": {
               ".validate": "newData.val() === now"
