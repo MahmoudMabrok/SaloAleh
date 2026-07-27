@@ -154,43 +154,6 @@ class MohamedLoversSessionStore(private val settings: Settings) {
     fun saveLastSalawatTimestamp(ts: Long) = settings.putLong(KEY_LAST_SALAWAT_TS, ts)
 
     /**
-     * Total competition salawat credited on this Cairo day (taps + manual + extension), tracked
-     * locally so it can be published to the player node and drive the daily leaderboard directly
-     * (instead of the server diffing against yesterday's snapshot). Unlike the pending-session
-     * counter this is NOT cleared on flush — it is the running day total, reset only when the Cairo
-     * day changes.
-     */
-    fun getTodayCount(today: LocalDate): Int {
-        if (settings.getStringOrNull(KEY_TODAY_DATE) != today.toString()) return 0
-        return settings.getInt(KEY_TODAY_COUNT, 0)
-    }
-
-    /** Adds [delta] to today's running total, rolling over to 0 when the Cairo day changed. Returns the new total. */
-    fun addTodayCount(today: LocalDate, delta: Int): Int {
-        ensureTodayCountToday(today)
-        if (delta <= 0) return settings.getInt(KEY_TODAY_COUNT, 0)
-        val updated = settings.getInt(KEY_TODAY_COUNT, 0) + delta
-        settings.putInt(KEY_TODAY_COUNT, updated)
-        return updated
-    }
-
-    /** Subtracts [delta] from today's running total after a correction, floored at 0. Returns the new total. */
-    fun subtractTodayCount(today: LocalDate, delta: Int): Int {
-        ensureTodayCountToday(today)
-        if (delta <= 0) return settings.getInt(KEY_TODAY_COUNT, 0)
-        val updated = (settings.getInt(KEY_TODAY_COUNT, 0) - delta).coerceAtLeast(0)
-        settings.putInt(KEY_TODAY_COUNT, updated)
-        return updated
-    }
-
-    private fun ensureTodayCountToday(today: LocalDate) {
-        val date = today.toString()
-        if (settings.getStringOrNull(KEY_TODAY_DATE) == date) return
-        settings.putString(KEY_TODAY_DATE, date)
-        settings.putInt(KEY_TODAY_COUNT, 0)
-    }
-
-    /**
      * How much more may still be credited to the competition today via manual ("record external")
      * entry — [dailyCap] minus what has already been used this Cairo day. Regular taps are uncapped
      * and do not count against this ledger.
@@ -291,9 +254,6 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         const val KEY_LAST_PUBLISHED_BADGE_LEVEL = "last_published_badge_level"
         const val KEY_LAST_KNOWN_RANK = "last_known_rank"
         const val KEY_LAST_SALAWAT_TS = "last_salawat_ts"
-        // Per-Cairo-day running total of competition salawat, published to the player node.
-        const val KEY_TODAY_DATE = "ml_today_date"
-        const val KEY_TODAY_COUNT = "ml_today_count"
         // Per-Cairo-day ledger for manual ("record external") entry into the competition.
         const val KEY_MANUAL_DATE = "ml_manual_date"
         const val KEY_MANUAL_USED = "ml_manual_used"

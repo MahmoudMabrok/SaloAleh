@@ -240,45 +240,6 @@ class MohamedLoversSessionStoreTest {
         assertEquals(MOHAMED_LOVERS_MANUAL_DAILY_CAP - 2_000, store.manualRemainingToday(d1))
     }
 
-    // --- Today count (per-Cairo-day running total published to the player node) ---
-
-    @Test
-    fun todayCount_initially_zero() {
-        assertEquals(0, store.getTodayCount(d1))
-    }
-
-    @Test
-    fun addTodayCount_accumulates_within_same_day() {
-        store.addTodayCount(d1, 1)
-        store.addTodayCount(d1, 4)
-        assertEquals(5, store.getTodayCount(d1))
-        assertEquals(7, store.addTodayCount(d1, 2))
-    }
-
-    @Test
-    fun addTodayCount_resets_on_new_day() {
-        store.addTodayCount(d1, 9)
-        assertEquals(9, store.getTodayCount(d1))
-        // A new Cairo day rolls the running total back to zero.
-        assertEquals(3, store.addTodayCount(d2, 3))
-        assertEquals(3, store.getTodayCount(d2))
-        assertEquals(0, store.getTodayCount(d1))
-    }
-
-    @Test
-    fun subtractTodayCount_floors_at_zero() {
-        store.addTodayCount(d1, 5)
-        assertEquals(2, store.subtractTodayCount(d1, 3))
-        assertEquals(0, store.subtractTodayCount(d1, 100))
-    }
-
-    @Test
-    fun addTodayCount_ignores_nonPositive_delta() {
-        store.addTodayCount(d1, 5)
-        assertEquals(5, store.addTodayCount(d1, 0))
-        assertEquals(5, store.addTodayCount(d1, -3))
-    }
-
     // --- Legacy migration ---
 
     @Test
