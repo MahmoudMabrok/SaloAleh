@@ -641,16 +641,16 @@
     <string name="settings_language_zh">中文</string>
 
     <!-- Daily badges -->
-    <string name="badge_spark_title">初踏之路</string>
-    <string name="badge_sprout_title">初学者</string>
-    <string name="badge_heart_title">爱圣者 ﷺ</string>
-    <string name="badge_tasbih_title">勤念者</string>
-    <string name="badge_dome_title">赞念伙伴</string>
-    <string name="badge_crescent_title">虔诚之列</string>
-    <string name="badge_lantern_title">爱之光</string>
-    <string name="badge_crown_title">赞圣之冠</string>
-    <string name="badge_mihrab_title">爱者之伊玛目</string>
-    <string name="badge_star_title">正道之星</string>
+    <string name="badge_spark_title">新手</string>
+    <string name="badge_sprout_title">行者</string>
+    <string name="badge_heart_title">挚爱者</string>
+    <string name="badge_tasbih_title">诵念者</string>
+    <string name="badge_dome_title">勤诵者</string>
+    <string name="badge_crescent_title">坚持者</string>
+    <string name="badge_lantern_title">光明者</string>
+    <string name="badge_crown_title">勇士</string>
+    <string name="badge_mihrab_title">伊玛目</string>
+    <string name="badge_star_title">爱者之王</string>
     <string name="badge_spark_desc">一天内发送 %1$d 次赞圣</string>
     <string name="badge_sprout_desc">一天内发送 %1$d 次赞圣</string>
     <string name="badge_heart_desc">一天内发送 %1$d 次赞圣</string>
