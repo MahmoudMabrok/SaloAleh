@@ -862,7 +862,6 @@
   <string name="alf_hasana_add">Glorify</string>
   <string name="alf_hasana_daily_goal">Daily goal: %1$d tasbih</string>
   <string name="alf_hasana_progress_count">%1$d / %2$d</string>
-  <string name="alf_hasana_hasanat_label">good deeds</string>
   <string name="alf_hasana_rank_number"># %1$d</string>
   <string name="alf_hasana_rank_subtitle">out of %1$d participants</string>
   <string name="alf_hasana_rank_unranked">Tap to see the leaders</string>

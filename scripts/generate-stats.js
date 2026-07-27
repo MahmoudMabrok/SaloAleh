@@ -246,6 +246,7 @@ async function main() {
   await sendZabadChallengeRank1Notification(db);
   await sendGharsChallengeRank1Notification(db);
   await sendQuranChallengeRank1Notification(db);
+  await sendAlfHasanaChallengeRank1Notification(db);
   // Persist the day's champions BEFORE the per-challenge day nodes are deleted by
   // the aggregate-and-clean steps below (those remove 100_challenge/{today} etc).
   await persistHeroes(db, dailyLeaderboardSnap);
@@ -429,6 +430,39 @@ async function sendQuranChallengeRank1Notification(db) {
     console.log(`[quran-rank1] sent to topic "challenges" uid=${rank1Uid} name="${name}" count=${rank1Count} msgId=${msgId}`);
   } catch (e) {
     console.error(`[quran-rank1] send failed: ${e.message}`);
+  }
+}
+
+async function sendAlfHasanaChallengeRank1Notification(db) {
+  const today = cairoToday();
+
+  console.log(`[alf_hasana-rank1] computing rank 1 winner from live alf_hasana_challenge/${today} counts`);
+  const rankedUsers = await readChallengeRankedUsers(db, ALF_HASANA_CHALLENGE_ROOT, today);
+  const winner = rankedUsers[0];
+
+  if (!winner || !winner.uid || !winner.count) {
+    console.log('[alf_hasana-rank1] no eligible participant — skip');
+    return;
+  }
+
+  const rank1Uid = winner.uid;
+  const rank1Count = winner.count;
+  const name = winner.nickname && winner.nickname.trim()
+    ? winner.nickname.trim()
+    : rank1Uid.slice(-6).toUpperCase();
+
+  const title = 'بطل اليوم في تحدي ألف حسنة 🏆';
+  const body = `تهانينا لـ ${name} على التصدر في تحدي ألف حسنة اليوم بـ ${rank1Count} تسبيحة — بارك الله فيك!`;
+
+  try {
+    const msgId = await admin.messaging().send({
+      topic: 'challenges',
+      notification: { title, body },
+      data: { title, body, notification_type: 'alf_hasana_challenge_rank1', notification_action: 'open_alf_hasana_challenge' },
+    });
+    console.log(`[alf_hasana-rank1] sent to topic "challenges" uid=${rank1Uid} name="${name}" count=${rank1Count} msgId=${msgId}`);
+  } catch (e) {
+    console.error(`[alf_hasana-rank1] send failed: ${e.message}`);
   }
 }
 

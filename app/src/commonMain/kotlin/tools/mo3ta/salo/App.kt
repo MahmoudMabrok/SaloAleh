@@ -237,6 +237,7 @@ fun App(
                 NotificationAction.OPEN_ISTIGHFAR_CHALLENGE -> showIstighfarChallenge = true
                 NotificationAction.OPEN_ZABAD_CHALLENGE -> showZabadChallenge = true
                 NotificationAction.OPEN_GHARS_CHALLENGE -> showGharsChallenge = true
+                NotificationAction.OPEN_ALF_HASANA_CHALLENGE -> showAlfHasanaChallenge = true
                 else -> Unit
             }
             onOpenChallengeHandled()
@@ -684,6 +685,10 @@ fun App(
                         }
                         NotificationAction.OPEN_GHARS_CHALLENGE -> {
                             showGharsChallenge = true
+                            openChallengeLeaderboard = true
+                        }
+                        NotificationAction.OPEN_ALF_HASANA_CHALLENGE -> {
+                            showAlfHasanaChallenge = true
                             openChallengeLeaderboard = true
                         }
                         NotificationAction.NONE -> Unit

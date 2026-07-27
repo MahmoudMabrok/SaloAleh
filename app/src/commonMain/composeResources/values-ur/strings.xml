@@ -824,7 +824,6 @@
   <string name="alf_hasana_add">تسبیح کریں</string>
   <string name="alf_hasana_daily_goal">روزانہ ہدف: %1$d تسبیح</string>
   <string name="alf_hasana_progress_count">%1$d / %2$d</string>
-  <string name="alf_hasana_hasanat_label">نیکیاں</string>
   <string name="alf_hasana_rank_number"># %1$d</string>
   <string name="alf_hasana_rank_subtitle">%1$d شرکاء میں سے</string>
   <string name="alf_hasana_rank_unranked">سرِفہرست دیکھنے کے لیے دبائیں</string>

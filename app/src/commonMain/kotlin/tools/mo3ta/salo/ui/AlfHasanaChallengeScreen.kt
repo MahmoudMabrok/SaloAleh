@@ -51,12 +51,10 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
-import tools.mo3ta.salo.domain.ALF_HASANA_HASANAT_PER_TASBIHA
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.alf_hasana_add
 import tools.mo3ta.salo.generated.resources.alf_hasana_back_cd
 import tools.mo3ta.salo.generated.resources.alf_hasana_daily_goal
-import tools.mo3ta.salo.generated.resources.alf_hasana_hasanat_label
 import tools.mo3ta.salo.generated.resources.alf_hasana_manual_entry_button
 import tools.mo3ta.salo.generated.resources.alf_hasana_milestone_subtitle
 import tools.mo3ta.salo.generated.resources.alf_hasana_milestone_title
@@ -290,7 +288,6 @@ private fun AlfHasanaHeroZone(
 @Composable
 private fun AlfHasanaCounter(countFlow: StateFlow<Int>, target: Int) {
     val count by countFlow.collectAsStateWithLifecycle()
-    val hasanat = count * ALF_HASANA_HASANAT_PER_TASBIHA
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         AlfHasanaProgressRing(
             fractionProvider = { if (target > 0) count.toFloat() / target.toFloat() else 0f },
@@ -323,19 +320,10 @@ private fun AlfHasanaCounter(countFlow: StateFlow<Int>, target: Int) {
 
         Spacer(Modifier.height(14.dp))
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            HeroStatChip(
-                value = stringResource(Res.string.alf_hasana_progress_count, count, target),
-                label = stringResource(Res.string.alf_hasana_daily_goal, target),
-            )
-            HeroStatChip(
-                value = hasanat.toString(),
-                label = stringResource(Res.string.alf_hasana_hasanat_label),
-            )
-        }
+        HeroStatChip(
+            value = stringResource(Res.string.alf_hasana_progress_count, count, target),
+            label = stringResource(Res.string.alf_hasana_daily_goal, target),
+        )
     }
 }
 

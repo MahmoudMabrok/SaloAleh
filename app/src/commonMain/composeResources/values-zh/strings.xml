@@ -824,7 +824,6 @@
   <string name="alf_hasana_add">赞念</string>
   <string name="alf_hasana_daily_goal">每日目标：%1$d 次赞念</string>
   <string name="alf_hasana_progress_count">%1$d / %2$d</string>
-  <string name="alf_hasana_hasanat_label">善行</string>
   <string name="alf_hasana_rank_number"># %1$d</string>
   <string name="alf_hasana_rank_subtitle">在 %1$d 位参与者中</string>
   <string name="alf_hasana_rank_unranked">点击查看排行榜</string>

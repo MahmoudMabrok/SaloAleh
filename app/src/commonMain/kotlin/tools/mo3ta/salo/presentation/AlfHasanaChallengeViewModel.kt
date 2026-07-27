@@ -117,11 +117,15 @@ class AlfHasanaChallengeViewModel(
 
     fun onTasbihTap() {
         val today = today()
+        val before = _todayCount.value
         val updated = store.incrementToday(today)
         _todayCount.value = updated
         maybeRecordWin(today, updated)
-        if (updated > 0 && updated % 100 == 0) {
-            _state.update { it.copy(showCelebration = true, celebrationMilestone = updated, errorMessage = null) }
+        // Reward only on reaching the daily goal — no sub-goal milestones.
+        if (before < ALF_HASANA_CHALLENGE_DAILY_GOAL && updated >= ALF_HASANA_CHALLENGE_DAILY_GOAL) {
+            _state.update {
+                it.copy(showCelebration = true, celebrationMilestone = ALF_HASANA_CHALLENGE_DAILY_GOAL, errorMessage = null)
+            }
         }
     }
 
@@ -145,8 +149,8 @@ class AlfHasanaChallengeViewModel(
         val updated = store.addToday(today, count)
         _todayCount.value = updated
         maybeRecordWin(today, updated)
-        val crossedMilestone = updated / 100 > before / 100
-        val milestone = updated / 100 * 100
+        // Reward only on reaching the daily goal — no sub-goal milestones.
+        val crossedGoal = before < ALF_HASANA_CHALLENGE_DAILY_GOAL && updated >= ALF_HASANA_CHALLENGE_DAILY_GOAL
         _state.update {
             it.copy(
                 dateKey = today.toString(),
@@ -154,8 +158,8 @@ class AlfHasanaChallengeViewModel(
                 showManualSheet = false,
                 isSubmittingManual = true,
                 errorMessage = null,
-                showCelebration = (crossedMilestone && milestone > 0) || it.showCelebration,
-                celebrationMilestone = if (crossedMilestone && milestone > 0) milestone else it.celebrationMilestone,
+                showCelebration = crossedGoal || it.showCelebration,
+                celebrationMilestone = if (crossedGoal) ALF_HASANA_CHALLENGE_DAILY_GOAL else it.celebrationMilestone,
             )
         }
         syncCorrectedTotal(today)

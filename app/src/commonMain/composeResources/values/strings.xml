@@ -874,7 +874,6 @@
   <string name="alf_hasana_add">سبِّح</string>
   <string name="alf_hasana_daily_goal">الهدف اليومي: %1$d تسبيحة</string>
   <string name="alf_hasana_progress_count">%1$d / %2$d</string>
-  <string name="alf_hasana_hasanat_label">حسنة</string>
   <string name="alf_hasana_rank_number"># %1$d</string>
   <string name="alf_hasana_rank_subtitle">من بين %1$d مشارك</string>
   <string name="alf_hasana_rank_unranked">اضغط لرؤية المتصدرين</string>

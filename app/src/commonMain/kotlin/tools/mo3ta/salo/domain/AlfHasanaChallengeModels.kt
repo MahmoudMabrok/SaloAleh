@@ -2,9 +2,6 @@ package tools.mo3ta.salo.domain
 
 const val ALF_HASANA_CHALLENGE_DAILY_GOAL = 100
 
-/** Each tasbiha ("سبحان الله") is worth 10 hasanat — 100 tasbihat = 1000 hasanat, as in the hadith. */
-const val ALF_HASANA_HASANAT_PER_TASBIHA = 10
-
 data class AlfHasanaChallengeDayStats(
     val rank: Int = 0,
     val participantCount: Int = 0,
