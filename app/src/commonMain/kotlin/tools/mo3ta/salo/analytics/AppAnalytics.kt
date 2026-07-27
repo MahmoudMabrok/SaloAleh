@@ -43,6 +43,11 @@ object AppAnalytics {
     const val OPEN_GHARS_GARDENS = "open_ghars_gardens"
     const val OPEN_GHARS_GARDEN = "open_ghars_garden"
 
+    const val OPEN_ALF_HASANA_CHALLENGE = "open_alf_hasana_challenge"
+    const val OPEN_MANUAL_ALF_HASANA = "open_manual_alf_hasana"
+    const val ALF_HASANA_TAP = "alf_hasana_tap"
+    const val ALF_HASANA_SCREEN_VIEW = "alf_hasana_screen_view"
+
     const val PARAM_COUNT = "count"
     const val LANGUAGE_CHANGED = "language_changed"
     const val SALAWAT_VARIANT_CHANGED = "salawat_variant_changed"

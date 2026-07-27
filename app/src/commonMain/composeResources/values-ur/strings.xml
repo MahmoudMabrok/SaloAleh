@@ -813,4 +813,39 @@
   <string name="auto_click_detected_title">توجہ فرمائیں</string>
   <string name="auto_click_detected_body">ایسا لگتا ہے کہ کوئی آٹو کلک ایپ آپ کی جگہ درود بھیج رہی ہے۔ یہ شمار نہیں ہوں گے۔ اجر دل اور زبان کے ذکر میں ہے، عدد میں نہیں۔</string>
   <string name="auto_click_detected_cta">سمجھ گیا</string>
+
+  <!-- الف حسنہ (ایک ہزار نیکیاں) تسبیح چیلنج -->
+  <string name="challenge_alf_hasana_title">ایک ہزار نیکیاں</string>
+  <string name="challenge_alf_hasana_body">سو تسبیح… ہر روز ایک ہزار نیکیاں</string>
+  <string name="alf_hasana_back_cd">واپس</string>
+  <string name="alf_hasana_phrase">سُبْحَانَ اللهِ</string>
+  <string name="alf_hasana_today">آج</string>
+  <string name="alf_hasana_times">تسبیح</string>
+  <string name="alf_hasana_add">تسبیح کریں</string>
+  <string name="alf_hasana_daily_goal">روزانہ ہدف: %1$d تسبیح</string>
+  <string name="alf_hasana_progress_count">%1$d / %2$d</string>
+  <string name="alf_hasana_hasanat_label">نیکیاں</string>
+  <string name="alf_hasana_rank_number"># %1$d</string>
+  <string name="alf_hasana_rank_subtitle">%1$d شرکاء میں سے</string>
+  <string name="alf_hasana_rank_unranked">سرِفہرست دیکھنے کے لیے دبائیں</string>
+  <string name="alf_hasana_tap_hint">تسبیح کے لیے کہیں بھی دبائیں</string>
+  <string name="alf_hasana_manual_entry_button">📿 بیرونی تسبیح درج کریں</string>
+  <string name="alf_hasana_view_rewards">🎁 آپ کو کیا ملے گا؟</string>
+  <string name="alf_hasana_leaderboard_title">سرِفہرست</string>
+  <string name="alf_hasana_leaderboard_rank_new">نیا</string>
+  <string name="alf_hasana_leaderboard_empty">ابھی کوئی ڈیٹا نہیں</string>
+  <string name="alf_hasana_rewards_title">سو تسبیح سے آپ کو کیا ملتا ہے؟</string>
+  <string name="alf_hasana_reward_hadith">«کیا تم میں سے کوئی اس سے عاجز ہے کہ ہر روز ایک ہزار نیکیاں کمائے؟ وہ اللہ کی سو مرتبہ تسبیح کرے تو اس کے لیے ایک ہزار نیکیاں لکھی جاتی ہیں اور اس سے ایک ہزار گناہ مٹا دیے جاتے ہیں۔»</string>
+  <string name="alf_hasana_reward_hadith_ref">مسلم نے روایت کیا</string>
+  <string name="alf_hasana_reward_written">آپ کے لیے ایک ہزار نیکیاں لکھی جاتی ہیں</string>
+  <string name="alf_hasana_reward_erased">آپ سے ایک ہزار گناہ مٹا دیے جاتے ہیں</string>
+  <string name="alf_hasana_rewards_close">تسبیح جاری رکھیں</string>
+  <string name="alf_hasana_milestone_title">آپ نے %1$d تسبیح مکمل کیں!</string>
+  <string name="alf_hasana_milestone_subtitle">آپ کے لیے ایک ہزار نیکیاں لکھی گئیں 🤍</string>
+  <string name="manual_alf_hasana_title">📿 بیرونی تسبیح درج کریں</string>
+  <string name="manual_alf_hasana_subtitle">خاموشی سے، انگلیوں پر یا تسبیح سے ذکر کیا؟\nجو گنا اسے درج کریں — ایپ سے دور ہونے کی وجہ سے ذکر نہ روکیں</string>
+  <string name="manual_alf_hasana_count">تعداد:</string>
+  <string name="manual_alf_hasana_enter_count">تعداد درج کریں</string>
+  <string name="manual_alf_hasana_submit">درج کریں</string>
+  <string name="manual_alf_hasana_witness">میں گواہی دیتا ہوں کہ میں نے واقعی اتنی تسبیح کی</string>
 </resources>

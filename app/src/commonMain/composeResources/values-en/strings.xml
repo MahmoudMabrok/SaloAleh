@@ -851,4 +851,39 @@
   <string name="auto_click_detected_title">Heads up</string>
   <string name="auto_click_detected_body">It looks like an auto-clicker app is sending salawat for you. Those taps won't be counted. The reward is in the remembrance itself, not in the number.</string>
   <string name="auto_click_detected_cta">Got it</string>
+
+  <!-- Alf Hasana (a thousand good deeds) tasbih challenge -->
+  <string name="challenge_alf_hasana_title">A Thousand Good Deeds</string>
+  <string name="challenge_alf_hasana_body">One hundred tasbih… a thousand good deeds every day</string>
+  <string name="alf_hasana_back_cd">Back</string>
+  <string name="alf_hasana_phrase">سُبْحَانَ اللهِ</string>
+  <string name="alf_hasana_today">Today</string>
+  <string name="alf_hasana_times">tasbih</string>
+  <string name="alf_hasana_add">Glorify</string>
+  <string name="alf_hasana_daily_goal">Daily goal: %1$d tasbih</string>
+  <string name="alf_hasana_progress_count">%1$d / %2$d</string>
+  <string name="alf_hasana_hasanat_label">good deeds</string>
+  <string name="alf_hasana_rank_number"># %1$d</string>
+  <string name="alf_hasana_rank_subtitle">out of %1$d participants</string>
+  <string name="alf_hasana_rank_unranked">Tap to see the leaders</string>
+  <string name="alf_hasana_tap_hint">Tap anywhere to glorify Allah</string>
+  <string name="alf_hasana_manual_entry_button">📿 Log external tasbih</string>
+  <string name="alf_hasana_view_rewards">🎁 What do you gain?</string>
+  <string name="alf_hasana_leaderboard_title">Leaders</string>
+  <string name="alf_hasana_leaderboard_rank_new">New</string>
+  <string name="alf_hasana_leaderboard_empty">No data yet</string>
+  <string name="alf_hasana_rewards_title">What do you gain with a hundred tasbih?</string>
+  <string name="alf_hasana_reward_hadith">"Is any of you unable to earn a thousand good deeds each day? Let him glorify Allah a hundred times, and a thousand good deeds will be written for him, and a thousand sins will be wiped away from him."</string>
+  <string name="alf_hasana_reward_hadith_ref">Narrated by Muslim</string>
+  <string name="alf_hasana_reward_written">A thousand good deeds are written for you</string>
+  <string name="alf_hasana_reward_erased">A thousand sins are wiped away from you</string>
+  <string name="alf_hasana_rewards_close">Keep glorifying</string>
+  <string name="alf_hasana_milestone_title">You completed %1$d tasbih!</string>
+  <string name="alf_hasana_milestone_subtitle">A thousand good deeds written for you 🤍</string>
+  <string name="manual_alf_hasana_title">📿 Log external tasbih</string>
+  <string name="manual_alf_hasana_subtitle">Glorified Allah silently, on your fingers, or with prayer beads?\nLog what you counted — do not stop the dhikr just because you are away from the app</string>
+  <string name="manual_alf_hasana_count">Count:</string>
+  <string name="manual_alf_hasana_enter_count">Enter the count</string>
+  <string name="manual_alf_hasana_submit">Log</string>
+  <string name="manual_alf_hasana_witness">I bear witness that I actually said this many</string>
 </resources>

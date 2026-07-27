@@ -9,6 +9,7 @@ const {
   GHARS_CHALLENGE_ROOT,
   QURAN_CHALLENGE_ROOT,
   ALBAQARA_CHALLENGE_ROOT,
+  ALF_HASANA_CHALLENGE_ROOT,
   buildBaqiyatChallengeDailyRanking,
   buildDhikrChallengeDailyRanking,
   buildIstighfarChallengeDailyRanking,
@@ -16,6 +17,7 @@ const {
   buildGharsChallengeDailyRanking,
   buildQuranChallengeDailyRanking,
   buildAlBaqaraChallengeDailyRanking,
+  buildAlfHasanaChallengeDailyRanking,
   attachChallengeMedals,
   buildOldRankMap,
   computeRankChange,
@@ -401,6 +403,68 @@ async function populateQuranChallengeToday(db) {
   await sendTop3ChangeNotifications(db, admin, top3Notifs, CHALLENGE_TOP3_MESSAGES.quran, 'quran');
 }
 
+// "ألف حسنة" tasbih challenge — 100 tasbihat/day. Same nested-users layout as the other
+// count challenges. No Firestore mirror (the mirror kill-switch is off); notifications reuse
+// the shared top-3 change path.
+async function populateAlfHasanaChallengeToday(db) {
+  const dateKey = cairoToday();
+  console.log(`\n--- Alf Hasana Challenge [${dateKey}] ---`);
+
+  const usersSnap = await db.ref(`${ALF_HASANA_CHALLENGE_ROOT}/${dateKey}/users`).get();
+  const users = [];
+
+  if (usersSnap.exists()) {
+    usersSnap.forEach(child => {
+      const data = child.val() || {};
+      const metadata = data.data || {};
+      const uid = typeof metadata.uid === 'string' && metadata.uid.length > 0
+        ? metadata.uid
+        : child.key;
+      const currentRank = typeof data.rank === 'number' && data.rank > 0 ? data.rank : null;
+      const countryCode = typeof metadata.countryCode === 'string' ? metadata.countryCode.toUpperCase() : '';
+      const nickname = typeof metadata.nickname === 'string' ? metadata.nickname.trim() : '';
+      const streak = typeof data.streak === 'number' && data.streak > 0 ? data.streak : 0;
+      users.push({ uid, count: data.count, countryCode, nickname, currentRank, streak });
+    });
+  }
+
+  const oldLbSnap = await db.ref(`${ALF_HASANA_CHALLENGE_ROOT}/${dateKey}/leaderboard`).get();
+  const oldRanks = buildOldRankMap(oldLbSnap);
+  const dailyRanking = buildAlfHasanaChallengeDailyRanking(dateKey, users);
+
+  const leaderboardEntries = dailyRanking.rankedUsers.slice(0, 10).map((user, i) => {
+    const entry = {
+      uid: user.uid,
+      countryCode: user.countryCode,
+      count: user.count,
+      rank: user.rank,
+      rankChange: computeRankChange(user.uid, user.rank, oldRanks),
+    };
+    if (user.nickname) entry.nickname = user.nickname;
+    if (user.streak) entry.streak = user.streak;
+    return [String(i), entry];
+  });
+
+  await attachChallengeMedals(db, ALF_HASANA_CHALLENGE_ROOT, leaderboardEntries);
+
+  const updates = {
+    ...dailyRanking.rankUpdates,
+    [`${ALF_HASANA_CHALLENGE_ROOT}/${dateKey}/participantCount`]: dailyRanking.participantCount,
+    [`${ALF_HASANA_CHALLENGE_ROOT}/${dateKey}/totalTodayAlfHasana`]: dailyRanking.totalTodayAlfHasana,
+    [`${ALF_HASANA_CHALLENGE_ROOT}/${dateKey}/lastRankedAt`]: admin.database.ServerValue.TIMESTAMP,
+    [`${ALF_HASANA_CHALLENGE_ROOT}/${dateKey}/leaderboard`]: Object.fromEntries(leaderboardEntries),
+  };
+
+  await db.ref('/').update(updates);
+  console.log(
+    `Wrote alf_hasana ranks + leaderboard(${leaderboardEntries.length}) for ${dailyRanking.participantCount} participant(s). totalTodayAlfHasana=${dailyRanking.totalTodayAlfHasana}`,
+  );
+
+  // Top-3 change notifications (drop-out / lost position), like mohamed_lovers.
+  const top3Notifs = computeTop3Changes(oldRanks, dailyRanking.rankedUsers);
+  await sendTop3ChangeNotifications(db, admin, top3Notifs, CHALLENGE_TOP3_MESSAGES.alf_hasana, 'alf_hasana');
+}
+
 // Al-Baqara reading challenge. Populates ranks + leaderboard + participant totals
 // so the app can read them, but sends NO FCM (no top-3 change notifications) — this
 // challenge is intentionally push-free; it only surfaces in the app leaderboard and
@@ -622,6 +686,7 @@ async function main() {
   await populateGharsChallengeToday(db);
   await populateQuranChallengeToday(db);
   await populateAlBaqaraChallengeToday(db);
+  await populateAlfHasanaChallengeToday(db);
 
   await populateMohamedLoversRound(db, admin, roundKey, isFinal);
 

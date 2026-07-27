@@ -27,6 +27,7 @@ data class ChallengesTotals(
     val ghars: Int = 0,
     val quran: Int = 0,
     val albaqara: Int = 0,
+    val alfHasana: Int = 0,
 )
 
 /**
@@ -41,6 +42,7 @@ data class ChallengesOverallTotals(
     val ghars: Int = 0,
     val quran: Int = 0,
     val albaqara: Int = 0,
+    val alfHasana: Int = 0,
 )
 
 class ChallengesViewModel(
@@ -104,6 +106,7 @@ class ChallengesViewModel(
             val ghars = async { readTotal(db, "ghars_challenge/$dateKey/totalTodayGhars") }
             val quran = async { readTotal(db, "quran_challenge/$dateKey/totalTodayQuran") }
             val albaqara = async { readTotal(db, "albaqara_challenge/$dateKey/totalTodayAlBaqara") }
+            val alfHasana = async { readTotal(db, "alf_hasana_challenge/$dateKey/totalTodayAlfHasana") }
 
             // All-time community totals (challenge root, not per-day).
             val dhikrAll = async { readTotal(db, "100_challenge/totalDhkr") }
@@ -113,6 +116,7 @@ class ChallengesViewModel(
             val gharsAll = async { readTotal(db, "ghars_challenge/totalGhars") }
             val quranAll = async { readTotal(db, "quran_challenge/totalQuran") }
             val albaqaraAll = async { readTotal(db, "albaqara_challenge/totalAlBaqara") }
+            val alfHasanaAll = async { readTotal(db, "alf_hasana_challenge/totalAlfHasana") }
 
             _totals.update {
                 ChallengesTotals(
@@ -123,6 +127,7 @@ class ChallengesViewModel(
                     ghars = ghars.await(),
                     quran = quran.await(),
                     albaqara = albaqara.await(),
+                    alfHasana = alfHasana.await(),
                 )
             }
 
@@ -135,6 +140,7 @@ class ChallengesViewModel(
                     ghars = gharsAll.await(),
                     quran = quranAll.await(),
                     albaqara = albaqaraAll.await(),
+                    alfHasana = alfHasanaAll.await(),
                 )
             }
 

@@ -7,6 +7,7 @@ const ZABAD_CHALLENGE_ROOT = 'zabad_challenge';
 const GHARS_CHALLENGE_ROOT = 'ghars_challenge';
 const QURAN_CHALLENGE_ROOT = 'quran_challenge';
 const ALBAQARA_CHALLENGE_ROOT = 'albaqara_challenge';
+const ALF_HASANA_CHALLENGE_ROOT = 'alf_hasana_challenge';
 const MOHAMED_LOVERS_ROOT = 'mohamed_lovers';
 
 // A day's salawat above this is treated as abnormal and recorded for admin review.
@@ -190,6 +191,16 @@ const CHALLENGE_TOP3_MESSAGES = {
       body: 'تراجع ترتيبك في تحدي القرآن الكريم — زِد من تلاوتك وارتقِ!',
     },
   },
+  alf_hasana: {
+    dropped: {
+      title: 'مكانك في تحدي ألف حسنة يناديك 🤍',
+      body: 'كنت من المتصدرين في تحدي ألف حسنة — عُد وسبِّح، فبمئة تسبيحة تُكتب لك ألف حسنة وتُحَطّ عنك ألف خطيئة!',
+    },
+    lost_position: {
+      title: 'المنافسة تشتد في تحدي ألف حسنة 🔥',
+      body: 'تراجع ترتيبك في تحدي ألف حسنة — أكثِر من التسبيح وارتقِ!',
+    },
+  },
 };
 
 function normalizeDhikrCount(value) {
@@ -351,6 +362,20 @@ function buildQuranChallengeDailyRanking(dateKey, users, rootPath = QURAN_CHALLE
   };
 }
 
+function buildAlfHasanaChallengeDailyRanking(dateKey, users, rootPath = ALF_HASANA_CHALLENGE_ROOT) {
+  const ranking = buildDailyCountChallengeRanking({
+    dateKey,
+    players: users,
+    rootPath,
+    playersPath: 'users',
+  });
+
+  return {
+    ...ranking,
+    totalTodayAlfHasana: ranking.totalCount,
+  };
+}
+
 // Per-challenge participant-node layout. The daily count challenges store their
 // participants under different child paths, and baqiyat keeps each player's
 // metadata (uid/countryCode/nickname) directly on the child while the others nest
@@ -364,6 +389,7 @@ const CHALLENGE_PARTICIPANT_CONFIG = {
   [GHARS_CHALLENGE_ROOT]:     { playersPath: 'users',   nested: true,  build: buildGharsChallengeDailyRanking },
   [QURAN_CHALLENGE_ROOT]:     { playersPath: 'users',   nested: true,  build: buildQuranChallengeDailyRanking },
   [ALBAQARA_CHALLENGE_ROOT]:  { playersPath: 'users',   nested: true,  build: buildAlBaqaraChallengeDailyRanking },
+  [ALF_HASANA_CHALLENGE_ROOT]: { playersPath: 'users',   nested: true,  build: buildAlfHasanaChallengeDailyRanking },
 };
 
 // Reads a daily count-challenge's raw participant node and returns the users
@@ -723,6 +749,7 @@ module.exports = {
   GHARS_CHALLENGE_ROOT,
   QURAN_CHALLENGE_ROOT,
   ALBAQARA_CHALLENGE_ROOT,
+  ALF_HASANA_CHALLENGE_ROOT,
   MOHAMED_LOVERS_ROOT,
   ABNORMAL_DAILY_THRESHOLD,
   computeTodayScore,
@@ -741,6 +768,7 @@ module.exports = {
   buildGharsChallengeDailyRanking,
   buildQuranChallengeDailyRanking,
   buildAlBaqaraChallengeDailyRanking,
+  buildAlfHasanaChallengeDailyRanking,
   readChallengeRankedUsers,
   awardChallengeMedals,
   attachChallengeMedals,

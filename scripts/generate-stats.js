@@ -23,6 +23,7 @@ const {
   GHARS_CHALLENGE_ROOT,
   QURAN_CHALLENGE_ROOT,
   ALBAQARA_CHALLENGE_ROOT,
+  ALF_HASANA_CHALLENGE_ROOT,
   readChallengeRankedUsers,
   awardChallengeMedals,
   cairoToday,
@@ -258,6 +259,7 @@ async function main() {
   await aggregateAndCleanGharsChallenge(db);
   await aggregateAndCleanQuranChallenge(db);
   await aggregateAndCleanAlBaqaraChallenge(db);
+  await aggregateAndCleanAlfHasanaChallenge(db);
 
   process.exit(0);
 }
@@ -542,7 +544,7 @@ async function persistHeroes(db, dailyLeaderboardSnap) {
     }));
   }
 
-  const [dhikr, baqiyat, istighfar, quran, zabad, ghars, albaqara] = await Promise.all([
+  const [dhikr, baqiyat, istighfar, quran, zabad, ghars, albaqara, alfHasana] = await Promise.all([
     challengeTop3(DHIKR_CHALLENGE_ROOT),
     challengeTop3(BAQIYAT_CHALLENGE_ROOT),
     challengeTop3(ISTIGHFAR_CHALLENGE_ROOT),
@@ -550,19 +552,20 @@ async function persistHeroes(db, dailyLeaderboardSnap) {
     challengeTop3(ZABAD_CHALLENGE_ROOT),
     challengeTop3(GHARS_CHALLENGE_ROOT),
     challengeTop3(ALBAQARA_CHALLENGE_ROOT),
+    challengeTop3(ALF_HASANA_CHALLENGE_ROOT),
   ]);
 
   const heroes = {
     date: today,
     updatedAt: new Date().toISOString(),
-    challenges: { salawat, dhikr, baqiyat, istighfar, quran, zabad, ghars, albaqara },
+    challenges: { salawat, dhikr, baqiyat, istighfar, quran, zabad, ghars, albaqara, alf_hasana: alfHasana },
   };
 
   // RTDB is the source of truth; overwrite the whole node so stale entries from
   // yesterday never linger.
   await db.ref('mohamed_lovers/heroes').set(heroes);
   console.log(
-    `[heroes] persisted for ${today}: salawat=${salawat.length} dhikr=${dhikr.length} baqiyat=${baqiyat.length} istighfar=${istighfar.length} quran=${quran.length} zabad=${zabad.length} ghars=${ghars.length} albaqara=${albaqara.length}`,
+    `[heroes] persisted for ${today}: salawat=${salawat.length} dhikr=${dhikr.length} baqiyat=${baqiyat.length} istighfar=${istighfar.length} quran=${quran.length} zabad=${zabad.length} ghars=${ghars.length} albaqara=${albaqara.length} alf_hasana=${alfHasana.length}`,
   );
 
   // Phase 1: mirror to Firestore.
@@ -581,6 +584,7 @@ async function awardAllChallengeMedals(db) {
     GHARS_CHALLENGE_ROOT,
     QURAN_CHALLENGE_ROOT,
     ALBAQARA_CHALLENGE_ROOT,
+    ALF_HASANA_CHALLENGE_ROOT,
   ];
   for (const root of roots) {
     try {
@@ -771,6 +775,33 @@ async function aggregateAndCleanQuranChallenge(db) {
 
   // Phase 1: mirror to Firestore
   await mirrorQuranAggregateAndClean(admin.firestore(), today, todayTotal, globalTotal + todayTotal);
+}
+
+async function aggregateAndCleanAlfHasanaChallenge(db) {
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+
+  const [todayTotalSnap, globalTotalSnap] = await Promise.all([
+    db.ref(`alf_hasana_challenge/${today}/totalTodayAlfHasana`).get(),
+    db.ref('alf_hasana_challenge/totalAlfHasana').get(),
+  ]);
+
+  const todayTotal = todayTotalSnap.val() || 0;
+  const globalTotal = globalTotalSnap.val() || 0;
+
+  console.log(`[alf_hasana-aggregate] today=${today} todayTotal=${todayTotal} globalBefore=${globalTotal}`);
+
+  if (todayTotal === 0) {
+    console.log('[alf_hasana-aggregate] todayTotal is 0 — skip update and delete');
+    return;
+  }
+
+  await db.ref('alf_hasana_challenge/totalAlfHasana').set(globalTotal + todayTotal);
+  console.log(`[alf_hasana-aggregate] totalAlfHasana updated: ${globalTotal} → ${globalTotal + todayTotal}`);
+
+  await db.ref(`alf_hasana_challenge/${today}`).remove();
+  console.log(`[alf_hasana-aggregate] deleted alf_hasana_challenge/${today}`);
 }
 
 main().catch(err => { console.error(err); process.exit(1); });

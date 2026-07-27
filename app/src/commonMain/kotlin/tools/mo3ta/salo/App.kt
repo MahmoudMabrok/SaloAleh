@@ -51,6 +51,7 @@ import tools.mo3ta.salo.ui.ChallengesScreen
 import tools.mo3ta.salo.ui.DhikrRewardsScreen
 import tools.mo3ta.salo.ui.IstighfarRewardsScreen
 import tools.mo3ta.salo.ui.AlBaqaraChallengeScreen
+import tools.mo3ta.salo.ui.AlfHasanaChallengeScreen
 import tools.mo3ta.salo.ui.ZabadScreen
 import tools.mo3ta.salo.ui.GharsScreen
 import tools.mo3ta.salo.ui.HadithListScreen
@@ -177,6 +178,7 @@ fun App(
         var showGharsChallenge by remember { mutableStateOf(false) }
         var showQuranChallenge by remember { mutableStateOf(false) }
         var showAlBaqaraChallenge by remember { mutableStateOf(false) }
+        var showAlfHasanaChallenge by remember { mutableStateOf(false) }
         // Set when a challenge push is tapped: the just-opened challenge screen auto-opens
         // its leaderboard sheet once, then clears the flag.
         var openChallengeLeaderboard by remember { mutableStateOf(false) }
@@ -196,6 +198,7 @@ fun App(
                 showGharsChallenge ||
                 showQuranChallenge ||
                 showAlBaqaraChallenge ||
+                showAlfHasanaChallenge ||
                 showTakbeerSession ||
                 showTenDays ||
                 showExtensionQr ||
@@ -212,6 +215,7 @@ fun App(
                 showGharsChallenge -> showGharsChallenge = false
                 showQuranChallenge -> showQuranChallenge = false
                 showAlBaqaraChallenge -> showAlBaqaraChallenge = false
+                showAlfHasanaChallenge -> showAlfHasanaChallenge = false
                 showTakbeerSession -> showTakbeerSession = false
                 showTenDays -> showTenDays = false
                 showExtensionQr -> showExtensionQr = false
@@ -273,6 +277,7 @@ fun App(
             showGharsChallenge ||
             showQuranChallenge ||
             showAlBaqaraChallenge ||
+            showAlfHasanaChallenge ||
             showTakbeerSession ||
             showTenDays ||
             showExtensionQr ||
@@ -342,6 +347,12 @@ fun App(
             showAlBaqaraChallenge -> AlBaqaraChallengeScreen(
                 onBack = { showAlBaqaraChallenge = false },
             )
+            showAlfHasanaChallenge -> AlfHasanaChallengeScreen(
+                onBack = { showAlfHasanaChallenge = false },
+                openLeaderboard = openChallengeLeaderboard,
+                onLeaderboardAutoOpened = { openChallengeLeaderboard = false },
+                manualEntryEnabled = manualEntryEnabled,
+            )
             else -> SaloTabScaffold(
                 selectedTab = selectedTab,
                 onTabSelected = { selectedTab = it },
@@ -369,6 +380,7 @@ fun App(
                                 onOpenGharsChallenge = { showGharsChallenge = true },
                                 onOpenQuranChallenge = { showQuranChallenge = true },
                                 onOpenAlBaqaraChallenge = { showAlBaqaraChallenge = true },
+                                onOpenAlfHasanaChallenge = { showAlfHasanaChallenge = true },
                             )
                             SaloTab.Achievements -> AchievementsScreen(
                                 onBack = { selectedTab = SaloTab.MohamedLovers },
