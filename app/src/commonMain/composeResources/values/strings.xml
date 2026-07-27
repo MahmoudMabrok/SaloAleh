@@ -679,18 +679,26 @@
 
     <!-- Motivation: Daily milestones -->
     <string name="milestone_today">%1$d صلاة اليوم!</string>
-    <string name="badge_sprout_title">مبتدئ الذكر</string>
-    <string name="badge_heart_title">محب النبي ﷺ</string>
-    <string name="badge_tasbih_title">كثير الصلاة</string>
-    <string name="badge_dome_title">رفيق الذكر</string>
-    <string name="badge_crescent_title">من المكثرين</string>
-    <string name="badge_crown_title">فارس الصلاة</string>
+    <string name="badge_spark_title">مُبتدئ</string>
+    <string name="badge_sprout_title">سالِك</string>
+    <string name="badge_heart_title">مُحِبّ</string>
+    <string name="badge_tasbih_title">ذاكِر</string>
+    <string name="badge_dome_title">مُكثِر</string>
+    <string name="badge_crescent_title">مُواظِب</string>
+    <string name="badge_lantern_title">مُنير</string>
+    <string name="badge_crown_title">فارس</string>
+    <string name="badge_mihrab_title">إمام</string>
+    <string name="badge_star_title">سلطان المحبين</string>
+    <string name="badge_spark_desc">صلِّ على النبي ﷺ %1$d مرة في اليوم</string>
     <string name="badge_sprout_desc">صلِّ على النبي ﷺ %1$d مرة في اليوم</string>
     <string name="badge_heart_desc">صلِّ على النبي ﷺ %1$d مرة في اليوم</string>
     <string name="badge_tasbih_desc">صلِّ على النبي ﷺ %1$d مرة في اليوم</string>
     <string name="badge_dome_desc">صلِّ على النبي ﷺ %1$d مرة في اليوم</string>
     <string name="badge_crescent_desc">صلِّ على النبي ﷺ %1$d مرة في اليوم</string>
+    <string name="badge_lantern_desc">صلِّ على النبي ﷺ %1$d مرة في اليوم</string>
     <string name="badge_crown_desc">صلِّ على النبي ﷺ %1$d مرة في اليوم</string>
+    <string name="badge_mihrab_desc">صلِّ على النبي ﷺ %1$d مرة في اليوم</string>
+    <string name="badge_star_desc">صلِّ على النبي ﷺ %1$d مرة في اليوم</string>
 
     <!-- Daily rank strip -->
     <string name="daily_rank_strip_today_label">صلاة اليوم</string>
