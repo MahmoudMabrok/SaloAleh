@@ -641,18 +641,26 @@
     <string name="settings_language_zh">中文</string>
 
     <!-- Daily badges -->
+    <string name="badge_spark_title">سفر کا آغاز</string>
     <string name="badge_sprout_title">ذکر کی ابتدا</string>
     <string name="badge_heart_title">نبی ﷺ سے محبت</string>
     <string name="badge_tasbih_title">کثرتِ درود</string>
     <string name="badge_dome_title">ذکر کا ساتھی</string>
     <string name="badge_crescent_title">مداومین میں سے</string>
+    <string name="badge_lantern_title">محبت کا نور</string>
     <string name="badge_crown_title">درود کا شہسوار</string>
+    <string name="badge_mihrab_title">محبین کے امام</string>
+    <string name="badge_star_title">ہدایت کا ستارہ</string>
+    <string name="badge_spark_desc">ایک دن میں %1$d درود بھیجیں</string>
     <string name="badge_sprout_desc">ایک دن میں %1$d درود بھیجیں</string>
     <string name="badge_heart_desc">ایک دن میں %1$d درود بھیجیں</string>
     <string name="badge_tasbih_desc">ایک دن میں %1$d درود بھیجیں</string>
     <string name="badge_dome_desc">ایک دن میں %1$d درود بھیجیں</string>
     <string name="badge_crescent_desc">ایک دن میں %1$d درود بھیجیں</string>
+    <string name="badge_lantern_desc">ایک دن میں %1$d درود بھیجیں</string>
     <string name="badge_crown_desc">ایک دن میں %1$d درود بھیجیں</string>
+    <string name="badge_mihrab_desc">ایک دن میں %1$d درود بھیجیں</string>
+    <string name="badge_star_desc">ایک دن میں %1$d درود بھیجیں</string>
 
     <!-- Idle salawat banner -->
     <string name="idle_banner_prefix">آپ نے درود نہیں بھیجا</string>
