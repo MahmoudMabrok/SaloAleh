@@ -9,6 +9,9 @@ jobs:
   android:
     name: Android
     runs-on: ubuntu-latest
+    # Skip the Android build when the PR is on hold (labeled "hold").
+    # workflow_dispatch runs have no pull_request payload, so the job still runs there.
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'hold') }}
 
     steps:
       - uses: actions/checkout@v4
