@@ -165,6 +165,24 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         return settings.getInt(KEY_TODAY_COUNT, 0)
     }
 
+    /**
+     * One-time initialization of today's running total from a pre-existing same-day [baseline]
+     * (the daily-goal tap progress that predates the today-count ledger). Only seeds when the
+     * ledger has not yet been initialized for [today]; a device that updated to the today-count
+     * build mid-day thus starts the daily leaderboard from its real daily count instead of 0,
+     * rather than under-reporting until the Cairo day rolls over. On a genuine new day the caller's
+     * baseline is itself 0 (the daily-goal progress is for the previous day), so this correctly
+     * resets to 0. Never lowers an already-tracked count. Returns the resulting today count.
+     */
+    fun seedTodayCountIfUnset(today: LocalDate, baseline: Int): Int {
+        val date = today.toString()
+        if (settings.getStringOrNull(KEY_TODAY_DATE) == date) return settings.getInt(KEY_TODAY_COUNT, 0)
+        val seed = baseline.coerceAtLeast(0)
+        settings.putString(KEY_TODAY_DATE, date)
+        settings.putInt(KEY_TODAY_COUNT, seed)
+        return seed
+    }
+
     /** Adds [delta] to today's running total, rolling over to 0 when the Cairo day changed. Returns the new total. */
     fun addTodayCount(today: LocalDate, delta: Int): Int {
         ensureTodayCountToday(today)

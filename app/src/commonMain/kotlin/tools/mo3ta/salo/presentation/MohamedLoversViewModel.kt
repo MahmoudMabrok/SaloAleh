@@ -95,13 +95,19 @@ class MohamedLoversViewModel(
             _state.update { it.copy(showGraceWarning = true) }
         }
         val todayProgress = dailyGoalStore.todayProgress(today)
+        // A device that updated to the today-count build (#142) mid-day has no today-count ledger
+        // yet, while the pre-existing daily-goal progress already holds the day's taps. Seed the
+        // ledger from it so the daily leaderboard — which ranks on the published todayCount —
+        // reflects the real daily count instead of starting over at 0. No-op once seeded, and on a
+        // genuine new day the progress is itself 0 so it resets correctly.
+        val seededTodayCount = sessionStore.seedTodayCountIfUnset(today, todayProgress)
         _state.update {
             it.copy(
                 dailyGoalTarget = dailyGoalStore.todayTarget(today),
                 dailyGoalProgress = todayProgress,
                 currentDailyBadge = DailyBadge.fromTapCount(todayProgress)?.key,
                 manualRemaining = sessionStore.manualRemainingToday(today, manualDailyCap(today)),
-                todayCount = sessionStore.getTodayCount(today),
+                todayCount = seededTodayCount,
             )
         }
         settleHeartDecay()

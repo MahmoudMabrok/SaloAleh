@@ -279,6 +279,45 @@ class MohamedLoversSessionStoreTest {
         assertEquals(5, store.addTodayCount(d1, -3))
     }
 
+    // --- Seed today count from pre-existing same-day progress (post-#142 update gap) ---
+
+    @Test
+    fun seedTodayCountIfUnset_seeds_from_baseline_when_ledger_unset() {
+        // Device updated mid-day: the today-count ledger was never initialized, but the daily-goal
+        // progress already holds the day's taps. Seeding starts the daily leaderboard from reality.
+        assertEquals(3_000, store.seedTodayCountIfUnset(d1, 3_000))
+        assertEquals(3_000, store.getTodayCount(d1))
+    }
+
+    @Test
+    fun seedTodayCountIfUnset_isNoOp_once_ledger_initialized() {
+        store.addTodayCount(d1, 600)
+        // A later seed attempt must not overwrite the already-tracked count with the baseline.
+        assertEquals(600, store.seedTodayCountIfUnset(d1, 3_000))
+        assertEquals(600, store.getTodayCount(d1))
+    }
+
+    @Test
+    fun seedTodayCountIfUnset_resets_to_zero_on_new_day() {
+        store.addTodayCount(d1, 900)
+        // On a genuine new day the caller's baseline is itself 0 (progress is for the prior day),
+        // so the ledger correctly resets rather than carrying yesterday forward.
+        assertEquals(0, store.seedTodayCountIfUnset(d2, 0))
+        assertEquals(0, store.getTodayCount(d2))
+    }
+
+    @Test
+    fun seedTodayCountIfUnset_clamps_negative_baseline_to_zero() {
+        assertEquals(0, store.seedTodayCountIfUnset(d1, -50))
+        assertEquals(0, store.getTodayCount(d1))
+    }
+
+    @Test
+    fun seedTodayCountIfUnset_then_addTodayCount_continues_from_seed() {
+        store.seedTodayCountIfUnset(d1, 3_000)
+        assertEquals(3_001, store.addTodayCount(d1, 1))
+    }
+
     // --- Legacy migration ---
 
     @Test
