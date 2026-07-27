@@ -3,6 +3,7 @@ package tools.mo3ta.salo.ui
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -73,6 +74,7 @@ import tools.mo3ta.salo.generated.resources.alf_hasana_tap_hint
 import tools.mo3ta.salo.generated.resources.alf_hasana_times
 import tools.mo3ta.salo.generated.resources.alf_hasana_today
 import tools.mo3ta.salo.generated.resources.alf_hasana_view_rewards
+import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.presentation.AlfHasanaChallengeViewModel
 import tools.mo3ta.salo.ui.alfhasana.AlfHasanaColors
 import tools.mo3ta.salo.ui.alfhasana.AlfHasanaHeroBackground
@@ -195,7 +197,11 @@ private fun AlfHasanaHeroZone(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            // No ripple: a tap on this full-screen surface only updates the counter — never a
+            // full-screen ripple across the whole hero (see CLAUDE.md challenge-counter rule).
             .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
                 enabled = canCount,
                 onClickLabel = stringResource(Res.string.alf_hasana_add),
                 role = Role.Button,
@@ -217,12 +223,16 @@ private fun AlfHasanaHeroZone(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                IconButton(onClick = onBack) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(Res.string.alf_hasana_back_cd),
-                        tint = Color.White.copy(alpha = 0.6f),
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(Res.string.alf_hasana_back_cd),
+                            tint = Color.White.copy(alpha = 0.6f),
+                        )
+                    }
+                    // Floating-bubble toggle (Android); no-op on iOS.
+                    ChallengeBubbleButton(ChallengeType.ALF_HASANA.id)
                 }
                 Surface(
                     onClick = onRankClick,
@@ -259,8 +269,28 @@ private fun AlfHasanaHeroZone(
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .padding(horizontal = 12.dp)
-                    .padding(top = 2.dp, bottom = 20.dp),
+                    .padding(top = 2.dp, bottom = 12.dp),
             )
+
+            // The hadith transcript lives on the screen itself; the reward breakdown stays behind
+            // the "what you gain" button — matching the other challenge screens.
+            Text(
+                text = stringResource(Res.string.alf_hasana_reward_hadith),
+                color = AlfHasanaColors.LightGold.copy(alpha = 0.82f),
+                fontSize = 15.sp,
+                lineHeight = 28.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
+            Spacer(Modifier.height(5.dp))
+            Text(
+                text = stringResource(Res.string.alf_hasana_reward_hadith_ref),
+                color = AlfHasanaColors.LightGold.copy(alpha = 0.5f),
+                fontSize = 11.sp,
+                textAlign = TextAlign.Center,
+            )
+
+            Spacer(Modifier.height(20.dp))
 
             counter()
 
@@ -415,22 +445,9 @@ private fun AlfHasanaRewardsSheet(visible: Boolean, onDismiss: () -> Unit) {
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
             )
-            Spacer(Modifier.height(16.dp))
-            Text(
-                text = stringResource(Res.string.alf_hasana_reward_hadith),
-                color = AlfHasanaColors.Ink.copy(alpha = 0.85f),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                lineHeight = 30.sp,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text = stringResource(Res.string.alf_hasana_reward_hadith_ref),
-                color = AlfHasanaColors.Gold,
-                fontSize = 12.sp,
-            )
             Spacer(Modifier.height(20.dp))
+            // The hadith transcript is shown on the challenge screen; this sheet holds the
+            // reward breakdown only.
             RewardRow(emoji = "🤍", text = stringResource(Res.string.alf_hasana_reward_written))
             Spacer(Modifier.height(10.dp))
             RewardRow(emoji = "🧹", text = stringResource(Res.string.alf_hasana_reward_erased))
