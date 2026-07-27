@@ -3,7 +3,9 @@ name: Build
 on:
   pull_request:
     branches: [main]
-  workflow_dispatch:    
+    paths-ignore:
+      - '.github/**'
+  workflow_dispatch:
 
 jobs:
   android:
