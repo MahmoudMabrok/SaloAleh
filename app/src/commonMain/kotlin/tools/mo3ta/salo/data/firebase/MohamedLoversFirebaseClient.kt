@@ -114,11 +114,11 @@ class MohamedLoversFirebaseClient(
             if (!snapshot.exists) return@runCatching null
             val map = snapshot.value as? Map<*, *> ?: return@runCatching null
             val latest = map[LATEST_VERSION_KEY] as? String
-            val minSupported = map[MIN_SUPPORTED_VERSION_KEY] as? String
-            if (latest == null && minSupported == null) return@runCatching null
+            val minSupportedCode = (map[MIN_SUPPORTED_VERSION_CODE_KEY] as? Number)?.toInt()
+            if (latest == null && minSupportedCode == null) return@runCatching null
             AppUpdateConfig(
                 latestVersion = latest ?: "",
-                minSupportedVersion = minSupported,
+                minSupportedVersionCode = minSupportedCode,
             )
         }.also { result ->
             result.fold(
@@ -798,7 +798,7 @@ class MohamedLoversFirebaseClient(
         const val ALL_TIME_TOTAL_PATH = "allTimeTotal"
         const val APP_CONFIG_PATH = "app_config"
         const val LATEST_VERSION_KEY = "latestVersion"
-        const val MIN_SUPPORTED_VERSION_KEY = "minSupportedVersion"
+        const val MIN_SUPPORTED_VERSION_CODE_KEY = "minSupportedVersionCode"
         const val HEROES_PATH = "heroes"
         const val USERS_PATH = "users"
         const val REMINDER_NOTIFS_ENABLED_KEY = "reminderNotifsEnabled"

@@ -13,6 +13,13 @@ expect fun openNotificationSettings()
 expect fun requestExactAlarmPermission()
 expect fun openStorePage()
 expect fun getAppVersion(): String
+
+/**
+ * The running build's integer version code (Android `versionCode` / iOS `CFBundleVersion`).
+ * Monotonic and unambiguous across internal builds that may share the same [getAppVersion]
+ * name, so it drives the force-update floor. Returns `0` when unavailable.
+ */
+expect fun getAppVersionCode(): Int
 expect fun shareBitmap(imageBitmap: ImageBitmap)
 expect fun startProtectionNotificationService()
 
