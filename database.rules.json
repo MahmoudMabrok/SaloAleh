@@ -454,6 +454,65 @@
       }
     },
 
+    "alf_hasana_challenge": {
+      "totalAlfHasana": {
+        ".read": true,
+        ".write": false
+      },
+      "users": {
+        "$uid": {
+          "medals": {
+            ".read": true,
+            ".validate": false,
+            "$medalType": {
+              ".validate": false
+            }
+          }
+        }
+      },
+      "$date": {
+        "participantCount": {
+          ".read": true,
+          ".write": false
+        },
+        "totalTodayAlfHasana": {
+          ".read": true,
+          ".write": false
+        },
+        "lastRankedAt": {
+          ".read": true,
+          ".write": false
+        },
+        "leaderboard": {
+          ".read": true,
+          ".write": false
+        },
+        "users": {
+          "$uid": {
+            ".write": "newData.child('data').child('uid').val() === $uid",
+
+            "count": {
+              ".read": true,
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
+            },
+            "streak": {
+              ".read": true,
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "rank": {
+              ".read": true,
+              ".validate": "newData.val() === data.val()"
+            },
+            "data": {
+              "uid": {
+                ".validate": "newData.isString() && newData.val() === $uid"
+              }
+            }
+          }
+        }
+      }
+    },
+
     "mohamed_lovers": {
       "allTimeTotal": {
         ".read": true,

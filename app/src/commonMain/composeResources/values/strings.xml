@@ -871,4 +871,38 @@
   <string name="auto_click_detected_title">تنبيه</string>
   <string name="auto_click_detected_body">يبدو أن تطبيق نقر تلقائي يرسل الصلوات نيابةً عنك. هذه الصلوات لن تُحتسب. الأجر في الذِّكر بقلبك ولسانك، لا في الرقم.</string>
   <string name="auto_click_detected_cta">فهمت</string>
+
+  <!-- ألف حسنة (Alf Hasana) tasbih challenge -->
+  <string name="challenge_alf_hasana_title">ألف حسنة</string>
+  <string name="challenge_alf_hasana_body">مئة تسبيحة… ألف حسنة كل يوم</string>
+  <string name="alf_hasana_back_cd">رجوع</string>
+  <string name="alf_hasana_phrase">سُبْحَانَ اللهِ</string>
+  <string name="alf_hasana_today">اليوم</string>
+  <string name="alf_hasana_times">تسبيحة</string>
+  <string name="alf_hasana_add">سبِّح</string>
+  <string name="alf_hasana_daily_goal">الهدف اليومي: %1$d تسبيحة</string>
+  <string name="alf_hasana_progress_count">%1$d / %2$d</string>
+  <string name="alf_hasana_rank_number"># %1$d</string>
+  <string name="alf_hasana_rank_subtitle">من بين %1$d مشارك</string>
+  <string name="alf_hasana_rank_unranked">اضغط لرؤية المتصدرين</string>
+  <string name="alf_hasana_tap_hint">اضغط في أي مكان للتسبيح</string>
+  <string name="alf_hasana_manual_entry_button">📿 تسجيل تسبيحات خارجية</string>
+  <string name="alf_hasana_view_rewards">🎁 ماذا تربح؟</string>
+  <string name="alf_hasana_leaderboard_title">المتصدرون</string>
+  <string name="alf_hasana_leaderboard_rank_new">جديد</string>
+  <string name="alf_hasana_leaderboard_empty">لا توجد بيانات بعد</string>
+  <string name="alf_hasana_rewards_title">ماذا تنال بمئة تسبيحة؟</string>
+  <string name="alf_hasana_reward_hadith">«أَيَعْجِزُ أَحَدُكُمْ أَنْ يَكْسِبَ كُلَّ يَوْمٍ أَلْفَ حَسَنَةٍ؟ يُسَبِّحُ اللهَ مِائَةَ تَسْبِيحَةٍ، فَيُكْتَبُ لَهُ أَلْفُ حَسَنَةٍ، وَيُحَطُّ عَنْهُ أَلْفُ خَطِيئَةٍ»</string>
+  <string name="alf_hasana_reward_hadith_ref">رواه مسلم</string>
+  <string name="alf_hasana_reward_written">تُكتب لك ألف حسنة</string>
+  <string name="alf_hasana_reward_erased">تُحَطّ عنك ألف خطيئة</string>
+  <string name="alf_hasana_rewards_close">واصل التسبيح</string>
+  <string name="alf_hasana_milestone_title">أتممت %1$d تسبيحة!</string>
+  <string name="alf_hasana_milestone_subtitle">ألف حسنة كُتبت لك 🤍</string>
+  <string name="manual_alf_hasana_title">📿 تسجيل تسبيحات خارجية</string>
+  <string name="manual_alf_hasana_subtitle">سبّحت بصمت أو على أصابعك أو بالمسبحة؟\nسجّل ما سبّحت — لا تتوقف عن الذكر لأنك بعيد عن التطبيق</string>
+  <string name="manual_alf_hasana_count">العدد:</string>
+  <string name="manual_alf_hasana_enter_count">أدخل العدد</string>
+  <string name="manual_alf_hasana_submit">تسجيل</string>
+  <string name="manual_alf_hasana_witness">أشهد أني سبّحت هذا العدد فعلاً</string>
 </resources>
