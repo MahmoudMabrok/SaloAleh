@@ -95,19 +95,13 @@ class MohamedLoversViewModel(
             _state.update { it.copy(showGraceWarning = true) }
         }
         val todayProgress = dailyGoalStore.todayProgress(today)
-        // A device that updated to the today-count build (#142) mid-day has no today-count ledger
-        // yet, while the pre-existing daily-goal progress already holds the day's taps. Seed the
-        // ledger from it so the daily leaderboard — which ranks on the published todayCount —
-        // reflects the real daily count instead of starting over at 0. No-op once seeded, and on a
-        // genuine new day the progress is itself 0 so it resets correctly.
-        val seededTodayCount = sessionStore.seedTodayCountIfUnset(today, todayProgress)
         _state.update {
             it.copy(
                 dailyGoalTarget = dailyGoalStore.todayTarget(today),
                 dailyGoalProgress = todayProgress,
                 currentDailyBadge = DailyBadge.fromTapCount(todayProgress)?.key,
                 manualRemaining = sessionStore.manualRemainingToday(today, manualDailyCap(today)),
-                todayCount = seededTodayCount,
+                todayCount = todayProgress,
             )
         }
         settleHeartDecay()
@@ -225,8 +219,9 @@ class MohamedLoversViewModel(
         dailyGoalStore.recordTap(today, 1)
         val isNowComplete = dailyGoalStore.isGoalComplete(today)
         val streakResult = roundStreakStore.recordActivity(roundKey, today)
-        val todayTotal = sessionStore.addTodayCount(today, 1)
         val todayStr = today.toString()
+        // The daily-goal tap progress is the single source of truth for today's competition count:
+        // it drives the rank strip and daily badge, and is what we publish for the daily leaderboard.
         val rawTaps = dailyGoalStore.todayProgress(today)
         val badge = DailyBadge.fromTapCount(rawTaps)
         val lastMilestone = sessionStore.getLastMilestoneLevel(todayStr)
@@ -246,7 +241,7 @@ class MohamedLoversViewModel(
         _state.update {
             it.copy(
                 sessionClicks = pending.clickCount,
-                todayCount = todayTotal,
+                todayCount = rawTaps,
                 error = null,
                 dailyGoalProgress = rawTaps,
                 dailyGoalJustCompleted = !wasComplete && isNowComplete,
@@ -299,7 +294,7 @@ class MohamedLoversViewModel(
                 val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
                 val result = repository.flushPendingSession(
                     countryCode = state.value.countryCode,
-                    todayCount = sessionStore.getTodayCount(today),
+                    todayCount = dailyGoalStore.todayProgress(today),
                 )
                 val latestPending = repository.getPendingSession(roundKey)
                 inFlightFlush = 0
@@ -373,11 +368,15 @@ class MohamedLoversViewModel(
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
         val prevStreak = state.value.roundStreak
         val streakResult = roundStreakStore.recordActivity(round, today)
-        val todayTotal = sessionStore.addTodayCount(today, count)
+        // Extension salawat count toward today's competition total (and thus the daily leaderboard,
+        // which now publishes the daily-goal progress) just like taps and manual entries do.
+        dailyGoalStore.recordTap(today, count)
+        val todayTotal = dailyGoalStore.todayProgress(today)
         _state.update {
             it.copy(
                 sessionClicks = pending.clickCount,
                 todayCount = todayTotal,
+                dailyGoalProgress = todayTotal,
                 heartScore = heart.first,
                 showHeartRefillNudge = shouldShowHeartRefillNudge(heart.first, heart.second),
                 roundStreak = streakResult.currentStreak,
@@ -434,14 +433,14 @@ class MohamedLoversViewModel(
         dailyGoalStore.recordTap(today, applied)
         val prevStreak = state.value.roundStreak
         val streakResult = roundStreakStore.recordActivity(roundKey, today)
-        val todayTotal = sessionStore.addTodayCount(today, applied)
+        val todayTotal = dailyGoalStore.todayProgress(today)
         _state.update {
             it.copy(
                 sessionClicks = pending.clickCount,
                 todayCount = todayTotal,
                 showManualSalawatSheet = false,
                 isSubmittingManualSalawat = true,
-                dailyGoalProgress = dailyGoalStore.todayProgress(today),
+                dailyGoalProgress = todayTotal,
                 lastSalawatElapsedMinutes = 0L,
                 heartScore = heart.first,
                 showHeartRefillNudge = shouldShowHeartRefillNudge(heart.first, heart.second),
@@ -483,7 +482,10 @@ class MohamedLoversViewModel(
         // A correction frees the manual-entry allowance again so a mis-entry can be re-added.
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
         sessionStore.refundManualEntry(today, applied)
-        val todayTotal = sessionStore.subtractTodayCount(today, applied)
+        // The daily-goal progress (the daily leaderboard/badge source) records activity and is
+        // intentionally not walked back by a competition-total correction — same as the heart
+        // index and streak below — so today's published daily count is unchanged here.
+        val todayTotal = dailyGoalStore.todayProgress(today)
 
         val pendingReduction = applied.coerceAtMost(pendingClicks)
         if (pendingReduction > 0) repository.decrementPendingClick(roundKey, pendingReduction)
