@@ -20,7 +20,7 @@ Read this file before exploring the codebase. It covers vocabulary, file map, da
 | **Rank** | Ordinal position (1–10+) on the leaderboard. Computed server-side. |
 | **allTimeTotal** | Aggregate tap count across all rounds — read-only display only. |
 | **Round Total / Player Count** | Server-computed aggregates per round: total taps and participant count. |
-| **Daily Badge** | Achievement icon for today's tap count. Thresholds: Sprout(100)→Heart(200)→Tasbih(500)→Dome(1000)→Crescent(2000)→Crown(5000). Resets daily at 19:00. |
+| **Daily Badge** | Achievement icon for today's tap count. Thresholds: Spark(10)→Sprout(100)→Heart(200)→Tasbih(500)→Dome(1000)→Crescent(2000)→Lantern(4000)→Crown(5000)→Mihrab(8000)→Star(10000). Resets daily at 19:00. |
 | **Milestone** | First time a user hits a daily badge threshold → triggers confetti animation. |
 | **Grace Period** | 2-day absence allowance in streak tracking. Usable once per absence window. |
 | **Achievement** | Sealed union: `StreakBadge` (7-day or 30-day streak) or `RankAchievement` (top-3 round finish). |
@@ -45,7 +45,7 @@ All paths relative to `app/src/commonMain/kotlin/tools/mo3ta/salo/`.
 | File | Contents |
 |------|----------|
 | `domain/MohamedLoversModels.kt` | Core entities: `MohamedLoversPlayer`, `MohamedLoversPendingSession`, `MohamedLoversCompetitionWindow`, `FirebaseLeaderboard(Entry)` |
-| `domain/DailyBadgeModels.kt` | `DailyBadge` enum with tap thresholds (Sprout→Crown) |
+| `domain/DailyBadgeModels.kt` | `DailyBadge` enum with tap thresholds (Spark→Star) |
 | `domain/EngagementModels.kt` | Streak/open-count tracking, `BadgeType`, `Achievement` sealed union |
 | `domain/DhikrChallengeModels.kt` | `DhikrChallengeDayStats` (rank, participantCount, totalTodayDhikr); daily goal = 100 |
 

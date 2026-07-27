@@ -533,7 +533,7 @@
       "referral_codes": {
         "$code": {
           ".read": true,
-          ".write": "!data.exists()",
+          ".write": "!data.exists() || data.val() === newData.val()",
           ".validate": "newData.isString() && newData.val().length > 0"
         }
       },
@@ -692,7 +692,7 @@
               ".validate": "newData.isNumber() && newData.val() >= (data.exists() ? data.val() : 0)"
             },
             "dailyBadge": {
-              ".validate": "newData.isString() && (newData.val() === 'sprout' || newData.val() === 'heart' || newData.val() === 'tasbih' || newData.val() === 'dome' || newData.val() === 'crescent' || newData.val() === 'crown')"
+              ".validate": "newData.isString()"
             },
             "roundStreak": {
               ".validate": "newData.isNumber() && newData.val() >= 0"
