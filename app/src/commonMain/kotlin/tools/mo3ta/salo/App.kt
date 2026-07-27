@@ -64,6 +64,7 @@ import tools.mo3ta.salo.ui.PlatformBackHandler
 import tools.mo3ta.salo.ui.ReviewDialog
 import tools.mo3ta.salo.ui.VersionUpdateDialog
 import tools.mo3ta.salo.ui.getAppVersion
+import tools.mo3ta.salo.ui.getAppVersionCode
 import tools.mo3ta.salo.ui.openStorePage
 import tools.mo3ta.salo.ui.settings.ExtensionQrScreen
 import tools.mo3ta.salo.data.billing.BillingManager
@@ -739,7 +740,7 @@ fun App(
         LaunchedEffect(newVersionAvailable) {
             if (!UPDATE_PROMPT_ENABLED) return@LaunchedEffect
             val current = getAppVersion()
-            val decision = updateChecker.check(current)
+            val decision = updateChecker.check(current, getAppVersionCode())
             // A forced update (build below the minimum supported version) always wins,
             // even over an explicit "new version" notification tap.
             pendingAppUpdate = if (decision?.forced == true) {

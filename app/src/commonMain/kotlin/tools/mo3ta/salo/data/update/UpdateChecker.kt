@@ -21,8 +21,10 @@ data class UpdatePrompt(
  *
  * Reads remote config (RTDB `mohamed_lovers/app_config`) and compares it to the running
  * app version:
- * - `minSupportedVersion` newer than the running build ⇒ a **forced** update (blocks the
- *   app, never dismissable, ignores any per-version dismissal). Takes precedence.
+ * - `minSupportedVersionCode` greater than the running build's version code ⇒ a **forced**
+ *   update (blocks the app, never dismissable, ignores any per-version dismissal). Takes
+ *   precedence. The prompt shows the newest available versionName ([latestVersion]) since
+ *   the code itself is not user-meaningful.
  * - otherwise `latestVersion` newer than the running build ⇒ a **soft** update, suppressed
  *   once the user has dismissed it for that specific version (see [UpdatePromptStore]).
  */
@@ -34,17 +36,21 @@ class UpdateChecker(
     /**
      * Returns the update to prompt for, or `null` when the app is already up to date,
      * remote config is missing/unreadable, or the user already dismissed the soft prompt
-     * for that version. [currentVersion] is the running app's version name.
+     * for that version. [currentVersion] is the running app's version name (drives the soft
+     * prompt); [currentVersionCode] is its integer version code (drives the forced prompt).
      */
-    suspend fun check(currentVersion: String): UpdatePrompt? {
+    suspend fun check(currentVersion: String, currentVersionCode: Int): UpdatePrompt? {
         val config = firebaseApi.fetchAppConfig().getOrNull() ?: return null
 
         // Forced update wins over the soft prompt and ignores per-version dismissal —
         // an obsolete build must not be usable regardless of what the user tapped before.
-        config.minSupportedVersion
-            ?.takeIf { it.isNotBlank() }
-            ?.let { min ->
-                if (isNewerVersion(min, currentVersion)) return UpdatePrompt(min, forced = true)
+        // Compared as integer version codes so builds sharing a versionName are still gated.
+        config.minSupportedVersionCode
+            ?.takeIf { it > 0 }
+            ?.let { minCode ->
+                if (minCode > currentVersionCode) {
+                    return UpdatePrompt(config.latestVersion, forced = true)
+                }
             }
 
         val latest = config.latestVersion.takeIf { it.isNotBlank() } ?: return null

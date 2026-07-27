@@ -120,6 +120,17 @@ actual fun getAppVersion(): String {
     return ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName ?: "—"
 }
 
+actual fun getAppVersionCode(): Int {
+    val ctx = AndroidAppContext.get()
+    val info = ctx.packageManager.getPackageInfo(ctx.packageName, 0)
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        info.longVersionCode.toInt()
+    } else {
+        @Suppress("DEPRECATION")
+        info.versionCode
+    }
+}
+
 actual fun openNotificationSettings() {
     val ctx = AndroidAppContext.get()
     val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
