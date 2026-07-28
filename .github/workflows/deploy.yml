@@ -254,6 +254,7 @@ jobs:
             sed -i "s/versionCode = $CURRENT_CODE/versionCode = $NEW_CODE/" app/build.gradle.kts
             sed -i "s/versionName = \"[^\"]*\"/versionName = \"$VERSION_NAME\"/" app/build.gradle.kts
             echo "Android versionCode: $CURRENT_CODE → $NEW_CODE"
+            echo "ANDROID_VERSION_CODE=$NEW_CODE" >> "$GITHUB_ENV"
             echo "| Android | versionCode | \`$CURRENT_CODE\` | \`$NEW_CODE\` |" >> "$GITHUB_STEP_SUMMARY"
             echo "| Android | versionName | — | \`$VERSION_NAME\` |" >> "$GITHUB_STEP_SUMMARY"
           else
@@ -294,6 +295,8 @@ jobs:
           IOS="${{ needs.deploy-ios.result }}"
 
           NOTES="## v${VERSION}"$'\n'
+          NOTES+="- **Version name:** ${VERSION}"$'\n'
+          [ -n "$ANDROID_VERSION_CODE" ] && NOTES+="- **Version code:** ${ANDROID_VERSION_CODE}"$'\n'
           [ "$ANDROID" = "success" ] && NOTES+="- ✅ Android published to Google Play (${{ github.event.inputs.track }})"$'\n'
           [ "$ANDROID" != "success" ] && NOTES+="- ❌ Android deploy failed"$'\n'
           [ "$IOS" = "success" ] && NOTES+="- ✅ iOS published to App Store Connect"$'\n'
