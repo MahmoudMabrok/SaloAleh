@@ -28,7 +28,9 @@ const {
   awardChallengeMedals,
   cairoToday,
   buildDailyScoreSnapshots,
+  roundDayNumber,
   ABNORMAL_DAILY_THRESHOLD,
+  PACE_DAILY_INCREMENT,
 } = require('./leaderboard-utils');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -145,16 +147,20 @@ async function main() {
   }
 
   // Per-user daily close: append a score-history snapshot for each active player, flag anyone who
-  // exceeded the abnormal daily threshold for admin review, and reset todayCount so the next Cairo
-  // day starts fresh (the daily leaderboard ranks on the client-pushed todayCount).
-  const { scoreHistoryUpdates, abnormalUpdates, todayCountResets } =
-    buildDailyScoreSnapshots({ players: playerSnapshots, dateKey: dateStr, roundKey });
-  const dailyCloseUpdates = { ...scoreHistoryUpdates, ...abnormalUpdates, ...todayCountResets };
+  // exceeded the abnormal daily threshold for admin review, flag anyone whose cumulative round
+  // total outran the day-of-round pace ceiling (day N * 11k) into users/{uid}/paceFlags/{dateKey},
+  // and reset todayCount so the next Cairo day starts fresh (the daily leaderboard ranks on the
+  // client-pushed todayCount).
+  const roundDay = roundDayNumber(roundKey, dateStr);
+  const { scoreHistoryUpdates, abnormalUpdates, todayCountResets, paceFlagUpdates } =
+    buildDailyScoreSnapshots({ players: playerSnapshots, dateKey: dateStr, roundKey, roundDay });
+  const dailyCloseUpdates = { ...scoreHistoryUpdates, ...abnormalUpdates, ...todayCountResets, ...paceFlagUpdates };
   if (Object.keys(dailyCloseUpdates).length > 0) {
     await db.ref('/').update(dailyCloseUpdates);
     console.log(
       `Daily close: ${Object.keys(scoreHistoryUpdates).length} history snapshot(s), ` +
       `${Object.keys(abnormalUpdates).length} abnormal user(s) (> ${ABNORMAL_DAILY_THRESHOLD}/day), ` +
+      `${Object.keys(paceFlagUpdates).length} pace flag(s) (> day ${roundDay} × ${PACE_DAILY_INCREMENT} = ${roundDay * PACE_DAILY_INCREMENT}), ` +
       `${Object.keys(todayCountResets).length} todayCount reset(s).`
     );
   }

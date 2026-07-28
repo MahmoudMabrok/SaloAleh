@@ -2,8 +2,10 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const {
   ABNORMAL_DAILY_THRESHOLD,
+  PACE_DAILY_INCREMENT,
   computeTodayScore,
   buildDailyScoreSnapshots,
+  roundDayNumber,
 } = require('./leaderboard-utils');
 
 describe('computeTodayScore', () => {
@@ -115,5 +117,83 @@ describe('buildDailyScoreSnapshots', () => {
     assert.deepEqual(result.scoreHistoryUpdates, {});
     assert.deepEqual(result.abnormalUpdates, {});
     assert.deepEqual(result.todayCountResets, {});
+    assert.deepEqual(result.paceFlagUpdates, {});
+  });
+
+  it('does not build pace flags when roundDay is omitted', () => {
+    const { paceFlagUpdates } = buildDailyScoreSnapshots({
+      players: [{ uid: 'fast', totalCount: 999999, todayCount: 100, yesterdayTotalScore: 0 }],
+      dateKey,
+      roundKey,
+    });
+    assert.deepEqual(paceFlagUpdates, {});
+  });
+
+  it('flags a cumulative total above the day-of-round pace ceiling', () => {
+    // Day 2 → ceiling 22k. `fast` outruns it; `steady` is right at it (not flagged).
+    const { paceFlagUpdates } = buildDailyScoreSnapshots({
+      players: [
+        { uid: 'fast', totalCount: 2 * PACE_DAILY_INCREMENT + 1, todayCount: 500, yesterdayTotalScore: 0, countryCode: 'eg' },
+        { uid: 'steady', totalCount: 2 * PACE_DAILY_INCREMENT, todayCount: 500, yesterdayTotalScore: 0, countryCode: 'sa' },
+      ],
+      dateKey,
+      roundKey,
+      roundDay: 2,
+    });
+    assert.deepEqual(paceFlagUpdates, {
+      [`mohamed_lovers/users/fast/paceFlags/${dateKey}`]: {
+        totalCount: 2 * PACE_DAILY_INCREMENT + 1,
+        dayOfRound: 2,
+        threshold: 2 * PACE_DAILY_INCREMENT,
+        countryCode: 'eg',
+      },
+    });
+  });
+
+  it('uses an 11k ceiling on day 1 (Saturday)', () => {
+    const { paceFlagUpdates } = buildDailyScoreSnapshots({
+      players: [
+        { uid: 'over', totalCount: PACE_DAILY_INCREMENT + 1, todayCount: 100, yesterdayTotalScore: 0, countryCode: 'eg' },
+        { uid: 'under', totalCount: PACE_DAILY_INCREMENT, todayCount: 100, yesterdayTotalScore: 0, countryCode: 'eg' },
+      ],
+      dateKey,
+      roundKey,
+      roundDay: 1,
+    });
+    assert.deepEqual(Object.keys(paceFlagUpdates), [`mohamed_lovers/users/over/paceFlags/${dateKey}`]);
+    assert.equal(paceFlagUpdates[`mohamed_lovers/users/over/paceFlags/${dateKey}`].threshold, PACE_DAILY_INCREMENT);
+  });
+
+  it('defaults a missing countryCode to NA in the pace flag', () => {
+    const { paceFlagUpdates } = buildDailyScoreSnapshots({
+      players: [{ uid: 'nocc', totalCount: 3 * PACE_DAILY_INCREMENT + 5, todayCount: 100, yesterdayTotalScore: 0 }],
+      dateKey,
+      roundKey,
+      roundDay: 3,
+    });
+    assert.equal(paceFlagUpdates[`mohamed_lovers/users/nocc/paceFlags/${dateKey}`].countryCode, 'NA');
+  });
+});
+
+describe('roundDayNumber', () => {
+  // Round key is the round's END Friday (Cairo); the round began the previous Friday 19:00.
+  const roundKey = '2026-07-31'; // Friday
+
+  it('maps Saturday to day 1', () => {
+    assert.equal(roundDayNumber(roundKey, '2026-07-25'), 1);
+  });
+
+  it('maps Sunday to day 2', () => {
+    assert.equal(roundDayNumber(roundKey, '2026-07-26'), 2);
+  });
+
+  it('maps the end Friday to day 7', () => {
+    assert.equal(roundDayNumber(roundKey, '2026-07-31'), 7);
+  });
+
+  it('clamps the post-reset Friday-night close (fresh round) to day 1', () => {
+    // On the end Friday's 23:45 close the round has already advanced to the next Friday,
+    // so dateKey === startFriday → raw 0, clamped up to 1.
+    assert.equal(roundDayNumber('2026-08-07', '2026-07-31'), 1);
   });
 });

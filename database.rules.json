@@ -615,6 +615,12 @@
               ".validate": false
             }
           },
+          "paceFlags": {
+            ".validate": false,
+            "$dateKey": {
+              ".validate": false
+            }
+          },
           "purchases": {
             "$productId": {
               ".validate": "newData.hasChildren(['productId', 'productType', 'purchaseDate'])",

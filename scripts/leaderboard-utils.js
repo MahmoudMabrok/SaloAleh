@@ -13,6 +13,13 @@ const MOHAMED_LOVERS_ROOT = 'mohamed_lovers';
 // A day's salawat above this is treated as abnormal and recorded for admin review.
 const ABNORMAL_DAILY_THRESHOLD = 12000;
 
+// Salawat pace ceiling: a player's cumulative round total is expected to grow by at
+// most this per competition day. On day N of the round a total above N * this is
+// treated as abnormal pace and recorded (per-user, for later analysis). Saturday —
+// the first day after the Friday 19:00 reset — is day 1, so its ceiling is one
+// increment (11k), Sunday (day 2) is 22k, and so on.
+const PACE_DAILY_INCREMENT = 11000;
+
 // A player's competition score for the current Cairo day. Prefers the client-published absolute
 // `todayCount`; falls back to the yesterday-diff (`totalCount - yesterdayTotalScore`) for clients
 // that predate todayCount, so the daily leaderboard never zeroes out an un-updated user.
@@ -22,13 +29,24 @@ function computeTodayScore({ total, today, yesterday }) {
 }
 
 // Builds the per-user daily snapshots written at the daily close (generate-stats.js): a score
-// history entry per active user, an abnormal-user flag for anyone above the threshold, and a
+// history entry per active user, an abnormal-user flag for anyone above the daily threshold, a
+// pace flag for anyone whose cumulative round total outruns the day-of-round ceiling, and a
 // todayCount reset so the next Cairo day starts from zero. Pure so it can be unit-tested.
 // `players` items: { uid, totalCount, todayCount, yesterdayTotalScore, countryCode }.
-function buildDailyScoreSnapshots({ players, dateKey, roundKey, threshold = ABNORMAL_DAILY_THRESHOLD }) {
+// `roundDay` (1-based competition day; see roundDayNumber) gates the pace flag; pass null to skip it.
+function buildDailyScoreSnapshots({
+  players,
+  dateKey,
+  roundKey,
+  roundDay = null,
+  threshold = ABNORMAL_DAILY_THRESHOLD,
+  paceIncrement = PACE_DAILY_INCREMENT,
+}) {
   const scoreHistoryUpdates = {};
   const abnormalUpdates = {};
   const todayCountResets = {};
+  const paceFlagUpdates = {};
+  const paceCeiling = typeof roundDay === 'number' && roundDay > 0 ? roundDay * paceIncrement : null;
   for (const p of players || []) {
     if (!p || !p.uid) continue;
     const dayTotal = computeTodayScore({
@@ -46,12 +64,24 @@ function buildDailyScoreSnapshots({ players, dateKey, roundKey, threshold = ABNO
         countryCode: typeof p.countryCode === 'string' ? p.countryCode : 'NA',
       };
     }
+    // Pace flag: cumulative round total outrunning the day-of-round ceiling (day N * increment).
+    if (paceCeiling != null) {
+      const total = typeof p.totalCount === 'number' ? p.totalCount : 0;
+      if (total > paceCeiling) {
+        paceFlagUpdates[`${MOHAMED_LOVERS_ROOT}/users/${p.uid}/paceFlags/${dateKey}`] = {
+          totalCount: total,
+          dayOfRound: roundDay,
+          threshold: paceCeiling,
+          countryCode: typeof p.countryCode === 'string' ? p.countryCode : 'NA',
+        };
+      }
+    }
     // Only reset players who actually carry a non-zero client-pushed todayCount.
     if (typeof p.todayCount === 'number' && p.todayCount !== 0) {
       todayCountResets[`${MOHAMED_LOVERS_ROOT}/${roundKey}/players/${p.uid}/todayCount`] = 0;
     }
   }
-  return { scoreHistoryUpdates, abnormalUpdates, todayCountResets };
+  return { scoreHistoryUpdates, abnormalUpdates, todayCountResets, paceFlagUpdates };
 }
 
 function buildOldRankMap(source) {
@@ -227,6 +257,18 @@ function addDaysToDateKey(dateKey, days) {
   const d = new Date(`${dateKey}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
+}
+
+// The 1-based competition day for a Cairo date within a round. Round keys are the
+// round's END Friday (Cairo); the round began the previous Friday at 19:00, so
+// Saturday = 1 … Friday(end) = 7. Clamped to [1, 7] so the post-reset Friday-night
+// daily close (already a fresh round) reads as day 1 rather than day 0.
+function roundDayNumber(roundKey, dateKey) {
+  const startFriday = addDaysToDateKey(roundKey, -7);
+  const start = new Date(`${startFriday}T00:00:00Z`);
+  const day = new Date(`${dateKey}T00:00:00Z`);
+  const diff = Math.round((day - start) / 86400000);
+  return Math.max(1, Math.min(7, diff));
 }
 
 function buildDailyCountChallengeRanking({
@@ -752,8 +794,10 @@ module.exports = {
   ALF_HASANA_CHALLENGE_ROOT,
   MOHAMED_LOVERS_ROOT,
   ABNORMAL_DAILY_THRESHOLD,
+  PACE_DAILY_INCREMENT,
   computeTodayScore,
   buildDailyScoreSnapshots,
+  roundDayNumber,
   buildOldRankMap,
   computeRankChange,
   computeTop3Changes,
