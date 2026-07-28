@@ -67,6 +67,7 @@ class AlBaqaraChallengeViewModel(
     }
 
     fun onScreenEntered() {
+        publishLifetimeTotal()
         loadLeaderboard()
         val today = today()
         viewModelScope.launch {
@@ -207,6 +208,7 @@ class AlBaqaraChallengeViewModel(
     }
 
     fun onScreenLeft() {
+        publishLifetimeTotal()
         viewModelScope.launch {
             syncMutex.withLock {
                 if (!firebaseClient.isConfigured()) return@withLock
@@ -268,6 +270,18 @@ class AlBaqaraChallengeViewModel(
             .onFailure { error ->
                 _state.update { it.copy(errorMessage = error.message) }
             }
+    }
+
+    /**
+     * Publish the device's lifetime total for this challenge to the persistent DB user node
+     * ({root}/users/{uid}/totalCount). Fire-and-forget and batched on screen enter/leave rather
+     * than per-tap, so it never spams the network. A failure never affects the daily-count sync.
+     */
+    private fun publishLifetimeTotal() {
+        viewModelScope.launch {
+            if (!firebaseClient.isConfigured()) return@launch
+            firebaseClient.writeUserTotal(sessionStore.getOrCreateUid(), store.lifetimeCount())
+        }
     }
 
     private fun today(): LocalDate = Clock.System.todayIn(cairoZone)

@@ -34,6 +34,7 @@ class AlBaqaraChallengeStore(private val settings: Settings) {
         ensureToday(today)
         val newPending = settings.getInt(KEY_PENDING, 0) + 1
         settings.putInt(KEY_PENDING, newPending)
+        addLifetime(1)
         return settings.getInt(KEY_REMOTE, 0) + newPending
     }
 
@@ -76,6 +77,17 @@ class AlBaqaraChallengeStore(private val settings: Settings) {
         settings.putInt(KEY_PENDING, 0)
     }
 
+    /**
+     * Lifetime total counted on this device — never resets on day rollover. Accumulates every
+     * locally-counted read so the overall total-over-time is published to the persistent DB user node.
+     */
+    fun lifetimeCount(): Int = settings.getInt(KEY_LIFETIME, 0)
+
+    private fun addLifetime(delta: Int) {
+        if (delta <= 0) return
+        settings.putInt(KEY_LIFETIME, settings.getInt(KEY_LIFETIME, 0) + delta)
+    }
+
     private fun ensureToday(today: LocalDate) {
         val date = today.toString()
         if (settings.getStringOrNull(KEY_DATE) == date) return
@@ -88,5 +100,7 @@ class AlBaqaraChallengeStore(private val settings: Settings) {
         const val KEY_DATE = "albaqara_challenge_date"
         const val KEY_REMOTE = "albaqara_challenge_count"
         const val KEY_PENDING = "albaqara_challenge_pending"
+        // Lifetime accumulator — survives day rollover; total counted across all days.
+        const val KEY_LIFETIME = "albaqara_challenge_lifetime"
     }
 }

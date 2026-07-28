@@ -116,6 +116,18 @@ The same podium-medal concept as the weekly Winner medal badge, but awarded **da
 - Strings: reuses `leaderboard_medals_info_{gold,silver,bronze}`, adds `challenge_medals_info_{title,desc}` (all four locales).
 - Tests: `commonTest/data/dhikr/DhikrChallengeFirebaseClientTest.kt` (medal parse), `scripts/challenge-medals.test.js` (award + attach).
 
+### Challenge lifetime total (total over time)
+
+Per-challenge cumulative "total over time" — the overall count a device has ever logged for a challenge (like ghars's "total palms"), extended to **all count challenges** and published to the persistent DB user node.
+
+- Applies to the 8 count challenges: dhikr (`100_challenge`), baqiyat (`baqiyat_saliha`), istighfar (`istighfar_challenge`), zabad (`zabad_challenge`), quran (`quran_challenge`), albaqara (`albaqara_challenge`), alfhasana (`alf_hasana_challenge`), ghars (`ghars_challenge`).
+- Core files: each `data/{challenge}/*Store.kt` (`KEY_LIFETIME = "{prefix}_lifetime"`, `lifetimeCount()`, private `addLifetime()`), each `data/{challenge}/*FirebaseClient.kt` (`TOTAL_COUNT_KEY = "totalCount"`, `writeUserTotal(uid, total)`), each challenge ViewModel (`publishLifetimeTotal()`), `database.rules.json`.
+- **Local accumulator:** `addLifetime` is called from `incrementToday` (`+1` per tap) and `addToday` (the *applied* manual amount, after cap-clamping — never the requested amount). It **survives day rollover** (never reset by `ensureToday`), is **never advanced by a remote baseline fetch** (`updateRemoteBaseline` only moves the daily total), and is **not walked back by `subtractToday`** (a mistaken-entry correction lowers today's count but not the lifetime tally) — same semantics as ghars.
+- **DB publish:** `writeUserTotal` writes the absolute lifetime to the **persistent** node `{challengeRoot}/users/{uid}/totalCount` (sibling of the server-only `medals` node, not under a `{dateKey}`). The ViewModel's `publishLifetimeTotal()` is fire-and-forget and **batched on screen enter/leave** (`onScreenEntered`/`onScreenLeft`) rather than per-tap so it never spams the network; a publish failure never affects the daily-count sync.
+- RTDB rules: each `{challengeRoot}/users/{uid}/totalCount` is `.read: true`, `.write: true`, `.validate: isNumber() && >= 0` (absolute, client-writable). This is the *only* client write grant reaching the root-level `users` node, so `medals` stays server-only (its `.validate: false` still rejects client writes; the new grant is scoped to the `totalCount` child). The main competition (`mohamed_lovers`) is unchanged — it already publishes its own `totalCount`/`todayCount` on the player node.
+- No Firestore mirror (RTDB is the source of truth for these, matching challenge medals). No server script reads it yet — it accumulates going forward for later use.
+- Tests: `commonTest/data/ghars/GharsChallengeStoreTest.kt` and `commonTest/data/zabad/ZabadChallengeStoreTest.kt` cover the accumulator semantics.
+
 ### Daily today-count, score history & abnormal-user tracking
 
 Client-published per-Cairo-day salawat total that drives the daily leaderboard directly, plus a server-side daily audit trail, a fixed-threshold abnormal-usage flag, and a day-of-round pace flag.
