@@ -16,6 +16,7 @@ private const val ROOT_PATH = "quran_challenge"
 private const val USERS_PATH = "users"
 private const val LEADERBOARD_PATH = "leaderboard"
 private const val COUNT_KEY = "count"
+private const val TOTAL_COUNT_KEY = "totalCount"
 private const val STREAK_KEY = "streak"
 private const val RANK_KEY = "rank"
 private const val RANK_CHANGE_KEY = "rankChange"
@@ -163,6 +164,27 @@ open class QuranChallengeFirebaseClient(
             access = "read",
             error = error,
         )
+    }
+
+    /**
+     * Publish the device's lifetime total (all-time count across every day) to the persistent
+     * user node at {root}/users/{uid}/totalCount. Fire-and-forget: a failure never affects the
+     * daily-count sync. The value is absolute — the server baseline is not read back.
+     */
+    suspend fun writeUserTotal(uid: String, total: Int): Result<Unit> {
+        log.d { "writeUserTotal[$uid] total=$total" }
+        return runCatching {
+            Firebase.database.reference("$ROOT_PATH/$USERS_PATH/$uid")
+                .updateChildren(mapOf(TOTAL_COUNT_KEY to total.coerceAtLeast(0)))
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "writeUserTotal[$uid] ok" } },
+                onFailure = { error ->
+                    log.e(error) { "writeUserTotal[$uid] failed" }
+                    trackWriteFailure("write_user_total", error)
+                },
+            )
+        }
     }
 
     private fun trackWriteFailure(operation: String, error: Throwable) {

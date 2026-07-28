@@ -75,6 +75,7 @@ class AlfHasanaChallengeViewModel(
     }
 
     fun onScreenEntered() {
+        publishLifetimeTotal()
         loadLeaderboard()
         val today = today()
         viewModelScope.launch {
@@ -210,6 +211,7 @@ class AlfHasanaChallengeViewModel(
     }
 
     fun onScreenLeft() {
+        publishLifetimeTotal()
         viewModelScope.launch {
             syncMutex.withLock {
                 if (!firebaseClient.isConfigured()) return@withLock
@@ -296,6 +298,18 @@ class AlfHasanaChallengeViewModel(
         val streak = challengeBadgeStore.getCurrentStreak(ChallengeType.ALF_HASANA, today)
         if (streak != _state.value.currentStreak) {
             _state.update { it.copy(currentStreak = streak) }
+        }
+    }
+
+    /**
+     * Publish the device's lifetime total for this challenge to the persistent DB user node
+     * ({root}/users/{uid}/totalCount). Fire-and-forget and batched on screen enter/leave rather
+     * than per-tap, so it never spams the network. A failure never affects the daily-count sync.
+     */
+    private fun publishLifetimeTotal() {
+        viewModelScope.launch {
+            if (!firebaseClient.isConfigured()) return@launch
+            firebaseClient.writeUserTotal(sessionStore.getOrCreateUid(), store.lifetimeCount())
         }
     }
 
