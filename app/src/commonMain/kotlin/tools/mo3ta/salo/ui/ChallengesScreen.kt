@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Spa
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.AutoStories
+import androidx.compose.material.icons.filled.Balance
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Forest
 import androidx.compose.material.icons.filled.MenuBook
@@ -71,6 +72,8 @@ import tools.mo3ta.salo.generated.resources.challenge_baqiyat_body
 import tools.mo3ta.salo.generated.resources.challenge_baqiyat_title
 import tools.mo3ta.salo.generated.resources.challenge_alf_hasana_body
 import tools.mo3ta.salo.generated.resources.challenge_alf_hasana_title
+import tools.mo3ta.salo.generated.resources.challenge_kalimat_body
+import tools.mo3ta.salo.generated.resources.challenge_kalimat_title
 import tools.mo3ta.salo.generated.resources.challenge_dhikr_body
 import tools.mo3ta.salo.generated.resources.challenge_dhikr_title
 import tools.mo3ta.salo.generated.resources.challenge_istighfar_body
@@ -134,6 +137,7 @@ fun ChallengesScreen(
     onOpenQuranChallenge: () -> Unit,
     onOpenAlBaqaraChallenge: () -> Unit,
     onOpenAlfHasanaChallenge: () -> Unit,
+    onOpenKalimatChallenge: () -> Unit,
 ) {
     val analyticsManager: AnalyticsManager = koinInject()
     val viewModel: ChallengesViewModel = koinViewModel()
@@ -200,6 +204,23 @@ fun ChallengesScreen(
                     mapOf(AppAnalytics.PARAM_SOURCE to "challenges"),
                 )
                 onOpenAlfHasanaChallenge()
+            },
+        ),
+        ChallengeItem(
+            titleRes = Res.string.challenge_kalimat_title,
+            bodyRes = Res.string.challenge_kalimat_body,
+            icon = Icons.Default.Balance,
+            accent = Color(0xFFE07A9E),
+            total = totals.kalimat,
+            overallTotal = overallTotals.kalimat,
+            streak = streaks[ChallengeType.KALIMAT] ?: 0,
+            participatedToday = ChallengeType.KALIMAT in participatedToday,
+            onClick = {
+                analyticsManager.logAction(
+                    AppAnalytics.OPEN_KALIMAT_CHALLENGE,
+                    mapOf(AppAnalytics.PARAM_SOURCE to "challenges"),
+                )
+                onOpenKalimatChallenge()
             },
         ),
         ChallengeItem(
