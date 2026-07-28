@@ -272,13 +272,9 @@ private fun DhikrImmersiveZone(
     onManualEntryClick: () -> Unit,
     manualEntryVisible: Boolean = true,
 ) {
-    // Ring cycles within the current goal: once the goal is reached it resets and fills again so
-    // counting can continue past it (mirrors the active emancipation chain's within-hundred logic).
-    val withinCycle = when {
-        target <= 0 -> 0
-        count > 0 && count % target == 0 -> target
-        else -> count % target
-    }
+    // Ring cycles within the current goal: the moment the goal is reached it returns to 0 and
+    // fills again so counting can continue past it, cycle after cycle.
+    val withinCycle = if (target > 0) count % target else 0
     val fraction = if (target > 0) (withinCycle.toFloat() / target.toFloat()).coerceIn(0f, 1f) else 0f
 
     Box(
