@@ -318,7 +318,11 @@ private fun KalimatCounter(
     val count by countFlow.collectAsStateWithLifecycle()
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         KalimatProgressRing(
-            fractionProvider = { if (target > 0) count.toFloat() / target.toFloat() else 0f },
+            // Within-cycle progress: the ring returns to 0 the moment the goal is reached and starts
+            // filling again for the next cycle, so counting past the goal restarts the ring each
+            // milestone (the goal celebration still fires to mark the completed cycle). Mirrors the
+            // istighfar/dhikr rings (#155).
+            fractionProvider = { if (target > 0) (count % target).toFloat() / target.toFloat() else 0f },
             modifier = Modifier.size(220.dp),
             trackColor = Color.White.copy(alpha = 0.15f),
             fillColor = KalimatColors.LightGold,
