@@ -48,6 +48,11 @@ object AppAnalytics {
     const val ALF_HASANA_TAP = "alf_hasana_tap"
     const val ALF_HASANA_SCREEN_VIEW = "alf_hasana_screen_view"
 
+    const val OPEN_KALIMAT_CHALLENGE = "open_kalimat_challenge"
+    const val OPEN_MANUAL_KALIMAT = "open_manual_kalimat"
+    const val KALIMAT_TAP = "kalimat_tap"
+    const val KALIMAT_SCREEN_VIEW = "kalimat_screen_view"
+
     const val PARAM_COUNT = "count"
     const val LANGUAGE_CHANGED = "language_changed"
     const val SALAWAT_VARIANT_CHANGED = "salawat_variant_changed"

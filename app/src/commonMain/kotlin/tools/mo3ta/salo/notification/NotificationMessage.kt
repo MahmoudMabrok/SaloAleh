@@ -18,6 +18,7 @@ enum class NotificationAction {
     OPEN_ZABAD_CHALLENGE,
     OPEN_GHARS_CHALLENGE,
     OPEN_ALF_HASANA_CHALLENGE,
+    OPEN_KALIMAT_CHALLENGE,
     NONE;
 
     companion object {
@@ -31,6 +32,7 @@ enum class NotificationAction {
             "open_zabad_challenge" -> OPEN_ZABAD_CHALLENGE
             "open_ghars_challenge" -> OPEN_GHARS_CHALLENGE
             "open_alf_hasana_challenge" -> OPEN_ALF_HASANA_CHALLENGE
+            "open_kalimat_challenge" -> OPEN_KALIMAT_CHALLENGE
             "none" -> NONE
             else -> OPEN_LEADERBOARD
         }
