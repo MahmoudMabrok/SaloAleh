@@ -233,7 +233,16 @@ private fun IstighfarImmersiveZone(
     onViewRewards: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val fraction = (count.toFloat() / target.toFloat()).coerceIn(0f, 1f)
+    // The ring lives inside the *current* cycle: once the goal is reached it resets and fills
+    // again, so the user can keep counting past the goal. A completed cycle (count is a positive
+    // multiple of the goal) shows a full ring rather than snapping back to empty — mirrors the
+    // dhikr shackle chain's within-hundred behaviour.
+    val withinCycle = when {
+        target <= 0 -> 0
+        count > 0 && count % target == 0 -> target
+        else -> count % target
+    }
+    val fraction = if (target > 0) (withinCycle.toFloat() / target.toFloat()).coerceIn(0f, 1f) else 0f
     val cyclesCompleted = if (target > 0) count / target else 0
 
     Box(
@@ -358,7 +367,9 @@ private fun IstighfarImmersiveZone(
 
             IstighfarStatChips(
                 cyclesCompleted = cyclesCompleted,
-                todayCount = count,
+                // Show progress within the current cycle so the chip agrees with the ring;
+                // the cumulative day total stays prominent in the ring's centre.
+                todayCount = withinCycle,
                 target = target,
             )
 
