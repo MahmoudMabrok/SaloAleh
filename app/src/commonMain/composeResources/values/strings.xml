@@ -925,6 +925,7 @@
   <string name="kalimat_leaderboard_empty">لا توجد بيانات بعد</string>
   <string name="kalimat_rewards_title">كلماتٌ يرجَحْنَ الميزان</string>
   <string name="kalimat_reward_hadith">«قال ﷺ لجويرية: قد قلتُ بعدكِ أربعَ كلماتٍ، لو وُزِنَّ بما قلتِ منذ اليومِ لوَزَنَتْهُنَّ: سُبْحَانَ اللهِ وَبِحَمْدِهِ، عَدَدَ خَلْقِهِ، وَرِضَا نَفْسِهِ، وَزِنَةَ عَرْشِهِ، وَمِدَادَ كَلِمَاتِهِ»</string>
+  <string name="kalimat_hadith_dhikr">سُبْحَانَ اللهِ وَبِحَمْدِهِ، عَدَدَ خَلْقِهِ، وَرِضَا نَفْسِهِ، وَزِنَةَ عَرْشِهِ، وَمِدَادَ كَلِمَاتِهِ</string>
   <string name="kalimat_reward_hadith_ref">رواه مسلم</string>
   <string name="kalimat_reward_outweigh">كلماتٌ ترجُح كلَّ ما سبّحتَ في الميزان</string>
   <string name="kalimat_reward_pleasing">رِضا الرحمن وزِنةُ عرشِه ومِدادُ كلماته</string>

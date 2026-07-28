@@ -913,6 +913,7 @@
   <string name="kalimat_leaderboard_empty">No data yet</string>
   <string name="kalimat_rewards_title">Words that tip the scales</string>
   <string name="kalimat_reward_hadith">The Prophet ﷺ said to Juwayriyah: "After I left you I said four words; if they were weighed against all you have said since this morning, they would outweigh them: Glory and praise be to Allah, as many as His creation, as pleases Him, as much as the weight of His Throne, and as many as the ink of His words."</string>
+  <string name="kalimat_hadith_dhikr">Glory and praise be to Allah, as many as His creation, as pleases Him, as much as the weight of His Throne, and as many as the ink of His words</string>
   <string name="kalimat_reward_hadith_ref">Narrated by Muslim</string>
   <string name="kalimat_reward_outweigh">Words that outweigh all other dhikr on the scales</string>
   <string name="kalimat_reward_pleasing">As pleases Him, the weight of His Throne, and the ink of His words</string>

@@ -875,6 +875,7 @@
   <string name="kalimat_leaderboard_empty">ابھی کوئی ڈیٹا نہیں</string>
   <string name="kalimat_rewards_title">وہ کلمات جو ترازو جھکا دیتے ہیں</string>
   <string name="kalimat_reward_hadith">«نبی ﷺ نے جویریہؓ سے فرمایا: میں نے تمہارے بعد چار کلمات کہے، اگر انہیں اُس سب کے ساتھ تولا جائے جو تم نے آج سے اب تک کہا تو وہ بھاری رہیں گے: سُبْحَانَ اللهِ وَبِحَمْدِهِ، عَدَدَ خَلْقِهِ، وَرِضَا نَفْسِهِ، وَزِنَةَ عَرْشِهِ، وَمِدَادَ كَلِمَاتِهِ»</string>
+  <string name="kalimat_hadith_dhikr">سُبْحَانَ اللهِ وَبِحَمْدِهِ، عَدَدَ خَلْقِهِ، وَرِضَا نَفْسِهِ، وَزِنَةَ عَرْشِهِ، وَمِدَادَ كَلِمَاتِهِ</string>
   <string name="kalimat_reward_hadith_ref">مسلم نے روایت کیا</string>
   <string name="kalimat_reward_outweigh">وہ کلمات جو ترازو میں ہر دوسرے ذکر پر بھاری ہیں</string>
   <string name="kalimat_reward_pleasing">اللہ کی رضا، اس کے عرش کا وزن اور اس کے کلمات کی سیاہی</string>
