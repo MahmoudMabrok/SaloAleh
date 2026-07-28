@@ -38,8 +38,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
@@ -59,8 +63,8 @@ import tools.mo3ta.salo.generated.resources.kalimat_back_cd
 import tools.mo3ta.salo.generated.resources.kalimat_daily_goal
 import tools.mo3ta.salo.generated.resources.kalimat_manual_entry_button
 import tools.mo3ta.salo.generated.resources.kalimat_milestone_subtitle
+import tools.mo3ta.salo.generated.resources.kalimat_hadith_dhikr
 import tools.mo3ta.salo.generated.resources.kalimat_milestone_title
-import tools.mo3ta.salo.generated.resources.kalimat_phrase
 import tools.mo3ta.salo.generated.resources.kalimat_progress_count
 import tools.mo3ta.salo.generated.resources.kalimat_rank_number
 import tools.mo3ta.salo.generated.resources.kalimat_rank_subtitle
@@ -145,16 +149,9 @@ fun KalimatChallengeScreen(
             },
             onViewRewards = { showRewardsSheet = true },
             // The counter is a self-collecting island: [KalimatCounter] is its own restartable
-            // composable that subscribes to the todayCount flow internally, and it is the single
-            // tap button — so a tap recomposes only that widget, never the enclosing hero.
-            counter = { onTap, enabled ->
-                KalimatCounter(
-                    countFlow = viewModel.todayCount,
-                    target = dailyGoalForCounter,
-                    onTap = onTap,
-                    enabled = enabled,
-                )
-            },
+            // composable that subscribes to the todayCount flow internally, so a tap recomposes only
+            // that widget — the enclosing hero (and the rest of the screen) never re-renders on a tap.
+            counter = { KalimatCounter(countFlow = viewModel.todayCount, target = dailyGoalForCounter) },
         )
 
         KalimatMilestoneOverlay(
@@ -199,9 +196,22 @@ private fun KalimatHeroZone(
     onRankClick: () -> Unit,
     onManualEntryClick: () -> Unit,
     onViewRewards: () -> Unit,
-    counter: @Composable (onTap: () -> Unit, enabled: Boolean) -> Unit,
+    counter: @Composable () -> Unit,
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            // Whole-screen tap: a tap anywhere records one dhikr. No ripple — the click only updates
+            // the counter, never a full-screen ripple across the hero (see CLAUDE.md counter rule).
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                enabled = canCount,
+                onClickLabel = stringResource(Res.string.kalimat_add),
+                role = Role.Button,
+                onClick = onTap,
+            ),
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -254,25 +264,15 @@ private fun KalimatHeroZone(
 
             Spacer(Modifier.weight(1f))
 
+            // The full four-word dhikr the user actually recites is highlighted in place inside the
+            // hadith transcript, rather than repeated as a standalone (and incomplete) heading above
+            // it. The reward breakdown stays behind the "what you gain" button — matching the other
+            // challenge screens.
             Text(
-                text = stringResource(Res.string.kalimat_phrase),
-                color = Color.White.copy(alpha = 0.92f),
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Bold,
-                lineHeight = 42.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .padding(horizontal = 12.dp)
-                    .padding(top = 2.dp, bottom = 12.dp),
-            )
-
-            // The hadith transcript lives on the screen itself; the reward breakdown stays behind
-            // the "what you gain" button — matching the other challenge screens.
-            Text(
-                text = stringResource(Res.string.kalimat_reward_hadith),
+                text = kalimatHadithHighlighted(),
                 color = KalimatColors.LightGold.copy(alpha = 0.82f),
-                fontSize = 15.sp,
-                lineHeight = 28.sp,
+                fontSize = 16.sp,
+                lineHeight = 30.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
@@ -286,8 +286,7 @@ private fun KalimatHeroZone(
 
             Spacer(Modifier.height(20.dp))
 
-            // The single count button.
-            counter(onTap, canCount)
+            counter()
 
             Spacer(Modifier.height(10.dp))
             Text(
@@ -307,34 +306,20 @@ private fun KalimatHeroZone(
 }
 
 /**
- * The counter island AND single tap button: a circular ring that shows the running count and, when
- * pressed, records one tasbih. This is the ONLY composable that reads the running count, so a tap
- * recomposes just this subtree — never the whole hero (see CLAUDE.md challenge-counter rule).
+ * The counter island: a circular ring showing the running count. This is the ONLY composable that
+ * reads the running count, so a tap recomposes just this subtree — never the whole hero (see
+ * CLAUDE.md challenge-counter rule). Tapping is handled by the full-screen surface in the hero zone.
  */
 @Composable
 private fun KalimatCounter(
     countFlow: StateFlow<Int>,
     target: Int,
-    onTap: () -> Unit,
-    enabled: Boolean,
 ) {
     val count by countFlow.collectAsStateWithLifecycle()
-    val addLabel = stringResource(Res.string.kalimat_add)
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         KalimatProgressRing(
             fractionProvider = { if (target > 0) count.toFloat() / target.toFloat() else 0f },
-            modifier = Modifier
-                .size(220.dp)
-                // No shared ripple: the single button owns its own interaction source, so pressing
-                // it never triggers a ripple beyond this widget.
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    enabled = enabled,
-                    onClickLabel = addLabel,
-                    role = Role.Button,
-                    onClick = onTap,
-                ),
+            modifier = Modifier.size(220.dp),
             trackColor = Color.White.copy(alpha = 0.15f),
             fillColor = KalimatColors.LightGold,
         ) {
@@ -367,6 +352,29 @@ private fun KalimatCounter(
             value = stringResource(Res.string.kalimat_progress_count, count, target),
             label = stringResource(Res.string.kalimat_daily_goal, target),
         )
+    }
+}
+
+/**
+ * The hadith transcript with the recited four-word dhikr ([kalimat_hadith_dhikr]) emphasised in
+ * place inside it. Falls back to the plain hadith if the substring isn't present (e.g. a locale that
+ * phrases it differently).
+ */
+@Composable
+private fun kalimatHadithHighlighted(): AnnotatedString {
+    val hadith = stringResource(Res.string.kalimat_reward_hadith)
+    val dhikr = stringResource(Res.string.kalimat_hadith_dhikr)
+    return buildAnnotatedString {
+        val idx = hadith.indexOf(dhikr)
+        if (idx < 0 || dhikr.isEmpty()) {
+            append(hadith)
+        } else {
+            append(hadith.substring(0, idx))
+            withStyle(SpanStyle(color = Color.White, fontWeight = FontWeight.Bold)) {
+                append(dhikr)
+            }
+            append(hadith.substring(idx + dhikr.length))
+        }
     }
 }
 
