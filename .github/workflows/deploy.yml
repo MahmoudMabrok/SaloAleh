@@ -51,6 +51,17 @@ jobs:
           sed -i "s/versionCode = $CURRENT_CODE/versionCode = $NEW_CODE/" app/build.gradle.kts
           sed -i "s/versionName = \"[^\"]*\"/versionName = \"$VERSION_NAME\"/" app/build.gradle.kts
 
+          {
+            echo "## 📦 Android version dump"
+            echo ""
+            echo "| Field | Old | New |"
+            echo "|-------|-----|-----|"
+            echo "| versionCode | \`$CURRENT_CODE\` | \`$NEW_CODE\` |"
+            echo "| versionName | — | \`$VERSION_NAME\` |"
+            echo ""
+            echo "**Track:** \`${{ github.event.inputs.track }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Decode google-services.json
         env:
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
@@ -228,14 +239,26 @@ jobs:
         run: |
           VERSION_NAME="${{ github.event.inputs.version_name }}"
 
+          {
+            echo "## 🏷️ Committed version dump"
+            echo ""
+            echo "**Version name:** \`$VERSION_NAME\`"
+            echo ""
+            echo "| Platform | Field | Old | New |"
+            echo "|----------|-------|-----|-----|"
+          } >> "$GITHUB_STEP_SUMMARY"
+
           if [ "${{ needs.deploy-android.result }}" = "success" ]; then
             CURRENT_CODE=$(grep 'versionCode = ' app/build.gradle.kts | grep -o '[0-9]*')
             NEW_CODE=$((CURRENT_CODE + 1))
             sed -i "s/versionCode = $CURRENT_CODE/versionCode = $NEW_CODE/" app/build.gradle.kts
             sed -i "s/versionName = \"[^\"]*\"/versionName = \"$VERSION_NAME\"/" app/build.gradle.kts
             echo "Android versionCode: $CURRENT_CODE → $NEW_CODE"
+            echo "| Android | versionCode | \`$CURRENT_CODE\` | \`$NEW_CODE\` |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Android | versionName | — | \`$VERSION_NAME\` |" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "Android deploy failed — skipping Android version bump"
+            echo "| Android | — | _skipped (deploy failed)_ | |" >> "$GITHUB_STEP_SUMMARY"
           fi
 
           if [ "${{ needs.deploy-ios.result }}" = "success" ]; then
@@ -245,6 +268,8 @@ jobs:
             sed -i "s/CURRENT_PROJECT_VERSION = $CURRENT_BUILD/CURRENT_PROJECT_VERSION = $NEW_BUILD/g" "$PBXPROJ"
             sed -i "s/MARKETING_VERSION = [^;]*/MARKETING_VERSION = $VERSION_NAME/g" "$PBXPROJ"
             echo "iOS build: $CURRENT_BUILD → $NEW_BUILD"
+            echo "| iOS | CURRENT_PROJECT_VERSION | \`$CURRENT_BUILD\` | \`$NEW_BUILD\` |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| iOS | MARKETING_VERSION | — | \`$VERSION_NAME\` |" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "iOS deploy failed — skipping iOS version bump"
           fi
