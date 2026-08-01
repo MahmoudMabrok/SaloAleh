@@ -225,8 +225,9 @@
     <!-- Baqiyat Challenge Screen -->
     <string name="baqiyat_ayah">﴿ وَالْبَاقِيَاتُ الصَّالِحَاتُ خَيْرٌ عِندَ رَبِّكَ ثَوَابًا وَخَيْرٌ أَمَلًا ﴾</string>
     <string name="baqiyat_ayah_ref">سورۃ الکہف ۴۶</string>
-    <string name="baqiyat_tap_hint">ہر ذکر پر ٹیپ کریں یہاں تک کہ دور مکمل ہو جائے</string>
-    <string name="baqiyat_shuffle">ترتیب بدلیں</string>
+    <string name="baqiyat_tap_hint">بٹن دبائیں اور ذکر پڑھیں — پانچ اذکار سے ایک دور مکمل ہوتا ہے</string>
+    <string name="baqiyat_step_progress">ذکر %1$d از %2$d</string>
+    <string name="baqiyat_phrases_title">دور کے اذکار</string>
     <string name="baqiyat_cycles_label">آج مکمل ہونے والے دور</string>
     <string name="baqiyat_manual_entry_button">📿 بیرونی باقیات درج کریں</string>
     <string name="manual_baqiyat_title">📿 بیرونی باقیات درج کریں</string>

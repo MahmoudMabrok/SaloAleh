@@ -225,8 +225,9 @@
     <!-- Baqiyat Challenge Screen -->
     <string name="baqiyat_ayah">﴿ وَالْبَاقِيَاتُ الصَّالِحَاتُ خَيْرٌ عِندَ رَبِّكَ ثَوَابًا وَخَيْرٌ أَمَلًا ﴾</string>
     <string name="baqiyat_ayah_ref">古兰经·山洞章 46</string>
-    <string name="baqiyat_tap_hint">依次点击每句赞词，直到完成一轮</string>
-    <string name="baqiyat_shuffle">打乱顺序</string>
+    <string name="baqiyat_tap_hint">点击按钮并诵读赞词 —— 五句赞词完成一轮</string>
+    <string name="baqiyat_step_progress">第 %1$d 句，共 %2$d 句</string>
+    <string name="baqiyat_phrases_title">本轮赞词</string>
     <string name="baqiyat_cycles_label">今日完成轮数</string>
     <string name="baqiyat_manual_entry_button">📿 记录外部永恒善功</string>
     <string name="manual_baqiyat_title">📿 记录外部永恒善功</string>

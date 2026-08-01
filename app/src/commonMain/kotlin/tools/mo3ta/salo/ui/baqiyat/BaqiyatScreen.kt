@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -52,7 +51,8 @@ import tools.mo3ta.salo.generated.resources.baqiyat_ayah
 import tools.mo3ta.salo.generated.resources.baqiyat_ayah_ref
 import tools.mo3ta.salo.generated.resources.baqiyat_cycles_label
 import tools.mo3ta.salo.generated.resources.baqiyat_manual_entry_button
-import tools.mo3ta.salo.generated.resources.baqiyat_shuffle
+import tools.mo3ta.salo.generated.resources.baqiyat_phrases_title
+import tools.mo3ta.salo.generated.resources.baqiyat_step_progress
 import tools.mo3ta.salo.generated.resources.baqiyat_tap_hint
 import tools.mo3ta.salo.generated.resources.challenge_baqiyat_title
 import tools.mo3ta.salo.generated.resources.dhikr_back_cd
@@ -160,24 +160,21 @@ fun BaqiyatScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            PhraseGrid(
-                phraseOrder = state.phraseOrder,
-                tappedPhrases = state.tappedPhrases,
+            PhraseTapButton(
+                phrase = state.currentPhrase,
+                stepIndex = state.currentPhraseIndex,
                 enabled = !state.isLoading,
-                onTap = { phrase ->
-                    viewModel.onPhraseTap(phrase)
+                onTap = {
+                    viewModel.onPhraseTap()
                     analyticsManager.logAction(AppAnalytics.BAQIYAT_PHRASE_TAP)
                 },
             )
 
             Spacer(Modifier.height(16.dp))
 
-            ShuffleButton(
-                enabled = !state.isLoading,
-                onClick = { viewModel.onShuffle() },
-            )
+            PhraseList(currentIndex = state.currentPhraseIndex)
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(16.dp))
 
             if (manualEntryEnabled) {
                 BaqiyatManualEntryButton(
@@ -318,120 +315,129 @@ private fun CyclesCounterCard(cyclesCompleted: Int) {
     }
 }
 
+/**
+ * The single tap target for the whole challenge: it shows the phrase to recite right now, and every
+ * tap moves to the next one. Tapping on the last phrase completes the cycle and starts over.
+ */
 @Composable
-private fun PhraseGrid(
-    phraseOrder: List<BaqiyatPhrase>,
-    tappedPhrases: Set<BaqiyatPhrase>,
+private fun PhraseTapButton(
+    phrase: BaqiyatPhrase,
+    stepIndex: Int,
     enabled: Boolean,
-    onTap: (BaqiyatPhrase) -> Unit,
+    onTap: () -> Unit,
 ) {
+    val total = BaqiyatPhrase.entries.size
+    val isLastStep = stepIndex == total - 1
+    val borderColor by animateColorAsState(
+        targetValue = if (isLastStep) BaqiyatGreen else BaqiyatGold.copy(alpha = 0.45f),
+    )
+    Surface(
+        onClick = onTap,
+        enabled = enabled,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = Color.White.copy(alpha = 0.08f),
+        border = BorderStroke(1.5.dp, borderColor),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = stringResource(Res.string.baqiyat_step_progress, stepIndex + 1, total),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.6f),
+                fontSize = 12.sp,
+            )
+            Spacer(Modifier.height(14.dp))
+            Text(
+                text = stringResource(phrase.labelRes),
+                color = MohamedLoversPalette.GoldGlow,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                lineHeight = 40.sp,
+            )
+            Spacer(Modifier.height(18.dp))
+            StepDots(stepIndex = stepIndex, total = total)
+        }
+    }
+}
+
+@Composable
+private fun StepDots(stepIndex: Int, total: Int) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        repeat(total) { index ->
+            val dotColor by animateColorAsState(
+                targetValue = when {
+                    index < stepIndex -> BaqiyatGreen
+                    index == stepIndex -> BaqiyatGold
+                    else -> Color.White.copy(alpha = 0.18f)
+                },
+            )
+            Box(
+                modifier = Modifier
+                    .height(8.dp)
+                    .width(if (index == stepIndex) 20.dp else 8.dp)
+                    .background(dotColor, RoundedCornerShape(50)),
+            )
+        }
+    }
+}
+
+/** All the phrases of the cycle, written out so they can be read and followed along. */
+@Composable
+private fun PhraseList(currentIndex: Int) {
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            phraseOrder.take(2).forEach { phrase ->
-                PhraseSlot(
-                    phrase = phrase,
-                    tapped = phrase in tappedPhrases,
-                    enabled = enabled,
-                    onTap = onTap,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-        }
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            phraseOrder.drop(2).take(2).forEach { phrase ->
-                PhraseSlot(
-                    phrase = phrase,
-                    tapped = phrase in tappedPhrases,
-                    enabled = enabled,
-                    onTap = onTap,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-        }
-        PhraseSlot(
-            phrase = BaqiyatPhrase.LaHawla,
-            tapped = BaqiyatPhrase.LaHawla in tappedPhrases,
-            enabled = enabled,
-            onTap = onTap,
-            modifier = Modifier.fillMaxWidth(),
+        Text(
+            text = stringResource(Res.string.baqiyat_phrases_title),
+            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.55f),
+            fontSize = 12.sp,
         )
+        BaqiyatPhrase.entries.forEachIndexed { index, phrase ->
+            PhraseListRow(phrase = phrase, index = index, currentIndex = currentIndex)
+        }
     }
 }
 
 @Composable
-private fun PhraseSlot(
-    phrase: BaqiyatPhrase,
-    tapped: Boolean,
-    enabled: Boolean,
-    onTap: (BaqiyatPhrase) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val backgroundColor by animateColorAsState(
-        targetValue = if (tapped) BaqiyatGreen.copy(alpha = 0.28f) else Color.White.copy(alpha = 0.07f),
-    )
-    val borderColor by animateColorAsState(
-        targetValue = if (tapped) BaqiyatGreen else BaqiyatGold.copy(alpha = 0.35f),
-    )
+private fun PhraseListRow(phrase: BaqiyatPhrase, index: Int, currentIndex: Int) {
+    val isCurrent = index == currentIndex
+    val isDone = index < currentIndex
     val textColor by animateColorAsState(
-        targetValue = if (tapped) BaqiyatGreen else MohamedLoversPalette.GoldGlow,
+        targetValue = when {
+            isCurrent -> MohamedLoversPalette.GoldGlow
+            isDone -> BaqiyatGreen
+            else -> Color.White.copy(alpha = 0.55f)
+        },
     )
-    Box(modifier = modifier.height(96.dp)) {
-        Surface(
-            onClick = { onTap(phrase) },
-            enabled = enabled,
-            modifier = Modifier.fillMaxSize(),
-            shape = RoundedCornerShape(18.dp),
-            color = backgroundColor,
-            border = BorderStroke(1.dp, borderColor),
-        ) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(10.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = stringResource(phrase.labelRes),
-                    color = textColor,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Center,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ShuffleButton(
-    enabled: Boolean,
-    onClick: () -> Unit,
-) {
-    Surface(
-        onClick = onClick,
-        enabled = enabled,
-        shape = RoundedCornerShape(50),
-        color = Color.White.copy(alpha = 0.06f),
-        border = BorderStroke(1.dp, BaqiyatGold.copy(alpha = 0.3f)),
+    val backgroundColor by animateColorAsState(
+        targetValue = if (isCurrent) Color.White.copy(alpha = 0.08f) else Color.Transparent,
+    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(backgroundColor, RoundedCornerShape(14.dp))
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Shuffle,
-                contentDescription = null,
-                tint = MohamedLoversPalette.GoldGlow.copy(alpha = 0.8f),
-                modifier = Modifier.height(18.dp).width(18.dp),
-            )
-            Text(
-                text = stringResource(Res.string.baqiyat_shuffle),
-                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-            )
-        }
+        Box(
+            modifier = Modifier
+                .height(6.dp)
+                .width(6.dp)
+                .background(textColor.copy(alpha = 0.7f), RoundedCornerShape(50)),
+        )
+        Text(
+            text = stringResource(phrase.labelRes),
+            color = textColor,
+            fontSize = 16.sp,
+            fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+            lineHeight = 26.sp,
+        )
     }
 }
