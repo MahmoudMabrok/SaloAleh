@@ -772,7 +772,7 @@
               ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 3"
             },
             "totalCount": {
-              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= (data.exists() ? data.val() : 0) + 10000 && newData.val() <= (data.parent().child('yesterdayTotalScore').exists() ? data.parent().child('yesterdayTotalScore').val() : 0) + 50000"
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= (data.exists() ? data.val() : 0) + 10000 && newData.val() <= (data.parent().child('yesterdayTotalScore').exists() ? data.parent().child('yesterdayTotalScore').val() : 0) + 18000"
             },
             "yesterdayTotalScore": {
               ".read": true,
