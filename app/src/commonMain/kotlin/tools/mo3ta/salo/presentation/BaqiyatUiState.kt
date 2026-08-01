@@ -7,8 +7,8 @@ import tools.mo3ta.salo.domain.BaqiyatLeaderboardEntry
 data class BaqiyatUiState(
     val dateKey: String = "",
     val cyclesCompleted: Int = 0,
-    val phraseOrder: List<BaqiyatPhrase> = BaqiyatPhrase.entries.take(4),
-    val tappedPhrases: Set<BaqiyatPhrase> = emptySet(),
+    /** Position in the cycle: which phrase the single tap button is currently showing. */
+    val currentPhraseIndex: Int = 0,
     val rank: Int = 0,
     val participantCount: Int = 0,
     val totalTodayBaqiyat: Int = 0,
@@ -25,4 +25,8 @@ data class BaqiyatUiState(
     val isLeaderboardLoading: Boolean = false,
     val currentUid: String = "",
     val currentStreak: Int = 0,
-)
+) {
+    /** The phrase shown on the tap button right now. */
+    val currentPhrase: BaqiyatPhrase
+        get() = BaqiyatPhrase.entries[currentPhraseIndex.coerceIn(0, BaqiyatPhrase.entries.lastIndex)]
+}

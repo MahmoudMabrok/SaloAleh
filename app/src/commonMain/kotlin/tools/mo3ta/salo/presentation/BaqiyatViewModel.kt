@@ -32,7 +32,6 @@ class BaqiyatViewModel(
 ) : ViewModel() {
 
     private val cairoZone = TimeZone.of("Africa/Cairo")
-    private val activePhrases = BaqiyatPhrase.entries.take(4)
     private val syncMutex = Mutex()
 
     private val _state = MutableStateFlow(BaqiyatUiState(currentUid = sessionStore.getOrCreateUid()))
@@ -59,8 +58,7 @@ class BaqiyatViewModel(
                     dateKey = today.toString(),
                     cyclesCompleted = store.todayCount(today),
                     manualRemainingToday = store.manualRemainingToday(today),
-                    phraseOrder = activePhrases,
-                    tappedPhrases = emptySet(),
+                    currentPhraseIndex = 0,
                     currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.BAQIYAT, today),
                     isLoading = false,
                     errorMessage = null,
@@ -81,14 +79,14 @@ class BaqiyatViewModel(
         }
     }
 
-    /** Marks [phrase] green; once all phrases are marked, a full cycle completes: +1 to the counter, all reset. */
-    fun onPhraseTap(phrase: BaqiyatPhrase) {
-        val current = _state.value
-        if (phrase in current.tappedPhrases) return
-
-        val tapped = current.tappedPhrases + phrase
-        if (tapped.size < BaqiyatPhrase.entries.size) {
-            _state.update { it.copy(tappedPhrases = tapped) }
+    /**
+     * A single tap advances the cycle to the next phrase. Tapping on the last phrase completes a
+     * full cycle: +1 to the counter and back to the first phrase.
+     */
+    fun onPhraseTap() {
+        val next = _state.value.currentPhraseIndex + 1
+        if (next < BaqiyatPhrase.entries.size) {
+            _state.update { it.copy(currentPhraseIndex = next) }
             return
         }
 
@@ -97,18 +95,13 @@ class BaqiyatViewModel(
         maybeRecordWin(today, updated)
         _state.update {
             it.copy(
-                tappedPhrases = emptySet(),
+                currentPhraseIndex = 0,
                 cyclesCompleted = updated,
                 showCelebration = true,
                 celebrationMilestone = updated,
             )
         }
         recalculateLocalLeaderboard()
-    }
-
-    /** Reshuffles the card order on user request, preserving any already-marked phrases. */
-    fun onShuffle() {
-        _state.update { it.copy(phraseOrder = shuffledActivePhrases(it.phraseOrder)) }
     }
 
     fun onCelebrationDismissed() {
@@ -296,13 +289,4 @@ class BaqiyatViewModel(
     }
 
     private fun today(): LocalDate = Clock.System.todayIn(cairoZone)
-
-    private fun shuffledActivePhrases(currentOrder: List<BaqiyatPhrase>): List<BaqiyatPhrase> {
-        val shuffled = activePhrases.shuffled()
-        return if (activePhrases.size > 1 && shuffled == currentOrder) {
-            activePhrases.drop(1) + activePhrases.first()
-        } else {
-            shuffled
-        }
-    }
 }
