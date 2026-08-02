@@ -250,8 +250,8 @@
     <!-- Baqiyat Challenge Screen -->
     <string name="baqiyat_ayah">﴿ وَالْبَاقِيَاتُ الصَّالِحَاتُ خَيْرٌ عِندَ رَبِّكَ ثَوَابًا وَخَيْرٌ أَمَلًا ﴾</string>
     <string name="baqiyat_ayah_ref">Surah Al-Kahf 46</string>
-    <string name="baqiyat_tap_hint">Tap the button and read the phrase — five phrases complete a cycle</string>
-    <string name="baqiyat_step_progress">Phrase %1$d of %2$d</string>
+    <string name="baqiyat_tap_hint">Read the five phrases, then tap anywhere — one tap = one cycle</string>
+    <string name="baqiyat_add_cd">Cycle completed ✦ Tap here</string>
     <string name="baqiyat_phrases_title">Phrases of the cycle</string>
     <string name="baqiyat_cycles_label">Cycles completed today</string>
     <string name="baqiyat_manual_entry_button">📿 Log external baqiyat</string>

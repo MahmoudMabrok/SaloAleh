@@ -14,7 +14,6 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import tools.mo3ta.salo.data.baqiyat.BaqiyatFirebaseClient
-import tools.mo3ta.salo.data.baqiyat.BaqiyatPhrase
 import tools.mo3ta.salo.data.baqiyat.BaqiyatStore
 import tools.mo3ta.salo.data.country.CountryCodeProvider
 import tools.mo3ta.salo.data.engagement.ChallengeBadgeStore
@@ -58,7 +57,6 @@ class BaqiyatViewModel(
                     dateKey = today.toString(),
                     cyclesCompleted = store.todayCount(today),
                     manualRemainingToday = store.manualRemainingToday(today),
-                    currentPhraseIndex = 0,
                     currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.BAQIYAT, today),
                     isLoading = false,
                     errorMessage = null,
@@ -80,22 +78,16 @@ class BaqiyatViewModel(
     }
 
     /**
-     * A single tap advances the cycle to the next phrase. Tapping on the last phrase completes a
-     * full cycle: +1 to the counter and back to the first phrase.
+     * One tap = one completed cycle of all the phrases: +1 to the counter, like every other
+     * count challenge. The phrases are shown on screen to recite; the app does not step through
+     * them.
      */
-    fun onPhraseTap() {
-        val next = _state.value.currentPhraseIndex + 1
-        if (next < BaqiyatPhrase.entries.size) {
-            _state.update { it.copy(currentPhraseIndex = next) }
-            return
-        }
-
+    fun onCycleTap() {
         val today = today()
         val updated = store.incrementToday(today)
         maybeRecordWin(today, updated)
         _state.update {
             it.copy(
-                currentPhraseIndex = 0,
                 cyclesCompleted = updated,
                 showCelebration = true,
                 celebrationMilestone = updated,
