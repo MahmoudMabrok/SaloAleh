@@ -1,8 +1,9 @@
 package tools.mo3ta.salo.ui.baqiyat
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,9 +30,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -47,12 +50,12 @@ import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.data.baqiyat.BaqiyatPhrase
 import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.baqiyat_add_cd
 import tools.mo3ta.salo.generated.resources.baqiyat_ayah
 import tools.mo3ta.salo.generated.resources.baqiyat_ayah_ref
 import tools.mo3ta.salo.generated.resources.baqiyat_cycles_label
 import tools.mo3ta.salo.generated.resources.baqiyat_manual_entry_button
 import tools.mo3ta.salo.generated.resources.baqiyat_phrases_title
-import tools.mo3ta.salo.generated.resources.baqiyat_step_progress
 import tools.mo3ta.salo.generated.resources.baqiyat_tap_hint
 import tools.mo3ta.salo.generated.resources.challenge_baqiyat_title
 import tools.mo3ta.salo.generated.resources.dhikr_back_cd
@@ -106,7 +109,20 @@ fun BaqiyatScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MohamedLoversPalette.DeepBlue),
+            .background(MohamedLoversPalette.DeepBlue)
+            // One tap anywhere = one completed cycle. No ripple: a tap only updates the counter
+            // and its related parts, never the whole screen.
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                enabled = !state.isLoading,
+                onClickLabel = stringResource(Res.string.baqiyat_add_cd),
+                role = Role.Button,
+                onClick = {
+                    viewModel.onCycleTap()
+                    analyticsManager.logAction(AppAnalytics.BAQIYAT_PHRASE_TAP)
+                },
+            ),
     ) {
         Column(
             modifier = Modifier
@@ -160,19 +176,11 @@ fun BaqiyatScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            PhraseTapButton(
-                phrase = state.currentPhrase,
-                stepIndex = state.currentPhraseIndex,
-                enabled = !state.isLoading,
-                onTap = {
-                    viewModel.onPhraseTap()
-                    analyticsManager.logAction(AppAnalytics.BAQIYAT_PHRASE_TAP)
-                },
-            )
+            PhraseList()
 
             Spacer(Modifier.height(16.dp))
 
-            PhraseList(currentIndex = state.currentPhraseIndex)
+            CycleTapHint()
 
             Spacer(Modifier.height(16.dp))
 
@@ -316,128 +324,71 @@ private fun CyclesCounterCard(cyclesCompleted: Int) {
 }
 
 /**
- * The single tap target for the whole challenge: it shows the phrase to recite right now, and every
- * tap moves to the next one. Tapping on the last phrase completes the cycle and starts over.
+ * The phrases of one cycle, written out so they can be read. Static: the screen never steps
+ * through them — the user recites them and taps once for the whole cycle.
  */
 @Composable
-private fun PhraseTapButton(
-    phrase: BaqiyatPhrase,
-    stepIndex: Int,
-    enabled: Boolean,
-    onTap: () -> Unit,
-) {
-    val total = BaqiyatPhrase.entries.size
-    val isLastStep = stepIndex == total - 1
-    val borderColor by animateColorAsState(
-        targetValue = if (isLastStep) BaqiyatGreen else BaqiyatGold.copy(alpha = 0.45f),
-    )
+private fun PhraseList() {
     Surface(
-        onClick = onTap,
-        enabled = enabled,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        color = Color.White.copy(alpha = 0.08f),
-        border = BorderStroke(1.5.dp, borderColor),
+        shape = RoundedCornerShape(20.dp),
+        color = Color.White.copy(alpha = 0.06f),
+        border = BorderStroke(1.dp, BaqiyatGold.copy(alpha = 0.25f)),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 28.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .padding(horizontal = 16.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                text = stringResource(Res.string.baqiyat_step_progress, stepIndex + 1, total),
-                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.6f),
+                text = stringResource(Res.string.baqiyat_phrases_title),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.55f),
                 fontSize = 12.sp,
             )
-            Spacer(Modifier.height(14.dp))
-            Text(
-                text = stringResource(phrase.labelRes),
-                color = MohamedLoversPalette.GoldGlow,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                lineHeight = 40.sp,
-            )
-            Spacer(Modifier.height(18.dp))
-            StepDots(stepIndex = stepIndex, total = total)
+            BaqiyatPhrase.entries.forEachIndexed { index, phrase ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Text(
+                        text = (index + 1).toString(),
+                        color = BaqiyatGold.copy(alpha = 0.55f),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        text = stringResource(phrase.labelRes),
+                        color = MohamedLoversPalette.GoldGlow,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        lineHeight = 28.sp,
+                    )
+                }
+            }
         }
     }
 }
 
+/** Tap affordance for the full-screen counter — not itself clickable; the whole screen is. */
 @Composable
-private fun StepDots(stepIndex: Int, total: Int) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        repeat(total) { index ->
-            val dotColor by animateColorAsState(
-                targetValue = when {
-                    index < stepIndex -> BaqiyatGreen
-                    index == stepIndex -> BaqiyatGold
-                    else -> Color.White.copy(alpha = 0.18f)
-                },
-            )
-            Box(
-                modifier = Modifier
-                    .height(8.dp)
-                    .width(if (index == stepIndex) 20.dp else 8.dp)
-                    .background(dotColor, RoundedCornerShape(50)),
-            )
-        }
-    }
-}
-
-/** All the phrases of the cycle, written out so they can be read and followed along. */
-@Composable
-private fun PhraseList(currentIndex: Int) {
-    Column(
+private fun CycleTapHint() {
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        shape = RoundedCornerShape(20.dp),
+        color = BaqiyatGreen.copy(alpha = 0.16f),
+        border = BorderStroke(1.5.dp, BaqiyatGreen.copy(alpha = 0.55f)),
     ) {
         Text(
-            text = stringResource(Res.string.baqiyat_phrases_title),
-            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.55f),
-            fontSize = 12.sp,
-        )
-        BaqiyatPhrase.entries.forEachIndexed { index, phrase ->
-            PhraseListRow(phrase = phrase, index = index, currentIndex = currentIndex)
-        }
-    }
-}
-
-@Composable
-private fun PhraseListRow(phrase: BaqiyatPhrase, index: Int, currentIndex: Int) {
-    val isCurrent = index == currentIndex
-    val isDone = index < currentIndex
-    val textColor by animateColorAsState(
-        targetValue = when {
-            isCurrent -> MohamedLoversPalette.GoldGlow
-            isDone -> BaqiyatGreen
-            else -> Color.White.copy(alpha = 0.55f)
-        },
-    )
-    val backgroundColor by animateColorAsState(
-        targetValue = if (isCurrent) Color.White.copy(alpha = 0.08f) else Color.Transparent,
-    )
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(backgroundColor, RoundedCornerShape(14.dp))
-            .padding(horizontal = 14.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Box(
+            text = stringResource(Res.string.baqiyat_add_cd),
+            color = Color.White.copy(alpha = 0.92f),
+            fontSize = 17.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
             modifier = Modifier
-                .height(6.dp)
-                .width(6.dp)
-                .background(textColor.copy(alpha = 0.7f), RoundedCornerShape(50)),
-        )
-        Text(
-            text = stringResource(phrase.labelRes),
-            color = textColor,
-            fontSize = 16.sp,
-            fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
-            lineHeight = 26.sp,
+                .fillMaxWidth()
+                .padding(vertical = 20.dp, horizontal = 12.dp),
         )
     }
 }
