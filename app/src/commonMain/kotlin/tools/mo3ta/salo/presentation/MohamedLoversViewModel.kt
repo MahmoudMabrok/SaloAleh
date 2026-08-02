@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -386,6 +387,10 @@ class MohamedLoversViewModel(
         publishRoundStreak(round, streakResult.currentStreak, prevStreak)
         applyLeaderboard()
         flushPendingSession()
+        // Extension batches are external salawat too — large ones leave the same audit entry.
+        viewModelScope.launch {
+            repository.appendExternalLog(round, count, Instant.fromEpochMilliseconds(nowMs))
+        }
     }
 
     fun showManualSalawatSheet() {
@@ -455,6 +460,8 @@ class MohamedLoversViewModel(
         viewModelScope.launch {
             repository.incrementExternalCount(roundKey, applied)
             _state.update { it.copy(isSubmittingManualSalawat = false) }
+            // Audit trail for oversized batches; the applied (capped) amount is what was scored.
+            repository.appendExternalLog(roundKey, applied, Instant.fromEpochMilliseconds(nowMs))
         }
         sessionStore.saveLastSalawatTimestamp(nowMs)
     }
