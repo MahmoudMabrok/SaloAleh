@@ -40,5 +40,5 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
           ZERO_SCORE_DAYS: ${{ github.event.inputs.zero_score_days || '3' }}
-          SCORED_DAYS: ${{ github.event.inputs.scored_days || '10' }}
+          SCORED_DAYS: ${{ github.event.inputs.scored_days || '21' }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
