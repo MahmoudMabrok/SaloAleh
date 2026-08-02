@@ -796,6 +796,11 @@
             "totalExternal": {
               ".validate": "newData.isNumber() && newData.val() >= (data.exists() ? data.val() : 0)"
             },
+            "externalLog": {
+              "$entryKey": {
+                ".validate": "newData.isNumber() && newData.val() >= 0"
+              }
+            },
             "dailyBadge": {
               ".validate": "newData.isString()"
             },

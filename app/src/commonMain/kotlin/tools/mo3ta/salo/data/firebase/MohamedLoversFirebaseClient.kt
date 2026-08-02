@@ -255,6 +255,33 @@ class MohamedLoversFirebaseClient(
         }
     }
 
+    override suspend fun appendExternalLog(
+        roundKey: String,
+        uid: String,
+        timeKey: String,
+        count: Int,
+    ): Result<Unit> {
+        log.d { "appendExternalLog[$roundKey/$uid] $timeKey=$count" }
+        return runCatching {
+            // Written as a deep path inside the player patch so the node keeps carrying uid +
+            // schemaVersion (the write rule and required-field validate both read the merged state).
+            Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(
+                playerPatch(uid, "$EXTERNAL_LOG_PATH/$timeKey" to ServerValue.increment(count.toDouble()))
+            )
+        }.also { result ->
+            result.fold(
+                onSuccess = {
+                    log.d { "appendExternalLog[$roundKey/$uid] ok" }
+                    mirror.mirrorExternalLog(roundKey, uid, timeKey, count)
+                },
+                onFailure = { error ->
+                    log.e(error) { "appendExternalLog[$roundKey/$uid] failed" }
+                    trackWriteFailure("append_external_log", error)
+                },
+            )
+        }
+    }
+
     override suspend fun decrementScore(roundKey: String, uid: String, amount: Int): Result<Int> {
         log.d { "decrementScore[$roundKey/$uid] amount=$amount" }
         if (amount <= 0) return Result.success(0)
@@ -778,6 +805,7 @@ class MohamedLoversFirebaseClient(
         const val RANK_KEY = "rank"
         const val TOTAL_COUNT_KEY = "totalCount"
         const val TOTAL_EXTERNAL_KEY = "totalExternal"
+        const val EXTERNAL_LOG_PATH = "externalLog"
         const val IS_WINNER_KEY = "isWinner"
         const val WINNER_CODE_KEY = "winnerCode"
         const val COUNTRY_CODE_KEY = "countryCode"

@@ -83,6 +83,20 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
     override suspend fun incrementExternalCount(roundKey: String, uid: String, count: Int): Result<Unit> =
         Result.success(Unit)
 
+    data class ExternalLogCall(val roundKey: String, val uid: String, val timeKey: String, val count: Int)
+
+    val externalLogCalls = mutableListOf<ExternalLogCall>()
+
+    override suspend fun appendExternalLog(
+        roundKey: String,
+        uid: String,
+        timeKey: String,
+        count: Int,
+    ): Result<Unit> {
+        externalLogCalls.add(ExternalLogCall(roundKey, uid, timeKey, count))
+        return Result.success(Unit)
+    }
+
     data class DecrementScoreCall(val roundKey: String, val uid: String, val amount: Int)
 
     val decrementScoreCalls = mutableListOf<DecrementScoreCall>()

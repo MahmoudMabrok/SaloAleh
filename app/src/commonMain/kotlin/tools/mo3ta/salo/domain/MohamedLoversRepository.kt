@@ -2,6 +2,7 @@ package tools.mo3ta.salo.domain
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import tools.mo3ta.salo.data.billing.PremiumStore
@@ -124,6 +125,17 @@ class MohamedLoversRepository(
     suspend fun incrementExternalCount(roundKey: String, count: Int): Result<Unit> {
         val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
         return firebaseClient.incrementExternalCount(roundKey, uid, count)
+    }
+
+    /**
+     * Record a large external/manual salawat batch under the player's `externalLog`, keyed by the
+     * Cairo minute it was entered. Batches at or below [ExternalSalawatLog.MIN_LOGGED_COUNT] are a
+     * no-op, so only oversized claims leave a trail.
+     */
+    suspend fun appendExternalLog(roundKey: String, count: Int, at: Instant): Result<Unit> {
+        if (!ExternalSalawatLog.shouldLog(count)) return Result.success(Unit)
+        val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
+        return firebaseClient.appendExternalLog(roundKey, uid, ExternalSalawatLog.entryKey(at), count)
     }
 
     suspend fun flushPendingSession(countryCode: String, todayCount: Int = 0): Result<Unit> {

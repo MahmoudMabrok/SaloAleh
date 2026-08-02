@@ -139,6 +139,17 @@ Client-published per-Cairo-day salawat total that drives the daily leaderboard d
 - RTDB rules: `players/{uid}/todayCount` validates `isNumber() && >= 0` (client-writable, absolute). `users/{uid}/scoreHistory`, `users/{uid}/paceFlags`, and top-level `mohamed_lovers/abnormal_users` are server-only — `scoreHistory`/`paceFlags` use the `.validate: false` pattern (the cascading `users/$uid` write grant reaches them, so `.write:false` would be useless); `abnormal_users` is an explicit named node (`.read:false`, `.write:false`) so it isn't shadowed by the `$round` wildcard, and the Admin SDK bypasses both. No Firestore mirror (RTDB is the source of truth for these).
 - Tests: `commonTest/data/engagement/DailyGoalStoreTest.kt` (daily progress), `scripts/abnormal-users.test.js` (`computeTodayScore` + `buildDailyScoreSnapshots` incl. pace flags + `roundDayNumber`).
 
+### Large external-entry log
+
+Audit trail for oversized externally-recorded salawat batches: any manual ("record external") entry or Chrome-extension sync **strictly greater than 2,000** is stamped onto the player node so a big claim leaves a timestamped record next to the score it produced. Record-only — nothing about the score, cap, heart index, streak or daily count changes because of it.
+
+- Core files: `domain/ExternalSalawatLog.kt` (`MIN_LOGGED_COUNT = 2_000`, `shouldLog`, `entryKey`), `domain/MohamedLoversRepository.kt` (`appendExternalLog`), `data/firebase/MohamedLoversFirebaseClient.kt` (`EXTERNAL_LOG_PATH`, `appendExternalLog`), `presentation/MohamedLoversViewModel.kt` (`submitManualSalawat`, `applyExtensionScore`), `database.rules.json`.
+- Written to RTDB `mohamed_lovers/{roundKey}/players/{uid}/externalLog/{timeKey}` = count, where `timeKey` is the Cairo wall clock as `yyyy-MM-dd HH;mm` (minute precision; `;` instead of `:`, and no `.`/`$`/`#`/`[`/`]`/`/`, so it is a legal RTDB key). Values are written with `ServerValue.increment`, so two batches landing in the same minute add up instead of overwriting each other.
+- Regular in-app taps are **never** logged — only bulk amounts a user claims. The manual path logs the **applied** (cap-clamped) amount, i.e. what actually scored; the extension path logs the synced count.
+- The write goes through `playerPatch` as a deep path (`externalLog/{timeKey}`) so the patch still carries `uid` + `schemaVersion` for the write rule and the required-field gate. It is fire-and-forget and runs after the manual sheet's submitting state clears, so a failure never blocks or reverts the entry.
+- RTDB rules: `externalLog/$entryKey` validates `isNumber() && >= 0` under the existing player `.write` grant (the player node's `$other: false` means the key had to be whitelisted). Mirrored to Firestore as a nested `externalLog` map field on the player doc.
+- Tests: `commonTest/domain/ExternalSalawatLogTest.kt`, `commonTest/domain/MohamedLoversRepositoryExternalLogTest.kt`.
+
 ### Remote update prompt
 
 Startup update dialog driven by remote-config values (RTDB, not Firebase Remote Config — the latter is unused). Two modes: a **soft** "new version available" nudge (`latestVersion`, a versionName string) and a **forced**, non-dismissable "update required" block (`minSupportedVersionCode`, an integer version code).
@@ -184,6 +195,7 @@ mohamed_lovers/
     ├── roundTotal, roundPlayerCount      # server-computed aggregates
     ├── leaderboard/                      # server-populated top-N
     └── players/{uid}/                    # client-writable: uid, schemaVersion, totalCount, todayCount, updatedAt, countryCode, dailyBadge, roundStreak
+        └── externalLog/{yyyy-MM-dd HH;mm} # client-written audit entry per external/manual batch > 2,000
 ```
 
 **Round key convention:** `YYYY-MM-DD` of the _next_ Friday in Cairo timezone (`Africa/Cairo`). Round resets at 19:00 Cairo time (16:00 UTC) on Friday.
