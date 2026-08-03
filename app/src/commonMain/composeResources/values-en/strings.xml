@@ -501,6 +501,20 @@
     <string name="settings_supporter_status">You are a supporter — %1$s</string>
     <string name="settings_manage_features">Tap to manage features</string>
 
+    <!-- Voice Dhikr Contribution -->
+    <string name="settings_voice_dhikr_header">Help us build</string>
+    <string name="settings_voice_dhikr_link">🎙️ Help us build the dhikr-by-voice feature</string>
+    <string name="voice_dhikr_title">Dhikr by voice</string>
+    <string name="voice_dhikr_headline">Coming feature: count your dhikr by voice</string>
+    <string name="voice_dhikr_intro">We are collecting voice recordings of dhikr from volunteers like you to train a model that recognises dhikr. Then you will simply open the microphone and say the dhikr, and the app will count it for you — no tapping the screen.</string>
+    <string name="voice_dhikr_how_header">How to take part</string>
+    <string name="voice_dhikr_step_1">Tap the start button below to open the recording form.</string>
+    <string name="voice_dhikr_step_2">Record the requested adhkar in your own voice, in a quiet place.</string>
+    <string name="voice_dhikr_step_3">Submit the recording — it is used only to train the model.</string>
+    <string name="voice_dhikr_privacy">Taking part is entirely voluntary. Recordings are used only to train the dhikr recognition model; they are never published and are not linked to your name.</string>
+    <string name="voice_dhikr_start">Start recording</string>
+    <string name="voice_dhikr_external_note">The link opens in your browser, outside the app.</string>
+
     <!-- Extension QR Screen -->
     <string name="extension_qr_title">Sync data</string>
     <string name="extension_qr_warning_title">Warning</string>

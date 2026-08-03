@@ -506,6 +506,20 @@
     <string name="settings_supporter_status">أنت داعم — %1$s</string>
     <string name="settings_manage_features">اضغط لإدارة المزايا</string>
 
+    <!-- Voice Dhikr Contribution -->
+    <string name="settings_voice_dhikr_header">ساعدنا في التطوير</string>
+    <string name="settings_voice_dhikr_link">🎙️ ساعدنا في بناء ميزة الذكر بالصوت</string>
+    <string name="voice_dhikr_title">الذكر بالصوت</string>
+    <string name="voice_dhikr_headline">ميزة قادمة: عدّ الذكر بصوتك</string>
+    <string name="voice_dhikr_intro">نجمع تسجيلات صوتية للأذكار من متطوعين مثلك لتدريب نموذج يتعرّف على الذكر. وبعدها يكفي أن تفتح الميكروفون وتذكر الله، فيقوم التطبيق بالعدّ تلقائيًا دون أن تضغط على الشاشة.</string>
+    <string name="voice_dhikr_how_header">كيف تشارك؟</string>
+    <string name="voice_dhikr_step_1">اضغط زر البدء بالأسفل ليفتح لك نموذج التسجيل.</string>
+    <string name="voice_dhikr_step_2">سجّل الأذكار المطلوبة بصوتك في مكان هادئ.</string>
+    <string name="voice_dhikr_step_3">أرسل التسجيل، وسيُستخدم في تدريب النموذج فقط.</string>
+    <string name="voice_dhikr_privacy">المشاركة تطوّعية بالكامل، والتسجيلات تُستخدم فقط لتدريب نموذج التعرّف على الذكر، ولا تُنشر ولا تُربط باسمك.</string>
+    <string name="voice_dhikr_start">ابدأ التسجيل</string>
+    <string name="voice_dhikr_external_note">سيفتح الرابط في المتصفح خارج التطبيق.</string>
+
     <!-- Extension QR Screen -->
     <string name="extension_qr_title">مزامنة البيانات</string>
     <string name="extension_qr_warning_title">تنبيه</string>

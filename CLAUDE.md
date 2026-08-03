@@ -175,6 +175,15 @@ Server-side hard backstop that pairs with the force-update prompt: builds that p
 - Scope is the **main competition only** (`mohamed_lovers` players); the 7 challenge nodes and `ten_days` are not gated. Admin scripts bypass rules (Admin SDK), so server writes need no `schemaVersion`.
 - **Rollout order matters** — deploying the rule denies all not-yet-updated clients immediately. Ship the new build first (it also carries the existing force-update code), publish and let the store propagate, set `mohamed_lovers/app_config/minSupportedVersionCode` to the new build's version code (force-update UX), **then** `firebase deploy --only database` (the hard backstop).
 
+### Voice dhikr data collection
+
+Settings entry that recruits volunteers to record dhikr audio for training a sound-based dhikr counter.
+
+- Core files: `ui/settings/VoiceDhikrScreen.kt`, `ui/settings/SettingsScreen.kt` (`onOpenVoiceDhikr` + "help us build" section), `App.kt` (`showVoiceDhikr` route + back handler).
+- Purely informational — no recording happens in-app and nothing is persisted or written to Firebase. The screen explains why recordings are collected, lists the three participation steps, and its "start" button hands off to an external Google Apps Script form (`VOICE_DHIKR_FORM_URL`) via `LocalUriHandler.openUri`.
+- Analytics: `AppAnalytics.OPEN_VOICE_DHIKR` (settings row tapped), `AppAnalytics.VOICE_DHIKR_FORM_OPENED` (external form opened), plus a `VoiceDhikrScreen` view event.
+- Strings are the `settings_voice_dhikr_*` / `voice_dhikr_*` keys in all four locales.
+
 ## Firebase RTDB structure
 
 ```
