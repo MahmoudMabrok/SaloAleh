@@ -250,8 +250,9 @@
     <!-- Baqiyat Challenge Screen -->
     <string name="baqiyat_ayah">﴿ وَالْبَاقِيَاتُ الصَّالِحَاتُ خَيْرٌ عِندَ رَبِّكَ ثَوَابًا وَخَيْرٌ أَمَلًا ﴾</string>
     <string name="baqiyat_ayah_ref">Surah Al-Kahf 46</string>
-    <string name="baqiyat_tap_hint">Tap each phrase until the cycle completes</string>
-    <string name="baqiyat_shuffle">Shuffle order</string>
+    <string name="baqiyat_tap_hint">Read the five phrases, then tap anywhere — one tap = one cycle</string>
+    <string name="baqiyat_add_cd">Cycle completed ✦ Tap here</string>
+    <string name="baqiyat_phrases_title">Phrases of the cycle</string>
     <string name="baqiyat_cycles_label">Cycles completed today</string>
     <string name="baqiyat_manual_entry_button">📿 Log external baqiyat</string>
     <string name="manual_baqiyat_title">📿 Log External Baqiyat</string>
@@ -500,6 +501,20 @@
     <string name="settings_supporter_status">You are a supporter — %1$s</string>
     <string name="settings_manage_features">Tap to manage features</string>
 
+    <!-- Voice Dhikr Contribution -->
+    <string name="settings_voice_dhikr_header">Help us build</string>
+    <string name="settings_voice_dhikr_link">🎙️ Help us build the dhikr-by-voice feature</string>
+    <string name="voice_dhikr_title">Dhikr by voice</string>
+    <string name="voice_dhikr_headline">Coming feature: count your dhikr by voice</string>
+    <string name="voice_dhikr_intro">We are collecting voice recordings of dhikr from volunteers like you to train a model that recognises dhikr. Then you will simply open the microphone and say the dhikr, and the app will count it for you — no tapping the screen.</string>
+    <string name="voice_dhikr_how_header">How to take part</string>
+    <string name="voice_dhikr_step_1">Tap the start button below to open the recording form.</string>
+    <string name="voice_dhikr_step_2">Record the requested adhkar in your own voice, in a quiet place.</string>
+    <string name="voice_dhikr_step_3">Submit the recording — it is used only to train the model.</string>
+    <string name="voice_dhikr_privacy">Taking part is entirely voluntary. Recordings are used only to train the dhikr recognition model; they are never published and are not linked to your name.</string>
+    <string name="voice_dhikr_start">Start recording</string>
+    <string name="voice_dhikr_external_note">The link opens in your browser, outside the app.</string>
+
     <!-- Extension QR Screen -->
     <string name="extension_qr_title">Sync data</string>
     <string name="extension_qr_warning_title">Warning</string>
@@ -554,6 +569,9 @@
     <string name="version_update_description">A new version of the app is available. Update now to get the latest improvements and features.</string>
     <string name="version_update_update_now">Update Now</string>
     <string name="version_update_later">Later</string>
+    <string name="force_update_title">Update Required</string>
+    <string name="force_update_description">This version is no longer supported. You must update the app to the latest version to continue.</string>
+    <string name="permission_denied_update_message">Something went wrong, please update the app</string>
 
     <!-- Manual Salawat Sheet -->
     <string name="manual_salawat_title">📿 Log External Prayers</string>
@@ -664,18 +682,26 @@
 
     <!-- Motivation: Daily milestones -->
     <string name="milestone_today">%1$d salawat today!</string>
-    <string name="badge_sprout_title">Beginner</string>
-    <string name="badge_heart_title">Lover of the Prophet ﷺ</string>
-    <string name="badge_tasbih_title">Frequent in Salawat</string>
-    <string name="badge_dome_title">Companion of Dhikr</string>
-    <string name="badge_crescent_title">Among the Devoted</string>
-    <string name="badge_crown_title">Champion of Salawat</string>
+    <string name="badge_spark_title">Novice</string>
+    <string name="badge_sprout_title">Wayfarer</string>
+    <string name="badge_heart_title">Lover</string>
+    <string name="badge_tasbih_title">Remembrancer</string>
+    <string name="badge_dome_title">Devotee</string>
+    <string name="badge_crescent_title">Steadfast</string>
+    <string name="badge_lantern_title">Luminous</string>
+    <string name="badge_crown_title">Champion</string>
+    <string name="badge_mihrab_title">Imam</string>
+    <string name="badge_star_title">Sultan of Lovers</string>
+    <string name="badge_spark_desc">Send %1$d salawat in a single day</string>
     <string name="badge_sprout_desc">Send %1$d salawat in a single day</string>
     <string name="badge_heart_desc">Send %1$d salawat in a single day</string>
     <string name="badge_tasbih_desc">Send %1$d salawat in a single day</string>
     <string name="badge_dome_desc">Send %1$d salawat in a single day</string>
     <string name="badge_crescent_desc">Send %1$d salawat in a single day</string>
+    <string name="badge_lantern_desc">Send %1$d salawat in a single day</string>
     <string name="badge_crown_desc">Send %1$d salawat in a single day</string>
+    <string name="badge_mihrab_desc">Send %1$d salawat in a single day</string>
+    <string name="badge_star_desc">Send %1$d salawat in a single day</string>
 
     <!-- Daily rank strip -->
     <string name="daily_rank_strip_today_label">salawat today</string>
@@ -848,4 +874,71 @@
   <string name="auto_click_detected_title">Heads up</string>
   <string name="auto_click_detected_body">It looks like an auto-clicker app is sending salawat for you. Those taps won't be counted. The reward is in the remembrance itself, not in the number.</string>
   <string name="auto_click_detected_cta">Got it</string>
+
+  <!-- Alf Hasana (a thousand good deeds) tasbih challenge -->
+  <string name="challenge_alf_hasana_title">A Thousand Good Deeds</string>
+  <string name="challenge_alf_hasana_body">One hundred tasbih… a thousand good deeds every day</string>
+  <string name="alf_hasana_back_cd">Back</string>
+  <string name="alf_hasana_phrase">سُبْحَانَ اللهِ</string>
+  <string name="alf_hasana_today">Today</string>
+  <string name="alf_hasana_times">tasbih</string>
+  <string name="alf_hasana_add">Glorify</string>
+  <string name="alf_hasana_daily_goal">Daily goal: %1$d tasbih</string>
+  <string name="alf_hasana_progress_count">%1$d / %2$d</string>
+  <string name="alf_hasana_rank_number"># %1$d</string>
+  <string name="alf_hasana_rank_subtitle">out of %1$d participants</string>
+  <string name="alf_hasana_rank_unranked">Tap to see the leaders</string>
+  <string name="alf_hasana_tap_hint">Tap anywhere to glorify Allah</string>
+  <string name="alf_hasana_manual_entry_button">📿 Log external tasbih</string>
+  <string name="alf_hasana_view_rewards">🎁 What do you gain?</string>
+  <string name="alf_hasana_leaderboard_title">Leaders</string>
+  <string name="alf_hasana_leaderboard_rank_new">New</string>
+  <string name="alf_hasana_leaderboard_empty">No data yet</string>
+  <string name="alf_hasana_rewards_title">What do you gain with a hundred tasbih?</string>
+  <string name="alf_hasana_reward_hadith">"Is any of you unable to earn a thousand good deeds each day? Let him glorify Allah a hundred times, and a thousand good deeds will be written for him, and a thousand sins will be wiped away from him."</string>
+  <string name="alf_hasana_reward_hadith_ref">Narrated by Muslim</string>
+  <string name="alf_hasana_reward_written">A thousand good deeds are written for you</string>
+  <string name="alf_hasana_reward_erased">A thousand sins are wiped away from you</string>
+  <string name="alf_hasana_rewards_close">Keep glorifying</string>
+  <string name="alf_hasana_milestone_title">You completed %1$d tasbih!</string>
+  <string name="alf_hasana_milestone_subtitle">A thousand good deeds written for you 🤍</string>
+  <string name="manual_alf_hasana_title">📿 Log external tasbih</string>
+  <string name="manual_alf_hasana_subtitle">Glorified Allah silently, on your fingers, or with prayer beads?\nLog what you counted — do not stop the dhikr just because you are away from the app</string>
+  <string name="manual_alf_hasana_count">Count:</string>
+  <string name="manual_alf_hasana_enter_count">Enter the count</string>
+  <string name="manual_alf_hasana_submit">Log</string>
+  <string name="manual_alf_hasana_witness">I bear witness that I actually said this many</string>
+  <string name="challenge_kalimat_title">The Four Words</string>
+  <string name="challenge_kalimat_body">Four words that outweigh the scales</string>
+  <string name="kalimat_back_cd">Back</string>
+  <string name="kalimat_phrase">سُبْحَانَ اللهِ وَبِحَمْدِهِ</string>
+  <string name="kalimat_today">Today</string>
+  <string name="kalimat_times">times</string>
+  <string name="kalimat_add">Glorify</string>
+  <string name="kalimat_daily_goal">Daily goal: %1$d times</string>
+  <string name="kalimat_progress_count">%1$d / %2$d</string>
+  <string name="kalimat_rank_number"># %1$d</string>
+  <string name="kalimat_rank_subtitle">out of %1$d participants</string>
+  <string name="kalimat_rank_unranked">Tap to see the leaders</string>
+  <string name="kalimat_tap_hint">Tap the button to say the four words</string>
+  <string name="kalimat_manual_entry_button">📿 Log external tasbih</string>
+  <string name="kalimat_view_rewards">🎁 What do you gain?</string>
+  <string name="kalimat_leaderboard_title">Leaders</string>
+  <string name="kalimat_leaderboard_rank_new">New</string>
+  <string name="kalimat_leaderboard_empty">No data yet</string>
+  <string name="kalimat_rewards_title">Words that tip the scales</string>
+  <string name="kalimat_reward_hadith">The Prophet ﷺ said to Juwayriyah: "After I left you I said four words; if they were weighed against all you have said since this morning, they would outweigh them: Glory and praise be to Allah, as many as His creation, as pleases Him, as much as the weight of His Throne, and as many as the ink of His words."</string>
+  <string name="kalimat_hadith_dhikr">Glory and praise be to Allah, as many as His creation, as pleases Him, as much as the weight of His Throne, and as many as the ink of His words</string>
+  <string name="kalimat_reward_hadith_ref">Narrated by Muslim</string>
+  <string name="kalimat_reward_outweigh">Words that outweigh all other dhikr on the scales</string>
+  <string name="kalimat_reward_pleasing">As pleases Him, the weight of His Throne, and the ink of His words</string>
+  <string name="kalimat_rewards_close">Keep glorifying</string>
+  <string name="kalimat_milestone_title">You completed the four words %1$d times!</string>
+  <string name="kalimat_milestone_subtitle">Words that tip your scales 🤍</string>
+  <string name="manual_kalimat_title">📿 Log external tasbih</string>
+  <string name="manual_kalimat_subtitle">Glorified Allah silently, on your fingers, or with prayer beads?\nLog what you counted — do not stop the dhikr just because you are away from the app</string>
+  <string name="manual_kalimat_count">Count:</string>
+  <string name="manual_kalimat_enter_count">Enter the count</string>
+  <string name="manual_kalimat_submit">Log</string>
+  <string name="manual_kalimat_witness">I bear witness that I actually said this many</string>
 </resources>

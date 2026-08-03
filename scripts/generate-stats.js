@@ -23,9 +23,15 @@ const {
   GHARS_CHALLENGE_ROOT,
   QURAN_CHALLENGE_ROOT,
   ALBAQARA_CHALLENGE_ROOT,
+  ALF_HASANA_CHALLENGE_ROOT,
+  KALIMAT_CHALLENGE_ROOT,
   readChallengeRankedUsers,
   awardChallengeMedals,
   cairoToday,
+  buildDailyScoreSnapshots,
+  roundDayNumber,
+  ABNORMAL_DAILY_THRESHOLD,
+  PACE_DAILY_INCREMENT,
 } = require('./leaderboard-utils');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -86,6 +92,7 @@ async function main() {
   let topScore      = 0;
   const countries   = new Set();
   const yesterdayTotalScoreUpdates = {};
+  const playerSnapshots = [];
 
   if (playersSnap.exists()) {
     playersSnap.forEach(child => {
@@ -98,6 +105,15 @@ async function main() {
         yesterdayTotalScoreUpdates[
           `mohamed_lovers/${roundKey}/players/${child.key}/yesterdayTotalScore`
         ] = score;
+        playerSnapshots.push({
+          uid: child.key,
+          totalCount: score,
+          // Read BEFORE the yesterdayTotalScore update above is applied — still yesterday's value,
+          // so the todayCount fallback (totalCount - yesterdayTotalScore) stays correct.
+          todayCount: typeof data?.todayCount === 'number' ? data.todayCount : null,
+          yesterdayTotalScore: data?.yesterdayTotalScore || 0,
+          countryCode: typeof data?.countryCode === 'string' ? data.countryCode : 'NA',
+        });
       }
     });
   }
@@ -129,6 +145,25 @@ async function main() {
     console.log(`Updated yesterdayTotalScore for ${Object.keys(yesterdayTotalScoreUpdates).length} player(s).`);
     // Phase 1: mirror to Firestore
     await mirrorYesterdayTotalScores(admin.firestore(), roundKey, yesterdayTotalScoreUpdates);
+  }
+
+  // Per-user daily close: append a score-history snapshot for each active player, flag anyone who
+  // exceeded the abnormal daily threshold for admin review, flag anyone whose cumulative round
+  // total outran the day-of-round pace ceiling (day N * 11k) into users/{uid}/paceFlags/{dateKey},
+  // and reset todayCount so the next Cairo day starts fresh (the daily leaderboard ranks on the
+  // client-pushed todayCount).
+  const roundDay = roundDayNumber(roundKey, dateStr);
+  const { scoreHistoryUpdates, abnormalUpdates, todayCountResets, paceFlagUpdates } =
+    buildDailyScoreSnapshots({ players: playerSnapshots, dateKey: dateStr, roundKey, roundDay });
+  const dailyCloseUpdates = { ...scoreHistoryUpdates, ...abnormalUpdates, ...todayCountResets, ...paceFlagUpdates };
+  if (Object.keys(dailyCloseUpdates).length > 0) {
+    await db.ref('/').update(dailyCloseUpdates);
+    console.log(
+      `Daily close: ${Object.keys(scoreHistoryUpdates).length} history snapshot(s), ` +
+      `${Object.keys(abnormalUpdates).length} abnormal user(s) (> ${ABNORMAL_DAILY_THRESHOLD}/day), ` +
+      `${Object.keys(paceFlagUpdates).length} pace flag(s) (> day ${roundDay} × ${PACE_DAILY_INCREMENT} = ${roundDay * PACE_DAILY_INCREMENT}), ` +
+      `${Object.keys(todayCountResets).length} todayCount reset(s).`
+    );
   }
 
   // Clear dailyBadge for all players (midnight reset)
@@ -218,6 +253,8 @@ async function main() {
   await sendZabadChallengeRank1Notification(db);
   await sendGharsChallengeRank1Notification(db);
   await sendQuranChallengeRank1Notification(db);
+  await sendAlfHasanaChallengeRank1Notification(db);
+  await sendKalimatChallengeRank1Notification(db);
   // Persist the day's champions BEFORE the per-challenge day nodes are deleted by
   // the aggregate-and-clean steps below (those remove 100_challenge/{today} etc).
   await persistHeroes(db, dailyLeaderboardSnap);
@@ -231,6 +268,8 @@ async function main() {
   await aggregateAndCleanGharsChallenge(db);
   await aggregateAndCleanQuranChallenge(db);
   await aggregateAndCleanAlBaqaraChallenge(db);
+  await aggregateAndCleanAlfHasanaChallenge(db);
+  await aggregateAndCleanKalimatChallenge(db);
 
   process.exit(0);
 }
@@ -403,6 +442,72 @@ async function sendQuranChallengeRank1Notification(db) {
   }
 }
 
+async function sendAlfHasanaChallengeRank1Notification(db) {
+  const today = cairoToday();
+
+  console.log(`[alf_hasana-rank1] computing rank 1 winner from live alf_hasana_challenge/${today} counts`);
+  const rankedUsers = await readChallengeRankedUsers(db, ALF_HASANA_CHALLENGE_ROOT, today);
+  const winner = rankedUsers[0];
+
+  if (!winner || !winner.uid || !winner.count) {
+    console.log('[alf_hasana-rank1] no eligible participant — skip');
+    return;
+  }
+
+  const rank1Uid = winner.uid;
+  const rank1Count = winner.count;
+  const name = winner.nickname && winner.nickname.trim()
+    ? winner.nickname.trim()
+    : rank1Uid.slice(-6).toUpperCase();
+
+  const title = 'بطل اليوم في تحدي ألف حسنة 🏆';
+  const body = `تهانينا لـ ${name} على التصدر في تحدي ألف حسنة اليوم بـ ${rank1Count} تسبيحة — بارك الله فيك!`;
+
+  try {
+    const msgId = await admin.messaging().send({
+      topic: 'challenges',
+      notification: { title, body },
+      data: { title, body, notification_type: 'alf_hasana_challenge_rank1', notification_action: 'open_alf_hasana_challenge' },
+    });
+    console.log(`[alf_hasana-rank1] sent to topic "challenges" uid=${rank1Uid} name="${name}" count=${rank1Count} msgId=${msgId}`);
+  } catch (e) {
+    console.error(`[alf_hasana-rank1] send failed: ${e.message}`);
+  }
+}
+
+async function sendKalimatChallengeRank1Notification(db) {
+  const today = cairoToday();
+
+  console.log(`[kalimat-rank1] computing rank 1 winner from live kalimat_challenge/${today} counts`);
+  const rankedUsers = await readChallengeRankedUsers(db, KALIMAT_CHALLENGE_ROOT, today);
+  const winner = rankedUsers[0];
+
+  if (!winner || !winner.uid || !winner.count) {
+    console.log('[kalimat-rank1] no eligible participant — skip');
+    return;
+  }
+
+  const rank1Uid = winner.uid;
+  const rank1Count = winner.count;
+  const name = winner.nickname && winner.nickname.trim()
+    ? winner.nickname.trim()
+    : rank1Uid.slice(-6).toUpperCase();
+
+  const title = 'بطل اليوم في تحدي الكلمات الأربع 🏆';
+  const body = `تهانينا لـ ${name} على التصدر في تحدي الكلمات الأربع اليوم بـ ${rank1Count} تسبيحة — بارك الله فيك!`;
+
+  try {
+    const msgId = await admin.messaging().send({
+      topic: 'challenges',
+      notification: { title, body },
+      data: { title, body, notification_type: 'kalimat_challenge_rank1', notification_action: 'open_kalimat_challenge' },
+    });
+    console.log(`[kalimat-rank1] sent to topic "challenges" uid=${rank1Uid} name="${name}" count=${rank1Count} msgId=${msgId}`);
+  } catch (e) {
+    console.error(`[kalimat-rank1] send failed: ${e.message}`);
+  }
+}
+
 // Persists the day's top-3 champions across all active challenges to a single
 // RTDB node (mohamed_lovers/heroes) that the app reads (read-only). Overwritten
 // daily. Mirrored to Firestore per the Phase-1 dual-write convention.
@@ -515,7 +620,7 @@ async function persistHeroes(db, dailyLeaderboardSnap) {
     }));
   }
 
-  const [dhikr, baqiyat, istighfar, quran, zabad, ghars, albaqara] = await Promise.all([
+  const [dhikr, baqiyat, istighfar, quran, zabad, ghars, albaqara, alfHasana, kalimat] = await Promise.all([
     challengeTop3(DHIKR_CHALLENGE_ROOT),
     challengeTop3(BAQIYAT_CHALLENGE_ROOT),
     challengeTop3(ISTIGHFAR_CHALLENGE_ROOT),
@@ -523,19 +628,21 @@ async function persistHeroes(db, dailyLeaderboardSnap) {
     challengeTop3(ZABAD_CHALLENGE_ROOT),
     challengeTop3(GHARS_CHALLENGE_ROOT),
     challengeTop3(ALBAQARA_CHALLENGE_ROOT),
+    challengeTop3(ALF_HASANA_CHALLENGE_ROOT),
+    challengeTop3(KALIMAT_CHALLENGE_ROOT),
   ]);
 
   const heroes = {
     date: today,
     updatedAt: new Date().toISOString(),
-    challenges: { salawat, dhikr, baqiyat, istighfar, quran, zabad, ghars, albaqara },
+    challenges: { salawat, dhikr, baqiyat, istighfar, quran, zabad, ghars, albaqara, alf_hasana: alfHasana, kalimat },
   };
 
   // RTDB is the source of truth; overwrite the whole node so stale entries from
   // yesterday never linger.
   await db.ref('mohamed_lovers/heroes').set(heroes);
   console.log(
-    `[heroes] persisted for ${today}: salawat=${salawat.length} dhikr=${dhikr.length} baqiyat=${baqiyat.length} istighfar=${istighfar.length} quran=${quran.length} zabad=${zabad.length} ghars=${ghars.length} albaqara=${albaqara.length}`,
+    `[heroes] persisted for ${today}: salawat=${salawat.length} dhikr=${dhikr.length} baqiyat=${baqiyat.length} istighfar=${istighfar.length} quran=${quran.length} zabad=${zabad.length} ghars=${ghars.length} albaqara=${albaqara.length} alf_hasana=${alfHasana.length} kalimat=${kalimat.length}`,
   );
 
   // Phase 1: mirror to Firestore.
@@ -554,6 +661,8 @@ async function awardAllChallengeMedals(db) {
     GHARS_CHALLENGE_ROOT,
     QURAN_CHALLENGE_ROOT,
     ALBAQARA_CHALLENGE_ROOT,
+    ALF_HASANA_CHALLENGE_ROOT,
+    KALIMAT_CHALLENGE_ROOT,
   ];
   for (const root of roots) {
     try {
@@ -744,6 +853,60 @@ async function aggregateAndCleanQuranChallenge(db) {
 
   // Phase 1: mirror to Firestore
   await mirrorQuranAggregateAndClean(admin.firestore(), today, todayTotal, globalTotal + todayTotal);
+}
+
+async function aggregateAndCleanAlfHasanaChallenge(db) {
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+
+  const [todayTotalSnap, globalTotalSnap] = await Promise.all([
+    db.ref(`alf_hasana_challenge/${today}/totalTodayAlfHasana`).get(),
+    db.ref('alf_hasana_challenge/totalAlfHasana').get(),
+  ]);
+
+  const todayTotal = todayTotalSnap.val() || 0;
+  const globalTotal = globalTotalSnap.val() || 0;
+
+  console.log(`[alf_hasana-aggregate] today=${today} todayTotal=${todayTotal} globalBefore=${globalTotal}`);
+
+  if (todayTotal === 0) {
+    console.log('[alf_hasana-aggregate] todayTotal is 0 — skip update and delete');
+    return;
+  }
+
+  await db.ref('alf_hasana_challenge/totalAlfHasana').set(globalTotal + todayTotal);
+  console.log(`[alf_hasana-aggregate] totalAlfHasana updated: ${globalTotal} → ${globalTotal + todayTotal}`);
+
+  await db.ref(`alf_hasana_challenge/${today}`).remove();
+  console.log(`[alf_hasana-aggregate] deleted alf_hasana_challenge/${today}`);
+}
+
+async function aggregateAndCleanKalimatChallenge(db) {
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+
+  const [todayTotalSnap, globalTotalSnap] = await Promise.all([
+    db.ref(`kalimat_challenge/${today}/totalTodayKalimat`).get(),
+    db.ref('kalimat_challenge/totalKalimat').get(),
+  ]);
+
+  const todayTotal = todayTotalSnap.val() || 0;
+  const globalTotal = globalTotalSnap.val() || 0;
+
+  console.log(`[kalimat-aggregate] today=${today} todayTotal=${todayTotal} globalBefore=${globalTotal}`);
+
+  if (todayTotal === 0) {
+    console.log('[kalimat-aggregate] todayTotal is 0 — skip update and delete');
+    return;
+  }
+
+  await db.ref('kalimat_challenge/totalKalimat').set(globalTotal + todayTotal);
+  console.log(`[kalimat-aggregate] totalKalimat updated: ${globalTotal} → ${globalTotal + todayTotal}`);
+
+  await db.ref(`kalimat_challenge/${today}`).remove();
+  console.log(`[kalimat-aggregate] deleted kalimat_challenge/${today}`);
 }
 
 main().catch(err => { console.error(err); process.exit(1); });

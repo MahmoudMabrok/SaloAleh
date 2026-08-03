@@ -120,6 +120,17 @@ actual fun getAppVersion(): String {
     return ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName ?: "—"
 }
 
+actual fun getAppVersionCode(): Int {
+    val ctx = AndroidAppContext.get()
+    val info = ctx.packageManager.getPackageInfo(ctx.packageName, 0)
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        info.longVersionCode.toInt()
+    } else {
+        @Suppress("DEPRECATION")
+        info.versionCode
+    }
+}
+
 actual fun openNotificationSettings() {
     val ctx = AndroidAppContext.get()
     val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
@@ -419,6 +430,8 @@ actual fun ChallengeBubbleButton(challengeType: String) {
         FloatingBubbleService.BubbleType.ISTIGHFAR.id -> Color(0xFFC08A3E)
         FloatingBubbleService.BubbleType.ZABAD.id -> Color(0xFF2ED3C4)
         FloatingBubbleService.BubbleType.GHARS.id -> Color(0xFFC4762A)
+        FloatingBubbleService.BubbleType.ALF_HASANA.id -> Color(0xFFE9C462)
+        FloatingBubbleService.BubbleType.KALIMAT.id -> Color(0xFFE07A9E)
         else -> MohamedLoversPalette.GoldHighlight
     }
 

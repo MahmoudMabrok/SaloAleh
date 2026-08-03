@@ -272,7 +272,10 @@ private fun DhikrImmersiveZone(
     onManualEntryClick: () -> Unit,
     manualEntryVisible: Boolean = true,
 ) {
-    val fraction = (count.toFloat() / target.toFloat()).coerceIn(0f, 1f)
+    // Ring cycles within the current goal: the moment the goal is reached it returns to 0 and
+    // fills again so counting can continue past it, cycle after cycle.
+    val withinCycle = if (target > 0) count % target else 0
+    val fraction = if (target > 0) (withinCycle.toFloat() / target.toFloat()).coerceIn(0f, 1f) else 0f
 
     Box(
         modifier = Modifier

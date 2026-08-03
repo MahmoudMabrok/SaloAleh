@@ -225,8 +225,9 @@
     <!-- Baqiyat Challenge Screen -->
     <string name="baqiyat_ayah">﴿ وَالْبَاقِيَاتُ الصَّالِحَاتُ خَيْرٌ عِندَ رَبِّكَ ثَوَابًا وَخَيْرٌ أَمَلًا ﴾</string>
     <string name="baqiyat_ayah_ref">古兰经·山洞章 46</string>
-    <string name="baqiyat_tap_hint">依次点击每句赞词，直到完成一轮</string>
-    <string name="baqiyat_shuffle">打乱顺序</string>
+    <string name="baqiyat_tap_hint">诵读五句赞词后点击任意位置 —— 一次点击 = 一轮</string>
+    <string name="baqiyat_add_cd">完成一轮 ✦ 点击这里</string>
+    <string name="baqiyat_phrases_title">本轮赞词</string>
     <string name="baqiyat_cycles_label">今日完成轮数</string>
     <string name="baqiyat_manual_entry_button">📿 记录外部永恒善功</string>
     <string name="manual_baqiyat_title">📿 记录外部永恒善功</string>
@@ -471,6 +472,20 @@
     <string name="settings_supporter_status">你是支持者 - %1$s</string>
     <string name="settings_manage_features">点击管理功能</string>
 
+    <!-- Voice Dhikr Contribution -->
+    <string name="settings_voice_dhikr_header">帮助我们开发</string>
+    <string name="settings_voice_dhikr_link">🎙️ 帮助我们打造语音赞念计数功能</string>
+    <string name="voice_dhikr_title">语音赞念</string>
+    <string name="voice_dhikr_headline">即将推出：用你的声音计数赞念</string>
+    <string name="voice_dhikr_intro">我们正在向像你一样的志愿者收集赞念录音，用于训练能够识别赞念的模型。之后你只需打开麦克风念诵，应用便会自动计数，无需点击屏幕。</string>
+    <string name="voice_dhikr_how_header">如何参与</string>
+    <string name="voice_dhikr_step_1">点击下方的开始按钮，打开录音表单。</string>
+    <string name="voice_dhikr_step_2">在安静的地方用自己的声音录下所需的赞念。</string>
+    <string name="voice_dhikr_step_3">提交录音，它只会用于训练模型。</string>
+    <string name="voice_dhikr_privacy">参与完全自愿。录音仅用于训练赞念识别模型，不会公开，也不会与你的姓名关联。</string>
+    <string name="voice_dhikr_start">开始录音</string>
+    <string name="voice_dhikr_external_note">链接将在应用外的浏览器中打开。</string>
+
     <!-- Extension QR Screen -->
     <string name="extension_qr_title">同步数据</string>
     <string name="extension_qr_warning_title">警告</string>
@@ -525,6 +540,9 @@
     <string name="version_update_description">应用的新版本已发布。立即更新以获取最新的改进和功能。</string>
     <string name="version_update_update_now">立即更新</string>
     <string name="version_update_later">以后再说</string>
+    <string name="force_update_title">需要更新</string>
+    <string name="force_update_description">此版本已不再受支持。您必须将应用更新到最新版本才能继续使用。</string>
+    <string name="permission_denied_update_message">出了点问题，请更新应用</string>
 
     <!-- Manual Salawat Sheet -->
     <string name="manual_salawat_title">📿 记录外部祈祷</string>
@@ -638,18 +656,26 @@
     <string name="settings_language_zh">中文</string>
 
     <!-- Daily badges -->
-    <string name="badge_sprout_title">初学者</string>
-    <string name="badge_heart_title">爱圣者 ﷺ</string>
-    <string name="badge_tasbih_title">勤念者</string>
-    <string name="badge_dome_title">赞念伙伴</string>
-    <string name="badge_crescent_title">虔诚之列</string>
-    <string name="badge_crown_title">赞圣之冠</string>
+    <string name="badge_spark_title">新手</string>
+    <string name="badge_sprout_title">行者</string>
+    <string name="badge_heart_title">挚爱者</string>
+    <string name="badge_tasbih_title">诵念者</string>
+    <string name="badge_dome_title">勤诵者</string>
+    <string name="badge_crescent_title">坚持者</string>
+    <string name="badge_lantern_title">光明者</string>
+    <string name="badge_crown_title">勇士</string>
+    <string name="badge_mihrab_title">伊玛目</string>
+    <string name="badge_star_title">爱者之王</string>
+    <string name="badge_spark_desc">一天内发送 %1$d 次赞圣</string>
     <string name="badge_sprout_desc">一天内发送 %1$d 次赞圣</string>
     <string name="badge_heart_desc">一天内发送 %1$d 次赞圣</string>
     <string name="badge_tasbih_desc">一天内发送 %1$d 次赞圣</string>
     <string name="badge_dome_desc">一天内发送 %1$d 次赞圣</string>
     <string name="badge_crescent_desc">一天内发送 %1$d 次赞圣</string>
+    <string name="badge_lantern_desc">一天内发送 %1$d 次赞圣</string>
     <string name="badge_crown_desc">一天内发送 %1$d 次赞圣</string>
+    <string name="badge_mihrab_desc">一天内发送 %1$d 次赞圣</string>
+    <string name="badge_star_desc">一天内发送 %1$d 次赞圣</string>
 
     <!-- Idle salawat banner -->
     <string name="idle_banner_prefix">距上次赞圣已过</string>
@@ -810,4 +836,71 @@
   <string name="auto_click_detected_title">提示</string>
   <string name="auto_click_detected_body">看起来有自动点击应用正在代替您发送赞词。这些点击不会被计入。功德在于内心与口舌的诵念，而非数字。</string>
   <string name="auto_click_detected_cta">明白了</string>
+
+  <!-- 一千善行 (Alf Hasana) 赞念挑战 -->
+  <string name="challenge_alf_hasana_title">一千善行</string>
+  <string name="challenge_alf_hasana_body">一百次赞念…每天一千善行</string>
+  <string name="alf_hasana_back_cd">返回</string>
+  <string name="alf_hasana_phrase">سُبْحَانَ اللهِ</string>
+  <string name="alf_hasana_today">今天</string>
+  <string name="alf_hasana_times">次赞念</string>
+  <string name="alf_hasana_add">赞念</string>
+  <string name="alf_hasana_daily_goal">每日目标：%1$d 次赞念</string>
+  <string name="alf_hasana_progress_count">%1$d / %2$d</string>
+  <string name="alf_hasana_rank_number"># %1$d</string>
+  <string name="alf_hasana_rank_subtitle">在 %1$d 位参与者中</string>
+  <string name="alf_hasana_rank_unranked">点击查看排行榜</string>
+  <string name="alf_hasana_tap_hint">点击任意位置进行赞念</string>
+  <string name="alf_hasana_manual_entry_button">📿 记录外部赞念</string>
+  <string name="alf_hasana_view_rewards">🎁 你将获得什么？</string>
+  <string name="alf_hasana_leaderboard_title">排行榜</string>
+  <string name="alf_hasana_leaderboard_rank_new">新</string>
+  <string name="alf_hasana_leaderboard_empty">暂无数据</string>
+  <string name="alf_hasana_rewards_title">一百次赞念你能获得什么？</string>
+  <string name="alf_hasana_reward_hadith">「你们中有谁不能每天赚取一千善行呢？他赞念安拉一百次，就会为他记下一千善行，并从他身上抹去一千罪过。」</string>
+  <string name="alf_hasana_reward_hadith_ref">穆斯林辑录</string>
+  <string name="alf_hasana_reward_written">为你记下一千善行</string>
+  <string name="alf_hasana_reward_erased">从你身上抹去一千罪过</string>
+  <string name="alf_hasana_rewards_close">继续赞念</string>
+  <string name="alf_hasana_milestone_title">你完成了 %1$d 次赞念！</string>
+  <string name="alf_hasana_milestone_subtitle">为你记下一千善行 🤍</string>
+  <string name="manual_alf_hasana_title">📿 记录外部赞念</string>
+  <string name="manual_alf_hasana_subtitle">默念、掐指或用念珠赞念了吗？\n记录你所念的——不要因为离开应用而停止赞念</string>
+  <string name="manual_alf_hasana_count">数量：</string>
+  <string name="manual_alf_hasana_enter_count">输入数量</string>
+  <string name="manual_alf_hasana_submit">记录</string>
+  <string name="manual_alf_hasana_witness">我作证我确实念了这么多</string>
+  <string name="challenge_kalimat_title">四句话</string>
+  <string name="challenge_kalimat_body">四句话，在天秤上重于一切</string>
+  <string name="kalimat_back_cd">返回</string>
+  <string name="kalimat_phrase">سُبْحَانَ اللهِ وَبِحَمْدِهِ</string>
+  <string name="kalimat_today">今天</string>
+  <string name="kalimat_times">次</string>
+  <string name="kalimat_add">赞念</string>
+  <string name="kalimat_daily_goal">每日目标：%1$d 次</string>
+  <string name="kalimat_progress_count">%1$d / %2$d</string>
+  <string name="kalimat_rank_number"># %1$d</string>
+  <string name="kalimat_rank_subtitle">在 %1$d 位参与者中</string>
+  <string name="kalimat_rank_unranked">点击查看排行榜</string>
+  <string name="kalimat_tap_hint">点击按钮念这四句话</string>
+  <string name="kalimat_manual_entry_button">📿 记录外部赞念</string>
+  <string name="kalimat_view_rewards">🎁 你将获得什么？</string>
+  <string name="kalimat_leaderboard_title">排行榜</string>
+  <string name="kalimat_leaderboard_rank_new">新</string>
+  <string name="kalimat_leaderboard_empty">暂无数据</string>
+  <string name="kalimat_rewards_title">使天秤倾斜的话语</string>
+  <string name="kalimat_reward_hadith">「先知ﷺ对朱薇丽娅说：我在你之后说了四句话，若把它们与你从今晨起所说的一切相称，它们仍更重：赞美安拉，如同祂造化之数，如同祂的喜悦，如同祂宝座之重，如同祂言辞之墨。」</string>
+  <string name="kalimat_hadith_dhikr">赞美安拉，如同祂造化之数，如同祂的喜悦，如同祂宝座之重，如同祂言辞之墨</string>
+  <string name="kalimat_reward_hadith_ref">穆斯林辑录</string>
+  <string name="kalimat_reward_outweigh">在天秤上重于其他一切赞念的话语</string>
+  <string name="kalimat_reward_pleasing">祂的喜悦、祂宝座之重、祂言辞之墨</string>
+  <string name="kalimat_rewards_close">继续赞念</string>
+  <string name="kalimat_milestone_title">你完成了四句话 %1$d 次！</string>
+  <string name="kalimat_milestone_subtitle">使你的天秤倾斜的话语 🤍</string>
+  <string name="manual_kalimat_title">📿 记录外部赞念</string>
+  <string name="manual_kalimat_subtitle">默念、掐指或用念珠赞念了吗？\n记录你所念的——不要因为离开应用而停止赞念</string>
+  <string name="manual_kalimat_count">数量：</string>
+  <string name="manual_kalimat_enter_count">输入数量</string>
+  <string name="manual_kalimat_submit">记录</string>
+  <string name="manual_kalimat_witness">我作证我确实念了这么多</string>
 </resources>

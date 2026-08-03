@@ -46,6 +46,16 @@ class FirestoreMirror {
                 )
         }
 
+    fun mirrorExternalLog(roundKey: String, uid: String, timeKey: String, count: Int) =
+        mirror("external-log[$roundKey/$uid/$timeKey]") {
+            fs.collection(ROUNDS_COLLECTION).document(roundKey)
+                .collection(PLAYERS_SUBCOLLECTION).document(uid)
+                .set(
+                    mapOf("externalLog" to mapOf(timeKey to FieldValue.increment(count))),
+                    merge = true,
+                )
+        }
+
     fun mirrorResetPlayerScore(roundKey: String, uid: String) =
         mirror("reset-score[$roundKey/$uid]") {
             fs.collection(ROUNDS_COLLECTION).document(roundKey)

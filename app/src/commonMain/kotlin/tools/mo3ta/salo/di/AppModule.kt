@@ -20,6 +20,10 @@ import tools.mo3ta.salo.data.ghars.GharsChallengeFirebaseClient
 import tools.mo3ta.salo.data.ghars.GharsChallengeStore
 import tools.mo3ta.salo.data.quran.QuranChallengeFirebaseClient
 import tools.mo3ta.salo.data.quran.QuranChallengeStore
+import tools.mo3ta.salo.data.alfhasana.AlfHasanaChallengeFirebaseClient
+import tools.mo3ta.salo.data.alfhasana.AlfHasanaChallengeStore
+import tools.mo3ta.salo.data.kalimat.KalimatChallengeFirebaseClient
+import tools.mo3ta.salo.data.kalimat.KalimatChallengeStore
 import tools.mo3ta.salo.data.engagement.ChallengeBadgeStore
 import tools.mo3ta.salo.data.engagement.DailyGoalStore
 import tools.mo3ta.salo.data.engagement.EngagementStore
@@ -54,6 +58,8 @@ import tools.mo3ta.salo.presentation.AlBaqaraChallengeViewModel
 import tools.mo3ta.salo.presentation.ZabadChallengeViewModel
 import tools.mo3ta.salo.presentation.GharsChallengeViewModel
 import tools.mo3ta.salo.presentation.QuranChallengeViewModel
+import tools.mo3ta.salo.presentation.AlfHasanaChallengeViewModel
+import tools.mo3ta.salo.presentation.KalimatChallengeViewModel
 import tools.mo3ta.salo.presentation.HadithListViewModel
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
 import tools.mo3ta.salo.presentation.TakbeerSessionViewModel
@@ -84,6 +90,10 @@ val appModule = module {
     single { GharsChallengeFirebaseClient(get(), get()) }
     single { QuranChallengeStore(get()) }
     single { QuranChallengeFirebaseClient(get(), get()) }
+    single { AlfHasanaChallengeStore(get()) }
+    single { AlfHasanaChallengeFirebaseClient(get()) }
+    single { KalimatChallengeStore(get()) }
+    single { KalimatChallengeFirebaseClient(get()) }
     single { BaqiyatStore(get()) }
     single { BaqiyatFirebaseClient(get(), get()) }
     single { LanguageStore(get()) }
@@ -104,6 +114,8 @@ val appModule = module {
     viewModel { ZabadChallengeViewModel(get(), get(), get(), get(), get()) }
     viewModel { GharsChallengeViewModel(get(), get(), get(), get(), get()) }
     viewModel { QuranChallengeViewModel(get(), get(), get(), get(), get()) }
+    viewModel { AlfHasanaChallengeViewModel(get(), get(), get(), get(), get()) }
+    viewModel { KalimatChallengeViewModel(get(), get(), get(), get(), get()) }
     viewModel { BaqiyatViewModel(get(), get(), get(), get(), get()) }
     viewModel { AchievementsViewModel(get(), get(), get()) }
     viewModel { ChallengesViewModel(get()) }

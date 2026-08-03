@@ -51,6 +51,8 @@ import tools.mo3ta.salo.ui.ChallengesScreen
 import tools.mo3ta.salo.ui.DhikrRewardsScreen
 import tools.mo3ta.salo.ui.IstighfarRewardsScreen
 import tools.mo3ta.salo.ui.AlBaqaraChallengeScreen
+import tools.mo3ta.salo.ui.AlfHasanaChallengeScreen
+import tools.mo3ta.salo.ui.KalimatChallengeScreen
 import tools.mo3ta.salo.ui.ZabadScreen
 import tools.mo3ta.salo.ui.GharsScreen
 import tools.mo3ta.salo.ui.HadithListScreen
@@ -58,10 +60,12 @@ import tools.mo3ta.salo.ui.MohamedLoversScreen
 import tools.mo3ta.salo.ui.FcmPermissionReminderDialog
 import tools.mo3ta.salo.ui.NotificationRationaleDialog
 import tools.mo3ta.salo.ui.OnboardingScreen
+import tools.mo3ta.salo.ui.PermissionDeniedSnackbar
 import tools.mo3ta.salo.ui.PlatformBackHandler
 import tools.mo3ta.salo.ui.ReviewDialog
 import tools.mo3ta.salo.ui.VersionUpdateDialog
 import tools.mo3ta.salo.ui.getAppVersion
+import tools.mo3ta.salo.ui.getAppVersionCode
 import tools.mo3ta.salo.ui.openStorePage
 import tools.mo3ta.salo.ui.settings.ExtensionQrScreen
 import tools.mo3ta.salo.data.billing.BillingManager
@@ -72,6 +76,7 @@ import tools.mo3ta.salo.domain.MohamedLoversRepository
 import tools.mo3ta.salo.data.billing.SupportTier
 import tools.mo3ta.salo.ui.settings.PaywallScreen
 import tools.mo3ta.salo.ui.settings.ReferralScreen
+import tools.mo3ta.salo.ui.settings.VoiceDhikrScreen
 import tools.mo3ta.salo.ui.settings.PremiumPromoDialog
 import tools.mo3ta.salo.ui.settings.PurchaseSuccessDialog
 import tools.mo3ta.salo.ui.settings.SettingsScreen
@@ -90,6 +95,7 @@ import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseApi
 import tools.mo3ta.salo.data.referral.ReferralStore
 import tools.mo3ta.salo.data.reminder.AlKahfReminderStore
 import tools.mo3ta.salo.data.update.UpdateChecker
+import tools.mo3ta.salo.data.update.UpdatePrompt
 import tools.mo3ta.salo.domain.isNewerVersion
 import tools.mo3ta.salo.analytics.BillingAnalytics
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
@@ -175,11 +181,14 @@ fun App(
         var showGharsChallenge by remember { mutableStateOf(false) }
         var showQuranChallenge by remember { mutableStateOf(false) }
         var showAlBaqaraChallenge by remember { mutableStateOf(false) }
+        var showAlfHasanaChallenge by remember { mutableStateOf(false) }
+        var showKalimatChallenge by remember { mutableStateOf(false) }
         // Set when a challenge push is tapped: the just-opened challenge screen auto-opens
         // its leaderboard sheet once, then clears the flag.
         var openChallengeLeaderboard by remember { mutableStateOf(false) }
         var showExtensionQr by remember { mutableStateOf(false) }
         var showReferral by remember { mutableStateOf(false) }
+        var showVoiceDhikr by remember { mutableStateOf(false) }
         var showPaywall by remember { mutableStateOf(false) }
         var nicknamePromptRequested by remember { mutableStateOf(false) }
         var nicknamePromptDismissedThisSession by remember { mutableStateOf(false) }
@@ -187,6 +196,7 @@ fun App(
         PlatformBackHandler(
             enabled = showPaywall ||
                 showReferral ||
+                showVoiceDhikr ||
                 showDhikrRewards ||
                 showBaqiyatChallenge ||
                 showIstighfarChallenge ||
@@ -194,6 +204,8 @@ fun App(
                 showGharsChallenge ||
                 showQuranChallenge ||
                 showAlBaqaraChallenge ||
+                showAlfHasanaChallenge ||
+                showKalimatChallenge ||
                 showTakbeerSession ||
                 showTenDays ||
                 showExtensionQr ||
@@ -203,6 +215,7 @@ fun App(
             when {
                 showPaywall -> showPaywall = false
                 showReferral -> showReferral = false
+                showVoiceDhikr -> showVoiceDhikr = false
                 showDhikrRewards -> showDhikrRewards = false
                 showBaqiyatChallenge -> showBaqiyatChallenge = false
                 showIstighfarChallenge -> showIstighfarChallenge = false
@@ -210,6 +223,8 @@ fun App(
                 showGharsChallenge -> showGharsChallenge = false
                 showQuranChallenge -> showQuranChallenge = false
                 showAlBaqaraChallenge -> showAlBaqaraChallenge = false
+                showAlfHasanaChallenge -> showAlfHasanaChallenge = false
+                showKalimatChallenge -> showKalimatChallenge = false
                 showTakbeerSession -> showTakbeerSession = false
                 showTenDays -> showTenDays = false
                 showExtensionQr -> showExtensionQr = false
@@ -231,6 +246,8 @@ fun App(
                 NotificationAction.OPEN_ISTIGHFAR_CHALLENGE -> showIstighfarChallenge = true
                 NotificationAction.OPEN_ZABAD_CHALLENGE -> showZabadChallenge = true
                 NotificationAction.OPEN_GHARS_CHALLENGE -> showGharsChallenge = true
+                NotificationAction.OPEN_ALF_HASANA_CHALLENGE -> showAlfHasanaChallenge = true
+                NotificationAction.OPEN_KALIMAT_CHALLENGE -> showKalimatChallenge = true
                 else -> Unit
             }
             onOpenChallengeHandled()
@@ -264,6 +281,7 @@ fun App(
         val mlState by mohamedLoversViewModel.state.collectAsStateWithLifecycle()
         val nicknamePromptBlocked = showPaywall ||
             showReferral ||
+            showVoiceDhikr ||
             showDhikrRewards ||
             showBaqiyatChallenge ||
             showIstighfarChallenge ||
@@ -271,6 +289,8 @@ fun App(
             showGharsChallenge ||
             showQuranChallenge ||
             showAlBaqaraChallenge ||
+            showAlfHasanaChallenge ||
+            showKalimatChallenge ||
             showTakbeerSession ||
             showTenDays ||
             showExtensionQr ||
@@ -288,6 +308,7 @@ fun App(
         when {
             showPaywall -> PaywallScreen(onBack = { showPaywall = false })
             showReferral -> ReferralScreen(onBack = { showReferral = false })
+            showVoiceDhikr -> VoiceDhikrScreen(onBack = { showVoiceDhikr = false })
             showExtensionQr -> ExtensionQrScreen(onBack = { showExtensionQr = false })
             showOnboarding -> OnboardingScreen(
                 onDone = {
@@ -340,6 +361,18 @@ fun App(
             showAlBaqaraChallenge -> AlBaqaraChallengeScreen(
                 onBack = { showAlBaqaraChallenge = false },
             )
+            showAlfHasanaChallenge -> AlfHasanaChallengeScreen(
+                onBack = { showAlfHasanaChallenge = false },
+                openLeaderboard = openChallengeLeaderboard,
+                onLeaderboardAutoOpened = { openChallengeLeaderboard = false },
+                manualEntryEnabled = manualEntryEnabled,
+            )
+            showKalimatChallenge -> KalimatChallengeScreen(
+                onBack = { showKalimatChallenge = false },
+                openLeaderboard = openChallengeLeaderboard,
+                onLeaderboardAutoOpened = { openChallengeLeaderboard = false },
+                manualEntryEnabled = manualEntryEnabled,
+            )
             else -> SaloTabScaffold(
                 selectedTab = selectedTab,
                 onTabSelected = { selectedTab = it },
@@ -367,6 +400,8 @@ fun App(
                                 onOpenGharsChallenge = { showGharsChallenge = true },
                                 onOpenQuranChallenge = { showQuranChallenge = true },
                                 onOpenAlBaqaraChallenge = { showAlBaqaraChallenge = true },
+                                onOpenAlfHasanaChallenge = { showAlfHasanaChallenge = true },
+                                onOpenKalimatChallenge = { showKalimatChallenge = true },
                             )
                             SaloTab.Achievements -> AchievementsScreen(
                                 onBack = { selectedTab = SaloTab.MohamedLovers },
@@ -386,6 +421,7 @@ fun App(
                                 onOpenExtensionQr = { showExtensionQr = true },
                                 onOpenPaywall = { showPaywall = true },
                                 onOpenReferral = { showReferral = true },
+                                onOpenVoiceDhikr = { showVoiceDhikr = true },
                             )
                         }
                     }
@@ -672,6 +708,14 @@ fun App(
                             showGharsChallenge = true
                             openChallengeLeaderboard = true
                         }
+                        NotificationAction.OPEN_ALF_HASANA_CHALLENGE -> {
+                            showAlfHasanaChallenge = true
+                            openChallengeLeaderboard = true
+                        }
+                        NotificationAction.OPEN_KALIMAT_CHALLENGE -> {
+                            showKalimatChallenge = true
+                            openChallengeLeaderboard = true
+                        }
                         NotificationAction.NONE -> Unit
                     }
                 },
@@ -716,33 +760,48 @@ fun App(
         // strictly newer than this build, and it is independent of the suppressed app
         // announcements above so it always reaches users on old versions.
         val updateChecker = koinInject<UpdateChecker>()
-        var pendingAppUpdate by remember { mutableStateOf<String?>(null) }
+        var pendingAppUpdate by remember { mutableStateOf<UpdatePrompt?>(null) }
         LaunchedEffect(newVersionAvailable) {
             if (!UPDATE_PROMPT_ENABLED) return@LaunchedEffect
             val current = getAppVersion()
-            pendingAppUpdate = newVersionAvailable
-                ?.takeIf { it.isNotBlank() && isNewerVersion(it, current) }
-                ?: updateChecker.check(current)
+            val decision = updateChecker.check(current, getAppVersionCode())
+            // A forced update (build below the minimum supported version) always wins,
+            // even over an explicit "new version" notification tap.
+            pendingAppUpdate = if (decision?.forced == true) {
+                decision
+            } else {
+                newVersionAvailable
+                    ?.takeIf { it.isNotBlank() && isNewerVersion(it, current) }
+                    ?.let { UpdatePrompt(it, forced = false) }
+                    ?: decision
+            }
         }
-        if (
-            UPDATE_PROMPT_ENABLED &&
-            !showOnboarding
-        ) pendingAppUpdate?.let { version ->
-            VersionUpdateDialog(
-                version = version,
-                // "Update now" only opens the store; it is not a dismissal, so a user who
-                // doesn't complete the update is still reminded on the next launch.
-                onUpdate = {
-                    pendingAppUpdate = null
-                    openStorePage()
-                },
-                // "Later" suppresses this exact version forever.
-                onDismiss = {
-                    updateChecker.markDismissed(version)
-                    pendingAppUpdate = null
-                },
-            )
+        // A forced update blocks the whole app, including onboarding; the soft prompt is
+        // still suppressed while onboarding is on screen.
+        if (UPDATE_PROMPT_ENABLED) pendingAppUpdate?.let { prompt ->
+            if (prompt.forced || !showOnboarding) {
+                VersionUpdateDialog(
+                    version = prompt.version,
+                    forced = prompt.forced,
+                    // "Update now" only opens the store; it is not a dismissal. For a soft
+                    // prompt the user who doesn't finish updating is reminded next launch;
+                    // for a forced one the dialog stays up so the app remains blocked.
+                    onUpdate = {
+                        if (!prompt.forced) pendingAppUpdate = null
+                        openStorePage()
+                    },
+                    // "Later" (soft only) suppresses this exact version forever.
+                    onDismiss = {
+                        updateChecker.markDismissed(prompt.version)
+                        pendingAppUpdate = null
+                    },
+                )
+            }
         }
+
+        // App-wide overlay: shows an "update the app" snackbar when a Firebase permission-denied
+        // rejection is detected. Emitted last so it sits on top of the current screen.
+        PermissionDeniedSnackbar()
     }
 }
 

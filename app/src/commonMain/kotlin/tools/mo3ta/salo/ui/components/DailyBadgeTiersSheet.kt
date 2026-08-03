@@ -72,13 +72,14 @@ fun DailyBadgeTiersSheet(
             )
 
             val badges = DailyBadge.entries
-            for (row in 0..1) {
+            val columns = 3
+            val rows = badges.chunked(columns)
+            rows.forEachIndexed { rowIndex, rowBadges ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    for (col in 0..2) {
-                        val badge = badges[row * 3 + col]
+                    for (badge in rowBadges) {
                         val isCurrent = badge == currentBadge
                         val isEarned = currentBadge != null && badge.threshold <= currentBadge.threshold
                         val isLocked = !isEarned && !isCurrent
@@ -136,8 +137,12 @@ fun DailyBadgeTiersSheet(
                             )
                         }
                     }
+                    // pad the final row so tiles keep a consistent width
+                    repeat(columns - rowBadges.size) {
+                        Spacer(Modifier.weight(1f))
+                    }
                 }
-                if (row == 0) Spacer(Modifier.height(8.dp))
+                if (rowIndex < rows.lastIndex) Spacer(Modifier.height(8.dp))
             }
         }
     }

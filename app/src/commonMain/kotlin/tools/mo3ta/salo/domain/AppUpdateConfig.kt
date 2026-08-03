@@ -4,10 +4,18 @@ package tools.mo3ta.salo.domain
  * Remote-config payload describing the latest published app release.
  *
  * Read from RTDB `mohamed_lovers/app_config`. The client compares [latestVersion]
- * to the running app's version name at startup and offers an update when it is newer.
+ * (a versionName string) to the running app's version name at startup and offers a
+ * *soft* update when it is newer.
+ *
+ * [minSupportedVersionCode], when present, is the lowest still-allowed integer version
+ * code (Android `versionCode` / iOS `CFBundleVersion`): any running build whose code is
+ * lower is *forced* to update and blocked from using the app. A code is used rather than
+ * a versionName so internal builds that share the same name can still be gated precisely,
+ * and so the comparison is an unambiguous integer check.
  */
 data class AppUpdateConfig(
     val latestVersion: String,
+    val minSupportedVersionCode: Int? = null,
 )
 
 /**

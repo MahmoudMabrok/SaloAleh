@@ -26,4 +26,21 @@ class ZabadChallengeStoreTest {
         assertEquals(1234L, store.lastWashTimestamp())
         assertEquals(0, store.roundsToday(next))
     }
+
+    @Test fun lifetimeAccumulatesAcrossDaysAndIgnoresRemoteBaseline() {
+        val store = ZabadChallengeStore(MapSettings())
+        val first = LocalDate(2026, 7, 12)
+        val next = LocalDate(2026, 7, 13)
+        repeat(5) { store.incrementToday(first) }
+        store.addToday(first, 10)
+        assertEquals(15, store.lifetimeCount())
+        // A higher remote baseline advances today's total but never the local lifetime tally.
+        store.updateRemoteBaseline(first, 50)
+        assertEquals(15, store.lifetimeCount())
+        // Day rollover zeroes the daily count but never the lifetime accumulator.
+        assertEquals(0, store.todayCount(next))
+        assertEquals(15, store.lifetimeCount())
+        repeat(3) { store.incrementToday(next) }
+        assertEquals(18, store.lifetimeCount())
+    }
 }

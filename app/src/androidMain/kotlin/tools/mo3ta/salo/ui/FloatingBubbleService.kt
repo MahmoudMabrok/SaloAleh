@@ -43,6 +43,8 @@ import tools.mo3ta.salo.data.engagement.DailyGoalStore
 import tools.mo3ta.salo.data.istighfar.IstighfarChallengeStore
 import tools.mo3ta.salo.data.zabad.ZabadChallengeStore
 import tools.mo3ta.salo.data.ghars.GharsChallengeStore
+import tools.mo3ta.salo.data.alfhasana.AlfHasanaChallengeStore
+import tools.mo3ta.salo.data.kalimat.KalimatChallengeStore
 import tools.mo3ta.salo.input.isSyntheticTap
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.domain.ChallengeType
@@ -56,7 +58,9 @@ class FloatingBubbleService : Service() {
         DHIKR("dhikr"),
         ISTIGHFAR("istighfar"),
         ZABAD("zabad"),
-        GHARS("ghars");
+        GHARS("ghars"),
+        ALF_HASANA("alf_hasana"),
+        KALIMAT("kalimat");
 
         /**
          * NotificationAction id for this type's challenge screen, or null for salawat
@@ -69,6 +73,8 @@ class FloatingBubbleService : Service() {
                 ISTIGHFAR -> "open_istighfar_challenge"
                 ZABAD -> "open_zabad_challenge"
                 GHARS -> "open_ghars_challenge"
+                ALF_HASANA -> "open_alf_hasana_challenge"
+                KALIMAT -> "open_kalimat_challenge"
             }
 
         companion object {
@@ -100,6 +106,8 @@ class FloatingBubbleService : Service() {
     private val istighfarStore: IstighfarChallengeStore by inject()
     private val zabadStore: ZabadChallengeStore by inject()
     private val gharsStore: GharsChallengeStore by inject()
+    private val alfHasanaStore: AlfHasanaChallengeStore by inject()
+    private val kalimatStore: KalimatChallengeStore by inject()
     private val challengeBadgeStore: ChallengeBadgeStore by inject()
     private val analyticsManager: tools.mo3ta.salo.analytics.AnalyticsManager by inject()
 
@@ -154,6 +162,8 @@ class FloatingBubbleService : Service() {
         BubbleType.ISTIGHFAR -> "istighfar_challenge_pending"
         BubbleType.ZABAD -> "zabad_challenge_pending"
         BubbleType.GHARS -> "ghars_challenge_pending"
+        BubbleType.ALF_HASANA -> "alf_hasana_challenge_pending"
+        BubbleType.KALIMAT -> "kalimat_challenge_pending"
     }
 
     // The number shown inside the bubble for the current type.
@@ -163,6 +173,8 @@ class FloatingBubbleService : Service() {
         BubbleType.ISTIGHFAR -> istighfarStore.todayCount(cairoToday())
         BubbleType.ZABAD -> zabadStore.todayCount(cairoToday())
         BubbleType.GHARS -> gharsStore.todayCount(cairoToday())
+        BubbleType.ALF_HASANA -> alfHasanaStore.todayCount(cairoToday())
+        BubbleType.KALIMAT -> kalimatStore.todayCount(cairoToday())
     }
 
     private fun Int.dp(): Int =
@@ -305,6 +317,34 @@ class FloatingBubbleService : Service() {
             notifTitle = "الغَرْس",
             notifText = "سبحان الله العظيم وبحمده",
             goal = ChallengeType.GHARS.dailyGoal,
+            subtitle = BubbleSubtitle.NONE,
+        )
+        BubbleType.ALF_HASANA -> BubbleTheme(
+            gradientStart = Color.parseColor("#3A2C52"),
+            gradientEnd = Color.parseColor("#0E1B33"),
+            ringColor = Color.parseColor("#E9C462"),
+            countColor = Color.parseColor("#F2D98A"),
+            label = "تسبيح",
+            name = "ألف حسنة",
+            contentDescription = "اضغط للتسبيح",
+            tooltip = "سبحان الله",
+            notifTitle = "ألف حسنة",
+            notifText = "سبحان الله",
+            goal = ChallengeType.ALF_HASANA.dailyGoal,
+            subtitle = BubbleSubtitle.NONE,
+        )
+        BubbleType.KALIMAT -> BubbleTheme(
+            gradientStart = Color.parseColor("#52294A"),
+            gradientEnd = Color.parseColor("#141026"),
+            ringColor = Color.parseColor("#E07A9E"),
+            countColor = Color.parseColor("#F2C0D2"),
+            label = "الكلمات",
+            name = "الكلمات الأربع",
+            contentDescription = "اضغط للتسبيح",
+            tooltip = "سبحان الله وبحمده",
+            notifTitle = "الكلمات الأربع",
+            notifText = "سبحان الله وبحمده",
+            goal = ChallengeType.KALIMAT.dailyGoal,
             subtitle = BubbleSubtitle.NONE,
         )
     }
@@ -757,6 +797,10 @@ class FloatingBubbleService : Service() {
                 recordChallengeTap(zabadStore.incrementToday(today), ChallengeType.ZABAD, today)
             BubbleType.GHARS ->
                 recordChallengeTap(gharsStore.incrementToday(today), ChallengeType.GHARS, today)
+            BubbleType.ALF_HASANA ->
+                recordChallengeTap(alfHasanaStore.incrementToday(today), ChallengeType.ALF_HASANA, today)
+            BubbleType.KALIMAT ->
+                recordChallengeTap(kalimatStore.incrementToday(today), ChallengeType.KALIMAT, today)
         }
     }
 

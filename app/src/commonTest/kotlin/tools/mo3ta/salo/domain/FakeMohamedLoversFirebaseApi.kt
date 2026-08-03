@@ -15,7 +15,7 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
     var incrementGate: CompletableDeferred<Unit>? = null
     var selfPlayerFlow: MutableSharedFlow<Result<MohamedLoversPlayer?>>? = null
 
-    data class IncrementCall(val roundKey: String, val uid: String, val delta: Int, val countryCode: String)
+    data class IncrementCall(val roundKey: String, val uid: String, val delta: Int, val countryCode: String, val todayCount: Int = 0)
 
     override fun isConfigured(): Boolean = true
 
@@ -39,9 +39,9 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
     override fun observeLeaderboard(roundKey: String, daily: Boolean): Flow<Result<FirebaseLeaderboard>> =
         flowOf(Result.success(FirebaseLeaderboard(emptyList(), false)))
 
-    override suspend fun incrementSession(roundKey: String, uid: String, delta: Int, countryCode: String): Result<Unit> {
+    override suspend fun incrementSession(roundKey: String, uid: String, delta: Int, countryCode: String, todayCount: Int): Result<Unit> {
         incrementGate?.await()
-        incrementCalls.add(IncrementCall(roundKey, uid, delta, countryCode))
+        incrementCalls.add(IncrementCall(roundKey, uid, delta, countryCode, todayCount))
         return incrementResult
     }
 
@@ -83,6 +83,20 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
     override suspend fun incrementExternalCount(roundKey: String, uid: String, count: Int): Result<Unit> =
         Result.success(Unit)
 
+    data class ExternalLogCall(val roundKey: String, val uid: String, val timeKey: String, val count: Int)
+
+    val externalLogCalls = mutableListOf<ExternalLogCall>()
+
+    override suspend fun appendExternalLog(
+        roundKey: String,
+        uid: String,
+        timeKey: String,
+        count: Int,
+    ): Result<Unit> {
+        externalLogCalls.add(ExternalLogCall(roundKey, uid, timeKey, count))
+        return Result.success(Unit)
+    }
+
     data class DecrementScoreCall(val roundKey: String, val uid: String, val amount: Int)
 
     val decrementScoreCalls = mutableListOf<DecrementScoreCall>()
@@ -95,8 +109,15 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
     override suspend fun setSupporter(roundKey: String, uid: String, supporter: Boolean): Result<Unit> =
         Result.success(Unit)
 
-    override suspend fun writeDailyBadge(roundKey: String, uid: String, badgeKey: String?): Result<Unit> =
-        Result.success(Unit)
+    data class WriteDailyBadgeCall(val roundKey: String, val uid: String, val badgeKey: String?)
+
+    val writeDailyBadgeCalls = mutableListOf<WriteDailyBadgeCall>()
+    var writeDailyBadgeResult: Result<Unit> = Result.success(Unit)
+
+    override suspend fun writeDailyBadge(roundKey: String, uid: String, badgeKey: String?): Result<Unit> {
+        writeDailyBadgeCalls.add(WriteDailyBadgeCall(roundKey, uid, badgeKey))
+        return writeDailyBadgeResult
+    }
 
     override suspend fun writeRoundStreak(roundKey: String, uid: String, streak: Int): Result<Unit> =
         Result.success(Unit)

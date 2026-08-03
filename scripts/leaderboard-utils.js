@@ -7,7 +7,83 @@ const ZABAD_CHALLENGE_ROOT = 'zabad_challenge';
 const GHARS_CHALLENGE_ROOT = 'ghars_challenge';
 const QURAN_CHALLENGE_ROOT = 'quran_challenge';
 const ALBAQARA_CHALLENGE_ROOT = 'albaqara_challenge';
+const ALF_HASANA_CHALLENGE_ROOT = 'alf_hasana_challenge';
+const KALIMAT_CHALLENGE_ROOT = 'kalimat_challenge';
 const MOHAMED_LOVERS_ROOT = 'mohamed_lovers';
+
+// A day's salawat above this is treated as abnormal and recorded for admin review.
+const ABNORMAL_DAILY_THRESHOLD = 12000;
+
+// Salawat pace ceiling: a player's cumulative round total is expected to grow by at
+// most this per competition day. On day N of the round a total above N * this is
+// treated as abnormal pace and recorded (per-user, for later analysis). Saturday —
+// the first day after the Friday 19:00 reset — is day 1, so its ceiling is one
+// increment (11k), Sunday (day 2) is 22k, and so on.
+const PACE_DAILY_INCREMENT = 11000;
+
+// A player's competition score for the current Cairo day. Prefers the client-published absolute
+// `todayCount`; falls back to the yesterday-diff (`totalCount - yesterdayTotalScore`) for clients
+// that predate todayCount, so the daily leaderboard never zeroes out an un-updated user.
+function computeTodayScore({ total, today, yesterday }) {
+  if (typeof today === 'number' && today >= 0) return Math.floor(today);
+  return Math.max(0, (total || 0) - (yesterday || 0));
+}
+
+// Builds the per-user daily snapshots written at the daily close (generate-stats.js): a score
+// history entry per active user, an abnormal-user flag for anyone above the daily threshold, a
+// pace flag for anyone whose cumulative round total outruns the day-of-round ceiling, and a
+// todayCount reset so the next Cairo day starts from zero. Pure so it can be unit-tested.
+// `players` items: { uid, totalCount, todayCount, yesterdayTotalScore, countryCode }.
+// `roundDay` (1-based competition day; see roundDayNumber) gates the pace flag; pass null to skip it.
+function buildDailyScoreSnapshots({
+  players,
+  dateKey,
+  roundKey,
+  roundDay = null,
+  threshold = ABNORMAL_DAILY_THRESHOLD,
+  paceIncrement = PACE_DAILY_INCREMENT,
+}) {
+  const scoreHistoryUpdates = {};
+  const abnormalUpdates = {};
+  const todayCountResets = {};
+  const paceFlagUpdates = {};
+  const paceCeiling = typeof roundDay === 'number' && roundDay > 0 ? roundDay * paceIncrement : null;
+  for (const p of players || []) {
+    if (!p || !p.uid) continue;
+    const dayTotal = computeTodayScore({
+      total: p.totalCount,
+      today: p.todayCount,
+      yesterday: p.yesterdayTotalScore,
+    });
+    if (dayTotal > 0) {
+      scoreHistoryUpdates[`${MOHAMED_LOVERS_ROOT}/users/${p.uid}/scoreHistory/${dateKey}`] = dayTotal;
+    }
+    if (dayTotal > threshold) {
+      abnormalUpdates[`${MOHAMED_LOVERS_ROOT}/abnormal_users/${dateKey}/${p.uid}`] = {
+        count: dayTotal,
+        totalCount: p.totalCount || 0,
+        countryCode: typeof p.countryCode === 'string' ? p.countryCode : 'NA',
+      };
+    }
+    // Pace flag: cumulative round total outrunning the day-of-round ceiling (day N * increment).
+    if (paceCeiling != null) {
+      const total = typeof p.totalCount === 'number' ? p.totalCount : 0;
+      if (total > paceCeiling) {
+        paceFlagUpdates[`${MOHAMED_LOVERS_ROOT}/users/${p.uid}/paceFlags/${dateKey}`] = {
+          totalCount: total,
+          dayOfRound: roundDay,
+          threshold: paceCeiling,
+          countryCode: typeof p.countryCode === 'string' ? p.countryCode : 'NA',
+        };
+      }
+    }
+    // Only reset players who actually carry a non-zero client-pushed todayCount.
+    if (typeof p.todayCount === 'number' && p.todayCount !== 0) {
+      todayCountResets[`${MOHAMED_LOVERS_ROOT}/${roundKey}/players/${p.uid}/todayCount`] = 0;
+    }
+  }
+  return { scoreHistoryUpdates, abnormalUpdates, todayCountResets, paceFlagUpdates };
+}
 
 function buildOldRankMap(source) {
   const entries = source && typeof source.exists === 'function'
@@ -146,6 +222,26 @@ const CHALLENGE_TOP3_MESSAGES = {
       body: 'تراجع ترتيبك في تحدي القرآن الكريم — زِد من تلاوتك وارتقِ!',
     },
   },
+  alf_hasana: {
+    dropped: {
+      title: 'مكانك في تحدي ألف حسنة يناديك 🤍',
+      body: 'كنت من المتصدرين في تحدي ألف حسنة — عُد وسبِّح، فبمئة تسبيحة تُكتب لك ألف حسنة وتُحَطّ عنك ألف خطيئة!',
+    },
+    lost_position: {
+      title: 'المنافسة تشتد في تحدي ألف حسنة 🔥',
+      body: 'تراجع ترتيبك في تحدي ألف حسنة — أكثِر من التسبيح وارتقِ!',
+    },
+  },
+  kalimat: {
+    dropped: {
+      title: 'مكانك في تحدي الكلمات الأربع يناديك 🤍',
+      body: 'كنت من المتصدرين في تحدي الكلمات الأربع — عُد وسبِّح، فهي كلماتٌ ترجَح الميزان!',
+    },
+    lost_position: {
+      title: 'المنافسة تشتد في تحدي الكلمات الأربع 🔥',
+      body: 'تراجع ترتيبك في تحدي الكلمات الأربع — أكثِر من التسبيح وارتقِ!',
+    },
+  },
 };
 
 function normalizeDhikrCount(value) {
@@ -172,6 +268,18 @@ function addDaysToDateKey(dateKey, days) {
   const d = new Date(`${dateKey}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
+}
+
+// The 1-based competition day for a Cairo date within a round. Round keys are the
+// round's END Friday (Cairo); the round began the previous Friday at 19:00, so
+// Saturday = 1 … Friday(end) = 7. Clamped to [1, 7] so the post-reset Friday-night
+// daily close (already a fresh round) reads as day 1 rather than day 0.
+function roundDayNumber(roundKey, dateKey) {
+  const startFriday = addDaysToDateKey(roundKey, -7);
+  const start = new Date(`${startFriday}T00:00:00Z`);
+  const day = new Date(`${dateKey}T00:00:00Z`);
+  const diff = Math.round((day - start) / 86400000);
+  return Math.max(1, Math.min(7, diff));
 }
 
 function buildDailyCountChallengeRanking({
@@ -307,6 +415,34 @@ function buildQuranChallengeDailyRanking(dateKey, users, rootPath = QURAN_CHALLE
   };
 }
 
+function buildAlfHasanaChallengeDailyRanking(dateKey, users, rootPath = ALF_HASANA_CHALLENGE_ROOT) {
+  const ranking = buildDailyCountChallengeRanking({
+    dateKey,
+    players: users,
+    rootPath,
+    playersPath: 'users',
+  });
+
+  return {
+    ...ranking,
+    totalTodayAlfHasana: ranking.totalCount,
+  };
+}
+
+function buildKalimatChallengeDailyRanking(dateKey, users, rootPath = KALIMAT_CHALLENGE_ROOT) {
+  const ranking = buildDailyCountChallengeRanking({
+    dateKey,
+    players: users,
+    rootPath,
+    playersPath: 'users',
+  });
+
+  return {
+    ...ranking,
+    totalTodayKalimat: ranking.totalCount,
+  };
+}
+
 // Per-challenge participant-node layout. The daily count challenges store their
 // participants under different child paths, and baqiyat keeps each player's
 // metadata (uid/countryCode/nickname) directly on the child while the others nest
@@ -320,6 +456,8 @@ const CHALLENGE_PARTICIPANT_CONFIG = {
   [GHARS_CHALLENGE_ROOT]:     { playersPath: 'users',   nested: true,  build: buildGharsChallengeDailyRanking },
   [QURAN_CHALLENGE_ROOT]:     { playersPath: 'users',   nested: true,  build: buildQuranChallengeDailyRanking },
   [ALBAQARA_CHALLENGE_ROOT]:  { playersPath: 'users',   nested: true,  build: buildAlBaqaraChallengeDailyRanking },
+  [ALF_HASANA_CHALLENGE_ROOT]: { playersPath: 'users',   nested: true,  build: buildAlfHasanaChallengeDailyRanking },
+  [KALIMAT_CHALLENGE_ROOT]:    { playersPath: 'users',   nested: true,  build: buildKalimatChallengeDailyRanking },
 };
 
 // Reads a daily count-challenge's raw participant node and returns the users
@@ -455,6 +593,7 @@ async function populateMohamedLoversRound(db, admin, roundKey, isFinal) {
         updatedAt: data.updatedAt || 0,
         countryCode: typeof data.countryCode === 'string' ? data.countryCode : 'NA',
         yesterdayTotalScore: typeof data.yesterdayTotalScore === 'number' ? data.yesterdayTotalScore : 0,
+        todayCount: typeof data.todayCount === 'number' ? data.todayCount : null,
         scoreMasked: data.scoreMasked === true,
         isSupporter: data.isSupporter === true,
         dailyBadge: typeof data.dailyBadge === 'string' ? data.dailyBadge : null,
@@ -498,10 +637,11 @@ async function populateMohamedLoversRound(db, admin, roundKey, isFinal) {
     leaderboard[String(i + 1)] = entry;
   });
 
-  // Daily leaderboard: rank by todayScore = totalCount - yesterdayTotalScore.
+  // Daily leaderboard: rank by the client-published todayCount (falls back to the
+  // yesterday-diff for clients that don't publish it yet).
   const dailyPlayers = allPlayers.map(p => ({
     ...p,
-    dailyScore: Math.max(0, p.score - (p.yesterdayTotalScore || 0)),
+    dailyScore: computeTodayScore({ total: p.score, today: p.todayCount, yesterday: p.yesterdayTotalScore }),
   }));
   dailyPlayers.sort((a, b) => b.dailyScore - a.dailyScore || b.updatedAt - a.updatedAt);
   const dailyTop10 = dailyPlayers.slice(0, 10);
@@ -677,7 +817,14 @@ module.exports = {
   GHARS_CHALLENGE_ROOT,
   QURAN_CHALLENGE_ROOT,
   ALBAQARA_CHALLENGE_ROOT,
+  ALF_HASANA_CHALLENGE_ROOT,
+  KALIMAT_CHALLENGE_ROOT,
   MOHAMED_LOVERS_ROOT,
+  ABNORMAL_DAILY_THRESHOLD,
+  PACE_DAILY_INCREMENT,
+  computeTodayScore,
+  buildDailyScoreSnapshots,
+  roundDayNumber,
   buildOldRankMap,
   computeRankChange,
   computeTop3Changes,
@@ -692,6 +839,8 @@ module.exports = {
   buildGharsChallengeDailyRanking,
   buildQuranChallengeDailyRanking,
   buildAlBaqaraChallengeDailyRanking,
+  buildAlfHasanaChallengeDailyRanking,
+  buildKalimatChallengeDailyRanking,
   readChallengeRankedUsers,
   awardChallengeMedals,
   attachChallengeMedals,

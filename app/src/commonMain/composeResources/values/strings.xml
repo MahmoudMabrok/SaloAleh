@@ -250,8 +250,9 @@
     <!-- Baqiyat Challenge Screen -->
     <string name="baqiyat_ayah">﴿ وَالْبَاقِيَاتُ الصَّالِحَاتُ خَيْرٌ عِندَ رَبِّكَ ثَوَابًا وَخَيْرٌ أَمَلًا ﴾</string>
     <string name="baqiyat_ayah_ref">سورة الكهف ٤٦</string>
-    <string name="baqiyat_tap_hint">اضغط على كل ذكر حتى تكتمل الدورة</string>
-    <string name="baqiyat_shuffle">خلط الترتيب</string>
+    <string name="baqiyat_tap_hint">اقرأ الأذكار الخمسة ثم اضغط في أي مكان — ضغطة واحدة = دورة</string>
+    <string name="baqiyat_add_cd">أتممت دورة ✦ اضغط هنا</string>
+    <string name="baqiyat_phrases_title">أذكار الدورة</string>
     <string name="baqiyat_cycles_label">الدورات المكتملة اليوم</string>
     <string name="baqiyat_manual_entry_button">📿 تسجيل باقيات خارجية</string>
     <string name="manual_baqiyat_title">📿 تسجيل باقيات خارجية</string>
@@ -505,6 +506,20 @@
     <string name="settings_supporter_status">أنت داعم — %1$s</string>
     <string name="settings_manage_features">اضغط لإدارة المزايا</string>
 
+    <!-- Voice Dhikr Contribution -->
+    <string name="settings_voice_dhikr_header">ساعدنا في التطوير</string>
+    <string name="settings_voice_dhikr_link">🎙️ ساعدنا في بناء ميزة الذكر بالصوت</string>
+    <string name="voice_dhikr_title">الذكر بالصوت</string>
+    <string name="voice_dhikr_headline">ميزة قادمة: عدّ الذكر بصوتك</string>
+    <string name="voice_dhikr_intro">نجمع تسجيلات صوتية للأذكار من متطوعين مثلك لتدريب نموذج يتعرّف على الذكر. وبعدها يكفي أن تفتح الميكروفون وتذكر الله، فيقوم التطبيق بالعدّ تلقائيًا دون أن تضغط على الشاشة.</string>
+    <string name="voice_dhikr_how_header">كيف تشارك؟</string>
+    <string name="voice_dhikr_step_1">اضغط زر البدء بالأسفل ليفتح لك نموذج التسجيل.</string>
+    <string name="voice_dhikr_step_2">سجّل الأذكار المطلوبة بصوتك في مكان هادئ.</string>
+    <string name="voice_dhikr_step_3">أرسل التسجيل، وسيُستخدم في تدريب النموذج فقط.</string>
+    <string name="voice_dhikr_privacy">المشاركة تطوّعية بالكامل، والتسجيلات تُستخدم فقط لتدريب نموذج التعرّف على الذكر، ولا تُنشر ولا تُربط باسمك.</string>
+    <string name="voice_dhikr_start">ابدأ التسجيل</string>
+    <string name="voice_dhikr_external_note">سيفتح الرابط في المتصفح خارج التطبيق.</string>
+
     <!-- Extension QR Screen -->
     <string name="extension_qr_title">مزامنة البيانات</string>
     <string name="extension_qr_warning_title">تنبيه</string>
@@ -561,6 +576,9 @@
     <string name="version_update_description">يوجد إصدار جديد من التطبيق. حدّث الآن لتحصل على أحدث التحسينات والميزات.</string>
     <string name="version_update_update_now">حدّث الآن</string>
     <string name="version_update_later">لاحقاً</string>
+    <string name="force_update_title">التحديث مطلوب</string>
+    <string name="force_update_description">هذا الإصدار لم يعد مدعوماً. يجب تحديث التطبيق إلى أحدث إصدار للمتابعة.</string>
+    <string name="permission_denied_update_message">حدث خطأ ما، يُرجى تحديث التطبيق</string>
 
     <!-- Manual Salawat Sheet -->
     <string name="manual_salawat_title">📿 تسجيل صلوات خارجية</string>
@@ -676,18 +694,26 @@
 
     <!-- Motivation: Daily milestones -->
     <string name="milestone_today">%1$d صلاة اليوم!</string>
-    <string name="badge_sprout_title">مبتدئ الذكر</string>
-    <string name="badge_heart_title">محب النبي ﷺ</string>
-    <string name="badge_tasbih_title">كثير الصلاة</string>
-    <string name="badge_dome_title">رفيق الذكر</string>
-    <string name="badge_crescent_title">من المكثرين</string>
-    <string name="badge_crown_title">فارس الصلاة</string>
+    <string name="badge_spark_title">مُبتدئ</string>
+    <string name="badge_sprout_title">سالِك</string>
+    <string name="badge_heart_title">مُحِبّ</string>
+    <string name="badge_tasbih_title">ذاكِر</string>
+    <string name="badge_dome_title">مُكثِر</string>
+    <string name="badge_crescent_title">مُواظِب</string>
+    <string name="badge_lantern_title">مُنير</string>
+    <string name="badge_crown_title">فارس</string>
+    <string name="badge_mihrab_title">إمام</string>
+    <string name="badge_star_title">سلطان المحبين</string>
+    <string name="badge_spark_desc">صلِّ على النبي ﷺ %1$d مرة في اليوم</string>
     <string name="badge_sprout_desc">صلِّ على النبي ﷺ %1$d مرة في اليوم</string>
     <string name="badge_heart_desc">صلِّ على النبي ﷺ %1$d مرة في اليوم</string>
     <string name="badge_tasbih_desc">صلِّ على النبي ﷺ %1$d مرة في اليوم</string>
     <string name="badge_dome_desc">صلِّ على النبي ﷺ %1$d مرة في اليوم</string>
     <string name="badge_crescent_desc">صلِّ على النبي ﷺ %1$d مرة في اليوم</string>
+    <string name="badge_lantern_desc">صلِّ على النبي ﷺ %1$d مرة في اليوم</string>
     <string name="badge_crown_desc">صلِّ على النبي ﷺ %1$d مرة في اليوم</string>
+    <string name="badge_mihrab_desc">صلِّ على النبي ﷺ %1$d مرة في اليوم</string>
+    <string name="badge_star_desc">صلِّ على النبي ﷺ %1$d مرة في اليوم</string>
 
     <!-- Daily rank strip -->
     <string name="daily_rank_strip_today_label">صلاة اليوم</string>
@@ -860,4 +886,71 @@
   <string name="auto_click_detected_title">تنبيه</string>
   <string name="auto_click_detected_body">يبدو أن تطبيق نقر تلقائي يرسل الصلوات نيابةً عنك. هذه الصلوات لن تُحتسب. الأجر في الذِّكر بقلبك ولسانك، لا في الرقم.</string>
   <string name="auto_click_detected_cta">فهمت</string>
+
+  <!-- ألف حسنة (Alf Hasana) tasbih challenge -->
+  <string name="challenge_alf_hasana_title">ألف حسنة</string>
+  <string name="challenge_alf_hasana_body">مئة تسبيحة… ألف حسنة كل يوم</string>
+  <string name="alf_hasana_back_cd">رجوع</string>
+  <string name="alf_hasana_phrase">سُبْحَانَ اللهِ</string>
+  <string name="alf_hasana_today">اليوم</string>
+  <string name="alf_hasana_times">تسبيحة</string>
+  <string name="alf_hasana_add">سبِّح</string>
+  <string name="alf_hasana_daily_goal">الهدف اليومي: %1$d تسبيحة</string>
+  <string name="alf_hasana_progress_count">%1$d / %2$d</string>
+  <string name="alf_hasana_rank_number"># %1$d</string>
+  <string name="alf_hasana_rank_subtitle">من بين %1$d مشارك</string>
+  <string name="alf_hasana_rank_unranked">اضغط لرؤية المتصدرين</string>
+  <string name="alf_hasana_tap_hint">اضغط في أي مكان للتسبيح</string>
+  <string name="alf_hasana_manual_entry_button">📿 تسجيل تسبيحات خارجية</string>
+  <string name="alf_hasana_view_rewards">🎁 ماذا تربح؟</string>
+  <string name="alf_hasana_leaderboard_title">المتصدرون</string>
+  <string name="alf_hasana_leaderboard_rank_new">جديد</string>
+  <string name="alf_hasana_leaderboard_empty">لا توجد بيانات بعد</string>
+  <string name="alf_hasana_rewards_title">ماذا تنال بمئة تسبيحة؟</string>
+  <string name="alf_hasana_reward_hadith">«أَيَعْجِزُ أَحَدُكُمْ أَنْ يَكْسِبَ كُلَّ يَوْمٍ أَلْفَ حَسَنَةٍ؟ يُسَبِّحُ اللهَ مِائَةَ تَسْبِيحَةٍ، فَيُكْتَبُ لَهُ أَلْفُ حَسَنَةٍ، وَيُحَطُّ عَنْهُ أَلْفُ خَطِيئَةٍ»</string>
+  <string name="alf_hasana_reward_hadith_ref">رواه مسلم</string>
+  <string name="alf_hasana_reward_written">تُكتب لك ألف حسنة</string>
+  <string name="alf_hasana_reward_erased">تُحَطّ عنك ألف خطيئة</string>
+  <string name="alf_hasana_rewards_close">واصل التسبيح</string>
+  <string name="alf_hasana_milestone_title">أتممت %1$d تسبيحة!</string>
+  <string name="alf_hasana_milestone_subtitle">ألف حسنة كُتبت لك 🤍</string>
+  <string name="manual_alf_hasana_title">📿 تسجيل تسبيحات خارجية</string>
+  <string name="manual_alf_hasana_subtitle">سبّحت بصمت أو على أصابعك أو بالمسبحة؟\nسجّل ما سبّحت — لا تتوقف عن الذكر لأنك بعيد عن التطبيق</string>
+  <string name="manual_alf_hasana_count">العدد:</string>
+  <string name="manual_alf_hasana_enter_count">أدخل العدد</string>
+  <string name="manual_alf_hasana_submit">تسجيل</string>
+  <string name="manual_alf_hasana_witness">أشهد أني سبّحت هذا العدد فعلاً</string>
+  <string name="challenge_kalimat_title">الكلمات الأربع</string>
+  <string name="challenge_kalimat_body">أربع كلماتٍ لو وُزِنَّ لرجَحْن</string>
+  <string name="kalimat_back_cd">رجوع</string>
+  <string name="kalimat_phrase">سُبْحَانَ اللهِ وَبِحَمْدِهِ</string>
+  <string name="kalimat_today">اليوم</string>
+  <string name="kalimat_times">مرة</string>
+  <string name="kalimat_add">سبِّح</string>
+  <string name="kalimat_daily_goal">الهدف اليومي: %1$d مرات</string>
+  <string name="kalimat_progress_count">%1$d / %2$d</string>
+  <string name="kalimat_rank_number"># %1$d</string>
+  <string name="kalimat_rank_subtitle">من بين %1$d مشارك</string>
+  <string name="kalimat_rank_unranked">اضغط لرؤية المتصدرين</string>
+  <string name="kalimat_tap_hint">اضغط على الزر لتُسبِّح الكلمات الأربع</string>
+  <string name="kalimat_manual_entry_button">📿 تسجيل تسبيحات خارجية</string>
+  <string name="kalimat_view_rewards">🎁 ماذا تربح؟</string>
+  <string name="kalimat_leaderboard_title">المتصدرون</string>
+  <string name="kalimat_leaderboard_rank_new">جديد</string>
+  <string name="kalimat_leaderboard_empty">لا توجد بيانات بعد</string>
+  <string name="kalimat_rewards_title">كلماتٌ يرجَحْنَ الميزان</string>
+  <string name="kalimat_reward_hadith">«قال ﷺ لجويرية: قد قلتُ بعدكِ أربعَ كلماتٍ، لو وُزِنَّ بما قلتِ منذ اليومِ لوَزَنَتْهُنَّ: سُبْحَانَ اللهِ وَبِحَمْدِهِ، عَدَدَ خَلْقِهِ، وَرِضَا نَفْسِهِ، وَزِنَةَ عَرْشِهِ، وَمِدَادَ كَلِمَاتِهِ»</string>
+  <string name="kalimat_hadith_dhikr">سُبْحَانَ اللهِ وَبِحَمْدِهِ، عَدَدَ خَلْقِهِ، وَرِضَا نَفْسِهِ، وَزِنَةَ عَرْشِهِ، وَمِدَادَ كَلِمَاتِهِ</string>
+  <string name="kalimat_reward_hadith_ref">رواه مسلم</string>
+  <string name="kalimat_reward_outweigh">كلماتٌ ترجُح كلَّ ما سبّحتَ في الميزان</string>
+  <string name="kalimat_reward_pleasing">رِضا الرحمن وزِنةُ عرشِه ومِدادُ كلماته</string>
+  <string name="kalimat_rewards_close">واصل التسبيح</string>
+  <string name="kalimat_milestone_title">أتممت الكلمات الأربع %1$d مرات!</string>
+  <string name="kalimat_milestone_subtitle">كلماتٌ يرجَحْنَ ميزانك 🤍</string>
+  <string name="manual_kalimat_title">📿 تسجيل تسبيحات خارجية</string>
+  <string name="manual_kalimat_subtitle">سبّحت بصمت أو على أصابعك أو بالمسبحة؟\nسجّل ما سبّحت — لا تتوقف عن الذكر لأنك بعيد عن التطبيق</string>
+  <string name="manual_kalimat_count">العدد:</string>
+  <string name="manual_kalimat_enter_count">أدخل العدد</string>
+  <string name="manual_kalimat_submit">تسجيل</string>
+  <string name="manual_kalimat_witness">أشهد أني سبّحت هذا العدد فعلاً</string>
 </resources>

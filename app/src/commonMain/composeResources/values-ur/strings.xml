@@ -225,8 +225,9 @@
     <!-- Baqiyat Challenge Screen -->
     <string name="baqiyat_ayah">﴿ وَالْبَاقِيَاتُ الصَّالِحَاتُ خَيْرٌ عِندَ رَبِّكَ ثَوَابًا وَخَيْرٌ أَمَلًا ﴾</string>
     <string name="baqiyat_ayah_ref">سورۃ الکہف ۴۶</string>
-    <string name="baqiyat_tap_hint">ہر ذکر پر ٹیپ کریں یہاں تک کہ دور مکمل ہو جائے</string>
-    <string name="baqiyat_shuffle">ترتیب بدلیں</string>
+    <string name="baqiyat_tap_hint">پانچوں اذکار پڑھیں پھر کہیں بھی ٹیپ کریں — ایک ٹیپ = ایک دور</string>
+    <string name="baqiyat_add_cd">دور مکمل ہوا ✦ یہاں ٹیپ کریں</string>
+    <string name="baqiyat_phrases_title">دور کے اذکار</string>
     <string name="baqiyat_cycles_label">آج مکمل ہونے والے دور</string>
     <string name="baqiyat_manual_entry_button">📿 بیرونی باقیات درج کریں</string>
     <string name="manual_baqiyat_title">📿 بیرونی باقیات درج کریں</string>
@@ -471,6 +472,20 @@
     <string name="settings_supporter_status">آپ معاون ہیں — %1$s</string>
     <string name="settings_manage_features">خصوصیات کا انتظام کرنے کے لیے ٹیپ کریں</string>
 
+    <!-- Voice Dhikr Contribution -->
+    <string name="settings_voice_dhikr_header">تعمیر میں ہماری مدد کریں</string>
+    <string name="settings_voice_dhikr_link">🎙️ آواز سے ذکر گننے کی خصوصیت بنانے میں مدد کریں</string>
+    <string name="voice_dhikr_title">آواز سے ذکر</string>
+    <string name="voice_dhikr_headline">آنے والی خصوصیت: اپنی آواز سے ذکر کی گنتی</string>
+    <string name="voice_dhikr_intro">ہم آپ جیسے رضاکاروں سے اذکار کی صوتی ریکارڈنگز جمع کر رہے ہیں تاکہ ایک ایسا ماڈل تربیت دیا جا سکے جو ذکر کو پہچانے۔ پھر آپ صرف مائیکروفون کھول کر ذکر کریں گے اور ایپ خود بخود گنتی کرے گی — اسکرین دبانے کی ضرورت نہیں۔</string>
+    <string name="voice_dhikr_how_header">شرکت کیسے کریں؟</string>
+    <string name="voice_dhikr_step_1">نیچے دیے گئے شروع کے بٹن پر ٹیپ کریں تاکہ ریکارڈنگ فارم کھل جائے۔</string>
+    <string name="voice_dhikr_step_2">کسی پُرسکون جگہ پر مطلوبہ اذکار اپنی آواز میں ریکارڈ کریں۔</string>
+    <string name="voice_dhikr_step_3">ریکارڈنگ جمع کرائیں — یہ صرف ماڈل کی تربیت کے لیے استعمال ہوگی۔</string>
+    <string name="voice_dhikr_privacy">شرکت مکمل طور پر رضاکارانہ ہے۔ ریکارڈنگز صرف ذکر پہچاننے والے ماڈل کی تربیت کے لیے استعمال ہوتی ہیں؛ نہ شائع کی جاتی ہیں اور نہ آپ کے نام سے منسلک ہوتی ہیں۔</string>
+    <string name="voice_dhikr_start">ریکارڈنگ شروع کریں</string>
+    <string name="voice_dhikr_external_note">لنک ایپ سے باہر آپ کے براؤزر میں کھلے گا۔</string>
+
     <!-- Extension QR Screen -->
     <string name="extension_qr_title">ڈیٹا کی مطابقت پذیری</string>
     <string name="extension_qr_warning_title">تنبیہ</string>
@@ -525,6 +540,9 @@
     <string name="version_update_description">ایپ کا نیا ورژن دستیاب ہے۔ تازہ ترین بہتری اور خصوصیات حاصل کرنے کے لیے ابھی اپڈیٹ کریں۔</string>
     <string name="version_update_update_now">ابھی اپڈیٹ کریں</string>
     <string name="version_update_later">بعد میں</string>
+    <string name="force_update_title">اپ ڈیٹ ضروری ہے</string>
+    <string name="force_update_description">یہ ورژن اب سپورٹ نہیں کیا جاتا۔ جاری رکھنے کے لیے آپ کو ایپ کو تازہ ترین ورژن پر اپ ڈیٹ کرنا ہوگا۔</string>
+    <string name="permission_denied_update_message">کچھ غلط ہو گیا، براہ کرم ایپ کو اپ ڈیٹ کریں</string>
 
     <!-- Manual Salawat Sheet -->
     <string name="manual_salawat_title">📿 بیرونی صلوات درج کریں</string>
@@ -638,18 +656,26 @@
     <string name="settings_language_zh">中文</string>
 
     <!-- Daily badges -->
-    <string name="badge_sprout_title">ذکر کی ابتدا</string>
-    <string name="badge_heart_title">نبی ﷺ سے محبت</string>
-    <string name="badge_tasbih_title">کثرتِ درود</string>
-    <string name="badge_dome_title">ذکر کا ساتھی</string>
-    <string name="badge_crescent_title">مداومین میں سے</string>
-    <string name="badge_crown_title">درود کا شہسوار</string>
+    <string name="badge_spark_title">نو آموز</string>
+    <string name="badge_sprout_title">سالک</string>
+    <string name="badge_heart_title">محب</string>
+    <string name="badge_tasbih_title">ذاکر</string>
+    <string name="badge_dome_title">کثرت کرنے والا</string>
+    <string name="badge_crescent_title">مواظب</string>
+    <string name="badge_lantern_title">منور</string>
+    <string name="badge_crown_title">شہسوار</string>
+    <string name="badge_mihrab_title">امام</string>
+    <string name="badge_star_title">محبین کا سلطان</string>
+    <string name="badge_spark_desc">ایک دن میں %1$d درود بھیجیں</string>
     <string name="badge_sprout_desc">ایک دن میں %1$d درود بھیجیں</string>
     <string name="badge_heart_desc">ایک دن میں %1$d درود بھیجیں</string>
     <string name="badge_tasbih_desc">ایک دن میں %1$d درود بھیجیں</string>
     <string name="badge_dome_desc">ایک دن میں %1$d درود بھیجیں</string>
     <string name="badge_crescent_desc">ایک دن میں %1$d درود بھیجیں</string>
+    <string name="badge_lantern_desc">ایک دن میں %1$d درود بھیجیں</string>
     <string name="badge_crown_desc">ایک دن میں %1$d درود بھیجیں</string>
+    <string name="badge_mihrab_desc">ایک دن میں %1$d درود بھیجیں</string>
+    <string name="badge_star_desc">ایک دن میں %1$d درود بھیجیں</string>
 
     <!-- Idle salawat banner -->
     <string name="idle_banner_prefix">آپ نے درود نہیں بھیجا</string>
@@ -810,4 +836,71 @@
   <string name="auto_click_detected_title">توجہ فرمائیں</string>
   <string name="auto_click_detected_body">ایسا لگتا ہے کہ کوئی آٹو کلک ایپ آپ کی جگہ درود بھیج رہی ہے۔ یہ شمار نہیں ہوں گے۔ اجر دل اور زبان کے ذکر میں ہے، عدد میں نہیں۔</string>
   <string name="auto_click_detected_cta">سمجھ گیا</string>
+
+  <!-- الف حسنہ (ایک ہزار نیکیاں) تسبیح چیلنج -->
+  <string name="challenge_alf_hasana_title">ایک ہزار نیکیاں</string>
+  <string name="challenge_alf_hasana_body">سو تسبیح… ہر روز ایک ہزار نیکیاں</string>
+  <string name="alf_hasana_back_cd">واپس</string>
+  <string name="alf_hasana_phrase">سُبْحَانَ اللهِ</string>
+  <string name="alf_hasana_today">آج</string>
+  <string name="alf_hasana_times">تسبیح</string>
+  <string name="alf_hasana_add">تسبیح کریں</string>
+  <string name="alf_hasana_daily_goal">روزانہ ہدف: %1$d تسبیح</string>
+  <string name="alf_hasana_progress_count">%1$d / %2$d</string>
+  <string name="alf_hasana_rank_number"># %1$d</string>
+  <string name="alf_hasana_rank_subtitle">%1$d شرکاء میں سے</string>
+  <string name="alf_hasana_rank_unranked">سرِفہرست دیکھنے کے لیے دبائیں</string>
+  <string name="alf_hasana_tap_hint">تسبیح کے لیے کہیں بھی دبائیں</string>
+  <string name="alf_hasana_manual_entry_button">📿 بیرونی تسبیح درج کریں</string>
+  <string name="alf_hasana_view_rewards">🎁 آپ کو کیا ملے گا؟</string>
+  <string name="alf_hasana_leaderboard_title">سرِفہرست</string>
+  <string name="alf_hasana_leaderboard_rank_new">نیا</string>
+  <string name="alf_hasana_leaderboard_empty">ابھی کوئی ڈیٹا نہیں</string>
+  <string name="alf_hasana_rewards_title">سو تسبیح سے آپ کو کیا ملتا ہے؟</string>
+  <string name="alf_hasana_reward_hadith">«کیا تم میں سے کوئی اس سے عاجز ہے کہ ہر روز ایک ہزار نیکیاں کمائے؟ وہ اللہ کی سو مرتبہ تسبیح کرے تو اس کے لیے ایک ہزار نیکیاں لکھی جاتی ہیں اور اس سے ایک ہزار گناہ مٹا دیے جاتے ہیں۔»</string>
+  <string name="alf_hasana_reward_hadith_ref">مسلم نے روایت کیا</string>
+  <string name="alf_hasana_reward_written">آپ کے لیے ایک ہزار نیکیاں لکھی جاتی ہیں</string>
+  <string name="alf_hasana_reward_erased">آپ سے ایک ہزار گناہ مٹا دیے جاتے ہیں</string>
+  <string name="alf_hasana_rewards_close">تسبیح جاری رکھیں</string>
+  <string name="alf_hasana_milestone_title">آپ نے %1$d تسبیح مکمل کیں!</string>
+  <string name="alf_hasana_milestone_subtitle">آپ کے لیے ایک ہزار نیکیاں لکھی گئیں 🤍</string>
+  <string name="manual_alf_hasana_title">📿 بیرونی تسبیح درج کریں</string>
+  <string name="manual_alf_hasana_subtitle">خاموشی سے، انگلیوں پر یا تسبیح سے ذکر کیا؟\nجو گنا اسے درج کریں — ایپ سے دور ہونے کی وجہ سے ذکر نہ روکیں</string>
+  <string name="manual_alf_hasana_count">تعداد:</string>
+  <string name="manual_alf_hasana_enter_count">تعداد درج کریں</string>
+  <string name="manual_alf_hasana_submit">درج کریں</string>
+  <string name="manual_alf_hasana_witness">میں گواہی دیتا ہوں کہ میں نے واقعی اتنی تسبیح کی</string>
+  <string name="challenge_kalimat_title">چار کلمات</string>
+  <string name="challenge_kalimat_body">چار کلمات جو ترازو میں سب پر بھاری ہیں</string>
+  <string name="kalimat_back_cd">واپس</string>
+  <string name="kalimat_phrase">سُبْحَانَ اللهِ وَبِحَمْدِهِ</string>
+  <string name="kalimat_today">آج</string>
+  <string name="kalimat_times">بار</string>
+  <string name="kalimat_add">تسبیح کریں</string>
+  <string name="kalimat_daily_goal">روزانہ ہدف: %1$d بار</string>
+  <string name="kalimat_progress_count">%1$d / %2$d</string>
+  <string name="kalimat_rank_number"># %1$d</string>
+  <string name="kalimat_rank_subtitle">%1$d شرکاء میں سے</string>
+  <string name="kalimat_rank_unranked">سرِفہرست دیکھنے کے لیے دبائیں</string>
+  <string name="kalimat_tap_hint">چار کلمات پڑھنے کے لیے بٹن دبائیں</string>
+  <string name="kalimat_manual_entry_button">📿 بیرونی تسبیح درج کریں</string>
+  <string name="kalimat_view_rewards">🎁 آپ کو کیا ملے گا؟</string>
+  <string name="kalimat_leaderboard_title">سرِفہرست</string>
+  <string name="kalimat_leaderboard_rank_new">نیا</string>
+  <string name="kalimat_leaderboard_empty">ابھی کوئی ڈیٹا نہیں</string>
+  <string name="kalimat_rewards_title">وہ کلمات جو ترازو جھکا دیتے ہیں</string>
+  <string name="kalimat_reward_hadith">«نبی ﷺ نے جویریہؓ سے فرمایا: میں نے تمہارے بعد چار کلمات کہے، اگر انہیں اُس سب کے ساتھ تولا جائے جو تم نے آج سے اب تک کہا تو وہ بھاری رہیں گے: سُبْحَانَ اللهِ وَبِحَمْدِهِ، عَدَدَ خَلْقِهِ، وَرِضَا نَفْسِهِ، وَزِنَةَ عَرْشِهِ، وَمِدَادَ كَلِمَاتِهِ»</string>
+  <string name="kalimat_hadith_dhikr">سُبْحَانَ اللهِ وَبِحَمْدِهِ، عَدَدَ خَلْقِهِ، وَرِضَا نَفْسِهِ، وَزِنَةَ عَرْشِهِ، وَمِدَادَ كَلِمَاتِهِ</string>
+  <string name="kalimat_reward_hadith_ref">مسلم نے روایت کیا</string>
+  <string name="kalimat_reward_outweigh">وہ کلمات جو ترازو میں ہر دوسرے ذکر پر بھاری ہیں</string>
+  <string name="kalimat_reward_pleasing">اللہ کی رضا، اس کے عرش کا وزن اور اس کے کلمات کی سیاہی</string>
+  <string name="kalimat_rewards_close">تسبیح جاری رکھیں</string>
+  <string name="kalimat_milestone_title">آپ نے چار کلمات %1$d بار مکمل کیے!</string>
+  <string name="kalimat_milestone_subtitle">وہ کلمات جو آپ کا ترازو جھکا دیتے ہیں 🤍</string>
+  <string name="manual_kalimat_title">📿 بیرونی تسبیح درج کریں</string>
+  <string name="manual_kalimat_subtitle">خاموشی سے، انگلیوں پر یا تسبیح سے ذکر کیا؟\nجو گنا اسے درج کریں — ایپ سے دور ہونے کی وجہ سے ذکر نہ روکیں</string>
+  <string name="manual_kalimat_count">تعداد:</string>
+  <string name="manual_kalimat_enter_count">تعداد درج کریں</string>
+  <string name="manual_kalimat_submit">درج کریں</string>
+  <string name="manual_kalimat_witness">میں گواہی دیتا ہوں کہ میں نے واقعی اتنی تسبیح کی</string>
 </resources>

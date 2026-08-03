@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -232,14 +233,22 @@ private fun IstighfarImmersiveZone(
     onViewRewards: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val fraction = (count.toFloat() / target.toFloat()).coerceIn(0f, 1f)
+    // The ring lives inside the *current* cycle: the moment the goal is reached the ring returns
+    // to 0 and starts filling again, so the user can keep counting past the goal cycle after cycle.
+    // (The milestone celebration fires on reaching the goal to mark the completed cycle.)
+    val withinCycle = if (target > 0) count % target else 0
+    val fraction = if (target > 0) (withinCycle.toFloat() / target.toFloat()).coerceIn(0f, 1f) else 0f
     val cyclesCompleted = if (target > 0) count / target else 0
 
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(IstighfarHeroBackground)
+            // No ripple: a tap on this full-screen surface only updates the counter and its
+            // related parts — never a full-screen ripple effect across the whole hero.
             .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
                 enabled = canCount,
                 onClickLabel = stringResource(Res.string.istighfar_add),
                 role = Role.Button,
@@ -353,7 +362,9 @@ private fun IstighfarImmersiveZone(
 
             IstighfarStatChips(
                 cyclesCompleted = cyclesCompleted,
-                todayCount = count,
+                // Show progress within the current cycle so the chip agrees with the ring;
+                // the cumulative day total stays prominent in the ring's centre.
+                todayCount = withinCycle,
                 target = target,
             )
 

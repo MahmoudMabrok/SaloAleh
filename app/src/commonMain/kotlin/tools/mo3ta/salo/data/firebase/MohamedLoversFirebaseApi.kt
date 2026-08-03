@@ -22,7 +22,7 @@ interface MohamedLoversFirebaseApi {
     suspend fun fetchHeroes(): Result<HeroesBoard?>
     fun observeLeaderboard(roundKey: String, daily: Boolean = false): Flow<Result<FirebaseLeaderboard>>
     suspend fun fetchLiveLeaderboard(roundKey: String): Result<FirebaseLeaderboard>
-    suspend fun incrementSession(roundKey: String, uid: String, delta: Int, countryCode: String): Result<Unit>
+    suspend fun incrementSession(roundKey: String, uid: String, delta: Int, countryCode: String, todayCount: Int): Result<Unit>
     suspend fun writeUserActivity(uid: String, installDate: String, lastOpenDate: String): Result<Unit>
     suspend fun writeFcmToken(uid: String, token: String): Result<Unit>
     suspend fun writeNotificationPrefs(
@@ -34,6 +34,12 @@ interface MohamedLoversFirebaseApi {
     /** Reads the current user's cumulative podium medals from `users/{uid}/medals`. */
     suspend fun fetchSelfMedals(uid: String): Result<MohamedLoversMedals>
     suspend fun incrementExternalCount(roundKey: String, uid: String, count: Int): Result<Unit>
+    /**
+     * Append one audit entry for a large external/manual batch at
+     * `players/{uid}/externalLog/{timeKey}`. Entries accumulate, so two batches landing in the same
+     * minute add up instead of overwriting each other.
+     */
+    suspend fun appendExternalLog(roundKey: String, uid: String, timeKey: String, count: Int): Result<Unit>
     /**
      * Lower the player's saved competition score by [amount] to correct a mistaken entry.
      * The score is floored at 0 (never negative). Returns the reduction actually applied.

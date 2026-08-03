@@ -28,6 +28,7 @@ class QuranChallengeStore(private val settings: Settings) {
         ensureToday(today)
         val newPending = settings.getInt(KEY_PENDING, 0) + 1
         settings.putInt(KEY_PENDING, newPending)
+        addLifetime(1)
         return settings.getInt(KEY_REMOTE, 0) + newPending
     }
 
@@ -43,6 +44,7 @@ class QuranChallengeStore(private val settings: Settings) {
             if (applied > 0) {
                 settings.putInt(KEY_PENDING, settings.getInt(KEY_PENDING, 0) + applied)
                 settings.putInt(KEY_MANUAL, usedManual + applied)
+                addLifetime(applied)
             }
         }
         return settings.getInt(KEY_REMOTE, 0) + settings.getInt(KEY_PENDING, 0)
@@ -103,6 +105,18 @@ class QuranChallengeStore(private val settings: Settings) {
         return 0
     }
 
+    /**
+     * Lifetime total counted on this device — never resets on day rollover. Accumulates every
+     * locally-counted khatma unit (taps + applied manual entries) so the overall total-over-time is
+     * published to the persistent DB user node.
+     */
+    fun lifetimeCount(): Int = settings.getInt(KEY_LIFETIME, 0)
+
+    private fun addLifetime(delta: Int) {
+        if (delta <= 0) return
+        settings.putInt(KEY_LIFETIME, settings.getInt(KEY_LIFETIME, 0) + delta)
+    }
+
     private fun ensureToday(today: LocalDate) {
         val date = today.toString()
         if (settings.getStringOrNull(KEY_DATE) == date) return
@@ -118,5 +132,7 @@ class QuranChallengeStore(private val settings: Settings) {
         const val KEY_PENDING = "quran_challenge_pending"
         // Cumulative manual ("external") entry today — the daily-cap ledger.
         const val KEY_MANUAL = "quran_challenge_manual"
+        // Lifetime accumulator — survives day rollover; total counted across all days.
+        const val KEY_LIFETIME = "quran_challenge_lifetime"
     }
 }

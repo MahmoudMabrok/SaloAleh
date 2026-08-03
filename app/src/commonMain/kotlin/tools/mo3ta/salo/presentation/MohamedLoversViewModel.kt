@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -101,6 +102,7 @@ class MohamedLoversViewModel(
                 dailyGoalProgress = todayProgress,
                 currentDailyBadge = DailyBadge.fromTapCount(todayProgress)?.key,
                 manualRemaining = sessionStore.manualRemainingToday(today, manualDailyCap(today)),
+                todayCount = todayProgress,
             )
         }
         settleHeartDecay()
@@ -219,6 +221,8 @@ class MohamedLoversViewModel(
         val isNowComplete = dailyGoalStore.isGoalComplete(today)
         val streakResult = roundStreakStore.recordActivity(roundKey, today)
         val todayStr = today.toString()
+        // The daily-goal tap progress is the single source of truth for today's competition count:
+        // it drives the rank strip and daily badge, and is what we publish for the daily leaderboard.
         val rawTaps = dailyGoalStore.todayProgress(today)
         val badge = DailyBadge.fromTapCount(rawTaps)
         val lastMilestone = sessionStore.getLastMilestoneLevel(todayStr)
@@ -227,12 +231,18 @@ class MohamedLoversViewModel(
         if (badge != null && badge.threshold > lastMilestone) {
             milestoneThreshold = badge.threshold
             milestoneBadgeKey = badge.key
+            // Local celebration guard advances immediately (fires the milestone dialog once).
             sessionStore.saveLastMilestoneLevel(todayStr, badge.threshold)
-            viewModelScope.launch { repository.writeDailyBadge(roundKey, badge.key) }
+            // The server badge is NOT written here. Flushing pushes the pending score first and
+            // then reconciles the badge (see flushPendingSession -> publishDailyBadgeIfChanged), so
+            // the badge never leads the score on the server and a failed publish is retried on the
+            // next flush instead of being lost.
+            flushPendingSession()
         }
         _state.update {
             it.copy(
                 sessionClicks = pending.clickCount,
+                todayCount = rawTaps,
                 error = null,
                 dailyGoalProgress = rawTaps,
                 dailyGoalJustCompleted = !wasComplete && isNowComplete,
@@ -282,8 +292,10 @@ class MohamedLoversViewModel(
                 inFlightFlush = state.value.sessionClicks
                 _state.update { it.copy(isSavingSession = true, error = null) }
 
+                val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
                 val result = repository.flushPendingSession(
                     countryCode = state.value.countryCode,
+                    todayCount = dailyGoalStore.todayProgress(today),
                 )
                 val latestPending = repository.getPendingSession(roundKey)
                 inFlightFlush = 0
@@ -298,7 +310,30 @@ class MohamedLoversViewModel(
                     )
                 }
                 applyLeaderboard()
+                // Reconcile the server daily badge only after the score reached the server, so the
+                // badge never leads the score. On a failed flush the score didn't move, so leave
+                // the badge alone.
+                if (result.isSuccess) publishDailyBadgeIfChanged(roundKey)
             }
+        }
+    }
+
+    /**
+     * Publishes the current local daily badge to the player's Firebase record, but only once the
+     * score has been flushed (this is called from [flushPendingSession] after the score write). The
+     * published level is persisted only on write success, so a failed publish is transparently
+     * retried on the next flush rather than being dropped. Never lowers the badge: the daily tap
+     * count only grows within a Cairo day and the guard resets with the date.
+     */
+    private fun publishDailyBadgeIfChanged(roundKey: String) {
+        if (!state.value.firebaseConfigured) return
+        val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
+        val todayStr = today.toString()
+        val badge = DailyBadge.fromTapCount(dailyGoalStore.todayProgress(today)) ?: return
+        if (badge.threshold <= sessionStore.getLastPublishedBadgeLevel(todayStr)) return
+        viewModelScope.launch {
+            repository.writeDailyBadge(roundKey, badge.key)
+                .onSuccess { sessionStore.saveLastPublishedBadgeLevel(todayStr, badge.threshold) }
         }
     }
 
@@ -334,9 +369,15 @@ class MohamedLoversViewModel(
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
         val prevStreak = state.value.roundStreak
         val streakResult = roundStreakStore.recordActivity(round, today)
+        // Extension salawat count toward today's competition total (and thus the daily leaderboard,
+        // which now publishes the daily-goal progress) just like taps and manual entries do.
+        dailyGoalStore.recordTap(today, count)
+        val todayTotal = dailyGoalStore.todayProgress(today)
         _state.update {
             it.copy(
                 sessionClicks = pending.clickCount,
+                todayCount = todayTotal,
+                dailyGoalProgress = todayTotal,
                 heartScore = heart.first,
                 showHeartRefillNudge = shouldShowHeartRefillNudge(heart.first, heart.second),
                 roundStreak = streakResult.currentStreak,
@@ -346,6 +387,10 @@ class MohamedLoversViewModel(
         publishRoundStreak(round, streakResult.currentStreak, prevStreak)
         applyLeaderboard()
         flushPendingSession()
+        // Extension batches are external salawat too — large ones leave the same audit entry.
+        viewModelScope.launch {
+            repository.appendExternalLog(round, count, Instant.fromEpochMilliseconds(nowMs))
+        }
     }
 
     fun showManualSalawatSheet() {
@@ -393,12 +438,14 @@ class MohamedLoversViewModel(
         dailyGoalStore.recordTap(today, applied)
         val prevStreak = state.value.roundStreak
         val streakResult = roundStreakStore.recordActivity(roundKey, today)
+        val todayTotal = dailyGoalStore.todayProgress(today)
         _state.update {
             it.copy(
                 sessionClicks = pending.clickCount,
+                todayCount = todayTotal,
                 showManualSalawatSheet = false,
                 isSubmittingManualSalawat = true,
-                dailyGoalProgress = dailyGoalStore.todayProgress(today),
+                dailyGoalProgress = todayTotal,
                 lastSalawatElapsedMinutes = 0L,
                 heartScore = heart.first,
                 showHeartRefillNudge = shouldShowHeartRefillNudge(heart.first, heart.second),
@@ -413,6 +460,8 @@ class MohamedLoversViewModel(
         viewModelScope.launch {
             repository.incrementExternalCount(roundKey, applied)
             _state.update { it.copy(isSubmittingManualSalawat = false) }
+            // Audit trail for oversized batches; the applied (capped) amount is what was scored.
+            repository.appendExternalLog(roundKey, applied, Instant.fromEpochMilliseconds(nowMs))
         }
         sessionStore.saveLastSalawatTimestamp(nowMs)
     }
@@ -440,6 +489,10 @@ class MohamedLoversViewModel(
         // A correction frees the manual-entry allowance again so a mis-entry can be re-added.
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
         sessionStore.refundManualEntry(today, applied)
+        // The daily-goal progress (the daily leaderboard/badge source) records activity and is
+        // intentionally not walked back by a competition-total correction — same as the heart
+        // index and streak below — so today's published daily count is unchanged here.
+        val todayTotal = dailyGoalStore.todayProgress(today)
 
         val pendingReduction = applied.coerceAtMost(pendingClicks)
         if (pendingReduction > 0) repository.decrementPendingClick(roundKey, pendingReduction)
@@ -449,6 +502,7 @@ class MohamedLoversViewModel(
         _state.update {
             it.copy(
                 sessionClicks = pending.clickCount,
+                todayCount = todayTotal,
                 showManualSalawatSheet = false,
                 isSubmittingManualSalawat = serverReduction > 0,
                 manualRemaining = sessionStore.manualRemainingToday(today, manualDailyCap(today)),
@@ -831,7 +885,10 @@ class MohamedLoversViewModel(
         val selfRemoteTotal = remoteSelfPlayer?.totalCount ?: 0
         val pendingNet = (state.value.sessionClicks - inFlightFlush).coerceAtLeast(0)
         val selfProjectedTotal = selfRemoteTotal + pendingNet
-        val selfProjectedDaily = (selfRemoteTotal - (remoteSelfPlayer?.yesterdayTotalScore ?: 0)).coerceAtLeast(0) + pendingNet
+        // Daily score is now the locally-tracked running day total (which already includes taps not
+        // yet flushed to the server); fall back to the server-published todayCount when local is
+        // behind (e.g. right after a reinstall).
+        val selfProjectedDaily = maxOf(state.value.todayCount, remoteSelfPlayer?.todayCount ?: 0)
         val selfDisplayScore = if (isDaily) selfProjectedDaily else selfProjectedTotal
 
         val selfPublishedName = sessionStore.getPublishedName()

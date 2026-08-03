@@ -30,4 +30,31 @@ async function publishLatestVersion(db, version) {
   }
 }
 
-module.exports = { publishLatestVersion, APP_CONFIG_PATH };
+/**
+ * Writes the minimum supported version *code* to remote config. Builds whose
+ * integer version code (Android `versionCode`) is lower than this are
+ * force-blocked to update (non-dismissable prompt). A code is used rather than a
+ * versionName so internal builds sharing a name can still be gated precisely and
+ * the client comparison is an unambiguous integer check. Unlike `latestVersion`,
+ * this is never auto-published alongside a build — it is set deliberately to
+ * retire old builds. Idempotent — writing the same value twice is harmless. Never
+ * throws.
+ *
+ * @param {import('firebase-admin').database.Database} db
+ * @param {number} versionCode integer version code, e.g. 125
+ */
+async function publishMinSupportedVersionCode(db, versionCode) {
+  const code = Number(versionCode);
+  if (!Number.isInteger(code) || code <= 0) {
+    console.warn(`[app-config] skipping minSupportedVersionCode write — invalid code: ${versionCode}`);
+    return;
+  }
+  try {
+    await db.ref(`${APP_CONFIG_PATH}/minSupportedVersionCode`).set(code);
+    console.log(`[app-config] minSupportedVersionCode set to ${code}`);
+  } catch (e) {
+    console.error(`[app-config] failed to set minSupportedVersionCode=${code}: ${e.message}`);
+  }
+}
+
+module.exports = { publishLatestVersion, publishMinSupportedVersionCode, APP_CONFIG_PATH };

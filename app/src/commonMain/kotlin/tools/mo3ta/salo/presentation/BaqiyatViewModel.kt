@@ -14,7 +14,6 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import tools.mo3ta.salo.data.baqiyat.BaqiyatFirebaseClient
-import tools.mo3ta.salo.data.baqiyat.BaqiyatPhrase
 import tools.mo3ta.salo.data.baqiyat.BaqiyatStore
 import tools.mo3ta.salo.data.country.CountryCodeProvider
 import tools.mo3ta.salo.data.engagement.ChallengeBadgeStore
@@ -32,13 +31,13 @@ class BaqiyatViewModel(
 ) : ViewModel() {
 
     private val cairoZone = TimeZone.of("Africa/Cairo")
-    private val activePhrases = BaqiyatPhrase.entries.take(4)
     private val syncMutex = Mutex()
 
     private val _state = MutableStateFlow(BaqiyatUiState(currentUid = sessionStore.getOrCreateUid()))
     val state: StateFlow<BaqiyatUiState> = _state.asStateFlow()
 
     fun onScreenEntered() {
+        publishLifetimeTotal()
         val today = today()
         viewModelScope.launch {
             val uid = sessionStore.getOrCreateUid()
@@ -58,8 +57,6 @@ class BaqiyatViewModel(
                     dateKey = today.toString(),
                     cyclesCompleted = store.todayCount(today),
                     manualRemainingToday = store.manualRemainingToday(today),
-                    phraseOrder = activePhrases,
-                    tappedPhrases = emptySet(),
                     currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.BAQIYAT, today),
                     isLoading = false,
                     errorMessage = null,
@@ -80,34 +77,23 @@ class BaqiyatViewModel(
         }
     }
 
-    /** Marks [phrase] green; once all phrases are marked, a full cycle completes: +1 to the counter, all reset. */
-    fun onPhraseTap(phrase: BaqiyatPhrase) {
-        val current = _state.value
-        if (phrase in current.tappedPhrases) return
-
-        val tapped = current.tappedPhrases + phrase
-        if (tapped.size < BaqiyatPhrase.entries.size) {
-            _state.update { it.copy(tappedPhrases = tapped) }
-            return
-        }
-
+    /**
+     * One tap = one completed cycle of all the phrases: +1 to the counter, like every other
+     * count challenge. The phrases are shown on screen to recite; the app does not step through
+     * them.
+     */
+    fun onCycleTap() {
         val today = today()
         val updated = store.incrementToday(today)
         maybeRecordWin(today, updated)
         _state.update {
             it.copy(
-                tappedPhrases = emptySet(),
                 cyclesCompleted = updated,
                 showCelebration = true,
                 celebrationMilestone = updated,
             )
         }
         recalculateLocalLeaderboard()
-    }
-
-    /** Reshuffles the card order on user request, preserving any already-marked phrases. */
-    fun onShuffle() {
-        _state.update { it.copy(phraseOrder = shuffledActivePhrases(it.phraseOrder)) }
     }
 
     fun onCelebrationDismissed() {
@@ -194,6 +180,7 @@ class BaqiyatViewModel(
     }
 
     fun onScreenLeft() {
+        publishLifetimeTotal()
         viewModelScope.launch {
             syncMutex.withLock {
                 if (!firebaseClient.isConfigured()) return@withLock
@@ -281,14 +268,17 @@ class BaqiyatViewModel(
         _state.update { it.copy(currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.BAQIYAT, today)) }
     }
 
-    private fun today(): LocalDate = Clock.System.todayIn(cairoZone)
-
-    private fun shuffledActivePhrases(currentOrder: List<BaqiyatPhrase>): List<BaqiyatPhrase> {
-        val shuffled = activePhrases.shuffled()
-        return if (activePhrases.size > 1 && shuffled == currentOrder) {
-            activePhrases.drop(1) + activePhrases.first()
-        } else {
-            shuffled
+    /**
+     * Publish the device's lifetime total for this challenge to the persistent DB user node
+     * ({root}/users/{uid}/totalCount). Fire-and-forget and batched on screen enter/leave rather
+     * than per-tap, so it never spams the network. A failure never affects the daily-count sync.
+     */
+    private fun publishLifetimeTotal() {
+        viewModelScope.launch {
+            if (!firebaseClient.isConfigured()) return@launch
+            firebaseClient.writeUserTotal(sessionStore.getOrCreateUid(), store.lifetimeCount())
         }
     }
+
+    private fun today(): LocalDate = Clock.System.todayIn(cairoZone)
 }

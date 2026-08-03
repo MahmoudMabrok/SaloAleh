@@ -1,12 +1,16 @@
 package tools.mo3ta.salo.domain
 
 enum class DailyBadge(val key: String, val threshold: Int) {
+    SPARK("spark", 10),
     SPROUT("sprout", 100),
     HEART("heart", 200),
     TASBIH("tasbih", 500),
     DOME("dome", 1000),
     CRESCENT("crescent", 2000),
-    CROWN("crown", 5000);
+    LANTERN("lantern", 4000),
+    CROWN("crown", 5000),
+    MIHRAB("mihrab", 8000),
+    STAR("star", 10000);
 
     fun next(): DailyBadge? {
         val idx = entries.indexOf(this)

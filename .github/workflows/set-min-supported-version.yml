@@ -1,0 +1,35 @@
+name: Set Min Supported Version
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      versionCode:
+        description: 'Minimum supported versionCode (builds with a lower code are force-blocked to update)'
+        required: true
+        default: '125'
+
+jobs:
+  set-min-version:
+    name: Publish minSupportedVersionCode to remote config
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install firebase-admin
+        run: npm install firebase-admin
+        working-directory: scripts
+
+      - name: Set minSupportedVersionCode
+        run: node scripts/set-min-supported-version.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          MIN_SUPPORTED_VERSION_CODE: ${{ github.event.inputs.versionCode }}

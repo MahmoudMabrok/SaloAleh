@@ -64,6 +64,7 @@ class GharsChallengeViewModel(
     }
 
     fun onScreenEntered() {
+        publishLifetimeTotal()
         loadLeaderboard()
         val today = today()
         viewModelScope.launch {
@@ -243,6 +244,7 @@ class GharsChallengeViewModel(
     }
 
     fun onScreenLeft() {
+        publishLifetimeTotal()
         viewModelScope.launch {
             syncMutex.withLock {
                 if (!firebaseClient.isConfigured()) return@withLock
@@ -317,6 +319,18 @@ class GharsChallengeViewModel(
         }
         if (total >= GHARS_CHALLENGE_DAILY_GOAL) {
             challengeBadgeStore.recordWin(ChallengeType.GHARS, today)
+        }
+    }
+
+    /**
+     * Publish the device's lifetime palm total to the persistent DB user node
+     * ({root}/users/{uid}/totalCount). Fire-and-forget and batched on screen enter/leave rather
+     * than per-tap, so it never spams the network. A failure never affects the daily-count sync.
+     */
+    private fun publishLifetimeTotal() {
+        viewModelScope.launch {
+            if (!firebaseClient.isConfigured()) return@launch
+            firebaseClient.writeUserTotal(sessionStore.getOrCreateUid(), store.lifetimeCount())
         }
     }
 
