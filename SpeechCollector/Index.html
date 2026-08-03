@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="theme-color" content="#176b45">
+  <style>
+/*__STYLES__*/
+  </style>
+</head>
+<body>
+  <main class="page-shell">
+    <section class="collector-card" aria-labelledby="hero-title">
+      <header class="app-header">
+        <div class="brand-mark" aria-hidden="true">☪</div>
+        <h1 id="hero-title" data-i18n="hero"></h1>
+      </header>
+
+      <div class="progress-block">
+        <p class="eyebrow" data-i18n="currentPhrase"></p>
+        <p id="phrase-progress" class="phrase-progress" aria-live="polite"></p>
+        <div class="progress-track" aria-hidden="true">
+          <span id="progress-fill"></span>
+        </div>
+      </div>
+
+      <div class="phrase-panel">
+        <p id="phrase-text" class="phrase-text" lang="ar"></p>
+      </div>
+
+      <div class="recorder-panel">
+        <canvas id="waveform" width="720" height="112" aria-label="موجة الصوت"></canvas>
+        <output id="timer" class="timer" aria-live="off">00:00.0</output>
+        <p class="microphone-hint" data-i18n="microphoneHint"></p>
+      </div>
+
+      <div id="status" class="status status-info" role="status" aria-live="polite"></div>
+
+      <div class="button-grid">
+        <button id="record-button" class="button button-primary" type="button">
+          <span aria-hidden="true">●</span><span data-i18n="record"></span>
+        </button>
+        <button id="stop-button" class="button button-danger" type="button" disabled>
+          <span aria-hidden="true">■</span><span data-i18n="stop"></span>
+        </button>
+        <button id="play-button" class="button button-secondary" type="button" disabled>
+          <span aria-hidden="true">▶</span><span id="play-label" data-i18n="play"></span>
+        </button>
+        <button id="upload-button" class="button button-accent" type="button" disabled>
+          <span aria-hidden="true">⬆</span><span id="upload-label" data-i18n="upload"></span>
+        </button>
+        <button id="next-button" class="button button-ghost button-wide" type="button">
+          <span data-i18n="next"></span><span aria-hidden="true">←</span>
+        </button>
+      </div>
+
+      <p class="privacy-note"><span aria-hidden="true">🔒</span> <span data-i18n="privacy"></span></p>
+    </section>
+  </main>
+
+  <audio id="audio-player" preload="metadata"></audio>
+  <script id="bootstrap-data" type="application/json"><?!= bootstrapJson ?></script>
+  <script>
+/*__APP_JS__*/
+  </script>
+</body>
+</html>
+
