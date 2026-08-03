@@ -1,0 +1,125 @@
+{
+  "allTimeSalawat": 2494631,
+  "weekSalawat": 236359,
+  "todaySalawat": 76290,
+  "activePlayers": 312,
+  "countriesCount": 14,
+  "countries": [
+    "DZ",
+    "EG",
+    "ET",
+    "GM",
+    "IL",
+    "IQ",
+    "JO",
+    "MR",
+    "NA",
+    "NO",
+    "SA",
+    "SD",
+    "SY",
+    "YE"
+  ],
+  "topScore": 69960,
+  "roundKey": "2026-08-07",
+  "leaderboard": [
+    {
+      "countryCode": "EG",
+      "goldMedals": 1,
+      "nickname": "المحبة لله والرسول ﷺ",
+      "rank": 1,
+      "rankChange": "same",
+      "roundStreak": 13,
+      "score": 69960,
+      "silverMedals": 1,
+      "uid": "6059a577e42ed69ff5ca13aff67f692fa5921e6600590e5fede1fe59d84f2df1"
+    },
+    {
+      "countryCode": "EG",
+      "goldMedals": 7,
+      "nickname": "يونس",
+      "rank": 2,
+      "rankChange": "same",
+      "roundStreak": 17,
+      "score": 19477,
+      "silverMedals": 2,
+      "uid": "5a4b1d0ed314c539aefe3fedeb07054b2acf361dd98189761e80e047fbf80305"
+    },
+    {
+      "countryCode": "EG",
+      "nickname": "أحمد",
+      "rank": 3,
+      "rankChange": "same",
+      "score": 15400,
+      "uid": "5c19a0540dc18437b0e89cacb3aeb63dbd5b647f5b0fec1356098b855ccd6e0b"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "nickname": "وفاء محمود خلف",
+      "rank": 4,
+      "rankChange": "same",
+      "roundStreak": 2,
+      "score": 12993,
+      "uid": "b9d860ce859d1d4475a6a4f70ed8c50a88f54dcfb24eb5e6d138fa01e2affb77"
+    },
+    {
+      "countryCode": "DZ",
+      "nickname": "Saliha",
+      "rank": 5,
+      "rankChange": "same",
+      "score": 10500,
+      "uid": "95f710fac50b769650b5494354a21344bc4ac1bdfb9dd101925154b1ded0d7d5"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "crescent",
+      "nickname": "رضا الله غايتي🩷",
+      "rank": 6,
+      "rankChange": "same",
+      "roundStreak": 4,
+      "score": 10160,
+      "uid": "f154ba230f7f874a00909ab9afcc3b38d0c6957c843e688349588bfb6652d994"
+    },
+    {
+      "countryCode": "IQ",
+      "nickname": "f1c9da",
+      "rank": 7,
+      "rankChange": "same",
+      "score": 8565,
+      "uid": "54b7c2f9caeae53a281bce46b99558bee71ceba0c236d28b41d15e6310f1c9da"
+    },
+    {
+      "bronzeMedals": 1,
+      "countryCode": "SA",
+      "nickname": "M.A.L",
+      "rank": 8,
+      "rankChange": "same",
+      "roundStreak": 4,
+      "score": 8527,
+      "silverMedals": 2,
+      "uid": "092d20eeafb6b68719e19fcd41f072811d333b4f561862f7b13734d0d633db00"
+    },
+    {
+      "bronzeMedals": 2,
+      "countryCode": "EG",
+      "dailyBadge": "crescent",
+      "nickname": "أميمة جبر",
+      "rank": 9,
+      "rankChange": "same",
+      "roundStreak": 18,
+      "score": 7233,
+      "uid": "e477222c0701dd0f1939150e456079f547c978120b2eaf3977fbcfb14349a880"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "lantern",
+      "nickname": "جججج",
+      "rank": 10,
+      "rankChange": "same",
+      "score": 6746,
+      "uid": "5d2a10a05644745c07a87e60e7234201129d1ed76d7ad4235b3279d1928217e0"
+    }
+  ],
+  "updatedAt": "2026-08-03T20:58:07.776Z"
+}
