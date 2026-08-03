@@ -472,6 +472,20 @@
     <string name="settings_supporter_status">你是支持者 - %1$s</string>
     <string name="settings_manage_features">点击管理功能</string>
 
+    <!-- Voice Dhikr Contribution -->
+    <string name="settings_voice_dhikr_header">帮助我们开发</string>
+    <string name="settings_voice_dhikr_link">🎙️ 帮助我们打造语音赞念计数功能</string>
+    <string name="voice_dhikr_title">语音赞念</string>
+    <string name="voice_dhikr_headline">即将推出：用你的声音计数赞念</string>
+    <string name="voice_dhikr_intro">我们正在向像你一样的志愿者收集赞念录音，用于训练能够识别赞念的模型。之后你只需打开麦克风念诵，应用便会自动计数，无需点击屏幕。</string>
+    <string name="voice_dhikr_how_header">如何参与</string>
+    <string name="voice_dhikr_step_1">点击下方的开始按钮，打开录音表单。</string>
+    <string name="voice_dhikr_step_2">在安静的地方用自己的声音录下所需的赞念。</string>
+    <string name="voice_dhikr_step_3">提交录音，它只会用于训练模型。</string>
+    <string name="voice_dhikr_privacy">参与完全自愿。录音仅用于训练赞念识别模型，不会公开，也不会与你的姓名关联。</string>
+    <string name="voice_dhikr_start">开始录音</string>
+    <string name="voice_dhikr_external_note">链接将在应用外的浏览器中打开。</string>
+
     <!-- Extension QR Screen -->
     <string name="extension_qr_title">同步数据</string>
     <string name="extension_qr_warning_title">警告</string>

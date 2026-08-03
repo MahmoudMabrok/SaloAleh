@@ -472,6 +472,20 @@
     <string name="settings_supporter_status">آپ معاون ہیں — %1$s</string>
     <string name="settings_manage_features">خصوصیات کا انتظام کرنے کے لیے ٹیپ کریں</string>
 
+    <!-- Voice Dhikr Contribution -->
+    <string name="settings_voice_dhikr_header">تعمیر میں ہماری مدد کریں</string>
+    <string name="settings_voice_dhikr_link">🎙️ آواز سے ذکر گننے کی خصوصیت بنانے میں مدد کریں</string>
+    <string name="voice_dhikr_title">آواز سے ذکر</string>
+    <string name="voice_dhikr_headline">آنے والی خصوصیت: اپنی آواز سے ذکر کی گنتی</string>
+    <string name="voice_dhikr_intro">ہم آپ جیسے رضاکاروں سے اذکار کی صوتی ریکارڈنگز جمع کر رہے ہیں تاکہ ایک ایسا ماڈل تربیت دیا جا سکے جو ذکر کو پہچانے۔ پھر آپ صرف مائیکروفون کھول کر ذکر کریں گے اور ایپ خود بخود گنتی کرے گی — اسکرین دبانے کی ضرورت نہیں۔</string>
+    <string name="voice_dhikr_how_header">شرکت کیسے کریں؟</string>
+    <string name="voice_dhikr_step_1">نیچے دیے گئے شروع کے بٹن پر ٹیپ کریں تاکہ ریکارڈنگ فارم کھل جائے۔</string>
+    <string name="voice_dhikr_step_2">کسی پُرسکون جگہ پر مطلوبہ اذکار اپنی آواز میں ریکارڈ کریں۔</string>
+    <string name="voice_dhikr_step_3">ریکارڈنگ جمع کرائیں — یہ صرف ماڈل کی تربیت کے لیے استعمال ہوگی۔</string>
+    <string name="voice_dhikr_privacy">شرکت مکمل طور پر رضاکارانہ ہے۔ ریکارڈنگز صرف ذکر پہچاننے والے ماڈل کی تربیت کے لیے استعمال ہوتی ہیں؛ نہ شائع کی جاتی ہیں اور نہ آپ کے نام سے منسلک ہوتی ہیں۔</string>
+    <string name="voice_dhikr_start">ریکارڈنگ شروع کریں</string>
+    <string name="voice_dhikr_external_note">لنک ایپ سے باہر آپ کے براؤزر میں کھلے گا۔</string>
+
     <!-- Extension QR Screen -->
     <string name="extension_qr_title">ڈیٹا کی مطابقت پذیری</string>
     <string name="extension_qr_warning_title">تنبیہ</string>

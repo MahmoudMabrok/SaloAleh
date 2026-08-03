@@ -68,6 +68,8 @@ object AppAnalytics {
     const val REFERRAL_ANNOUNCEMENT_DISMISSED = "referral_announcement_dismissed"
     const val STREAK_BADGE_ANNOUNCEMENT_OPENED = "streak_badge_announcement_opened"
     const val STREAK_BADGE_ANNOUNCEMENT_DISMISSED = "streak_badge_announcement_dismissed"
+    const val OPEN_VOICE_DHIKR = "open_voice_dhikr"
+    const val VOICE_DHIKR_FORM_OPENED = "voice_dhikr_form_opened"
     const val REVIEW_DIALOG_SHOWN = "review_dialog_shown"
     const val REVIEW_DIALOG_GO_TO_STORE = "review_dialog_go_to_store"
     const val REVIEW_DIALOG_DISMISSED = "review_dialog_dismissed"

@@ -76,6 +76,7 @@ import tools.mo3ta.salo.domain.MohamedLoversRepository
 import tools.mo3ta.salo.data.billing.SupportTier
 import tools.mo3ta.salo.ui.settings.PaywallScreen
 import tools.mo3ta.salo.ui.settings.ReferralScreen
+import tools.mo3ta.salo.ui.settings.VoiceDhikrScreen
 import tools.mo3ta.salo.ui.settings.PremiumPromoDialog
 import tools.mo3ta.salo.ui.settings.PurchaseSuccessDialog
 import tools.mo3ta.salo.ui.settings.SettingsScreen
@@ -187,6 +188,7 @@ fun App(
         var openChallengeLeaderboard by remember { mutableStateOf(false) }
         var showExtensionQr by remember { mutableStateOf(false) }
         var showReferral by remember { mutableStateOf(false) }
+        var showVoiceDhikr by remember { mutableStateOf(false) }
         var showPaywall by remember { mutableStateOf(false) }
         var nicknamePromptRequested by remember { mutableStateOf(false) }
         var nicknamePromptDismissedThisSession by remember { mutableStateOf(false) }
@@ -194,6 +196,7 @@ fun App(
         PlatformBackHandler(
             enabled = showPaywall ||
                 showReferral ||
+                showVoiceDhikr ||
                 showDhikrRewards ||
                 showBaqiyatChallenge ||
                 showIstighfarChallenge ||
@@ -212,6 +215,7 @@ fun App(
             when {
                 showPaywall -> showPaywall = false
                 showReferral -> showReferral = false
+                showVoiceDhikr -> showVoiceDhikr = false
                 showDhikrRewards -> showDhikrRewards = false
                 showBaqiyatChallenge -> showBaqiyatChallenge = false
                 showIstighfarChallenge -> showIstighfarChallenge = false
@@ -277,6 +281,7 @@ fun App(
         val mlState by mohamedLoversViewModel.state.collectAsStateWithLifecycle()
         val nicknamePromptBlocked = showPaywall ||
             showReferral ||
+            showVoiceDhikr ||
             showDhikrRewards ||
             showBaqiyatChallenge ||
             showIstighfarChallenge ||
@@ -303,6 +308,7 @@ fun App(
         when {
             showPaywall -> PaywallScreen(onBack = { showPaywall = false })
             showReferral -> ReferralScreen(onBack = { showReferral = false })
+            showVoiceDhikr -> VoiceDhikrScreen(onBack = { showVoiceDhikr = false })
             showExtensionQr -> ExtensionQrScreen(onBack = { showExtensionQr = false })
             showOnboarding -> OnboardingScreen(
                 onDone = {
@@ -415,6 +421,7 @@ fun App(
                                 onOpenExtensionQr = { showExtensionQr = true },
                                 onOpenPaywall = { showPaywall = true },
                                 onOpenReferral = { showReferral = true },
+                                onOpenVoiceDhikr = { showVoiceDhikr = true },
                             )
                         }
                     }
