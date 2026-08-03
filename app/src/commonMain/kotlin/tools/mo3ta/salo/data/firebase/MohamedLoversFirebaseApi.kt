@@ -23,7 +23,18 @@ interface MohamedLoversFirebaseApi {
     fun observeLeaderboard(roundKey: String, daily: Boolean = false): Flow<Result<FirebaseLeaderboard>>
     suspend fun fetchLiveLeaderboard(roundKey: String): Result<FirebaseLeaderboard>
     suspend fun incrementSession(roundKey: String, uid: String, delta: Int, countryCode: String, todayCount: Int): Result<Unit>
-    suspend fun writeUserActivity(uid: String, installDate: String, lastOpenDate: String): Result<Unit>
+    /**
+     * Stamps the user node with the open dates and the build the user is running.
+     * [appVersion] is the versionName (skipped when blank) and [appVersionCode] the integer
+     * version code (skipped when non-positive, i.e. unavailable on this platform).
+     */
+    suspend fun writeUserActivity(
+        uid: String,
+        installDate: String,
+        lastOpenDate: String,
+        appVersion: String,
+        appVersionCode: Int,
+    ): Result<Unit>
     suspend fun writeFcmToken(uid: String, token: String): Result<Unit>
     suspend fun writeNotificationPrefs(
         uid: String,

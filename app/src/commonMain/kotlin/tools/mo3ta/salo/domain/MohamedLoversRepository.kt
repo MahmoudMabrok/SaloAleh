@@ -182,10 +182,20 @@ class MohamedLoversRepository(
         return firebaseClient.writeNickname(roundKey, uid, nickname)
     }
 
-    suspend fun writeUserActivity(uid: String, today: kotlinx.datetime.LocalDate): Result<Unit> {
+    /**
+     * Stamps the user node on app start: install/last-open dates plus the build being run
+     * ([appVersion] versionName, [appVersionCode] version code), so the running version is
+     * always current server-side.
+     */
+    suspend fun writeUserActivity(
+        uid: String,
+        today: kotlinx.datetime.LocalDate,
+        appVersion: String,
+        appVersionCode: Int,
+    ): Result<Unit> {
         val installDate = sessionStore.getOrSetInstallDate(today)
         val lastOpenDate = today.toString()
-        return firebaseClient.writeUserActivity(uid, installDate, lastOpenDate)
+        return firebaseClient.writeUserActivity(uid, installDate, lastOpenDate, appVersion, appVersionCode)
     }
 
     /** Syncs the user's server-notification opt-in flags to RTDB so the cron scripts honour them. */
