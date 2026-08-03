@@ -165,6 +165,17 @@ Startup update dialog driven by remote-config values (RTDB, not Firebase Remote 
 - Reuses the existing `version_update_*` string keys and adds `force_update_{title,description}` (all four locales); shares the cross-platform `getAppVersion()`/`getAppVersionCode()` expect/actuals.
 - Tests: `commonTest/domain/AppUpdateConfigTest.kt`, `commonTest/data/update/UpdatePromptStoreTest.kt`, `commonTest/data/update/UpdateCheckerTest.kt`.
 
+### Installed-version reporting
+
+Every app start publishes the build the device is running to its user node, so the server can see which versions are still in the wild (and how many installs a force-update floor would block).
+
+- Core files: `presentation/MohamedLoversViewModel.kt` (startup sync, supplies `getAppVersion()`/`getAppVersionCode()`), `domain/MohamedLoversRepository.kt` (`writeUserActivity`), `data/firebase/MohamedLoversFirebaseClient.kt` (`APP_VERSION_KEY`/`APP_VERSION_CODE_KEY`), `data/firebase/FirestoreMirror.kt`, `database.rules.json`.
+- Written as `mohamed_lovers/users/{uid}/{appVersion, appVersionCode}` on the **same** startup write that already stamps `installDate`/`lastOpenDate` — one `updateChildren` call, fire-and-forget, so it costs no extra round trip and a failure never affects the app.
+- `appVersion` is the versionName string (`3.9.2`), `appVersionCode` the integer code (Android `versionCode` / iOS `CFBundleVersion`). Both are **absolute overwrites** — the node always reflects the currently-installed build, not the first one seen. A blank name or non-positive code (platform couldn't report it) is omitted from the patch rather than written as a placeholder, so an existing value is never clobbered.
+- Purely informational: nothing reads it in-app. The startup update prompt still decides from `app_config` compared against the *local* version — this node is the reverse direction (client → server) for server-side analysis.
+- RTDB rules: `appVersion` validates `isString()` with length `1..32`, `appVersionCode` `isNumber() && >= 0`, both under the existing `users/$uid` write grant (the node's `$other: false` means the keys had to be whitelisted). Mirrored to Firestore `mohamed_lovers_users/{uid}` by the same map.
+- Tests: `commonTest/domain/MohamedLoversRepositoryUserActivityTest.kt`.
+
 ### Required-field write gate (`schemaVersion`)
 
 Server-side hard backstop that pairs with the force-update prompt: builds that predate this field are **denied at the DB** on the main competition write path, so an obsolete client cannot save salawat even if it dodges the update dialog.
@@ -195,6 +206,7 @@ mohamed_lovers/
 ├── abnormal_users/{dateKey}/{uid}        # server-only: {count,totalCount,countryCode} for users > 12k/day
 ├── users/{uid}/                          # per-device user data
 │   ├── fcmToken, installDate, lastOpenDate, lastRivalNotifDate
+│   ├── appVersion, appVersionCode        # build the user is running; refreshed on every app start
 │   ├── reminderNotifsEnabled            # client opt-in for notify-users.js push (Settings; absent = on)
 │   ├── leaderboardNotifsEnabled         # client opt-in for populate-leaderboard.js push (Settings; absent = on)
 │   ├── scoreHistory/{dateKey}            # server-only daily per-user score snapshot (that day's total)

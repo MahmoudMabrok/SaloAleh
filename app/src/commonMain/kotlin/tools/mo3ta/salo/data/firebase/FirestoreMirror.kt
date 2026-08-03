@@ -70,13 +70,10 @@ class FirestoreMirror {
                 .set(mapOf(field to value), merge = true)
         }
 
-    fun mirrorUserActivity(uid: String, installDate: String, lastOpenDate: String) =
+    /** [fields] is the same map written to RTDB (dates plus the running app version, when known). */
+    fun mirrorUserActivity(uid: String, fields: Map<String, Any>) =
         mirror("user-activity[$uid]") {
-            fs.collection(USERS_COLLECTION).document(uid)
-                .set(
-                    mapOf("installDate" to installDate, "lastOpenDate" to lastOpenDate),
-                    merge = true,
-                )
+            fs.collection(USERS_COLLECTION).document(uid).set(fields, merge = true)
         }
 
     fun mirrorFcmToken(uid: String, token: String) =

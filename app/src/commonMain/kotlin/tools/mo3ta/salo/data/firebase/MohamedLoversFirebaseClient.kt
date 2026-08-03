@@ -329,20 +329,30 @@ class MohamedLoversFirebaseClient(
         }
     }
 
-    override suspend fun writeUserActivity(uid: String, installDate: String, lastOpenDate: String): Result<Unit> {
-        log.d { "writeUserActivity[$uid]" }
+    override suspend fun writeUserActivity(
+        uid: String,
+        installDate: String,
+        lastOpenDate: String,
+        appVersion: String,
+        appVersionCode: Int,
+    ): Result<Unit> {
+        log.d { "writeUserActivity[$uid] version=$appVersion($appVersionCode)" }
+        // A blank name / non-positive code means the platform couldn't report it; leave whatever
+        // the node already carries rather than overwriting it with a placeholder (and the rules
+        // would reject an empty string anyway).
+        val fields = buildMap<String, Any> {
+            put(INSTALL_DATE_KEY, installDate)
+            put(LAST_OPEN_DATE_KEY, lastOpenDate)
+            if (appVersion.isNotBlank()) put(APP_VERSION_KEY, appVersion)
+            if (appVersionCode > 0) put(APP_VERSION_CODE_KEY, appVersionCode)
+        }
         return runCatching {
-            Firebase.database.reference("$ROOT_PATH/$USERS_PATH/$uid").updateChildren(
-                mapOf(
-                    "installDate" to installDate,
-                    "lastOpenDate" to lastOpenDate,
-                )
-            )
+            Firebase.database.reference("$ROOT_PATH/$USERS_PATH/$uid").updateChildren(fields)
         }.also { result ->
             result.fold(
                 onSuccess = {
                     log.d { "writeUserActivity[$uid] ok" }
-                    mirror.mirrorUserActivity(uid, installDate, lastOpenDate)
+                    mirror.mirrorUserActivity(uid, fields)
                 },
                 onFailure = { error ->
                     log.e(error) { "writeUserActivity[$uid] failed" }
@@ -829,6 +839,12 @@ class MohamedLoversFirebaseClient(
         const val MIN_SUPPORTED_VERSION_CODE_KEY = "minSupportedVersionCode"
         const val HEROES_PATH = "heroes"
         const val USERS_PATH = "users"
+        const val INSTALL_DATE_KEY = "installDate"
+        const val LAST_OPEN_DATE_KEY = "lastOpenDate"
+        // The build the user is currently running, refreshed on every app start alongside
+        // lastOpenDate, so the server can see which versions are still in the wild.
+        const val APP_VERSION_KEY = "appVersion"
+        const val APP_VERSION_CODE_KEY = "appVersionCode"
         const val REMINDER_NOTIFS_ENABLED_KEY = "reminderNotifsEnabled"
         const val LEADERBOARD_NOTIFS_ENABLED_KEY = "leaderboardNotifsEnabled"
         const val ACHIEVEMENTS_PATH = "achievements"

@@ -42,6 +42,8 @@ import tools.mo3ta.salo.domain.MohamedLoversPlayer
 import tools.mo3ta.salo.domain.MohamedLoversRepository
 import tools.mo3ta.salo.domain.SalawatManualCap
 import tools.mo3ta.salo.domain.buildMohamedLoversDisplayTag
+import tools.mo3ta.salo.ui.getAppVersion
+import tools.mo3ta.salo.ui.getAppVersionCode
 import tools.mo3ta.salo.ui.setLeaderboardTopicSubscription
 
 class MohamedLoversViewModel(
@@ -755,7 +757,9 @@ class MohamedLoversViewModel(
             val selfPublishedName = sessionStore.getPublishedName()
             _state.update { it.copy(selfDisplayTag = buildMohamedLoversDisplayTag(uid, it.countryCode, selfPublishedName)) }
             val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
-            launch { repository.writeUserActivity(uid, today) }
+            // Also publishes the build being run, so the user node always reflects the
+            // currently-installed version (fire-and-forget, like the rest of this startup sync).
+            launch { repository.writeUserActivity(uid, today, getAppVersion(), getAppVersionCode()) }
             launch { repository.setSupporter(premiumStore.hasFeature(PremiumFeature.SUPPORTER_BADGE)) }
 
             if (!achievementsFetchedFromRtdb) {

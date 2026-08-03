@@ -45,8 +45,26 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
         return incrementResult
     }
 
-    override suspend fun writeUserActivity(uid: String, installDate: String, lastOpenDate: String): Result<Unit> =
-        Result.success(Unit)
+    data class UserActivityCall(
+        val uid: String,
+        val installDate: String,
+        val lastOpenDate: String,
+        val appVersion: String,
+        val appVersionCode: Int,
+    )
+
+    val userActivityCalls = mutableListOf<UserActivityCall>()
+
+    override suspend fun writeUserActivity(
+        uid: String,
+        installDate: String,
+        lastOpenDate: String,
+        appVersion: String,
+        appVersionCode: Int,
+    ): Result<Unit> {
+        userActivityCalls.add(UserActivityCall(uid, installDate, lastOpenDate, appVersion, appVersionCode))
+        return Result.success(Unit)
+    }
 
     override suspend fun writeFcmToken(uid: String, token: String): Result<Unit> =
         Result.success(Unit)

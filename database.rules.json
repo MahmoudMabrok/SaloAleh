@@ -655,6 +655,12 @@
           "lastOpenDate": {
             ".validate": "newData.isString() && newData.val().length == 10"
           },
+          "appVersion": {
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 32"
+          },
+          "appVersionCode": {
+            ".validate": "newData.isNumber() && newData.val() >= 0"
+          },
           "lastRivalNotifDate": {
             ".validate": "newData.isString() && newData.val().length == 10"
           },
