@@ -250,7 +250,11 @@
     <!-- Baqiyat Challenge Screen -->
     <string name="baqiyat_ayah">﴿ وَالْبَاقِيَاتُ الصَّالِحَاتُ خَيْرٌ عِندَ رَبِّكَ ثَوَابًا وَخَيْرٌ أَمَلًا ﴾</string>
     <string name="baqiyat_ayah_ref">Surah Al-Kahf 46</string>
-    <string name="baqiyat_tap_hint">Read the five phrases, then tap anywhere — one tap = one cycle</string>
+    <string name="baqiyat_tap_hint">Read the phrases, then tap anywhere — one tap = one cycle</string>
+    <string name="baqiyat_hadith_label">The hadith</string>
+    <string name="baqiyat_hadith">Among what you say of the majesty of Allah — the tasbih, the tahlil and the tahmid — they circle around the Throne, they have a hum like the hum of bees, and they mention their companion. Would not one of you love to have — or to keep having — someone who mentions him?</string>
+    <string name="baqiyat_hadith_sanad">Narrated by: An-Nu\'man ibn Bashir · Graded by: Al-Albani · Source: As-Silsilah As-Sahihah · Sahih</string>
+    <string name="baqiyat_extra_phrase_label">Counted with them</string>
     <string name="baqiyat_add_cd">Cycle completed ✦ Tap here</string>
     <string name="baqiyat_phrases_title">Phrases of the cycle</string>
     <string name="baqiyat_cycles_label">Cycles completed today</string>

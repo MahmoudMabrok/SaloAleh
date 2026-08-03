@@ -225,7 +225,11 @@
     <!-- Baqiyat Challenge Screen -->
     <string name="baqiyat_ayah">﴿ وَالْبَاقِيَاتُ الصَّالِحَاتُ خَيْرٌ عِندَ رَبِّكَ ثَوَابًا وَخَيْرٌ أَمَلًا ﴾</string>
     <string name="baqiyat_ayah_ref">古兰经·山洞章 46</string>
-    <string name="baqiyat_tap_hint">诵读五句赞词后点击任意位置 —— 一次点击 = 一轮</string>
+    <string name="baqiyat_tap_hint">诵读赞词后点击任意位置 —— 一次点击 = 一轮</string>
+    <string name="baqiyat_hadith_label">圣训原文</string>
+    <string name="baqiyat_hadith">你们赞念安拉尊严的话语——赞主清净、万物非主唯有安拉、一切赞颂归安拉——它们环绕着宝座回旋，发出如蜜蜂般的嗡鸣，并不断提起念诵它们的人。你们当中谁不愿意有人一直提起自己呢？</string>
+    <string name="baqiyat_hadith_sanad">传述人：努尔曼·本·白舍尔 · 评定：阿尔巴尼 · 出处：正确圣训集 · 圣训正确</string>
+    <string name="baqiyat_extra_phrase_label">一并计入</string>
     <string name="baqiyat_add_cd">完成一轮 ✦ 点击这里</string>
     <string name="baqiyat_phrases_title">本轮赞词</string>
     <string name="baqiyat_cycles_label">今日完成轮数</string>

@@ -250,7 +250,11 @@
     <!-- Baqiyat Challenge Screen -->
     <string name="baqiyat_ayah">﴿ وَالْبَاقِيَاتُ الصَّالِحَاتُ خَيْرٌ عِندَ رَبِّكَ ثَوَابًا وَخَيْرٌ أَمَلًا ﴾</string>
     <string name="baqiyat_ayah_ref">سورة الكهف ٤٦</string>
-    <string name="baqiyat_tap_hint">اقرأ الأذكار الخمسة ثم اضغط في أي مكان — ضغطة واحدة = دورة</string>
+    <string name="baqiyat_tap_hint">اقرأ الأذكار ثم اضغط في أي مكان — ضغطة واحدة = دورة</string>
+    <string name="baqiyat_hadith_label">نصّ الحديث</string>
+    <string name="baqiyat_hadith">إنَّ مما تذكرون من جلالِ اللهِ: التَّسبيحَ والتهليلَ والتحميدَ، ينعطِفْنَ حولَ العرشِ، لهنّ دويٌّ كدويِّ النحلِ، تُذَكِّرُ بصاحبها، أما يحبُّ أحدُكم أن يكونَ له — أو لا يزالُ له — من يُذكِّرُ به</string>
+    <string name="baqiyat_hadith_sanad">الراوي: النعمان بن بشير · المحدّث: الألباني · المصدر: السلسلة الصحيحة · صحيح</string>
+    <string name="baqiyat_extra_phrase_label">ويُضاف إليها</string>
     <string name="baqiyat_add_cd">أتممت دورة ✦ اضغط هنا</string>
     <string name="baqiyat_phrases_title">أذكار الدورة</string>
     <string name="baqiyat_cycles_label">الدورات المكتملة اليوم</string>
