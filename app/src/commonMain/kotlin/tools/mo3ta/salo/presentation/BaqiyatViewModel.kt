@@ -3,8 +3,12 @@ package tools.mo3ta.salo.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -33,8 +37,49 @@ class BaqiyatViewModel(
     private val cairoZone = TimeZone.of("Africa/Cairo")
     private val syncMutex = Mutex()
 
-    private val _state = MutableStateFlow(BaqiyatUiState(currentUid = sessionStore.getOrCreateUid()))
+    private val _state = MutableStateFlow(
+        BaqiyatUiState(
+            currentUid = sessionStore.getOrCreateUid(),
+            playerName = sessionStore.getPublishedName(),
+        )
+    )
     val state: StateFlow<BaqiyatUiState> = _state.asStateFlow()
+
+    /**
+     * The screen is split into three flows so a tap only touches what a tap changes.
+     *
+     * A completed cycle moves the counter *and* re-ranks the local leaderboard, so a screen that
+     * collected the whole state would recompose top to bottom on every tap — the thing the
+     * challenge-screen rule in CLAUDE.md forbids. Instead [shell] blanks out exactly those two
+     * fields (with `distinctUntilChanged` on top, so it simply does not emit on a tap), while
+     * [cycles] feeds the counter leaf and [leaderboardEntries] feeds the sheet.
+     */
+    val shell: StateFlow<BaqiyatUiState> = _state
+        .map { it.withoutTapVaryingFields() }
+        .distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, _state.value.withoutTapVaryingFields())
+
+    val cycles: StateFlow<Int> = _state
+        .map { it.cyclesCompleted }
+        .distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, _state.value.cyclesCompleted)
+
+    val leaderboardEntries: StateFlow<List<BaqiyatLeaderboardEntry>> = _state
+        .map { it.leaderboard }
+        .distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, _state.value.leaderboard)
+
+    private val _cycleSerial = MutableStateFlow(0)
+
+    /**
+     * Bumped once per cycle the user actually completes here (tap or manual entry) — never by a
+     * remote-baseline sync on screen enter. The hive canvas launches one swarm of sparks per bump,
+     * so opening the screen with 40 cycles already synced does not fire 40 launches.
+     */
+    val cycleSerial: StateFlow<Int> = _cycleSerial.asStateFlow()
+
+    private fun BaqiyatUiState.withoutTapVaryingFields(): BaqiyatUiState =
+        copy(cyclesCompleted = 0, leaderboard = emptyList())
 
     fun onScreenEntered() {
         publishLifetimeTotal()
@@ -86,6 +131,7 @@ class BaqiyatViewModel(
         val today = today()
         val updated = store.incrementToday(today)
         maybeRecordWin(today, updated)
+        _cycleSerial.update { it + 1 }
         _state.update {
             it.copy(
                 cyclesCompleted = updated,
@@ -114,6 +160,8 @@ class BaqiyatViewModel(
         val today = today()
         val updated = store.addToday(today, count)
         maybeRecordWin(today, updated)
+        // One launch for the whole batch, not one per cycle recorded outside the app.
+        _cycleSerial.update { it + 1 }
         _state.update {
             it.copy(
                 dateKey = today.toString(),

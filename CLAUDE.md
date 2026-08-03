@@ -128,6 +128,18 @@ Per-challenge cumulative "total over time" — the overall count a device has ev
 - No Firestore mirror (RTDB is the source of truth for these, matching challenge medals). No server script reads it yet — it accumulates going forward for later use.
 - Tests: `commonTest/data/ghars/GharsChallengeStoreTest.kt` and `commonTest/data/zabad/ZabadChallengeStoreTest.kt` cover the accumulator semantics.
 
+### Baqiyat hive (hadith simulation)
+
+The Baqiyat screen plays out the hadith it teaches: "…they circle around the Throne, they have a hum like the hum of bees, they mention their companion."
+
+- Core files: `ui/baqiyat/BaqiyatHiveCanvas.kt` (the swarm), `ui/baqiyat/BaqiyatScreen.kt`, `presentation/BaqiyatViewModel.kt`, `data/baqiyat/BaqiyatStore.kt` (`BaqiyatPhrase.inHadith`).
+- Every completed cycle launches one spark per hadith dhikr from the reciter at the foot of the canvas; each spark carries its dhikr **and the reciter's name** (`MohamedLoversSessionStore.getPublishedName()` — nickname when enabled, else the last 6 of the uid, i.e. exactly what the leaderboard shows), spirals up and joins the swarm orbiting the Throne arc. The name is the visually dominant half of the pair; a spark stays readable ~7s then settles into a plain dot. Capped at 110 motes, oldest first.
+- **Nothing is driven by the count.** The canvas runs off its own `withFrameNanos` clock read *inside the draw lambda*, and a new cycle arrives as `BaqiyatViewModel.cycleSerial` (a `StateFlow<Int>` collected inside the canvas) — so a tap invalidates the draw phase only, never composition. `cycleSerial` is bumped by real user cycles (tap, manual entry) but **not** by the remote-baseline sync on screen enter, so opening the screen with 40 synced cycles does not fire 40 launches.
+- The ViewModel splits its state three ways for the same reason: `shell` (the whole `BaqiyatUiState` with `cyclesCompleted`/`leaderboard` blanked + `distinctUntilChanged`, so it does not emit on a tap), `cycles` (the counter leaf) and `leaderboardEntries` (the sheet). A tap re-ranks the local leaderboard, so collecting the full state in the screen would recompose it top to bottom.
+- `BaqiyatPhrase.inHadith` marks the four the narration names (tasbih, tahmid, tahlil, takbir) — the four the sparks carry and the screen leads with. The fifth phrase (hawqala) is **still part of the cycle** and still shown, on a secondary line under the four.
+- Screen layout: hint line (the screen itself is the button — there is no "completed a cycle" CTA), hive, counter, hadith transcript + sanad, the four dhikr as one bi-coloured text line (divine name in the brighter gold, matched by token so it works in all four locales), the ayah, then the external-entry button.
+- Strings: `baqiyat_hadith`, `baqiyat_hadith_label`, `baqiyat_hadith_sanad`, `baqiyat_extra_phrase_label` (all four locales); `baqiyat_tap_hint` no longer says "five".
+
 ### Daily today-count, score history & abnormal-user tracking
 
 Client-published per-Cairo-day salawat total that drives the daily leaderboard directly, plus a server-side daily audit trail, a fixed-threshold abnormal-usage flag, and a day-of-round pace flag.

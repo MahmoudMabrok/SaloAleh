@@ -22,4 +22,6 @@ data class BaqiyatUiState(
     val isLeaderboardLoading: Boolean = false,
     val currentUid: String = "",
     val currentStreak: Int = 0,
+    /** Nickname when enabled, otherwise the last six of the uid — the name the swarm carries. */
+    val playerName: String = "",
 )
