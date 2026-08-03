@@ -226,10 +226,8 @@
     <string name="baqiyat_ayah">﴿ وَالْبَاقِيَاتُ الصَّالِحَاتُ خَيْرٌ عِندَ رَبِّكَ ثَوَابًا وَخَيْرٌ أَمَلًا ﴾</string>
     <string name="baqiyat_ayah_ref">سورۃ الکہف ۴۶</string>
     <string name="baqiyat_tap_hint">اذکار پڑھیں پھر کہیں بھی ٹیپ کریں — ایک ٹیپ = ایک دور</string>
-    <string name="baqiyat_hadith_label">حدیث کا متن</string>
     <string name="baqiyat_hadith">اللہ کی بڑائی میں تم جو تسبیح، تہلیل اور تحمید کہتے ہو، وہ عرش کے گرد چکر لگاتی ہیں، ان کی شہد کی مکھیوں جیسی بھنبھناہٹ ہوتی ہے، اور وہ اپنے پڑھنے والے کا ذکر کرتی رہتی ہیں۔ کیا تم میں سے کوئی یہ پسند نہیں کرتا کہ کوئی اُس کا ذکر کرتا رہے؟</string>
     <string name="baqiyat_hadith_sanad">راوی: نعمان بن بشیر · محدث: البانی · مأخذ: السلسلۃ الصحیحۃ · صحیح</string>
-    <string name="baqiyat_extra_phrase_label">ان کے ساتھ</string>
     <string name="baqiyat_add_cd">دور مکمل ہوا ✦ یہاں ٹیپ کریں</string>
     <string name="baqiyat_phrases_title">دور کے اذکار</string>
     <string name="baqiyat_cycles_label">آج مکمل ہونے والے دور</string>

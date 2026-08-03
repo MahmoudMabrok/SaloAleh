@@ -60,9 +60,7 @@ import tools.mo3ta.salo.generated.resources.baqiyat_add_cd
 import tools.mo3ta.salo.generated.resources.baqiyat_ayah
 import tools.mo3ta.salo.generated.resources.baqiyat_ayah_ref
 import tools.mo3ta.salo.generated.resources.baqiyat_cycles_label
-import tools.mo3ta.salo.generated.resources.baqiyat_extra_phrase_label
 import tools.mo3ta.salo.generated.resources.baqiyat_hadith
-import tools.mo3ta.salo.generated.resources.baqiyat_hadith_label
 import tools.mo3ta.salo.generated.resources.baqiyat_hadith_sanad
 import tools.mo3ta.salo.generated.resources.baqiyat_manual_entry_button
 import tools.mo3ta.salo.generated.resources.baqiyat_phrases_title
@@ -161,7 +159,17 @@ fun BaqiyatScreen(
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
             )
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(12.dp))
+
+            // The narration first, then the four phrases it names, then the hive that draws it.
+            HadithCard()
+
+            Spacer(Modifier.height(14.dp))
+
+            PhrasesOfTheCycle()
+
+            Spacer(Modifier.height(10.dp))
+
             // The screen is the button, so the affordance is a line of guidance, not a control.
             Text(
                 text = stringResource(Res.string.baqiyat_tap_hint),
@@ -186,15 +194,7 @@ fun BaqiyatScreen(
             // already occupied by the figure the sparks launch from.
             CyclesCounter(cycles = viewModel.cycles)
 
-            Spacer(Modifier.height(16.dp))
-
-            HadithCard()
-
-            Spacer(Modifier.height(14.dp))
-
-            PhrasesOfTheCycle()
-
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(18.dp))
 
             Ayah()
 
@@ -235,7 +235,7 @@ fun BaqiyatScreen(
 /** The four the hadith names, in cycle order — what the sparks carry around the Throne. */
 @Composable
 private fun hadithPhrases(): List<String> =
-    BaqiyatPhrase.entries.filter { it.inHadith }.map { stringResource(it.labelRes) }
+    BaqiyatPhrase.entries.map { stringResource(it.labelRes) }
 
 /**
  * The running count, in its own leaf so a tap recomposes this and nothing above it.
@@ -312,11 +312,6 @@ private fun HadithCard() {
             verticalArrangement = Arrangement.spacedBy(9.dp),
         ) {
             Text(
-                text = stringResource(Res.string.baqiyat_hadith_label),
-                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.5f),
-                fontSize = 11.sp,
-            )
-            Text(
                 text = stringResource(Res.string.baqiyat_hadith),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.92f),
                 fontSize = 14.sp,
@@ -334,13 +329,11 @@ private fun HadithCard() {
 
 /**
  * The phrases as plain text rather than cards: the four of the hadith on one bi-coloured line —
- * the divine name in the brighter gold, the act of dhikr a step behind it — and the fifth phrase
- * of the cycle named underneath so nothing silently drops out of what the user recites.
+ * the divine name in the brighter gold, the act of dhikr a step behind it.
  */
 @Composable
 private fun PhrasesOfTheCycle() {
     val named = hadithPhrases()
-    val extras = BaqiyatPhrase.entries.filterNot { it.inHadith }.map { stringResource(it.labelRes) }
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -365,15 +358,6 @@ private fun PhrasesOfTheCycle() {
             lineHeight = 30.sp,
             textAlign = TextAlign.Center,
         )
-        if (extras.isNotEmpty()) {
-            Text(
-                text = "${stringResource(Res.string.baqiyat_extra_phrase_label)}: ${extras.joinToString("  ·  ")}",
-                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.45f),
-                fontSize = 12.sp,
-                lineHeight = 22.sp,
-                textAlign = TextAlign.Center,
-            )
-        }
     }
 }
 

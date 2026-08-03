@@ -7,24 +7,18 @@ import tools.mo3ta.salo.domain.BAQIYAT_MANUAL_DAILY_CAP
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.baqiyat_phrase_alhamdulillah
 import tools.mo3ta.salo.generated.resources.baqiyat_phrase_allahuakbar
-import tools.mo3ta.salo.generated.resources.baqiyat_phrase_lahawla
 import tools.mo3ta.salo.generated.resources.baqiyat_phrase_lailaha
 import tools.mo3ta.salo.generated.resources.baqiyat_phrase_subhanallah
 
 /**
- * The phrases of one cycle.
- *
- * [inHadith] marks the four the "hum of the bees" hadith itself names — tasbih, tahmid, tahlil,
- * takbir. Those four are what the screen leads with and what the hive canvas sends around the
- * Throne; the fifth (the hawqala) is still part of the cycle and still shown, just not part of
- * that narration.
+ * The phrases of one cycle: the four the "hum of the bees" hadith itself names — tasbih, tahmid,
+ * takbir, tahlil. These are what the screen shows and what the hive canvas sends around the Throne.
  */
-enum class BaqiyatPhrase(val key: String, val labelRes: StringResource, val inHadith: Boolean = true) {
+enum class BaqiyatPhrase(val key: String, val labelRes: StringResource) {
     SubhanAllah("subhanallah", Res.string.baqiyat_phrase_subhanallah),
     Alhamdulillah("alhamdulillah", Res.string.baqiyat_phrase_alhamdulillah),
     AllahuAkbar("allahuakbar", Res.string.baqiyat_phrase_allahuakbar),
     LaIlahaIllallah("lailaha", Res.string.baqiyat_phrase_lailaha),
-    LaHawla("lahawla", Res.string.baqiyat_phrase_lahawla, inHadith = false),
 }
 
 /** Local counter of completed Baqiyat Salihat cycles (one full pass over all [BaqiyatPhrase] values = +1). */
