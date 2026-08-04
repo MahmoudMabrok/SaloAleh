@@ -16,11 +16,25 @@ SpeechCollector/
 ├── appsscript.json     Apps Script manifest source
 ├── build.mjs           Dependency-free build script
 ├── verify.mjs          Dependency-free static and validation checks
-├── dist/               Files ready to upload to Apps Script
+├── dist/               Files ready to upload to Apps Script, plus voice.html
 └── README.md
 ```
 
 Google Apps Script projects accept only `.gs`, `.html`, and manifest files. They cannot directly deploy `config.ts`, `app.js`, or `styles.css`. The build script reads `config.ts`, injects configuration into the backend, embeds JavaScript and CSS into `Index.html`, and writes a deployable three-file project to `dist/`.
+
+It also writes `dist/voice.html`, a self-contained copy for static hosting. **This is the page volunteers must use.**
+
+## Why recording does not work on the `/exec` URL
+
+Apps Script never serves a web app as a top-level document. `/exec` returns a wrapper page that embeds the project's HTML in a `googleusercontent.com` sandbox iframe, and that iframe is not granted the `microphone` permission. A browser refuses `getUserMedia()` in a frame without the delegated permission **before** it would prompt, so the page reports a microphone failure and no permission dialog is ever shown. Nothing in the Apps Script project can grant the permission to its own frame.
+
+The fix is to serve the recorder from a normal page and keep Apps Script as the upload backend only:
+
+- `dist/voice.html` is deployed to GitHub Pages by `.github/workflows/deploy-pages.yml` and is published at `deployment.standaloneUrl`. It is a top-level page, so the microphone prompt appears normally.
+- It uploads to `deployment.webAppUrl` (the `/exec` URL) with a `text/plain` body, which is a CORS-simple request; `doPost` handles it exactly as before.
+- The `/exec` page still works as a landing page: when it detects that the microphone is blocked by permissions policy, it disables recording and shows an **فتح صفحة التسجيل** button that opens the standalone page. That keeps already-shipped app builds that link to `/exec` usable.
+
+Set both URLs in `deployment` in `config.ts` whenever the deployment or the Pages site moves.
 
 No npm packages, frameworks, APIs, or external assets are used. The build requires only Node.js 18 or newer.
 
@@ -135,7 +149,7 @@ If a managed Google Workspace account does not offer public/anonymous access, it
 After code or configuration changes:
 
 1. Run `node build.mjs` again.
-2. Copy the rebuilt `dist/Code.gs`, `dist/Index.html`, and `dist/appsscript.json` into the existing Apps Script project.
+2. Copy the rebuilt `dist/Code.gs`, `dist/Index.html`, and `dist/appsscript.json` into the existing Apps Script project. (`dist/voice.html` is not uploaded to Apps Script; committing it publishes it through the Pages workflow.)
 3. Save.
 4. Choose **Deploy → Manage deployments**.
 5. Click the pencil icon, choose **New version**, and click **Deploy**.
@@ -144,11 +158,11 @@ Saving code alone does not update the public `/exec` deployment. A new deploymen
 
 ## 5. Test on Android and iPhone
 
-Apps Script uses HTTPS, which is required for microphone access.
+Both hosts use HTTPS, which is required for microphone access. Test the standalone page — the `/exec` URL cannot record.
 
 ### Android
 
-1. Open the `/exec` Web App URL in a current version of Chrome.
+1. Open the standalone page (`deployment.standaloneUrl`) in a current version of Chrome.
 2. Tap **تسجيل** (Record).
 3. When asked, allow microphone access.
 4. Speak for at least one second. Recording stops automatically at five seconds.
@@ -157,7 +171,7 @@ Apps Script uses HTTPS, which is required for microphone access.
 
 ### iPhone or iPad
 
-1. Open the `/exec` URL in a current version of Safari.
+1. Open the standalone page (`deployment.standaloneUrl`) in a current version of Safari.
 2. Allow microphone access when prompted.
 3. Record, play, and upload as above.
 4. If microphone access was previously denied, open **Settings → Safari → Microphone** (or the website settings from Safari's address bar), allow access, and reload the page.
@@ -207,8 +221,9 @@ Because the app intentionally allows anonymous uploads, anyone with the Web App 
 
 ### The page says microphone access failed
 
-- Confirm the page URL begins with `https://` and ends with `/exec`.
-- Check the browser's site permissions and reload.
+- **No permission dialog appeared at all:** the page is running inside a frame that withholds the microphone, which is always the case on the Apps Script `/exec` URL. Open `deployment.standaloneUrl` (`voice.html`) instead — see "Why recording does not work on the `/exec` URL".
+- Confirm the page URL begins with `https://`.
+- Check the browser's site permissions and reload; a previously denied site never prompts again until the permission is reset.
 - Close other apps that may hold exclusive microphone access.
 - Test with current Chrome on Android or current Safari on iPhone.
 

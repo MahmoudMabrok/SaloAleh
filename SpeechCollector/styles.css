@@ -161,6 +161,15 @@ h1 {
 .status-success { color: #0d5936; background: #e5f7ed; }
 .status-error { color: #8d1f1a; background: #fcecea; }
 
+.standalone-banner {
+  display: grid;
+  margin: 0 0 15px;
+}
+
+.standalone-banner[hidden] { display: none; }
+
+.standalone-banner .button { text-decoration: none; }
+
 .button-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

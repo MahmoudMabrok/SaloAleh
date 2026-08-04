@@ -16,6 +16,19 @@ assert.ok(!html.includes('/*__STYLES__*/'), 'CSS placeholder remains in dist/Ind
 assert.ok(!html.includes('/*__APP_JS__*/'), 'JavaScript placeholder remains in dist/Index.html.');
 assert.ok(html.includes('<?!= bootstrapJson ?>'), 'Apps Script bootstrap template is missing.');
 
+// The standalone page must carry a resolved bootstrap payload: it is served
+// outside Apps Script, so an unresolved <?!= ?> template would ship as text.
+const standalone = read('dist/voice.html');
+assert.ok(!standalone.includes('<?!= bootstrapJson ?>'), 'dist/voice.html still contains the Apps Script template tag.');
+assert.ok(!standalone.includes('/*__APP_JS__*/'), 'JavaScript placeholder remains in dist/voice.html.');
+
+const bootstrapMatch = standalone.match(/<script id="bootstrap-data" type="application\/json">([\s\S]*?)<\/script>/);
+assert.ok(bootstrapMatch, 'dist/voice.html has no bootstrap payload.');
+const bootstrap = JSON.parse(bootstrapMatch[1].replace(/\\u003c/g, '<').replace(/\\u003e/g, '>').replace(/\\u0026/g, '&'));
+assert.match(bootstrap.endpoint, /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/, 'The standalone upload endpoint is not an Apps Script /exec URL.');
+assert.ok(bootstrap.phrases.length > 0, 'The standalone page has no phrases.');
+assert.ok(bootstrap.ui.microphoneBlocked, 'The permissions-policy message is missing from the UI strings.');
+
 const manifest = JSON.parse(read('dist/appsscript.json'));
 assert.equal(manifest.runtimeVersion, 'V8');
 assert.equal(manifest.webapp.executeAs, 'USER_DEPLOYING');

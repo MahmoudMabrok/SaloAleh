@@ -14,6 +14,9 @@ function doGet() {
   const template = HtmlService.createTemplateFromFile('Index');
   template.bootstrapJson = safeJsonForHtml_({
     endpoint: ScriptApp.getService().getUrl(),
+    // Apps Script renders this page inside a sandbox iframe that withholds the
+    // microphone permission, so the page offers the standalone copy instead.
+    standaloneUrl: CONFIG.deployment.standaloneUrl,
     app: CONFIG.app,
     recording: {
       minimumDurationMs: CONFIG.recording.minimumDurationMs,

@@ -1,3 +1,292 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="theme-color" content="#176b45">
+  <style>
+:root {
+  color-scheme: light;
+  --primary: #176b45;
+  --primary-dark: #0d4f32;
+  --primary-soft: #e9f6ef;
+  --accent: #d6a53a;
+  --page-bg: #f4f8f5;
+  --card-bg: #ffffff;
+  --text: #17362a;
+  --muted: #61746b;
+  --danger: #b3261e;
+  --border: #d9e6df;
+  --shadow: 0 18px 50px rgba(20, 73, 49, 0.12);
+  font-family: Tahoma, Arial, "Noto Sans Arabic", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html { min-height: 100%; background: var(--page-bg); }
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 12% 8%, rgba(214, 165, 58, 0.12), transparent 26rem),
+    linear-gradient(160deg, #f8fbf9 0%, var(--page-bg) 100%);
+}
+
+button { font: inherit; }
+
+.page-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: max(16px, env(safe-area-inset-top)) 14px max(20px, env(safe-area-inset-bottom));
+}
+
+.collector-card {
+  width: min(100%, 620px);
+  padding: 22px 18px;
+  border: 1px solid rgba(23, 107, 69, 0.1);
+  border-radius: 28px;
+  background: var(--card-bg);
+  box-shadow: var(--shadow);
+}
+
+.app-header { text-align: center; }
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  color: white;
+  background: linear-gradient(145deg, var(--primary), var(--primary-dark));
+  box-shadow: 0 8px 22px rgba(23, 107, 69, 0.2);
+  font-size: 28px;
+}
+
+h1 {
+  max-width: 470px;
+  margin: 0 auto;
+  font-size: clamp(1.35rem, 5vw, 1.85rem);
+  line-height: 1.55;
+}
+
+.progress-block { margin-top: 24px; }
+
+.eyebrow,
+.phrase-progress,
+.microphone-hint,
+.privacy-note { color: var(--muted); }
+
+.eyebrow {
+  margin: 0;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.phrase-progress {
+  margin: 5px 0 9px;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.progress-track {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #e7eee9;
+}
+
+.progress-track span {
+  display: block;
+  width: 10%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--primary), #2e9870);
+  transition: width 280ms ease;
+}
+
+.phrase-panel {
+  display: grid;
+  min-height: 142px;
+  place-items: center;
+  margin: 18px 0;
+  padding: 24px 16px;
+  border: 1px solid #cfe4d8;
+  border-radius: 22px;
+  background: linear-gradient(155deg, #fbfefc, var(--primary-soft));
+}
+
+.phrase-text {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(2rem, 9vw, 3.25rem);
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.recorder-panel { text-align: center; }
+
+#waveform {
+  display: block;
+  width: 100%;
+  height: 68px;
+  border-radius: 14px;
+  background: #f6faf7;
+}
+
+.timer {
+  display: block;
+  margin-top: 7px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.45rem;
+  font-weight: 800;
+  direction: ltr;
+}
+
+.microphone-hint {
+  margin: 6px 0 0;
+  font-size: 0.88rem;
+}
+
+.status {
+  min-height: 48px;
+  margin: 15px 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  text-align: center;
+  line-height: 1.55;
+}
+
+.status-info { color: #38594a; background: #f0f6f2; }
+.status-success { color: #0d5936; background: #e5f7ed; }
+.status-error { color: #8d1f1a; background: #fcecea; }
+
+.standalone-banner {
+  display: grid;
+  margin: 0 0 15px;
+}
+
+.standalone-banner[hidden] { display: none; }
+
+.standalone-banner .button { text-decoration: none; }
+
+.button-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 11px;
+}
+
+.button {
+  min-height: 58px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 16px;
+  cursor: pointer;
+  font-size: 1.05rem;
+  font-weight: 800;
+  transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.button:not(:disabled):active { transform: scale(0.98); }
+.button:focus-visible { outline: 4px solid rgba(214, 165, 58, 0.35); outline-offset: 2px; }
+.button:disabled { cursor: not-allowed; opacity: 0.42; }
+.button-primary { color: white; background: var(--primary); box-shadow: 0 8px 20px rgba(23, 107, 69, 0.18); }
+.button-danger { color: white; background: var(--danger); }
+.button-secondary { color: var(--primary-dark); border: 2px solid #b9d8c7; background: white; }
+.button-accent { color: #302000; background: #f1c45f; }
+.button-ghost { color: var(--primary-dark); border: 1px solid var(--border); background: #f6faf7; }
+.button-wide { grid-column: 1 / -1; }
+
+.privacy-note {
+  margin: 17px 4px 0;
+  text-align: center;
+  font-size: 0.78rem;
+  line-height: 1.65;
+}
+
+@media (min-width: 600px) {
+  .collector-card { padding: 30px 34px; }
+  .button-grid { grid-template-columns: repeat(4, 1fr); }
+  .button-wide { grid-column: 1 / -1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+}
+
+
+  </style>
+</head>
+<body>
+  <main class="page-shell">
+    <section class="collector-card" aria-labelledby="hero-title">
+      <header class="app-header">
+        <div class="brand-mark" aria-hidden="true">☪</div>
+        <h1 id="hero-title" data-i18n="hero"></h1>
+      </header>
+
+      <div class="progress-block">
+        <p class="eyebrow" data-i18n="currentPhrase"></p>
+        <p id="phrase-progress" class="phrase-progress" aria-live="polite"></p>
+        <div class="progress-track" aria-hidden="true">
+          <span id="progress-fill"></span>
+        </div>
+      </div>
+
+      <div class="phrase-panel">
+        <p id="phrase-text" class="phrase-text" lang="ar"></p>
+      </div>
+
+      <div class="recorder-panel">
+        <canvas id="waveform" width="720" height="112" aria-label="موجة الصوت"></canvas>
+        <output id="timer" class="timer" aria-live="off">00:00.0</output>
+        <p class="microphone-hint" data-i18n="microphoneHint"></p>
+      </div>
+
+      <div id="status" class="status status-info" role="status" aria-live="polite"></div>
+
+      <div id="standalone-banner" class="standalone-banner" hidden>
+        <a id="standalone-link" class="button button-primary button-wide" target="_blank" rel="noopener">
+          <span aria-hidden="true">🎙</span><span data-i18n="openStandalone"></span>
+        </a>
+      </div>
+
+      <div class="button-grid">
+        <button id="record-button" class="button button-primary" type="button">
+          <span aria-hidden="true">●</span><span data-i18n="record"></span>
+        </button>
+        <button id="stop-button" class="button button-danger" type="button" disabled>
+          <span aria-hidden="true">■</span><span data-i18n="stop"></span>
+        </button>
+        <button id="play-button" class="button button-secondary" type="button" disabled>
+          <span aria-hidden="true">▶</span><span id="play-label" data-i18n="play"></span>
+        </button>
+        <button id="upload-button" class="button button-accent" type="button" disabled>
+          <span aria-hidden="true">⬆</span><span id="upload-label" data-i18n="upload"></span>
+        </button>
+        <button id="next-button" class="button button-ghost button-wide" type="button">
+          <span data-i18n="next"></span><span aria-hidden="true">←</span>
+        </button>
+      </div>
+
+      <p class="privacy-note"><span aria-hidden="true">🔒</span> <span data-i18n="privacy"></span></p>
+    </section>
+  </main>
+
+  <audio id="audio-player" preload="metadata"></audio>
+  <script id="bootstrap-data" type="application/json">{"endpoint":"https://script.google.com/macros/s/AKfycby0iRCm_qYASYLppPhF9FUTHyEuiIsqxV-Zm_Rm0r7NLQ3DuVUshT9ZRV5vc8zgplbnKQ/exec","standaloneUrl":"https://mahmoudmabrok.github.io/SaloAleh/voice.html","app":{"title":"Dhikr Speech Dataset","htmlTitle":"Arabic Speech Dataset Collector","language":"ar","direction":"rtl","timezone":"Africa/Cairo"},"recording":{"minimumDurationMs":1000,"maximumDurationMs":5000,"maximumUploadBytes":5242880,"preferredSampleRate":16000,"preferredChannelCount":1,"acceptedMimeTypes":["audio/wav","audio/x-wav","audio/webm","audio/ogg","audio/mp4","audio/mpeg"]},"theme":{"primary":"#176b45","primaryDark":"#0d4f32","primarySoft":"#e9f6ef","accent":"#d6a53a","pageBackground":"#f4f8f5","cardBackground":"#ffffff","text":"#17362a","mutedText":"#61746b","danger":"#b3261e"},"ui":{"hero":"❤️ ساهم في تحسين التعرّف على الكلام العربي","currentPhrase":"العبارة الحالية","phraseProgress":"العبارة {current} من {total}","record":"تسجيل","stop":"إيقاف","play":"استماع","pause":"إيقاف الاستماع","upload":"رفع التسجيل","uploading":"جارٍ الرفع…","next":"التالي","timerReady":"00:00.0","microphoneHint":"اقرأ العبارة بصوت واضح في مكان هادئ.","privacy":"لا نجمع الاسم أو البريد أو الهاتف أو الموقع. يُحفظ التسجيل والبيانات التقنية الأساسية فقط.","ready":"اضغط «تسجيل» واسمح باستخدام الميكروفون.","recording":"جارٍ التسجيل…","recordingReady":"التسجيل جاهز. استمع إليه أو ارفعه.","microphoneDenied":"تم رفض إذن الميكروفون. افتح إعدادات الموقع في المتصفح، فعّل الميكروفون، ثم أعد تحميل الصفحة.","microphoneBlocked":"المتصفح لا يعرض طلب الإذن لأن الصفحة معروضة داخل إطار لا يسمح بالميكروفون. افتح صفحة التسجيل في نافذة مستقلة ثم اضغط «تسجيل».","microphoneMissing":"لم يُعثر على ميكروفون متاح. وصّل ميكروفونًا أو تحقق من إعدادات الصوت ثم حاول مجددًا.","microphoneBusy":"الميكروفون مشغول بتطبيق آخر. أغلق التطبيقات التي تستخدمه ثم حاول مجددًا.","insecureContext":"التسجيل يتطلب فتح الصفحة عبر رابط https. افتح الرابط الرسمي للصفحة ثم حاول مجددًا.","openStandalone":"فتح صفحة التسجيل","unsupported":"هذا المتصفح لا يدعم تسجيل الصوت. جرّب إصدارًا حديثًا من Chrome أو Safari.","tooShort":"التسجيل قصير جدًا. سجّل لمدة ثانية واحدة على الأقل.","uploadSuccessTitle":"✅ شكرًا لك!","uploadSuccessBody":"تم رفع العينة بنجاح.","uploadFailedTitle":"فشل رفع التسجيل","uploadFailedBody":"احتفظنا بالتسجيل. تحقق من الإنترنت ثم حاول مجددًا.","retry":"إعادة المحاولة","nextBlocked":"ارفع التسجيل الحالي قبل الانتقال حتى لا تفقده.","completed":"شكرًا! أكملت جميع العبارات. يمكنك البدء من جديد وجمع عينات إضافية.","restart":"البدء من جديد"},"phrases":[{"id":1,"text":"سبحان الله"},{"id":2,"text":"الحمد لله"},{"id":3,"text":"الله أكبر"},{"id":4,"text":"لا إله إلا الله"},{"id":5,"text":"أستغفر الله"},{"id":6,"text":"سبحان الله وبحمده"},{"id":7,"text":"سبحان الله العظيم وبحمده"},{"id":8,"text":"لا حول ولا قوة إلا بالله"},{"id":9,"text":"اللهم صل على محمد"},{"id":10,"text":"اللهم صل وسلم على نبينا محمد"}]}</script>
+  <script>
 'use strict';
 
 (() => {
@@ -600,3 +889,8 @@
     return node.innerHTML;
   }
 })();
+
+  </script>
+</body>
+</html>
+
