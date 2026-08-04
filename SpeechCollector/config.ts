@@ -71,7 +71,7 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
   },
 
   ui: {
-    hero: "❤️ ساهم في تحسين التعرّف على الكلام العربي",
+    hero: "❤️ ساعدنا في بناء ميزة الذكر بالصوت",
     currentPhrase: "العبارة الحالية",
     phraseProgress: "العبارة {current} من {total}",
     record: "تسجيل",
