@@ -167,6 +167,15 @@ h1 {
 .status-success { color: #0d5936; background: #e5f7ed; }
 .status-error { color: #8d1f1a; background: #fcecea; }
 
+.standalone-banner {
+  display: grid;
+  margin: 0 0 15px;
+}
+
+.standalone-banner[hidden] { display: none; }
+
+.standalone-banner .button { text-decoration: none; }
+
 .button-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -247,6 +256,12 @@ h1 {
 
       <div id="status" class="status status-info" role="status" aria-live="polite"></div>
 
+      <div id="standalone-banner" class="standalone-banner" hidden>
+        <a id="standalone-link" class="button button-primary button-wide" target="_blank" rel="noopener">
+          <span aria-hidden="true">🎙</span><span data-i18n="openStandalone"></span>
+        </a>
+      </div>
+
       <div class="button-grid">
         <button id="record-button" class="button button-primary" type="button">
           <span aria-hidden="true">●</span><span data-i18n="record"></span>
@@ -292,7 +307,9 @@ h1 {
     upload: $('upload-button'),
     uploadLabel: $('upload-label'),
     next: $('next-button'),
-    player: $('audio-player')
+    player: $('audio-player'),
+    standalone: $('standalone-banner'),
+    standaloneLink: $('standalone-link')
   };
 
   const state = {
@@ -323,12 +340,58 @@ h1 {
     drawIdleWaveform();
     renderPhrase();
 
+    if (!window.isSecureContext) {
+      setStatus(config.ui.insecureContext, 'error');
+      elements.record.disabled = true;
+      return;
+    }
+
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
       setStatus(config.ui.unsupported, 'error');
       elements.record.disabled = true;
-    } else {
-      setStatus(config.ui.ready, 'info');
+      return;
     }
+
+    // Apps Script serves every web app inside a googleusercontent.com sandbox
+    // iframe that does not delegate the "microphone" permission. getUserMedia is
+    // then rejected by permissions policy *without* showing a prompt, so offer
+    // the standalone page whenever this copy is framed.
+    if (isEmbedded()) showStandaloneBanner();
+
+    if (policyDeniesMicrophone()) {
+      setStatus(config.ui.microphoneBlocked, 'error');
+      elements.record.disabled = true;
+      return;
+    }
+
+    setStatus(config.ui.ready, 'info');
+  }
+
+  /**
+   * True only when the embedder explicitly withholds the microphone permission.
+   * Treated as a one-way signal: browsers disagree on what allowsFeature()
+   * reports for a frame that was never granted the feature, so "true" disables
+   * recording while "false" only means "no reason to give up before trying".
+   */
+  function policyDeniesMicrophone() {
+    const policy = document.featurePolicy || document.permissionsPolicy;
+    return policy?.allowsFeature ? policy.allowsFeature('microphone') === false : false;
+  }
+
+  function isEmbedded() {
+    try {
+      return window.self !== window.top;
+    } catch (error) {
+      // A cross-origin parent throws on access, which itself means we are framed.
+      return true;
+    }
+  }
+
+  function showStandaloneBanner() {
+    const url = config.standaloneUrl;
+    if (!url || !elements.standalone || url === window.location.href) return;
+    elements.standaloneLink.href = url;
+    elements.standalone.hidden = false;
   }
 
   function applyTheme() {
@@ -375,15 +438,7 @@ h1 {
     if (state.recording || state.uploading || state.recorder?.state === 'recording') return;
 
     try {
-      state.stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          channelCount: { ideal: config.recording.preferredChannelCount },
-          sampleRate: { ideal: config.recording.preferredSampleRate },
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false
-        }
-      });
+      state.stream = await requestMicrophone();
 
       const mimeType = selectSupportedMimeType();
       state.chunks = [];
@@ -410,8 +465,64 @@ h1 {
     } catch (error) {
       console.error(error);
       releaseMicrophone();
-      setStatus(config.ui.microphoneDenied, 'error');
+      reportMicrophoneError(error);
     }
+  }
+
+  /**
+   * Asks for the microphone from inside the click handler so the browser treats
+   * it as a user gesture. A device that cannot honour the preferred sample rate
+   * or channel count rejects with OverconstrainedError, so retry once with the
+   * plain constraint rather than reporting a permission problem.
+   */
+  async function requestMicrophone() {
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: { ideal: config.recording.preferredChannelCount },
+          sampleRate: { ideal: config.recording.preferredSampleRate },
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false
+        }
+      });
+    } catch (error) {
+      if (error?.name !== 'OverconstrainedError' && error?.name !== 'ConstraintNotSatisfiedError') throw error;
+      console.warn('Preferred audio constraints were rejected; retrying with defaults.', error);
+      return navigator.mediaDevices.getUserMedia({ audio: true });
+    }
+  }
+
+  /**
+   * Distinguishes the failures a volunteer can actually fix. The permissions
+   * policy case is the important one: it never shows a prompt, so telling the
+   * user to "allow access" would be advice they cannot follow.
+   */
+  function reportMicrophoneError(error) {
+    const name = error?.name || '';
+    const message = String(error?.message || '');
+
+    if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+      setStatus(config.ui.microphoneMissing, 'error');
+      return;
+    }
+    if (name === 'NotReadableError' || name === 'TrackStartError' || name === 'AbortError') {
+      setStatus(config.ui.microphoneBusy, 'error');
+      return;
+    }
+    if (name === 'SecurityError' || !window.isSecureContext) {
+      setStatus(config.ui.insecureContext, 'error');
+      return;
+    }
+    // A rejection inside a frame is a permissions-policy block in practice: the
+    // browser never prompted, so "allow access and retry" is advice the
+    // volunteer cannot act on. Only a top-level page can mean a real denial.
+    if (isEmbedded() || policyDeniesMicrophone() || /permissions policy|feature policy|disallowed by/i.test(message)) {
+      showStandaloneBanner();
+      setStatus(config.ui.microphoneBlocked, 'error');
+      return;
+    }
+    setStatus(config.ui.microphoneDenied, 'error');
   }
 
   function stopRecording(automatic) {

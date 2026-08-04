@@ -13,6 +13,8 @@ on:
     branches: [main]
     paths:
       - '**.json'
+      # The voice-recording page is built from these sources into _site/voice.html.
+      - 'SpeechCollector/**'
   workflow_run:
     workflows: ["Update Landing Page Stats"]
     types: [completed]
@@ -46,6 +48,14 @@ jobs:
           cp support.html _site/support.html
           cp stats.json _site/stats.json
           cp -r stats _site/stats
+
+      # Recording needs a top-level page: the Apps Script web app is always
+      # rendered inside a sandbox iframe that withholds the microphone
+      # permission, so getUserMedia there fails without ever prompting.
+      - name: Build voice collector page
+        run: |
+          node SpeechCollector/build.mjs
+          cp SpeechCollector/dist/voice.html _site/voice.html
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

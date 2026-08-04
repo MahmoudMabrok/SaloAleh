@@ -223,11 +223,28 @@ fun SettingsScreen(
             )
 
             Text(
+                text = stringResource(Res.string.settings_voice_dhikr_header),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 24.dp, bottom = 8.dp),
+            )
+
+            SettingLinkRow(
+                label = stringResource(Res.string.settings_voice_dhikr_link),
+                labelColor = MohamedLoversPalette.GoldGlow,
+                onClick = {
+                    analyticsManager.logAction(AppAnalytics.OPEN_VOICE_DHIKR)
+                    onOpenVoiceDhikr()
+                },
+            )
+
+            Text(
                 text = stringResource(Res.string.settings_notifications_header),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(vertical = 8.dp),
+                modifier = Modifier.padding(top = 24.dp, bottom = 8.dp),
             )
 
             if (!notifPermGranted) {
@@ -425,23 +442,6 @@ fun SettingsScreen(
             SettingLinkRow(
                 label = stringResource(Res.string.settings_download_chrome_extension),
                 onClick = { uriHandler.openUri("https://mahmoudmabrok.github.io/SaloAleh/landing.html#extension") },
-            )
-
-            Text(
-                text = stringResource(Res.string.settings_voice_dhikr_header),
-                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(top = 24.dp, bottom = 8.dp),
-            )
-
-            SettingLinkRow(
-                label = stringResource(Res.string.settings_voice_dhikr_link),
-                labelColor = MohamedLoversPalette.GoldGlow,
-                onClick = {
-                    analyticsManager.logAction(AppAnalytics.OPEN_VOICE_DHIKR)
-                    onOpenVoiceDhikr()
-                },
             )
 
             if (billingManager.isEnabled) {

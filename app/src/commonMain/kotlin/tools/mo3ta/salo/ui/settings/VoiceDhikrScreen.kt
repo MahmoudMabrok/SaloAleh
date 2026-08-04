@@ -47,8 +47,12 @@ import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.*
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 
+// The recorder is served from GitHub Pages rather than the Apps Script /exec URL:
+// Apps Script renders every web app inside a sandbox iframe that does not delegate
+// the microphone permission, so the browser rejects getUserMedia there without ever
+// showing a permission prompt. The page still uploads to the same Apps Script backend.
 private const val VOICE_DHIKR_FORM_URL =
-    "https://script.google.com/macros/s/AKfycby0iRCm_qYASYLppPhF9FUTHyEuiIsqxV-Zm_Rm0r7NLQ3DuVUshT9ZRV5vc8zgplbnKQ/exec"
+    "https://mahmoudmabrok.github.io/SaloAleh/voice.html"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
