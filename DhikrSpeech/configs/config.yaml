@@ -1,0 +1,226 @@
+# DhikrSpeech - single source of configuration.
+#
+# Every notebook and every module reads this file. Nothing is hard-coded
+# elsewhere; if a value matters it lives here.
+
+# Global random seed. Used for splits, shuffling, augmentation and TF/Keras.
+seed: 1337
+
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+# All directories below are relative to `drive_root/project_dir` unless they
+# are given as absolute paths, in which case they are used verbatim.
+paths:
+  drive_root: /content/drive/MyDrive
+  project_dir: DhikrDataset
+
+  dataset_dir: dataset          # raw recordings, one folder per class id
+  processed_dir: processed      # 16 kHz mono PCM16 output of notebook 02
+  noise_dir: noise              # optional background-noise wavs for augmentation
+  checkpoints_dir: checkpoints
+  exports_dir: exports
+  logs_dir: logs                # TensorBoard + CSV training logs
+  reports_dir: reports          # validation reports, metrics, charts
+
+  phrases_file: phrases.json    # [{"id": 1, "text": "..."}, ...]
+  unknown_class: unknown        # folder holding out-of-vocabulary / filler audio
+
+# ---------------------------------------------------------------------------
+# Audio
+# ---------------------------------------------------------------------------
+audio:
+  sample_rate: 16000
+  channels: 1                   # 1 = mono. The pipeline only supports mono.
+  bit_depth: 16                 # PCM16 output
+  clip_seconds: 2.0             # fixed model input length (pad / crop to this)
+  file_extensions: [".wav", ".WAV", ".flac", ".ogg", ".m4a", ".mp3"]
+
+  # Recordings outside this range are reported by the validator.
+  min_duration: 0.30
+  max_duration: 8.00
+
+  # A clip whose RMS is below this is treated as empty/silent.
+  silence_dbfs: -55.0
+
+  trim:
+    enabled: true
+    top_db: 30.0                # librosa.effects.trim threshold
+    pad_ms: 50.0                # keep this much audio around the kept region
+
+  normalize:
+    enabled: true
+    target_dbfs: -20.0          # RMS target
+    peak_ceiling: 0.99          # hard limit after gain, prevents clipping
+
+  # How a clip shorter/longer than clip_seconds is fitted to clip_seconds.
+  # center = pad or crop symmetrically, end = pad or crop at the end.
+  fit_mode: center
+
+# ---------------------------------------------------------------------------
+# Features - log mel spectrogram
+# ---------------------------------------------------------------------------
+features:
+  n_mels: 40
+  window_ms: 30.0
+  hop_ms: 10.0
+  n_fft: 512
+  fmin: 20.0
+  fmax: 7600.0
+  log_offset: 1.0e-6            # log(mel + offset), keeps the log finite
+  center: false                 # false => frame count is deterministic, matches Android
+  # none | per_example (zero mean / unit variance per clip) | global (dataset stats)
+  normalize: per_example
+
+# ---------------------------------------------------------------------------
+# Augmentation - training split only, applied on the fly
+# ---------------------------------------------------------------------------
+augmentation:
+  enabled: true
+
+  background_noise:
+    enabled: true
+    probability: 0.5
+    min_snr_db: 5.0
+    max_snr_db: 25.0
+    # Used when noise_dir is empty or missing.
+    synthetic_when_missing: true
+
+  pitch_shift:
+    enabled: true
+    probability: 0.3
+    min_semitones: -2.0
+    max_semitones: 2.0
+
+  speed_perturb:
+    enabled: true
+    probability: 0.3
+    min_rate: 0.90
+    max_rate: 1.10
+
+  gain:
+    enabled: true
+    probability: 0.5
+    min_db: -6.0
+    max_db: 6.0
+
+  time_shift:
+    enabled: true
+    probability: 0.5
+    max_shift_ms: 150.0
+
+  spec_augment:
+    enabled: true
+    probability: 0.5
+    freq_masks: 1
+    freq_mask_width: 6          # mel bins
+    time_masks: 2
+    time_mask_width: 12         # frames
+
+# ---------------------------------------------------------------------------
+# Dataset splitting
+# ---------------------------------------------------------------------------
+split:
+  val_ratio: 0.15
+  test_ratio: 0.10              # 0.0 disables the test split
+  stratified: true
+  # Recordings whose filename starts with the same speaker/session token can be
+  # kept together to avoid leakage. Set to null to disable grouping.
+  group_regex: null
+
+# ---------------------------------------------------------------------------
+# Model - DS-CNN (depthwise separable CNN, the standard KWS topology)
+# ---------------------------------------------------------------------------
+model:
+  name: ds_cnn
+  stem_filters: 64
+  stem_kernel: [10, 4]          # (time, freq)
+  stem_stride: [2, 2]
+  blocks: 4
+  block_filters: 64
+  block_kernel: [3, 3]
+  width_multiplier: 1.0
+  dropout: 0.2
+  use_bias: false
+  activation: relu
+  pool: gap                     # gap | flatten
+  # BatchNorm moving-average momentum. Keras defaults to 0.99, which needs
+  # thousands of steps to converge; a few hundred clips give only a handful of
+  # steps per epoch, leaving the moving statistics near their init and collapsing
+  # the model at inference time while training accuracy still looks fine.
+  # 0.9 converges in ~50 steps. Raise it toward 0.99 only for large datasets.
+  bn_momentum: 0.9
+
+# ---------------------------------------------------------------------------
+# Training
+# ---------------------------------------------------------------------------
+training:
+  epochs: 60
+  batch_size: 64
+  shuffle_buffer: 4096
+  mixed_precision: true         # honoured only when a GPU is present
+  class_weights: true
+  label_smoothing: 0.1
+
+  optimizer: adam               # adam | adamw | sgd | rmsprop
+  learning_rate: 1.0e-3
+  weight_decay: 1.0e-4          # adamw / sgd only
+  momentum: 0.9                 # sgd only
+  gradient_clip_norm: 1.0       # null disables clipping
+
+  # cosine | exponential | plateau | none
+  lr_schedule: cosine
+  warmup_epochs: 2
+  min_learning_rate: 1.0e-5
+  plateau_factor: 0.5
+  plateau_patience: 4
+
+  early_stopping:
+    enabled: true
+    monitor: val_accuracy
+    mode: max
+    patience: 12
+    min_delta: 0.001
+    restore_best_weights: true
+
+  checkpoint:
+    monitor: val_accuracy
+    mode: max
+    save_best_only: true
+    save_freq: epoch
+
+  tensorboard:
+    enabled: true
+    histogram_freq: 0
+    update_freq: epoch
+
+  resume: true                  # BackupAndRestore: rerunning fit continues the run
+  cache: true                   # cache decoded audio of the training split in RAM
+  prefetch: true
+
+# ---------------------------------------------------------------------------
+# Evaluation
+# ---------------------------------------------------------------------------
+evaluation:
+  batch_size: 128
+  split: test                   # test | val
+  roc: true                     # one-vs-rest ROC + macro AUC
+  top_k_confusions: 15
+  error_examples: 12            # false positives / negatives listed per class
+  confidence_threshold: 0.5     # a prediction below this counts as "no keyword"
+
+# ---------------------------------------------------------------------------
+# Export
+# ---------------------------------------------------------------------------
+export:
+  saved_model: true
+  float32: true
+  dynamic_range: true
+  int8: true
+  representative_samples: 300   # clips drawn from the training split for INT8
+  benchmark_runs: 100
+  benchmark_warmup: 10
+  # Desktop -> phone scaling used to report an expected on-device latency.
+  # It is a documented estimate, not a measurement. Calibrate per device.
+  android_latency_factor: 3.0
+  verify_tolerance: 0.05        # max |float32 - quantized| probability drift
