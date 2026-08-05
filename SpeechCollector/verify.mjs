@@ -57,6 +57,15 @@ assert.equal(validated.phrase.id, 1);
 assert.equal(validated.mimeType, 'audio/webm');
 assert.equal(vm.runInContext('padPhraseId_(1)', backendContext), '001');
 
+// The auto-written phrases.json body is generated from CONFIG and must be a
+// valid [{id, text}] list that the DhikrSpeech pipeline's load_phrases accepts.
+const generatedPhrases = JSON.parse(vm.runInContext('phrasesJsonContent_()', backendContext));
+assert.ok(Array.isArray(generatedPhrases) && generatedPhrases.length > 0, 'phrasesJsonContent_ produced an empty list.');
+assert.ok(
+  generatedPhrases.every((phrase) => Number.isInteger(phrase.id) && typeof phrase.text === 'string' && phrase.text.trim()),
+  'phrasesJsonContent_ entries must each be {id: integer, text: non-empty string}.'
+);
+
 backendContext.payload = { ...validPayload, phrase_id: 999 };
 assert.throws(
   () => vm.runInContext('validateRequest_(payload)', backendContext),
@@ -76,7 +85,8 @@ assert.throws(
 );
 
 const requiredFunctions = [
-  'doGet', 'doPost', 'saveAudio', 'createFolderIfMissing', 'appendSpreadsheetRow', 'jsonResponse'
+  'doGet', 'doPost', 'saveAudio', 'createFolderIfMissing', 'appendSpreadsheetRow', 'jsonResponse',
+  'phrasesJsonContent_', 'ensurePhrasesFile_'
 ];
 for (const functionName of requiredFunctions) {
   assert.equal(

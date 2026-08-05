@@ -53,6 +53,9 @@ function validateConfiguration(config) {
   if (typeof config.storage.datasetSubfolder !== 'string' || !config.storage.datasetSubfolder.trim()) {
     throw new Error('storage.datasetSubfolder must be a non-empty string (the folder the trainer scans, e.g. "dataset").');
   }
+  if (typeof config.storage.phrasesFile !== 'string' || !config.storage.phrasesFile.trim()) {
+    throw new Error('storage.phrasesFile must be a non-empty string (the labels file the collector writes, e.g. "phrases.json").');
+  }
 }
 
 function write(filename, contents) {

@@ -6,7 +6,8 @@
 const CONFIG = Object.freeze(JSON.parse('__CONFIG_JSON__'));
 const RUNTIME_KEYS = Object.freeze({
   ROOT_FOLDER_ID: 'SPEECH_COLLECTOR_ROOT_FOLDER_ID',
-  SPREADSHEET_ID: 'SPEECH_COLLECTOR_SPREADSHEET_ID'
+  SPREADSHEET_ID: 'SPEECH_COLLECTOR_SPREADSHEET_ID',
+  PHRASES_SIGNATURE: 'SPEECH_COLLECTOR_PHRASES_SIGNATURE'
 });
 
 /** Serves the mobile web application. */
@@ -95,6 +96,7 @@ function saveAudio(request) {
     }
 
     const rootFolder = getOrCreateRootFolder_();
+    ensurePhrasesFile_(rootFolder);
     const datasetFolder = createFolderIfMissing(rootFolder, CONFIG.storage.datasetSubfolder);
     const phraseFolderName = padPhraseId_(validated.phrase.id);
     const phraseFolder = createFolderIfMissing(datasetFolder, phraseFolderName);
@@ -141,6 +143,42 @@ function saveAudio(request) {
 function createFolderIfMissing(parentFolder, folderName) {
   const matches = parentFolder.getFoldersByName(folderName);
   return matches.hasNext() ? matches.next() : parentFolder.createFolder(folderName);
+}
+
+/** The phrases.json body the DhikrSpeech pipeline reads: a plain [{id, text}] list. */
+function phrasesJsonContent_() {
+  const phrases = CONFIG.phrases.map(function(phrase) {
+    return { id: phrase.id, text: phrase.text };
+  });
+  return JSON.stringify(phrases, null, 2) + '\n';
+}
+
+/**
+ * Writes phrases.json at the root of the dataset folder so the training
+ * pipeline gets its id->text labels without a manual upload. Best-effort: it
+ * never throws, so a failure here can never fail an audio upload. A signature
+ * in Script Properties gates the Drive write to only when the phrase list
+ * changes (e.g. after a redeploy), keeping the common path free of extra I/O.
+ */
+function ensurePhrasesFile_(rootFolder) {
+  try {
+    const content = phrasesJsonContent_();
+    const properties = PropertiesService.getScriptProperties();
+    const signature = Utilities.base64Encode(
+      Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, content)
+    );
+    if (properties.getProperty(RUNTIME_KEYS.PHRASES_SIGNATURE) === signature) return;
+
+    const existing = rootFolder.getFilesByName(CONFIG.storage.phrasesFile);
+    if (existing.hasNext()) {
+      existing.next().setContent(content);
+    } else {
+      rootFolder.createFile(CONFIG.storage.phrasesFile, content, 'application/json');
+    }
+    properties.setProperty(RUNTIME_KEYS.PHRASES_SIGNATURE, signature);
+  } catch (error) {
+    console.warn('Could not sync ' + CONFIG.storage.phrasesFile + ': ' + error);
+  }
 }
 
 /** Appends a row in the exact order configured in config.ts. */

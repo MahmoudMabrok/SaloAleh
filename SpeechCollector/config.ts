@@ -40,6 +40,12 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     // the collector and the trainer agree on the layout.
     datasetSubfolder: "dataset",
 
+    // The collector writes this file at the ROOT of the dataset folder (a
+    // sibling of datasetSubfolder), regenerated from `phrases` below whenever
+    // that list changes, so the DhikrSpeech pipeline finds its id->text labels
+    // with no manual upload. Matches the pipeline's `paths.phrases_file`.
+    phrasesFile: "phrases.json",
+
     // Leave blank to create a spreadsheet automatically on first upload.
     // Its ID is saved in Apps Script Properties for future uploads.
     spreadsheetId: "17nkSzNoyBB4PvCkaelLdyW82wFgcRPYoPAVDoEE5NoI",
