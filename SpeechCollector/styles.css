@@ -31,11 +31,10 @@ body {
 button { font: inherit; }
 
 .page-shell {
-  min-height: 100vh;
-  min-height: 100dvh;
   display: grid;
-  place-items: center;
-  padding: max(16px, env(safe-area-inset-top)) 14px max(20px, env(safe-area-inset-bottom));
+  justify-items: center;
+  /* Room for the upload-all bar, which floats over the end of the list. */
+  padding: max(16px, env(safe-area-inset-top)) 14px calc(104px + env(safe-area-inset-bottom));
 }
 
 .collector-card {
@@ -69,30 +68,34 @@ h1 {
   line-height: 1.55;
 }
 
-.progress-block { margin-top: 24px; }
-
-.eyebrow,
-.phrase-progress,
-.phrase-note,
+.list-hint,
 .microphone-hint,
-.skip-hint,
 .privacy-note { color: var(--muted); }
 
-.eyebrow {
-  margin: 0;
-  text-align: center;
-  font-size: 0.95rem;
-  font-weight: 700;
+/* ---- summary ------------------------------------------------------------ */
+
+.summary {
+  margin-top: 22px;
+  padding: 13px 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #fbfdfc;
 }
 
-.phrase-progress {
-  margin: 5px 0 9px;
-  text-align: center;
+.summary-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  color: var(--muted);
   font-size: 0.85rem;
 }
 
+#summary-phrases { color: var(--text); font-weight: 700; }
+
 .progress-track {
   height: 7px;
+  margin-top: 9px;
   overflow: hidden;
   border-radius: 99px;
   background: #e7eee9;
@@ -100,135 +103,177 @@ h1 {
 
 .progress-track span {
   display: block;
-  width: 10%;
+  width: 0;
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, var(--primary), #2e9870);
   transition: width 280ms ease;
 }
 
-.phrase-picker {
-  display: grid;
-  gap: 6px;
-  margin-top: 18px;
+.list-hint {
+  margin: 15px 2px 0;
+  font-size: 0.86rem;
+  line-height: 1.7;
 }
 
-.phrase-picker .eyebrow { text-align: start; }
+.microphone-hint {
+  margin: 6px 2px 0;
+  font-size: 0.86rem;
+  line-height: 1.7;
+}
 
-.phrase-select {
-  width: 100%;
-  min-height: 52px;
-  padding: 12px 14px;
-  border: 1px solid #cfe4d8;
-  border-radius: 16px;
-  color: var(--text);
-  background: #f6faf7;
-  cursor: pointer;
-  font: inherit;
-  font-size: 1.02rem;
+/* ---- one recorder per phrase -------------------------------------------- */
+
+.phrase-list {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phrase-card {
+  padding: 13px 13px 15px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--card-bg);
+  box-shadow: 0 6px 18px rgba(20, 73, 49, 0.05);
+  transition: border-color 160ms ease;
+}
+
+.phrase-card.card-recording { border-color: rgba(179, 38, 30, 0.45); box-shadow: 0 0 0 3px rgba(179, 38, 30, 0.07); }
+.phrase-card.card-ready { border-color: rgba(23, 107, 69, 0.4); }
+.phrase-card.card-queued,
+.phrase-card.card-uploading { border-color: rgba(214, 165, 58, 0.55); }
+.phrase-card.card-failed { border-color: rgba(179, 38, 30, 0.4); }
+
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.card-number {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  background: #eef4f0;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.7rem;
+}
+
+.card-tally {
+  margin-inline-start: auto;
+  padding: 2px 9px;
+  border-radius: 99px;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  font-size: 0.72rem;
   font-weight: 700;
 }
 
-.phrase-select:focus-visible { outline: 4px solid rgba(214, 165, 58, 0.35); outline-offset: 2px; }
-.phrase-select:disabled { cursor: not-allowed; opacity: 0.5; }
-
-.phrase-note {
-  margin: 10px 0 0;
-  text-align: center;
-  font-size: 0.82rem;
-}
-
-.phrase-note:empty { display: none; }
-
-.skip-hint {
-  margin: 12px 4px 0;
-  text-align: center;
-  font-size: 0.82rem;
-  line-height: 1.6;
-}
+.card-tally:empty { display: none; }
 
 .phrase-panel {
   display: grid;
-  min-height: 142px;
   place-items: center;
-  margin: 18px 0;
-  padding: 24px 16px;
+  padding: 15px 12px;
   border: 1px solid #cfe4d8;
-  border-radius: 22px;
+  border-radius: 16px;
   background: linear-gradient(155deg, #fbfefc, var(--primary-soft));
 }
 
 .phrase-text {
   margin: 0;
   text-align: center;
-  font-size: clamp(2rem, 9vw, 3.25rem);
+  font-size: clamp(1.4rem, 6vw, 1.75rem);
   font-weight: 700;
   line-height: 1.55;
 }
 
-.recorder-panel { text-align: center; }
+.recorder-panel {
+  margin-top: 11px;
+  text-align: center;
+}
 
-#waveform {
+.waveform {
   display: block;
   width: 100%;
-  height: 68px;
-  border-radius: 14px;
+  height: 52px;
+  border-radius: 12px;
   background: #f6faf7;
 }
 
+.card-recording .waveform { background: #fdf1f0; }
+
 .timer {
   display: block;
-  margin-top: 7px;
+  margin-top: 6px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 1.45rem;
+  font-size: 1.2rem;
   font-weight: 800;
   direction: ltr;
 }
 
-.microphone-hint {
-  margin: 6px 0 0;
-  font-size: 0.88rem;
-}
+.card-recording .timer { color: var(--danger); }
+
+/* ---- status ------------------------------------------------------------- */
 
 .status {
-  min-height: 48px;
-  margin: 15px 0;
-  padding: 12px 14px;
-  border-radius: 14px;
+  margin: 12px 0 0;
+  padding: 10px 13px;
+  border-radius: 13px;
   text-align: center;
+  font-size: 0.85rem;
   line-height: 1.55;
 }
+
+#page-status { margin: 15px 0 0; min-height: 44px; }
 
 .status-info { color: #38594a; background: #f0f6f2; }
 .status-success { color: #0d5936; background: #e5f7ed; }
 .status-error { color: #8d1f1a; background: #fcecea; }
+/* A card with nothing to report says nothing; ten identical hints are noise. */
+.status-empty { display: none; }
+
+/* ---- buttons ------------------------------------------------------------ */
 
 .standalone-banner {
   display: grid;
-  margin: 0 0 15px;
+  margin: 15px 0 0;
 }
 
 .standalone-banner[hidden] { display: none; }
 
 .standalone-banner .button { text-decoration: none; }
 
+.phrase-list { margin-top: 16px; }
+
+/* On the card itself, not on .status: a card with nothing to report hides its
+   status box entirely, and the buttons must not close up against the timer. */
 .button-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 11px;
+  gap: 9px;
+  margin-top: 12px;
 }
 
 .button {
-  min-height: 58px;
+  min-height: 50px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
-  padding: 12px 14px;
+  gap: 8px;
+  padding: 11px 12px;
   border: 0;
-  border-radius: 16px;
+  border-radius: 14px;
   cursor: pointer;
-  font-size: 1.05rem;
+  font-size: 0.98rem;
   font-weight: 800;
   transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
   -webkit-tap-highlight-color: transparent;
@@ -238,11 +283,30 @@ h1 {
 .button:focus-visible { outline: 4px solid rgba(214, 165, 58, 0.35); outline-offset: 2px; }
 .button:disabled { cursor: not-allowed; opacity: 0.42; }
 .button-primary { color: white; background: var(--primary); box-shadow: 0 8px 20px rgba(23, 107, 69, 0.18); }
+.button-primary:disabled { box-shadow: none; }
 .button-danger { color: white; background: var(--danger); }
 .button-secondary { color: var(--primary-dark); border: 2px solid #b9d8c7; background: white; }
 .button-accent { color: #302000; background: #f1c45f; }
-.button-ghost { color: var(--primary-dark); border: 1px solid var(--border); background: #f6faf7; }
 .button-wide { grid-column: 1 / -1; }
+
+/* ---- upload-all bar ----------------------------------------------------- */
+
+.upload-all-bar {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 5;
+  display: grid;
+  padding: 12px 14px calc(14px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 -12px 28px rgba(20, 73, 49, 0.1);
+  backdrop-filter: blur(6px);
+}
+
+.upload-all-bar[hidden] { display: none; }
+
+.upload-all-bar .button { width: min(100%, 592px); margin: 0 auto; }
 
 .privacy-note {
   margin: 17px 4px 0;
@@ -253,6 +317,7 @@ h1 {
 
 @media (min-width: 600px) {
   .collector-card { padding: 30px 34px; }
+  .phrase-card { padding: 16px 16px 18px; }
   .button-grid { grid-template-columns: repeat(4, 1fr); }
   .button-wide { grid-column: 1 / -1; }
 }
@@ -260,4 +325,3 @@ h1 {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
 }
-

@@ -6,8 +6,13 @@
  * touches, which keeps the tests honest: they drive the same buttons a
  * volunteer does and assert on what the page ends up showing.
  *
- * Covered: the phrase picker, skipping a phrase without recording it,
- * re-recording over a waiting take, and the per-phrase upload tally.
+ * The recorder cards are built at runtime, one per phrase, so the stub tracks
+ * every element the app creates and resolves it by id — `record-3` is the
+ * record button on the fourth card, exactly as in the real page.
+ *
+ * Covered: one card per phrase, one take at a time across the whole list,
+ * re-recording, per-card upload, the serialized upload-all bar, failure
+ * handling, and the per-phrase tally.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -30,10 +35,11 @@ const bootstrap = JSON.parse(
 const phrases = bootstrap.phrases;
 const UPLOAD_COUNTS_KEY = 'speech_collector_upload_counts';
 
-const ELEMENT_IDS = [
-  'phrase-text', 'phrase-note', 'phrase-select', 'phrase-progress', 'progress-fill', 'timer',
-  'waveform', 'status', 'record-button', 'record-label', 'stop-button', 'play-button', 'play-label',
-  'upload-button', 'upload-label', 'next-button', 'audio-player', 'standalone-banner', 'standalone-link'
+// The static shell from Index.html. Everything else is created by the app.
+const SHELL_IDS = [
+  'phrase-list', 'summary-phrases', 'summary-samples', 'progress-fill', 'page-status',
+  'upload-all-bar', 'upload-all-button', 'upload-all-label', 'audio-player',
+  'standalone-banner', 'standalone-link'
 ];
 
 class FakeElement {
@@ -43,22 +49,17 @@ class FakeElement {
     this.textContent = '';
     this.className = '';
     this.innerHTML = '';
-    this.value = '';
     this.disabled = false;
     this.hidden = true;
     this.href = '';
+    this.src = '';
     this.paused = true;
     this.width = 720;
-    this.height = 112;
+    this.height = 96;
     this.dataset = {};
     this.children = [];
     this.style = { setProperty() {}, width: '' };
     this.handlers = new Map();
-  }
-
-  /** The app reads select.options[index] when refreshing labels. */
-  get options() {
-    return this.children;
   }
 
   addEventListener(type, handler) {
@@ -80,11 +81,7 @@ class FakeElement {
     this.children = [...fragment.children];
   }
 
-  querySelector() {
-    if (!this.namedChild) this.namedChild = new FakeElement('span');
-    return this.namedChild;
-  }
-
+  setAttribute() {}
   removeAttribute() {}
   load() {}
   pause() {
@@ -103,25 +100,35 @@ class FakeElement {
 // Every canvas call is a no-op; only the app's control flow is under test.
 const drawingContext = new Proxy({}, { get: () => () => {} });
 
-function createEnvironment({ secureContext = true, confirmResult = true, storageSeed = null, uploadOk = true } = {}) {
-  const dom = new Map(ELEMENT_IDS.map((id) => [id, new FakeElement('div', id)]));
+function createEnvironment({ secureContext = true, storageSeed = null, uploadOk = true } = {}) {
+  const shell = new Map(SHELL_IDS.map((id) => [id, new FakeElement('div', id)]));
   const bootstrapNode = new FakeElement('script', 'bootstrap-data');
   bootstrapNode.textContent = JSON.stringify(bootstrap);
-  dom.set('bootstrap-data', bootstrapNode);
+  shell.set('bootstrap-data', bootstrapNode);
 
-  const confirmCalls = [];
+  // Cards are built at runtime, so anything the app creates is resolvable by id
+  // once it has been given one — the same contract the real document offers.
+  const created = [];
   const timers = [];
   const clock = { now: 0 };
   const storage = new Map(storageSeed ? [[UPLOAD_COUNTS_KEY, JSON.stringify(storageSeed)]] : []);
   const recorders = [];
+  const uploads = [];
+  let uploadGate = null;
+
+  const findById = (id) => shell.get(id) || created.find((element) => element.id === id) || null;
 
   const document = {
     documentElement: { lang: '', dir: '', style: { setProperty() {} } },
     title: '',
-    getElementById: (id) => dom.get(id) || null,
+    getElementById: findById,
     querySelectorAll: () => [],
     querySelector: () => ({ content: '' }),
-    createElement: (tagName) => new FakeElement(tagName),
+    createElement: (tagName) => {
+      const element = new FakeElement(tagName);
+      created.push(element);
+      return element;
+    },
     createDocumentFragment: () => new FakeElement('fragment')
   };
 
@@ -132,25 +139,21 @@ function createEnvironment({ secureContext = true, confirmResult = true, storage
     location: { href: 'https://example.test/voice.html' },
     document,
     addEventListener() {},
-    // Deferred callbacks are queued, never fired automatically: the five-second
-    // auto-stop must not go off in the middle of a test.
+    // Deferred callbacks are queued, never fired automatically: neither the
+    // five-second auto-stop nor the microphone release may go off mid-test.
     setTimeout: (callback) => timers.push(callback),
     clearTimeout: (id) => {
       if (id) timers[id - 1] = null;
     },
     setInterval: () => 0,
     clearInterval() {},
-    confirm: (message) => {
-      confirmCalls.push(message);
-      return confirmResult;
-    },
     localStorage: {
       getItem: (key) => (storage.has(key) ? storage.get(key) : null),
       setItem: (key, value) => storage.set(key, String(value))
     },
     AudioContext: class {
       createMediaStreamSource() {
-        return { connect() {} };
+        return { connect() {}, disconnect() {} };
       }
       createAnalyser() {
         return { fftSize: 0, frequencyBinCount: 4, getByteTimeDomainData() {} };
@@ -189,6 +192,9 @@ function createEnvironment({ secureContext = true, confirmResult = true, storage
     }
   }
 
+  let microphoneRequests = 0;
+  const track = { readyState: 'live', stop() { track.readyState = 'ended'; }, getSettings: () => ({ sampleRate: 16000 }) };
+
   const context = vm.createContext({
     window,
     document,
@@ -198,10 +204,11 @@ function createEnvironment({ secureContext = true, confirmResult = true, storage
       userAgent: 'Mozilla/5.0 (Linux; Android 13) Chrome/120.0.0.0',
       platform: 'Android',
       mediaDevices: {
-        getUserMedia: async () => ({
-          getTracks: () => [{ stop() {} }],
-          getAudioTracks: () => [{ getSettings: () => ({ sampleRate: 16000 }) }]
-        })
+        getUserMedia: async () => {
+          microphoneRequests += 1;
+          track.readyState = 'live';
+          return { getTracks: () => [track], getAudioTracks: () => [track] };
+        }
       }
     },
     MediaRecorder: FakeMediaRecorder,
@@ -224,235 +231,277 @@ function createEnvironment({ secureContext = true, confirmResult = true, storage
         return 'data:audio/webm;base64,QUJD';
       }
     },
-    fetch: async () => ({ json: async () => (uploadOk ? { ok: true } : { ok: false, error: { message: 'nope' } }) })
+    fetch: async (url, options) => {
+      uploads.push(JSON.parse(options.body));
+      if (uploadGate) await uploadGate.promise;
+      return { json: async () => (uploadOk ? { ok: true } : { ok: false, error: { message: 'nope' } }) };
+    }
   });
   context.globalThis = context;
 
   source.runInContext(context);
 
-  /** Runs the callbacks the app deferred (the post-upload advance). */
-  const flushTimers = () => {
-    const pending = timers.splice(0, timers.length);
-    pending.forEach((callback) => callback?.());
+  return {
+    dom: { get: (id) => assertFound(findById(id), id) },
+    storage,
+    clock,
+    recorders,
+    uploads,
+    timers,
+    microphoneRequestCount: () => microphoneRequests,
+    /** Holds every upload open so a queue can be observed mid-flight. */
+    blockUploads() {
+      let release = () => {};
+      uploadGate = { promise: new Promise((resolve) => { release = resolve; }) };
+      return async () => {
+        uploadGate = null;
+        release();
+        await settle();
+      };
+    },
+    /** Runs the callbacks the app deferred (auto-stop, microphone release). */
+    flushTimers() {
+      timers.splice(0, timers.length).forEach((callback) => callback?.());
+    }
   };
-
-  return { dom, confirmCalls, storage, clock, recorders, timers, flushTimers };
 }
 
-const tick = () => new Promise((resolve) => setImmediate(resolve));
+function assertFound(element, id) {
+  assert.ok(element, `The page has no #${id}.`);
+  return element;
+}
 
-/** Drives a complete take through the real record/stop path. */
-async function recordTake(environment, durationMs = 1500) {
-  environment.dom.get('record-button').dispatch('click');
-  await tick();
+const settle = async () => {
+  for (let pass = 0; pass < 12; pass += 1) await new Promise((resolve) => setImmediate(resolve));
+};
+
+/** Drives a complete take on one card through the real record/stop path. */
+async function recordTake(environment, index, durationMs = 1500) {
+  environment.dom.get(`record-${index}`).dispatch('click');
+  await settle();
   environment.clock.now += durationMs;
-  environment.dom.get('stop-button').dispatch('click');
-  await tick();
+  environment.dom.get(`stop-${index}`).dispatch('click');
+  await settle();
 }
 
-async function uploadTake(environment) {
-  environment.dom.get('upload-button').dispatch('click');
-  await tick();
-  await tick();
+async function uploadTake(environment, index) {
+  environment.dom.get(`upload-${index}`).dispatch('click');
+  await settle();
 }
 
 const text = (environment, id) => environment.dom.get(id).textContent;
+const disabled = (environment, id) => environment.dom.get(id).disabled;
 
-// 1. The picker lists every phrase and starts on the first one.
+// 1. Every phrase gets its own card, with its own controls and its own text.
 {
   const environment = createEnvironment();
-  const select = environment.dom.get('phrase-select');
-  assert.equal(select.children.length, phrases.length, 'The picker must list every phrase.');
-  assert.equal(select.value, '0', 'The picker must start on the first phrase.');
-  assert.ok(select.children[3].textContent.includes(phrases[3].text), 'Options must carry the phrase text.');
-  assert.equal(text(environment, 'phrase-text'), phrases[0].text);
+  phrases.forEach((phrase, index) => {
+    assert.equal(text(environment, `phrase-${index}`), phrase.text, `Card ${index} must show its phrase.`);
+    for (const role of ['record', 'stop', 'play', 'upload']) {
+      assert.ok(environment.dom.get(`${role}-${index}`), `Card ${index} must have its own ${role} button.`);
+    }
+  });
+  assert.equal(
+    text(environment, 'summary-phrases'),
+    bootstrap.ui.summaryPhrases.replace('{recorded}', '0').replace('{total}', String(phrases.length))
+  );
 }
 
-// 2. Choosing a phrase jumps straight to it, skipping everything in between.
+// 2. A fresh card offers recording only; the rest of its buttons wait for a take.
 {
   const environment = createEnvironment();
-  const select = environment.dom.get('phrase-select');
-  select.value = '4';
-  select.dispatch('change');
-  assert.equal(text(environment, 'phrase-text'), phrases[4].text, 'Selecting a phrase must render it.');
-  assert.equal(select.value, '4', 'The picker must keep the chosen phrase.');
-  assert.deepEqual(environment.confirmCalls, [], 'With nothing recorded there is nothing to confirm.');
+  assert.equal(disabled(environment, 'record-0'), false, 'Recording must be the one thing on offer.');
+  assert.equal(disabled(environment, 'stop-0'), true);
+  assert.equal(disabled(environment, 'play-0'), true);
+  assert.equal(disabled(environment, 'upload-0'), true);
+  assert.equal(text(environment, 'page-status'), bootstrap.ui.ready);
 }
 
-// 3. "Next" moves on without recording the current phrase, and wraps around.
+// 3. One microphone, one take: recording a card locks every other card's record
+//    button, and stopping frees them again.
 {
   const environment = createEnvironment();
-  const next = environment.dom.get('next-button');
-  assert.equal(next.disabled, false, 'Next must be usable before anything is recorded.');
-  next.dispatch('click');
-  assert.equal(text(environment, 'phrase-text'), phrases[1].text, 'Next must skip to the following phrase.');
-  assert.equal(environment.dom.get('phrase-select').value, '1', 'The picker must follow a skip.');
+  environment.dom.get('record-2').dispatch('click');
+  await settle();
 
-  for (let step = 1; step < phrases.length; step += 1) next.dispatch('click');
-  assert.equal(text(environment, 'phrase-text'), phrases[0].text, 'Next must wrap back to the first phrase.');
-  assert.deepEqual(environment.confirmCalls, [], 'Skipping without a take must never prompt.');
+  assert.equal(disabled(environment, 'stop-2'), false, 'The live card must be stoppable.');
+  assert.equal(disabled(environment, 'record-2'), true, 'The live card cannot restart itself mid-take.');
+  assert.equal(disabled(environment, 'record-0'), true, 'Every other card must be locked.');
+  assert.equal(disabled(environment, 'record-9'), true, 'Every other card must be locked.');
+  assert.equal(text(environment, 'status-2'), bootstrap.ui.recording);
+
+  environment.clock.now += 1500;
+  environment.dom.get('stop-2').dispatch('click');
+  await settle();
+
+  assert.equal(disabled(environment, 'record-0'), false, 'Stopping must free the other cards.');
+  assert.equal(disabled(environment, 'record-9'), false);
 }
 
-// 4. A finished take leaves the record button available as "re-record".
+// 4. A finished take arms play and upload on its own card, and only there.
 {
   const environment = createEnvironment();
-  await recordTake(environment);
-  assert.equal(text(environment, 'status'), bootstrap.ui.recordingReady, 'The take must be ready.');
-  assert.equal(environment.dom.get('record-button').disabled, false, 'Re-recording must be possible.');
-  assert.equal(text(environment, 'record-label'), bootstrap.ui.reRecord, 'The button must offer re-recording.');
-  assert.equal(environment.dom.get('play-button').disabled, false);
-  assert.equal(environment.dom.get('upload-button').disabled, false);
+  await recordTake(environment, 3);
+  assert.equal(text(environment, 'status-3'), bootstrap.ui.recordingReady);
+  assert.equal(disabled(environment, 'play-3'), false);
+  assert.equal(disabled(environment, 'upload-3'), false);
+  assert.equal(text(environment, 'record-label-3'), bootstrap.ui.reRecord, 'The button must offer re-recording.');
+  assert.equal(disabled(environment, 'upload-4'), true, 'A neighbouring card must be untouched.');
+  assert.equal(text(environment, 'record-label-4'), bootstrap.ui.record);
 }
 
-// 5. Re-recording discards the waiting take and starts a fresh one, no prompt.
+// 5. Re-recording replaces the waiting take without asking.
 {
   const environment = createEnvironment();
-  await recordTake(environment);
-  environment.dom.get('record-button').dispatch('click');
-  await tick();
+  await recordTake(environment, 0);
+  environment.dom.get('record-0').dispatch('click');
+  await settle();
   assert.equal(environment.recorders.length, 2, 'A second recorder must be started.');
   assert.equal(environment.recorders[1].state, 'recording', 'The new take must be running.');
-  assert.equal(environment.dom.get('stop-button').disabled, false, 'Stop must be armed again.');
-  assert.deepEqual(environment.confirmCalls, [], 'Re-recording is explicit and must not prompt.');
-  assert.equal(text(environment, 'record-label'), bootstrap.ui.record, 'The label returns to "record" while recording.');
+  assert.equal(text(environment, 'record-label-0'), bootstrap.ui.record, 'The label returns to "record" mid-take.');
 }
 
-// 6. Skipping with an unuploaded take asks first, and honours "no".
-{
-  const environment = createEnvironment({ confirmResult: false });
-  await recordTake(environment);
-  environment.dom.get('next-button').dispatch('click');
-  assert.equal(environment.confirmCalls.length, 1, 'The volunteer must be warned before losing a take.');
-  assert.equal(text(environment, 'phrase-text'), phrases[0].text, 'A refused skip must stay on the phrase.');
-  assert.equal(environment.dom.get('upload-button').disabled, false, 'The take must survive a refused skip.');
-}
-
-// 7. Confirming the warning skips the phrase and drops the take.
-{
-  const environment = createEnvironment({ confirmResult: true });
-  await recordTake(environment);
-  environment.dom.get('next-button').dispatch('click');
-  assert.equal(environment.confirmCalls.length, 1);
-  assert.equal(text(environment, 'phrase-text'), phrases[1].text, 'A confirmed skip must advance.');
-  assert.equal(text(environment, 'status'), bootstrap.ui.recordingDiscarded, 'The discard must be reported.');
-  assert.equal(environment.dom.get('upload-button').disabled, true, 'The discarded take must be gone.');
-}
-
-// 8. A refused pick rolls the select back so it cannot disagree with the screen.
-{
-  const environment = createEnvironment({ confirmResult: false });
-  await recordTake(environment);
-  const select = environment.dom.get('phrase-select');
-  select.value = '6';
-  select.dispatch('change');
-  assert.equal(select.value, '0', 'The picker must roll back when the move is refused.');
-  assert.equal(text(environment, 'phrase-text'), phrases[0].text);
-}
-
-// 9. Navigation is locked while a take is in progress, and freed after it stops.
+// 6. A take is too short to keep, and says so without arming the upload.
 {
   const environment = createEnvironment();
-  environment.dom.get('record-button').dispatch('click');
-  await tick();
-  assert.equal(environment.dom.get('next-button').disabled, true, 'No skipping mid-take.');
-  assert.equal(environment.dom.get('phrase-select').disabled, true, 'No phrase switch mid-take.');
-  environment.clock.now += 1500;
-  environment.dom.get('stop-button').dispatch('click');
-  await tick();
-  assert.equal(environment.dom.get('next-button').disabled, false);
-  assert.equal(environment.dom.get('phrase-select').disabled, false);
+  await recordTake(environment, 1, 300);
+  assert.equal(text(environment, 'status-1'), bootstrap.ui.tooShort);
+  assert.equal(disabled(environment, 'upload-1'), true, 'A rejected take must not be uploadable.');
+  assert.equal(text(environment, 'record-label-1'), bootstrap.ui.record, 'No take is waiting.');
 }
 
-// 10. A successful upload is tallied per phrase and shown in the picker.
+// 7. Uploading one card tallies it, empties it for another sample, and leaves
+//    every other card alone.
 {
   const environment = createEnvironment();
-  await recordTake(environment);
-  await uploadTake(environment);
+  await recordTake(environment, 0);
+  await recordTake(environment, 1);
+  await uploadTake(environment, 0);
+
+  assert.equal(environment.uploads.length, 1, 'Only the uploaded card may be sent.');
+  assert.equal(environment.uploads[0].phrase_id, phrases[0].id, 'The payload must carry that card\'s phrase.');
   assert.deepEqual(
     JSON.parse(environment.storage.get(UPLOAD_COUNTS_KEY)),
     { [phrases[0].id]: 1 },
     'A successful upload must be tallied against its phrase.'
   );
-  assert.ok(
-    environment.dom.get('phrase-select').children[0].textContent.includes('✓'),
-    'The uploaded phrase must be marked in the picker.'
-  );
+  assert.equal(text(environment, 'tally-0'), bootstrap.ui.recordedCount.replace('{count}', '1'));
+  assert.equal(disabled(environment, 'upload-0'), true, 'The uploaded take is gone.');
+  assert.equal(disabled(environment, 'record-0'), false, 'The card must be ready for another sample.');
+  assert.equal(text(environment, 'record-label-0'), bootstrap.ui.record);
+  assert.equal(disabled(environment, 'upload-1'), false, 'The other card keeps its own waiting take.');
 }
 
-// 11. A stored tally is restored on the next visit, on the phrase and the picker.
-{
-  const environment = createEnvironment({ storageSeed: { [phrases[0].id]: 3 } });
-  assert.ok(environment.dom.get('phrase-select').children[0].textContent.includes('3'), 'The stored count must show.');
-  assert.equal(
-    text(environment, 'phrase-note'),
-    bootstrap.ui.recordedCount.replace('{count}', '3'),
-    'The current phrase must show how many samples it already has.'
-  );
-}
-
-// 12. After an upload the app moves on to a phrase that has no samples yet.
-{
-  const seed = Object.fromEntries(phrases.slice(1, 4).map((phrase) => [phrase.id, 1]));
-  const environment = createEnvironment({ storageSeed: seed });
-  await recordTake(environment);
-  await uploadTake(environment);
-  environment.flushTimers();
-  assert.equal(
-    text(environment, 'phrase-text'),
-    phrases[4].text,
-    'The next phrase must be the first one still missing a sample, not simply index + 1.'
-  );
-}
-
-// 13. The completion card appears only once every phrase has a sample.
-{
-  const seed = Object.fromEntries(phrases.slice(1).map((phrase) => [phrase.id, 1]));
-  const environment = createEnvironment({ storageSeed: seed });
-  assert.equal(text(environment, 'phrase-text'), phrases[0].text, 'The only uncovered phrase is the first.');
-  await recordTake(environment);
-  await uploadTake(environment);
-  environment.flushTimers();
-  assert.equal(text(environment, 'phrase-text'), '✓', 'Covering the last remaining phrase must complete the set.');
-  assert.equal(text(environment, 'status'), bootstrap.ui.completed);
-  assert.equal(environment.dom.get('phrase-select').disabled, false, 'The picker must survive the completion card.');
-
-  // Picking a phrase leaves the card and makes recording possible again.
-  const select = environment.dom.get('phrase-select');
-  select.value = '2';
-  select.dispatch('change');
-  assert.equal(text(environment, 'phrase-text'), phrases[2].text);
-  assert.equal(environment.dom.get('record-button').disabled, false, 'Recording must resume after the card.');
-}
-
-// 14. Uploading before every phrase is covered must not show the completion card.
+// 8. A second sample of the same phrase stacks on the tally.
 {
   const environment = createEnvironment();
-  environment.dom.get('phrase-select').value = String(phrases.length - 1);
-  environment.dom.get('phrase-select').dispatch('change');
-  await recordTake(environment);
-  await uploadTake(environment);
-  environment.flushTimers();
-  assert.notEqual(text(environment, 'phrase-text'), '✓', 'Reaching the last phrase is not the same as covering them all.');
-  assert.equal(text(environment, 'phrase-text'), phrases[0].text, 'It must wrap to the first uncovered phrase.');
+  await recordTake(environment, 0);
+  await uploadTake(environment, 0);
+  await recordTake(environment, 0);
+  await uploadTake(environment, 0);
+  assert.deepEqual(JSON.parse(environment.storage.get(UPLOAD_COUNTS_KEY)), { [phrases[0].id]: 2 });
+  assert.equal(text(environment, 'tally-0'), bootstrap.ui.recordedCount.replace('{count}', '2'));
+  assert.equal(text(environment, 'summary-samples'), bootstrap.ui.summarySamples.replace('{count}', '2'));
+  assert.equal(
+    text(environment, 'summary-phrases'),
+    bootstrap.ui.summaryPhrases.replace('{recorded}', '1').replace('{total}', String(phrases.length)),
+    'Two samples of one phrase still cover one phrase.'
+  );
 }
 
-// 15. A failed upload keeps the take, and never tallies it.
+// 9. A failed upload keeps its take, offers a retry, and never tallies.
 {
   const environment = createEnvironment({ uploadOk: false });
-  await recordTake(environment);
-  await uploadTake(environment);
+  await recordTake(environment, 5);
+  await uploadTake(environment, 5);
   assert.equal(environment.storage.has(UPLOAD_COUNTS_KEY), false, 'A failed upload must not be tallied.');
-  assert.equal(environment.dom.get('upload-button').disabled, false, 'The take must be kept for a retry.');
-  assert.equal(text(environment, 'upload-label'), bootstrap.ui.retry, 'The button must offer a retry.');
+  assert.equal(disabled(environment, 'upload-5'), false, 'The take must be kept for a retry.');
+  assert.equal(text(environment, 'upload-label-5'), bootstrap.ui.retry, 'The button must offer a retry.');
+  assert.equal(text(environment, 'tally-5'), '', 'Nothing was uploaded, so nothing is tallied.');
 }
 
-// 16. An insecure page blocks recording but leaves phrase navigation usable.
+// 10. The upload-all bar counts waiting takes and appears only once it beats
+//     the card's own button, which is already on screen.
+{
+  const environment = createEnvironment();
+  assert.equal(environment.dom.get('upload-all-bar').hidden, true, 'Nothing waiting, no bar.');
+
+  await recordTake(environment, 0);
+  assert.equal(environment.dom.get('upload-all-bar').hidden, true, 'One take is the card\'s own business.');
+
+  await recordTake(environment, 1);
+  assert.equal(environment.dom.get('upload-all-bar').hidden, false, 'Two waiting takes earn the bar.');
+  assert.equal(text(environment, 'upload-all-label'), bootstrap.ui.uploadAll.replace('{count}', '2'));
+
+  await recordTake(environment, 2);
+  assert.equal(text(environment, 'upload-all-label'), bootstrap.ui.uploadAll.replace('{count}', '3'));
+}
+
+// 11. Upload-all sends every waiting take, one at a time, and clears the bar.
+{
+  const environment = createEnvironment();
+  await recordTake(environment, 0);
+  await recordTake(environment, 1);
+  await recordTake(environment, 2);
+
+  const releaseUploads = environment.blockUploads();
+  environment.dom.get('upload-all-button').dispatch('click');
+  await settle();
+
+  assert.equal(environment.uploads.length, 1, 'Uploads must be serialized, not fired at once.');
+  assert.equal(text(environment, 'upload-label-0'), bootstrap.ui.uploading, 'The first take is on its way.');
+  assert.equal(text(environment, 'upload-label-1'), bootstrap.ui.uploadQueued, 'The rest wait their turn visibly.');
+  assert.equal(disabled(environment, 'record-1'), true, 'A queued card cannot be recorded over.');
+
+  await releaseUploads();
+
+  assert.equal(environment.uploads.length, 3, 'Every waiting take must be sent.');
+  assert.deepEqual(
+    JSON.parse(environment.storage.get(UPLOAD_COUNTS_KEY)),
+    { [phrases[0].id]: 1, [phrases[1].id]: 1, [phrases[2].id]: 1 },
+    'Each phrase must be tallied once.'
+  );
+  assert.equal(environment.dom.get('upload-all-bar').hidden, true, 'Nothing is waiting any more.');
+  assert.equal(
+    text(environment, 'summary-phrases'),
+    bootstrap.ui.summaryPhrases.replace('{recorded}', '3').replace('{total}', String(phrases.length))
+  );
+}
+
+// 12. The microphone is asked for once and held across cards.
+{
+  const environment = createEnvironment();
+  await recordTake(environment, 0);
+  await recordTake(environment, 1);
+  assert.equal(environment.microphoneRequestCount(), 1, 'A second card must reuse the open microphone.');
+
+  // The idle release is a deferred callback; once it runs, the next take asks again.
+  environment.flushTimers();
+  await recordTake(environment, 2);
+  assert.equal(environment.microphoneRequestCount(), 2, 'A released microphone must be requested again.');
+}
+
+// 13. A stored tally is restored onto the cards and the summary.
+{
+  const seed = { [phrases[0].id]: 3, [phrases[4].id]: 1 };
+  const environment = createEnvironment({ storageSeed: seed });
+  assert.equal(text(environment, 'tally-0'), bootstrap.ui.recordedCount.replace('{count}', '3'));
+  assert.equal(text(environment, 'tally-4'), bootstrap.ui.recordedCount.replace('{count}', '1'));
+  assert.equal(text(environment, 'tally-1'), '', 'A phrase with no samples shows no tally.');
+  assert.equal(text(environment, 'summary-samples'), bootstrap.ui.summarySamples.replace('{count}', '4'));
+  assert.equal(
+    text(environment, 'summary-phrases'),
+    bootstrap.ui.summaryPhrases.replace('{recorded}', '2').replace('{total}', String(phrases.length))
+  );
+}
+
+// 14. An insecure page blocks recording on every card and says why once.
 {
   const environment = createEnvironment({ secureContext: false });
-  assert.equal(environment.dom.get('record-button').disabled, true, 'Recording needs HTTPS.');
-  assert.equal(environment.dom.get('next-button').disabled, false, 'Navigation must stay usable.');
-  assert.equal(environment.dom.get('phrase-select').disabled, false, 'The picker must stay usable.');
-  assert.equal(text(environment, 'status'), bootstrap.ui.insecureContext);
+  assert.equal(text(environment, 'page-status'), bootstrap.ui.insecureContext);
+  phrases.forEach((phrase, index) => {
+    assert.equal(disabled(environment, `record-${index}`), true, `Card ${index} must not offer recording.`);
+  });
 }
 
-console.log('UI behaviour tests passed: phrase picker, skipping, re-recording, and upload tallies.');
+console.log('UI behaviour tests passed: per-phrase recorders, single-take locking, uploads, and tallies.');

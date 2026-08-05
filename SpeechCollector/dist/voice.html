@@ -37,11 +37,10 @@ body {
 button { font: inherit; }
 
 .page-shell {
-  min-height: 100vh;
-  min-height: 100dvh;
   display: grid;
-  place-items: center;
-  padding: max(16px, env(safe-area-inset-top)) 14px max(20px, env(safe-area-inset-bottom));
+  justify-items: center;
+  /* Room for the upload-all bar, which floats over the end of the list. */
+  padding: max(16px, env(safe-area-inset-top)) 14px calc(104px + env(safe-area-inset-bottom));
 }
 
 .collector-card {
@@ -75,30 +74,34 @@ h1 {
   line-height: 1.55;
 }
 
-.progress-block { margin-top: 24px; }
-
-.eyebrow,
-.phrase-progress,
-.phrase-note,
+.list-hint,
 .microphone-hint,
-.skip-hint,
 .privacy-note { color: var(--muted); }
 
-.eyebrow {
-  margin: 0;
-  text-align: center;
-  font-size: 0.95rem;
-  font-weight: 700;
+/* ---- summary ------------------------------------------------------------ */
+
+.summary {
+  margin-top: 22px;
+  padding: 13px 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #fbfdfc;
 }
 
-.phrase-progress {
-  margin: 5px 0 9px;
-  text-align: center;
+.summary-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  color: var(--muted);
   font-size: 0.85rem;
 }
 
+#summary-phrases { color: var(--text); font-weight: 700; }
+
 .progress-track {
   height: 7px;
+  margin-top: 9px;
   overflow: hidden;
   border-radius: 99px;
   background: #e7eee9;
@@ -106,135 +109,177 @@ h1 {
 
 .progress-track span {
   display: block;
-  width: 10%;
+  width: 0;
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, var(--primary), #2e9870);
   transition: width 280ms ease;
 }
 
-.phrase-picker {
-  display: grid;
-  gap: 6px;
-  margin-top: 18px;
+.list-hint {
+  margin: 15px 2px 0;
+  font-size: 0.86rem;
+  line-height: 1.7;
 }
 
-.phrase-picker .eyebrow { text-align: start; }
+.microphone-hint {
+  margin: 6px 2px 0;
+  font-size: 0.86rem;
+  line-height: 1.7;
+}
 
-.phrase-select {
-  width: 100%;
-  min-height: 52px;
-  padding: 12px 14px;
-  border: 1px solid #cfe4d8;
-  border-radius: 16px;
-  color: var(--text);
-  background: #f6faf7;
-  cursor: pointer;
-  font: inherit;
-  font-size: 1.02rem;
+/* ---- one recorder per phrase -------------------------------------------- */
+
+.phrase-list {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phrase-card {
+  padding: 13px 13px 15px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--card-bg);
+  box-shadow: 0 6px 18px rgba(20, 73, 49, 0.05);
+  transition: border-color 160ms ease;
+}
+
+.phrase-card.card-recording { border-color: rgba(179, 38, 30, 0.45); box-shadow: 0 0 0 3px rgba(179, 38, 30, 0.07); }
+.phrase-card.card-ready { border-color: rgba(23, 107, 69, 0.4); }
+.phrase-card.card-queued,
+.phrase-card.card-uploading { border-color: rgba(214, 165, 58, 0.55); }
+.phrase-card.card-failed { border-color: rgba(179, 38, 30, 0.4); }
+
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.card-number {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  background: #eef4f0;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.7rem;
+}
+
+.card-tally {
+  margin-inline-start: auto;
+  padding: 2px 9px;
+  border-radius: 99px;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  font-size: 0.72rem;
   font-weight: 700;
 }
 
-.phrase-select:focus-visible { outline: 4px solid rgba(214, 165, 58, 0.35); outline-offset: 2px; }
-.phrase-select:disabled { cursor: not-allowed; opacity: 0.5; }
-
-.phrase-note {
-  margin: 10px 0 0;
-  text-align: center;
-  font-size: 0.82rem;
-}
-
-.phrase-note:empty { display: none; }
-
-.skip-hint {
-  margin: 12px 4px 0;
-  text-align: center;
-  font-size: 0.82rem;
-  line-height: 1.6;
-}
+.card-tally:empty { display: none; }
 
 .phrase-panel {
   display: grid;
-  min-height: 142px;
   place-items: center;
-  margin: 18px 0;
-  padding: 24px 16px;
+  padding: 15px 12px;
   border: 1px solid #cfe4d8;
-  border-radius: 22px;
+  border-radius: 16px;
   background: linear-gradient(155deg, #fbfefc, var(--primary-soft));
 }
 
 .phrase-text {
   margin: 0;
   text-align: center;
-  font-size: clamp(2rem, 9vw, 3.25rem);
+  font-size: clamp(1.4rem, 6vw, 1.75rem);
   font-weight: 700;
   line-height: 1.55;
 }
 
-.recorder-panel { text-align: center; }
+.recorder-panel {
+  margin-top: 11px;
+  text-align: center;
+}
 
-#waveform {
+.waveform {
   display: block;
   width: 100%;
-  height: 68px;
-  border-radius: 14px;
+  height: 52px;
+  border-radius: 12px;
   background: #f6faf7;
 }
 
+.card-recording .waveform { background: #fdf1f0; }
+
 .timer {
   display: block;
-  margin-top: 7px;
+  margin-top: 6px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 1.45rem;
+  font-size: 1.2rem;
   font-weight: 800;
   direction: ltr;
 }
 
-.microphone-hint {
-  margin: 6px 0 0;
-  font-size: 0.88rem;
-}
+.card-recording .timer { color: var(--danger); }
+
+/* ---- status ------------------------------------------------------------- */
 
 .status {
-  min-height: 48px;
-  margin: 15px 0;
-  padding: 12px 14px;
-  border-radius: 14px;
+  margin: 12px 0 0;
+  padding: 10px 13px;
+  border-radius: 13px;
   text-align: center;
+  font-size: 0.85rem;
   line-height: 1.55;
 }
+
+#page-status { margin: 15px 0 0; min-height: 44px; }
 
 .status-info { color: #38594a; background: #f0f6f2; }
 .status-success { color: #0d5936; background: #e5f7ed; }
 .status-error { color: #8d1f1a; background: #fcecea; }
+/* A card with nothing to report says nothing; ten identical hints are noise. */
+.status-empty { display: none; }
+
+/* ---- buttons ------------------------------------------------------------ */
 
 .standalone-banner {
   display: grid;
-  margin: 0 0 15px;
+  margin: 15px 0 0;
 }
 
 .standalone-banner[hidden] { display: none; }
 
 .standalone-banner .button { text-decoration: none; }
 
+.phrase-list { margin-top: 16px; }
+
+/* On the card itself, not on .status: a card with nothing to report hides its
+   status box entirely, and the buttons must not close up against the timer. */
 .button-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 11px;
+  gap: 9px;
+  margin-top: 12px;
 }
 
 .button {
-  min-height: 58px;
+  min-height: 50px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
-  padding: 12px 14px;
+  gap: 8px;
+  padding: 11px 12px;
   border: 0;
-  border-radius: 16px;
+  border-radius: 14px;
   cursor: pointer;
-  font-size: 1.05rem;
+  font-size: 0.98rem;
   font-weight: 800;
   transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
   -webkit-tap-highlight-color: transparent;
@@ -244,11 +289,30 @@ h1 {
 .button:focus-visible { outline: 4px solid rgba(214, 165, 58, 0.35); outline-offset: 2px; }
 .button:disabled { cursor: not-allowed; opacity: 0.42; }
 .button-primary { color: white; background: var(--primary); box-shadow: 0 8px 20px rgba(23, 107, 69, 0.18); }
+.button-primary:disabled { box-shadow: none; }
 .button-danger { color: white; background: var(--danger); }
 .button-secondary { color: var(--primary-dark); border: 2px solid #b9d8c7; background: white; }
 .button-accent { color: #302000; background: #f1c45f; }
-.button-ghost { color: var(--primary-dark); border: 1px solid var(--border); background: #f6faf7; }
 .button-wide { grid-column: 1 / -1; }
+
+/* ---- upload-all bar ----------------------------------------------------- */
+
+.upload-all-bar {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 5;
+  display: grid;
+  padding: 12px 14px calc(14px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 -12px 28px rgba(20, 73, 49, 0.1);
+  backdrop-filter: blur(6px);
+}
+
+.upload-all-bar[hidden] { display: none; }
+
+.upload-all-bar .button { width: min(100%, 592px); margin: 0 auto; }
 
 .privacy-note {
   margin: 17px 4px 0;
@@ -259,6 +323,7 @@ h1 {
 
 @media (min-width: 600px) {
   .collector-card { padding: 30px 34px; }
+  .phrase-card { padding: 16px 16px 18px; }
   .button-grid { grid-template-columns: repeat(4, 1fr); }
   .button-wide { grid-column: 1 / -1; }
 }
@@ -266,7 +331,6 @@ h1 {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
 }
-
 
   </style>
 </head>
@@ -278,31 +342,20 @@ h1 {
         <h1 id="hero-title" data-i18n="hero"></h1>
       </header>
 
-      <div class="progress-block">
-        <p class="eyebrow" data-i18n="currentPhrase"></p>
-        <p id="phrase-progress" class="phrase-progress" aria-live="polite"></p>
+      <div class="summary">
+        <p class="summary-line">
+          <span id="summary-phrases"></span>
+          <span id="summary-samples"></span>
+        </p>
         <div class="progress-track" aria-hidden="true">
           <span id="progress-fill"></span>
         </div>
       </div>
 
-      <div class="phrase-picker">
-        <label id="phrase-select-label" class="eyebrow" for="phrase-select" data-i18n="choosePhrase"></label>
-        <select id="phrase-select" class="phrase-select"></select>
-      </div>
+      <p class="list-hint" data-i18n="listHint"></p>
+      <p class="microphone-hint" data-i18n="microphoneHint"></p>
 
-      <div class="phrase-panel">
-        <p id="phrase-text" class="phrase-text" lang="ar"></p>
-        <p id="phrase-note" class="phrase-note" aria-live="polite"></p>
-      </div>
-
-      <div class="recorder-panel">
-        <canvas id="waveform" width="720" height="112" aria-label="موجة الصوت"></canvas>
-        <output id="timer" class="timer" aria-live="off">00:00.0</output>
-        <p class="microphone-hint" data-i18n="microphoneHint"></p>
-      </div>
-
-      <div id="status" class="status status-info" role="status" aria-live="polite"></div>
+      <div id="page-status" class="status status-info" role="status" aria-live="polite"></div>
 
       <div id="standalone-banner" class="standalone-banner" hidden>
         <a id="standalone-link" class="button button-primary button-wide" target="_blank" rel="noopener">
@@ -310,32 +363,20 @@ h1 {
         </a>
       </div>
 
-      <div class="button-grid">
-        <button id="record-button" class="button button-primary" type="button">
-          <span aria-hidden="true">●</span><span id="record-label" data-i18n="record"></span>
-        </button>
-        <button id="stop-button" class="button button-danger" type="button" disabled>
-          <span aria-hidden="true">■</span><span data-i18n="stop"></span>
-        </button>
-        <button id="play-button" class="button button-secondary" type="button" disabled>
-          <span aria-hidden="true">▶</span><span id="play-label" data-i18n="play"></span>
-        </button>
-        <button id="upload-button" class="button button-accent" type="button" disabled>
-          <span aria-hidden="true">⬆</span><span id="upload-label" data-i18n="upload"></span>
-        </button>
-        <button id="next-button" class="button button-ghost button-wide" type="button">
-          <span data-i18n="next"></span><span aria-hidden="true">←</span>
-        </button>
-      </div>
-
-      <p class="skip-hint" data-i18n="skipHint"></p>
+      <ul id="phrase-list" class="phrase-list"></ul>
 
       <p class="privacy-note"><span aria-hidden="true">🔒</span> <span data-i18n="privacy"></span></p>
     </section>
   </main>
 
+  <div id="upload-all-bar" class="upload-all-bar" hidden>
+    <button id="upload-all-button" class="button button-primary button-wide" type="button">
+      <span aria-hidden="true">⬆</span><span id="upload-all-label"></span>
+    </button>
+  </div>
+
   <audio id="audio-player" preload="metadata"></audio>
-  <script id="bootstrap-data" type="application/json">{"endpoint":"https://script.google.com/macros/s/AKfycbwxiX4ztcQMl9m0K1tDcvsLTZiU6EkWk8Np9nPfdFOAnX3cnuGAsHeQ3IHv4TJANI6PFQ/exec","standaloneUrl":"https://mahmoudmabrok.github.io/SaloAleh/voice.html","app":{"title":"Dhikr Speech Dataset","htmlTitle":"Arabic Speech Dataset Collector","language":"ar","direction":"rtl","timezone":"Africa/Cairo"},"recording":{"minimumDurationMs":1000,"maximumDurationMs":5000,"maximumUploadBytes":5242880,"preferredSampleRate":16000,"preferredChannelCount":1,"acceptedMimeTypes":["audio/wav","audio/x-wav","audio/webm","audio/ogg","audio/mp4","audio/mpeg"]},"theme":{"primary":"#176b45","primaryDark":"#0d4f32","primarySoft":"#e9f6ef","accent":"#d6a53a","pageBackground":"#f4f8f5","cardBackground":"#ffffff","text":"#17362a","mutedText":"#61746b","danger":"#b3261e"},"ui":{"hero":"❤️ ساعدنا في بناء ميزة الذكر بالصوت","currentPhrase":"العبارة الحالية","phraseProgress":"العبارة {current} من {total}","choosePhrase":"اختر العبارة التي تريد تسجيلها","recordedCount":"عدد التسجيلات المرفوعة من هذه العبارة: {count}","record":"تسجيل","reRecord":"إعادة التسجيل","stop":"إيقاف","play":"استماع","pause":"إيقاف الاستماع","upload":"رفع التسجيل","uploading":"جارٍ الرفع…","next":"التالي","timerReady":"00:00.0","microphoneHint":"اقرأ العبارة بصوت واضح في مكان هادئ.","privacy":"لا نجمع الاسم أو البريد أو الهاتف أو الموقع. يُحفظ التسجيل والبيانات التقنية الأساسية فقط.","ready":"اضغط «تسجيل» واسمح باستخدام الميكروفون.","recording":"جارٍ التسجيل…","recordingReady":"التسجيل جاهز. استمع إليه أو ارفعه.","microphoneDenied":"تم رفض إذن الميكروفون. افتح إعدادات الموقع في المتصفح، فعّل الميكروفون، ثم أعد تحميل الصفحة.","microphoneBlocked":"المتصفح لا يعرض طلب الإذن لأن الصفحة معروضة داخل إطار لا يسمح بالميكروفون. افتح صفحة التسجيل في نافذة مستقلة ثم اضغط «تسجيل».","microphoneMissing":"لم يُعثر على ميكروفون متاح. وصّل ميكروفونًا أو تحقق من إعدادات الصوت ثم حاول مجددًا.","microphoneBusy":"الميكروفون مشغول بتطبيق آخر. أغلق التطبيقات التي تستخدمه ثم حاول مجددًا.","insecureContext":"التسجيل يتطلب فتح الصفحة عبر رابط https. افتح الرابط الرسمي للصفحة ثم حاول مجددًا.","openStandalone":"فتح صفحة التسجيل","unsupported":"هذا المتصفح لا يدعم تسجيل الصوت. جرّب إصدارًا حديثًا من Chrome أو Safari.","tooShort":"التسجيل قصير جدًا. سجّل لمدة ثانية واحدة على الأقل.","uploadSuccessTitle":"✅ شكرًا لك!","uploadSuccessBody":"تم رفع العينة بنجاح.","uploadFailedTitle":"فشل رفع التسجيل","uploadFailedBody":"احتفظنا بالتسجيل. تحقق من الإنترنت ثم حاول مجددًا.","retry":"إعادة المحاولة","discardConfirm":"لديك تسجيل لم يُرفع بعد. الانتقال إلى عبارة أخرى سيحذفه. هل تريد المتابعة؟","recordingDiscarded":"تم حذف التسجيل غير المرفوع. اضغط «تسجيل» للبدء من جديد.","skipHint":"يمكنك تخطي أي عبارة أو اختيار عبارة أخرى في أي وقت.","completed":"شكرًا! أكملت جميع العبارات. يمكنك البدء من جديد وجمع عينات إضافية.","restart":"البدء من جديد"},"phrases":[{"id":1,"text":"سبحان الله"},{"id":2,"text":"الحمد لله"},{"id":3,"text":"الله أكبر"},{"id":4,"text":"لا إله إلا الله"},{"id":5,"text":"أستغفر الله"},{"id":6,"text":"سبحان الله وبحمده"},{"id":7,"text":"سبحان الله العظيم وبحمده"},{"id":8,"text":"لا حول ولا قوة إلا بالله"},{"id":9,"text":"اللهم صل على محمد"},{"id":10,"text":"اللهم صل وسلم على نبينا محمد"}]}</script>
+  <script id="bootstrap-data" type="application/json">{"endpoint":"https://script.google.com/macros/s/AKfycbwxiX4ztcQMl9m0K1tDcvsLTZiU6EkWk8Np9nPfdFOAnX3cnuGAsHeQ3IHv4TJANI6PFQ/exec","standaloneUrl":"https://mahmoudmabrok.github.io/SaloAleh/voice.html","app":{"title":"Dhikr Speech Dataset","htmlTitle":"Arabic Speech Dataset Collector","language":"ar","direction":"rtl","timezone":"Africa/Cairo"},"recording":{"minimumDurationMs":1000,"maximumDurationMs":5000,"maximumUploadBytes":5242880,"preferredSampleRate":16000,"preferredChannelCount":1,"acceptedMimeTypes":["audio/wav","audio/x-wav","audio/webm","audio/ogg","audio/mp4","audio/mpeg"]},"theme":{"primary":"#176b45","primaryDark":"#0d4f32","primarySoft":"#e9f6ef","accent":"#d6a53a","pageBackground":"#f4f8f5","cardBackground":"#ffffff","text":"#17362a","mutedText":"#61746b","danger":"#b3261e"},"ui":{"hero":"❤️ ساعدنا في بناء ميزة الذكر بالصوت","listHint":"لكل عبارة مسجّلها الخاص. سجّل وارفع أي عبارة على حدة، وكرّرها كما تشاء — كل عينة إضافية تفيدنا.","summaryPhrases":"{recorded} من {total} عبارات لها تسجيل","summarySamples":"{count} عينة مرفوعة","recordedCount":"✓ {count} عينة مرفوعة","record":"تسجيل","reRecord":"إعادة التسجيل","stop":"إيقاف","play":"استماع","pause":"إيقاف الاستماع","upload":"رفع التسجيل","uploading":"جارٍ الرفع…","uploadQueued":"في الانتظار…","uploadAll":"رفع كل التسجيلات الجاهزة ({count})","timerReady":"00:00.0","microphoneHint":"اقرأ العبارة بصوت واضح في مكان هادئ.","privacy":"لا نجمع الاسم أو البريد أو الهاتف أو الموقع. يُحفظ التسجيل والبيانات التقنية الأساسية فقط.","ready":"اضغط «تسجيل» عند أي عبارة واسمح باستخدام الميكروفون.","recording":"جارٍ التسجيل…","recordingReady":"التسجيل جاهز. استمع إليه أو ارفعه.","microphoneDenied":"تم رفض إذن الميكروفون. افتح إعدادات الموقع في المتصفح، فعّل الميكروفون، ثم أعد تحميل الصفحة.","microphoneBlocked":"المتصفح لا يعرض طلب الإذن لأن الصفحة معروضة داخل إطار لا يسمح بالميكروفون. افتح صفحة التسجيل في نافذة مستقلة ثم اضغط «تسجيل».","microphoneMissing":"لم يُعثر على ميكروفون متاح. وصّل ميكروفونًا أو تحقق من إعدادات الصوت ثم حاول مجددًا.","microphoneBusy":"الميكروفون مشغول بتطبيق آخر. أغلق التطبيقات التي تستخدمه ثم حاول مجددًا.","insecureContext":"التسجيل يتطلب فتح الصفحة عبر رابط https. افتح الرابط الرسمي للصفحة ثم حاول مجددًا.","openStandalone":"فتح صفحة التسجيل","unsupported":"هذا المتصفح لا يدعم تسجيل الصوت. جرّب إصدارًا حديثًا من Chrome أو Safari.","tooShort":"التسجيل قصير جدًا. سجّل لمدة ثانية واحدة على الأقل.","tooLarge":"حجم التسجيل كبير جدًا. سجّل مقطعًا أقصر ثم حاول مجددًا.","uploadSuccessTitle":"✅ شكرًا لك!","uploadSuccessBody":"تم رفع العينة. يمكنك تسجيل عينة أخرى لنفس العبارة.","uploadFailedTitle":"فشل رفع التسجيل","uploadFailedBody":"احتفظنا بالتسجيل. تحقق من الإنترنت ثم حاول مجددًا.","retry":"إعادة المحاولة"},"phrases":[{"id":1,"text":"سبحان الله"},{"id":2,"text":"الحمد لله"},{"id":3,"text":"الله أكبر"},{"id":4,"text":"لا إله إلا الله"},{"id":5,"text":"أستغفر الله"},{"id":6,"text":"سبحان الله وبحمده"},{"id":7,"text":"سبحان الله العظيم وبحمده"},{"id":8,"text":"لا حول ولا قوة إلا بالله"},{"id":9,"text":"اللهم صل على محمد"},{"id":10,"text":"اللهم صل وسلم على نبينا محمد"}]}</script>
   <script>
 'use strict';
 
@@ -343,49 +384,64 @@ h1 {
   const config = JSON.parse(document.getElementById('bootstrap-data').textContent);
   const $ = (id) => document.getElementById(id);
 
-  // Per-device tally of successful uploads, used only to mark phrases the
-  // volunteer already covered so a free phrase choice is an informed one.
+  // Per-device tally of successful uploads, shown on every card so a volunteer
+  // can see at a glance which phrases they have already covered.
   const UPLOAD_COUNTS_KEY = 'speech_collector_upload_counts';
 
+  // The microphone is held between takes so recording a run of cards prompts
+  // once instead of once per card, and released again when the volunteer stops.
+  const MICROPHONE_IDLE_RELEASE_MS = 30000;
+
+  // Below this the bar would only duplicate a card's own upload button, which
+  // is already on screen. It earns its place once several takes are waiting.
+  const UPLOAD_ALL_MINIMUM = 2;
+
+  const IDLE = 'idle';
+  const RECORDING = 'recording';
+  const PROCESSING = 'processing';
+  const READY = 'ready';
+  const QUEUED = 'queued';
+  const UPLOADING = 'uploading';
+  const FAILED = 'failed';
+
   const elements = {
-    phraseText: $('phrase-text'),
-    phraseNote: $('phrase-note'),
-    phraseSelect: $('phrase-select'),
-    phraseProgress: $('phrase-progress'),
+    list: $('phrase-list'),
+    summaryPhrases: $('summary-phrases'),
+    summarySamples: $('summary-samples'),
     progressFill: $('progress-fill'),
-    timer: $('timer'),
-    waveform: $('waveform'),
-    status: $('status'),
-    record: $('record-button'),
-    recordLabel: $('record-label'),
-    stop: $('stop-button'),
-    play: $('play-button'),
-    playLabel: $('play-label'),
-    upload: $('upload-button'),
-    uploadLabel: $('upload-label'),
-    next: $('next-button'),
+    status: $('page-status'),
     player: $('audio-player'),
     standalone: $('standalone-banner'),
-    standaloneLink: $('standalone-link')
+    standaloneLink: $('standalone-link'),
+    uploadAllBar: $('upload-all-bar'),
+    uploadAll: $('upload-all-button'),
+    uploadAllLabel: $('upload-all-label')
   };
 
   const state = {
-    phraseIndex: 0,
+    cards: [],
+    // The card that owns the microphone. Only one take can run at a time, so
+    // this is what locks every other card's record button.
+    activeIndex: -1,
+    playingIndex: -1,
     recorder: null,
     stream: null,
     chunks: [],
-    recording: null,
     startedAt: 0,
+    pendingDurationMs: 0,
+    stoppedAutomatically: false,
     timerId: 0,
     automaticStopId: 0,
+    microphoneReleaseId: 0,
     audioContext: null,
     analyser: null,
+    analyserSource: null,
     animationId: 0,
-    uploading: false,
-    completed: false,
-    celebrated: false,
-    microphoneUnavailable: false,
-    uploadCounts: {}
+    // Uploads run one after another: the backend appends a spreadsheet row per
+    // sample, and a batch firing at once would race on it.
+    uploadChain: Promise.resolve(),
+    uploadCounts: {},
+    microphoneUnavailable: false
   };
 
   initialize();
@@ -397,19 +453,18 @@ h1 {
     applyTheme();
     applyTranslations();
     state.uploadCounts = loadUploadCounts();
-    buildPhraseOptions();
+    buildCards();
     bindEvents();
-    drawIdleWaveform();
-    renderPhrase();
+    render();
 
     if (!window.isSecureContext) {
-      setStatus(config.ui.insecureContext, 'error');
+      setPageStatus(config.ui.insecureContext, 'error');
       disableRecording();
       return;
     }
 
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
-      setStatus(config.ui.unsupported, 'error');
+      setPageStatus(config.ui.unsupported, 'error');
       disableRecording();
       return;
     }
@@ -421,23 +476,22 @@ h1 {
     if (isEmbedded()) showStandaloneBanner();
 
     if (policyDeniesMicrophone()) {
-      setStatus(config.ui.microphoneBlocked, 'error');
+      setPageStatus(config.ui.microphoneBlocked, 'error');
       disableRecording();
       return;
     }
 
-    setStatus(config.ui.ready, 'info');
+    setPageStatus(config.ui.ready, 'info');
   }
 
   /**
    * Marks recording as impossible on this page (no microphone, insecure origin,
    * or a frame that withholds the permission). Kept as state rather than a bare
-   * disabled flag so later control updates cannot re-enable the button, while
-   * phrase navigation stays usable.
+   * disabled flag so later control updates cannot re-enable the buttons.
    */
   function disableRecording() {
     state.microphoneUnavailable = true;
-    updateControls('idle');
+    render();
   }
 
   /**
@@ -488,75 +542,189 @@ h1 {
     document.querySelectorAll('[data-i18n]').forEach((element) => {
       element.textContent = config.ui[element.dataset.i18n] || element.dataset.i18n;
     });
-    elements.timer.textContent = config.ui.timerReady;
   }
 
   function bindEvents() {
-    elements.record.addEventListener('click', startRecording);
-    elements.stop.addEventListener('click', () => stopRecording(false));
-    elements.play.addEventListener('click', togglePlayback);
-    elements.upload.addEventListener('click', uploadRecording);
-    elements.next.addEventListener('click', nextPhrase);
-    elements.phraseSelect.addEventListener('change', onPhraseSelected);
-    elements.player.addEventListener('ended', updatePlaybackButton);
-    elements.player.addEventListener('pause', updatePlaybackButton);
+    elements.uploadAll.addEventListener('click', uploadEveryWaitingTake);
+    elements.player.addEventListener('ended', render);
+    elements.player.addEventListener('pause', render);
     window.addEventListener('beforeunload', (event) => {
-      if (state.recording) {
-        event.preventDefault();
-        event.returnValue = '';
-      }
+      if (!waitingCards().length) return;
+      event.preventDefault();
+      event.returnValue = '';
     });
   }
 
-  async function startRecording() {
-    if (state.uploading || state.recorder?.state === 'recording' || state.completed) return;
+  // ---------------------------------------------------------------------------
+  // Building the list
+  // ---------------------------------------------------------------------------
+
+  /**
+   * One recorder per phrase. Every element a card needs to update is kept on the
+   * card itself, so redrawing never has to search the document for it.
+   */
+  function buildCards() {
+    const fragment = document.createDocumentFragment();
+    config.phrases.forEach((phrase, index) => {
+      const card = createCard(phrase, index);
+      state.cards.push(card);
+      fragment.appendChild(card.dom.root);
+    });
+    elements.list.replaceChildren(fragment);
+    state.cards.forEach((card) => drawIdleWaveform(card));
+  }
+
+  function createCard(phrase, index) {
+    const root = make('li', 'phrase-card', { id: `card-${index}` });
+
+    const head = make('div', 'card-head');
+    head.appendChild(make('span', 'card-number', { text: String(index + 1) }));
+    const tally = make('span', 'card-tally', { id: `tally-${index}` });
+    head.appendChild(tally);
+    root.appendChild(head);
+
+    const panel = make('div', 'phrase-panel');
+    const text = make('p', 'phrase-text', { id: `phrase-${index}`, text: phrase.text });
+    text.lang = 'ar';
+    panel.appendChild(text);
+    root.appendChild(panel);
+
+    const recorder = make('div', 'recorder-panel');
+    const wave = make('canvas', 'waveform', { id: `wave-${index}` });
+    wave.width = 720;
+    wave.height = 96;
+    wave.setAttribute('aria-hidden', 'true');
+    recorder.appendChild(wave);
+    const timer = make('output', 'timer', { id: `timer-${index}`, text: config.ui.timerReady });
+    timer.setAttribute('aria-live', 'off');
+    recorder.appendChild(timer);
+    root.appendChild(recorder);
+
+    const status = make('div', 'status status-empty', { id: `status-${index}` });
+    status.setAttribute('role', 'status');
+    status.setAttribute('aria-live', 'polite');
+    root.appendChild(status);
+
+    const buttons = make('div', 'button-grid');
+    const record = makeButton(`record-${index}`, 'button-primary', '●', `record-label-${index}`, config.ui.record);
+    const stop = makeButton(`stop-${index}`, 'button-danger', '■', `stop-label-${index}`, config.ui.stop);
+    const play = makeButton(`play-${index}`, 'button-secondary', '▶', `play-label-${index}`, config.ui.play);
+    const upload = makeButton(`upload-${index}`, 'button-accent', '⬆', `upload-label-${index}`, config.ui.upload);
+    [record, stop, play, upload].forEach((button) => buttons.appendChild(button.root));
+    root.appendChild(buttons);
+
+    const card = {
+      index,
+      phrase,
+      status: IDLE,
+      recording: null,
+      message: '',
+      messageType: 'info',
+      messageHtml: false,
+      dom: {
+        root,
+        tally,
+        wave,
+        timer,
+        status,
+        record: record.root,
+        recordLabel: record.label,
+        stop: stop.root,
+        play: play.root,
+        playLabel: play.label,
+        upload: upload.root,
+        uploadLabel: upload.label
+      }
+    };
+
+    record.root.addEventListener('click', () => startRecording(card));
+    stop.root.addEventListener('click', () => stopRecording(card, false));
+    play.root.addEventListener('click', () => togglePlayback(card));
+    upload.root.addEventListener('click', () => requestUpload(card));
+    return card;
+  }
+
+  function make(tagName, className, options = {}) {
+    const node = document.createElement(tagName);
+    if (className) node.className = className;
+    if (options.id) node.id = options.id;
+    if (options.text !== undefined) node.textContent = options.text;
+    return node;
+  }
+
+  function makeButton(id, variant, glyph, labelId, labelText) {
+    const root = make('button', `button ${variant}`, { id });
+    root.type = 'button';
+    const icon = make('span', '', { text: glyph });
+    icon.setAttribute('aria-hidden', 'true');
+    root.appendChild(icon);
+    const label = make('span', '', { id: labelId, text: labelText });
+    root.appendChild(label);
+    return { root, label };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Recording
+  // ---------------------------------------------------------------------------
+
+  async function startRecording(card) {
+    if (state.microphoneUnavailable) return;
+    // One microphone means one take at a time; every other card is locked while
+    // this one runs, and a card waiting on its upload cannot be recorded over.
+    if (state.activeIndex !== -1) return;
+    if (card.status === QUEUED || card.status === UPLOADING) return;
 
     // Pressing the button while a take is waiting means "re-record": drop the
     // previous take rather than refusing until it is uploaded.
-    if (state.recording) clearRecording();
+    if (card.recording) clearTake(card);
 
     try {
-      state.stream = await requestMicrophone();
+      const stream = await ensureMicrophone();
 
       const mimeType = selectSupportedMimeType();
       state.chunks = [];
       state.recorder = mimeType
-        ? new MediaRecorder(state.stream, { mimeType, audioBitsPerSecond: 128000 })
-        : new MediaRecorder(state.stream);
+        ? new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 128000 })
+        : new MediaRecorder(stream);
 
       state.recorder.addEventListener('dataavailable', (event) => {
         if (event.data?.size) state.chunks.push(event.data);
       });
-      state.recorder.addEventListener('stop', finalizeRecording, { once: true });
-      state.recorder.addEventListener('error', handleRecorderError, { once: true });
+      state.recorder.addEventListener('stop', () => finalizeRecording(card), { once: true });
+      state.recorder.addEventListener('error', (error) => handleRecorderError(card, error), { once: true });
 
+      state.activeIndex = card.index;
       state.startedAt = performance.now();
       state.recorder.start(200);
-      startTimer();
-      startWaveform(state.stream);
-      updateControls('recording');
-      setStatus(config.ui.recording, 'info');
+      setCardState(card, RECORDING, config.ui.recording, 'info');
+      startTimer(card);
+      startWaveform(card, stream);
       state.automaticStopId = window.setTimeout(
-        () => stopRecording(true),
+        () => stopRecording(card, true),
         config.recording.maximumDurationMs
       );
     } catch (error) {
       console.error(error);
+      state.activeIndex = -1;
       releaseMicrophone();
-      reportMicrophoneError(error);
-      updateControls('idle');
+      reportMicrophoneError(card, error);
     }
   }
 
   /**
-   * Asks for the microphone from inside the click handler so the browser treats
-   * it as a user gesture. A device that cannot honour the preferred sample rate
-   * or channel count rejects with OverconstrainedError, so retry once with the
-   * plain constraint rather than reporting a permission problem.
+   * Returns the open microphone when there is one, otherwise asks for it from
+   * inside the click handler so the browser treats it as a user gesture. A
+   * device that cannot honour the preferred sample rate or channel count rejects
+   * with OverconstrainedError, so retry once with the plain constraint rather
+   * than reporting a permission problem.
    */
-  async function requestMicrophone() {
+  async function ensureMicrophone() {
+    window.clearTimeout(state.microphoneReleaseId);
+    state.microphoneReleaseId = 0;
+    if (state.stream?.getAudioTracks().some((track) => track.readyState !== 'ended')) return state.stream;
+
     try {
-      return await navigator.mediaDevices.getUserMedia({
+      state.stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           channelCount: { ideal: config.recording.preferredChannelCount },
           sampleRate: { ideal: config.recording.preferredSampleRate },
@@ -568,8 +736,9 @@ h1 {
     } catch (error) {
       if (error?.name !== 'OverconstrainedError' && error?.name !== 'ConstraintNotSatisfiedError') throw error;
       console.warn('Preferred audio constraints were rejected; retrying with defaults.', error);
-      return navigator.mediaDevices.getUserMedia({ audio: true });
+      state.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     }
+    return state.stream;
   }
 
   /**
@@ -577,20 +746,20 @@ h1 {
    * policy case is the important one: it never shows a prompt, so telling the
    * user to "allow access" would be advice they cannot follow.
    */
-  function reportMicrophoneError(error) {
+  function reportMicrophoneError(card, error) {
     const name = error?.name || '';
     const message = String(error?.message || '');
 
     if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
-      setStatus(config.ui.microphoneMissing, 'error');
+      setCardState(card, IDLE, config.ui.microphoneMissing, 'error');
       return;
     }
     if (name === 'NotReadableError' || name === 'TrackStartError' || name === 'AbortError') {
-      setStatus(config.ui.microphoneBusy, 'error');
+      setCardState(card, IDLE, config.ui.microphoneBusy, 'error');
       return;
     }
     if (name === 'SecurityError' || !window.isSecureContext) {
-      setStatus(config.ui.insecureContext, 'error');
+      setCardState(card, IDLE, config.ui.insecureContext, 'error');
       return;
     }
     // A rejection inside a frame is a permissions-policy block in practice: the
@@ -598,56 +767,54 @@ h1 {
     // volunteer cannot act on. Only a top-level page can mean a real denial.
     if (isEmbedded() || policyDeniesMicrophone() || /permissions policy|feature policy|disallowed by/i.test(message)) {
       showStandaloneBanner();
-      setStatus(config.ui.microphoneBlocked, 'error');
+      setCardState(card, IDLE, config.ui.microphoneBlocked, 'error');
       return;
     }
-    setStatus(config.ui.microphoneDenied, 'error');
+    setCardState(card, IDLE, config.ui.microphoneDenied, 'error');
   }
 
-  function stopRecording(automatic) {
+  function stopRecording(card, automatic) {
+    if (state.activeIndex !== card.index) return;
     if (!state.recorder || state.recorder.state !== 'recording') return;
     window.clearTimeout(state.automaticStopId);
     const elapsed = Math.min(performance.now() - state.startedAt, config.recording.maximumDurationMs);
     state.pendingDurationMs = Math.round(elapsed);
     state.stoppedAutomatically = automatic;
     state.recorder.stop();
-    updateControls('processing');
+    setCardState(card, PROCESSING, card.message, card.messageType);
   }
 
-  async function finalizeRecording() {
-    stopTimer();
+  function finalizeRecording(card) {
+    stopTimer(card);
     stopWaveform();
 
     const mimeType = normalizeMimeType(state.recorder.mimeType || state.chunks[0]?.type);
     const blob = new Blob(state.chunks, { type: mimeType });
     const trackSettings = state.stream?.getAudioTracks()[0]?.getSettings?.() || {};
-    releaseMicrophone();
+    state.recorder = null;
+    state.chunks = [];
+    state.activeIndex = -1;
+    scheduleMicrophoneRelease();
 
     if (state.pendingDurationMs < config.recording.minimumDurationMs) {
-      state.chunks = [];
-      state.recorder = null;
-      elements.timer.textContent = config.ui.timerReady;
-      drawIdleWaveform();
-      setStatus(config.ui.tooShort, 'error');
-      updateControls('idle');
+      resetRecorderPanel(card);
+      setCardState(card, IDLE, config.ui.tooShort, 'error');
       return;
     }
 
     if (!config.recording.acceptedMimeTypes.includes(mimeType)) {
-      state.recorder = null;
-      setStatus(config.ui.unsupported, 'error');
-      updateControls('idle');
+      resetRecorderPanel(card);
+      setCardState(card, IDLE, config.ui.unsupported, 'error');
       return;
     }
 
     if (blob.size > config.recording.maximumUploadBytes) {
-      state.recorder = null;
-      setStatus(config.ui.uploadFailedTitle + ': file is too large.', 'error');
-      updateControls('idle');
+      resetRecorderPanel(card);
+      setCardState(card, IDLE, config.ui.tooLarge, 'error');
       return;
     }
 
-    state.recording = {
+    card.recording = {
       blob,
       mimeType,
       durationMs: state.pendingDurationMs,
@@ -655,46 +822,90 @@ h1 {
       sampleId: createSampleId(),
       url: URL.createObjectURL(blob)
     };
-    elements.player.src = state.recording.url;
+    setCardState(card, READY, config.ui.recordingReady, 'success');
+  }
+
+  function handleRecorderError(card, error) {
+    console.error(error);
+    stopTimer(card);
+    stopWaveform();
+    releaseMicrophone();
     state.recorder = null;
-    setStatus(config.ui.recordingReady, 'success');
-    updateControls('ready');
+    state.chunks = [];
+    state.activeIndex = -1;
+    resetRecorderPanel(card);
+    setCardState(card, IDLE, config.ui.unsupported, 'error');
   }
 
-  async function togglePlayback() {
-    if (!state.recording) return;
-    if (elements.player.paused) {
-      try {
-        await elements.player.play();
-      } catch (error) {
-        console.error(error);
-      }
-    } else {
+  // ---------------------------------------------------------------------------
+  // Playback
+  // ---------------------------------------------------------------------------
+
+  async function togglePlayback(card) {
+    if (!card.recording) return;
+
+    if (state.playingIndex === card.index && !elements.player.paused) {
       elements.player.pause();
+      render();
+      return;
     }
-    updatePlaybackButton();
-  }
 
-  function updatePlaybackButton() {
-    elements.playLabel.textContent = elements.player.paused ? config.ui.play : config.ui.pause;
-  }
-
-  async function uploadRecording() {
-    if (!state.recording || state.uploading) return;
-
-    state.uploading = true;
     elements.player.pause();
-    updateControls('uploading');
-    setStatus(config.ui.uploading, 'info');
+    elements.player.src = card.recording.url;
+    state.playingIndex = card.index;
+    try {
+      await elements.player.play();
+    } catch (error) {
+      console.error(error);
+    }
+    render();
+  }
+
+  function isPlaying(card) {
+    return state.playingIndex === card.index && !elements.player.paused;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Uploading
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Queues one card's take. Uploads are serialized because the backend appends a
+   * spreadsheet row per sample; a batch fired at once would race on it. A card
+   * waits its turn visibly rather than looking idle.
+   */
+  function requestUpload(card) {
+    if (!card.recording || card.status === QUEUED || card.status === UPLOADING) return false;
+    setCardState(card, QUEUED, config.ui.uploadQueued, 'info');
+    state.uploadChain = state.uploadChain.then(() => runUpload(card)).catch(() => {});
+    return true;
+  }
+
+  /** The bottom bar: everything with a take that is not already on its way. */
+  function uploadEveryWaitingTake() {
+    waitingCards().forEach(requestUpload);
+  }
+
+  function waitingCards() {
+    return state.cards.filter(
+      (card) => card.recording && card.status !== QUEUED && card.status !== UPLOADING
+    );
+  }
+
+  async function runUpload(card) {
+    if (!card.recording) return;
+
+    if (state.playingIndex === card.index) elements.player.pause();
+    setCardState(card, UPLOADING, config.ui.uploading, 'info');
 
     try {
       const payload = {
-        sample_id: state.recording.sampleId,
-        phrase_id: config.phrases[state.phraseIndex].id,
-        duration_ms: state.recording.durationMs,
-        sample_rate: state.recording.sampleRate,
-        mime_type: state.recording.mimeType,
-        audio_base64: await blobToBase64(state.recording.blob),
+        sample_id: card.recording.sampleId,
+        phrase_id: card.phrase.id,
+        duration_ms: card.recording.durationMs,
+        sample_rate: card.recording.sampleRate,
+        mime_type: card.recording.mimeType,
+        audio_base64: await blobToBase64(card.recording.blob),
         browser: detectBrowser(),
         platform: detectPlatform(),
         language: navigator.language || config.app.language,
@@ -704,167 +915,116 @@ h1 {
       const result = await postPayload(payload);
       if (!result.ok) throw new Error(result.error?.message || config.ui.uploadFailedTitle);
 
-      recordUploadedPhrase(config.phrases[state.phraseIndex].id);
-      setStatus(`<strong>${escapeHtml(config.ui.uploadSuccessTitle)}</strong><br>${escapeHtml(config.ui.uploadSuccessBody)}`, 'success', true);
-      clearRecording();
-      updateControls('uploading');
-      window.setTimeout(advanceAfterUpload, 1100);
+      recordUploadedPhrase(card);
+      clearTake(card);
+      resetRecorderPanel(card);
+      // Back to an empty card on the same phrase: another sample of it is worth
+      // more to the dataset than moving the volunteer somewhere else.
+      setCardState(
+        card,
+        IDLE,
+        `<strong>${escapeHtml(config.ui.uploadSuccessTitle)}</strong><br>${escapeHtml(config.ui.uploadSuccessBody)}`,
+        'success',
+        true
+      );
     } catch (error) {
       console.error(error);
-      state.uploading = false;
-      setStatus(`<strong>${escapeHtml(config.ui.uploadFailedTitle)}</strong><br>${escapeHtml(config.ui.uploadFailedBody)}`, 'error', true);
-      updateControls('ready');
-      elements.uploadLabel.textContent = config.ui.retry;
+      setCardState(
+        card,
+        FAILED,
+        `<strong>${escapeHtml(config.ui.uploadFailedTitle)}</strong><br>${escapeHtml(config.ui.uploadFailedBody)}`,
+        'error',
+        true
+      );
     }
   }
 
-  /** Skipping is always allowed; an unuploaded take is only discarded on confirmation. */
-  function nextPhrase() {
-    goToPhrase(state.completed ? 0 : (state.phraseIndex + 1) % config.phrases.length);
+  // ---------------------------------------------------------------------------
+  // Rendering
+  // ---------------------------------------------------------------------------
+
+  function setCardState(card, status, message, messageType, messageHtml = false) {
+    card.status = status;
+    card.message = message || '';
+    card.messageType = messageType || 'info';
+    card.messageHtml = Boolean(messageHtml);
+    render();
   }
 
-  function onPhraseSelected() {
-    const index = Number(elements.phraseSelect.value);
-    if (!Number.isInteger(index) || index < 0 || index >= config.phrases.length) {
-      syncPhraseSelect();
-      return;
-    }
-    // The <select> already shows the new value, so a refused move has to be
-    // rolled back or the label would disagree with the phrase on screen.
-    if (!goToPhrase(index)) syncPhraseSelect();
+  function render() {
+    state.cards.forEach(renderCard);
+    renderSummary();
+    renderUploadAllBar();
   }
 
-  function goToPhrase(index) {
-    if (state.uploading || state.recorder?.state === 'recording') return false;
-    if (state.recording && !confirmDiscard()) return false;
+  function renderCard(card) {
+    const recording = card.status === RECORDING;
+    const processing = card.status === PROCESSING;
+    const inFlight = card.status === QUEUED || card.status === UPLOADING;
+    const hasTake = Boolean(card.recording);
+    const busyElsewhere = state.activeIndex !== -1 && state.activeIndex !== card.index;
 
-    const discarded = Boolean(state.recording);
-    if (discarded) clearRecording();
-    state.completed = false;
-    state.phraseIndex = index;
-    renderPhrase();
-    setStatus(discarded ? config.ui.recordingDiscarded : config.ui.ready, 'info');
-    return true;
+    card.dom.root.className = `phrase-card card-${card.status}`;
+    card.dom.tally.textContent = tallyLabel(card);
+
+    card.dom.status.className = card.message ? `status status-${card.messageType}` : 'status status-empty';
+    if (card.messageHtml) card.dom.status.innerHTML = card.message;
+    else card.dom.status.textContent = card.message;
+
+    card.dom.record.disabled =
+      state.microphoneUnavailable || busyElsewhere || recording || processing || inFlight;
+    card.dom.recordLabel.textContent = hasTake ? config.ui.reRecord : config.ui.record;
+    card.dom.stop.disabled = !recording;
+    card.dom.play.disabled = !hasTake || inFlight;
+    card.dom.playLabel.textContent = isPlaying(card) ? config.ui.pause : config.ui.play;
+    card.dom.upload.disabled = !hasTake || inFlight;
+    card.dom.uploadLabel.textContent = uploadLabel(card);
   }
 
-  function confirmDiscard() {
-    return typeof window.confirm !== 'function' || window.confirm(config.ui.discardConfirm);
+  function uploadLabel(card) {
+    if (card.status === UPLOADING) return config.ui.uploading;
+    if (card.status === QUEUED) return config.ui.uploadQueued;
+    if (card.status === FAILED) return config.ui.retry;
+    return config.ui.upload;
   }
 
-  /**
-   * Phrases can be recorded in any order, so "done" is every phrase having at
-   * least one uploaded sample — not merely reaching the last index. The card is
-   * shown once; a volunteer collecting a second round keeps moving instead.
-   */
-  function advanceAfterUpload() {
-    state.uploading = false;
-    if (allPhrasesCovered() && !state.celebrated) {
-      state.celebrated = true;
-      state.completed = true;
-      elements.phraseText.textContent = '✓';
-      elements.phraseNote.textContent = '';
-      elements.phraseProgress.textContent = config.ui.completed;
-      elements.progressFill.style.width = '100%';
-      elements.next.querySelector('[data-i18n]').textContent = config.ui.restart;
-      setStatus(config.ui.completed, 'success');
-      // Keeps the picker usable so a volunteer can jump straight back to any
-      // phrase instead of having to restart from the first one.
-      updateControls('idle');
-      return;
-    }
-
-    state.phraseIndex = nextPhraseIndex();
-    renderPhrase();
-    setStatus(config.ui.ready, 'info');
-  }
-
-  /** Prefers a phrase this device has not covered yet, else simply the next one. */
-  function nextPhraseIndex() {
-    for (let step = 1; step <= config.phrases.length; step += 1) {
-      const index = (state.phraseIndex + step) % config.phrases.length;
-      if (!uploadCount(config.phrases[index].id)) return index;
-    }
-    return (state.phraseIndex + 1) % config.phrases.length;
-  }
-
-  function allPhrasesCovered() {
-    return config.phrases.every((phrase) => uploadCount(phrase.id) > 0);
-  }
-
-  function renderPhrase() {
-    const phrase = config.phrases[state.phraseIndex];
-    elements.phraseText.textContent = phrase.text;
-    elements.phraseNote.textContent = phraseNote(phrase.id);
-    elements.phraseProgress.textContent = config.ui.phraseProgress
-      .replace('{current}', String(state.phraseIndex + 1))
-      .replace('{total}', String(config.phrases.length));
-    elements.progressFill.style.width = `${((state.phraseIndex + 1) / config.phrases.length) * 100}%`;
-    elements.next.querySelector('[data-i18n]').textContent = config.ui.next;
-    elements.timer.textContent = config.ui.timerReady;
-    syncPhraseSelect();
-    drawIdleWaveform();
-    updateControls('idle');
-  }
-
-  function updateControls(mode) {
-    const recording = mode === 'recording';
-    const ready = mode === 'ready';
-    const uploading = mode === 'uploading';
-    const processing = mode === 'processing';
-    const busy = recording || uploading || processing;
-    // Enabled in "ready" too: the same button re-records over a waiting take.
-    elements.record.disabled = busy || state.completed || state.microphoneUnavailable;
-    elements.recordLabel.textContent = state.recording ? config.ui.reRecord : config.ui.record;
-    elements.stop.disabled = !recording;
-    elements.play.disabled = !ready || uploading;
-    elements.upload.disabled = !ready || uploading;
-    elements.next.disabled = busy;
-    elements.phraseSelect.disabled = busy;
-    if (!uploading) elements.uploadLabel.textContent = config.ui.upload;
-  }
-
-  function buildPhraseOptions() {
-    const fragment = document.createDocumentFragment();
-    config.phrases.forEach((phrase, index) => {
-      const option = document.createElement('option');
-      option.value = String(index);
-      option.textContent = optionLabel(phrase, index);
-      fragment.appendChild(option);
-    });
-    elements.phraseSelect.replaceChildren(fragment);
-    syncPhraseSelect();
-  }
-
-  function refreshPhraseOptions() {
-    config.phrases.forEach((phrase, index) => {
-      const option = elements.phraseSelect.options[index];
-      if (option) option.textContent = optionLabel(phrase, index);
-    });
-  }
-
-  function optionLabel(phrase, index) {
-    const count = uploadCount(phrase.id);
-    return `${index + 1}. ${phrase.text}${count ? ` ✓ ${count}` : ''}`;
-  }
-
-  function phraseNote(phraseId) {
-    const count = uploadCount(phraseId);
+  function tallyLabel(card) {
+    const count = uploadCount(card.phrase.id);
     return count ? config.ui.recordedCount.replace('{count}', String(count)) : '';
   }
 
-  function syncPhraseSelect() {
-    elements.phraseSelect.value = String(state.phraseIndex);
+  function renderSummary() {
+    const covered = config.phrases.filter((phrase) => uploadCount(phrase.id) > 0).length;
+    const samples = config.phrases.reduce((total, phrase) => total + uploadCount(phrase.id), 0);
+    elements.summaryPhrases.textContent = config.ui.summaryPhrases
+      .replace('{recorded}', String(covered))
+      .replace('{total}', String(config.phrases.length));
+    elements.summarySamples.textContent = config.ui.summarySamples.replace('{count}', String(samples));
+    elements.progressFill.style.width = `${(covered / config.phrases.length) * 100}%`;
   }
+
+  function renderUploadAllBar() {
+    const waiting = waitingCards().length;
+    elements.uploadAllBar.hidden = waiting < UPLOAD_ALL_MINIMUM;
+    elements.uploadAllLabel.textContent = config.ui.uploadAll.replace('{count}', String(waiting));
+  }
+
+  function setPageStatus(message, type) {
+    elements.status.className = `status status-${type}`;
+    elements.status.textContent = message;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Per-phrase tally
+  // ---------------------------------------------------------------------------
 
   function uploadCount(phraseId) {
     return Number(state.uploadCounts[phraseId]) || 0;
   }
 
-  function recordUploadedPhrase(phraseId) {
-    state.uploadCounts[phraseId] = uploadCount(phraseId) + 1;
+  function recordUploadedPhrase(card) {
+    state.uploadCounts[card.phrase.id] = uploadCount(card.phrase.id) + 1;
     saveUploadCounts();
-    refreshPhraseOptions();
-    elements.phraseNote.textContent = phraseNote(phraseId);
   }
 
   /** Storage can be unavailable (private mode, sandboxed frame); the tally is optional. */
@@ -885,45 +1045,60 @@ h1 {
     }
   }
 
-  function startTimer() {
-    stopTimer();
-    updateTimer();
-    state.timerId = window.setInterval(updateTimer, 100);
+  // ---------------------------------------------------------------------------
+  // Timer and waveform
+  // ---------------------------------------------------------------------------
+
+  function startTimer(card) {
+    window.clearInterval(state.timerId);
+    updateTimer(card);
+    state.timerId = window.setInterval(() => updateTimer(card), 100);
   }
 
-  function updateTimer() {
+  function updateTimer(card) {
     const elapsed = Math.min(performance.now() - state.startedAt, config.recording.maximumDurationMs);
     const seconds = Math.floor(elapsed / 1000);
     const tenths = Math.floor((elapsed % 1000) / 100);
-    elements.timer.textContent = `00:${String(seconds).padStart(2, '0')}.${tenths}`;
+    card.dom.timer.textContent = `00:${String(seconds).padStart(2, '0')}.${tenths}`;
   }
 
-  function stopTimer() {
+  function stopTimer(card) {
     window.clearInterval(state.timerId);
     state.timerId = 0;
-    updateTimer();
+    updateTimer(card);
   }
 
-  function startWaveform(stream) {
+  function resetRecorderPanel(card) {
+    card.dom.timer.textContent = config.ui.timerReady;
+    drawIdleWaveform(card);
+  }
+
+  function startWaveform(card, stream) {
     stopWaveform();
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextClass) return;
-    state.audioContext = new AudioContextClass();
-    const source = state.audioContext.createMediaStreamSource(stream);
-    state.analyser = state.audioContext.createAnalyser();
-    state.analyser.fftSize = 256;
-    source.connect(state.analyser);
-    drawLiveWaveform();
+    if (!state.audioContext) state.audioContext = new AudioContextClass();
+    // The stream is held across takes, so its source node is too: connecting the
+    // same stream twice would stack nodes on every record.
+    if (!state.analyserSource) {
+      state.analyserSource = state.audioContext.createMediaStreamSource(stream);
+      state.analyser = state.audioContext.createAnalyser();
+      state.analyser.fftSize = 256;
+      state.analyserSource.connect(state.analyser);
+    }
+    drawLiveWaveform(card);
   }
 
-  function drawLiveWaveform() {
-    if (!state.analyser) return;
-    const canvas = elements.waveform;
+  function drawLiveWaveform(card) {
+    // The analyser outlives a take (the microphone is held), so the loop is tied
+    // to the card that owns the microphone rather than to the analyser existing.
+    if (!state.analyser || state.activeIndex !== card.index) return;
+    const canvas = card.dom.wave;
     const context = canvas.getContext('2d');
     const samples = new Uint8Array(state.analyser.frequencyBinCount);
     state.analyser.getByteTimeDomainData(samples);
     context.clearRect(0, 0, canvas.width, canvas.height);
-    context.strokeStyle = config.theme.primary;
+    context.strokeStyle = config.theme.danger;
     context.lineWidth = 4;
     context.beginPath();
     samples.forEach((sample, index) => {
@@ -932,11 +1107,11 @@ h1 {
       if (index === 0) context.moveTo(x, y); else context.lineTo(x, y);
     });
     context.stroke();
-    state.animationId = requestAnimationFrame(drawLiveWaveform);
+    state.animationId = requestAnimationFrame(() => drawLiveWaveform(card));
   }
 
-  function drawIdleWaveform() {
-    const canvas = elements.waveform;
+  function drawIdleWaveform(card) {
+    const canvas = card.dom.wave;
     const context = canvas.getContext('2d');
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.strokeStyle = '#b9d8c7';
@@ -952,34 +1127,42 @@ h1 {
   function stopWaveform() {
     cancelAnimationFrame(state.animationId);
     state.animationId = 0;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Microphone lifetime
+  // ---------------------------------------------------------------------------
+
+  function scheduleMicrophoneRelease() {
+    window.clearTimeout(state.microphoneReleaseId);
+    state.microphoneReleaseId = window.setTimeout(releaseMicrophone, MICROPHONE_IDLE_RELEASE_MS);
+  }
+
+  function releaseMicrophone() {
+    window.clearTimeout(state.microphoneReleaseId);
+    state.microphoneReleaseId = 0;
+    state.stream?.getTracks().forEach((track) => track.stop());
+    state.stream = null;
+    state.analyserSource?.disconnect();
+    state.analyserSource = null;
     state.analyser = null;
     if (state.audioContext) state.audioContext.close().catch(() => {});
     state.audioContext = null;
   }
 
-  function releaseMicrophone() {
-    state.stream?.getTracks().forEach((track) => track.stop());
-    state.stream = null;
-  }
+  // ---------------------------------------------------------------------------
+  // Takes
+  // ---------------------------------------------------------------------------
 
-  function handleRecorderError(error) {
-    console.error(error);
-    stopTimer();
-    stopWaveform();
-    releaseMicrophone();
-    state.recorder = null;
-    setStatus(config.ui.unsupported, 'error');
-    updateControls('idle');
-  }
-
-  function clearRecording() {
-    if (state.recording?.url) URL.revokeObjectURL(state.recording.url);
-    state.recording = null;
-    state.chunks = [];
-    elements.player.removeAttribute('src');
-    elements.player.load();
-    elements.timer.textContent = config.ui.timerReady;
-    drawIdleWaveform();
+  function clearTake(card) {
+    if (card.recording?.url) URL.revokeObjectURL(card.recording.url);
+    card.recording = null;
+    if (state.playingIndex === card.index) {
+      elements.player.pause();
+      elements.player.removeAttribute('src');
+      elements.player.load();
+      state.playingIndex = -1;
+    }
   }
 
   function selectSupportedMimeType() {
@@ -1065,12 +1248,6 @@ h1 {
     return navigator.userAgentData?.platform || navigator.platform || 'Unknown platform';
   }
 
-  function setStatus(message, type, allowHtml = false) {
-    elements.status.className = `status status-${type}`;
-    if (allowHtml) elements.status.innerHTML = message;
-    else elements.status.textContent = message;
-  }
-
   function escapeHtml(value) {
     const node = document.createElement('span');
     node.textContent = String(value);
@@ -1081,4 +1258,3 @@ h1 {
   </script>
 </body>
 </html>
-

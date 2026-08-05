@@ -29,16 +29,28 @@ assert.match(bootstrap.endpoint, /^https:\/\/script\.google\.com\/macros\/s\/[\w
 assert.ok(bootstrap.phrases.length > 0, 'The standalone page has no phrases.');
 assert.ok(bootstrap.ui.microphoneBlocked, 'The permissions-policy message is missing from the UI strings.');
 
-// The recorder markup and strings the phrase picker, skipping, and re-recording
-// depend on. app.js reads these by id and asserts nothing at runtime, so a
-// renamed element would only surface as a blank page in front of a volunteer.
-for (const elementId of ['phrase-select', 'phrase-note', 'record-label']) {
+// The shell app.js builds the per-phrase recorders into. The cards themselves
+// are created at runtime, so these containers are the only markup contract:
+// app.js reads them by id and asserts nothing, and a renamed element would
+// surface as a blank page in front of a volunteer.
+for (const elementId of [
+  'phrase-list', 'summary-phrases', 'summary-samples', 'progress-fill',
+  'page-status', 'upload-all-bar', 'upload-all-button', 'upload-all-label', 'audio-player'
+]) {
   assert.ok(standalone.includes(`id="${elementId}"`), `dist/voice.html is missing #${elementId}.`);
 }
-for (const key of ['reRecord', 'choosePhrase', 'recordedCount', 'discardConfirm', 'recordingDiscarded', 'skipHint']) {
+for (const key of [
+  'record', 'reRecord', 'stop', 'play', 'pause', 'upload', 'uploading', 'uploadQueued', 'uploadAll',
+  'retry', 'recordedCount', 'listHint', 'summaryPhrases', 'summarySamples', 'tooLarge'
+]) {
   assert.ok(bootstrap.ui[key], `The "${key}" UI string is missing from the bootstrap payload.`);
 }
 assert.ok(bootstrap.ui.recordedCount.includes('{count}'), 'recordedCount must contain the {count} placeholder.');
+assert.ok(bootstrap.ui.uploadAll.includes('{count}'), 'uploadAll must contain the {count} placeholder.');
+assert.ok(bootstrap.ui.summarySamples.includes('{count}'), 'summarySamples must contain the {count} placeholder.');
+for (const token of ['{recorded}', '{total}']) {
+  assert.ok(bootstrap.ui.summaryPhrases.includes(token), `summaryPhrases must contain the ${token} placeholder.`);
+}
 
 const manifest = JSON.parse(read('dist/appsscript.json'));
 assert.equal(manifest.runtimeVersion, 'V8');

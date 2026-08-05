@@ -113,10 +113,10 @@ Successful output looks like:
 ```text
 Built Apps Script project in .../SpeechCollector/dist
 Verification passed: build output, manifest, syntax, and request validation are valid.
-UI behaviour tests passed: phrase picker, skipping, re-recording, and upload tallies.
+UI behaviour tests passed: per-phrase recorders, single-take locking, uploads, and tallies.
 ```
 
-Re-run these commands after every change to `config.ts`, `Code.gs`, `Index.html`, `app.js`, `styles.css`, or `appsscript.json`. `ui.test.mjs` runs `app.js` against a minimal DOM stub and drives the recorder buttons, so it catches a broken phrase picker or navigation rule before the page reaches a volunteer. The Pages workflow runs all three before publishing `voice.html`.
+Re-run these commands after every change to `config.ts`, `Code.gs`, `Index.html`, `app.js`, `styles.css`, or `appsscript.json`. `ui.test.mjs` runs `app.js` against a minimal DOM stub and drives the buttons on the generated cards, so it catches a broken recorder, a card that fails to lock while another records, or a mis-queued upload before the page reaches a volunteer. The Pages workflow runs all three before publishing `voice.html`.
 
 ## 3. Create the Apps Script project
 
@@ -167,11 +167,12 @@ Both hosts use HTTPS, which is required for microphone access. Test the standalo
 ### Android
 
 1. Open the standalone page (`deployment.standaloneUrl`) in a current version of Chrome.
-2. Tap **تسجيل** (Record).
+2. Tap **تسجيل** (Record) on the first phrase card.
 3. When asked, allow microphone access.
 4. Speak for at least one second. Recording stops automatically at five seconds.
 5. Tap **استماع** (Play), then **رفع التسجيل** (Upload).
-6. Confirm that the success message appears and the next phrase loads.
+6. Confirm that the success message appears on that card, its `✓` tally reads 1, and the card is empty and ready for another sample.
+7. Record two more cards without uploading, confirm the bottom bar appears with a count of 2, and tap it. Both cards should upload one after the other, and the bar should disappear.
 
 ### iPhone or iPad
 
@@ -203,16 +204,20 @@ Drive files remain private unless the owner separately changes their sharing set
 - Shows a live waveform and timer.
 - Keeps the recording in browser memory after every upload error.
 - Uses a stable random `sample_id` for retries. If the direct POST succeeds but its response is interrupted, retrying returns the existing row rather than creating a duplicate.
-- Advances only after the server confirms success.
+- Tallies a sample only after the server confirms success.
 
-### Choosing, skipping, and re-recording a phrase
+### One recorder per phrase
 
-Volunteers are not marched through the list in order. Every phrase is optional and every take can be redone:
+There is no navigation. Every phrase is a card on the same page, carrying its own waveform, timer, status line, and four buttons (**تسجيل**, **إيقاف**, **استماع**, **رفع التسجيل**). A volunteer records and uploads whichever phrases they like, in any order, as many times as they like.
 
-- **Choose any phrase.** The picker above the phrase card lists all of them and jumps straight to the chosen one. The list is also the progress display: a phrase this device has already uploaded is marked `✓` with its sample count, and the count is repeated under the phrase itself.
-- **Skip without recording.** **التالي** always moves on, whether or not anything was recorded for the current phrase. It wraps around to the first phrase after the last one.
-- **Re-record.** Once a take is waiting, the record button becomes **إعادة التسجيل**: pressing it drops that take and starts a new one. No upload is required in between.
-- Leaving a phrase that still has an **unuploaded** take asks for confirmation first, then discards it. This is the only prompt; recording over your own take does not ask, because pressing "re-record" already says so.
+- **Record any card.** Tapping **تسجيل** starts that card and locks every other card's record button — there is one microphone, so there is one take at a time. The 1s minimum and 5s auto-stop are unchanged.
+- **Re-record.** Once a take is waiting, that card's record button becomes **إعادة التسجيل**: pressing it drops the take and starts a new one. No confirmation — pressing it already says so.
+- **Upload one card.** **رفع التسجيل** sends that card's take on its own. On success the card's `✓` tally ticks up and the card empties, ready for another sample of the same phrase; several samples of one phrase are worth more to the dataset than one sample each.
+- **Upload several.** Once two or more takes are waiting, a bar pins itself to the bottom of the screen: **رفع كل التسجيلات الجاهزة ({count})**. Below two it stays hidden, because the card's own upload button is already on screen. It never appears for a card that is mid-upload.
+- **Uploads are serialized.** The backend appends one spreadsheet row per sample, so takes are sent one after another. A queued card shows **في الانتظار…** and cannot be recorded over until its turn passes.
+- **A failure is local to its card.** The take is kept, the button becomes **إعادة المحاولة**, and the rest of the batch still goes through. The `sample_id` is stable, so a retry cannot create a duplicate row.
+- **The microphone is held between takes** and released after 30 seconds of not recording, so a run of cards costs one permission prompt rather than one per card.
+- **A card says nothing when it has nothing to report.** Status lines appear only while recording, when a take is ready, during upload, and on success or failure — ten identical idle hints would be noise.
 - The per-phrase upload tally is stored in this browser's `localStorage` (`speech_collector_upload_counts`). It is a convenience only — it never reaches the server, and recording works normally when storage is unavailable (private mode, sandboxed frame).
 
 ## Backend validation and security
