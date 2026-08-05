@@ -621,6 +621,7 @@ def export_all(
         ("int8", export_config.int8),
     ]
 
+    failures: List[Tuple[str, str]] = []
     for mode, enabled in requested:
         if not enabled:
             continue
@@ -632,6 +633,7 @@ def export_all(
             )
         except Exception as exc:  # noqa: BLE001 - one failed variant must not stop the rest
             LOGGER.error("conversion failed for %s: %s", mode, exc)
+            failures.append((mode, str(exc).strip().splitlines()[0][:200]))
             continue
 
         model_path = write_tflite(flatbuffer, destination / f"dhikr_{mode}.tflite")
@@ -652,6 +654,19 @@ def export_all(
                 tolerance=export_config.verify_tolerance,
             )
         bundle.models.append(exported)
+
+    if not bundle.models:
+        # Every variant failed. The sidecar files alone look like a successful
+        # export, so refuse rather than leave an exports folder with no model.
+        detail = "\n".join(f"  {mode}: {message}" for mode, message in failures)
+        raise RuntimeError(
+            "no TFLite model was produced - every conversion failed:\n"
+            f"{detail}\n"
+            "The SavedModel in "
+            f"{saved_model_dir} is intact, so this is a conversion problem, not a "
+            "training one. See the 'Mixed precision and the converter' section of "
+            "README.md if the message mentions 'neither a custom op nor a flex op'."
+        )
 
     bundle.labels_path = write_labels(destination / "labels.txt", class_names, phrases)
     bundle.metadata_path = write_metadata(
