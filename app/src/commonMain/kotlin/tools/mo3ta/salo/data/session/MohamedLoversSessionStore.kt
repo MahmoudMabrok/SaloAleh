@@ -183,13 +183,32 @@ class MohamedLoversSessionStore(private val settings: Settings) {
 
     /**
      * Refund [count] to today's manual-entry allowance after a correction (subtract), so a
-     * corrected over-entry frees the daily allowance to be used again. Floored at 0.
+     * corrected over-entry frees the daily allowance to be used again. Floored at 0 — a correction
+     * larger than what was entered manually today gives back only what the ledger holds. Returns
+     * the amount actually refunded, so the same delta can be mirrored to the server ledger.
      */
-    fun refundManualEntry(today: LocalDate, count: Int) {
-        if (count <= 0) return
+    fun refundManualEntry(today: LocalDate, count: Int): Int {
+        if (count <= 0) return 0
         ensureManualToday(today)
         val used = settings.getInt(KEY_MANUAL_USED, 0)
-        settings.putInt(KEY_MANUAL_USED, (used - count).coerceAtLeast(0))
+        val refunded = count.coerceAtMost(used)
+        if (refunded > 0) settings.putInt(KEY_MANUAL_USED, used - refunded)
+        return refunded
+    }
+
+    /**
+     * Reconcile today's manual-entry ledger with [remoteUsed], the server-side mirror read at
+     * startup. Takes the **higher** of the two: a fresh install (local 0) adopts the server's
+     * record so the daily cap survives a reinstall, while a local entry the server has not yet
+     * accepted — or a refund the server already knows about — is never undone by a stale read.
+     * Returns the reconciled used amount.
+     */
+    fun syncManualUsedFromRemote(today: LocalDate, remoteUsed: Int): Int {
+        ensureManualToday(today)
+        val used = settings.getInt(KEY_MANUAL_USED, 0)
+        val reconciled = maxOf(used, remoteUsed.coerceAtLeast(0))
+        if (reconciled != used) settings.putInt(KEY_MANUAL_USED, reconciled)
+        return reconciled
     }
 
     private fun ensureManualToday(today: LocalDate) {

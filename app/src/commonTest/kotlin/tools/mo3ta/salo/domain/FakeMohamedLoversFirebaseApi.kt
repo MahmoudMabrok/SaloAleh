@@ -101,7 +101,13 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
     override suspend fun incrementExternalCount(roundKey: String, uid: String, count: Int): Result<Unit> =
         Result.success(Unit)
 
-    data class ExternalLogCall(val roundKey: String, val uid: String, val timeKey: String, val count: Int)
+    data class ExternalLogCall(
+        val roundKey: String,
+        val uid: String,
+        val timeKey: String,
+        val count: Int,
+        val dayKey: String? = null,
+    )
 
     val externalLogCalls = mutableListOf<ExternalLogCall>()
 
@@ -110,10 +116,20 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
         uid: String,
         timeKey: String,
         count: Int,
+        dayKey: String?,
     ): Result<Unit> {
-        externalLogCalls.add(ExternalLogCall(roundKey, uid, timeKey, count))
+        externalLogCalls.add(ExternalLogCall(roundKey, uid, timeKey, count, dayKey))
         return Result.success(Unit)
     }
+
+    /** Server-side manual allowance ledger, keyed by Cairo day. */
+    val externalDailyUsed = mutableMapOf<String, Int>()
+
+    override suspend fun fetchExternalDailyUsed(
+        roundKey: String,
+        uid: String,
+        dayKey: String,
+    ): Result<Int> = Result.success(externalDailyUsed[dayKey] ?: 0)
 
     data class DecrementScoreCall(val roundKey: String, val uid: String, val amount: Int)
 
