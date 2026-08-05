@@ -79,7 +79,9 @@ h1 {
 
 .eyebrow,
 .phrase-progress,
+.phrase-note,
 .microphone-hint,
+.skip-hint,
 .privacy-note { color: var(--muted); }
 
 .eyebrow {
@@ -109,6 +111,46 @@ h1 {
   border-radius: inherit;
   background: linear-gradient(90deg, var(--primary), #2e9870);
   transition: width 280ms ease;
+}
+
+.phrase-picker {
+  display: grid;
+  gap: 6px;
+  margin-top: 18px;
+}
+
+.phrase-picker .eyebrow { text-align: start; }
+
+.phrase-select {
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 14px;
+  border: 1px solid #cfe4d8;
+  border-radius: 16px;
+  color: var(--text);
+  background: #f6faf7;
+  cursor: pointer;
+  font: inherit;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+
+.phrase-select:focus-visible { outline: 4px solid rgba(214, 165, 58, 0.35); outline-offset: 2px; }
+.phrase-select:disabled { cursor: not-allowed; opacity: 0.5; }
+
+.phrase-note {
+  margin: 10px 0 0;
+  text-align: center;
+  font-size: 0.82rem;
+}
+
+.phrase-note:empty { display: none; }
+
+.skip-hint {
+  margin: 12px 4px 0;
+  text-align: center;
+  font-size: 0.82rem;
+  line-height: 1.6;
 }
 
 .phrase-panel {
@@ -244,8 +286,14 @@ h1 {
         </div>
       </div>
 
+      <div class="phrase-picker">
+        <label id="phrase-select-label" class="eyebrow" for="phrase-select" data-i18n="choosePhrase"></label>
+        <select id="phrase-select" class="phrase-select"></select>
+      </div>
+
       <div class="phrase-panel">
         <p id="phrase-text" class="phrase-text" lang="ar"></p>
+        <p id="phrase-note" class="phrase-note" aria-live="polite"></p>
       </div>
 
       <div class="recorder-panel">
@@ -264,7 +312,7 @@ h1 {
 
       <div class="button-grid">
         <button id="record-button" class="button button-primary" type="button">
-          <span aria-hidden="true">●</span><span data-i18n="record"></span>
+          <span aria-hidden="true">●</span><span id="record-label" data-i18n="record"></span>
         </button>
         <button id="stop-button" class="button button-danger" type="button" disabled>
           <span aria-hidden="true">■</span><span data-i18n="stop"></span>
@@ -280,12 +328,14 @@ h1 {
         </button>
       </div>
 
+      <p class="skip-hint" data-i18n="skipHint"></p>
+
       <p class="privacy-note"><span aria-hidden="true">🔒</span> <span data-i18n="privacy"></span></p>
     </section>
   </main>
 
   <audio id="audio-player" preload="metadata"></audio>
-  <script id="bootstrap-data" type="application/json">{"endpoint":"https://script.google.com/macros/s/AKfycbwxiX4ztcQMl9m0K1tDcvsLTZiU6EkWk8Np9nPfdFOAnX3cnuGAsHeQ3IHv4TJANI6PFQ/exec","standaloneUrl":"https://mahmoudmabrok.github.io/SaloAleh/voice.html","app":{"title":"Dhikr Speech Dataset","htmlTitle":"Arabic Speech Dataset Collector","language":"ar","direction":"rtl","timezone":"Africa/Cairo"},"recording":{"minimumDurationMs":1000,"maximumDurationMs":5000,"maximumUploadBytes":5242880,"preferredSampleRate":16000,"preferredChannelCount":1,"acceptedMimeTypes":["audio/wav","audio/x-wav","audio/webm","audio/ogg","audio/mp4","audio/mpeg"]},"theme":{"primary":"#176b45","primaryDark":"#0d4f32","primarySoft":"#e9f6ef","accent":"#d6a53a","pageBackground":"#f4f8f5","cardBackground":"#ffffff","text":"#17362a","mutedText":"#61746b","danger":"#b3261e"},"ui":{"hero":"❤️ ساعدنا في بناء ميزة الذكر بالصوت","currentPhrase":"العبارة الحالية","phraseProgress":"العبارة {current} من {total}","record":"تسجيل","stop":"إيقاف","play":"استماع","pause":"إيقاف الاستماع","upload":"رفع التسجيل","uploading":"جارٍ الرفع…","next":"التالي","timerReady":"00:00.0","microphoneHint":"اقرأ العبارة بصوت واضح في مكان هادئ.","privacy":"لا نجمع الاسم أو البريد أو الهاتف أو الموقع. يُحفظ التسجيل والبيانات التقنية الأساسية فقط.","ready":"اضغط «تسجيل» واسمح باستخدام الميكروفون.","recording":"جارٍ التسجيل…","recordingReady":"التسجيل جاهز. استمع إليه أو ارفعه.","microphoneDenied":"تم رفض إذن الميكروفون. افتح إعدادات الموقع في المتصفح، فعّل الميكروفون، ثم أعد تحميل الصفحة.","microphoneBlocked":"المتصفح لا يعرض طلب الإذن لأن الصفحة معروضة داخل إطار لا يسمح بالميكروفون. افتح صفحة التسجيل في نافذة مستقلة ثم اضغط «تسجيل».","microphoneMissing":"لم يُعثر على ميكروفون متاح. وصّل ميكروفونًا أو تحقق من إعدادات الصوت ثم حاول مجددًا.","microphoneBusy":"الميكروفون مشغول بتطبيق آخر. أغلق التطبيقات التي تستخدمه ثم حاول مجددًا.","insecureContext":"التسجيل يتطلب فتح الصفحة عبر رابط https. افتح الرابط الرسمي للصفحة ثم حاول مجددًا.","openStandalone":"فتح صفحة التسجيل","unsupported":"هذا المتصفح لا يدعم تسجيل الصوت. جرّب إصدارًا حديثًا من Chrome أو Safari.","tooShort":"التسجيل قصير جدًا. سجّل لمدة ثانية واحدة على الأقل.","uploadSuccessTitle":"✅ شكرًا لك!","uploadSuccessBody":"تم رفع العينة بنجاح.","uploadFailedTitle":"فشل رفع التسجيل","uploadFailedBody":"احتفظنا بالتسجيل. تحقق من الإنترنت ثم حاول مجددًا.","retry":"إعادة المحاولة","nextBlocked":"ارفع التسجيل الحالي قبل الانتقال حتى لا تفقده.","completed":"شكرًا! أكملت جميع العبارات. يمكنك البدء من جديد وجمع عينات إضافية.","restart":"البدء من جديد"},"phrases":[{"id":1,"text":"سبحان الله"},{"id":2,"text":"الحمد لله"},{"id":3,"text":"الله أكبر"},{"id":4,"text":"لا إله إلا الله"},{"id":5,"text":"أستغفر الله"},{"id":6,"text":"سبحان الله وبحمده"},{"id":7,"text":"سبحان الله العظيم وبحمده"},{"id":8,"text":"لا حول ولا قوة إلا بالله"},{"id":9,"text":"اللهم صل على محمد"},{"id":10,"text":"اللهم صل وسلم على نبينا محمد"}]}</script>
+  <script id="bootstrap-data" type="application/json">{"endpoint":"https://script.google.com/macros/s/AKfycbwxiX4ztcQMl9m0K1tDcvsLTZiU6EkWk8Np9nPfdFOAnX3cnuGAsHeQ3IHv4TJANI6PFQ/exec","standaloneUrl":"https://mahmoudmabrok.github.io/SaloAleh/voice.html","app":{"title":"Dhikr Speech Dataset","htmlTitle":"Arabic Speech Dataset Collector","language":"ar","direction":"rtl","timezone":"Africa/Cairo"},"recording":{"minimumDurationMs":1000,"maximumDurationMs":5000,"maximumUploadBytes":5242880,"preferredSampleRate":16000,"preferredChannelCount":1,"acceptedMimeTypes":["audio/wav","audio/x-wav","audio/webm","audio/ogg","audio/mp4","audio/mpeg"]},"theme":{"primary":"#176b45","primaryDark":"#0d4f32","primarySoft":"#e9f6ef","accent":"#d6a53a","pageBackground":"#f4f8f5","cardBackground":"#ffffff","text":"#17362a","mutedText":"#61746b","danger":"#b3261e"},"ui":{"hero":"❤️ ساعدنا في بناء ميزة الذكر بالصوت","currentPhrase":"العبارة الحالية","phraseProgress":"العبارة {current} من {total}","choosePhrase":"اختر العبارة التي تريد تسجيلها","recordedCount":"عدد التسجيلات المرفوعة من هذه العبارة: {count}","record":"تسجيل","reRecord":"إعادة التسجيل","stop":"إيقاف","play":"استماع","pause":"إيقاف الاستماع","upload":"رفع التسجيل","uploading":"جارٍ الرفع…","next":"التالي","timerReady":"00:00.0","microphoneHint":"اقرأ العبارة بصوت واضح في مكان هادئ.","privacy":"لا نجمع الاسم أو البريد أو الهاتف أو الموقع. يُحفظ التسجيل والبيانات التقنية الأساسية فقط.","ready":"اضغط «تسجيل» واسمح باستخدام الميكروفون.","recording":"جارٍ التسجيل…","recordingReady":"التسجيل جاهز. استمع إليه أو ارفعه.","microphoneDenied":"تم رفض إذن الميكروفون. افتح إعدادات الموقع في المتصفح، فعّل الميكروفون، ثم أعد تحميل الصفحة.","microphoneBlocked":"المتصفح لا يعرض طلب الإذن لأن الصفحة معروضة داخل إطار لا يسمح بالميكروفون. افتح صفحة التسجيل في نافذة مستقلة ثم اضغط «تسجيل».","microphoneMissing":"لم يُعثر على ميكروفون متاح. وصّل ميكروفونًا أو تحقق من إعدادات الصوت ثم حاول مجددًا.","microphoneBusy":"الميكروفون مشغول بتطبيق آخر. أغلق التطبيقات التي تستخدمه ثم حاول مجددًا.","insecureContext":"التسجيل يتطلب فتح الصفحة عبر رابط https. افتح الرابط الرسمي للصفحة ثم حاول مجددًا.","openStandalone":"فتح صفحة التسجيل","unsupported":"هذا المتصفح لا يدعم تسجيل الصوت. جرّب إصدارًا حديثًا من Chrome أو Safari.","tooShort":"التسجيل قصير جدًا. سجّل لمدة ثانية واحدة على الأقل.","uploadSuccessTitle":"✅ شكرًا لك!","uploadSuccessBody":"تم رفع العينة بنجاح.","uploadFailedTitle":"فشل رفع التسجيل","uploadFailedBody":"احتفظنا بالتسجيل. تحقق من الإنترنت ثم حاول مجددًا.","retry":"إعادة المحاولة","discardConfirm":"لديك تسجيل لم يُرفع بعد. الانتقال إلى عبارة أخرى سيحذفه. هل تريد المتابعة؟","recordingDiscarded":"تم حذف التسجيل غير المرفوع. اضغط «تسجيل» للبدء من جديد.","skipHint":"يمكنك تخطي أي عبارة أو اختيار عبارة أخرى في أي وقت.","completed":"شكرًا! أكملت جميع العبارات. يمكنك البدء من جديد وجمع عينات إضافية.","restart":"البدء من جديد"},"phrases":[{"id":1,"text":"سبحان الله"},{"id":2,"text":"الحمد لله"},{"id":3,"text":"الله أكبر"},{"id":4,"text":"لا إله إلا الله"},{"id":5,"text":"أستغفر الله"},{"id":6,"text":"سبحان الله وبحمده"},{"id":7,"text":"سبحان الله العظيم وبحمده"},{"id":8,"text":"لا حول ولا قوة إلا بالله"},{"id":9,"text":"اللهم صل على محمد"},{"id":10,"text":"اللهم صل وسلم على نبينا محمد"}]}</script>
   <script>
 'use strict';
 
@@ -293,14 +343,21 @@ h1 {
   const config = JSON.parse(document.getElementById('bootstrap-data').textContent);
   const $ = (id) => document.getElementById(id);
 
+  // Per-device tally of successful uploads, used only to mark phrases the
+  // volunteer already covered so a free phrase choice is an informed one.
+  const UPLOAD_COUNTS_KEY = 'speech_collector_upload_counts';
+
   const elements = {
     phraseText: $('phrase-text'),
+    phraseNote: $('phrase-note'),
+    phraseSelect: $('phrase-select'),
     phraseProgress: $('phrase-progress'),
     progressFill: $('progress-fill'),
     timer: $('timer'),
     waveform: $('waveform'),
     status: $('status'),
     record: $('record-button'),
+    recordLabel: $('record-label'),
     stop: $('stop-button'),
     play: $('play-button'),
     playLabel: $('play-label'),
@@ -325,7 +382,10 @@ h1 {
     analyser: null,
     animationId: 0,
     uploading: false,
-    completed: false
+    completed: false,
+    celebrated: false,
+    microphoneUnavailable: false,
+    uploadCounts: {}
   };
 
   initialize();
@@ -336,19 +396,21 @@ h1 {
     document.title = config.app.htmlTitle;
     applyTheme();
     applyTranslations();
+    state.uploadCounts = loadUploadCounts();
+    buildPhraseOptions();
     bindEvents();
     drawIdleWaveform();
     renderPhrase();
 
     if (!window.isSecureContext) {
       setStatus(config.ui.insecureContext, 'error');
-      elements.record.disabled = true;
+      disableRecording();
       return;
     }
 
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
       setStatus(config.ui.unsupported, 'error');
-      elements.record.disabled = true;
+      disableRecording();
       return;
     }
 
@@ -360,11 +422,22 @@ h1 {
 
     if (policyDeniesMicrophone()) {
       setStatus(config.ui.microphoneBlocked, 'error');
-      elements.record.disabled = true;
+      disableRecording();
       return;
     }
 
     setStatus(config.ui.ready, 'info');
+  }
+
+  /**
+   * Marks recording as impossible on this page (no microphone, insecure origin,
+   * or a frame that withholds the permission). Kept as state rather than a bare
+   * disabled flag so later control updates cannot re-enable the button, while
+   * phrase navigation stays usable.
+   */
+  function disableRecording() {
+    state.microphoneUnavailable = true;
+    updateControls('idle');
   }
 
   /**
@@ -424,6 +497,7 @@ h1 {
     elements.play.addEventListener('click', togglePlayback);
     elements.upload.addEventListener('click', uploadRecording);
     elements.next.addEventListener('click', nextPhrase);
+    elements.phraseSelect.addEventListener('change', onPhraseSelected);
     elements.player.addEventListener('ended', updatePlaybackButton);
     elements.player.addEventListener('pause', updatePlaybackButton);
     window.addEventListener('beforeunload', (event) => {
@@ -435,7 +509,11 @@ h1 {
   }
 
   async function startRecording() {
-    if (state.recording || state.uploading || state.recorder?.state === 'recording') return;
+    if (state.uploading || state.recorder?.state === 'recording' || state.completed) return;
+
+    // Pressing the button while a take is waiting means "re-record": drop the
+    // previous take rather than refusing until it is uploaded.
+    if (state.recording) clearRecording();
 
     try {
       state.stream = await requestMicrophone();
@@ -466,6 +544,7 @@ h1 {
       console.error(error);
       releaseMicrophone();
       reportMicrophoneError(error);
+      updateControls('idle');
     }
   }
 
@@ -625,6 +704,7 @@ h1 {
       const result = await postPayload(payload);
       if (!result.ok) throw new Error(result.error?.message || config.ui.uploadFailedTitle);
 
+      recordUploadedPhrase(config.phrases[state.phraseIndex].id);
       setStatus(`<strong>${escapeHtml(config.ui.uploadSuccessTitle)}</strong><br>${escapeHtml(config.ui.uploadSuccessBody)}`, 'success', true);
       clearRecording();
       updateControls('uploading');
@@ -638,48 +718,90 @@ h1 {
     }
   }
 
+  /** Skipping is always allowed; an unuploaded take is only discarded on confirmation. */
   function nextPhrase() {
-    if (state.recording || state.uploading || state.recorder?.state === 'recording') {
-      setStatus(config.ui.nextBlocked, 'error');
-      return;
-    }
-    if (state.completed) {
-      state.completed = false;
-      state.phraseIndex = 0;
-    } else {
-      state.phraseIndex = (state.phraseIndex + 1) % config.phrases.length;
-    }
-    renderPhrase();
-    setStatus(config.ui.ready, 'info');
+    goToPhrase(state.completed ? 0 : (state.phraseIndex + 1) % config.phrases.length);
   }
 
+  function onPhraseSelected() {
+    const index = Number(elements.phraseSelect.value);
+    if (!Number.isInteger(index) || index < 0 || index >= config.phrases.length) {
+      syncPhraseSelect();
+      return;
+    }
+    // The <select> already shows the new value, so a refused move has to be
+    // rolled back or the label would disagree with the phrase on screen.
+    if (!goToPhrase(index)) syncPhraseSelect();
+  }
+
+  function goToPhrase(index) {
+    if (state.uploading || state.recorder?.state === 'recording') return false;
+    if (state.recording && !confirmDiscard()) return false;
+
+    const discarded = Boolean(state.recording);
+    if (discarded) clearRecording();
+    state.completed = false;
+    state.phraseIndex = index;
+    renderPhrase();
+    setStatus(discarded ? config.ui.recordingDiscarded : config.ui.ready, 'info');
+    return true;
+  }
+
+  function confirmDiscard() {
+    return typeof window.confirm !== 'function' || window.confirm(config.ui.discardConfirm);
+  }
+
+  /**
+   * Phrases can be recorded in any order, so "done" is every phrase having at
+   * least one uploaded sample — not merely reaching the last index. The card is
+   * shown once; a volunteer collecting a second round keeps moving instead.
+   */
   function advanceAfterUpload() {
     state.uploading = false;
-    if (state.phraseIndex === config.phrases.length - 1) {
+    if (allPhrasesCovered() && !state.celebrated) {
+      state.celebrated = true;
       state.completed = true;
       elements.phraseText.textContent = '✓';
+      elements.phraseNote.textContent = '';
       elements.phraseProgress.textContent = config.ui.completed;
       elements.progressFill.style.width = '100%';
       elements.next.querySelector('[data-i18n]').textContent = config.ui.restart;
       setStatus(config.ui.completed, 'success');
-      elements.record.disabled = true;
+      // Keeps the picker usable so a volunteer can jump straight back to any
+      // phrase instead of having to restart from the first one.
+      updateControls('idle');
       return;
     }
 
-    state.phraseIndex += 1;
+    state.phraseIndex = nextPhraseIndex();
     renderPhrase();
     setStatus(config.ui.ready, 'info');
+  }
+
+  /** Prefers a phrase this device has not covered yet, else simply the next one. */
+  function nextPhraseIndex() {
+    for (let step = 1; step <= config.phrases.length; step += 1) {
+      const index = (state.phraseIndex + step) % config.phrases.length;
+      if (!uploadCount(config.phrases[index].id)) return index;
+    }
+    return (state.phraseIndex + 1) % config.phrases.length;
+  }
+
+  function allPhrasesCovered() {
+    return config.phrases.every((phrase) => uploadCount(phrase.id) > 0);
   }
 
   function renderPhrase() {
     const phrase = config.phrases[state.phraseIndex];
     elements.phraseText.textContent = phrase.text;
+    elements.phraseNote.textContent = phraseNote(phrase.id);
     elements.phraseProgress.textContent = config.ui.phraseProgress
       .replace('{current}', String(state.phraseIndex + 1))
       .replace('{total}', String(config.phrases.length));
     elements.progressFill.style.width = `${((state.phraseIndex + 1) / config.phrases.length) * 100}%`;
     elements.next.querySelector('[data-i18n]').textContent = config.ui.next;
     elements.timer.textContent = config.ui.timerReady;
+    syncPhraseSelect();
     drawIdleWaveform();
     updateControls('idle');
   }
@@ -689,12 +811,78 @@ h1 {
     const ready = mode === 'ready';
     const uploading = mode === 'uploading';
     const processing = mode === 'processing';
-    elements.record.disabled = recording || ready || uploading || processing || state.completed;
+    const busy = recording || uploading || processing;
+    // Enabled in "ready" too: the same button re-records over a waiting take.
+    elements.record.disabled = busy || state.completed || state.microphoneUnavailable;
+    elements.recordLabel.textContent = state.recording ? config.ui.reRecord : config.ui.record;
     elements.stop.disabled = !recording;
     elements.play.disabled = !ready || uploading;
     elements.upload.disabled = !ready || uploading;
-    elements.next.disabled = recording || uploading || processing;
+    elements.next.disabled = busy;
+    elements.phraseSelect.disabled = busy;
     if (!uploading) elements.uploadLabel.textContent = config.ui.upload;
+  }
+
+  function buildPhraseOptions() {
+    const fragment = document.createDocumentFragment();
+    config.phrases.forEach((phrase, index) => {
+      const option = document.createElement('option');
+      option.value = String(index);
+      option.textContent = optionLabel(phrase, index);
+      fragment.appendChild(option);
+    });
+    elements.phraseSelect.replaceChildren(fragment);
+    syncPhraseSelect();
+  }
+
+  function refreshPhraseOptions() {
+    config.phrases.forEach((phrase, index) => {
+      const option = elements.phraseSelect.options[index];
+      if (option) option.textContent = optionLabel(phrase, index);
+    });
+  }
+
+  function optionLabel(phrase, index) {
+    const count = uploadCount(phrase.id);
+    return `${index + 1}. ${phrase.text}${count ? ` ✓ ${count}` : ''}`;
+  }
+
+  function phraseNote(phraseId) {
+    const count = uploadCount(phraseId);
+    return count ? config.ui.recordedCount.replace('{count}', String(count)) : '';
+  }
+
+  function syncPhraseSelect() {
+    elements.phraseSelect.value = String(state.phraseIndex);
+  }
+
+  function uploadCount(phraseId) {
+    return Number(state.uploadCounts[phraseId]) || 0;
+  }
+
+  function recordUploadedPhrase(phraseId) {
+    state.uploadCounts[phraseId] = uploadCount(phraseId) + 1;
+    saveUploadCounts();
+    refreshPhraseOptions();
+    elements.phraseNote.textContent = phraseNote(phraseId);
+  }
+
+  /** Storage can be unavailable (private mode, sandboxed frame); the tally is optional. */
+  function loadUploadCounts() {
+    try {
+      const stored = JSON.parse(window.localStorage.getItem(UPLOAD_COUNTS_KEY) || '{}');
+      return stored && typeof stored === 'object' ? stored : {};
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function saveUploadCounts() {
+    try {
+      window.localStorage.setItem(UPLOAD_COUNTS_KEY, JSON.stringify(state.uploadCounts));
+    } catch (error) {
+      /* Ignored: the tally is a convenience, never a requirement. */
+    }
   }
 
   function startTimer() {

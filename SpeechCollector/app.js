@@ -4,14 +4,21 @@
   const config = JSON.parse(document.getElementById('bootstrap-data').textContent);
   const $ = (id) => document.getElementById(id);
 
+  // Per-device tally of successful uploads, used only to mark phrases the
+  // volunteer already covered so a free phrase choice is an informed one.
+  const UPLOAD_COUNTS_KEY = 'speech_collector_upload_counts';
+
   const elements = {
     phraseText: $('phrase-text'),
+    phraseNote: $('phrase-note'),
+    phraseSelect: $('phrase-select'),
     phraseProgress: $('phrase-progress'),
     progressFill: $('progress-fill'),
     timer: $('timer'),
     waveform: $('waveform'),
     status: $('status'),
     record: $('record-button'),
+    recordLabel: $('record-label'),
     stop: $('stop-button'),
     play: $('play-button'),
     playLabel: $('play-label'),
@@ -36,7 +43,10 @@
     analyser: null,
     animationId: 0,
     uploading: false,
-    completed: false
+    completed: false,
+    celebrated: false,
+    microphoneUnavailable: false,
+    uploadCounts: {}
   };
 
   initialize();
@@ -47,19 +57,21 @@
     document.title = config.app.htmlTitle;
     applyTheme();
     applyTranslations();
+    state.uploadCounts = loadUploadCounts();
+    buildPhraseOptions();
     bindEvents();
     drawIdleWaveform();
     renderPhrase();
 
     if (!window.isSecureContext) {
       setStatus(config.ui.insecureContext, 'error');
-      elements.record.disabled = true;
+      disableRecording();
       return;
     }
 
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
       setStatus(config.ui.unsupported, 'error');
-      elements.record.disabled = true;
+      disableRecording();
       return;
     }
 
@@ -71,11 +83,22 @@
 
     if (policyDeniesMicrophone()) {
       setStatus(config.ui.microphoneBlocked, 'error');
-      elements.record.disabled = true;
+      disableRecording();
       return;
     }
 
     setStatus(config.ui.ready, 'info');
+  }
+
+  /**
+   * Marks recording as impossible on this page (no microphone, insecure origin,
+   * or a frame that withholds the permission). Kept as state rather than a bare
+   * disabled flag so later control updates cannot re-enable the button, while
+   * phrase navigation stays usable.
+   */
+  function disableRecording() {
+    state.microphoneUnavailable = true;
+    updateControls('idle');
   }
 
   /**
@@ -135,6 +158,7 @@
     elements.play.addEventListener('click', togglePlayback);
     elements.upload.addEventListener('click', uploadRecording);
     elements.next.addEventListener('click', nextPhrase);
+    elements.phraseSelect.addEventListener('change', onPhraseSelected);
     elements.player.addEventListener('ended', updatePlaybackButton);
     elements.player.addEventListener('pause', updatePlaybackButton);
     window.addEventListener('beforeunload', (event) => {
@@ -146,7 +170,11 @@
   }
 
   async function startRecording() {
-    if (state.recording || state.uploading || state.recorder?.state === 'recording') return;
+    if (state.uploading || state.recorder?.state === 'recording' || state.completed) return;
+
+    // Pressing the button while a take is waiting means "re-record": drop the
+    // previous take rather than refusing until it is uploaded.
+    if (state.recording) clearRecording();
 
     try {
       state.stream = await requestMicrophone();
@@ -177,6 +205,7 @@
       console.error(error);
       releaseMicrophone();
       reportMicrophoneError(error);
+      updateControls('idle');
     }
   }
 
@@ -336,6 +365,7 @@
       const result = await postPayload(payload);
       if (!result.ok) throw new Error(result.error?.message || config.ui.uploadFailedTitle);
 
+      recordUploadedPhrase(config.phrases[state.phraseIndex].id);
       setStatus(`<strong>${escapeHtml(config.ui.uploadSuccessTitle)}</strong><br>${escapeHtml(config.ui.uploadSuccessBody)}`, 'success', true);
       clearRecording();
       updateControls('uploading');
@@ -349,48 +379,90 @@
     }
   }
 
+  /** Skipping is always allowed; an unuploaded take is only discarded on confirmation. */
   function nextPhrase() {
-    if (state.recording || state.uploading || state.recorder?.state === 'recording') {
-      setStatus(config.ui.nextBlocked, 'error');
-      return;
-    }
-    if (state.completed) {
-      state.completed = false;
-      state.phraseIndex = 0;
-    } else {
-      state.phraseIndex = (state.phraseIndex + 1) % config.phrases.length;
-    }
-    renderPhrase();
-    setStatus(config.ui.ready, 'info');
+    goToPhrase(state.completed ? 0 : (state.phraseIndex + 1) % config.phrases.length);
   }
 
+  function onPhraseSelected() {
+    const index = Number(elements.phraseSelect.value);
+    if (!Number.isInteger(index) || index < 0 || index >= config.phrases.length) {
+      syncPhraseSelect();
+      return;
+    }
+    // The <select> already shows the new value, so a refused move has to be
+    // rolled back or the label would disagree with the phrase on screen.
+    if (!goToPhrase(index)) syncPhraseSelect();
+  }
+
+  function goToPhrase(index) {
+    if (state.uploading || state.recorder?.state === 'recording') return false;
+    if (state.recording && !confirmDiscard()) return false;
+
+    const discarded = Boolean(state.recording);
+    if (discarded) clearRecording();
+    state.completed = false;
+    state.phraseIndex = index;
+    renderPhrase();
+    setStatus(discarded ? config.ui.recordingDiscarded : config.ui.ready, 'info');
+    return true;
+  }
+
+  function confirmDiscard() {
+    return typeof window.confirm !== 'function' || window.confirm(config.ui.discardConfirm);
+  }
+
+  /**
+   * Phrases can be recorded in any order, so "done" is every phrase having at
+   * least one uploaded sample — not merely reaching the last index. The card is
+   * shown once; a volunteer collecting a second round keeps moving instead.
+   */
   function advanceAfterUpload() {
     state.uploading = false;
-    if (state.phraseIndex === config.phrases.length - 1) {
+    if (allPhrasesCovered() && !state.celebrated) {
+      state.celebrated = true;
       state.completed = true;
       elements.phraseText.textContent = '✓';
+      elements.phraseNote.textContent = '';
       elements.phraseProgress.textContent = config.ui.completed;
       elements.progressFill.style.width = '100%';
       elements.next.querySelector('[data-i18n]').textContent = config.ui.restart;
       setStatus(config.ui.completed, 'success');
-      elements.record.disabled = true;
+      // Keeps the picker usable so a volunteer can jump straight back to any
+      // phrase instead of having to restart from the first one.
+      updateControls('idle');
       return;
     }
 
-    state.phraseIndex += 1;
+    state.phraseIndex = nextPhraseIndex();
     renderPhrase();
     setStatus(config.ui.ready, 'info');
+  }
+
+  /** Prefers a phrase this device has not covered yet, else simply the next one. */
+  function nextPhraseIndex() {
+    for (let step = 1; step <= config.phrases.length; step += 1) {
+      const index = (state.phraseIndex + step) % config.phrases.length;
+      if (!uploadCount(config.phrases[index].id)) return index;
+    }
+    return (state.phraseIndex + 1) % config.phrases.length;
+  }
+
+  function allPhrasesCovered() {
+    return config.phrases.every((phrase) => uploadCount(phrase.id) > 0);
   }
 
   function renderPhrase() {
     const phrase = config.phrases[state.phraseIndex];
     elements.phraseText.textContent = phrase.text;
+    elements.phraseNote.textContent = phraseNote(phrase.id);
     elements.phraseProgress.textContent = config.ui.phraseProgress
       .replace('{current}', String(state.phraseIndex + 1))
       .replace('{total}', String(config.phrases.length));
     elements.progressFill.style.width = `${((state.phraseIndex + 1) / config.phrases.length) * 100}%`;
     elements.next.querySelector('[data-i18n]').textContent = config.ui.next;
     elements.timer.textContent = config.ui.timerReady;
+    syncPhraseSelect();
     drawIdleWaveform();
     updateControls('idle');
   }
@@ -400,12 +472,78 @@
     const ready = mode === 'ready';
     const uploading = mode === 'uploading';
     const processing = mode === 'processing';
-    elements.record.disabled = recording || ready || uploading || processing || state.completed;
+    const busy = recording || uploading || processing;
+    // Enabled in "ready" too: the same button re-records over a waiting take.
+    elements.record.disabled = busy || state.completed || state.microphoneUnavailable;
+    elements.recordLabel.textContent = state.recording ? config.ui.reRecord : config.ui.record;
     elements.stop.disabled = !recording;
     elements.play.disabled = !ready || uploading;
     elements.upload.disabled = !ready || uploading;
-    elements.next.disabled = recording || uploading || processing;
+    elements.next.disabled = busy;
+    elements.phraseSelect.disabled = busy;
     if (!uploading) elements.uploadLabel.textContent = config.ui.upload;
+  }
+
+  function buildPhraseOptions() {
+    const fragment = document.createDocumentFragment();
+    config.phrases.forEach((phrase, index) => {
+      const option = document.createElement('option');
+      option.value = String(index);
+      option.textContent = optionLabel(phrase, index);
+      fragment.appendChild(option);
+    });
+    elements.phraseSelect.replaceChildren(fragment);
+    syncPhraseSelect();
+  }
+
+  function refreshPhraseOptions() {
+    config.phrases.forEach((phrase, index) => {
+      const option = elements.phraseSelect.options[index];
+      if (option) option.textContent = optionLabel(phrase, index);
+    });
+  }
+
+  function optionLabel(phrase, index) {
+    const count = uploadCount(phrase.id);
+    return `${index + 1}. ${phrase.text}${count ? ` ✓ ${count}` : ''}`;
+  }
+
+  function phraseNote(phraseId) {
+    const count = uploadCount(phraseId);
+    return count ? config.ui.recordedCount.replace('{count}', String(count)) : '';
+  }
+
+  function syncPhraseSelect() {
+    elements.phraseSelect.value = String(state.phraseIndex);
+  }
+
+  function uploadCount(phraseId) {
+    return Number(state.uploadCounts[phraseId]) || 0;
+  }
+
+  function recordUploadedPhrase(phraseId) {
+    state.uploadCounts[phraseId] = uploadCount(phraseId) + 1;
+    saveUploadCounts();
+    refreshPhraseOptions();
+    elements.phraseNote.textContent = phraseNote(phraseId);
+  }
+
+  /** Storage can be unavailable (private mode, sandboxed frame); the tally is optional. */
+  function loadUploadCounts() {
+    try {
+      const stored = JSON.parse(window.localStorage.getItem(UPLOAD_COUNTS_KEY) || '{}');
+      return stored && typeof stored === 'object' ? stored : {};
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function saveUploadCounts() {
+    try {
+      window.localStorage.setItem(UPLOAD_COUNTS_KEY, JSON.stringify(state.uploadCounts));
+    } catch (error) {
+      /* Ignored: the tally is a convenience, never a requirement. */
+    }
   }
 
   function startTimer() {

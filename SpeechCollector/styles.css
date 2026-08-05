@@ -73,7 +73,9 @@ h1 {
 
 .eyebrow,
 .phrase-progress,
+.phrase-note,
 .microphone-hint,
+.skip-hint,
 .privacy-note { color: var(--muted); }
 
 .eyebrow {
@@ -103,6 +105,46 @@ h1 {
   border-radius: inherit;
   background: linear-gradient(90deg, var(--primary), #2e9870);
   transition: width 280ms ease;
+}
+
+.phrase-picker {
+  display: grid;
+  gap: 6px;
+  margin-top: 18px;
+}
+
+.phrase-picker .eyebrow { text-align: start; }
+
+.phrase-select {
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 14px;
+  border: 1px solid #cfe4d8;
+  border-radius: 16px;
+  color: var(--text);
+  background: #f6faf7;
+  cursor: pointer;
+  font: inherit;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+
+.phrase-select:focus-visible { outline: 4px solid rgba(214, 165, 58, 0.35); outline-offset: 2px; }
+.phrase-select:disabled { cursor: not-allowed; opacity: 0.5; }
+
+.phrase-note {
+  margin: 10px 0 0;
+  text-align: center;
+  font-size: 0.82rem;
+}
+
+.phrase-note:empty { display: none; }
+
+.skip-hint {
+  margin: 12px 4px 0;
+  text-align: center;
+  font-size: 0.82rem;
+  line-height: 1.6;
 }
 
 .phrase-panel {

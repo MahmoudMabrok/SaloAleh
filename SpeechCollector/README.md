@@ -16,6 +16,7 @@ SpeechCollector/
 ├── appsscript.json     Apps Script manifest source
 ├── build.mjs           Dependency-free build script
 ├── verify.mjs          Dependency-free static and validation checks
+├── ui.test.mjs         Recorder UI behaviour tests (DOM stub, no dependencies)
 ├── dist/               Files ready to upload to Apps Script, plus voice.html
 └── README.md
 ```
@@ -51,13 +52,12 @@ Open `config.ts` in a text editor. This is the single source for:
 - Arabic UI text
 - Theme colors, page language, direction, and timezone
 
-The default phrase list contains the original ten requested phrases plus every
-unique spoken Dhikr used by the repository's active Dhikr, Baqiyat, Istighfar,
-Zabad, and Ghars challenges. The challenge sources are the Arabic resources in
-`app/src/commonMain/composeResources/values/strings.xml`; IDs `11`–`13` add the
-long Tahlil, long Istighfar, and Ghars prompts that were missing from the original
-list. Quran and Al-Baqara reading prompts are not included because they are
-recitation challenges rather than Dhikr counter phrases.
+The default phrase list is the ten short spoken Dhikr used by the repository's
+active Dhikr, Baqiyat, Istighfar, Zabad, and Salawat challenges, sourced from the
+Arabic resources in `app/src/commonMain/composeResources/values/strings.xml`.
+Quran and Al-Baqara reading prompts are not included because they are recitation
+challenges rather than Dhikr counter phrases. Keep this list in step with
+`DhikrSpeech/phrases.json`, which the training pipeline reads.
 
 ### Recommended: use an existing Drive folder
 
@@ -105,6 +105,7 @@ From a terminal:
 cd SpeechCollector
 node build.mjs
 node verify.mjs
+node ui.test.mjs
 ```
 
 Successful output looks like:
@@ -112,9 +113,10 @@ Successful output looks like:
 ```text
 Built Apps Script project in .../SpeechCollector/dist
 Verification passed: build output, manifest, syntax, and request validation are valid.
+UI behaviour tests passed: phrase picker, skipping, re-recording, and upload tallies.
 ```
 
-Re-run this command after every change to `config.ts`, `Code.gs`, `Index.html`, `app.js`, `styles.css`, or `appsscript.json`.
+Re-run these commands after every change to `config.ts`, `Code.gs`, `Index.html`, `app.js`, `styles.css`, or `appsscript.json`. `ui.test.mjs` runs `app.js` against a minimal DOM stub and drives the recorder buttons, so it catches a broken phrase picker or navigation rule before the page reaches a volunteer. The Pages workflow runs all three before publishing `voice.html`.
 
 ## 3. Create the Apps Script project
 
@@ -200,9 +202,18 @@ Drive files remain private unless the owner separately changes their sharing set
 - Stops automatically at five seconds.
 - Shows a live waveform and timer.
 - Keeps the recording in browser memory after every upload error.
-- Prevents moving to another phrase while an unuploaded recording exists.
 - Uses a stable random `sample_id` for retries. If the direct POST succeeds but its response is interrupted, retrying returns the existing row rather than creating a duplicate.
 - Advances only after the server confirms success.
+
+### Choosing, skipping, and re-recording a phrase
+
+Volunteers are not marched through the list in order. Every phrase is optional and every take can be redone:
+
+- **Choose any phrase.** The picker above the phrase card lists all of them and jumps straight to the chosen one. The list is also the progress display: a phrase this device has already uploaded is marked `✓` with its sample count, and the count is repeated under the phrase itself.
+- **Skip without recording.** **التالي** always moves on, whether or not anything was recorded for the current phrase. It wraps around to the first phrase after the last one.
+- **Re-record.** Once a take is waiting, the record button becomes **إعادة التسجيل**: pressing it drops that take and starts a new one. No upload is required in between.
+- Leaving a phrase that still has an **unuploaded** take asks for confirmation first, then discards it. This is the only prompt; recording over your own take does not ask, because pressing "re-record" already says so.
+- The per-phrase upload tally is stored in this browser's `localStorage` (`speech_collector_upload_counts`). It is a convenience only — it never reaches the server, and recording works normally when storage is unavailable (private mode, sandboxed frame).
 
 ## Backend validation and security
 
