@@ -236,6 +236,22 @@ Every variant is benchmarked (size, mean/median/p95 latency, arena estimate) and
 the Keras model on held-out clips**. The notebook recommends the smallest variant that still agrees
 with Keras.
 
+### Mixed precision and the converter
+
+Training on a GPU enables `mixed_float16`, so the checkpoint computes in float16 — and TFLite has
+**no float16 builtin kernels** for `Conv2D`, `DepthwiseConv2dNative` or `Relu`. Converting such a
+checkpoint directly fails for *every* variant, quantised or not:
+
+```
+Could not translate MLIR to FlatBuffer ...
+'tf.Conv2D' op is neither a custom op nor a flex op
+```
+
+`export_all` handles this: it rebuilds the model under a float32 policy and copies the weights over
+before converting. That is lossless — mixed precision keeps master weights in float32 the whole time
+and only casts for compute, so the rebuild drops the casts, not precision. Calling `convert_tflite`
+directly on a mixed-precision model still fails; run it through `to_float32_model` first.
+
 Two honest caveats about the benchmark table:
 
 - `expected_android_ms` is the measured latency times `export.android_latency_factor` (default 3).
@@ -533,6 +549,7 @@ but do not compare two runs' test accuracy to the third decimal unless the manif
 | Validation accuracy far below training | Genuine overfitting: more recordings, more speakers, stronger `augmentation.*`, or a smaller `model.width_multiplier`. |
 | One class always wrong | Check its clips in notebook 01 — usually mislabelled or near-silent takes. Notebook 04 lets you listen to the errors. |
 | Colab disconnects | Re-run `03` with the same `RUN_NAME`; it resumes. |
+| `'tf.Conv2D' op is neither a custom op nor a flex op` | A mixed-precision (float16) checkpoint reached the converter. `export_all` rebuilds it in float32 automatically; if you call `convert_tflite` yourself, pass the model through `to_float32_model` first. |
 | `int8` conversion fails | Calibration data is empty or all one class. Ensure the `train` split is non-empty and `export.representative_samples` ≥ 100. |
 | Quantised model disagrees with Keras | Notebook 05 flags this. Increase `export.representative_samples`, or ship `dynamic_range` instead. |
 | Model works in Colab, fails on the phone | The Android front-end does not match. Compare against `model_meta.json` — sample rate, window, hop, centring and normalisation must all match. |
