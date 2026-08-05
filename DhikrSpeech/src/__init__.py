@@ -39,7 +39,14 @@ _EXPORTS = {
     "metrics": ("EvaluationResult", "evaluate_model"),
     "models": ("build_model", "model_summary_text"),
     "trainer": ("Trainer", "set_global_seed"),
-    "export": ("benchmark_tflite", "convert_tflite", "export_saved_model", "verify_tflite"),
+    "export": (
+        "benchmark_tflite",
+        "convert_tflite",
+        "export_all",
+        "export_saved_model",
+        "to_float32_model",
+        "verify_tflite",
+    ),
 }
 
 _SYMBOL_TO_MODULE = {

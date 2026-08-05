@@ -30,6 +30,11 @@ from typing import Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Un
 import numpy as np
 import tensorflow as tf
 
+try:  # Keras 3 ships standalone and is what TensorFlow >= 2.16 uses
+    import keras
+except ImportError:  # pragma: no cover - TensorFlow 2.15 and older
+    from tensorflow import keras
+
 LOGGER = logging.getLogger(__name__)
 
 PathLike = Union[str, Path]
@@ -40,9 +45,12 @@ __all__ = [
     "VerificationResult",
     "benchmark_tflite",
     "convert_tflite",
+    "export_all",
     "export_saved_model",
+    "low_precision_layers",
     "make_interpreter",
     "representative_dataset_from_arrays",
+    "to_float32_model",
     "verify_tflite",
     "write_labels",
     "write_metadata",
@@ -52,10 +60,102 @@ _MODES = ("float32", "dynamic_range", "int8")
 
 
 # ---------------------------------------------------------------------------
+# Precision
+# ---------------------------------------------------------------------------
+_LOW_PRECISION_POLICIES = frozenset(
+    {"float16", "mixed_float16", "bfloat16", "mixed_bfloat16"}
+)
+
+
+def low_precision_layers(model) -> List[str]:
+    """Names of layers whose compute dtype is not float32."""
+    names: List[str] = []
+    for layer in model.layers:
+        policy_name = getattr(getattr(layer, "dtype_policy", None), "name", None)
+        if policy_name in _LOW_PRECISION_POLICIES:
+            names.append(layer.name)
+    return names
+
+
+def _strip_low_precision(node):
+    """Rewrite every serialised dtype policy in a model config to float32."""
+    if isinstance(node, dict):
+        result = {}
+        for key, value in node.items():
+            if key == "dtype":
+                if isinstance(value, str) and value in _LOW_PRECISION_POLICIES:
+                    result[key] = "float32"
+                    continue
+                if isinstance(value, dict):
+                    inner = value.get("config")
+                    name = inner.get("name") if isinstance(inner, dict) else None
+                    if name in _LOW_PRECISION_POLICIES:
+                        result[key] = "float32"
+                        continue
+            result[key] = _strip_low_precision(value)
+        return result
+    if isinstance(node, list):
+        return [_strip_low_precision(item) for item in node]
+    return node
+
+
+def to_float32_model(model):
+    """Return a float32 equivalent of a model trained with mixed precision.
+
+    TFLite has no float16 kernels for ``Conv2D`` / ``DepthwiseConv2dNative`` /
+    ``Relu``, so a graph that computes in float16 fails to legalise and the
+    converter reports *"op is neither a custom op nor a flex op"* for every
+    variant, quantised or not.
+
+    Mixed precision keeps master weights in float32 and only casts for compute,
+    so rebuilding the same topology under a float32 policy and copying the
+    weights across is lossless - it drops the casts, it does not drop precision.
+    Returns the model unchanged when it is already float32.
+    """
+    affected = low_precision_layers(model)
+    if not affected:
+        return model
+
+    LOGGER.info(
+        "model computes in low precision (%d layers, e.g. %s); "
+        "rebuilding a float32 copy for export",
+        len(affected),
+        ", ".join(affected[:3]),
+    )
+    config = _strip_low_precision(model.get_config())
+    previous_policy = keras.mixed_precision.global_policy()
+    try:
+        # Layers whose config omits a dtype would otherwise inherit the global
+        # mixed policy and undo the rewrite.
+        keras.mixed_precision.set_global_policy("float32")
+        clone = model.__class__.from_config(config)
+        clone.set_weights(model.get_weights())
+    finally:
+        keras.mixed_precision.set_global_policy(previous_policy)
+
+    remaining = low_precision_layers(clone)
+    if remaining:
+        raise RuntimeError(
+            "failed to build a float32 copy for export; these layers are still "
+            f"low precision: {', '.join(remaining[:5])}"
+        )
+    return clone
+
+
+# ---------------------------------------------------------------------------
 # SavedModel
 # ---------------------------------------------------------------------------
 def export_saved_model(model, directory: PathLike, overwrite: bool = True) -> Path:
     """Write a SavedModel, using the Keras 3 ``export`` API when available."""
+    affected = low_precision_layers(model)
+    if affected:
+        LOGGER.warning(
+            "exporting a model with %d low-precision layers - TFLite conversion "
+            "will fail with 'op is neither a custom op nor a flex op'. "
+            "Pass it through to_float32_model() first.",
+            len(affected),
+        )
+
     target = Path(directory)
     if target.exists() and overwrite:
         shutil.rmtree(target)
@@ -494,10 +594,18 @@ def export_all(
     metrics: Optional[Dict] = None,
     output_dir: Optional[PathLike] = None,
 ) -> ExportBundle:
-    """Export every enabled variant, benchmark it and verify it against Keras."""
+    """Export every enabled variant, benchmark it and verify it against Keras.
+
+    A model trained with mixed precision is rebuilt in float32 first (see
+    :func:`to_float32_model`); that float32 model is also the reference the
+    verification step compares against, since it is the same weights without the
+    float16 compute casts.
+    """
     export_config = config.export
     destination = Path(output_dir or config.paths.exports_path)
     destination.mkdir(parents=True, exist_ok=True)
+
+    model = to_float32_model(model)
 
     saved_model_dir = destination / "saved_model"
     export_saved_model(model, saved_model_dir)
