@@ -590,9 +590,13 @@ and the `!!` notes in `artifacts.summary()`). Work through it in this order:
    a config change you made in between never took effect, and "epochs completed" counts epochs from
    a run you already abandoned. Set `FRESH_START = True` (or a new `RUN_NAME`) after any config
    change. The summary flags a resumed run.
-4. **Then look at the data**: `split_counts` in notebook 03 and the per-class table in notebook 01.
-   Ten classes need hundreds of clips each, from more than one or two speakers, before validation
-   accuracy means anything.
+4. **Then look at the data**, which is usually the real answer. Notebook 03 prints clips per class
+   for every split. If notebook 04 reports `samples : 10` for ten classes, the validation split is
+   one clip per class: accuracy can only be 0.0, 0.1, 0.2 … and its 95% interval runs from 0.02 to
+   0.40. That split cannot distinguish a working model from a broken one, and a dataset that thin
+   (≤ 13 clips per class, given how `assign_splits` floors the ratios) cannot train a 10-class
+   classifier from scratch at all. Aim for 50–100+ recordings per class from 10+ speakers before
+   the numbers start meaning anything.
 
 ---
 

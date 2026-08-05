@@ -83,6 +83,23 @@ class EvaluationResult:
     def confidence(self) -> np.ndarray:
         return self.y_prob.max(axis=1)
 
+    def accuracy_interval(self, z: float = 1.96) -> Tuple[float, float]:
+        """95% Wilson score interval for the accuracy.
+
+        A split of a few dozen clips cannot measure a model: accuracy on ``n``
+        samples only takes values in steps of ``1/n``, and its interval spans most
+        of the range. Reporting the interval next to the point estimate keeps a
+        number like "0.10 on 10 clips" from being read as a result.
+        """
+        n = float(self.num_samples)
+        if n <= 0:
+            return (float("nan"), float("nan"))
+        p = self.accuracy
+        denominator = 1.0 + z * z / n
+        center = (p + z * z / (2.0 * n)) / denominator
+        half = z * np.sqrt(p * (1.0 - p) / n + z * z / (4.0 * n * n)) / denominator
+        return (float(max(center - half, 0.0)), float(min(center + half, 1.0)))
+
     def prediction_distribution(self) -> Dict[str, int]:
         """How many clips were predicted as each class, most-predicted first."""
         counts = np.bincount(self.y_pred, minlength=len(self.class_names))
@@ -261,14 +278,24 @@ class EvaluationResult:
     def summary(self) -> str:
         macro = self.averaged("macro")
         weighted = self.averaged("weighted")
+        low, high = self.accuracy_interval()
         lines = [
             f"samples   : {self.num_samples}",
-            f"accuracy  : {self.accuracy:.4f}",
+            f"accuracy  : {self.accuracy:.4f} (95% CI {low:.3f}-{high:.3f})",
             f"macro     : P {macro['precision']:.4f} | R {macro['recall']:.4f} | "
             f"F1 {macro['f1']:.4f}",
             f"weighted  : P {weighted['precision']:.4f} | R {weighted['recall']:.4f} | "
             f"F1 {weighted['f1']:.4f}",
         ]
+        per_class = self.num_samples / max(len(self.class_names), 1)
+        if per_class < 10:
+            lines.append(
+                f"\n!! {self.num_samples} clips over {len(self.class_names)} classes is "
+                f"{per_class:.1f} per class. Accuracy here only moves in steps of "
+                f"{1.0 / max(self.num_samples, 1):.2f} and the interval above covers most of "
+                f"the range - this split cannot tell a good model from a bad one. Collect "
+                f"more recordings before reading anything into it."
+            )
         collapsed = self.collapsed_to
         if collapsed is not None:
             lines.append(
