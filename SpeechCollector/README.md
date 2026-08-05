@@ -171,7 +171,7 @@ Both hosts use HTTPS, which is required for microphone access. Test the standalo
 3. When asked, allow microphone access.
 4. Speak for at least one second. Recording stops automatically at five seconds.
 5. Tap **استماع** (Play), then **رفع التسجيل** (Upload).
-6. Confirm that the success message appears and the next phrase loads.
+6. Confirm that the success message appears, the phrase stays on screen, and the record button is ready for another sample of it.
 
 ### iPhone or iPad
 
@@ -203,16 +203,18 @@ Drive files remain private unless the owner separately changes their sharing set
 - Shows a live waveform and timer.
 - Keeps the recording in browser memory after every upload error.
 - Uses a stable random `sample_id` for retries. If the direct POST succeeds but its response is interrupted, retrying returns the existing row rather than creating a duplicate.
-- Advances only after the server confirms success.
+- Tallies a sample only after the server confirms success.
 
 ### Choosing, skipping, and re-recording a phrase
 
 Volunteers are not marched through the list in order. Every phrase is optional and every take can be redone:
 
 - **Choose any phrase.** The picker above the phrase card lists all of them and jumps straight to the chosen one. The list is also the progress display: a phrase this device has already uploaded is marked `✓` with its sample count, and the count is repeated under the phrase itself.
-- **Skip without recording.** **التالي** always moves on, whether or not anything was recorded for the current phrase. It wraps around to the first phrase after the last one.
+- **Stay on the phrase after uploading.** An upload does not move the volunteer on. The phrase stays on screen with its sample count updated and the recorder reset, because several samples of one phrase are worth more to the dataset than one sample each. Moving on is always a deliberate tap.
+- **Skip without recording.** **التالي** and **السابق** move to the following and previous phrase, whether or not anything was recorded for the current one. Both wrap around the ends of the list.
 - **Re-record.** Once a take is waiting, the record button becomes **إعادة التسجيل**: pressing it drops that take and starts a new one. No upload is required in between.
 - Leaving a phrase that still has an **unuploaded** take asks for confirmation first, then discards it. This is the only prompt; recording over your own take does not ask, because pressing "re-record" already says so.
+- Once every phrase has at least one sample, that is announced once in the status line. Nothing locks: extra samples for any phrase stay just as welcome.
 - The per-phrase upload tally is stored in this browser's `localStorage` (`speech_collector_upload_counts`). It is a convenience only — it never reaches the server, and recording works normally when storage is unavailable (private mode, sandboxed frame).
 
 ## Backend validation and security

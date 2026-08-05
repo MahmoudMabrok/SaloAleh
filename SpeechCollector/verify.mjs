@@ -32,10 +32,10 @@ assert.ok(bootstrap.ui.microphoneBlocked, 'The permissions-policy message is mis
 // The recorder markup and strings the phrase picker, skipping, and re-recording
 // depend on. app.js reads these by id and asserts nothing at runtime, so a
 // renamed element would only surface as a blank page in front of a volunteer.
-for (const elementId of ['phrase-select', 'phrase-note', 'record-label']) {
+for (const elementId of ['phrase-select', 'phrase-note', 'record-label', 'next-button', 'back-button']) {
   assert.ok(standalone.includes(`id="${elementId}"`), `dist/voice.html is missing #${elementId}.`);
 }
-for (const key of ['reRecord', 'choosePhrase', 'recordedCount', 'discardConfirm', 'recordingDiscarded', 'skipHint']) {
+for (const key of ['reRecord', 'choosePhrase', 'recordedCount', 'discardConfirm', 'recordingDiscarded', 'skipHint', 'back', 'readyForAnother']) {
   assert.ok(bootstrap.ui[key], `The "${key}" UI string is missing from the bootstrap payload.`);
 }
 assert.ok(bootstrap.ui.recordedCount.includes('{count}'), 'recordedCount must contain the {count} placeholder.');

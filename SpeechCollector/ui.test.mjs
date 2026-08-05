@@ -6,8 +6,9 @@
  * touches, which keeps the tests honest: they drive the same buttons a
  * volunteer does and assert on what the page ends up showing.
  *
- * Covered: the phrase picker, skipping a phrase without recording it,
- * re-recording over a waiting take, and the per-phrase upload tally.
+ * Covered: the phrase picker, skipping a phrase forwards and backwards without
+ * recording it, re-recording over a waiting take, staying on the phrase after
+ * an upload, and the per-phrase upload tally.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -33,7 +34,8 @@ const UPLOAD_COUNTS_KEY = 'speech_collector_upload_counts';
 const ELEMENT_IDS = [
   'phrase-text', 'phrase-note', 'phrase-select', 'phrase-progress', 'progress-fill', 'timer',
   'waveform', 'status', 'record-button', 'record-label', 'stop-button', 'play-button', 'play-label',
-  'upload-button', 'upload-label', 'next-button', 'audio-player', 'standalone-banner', 'standalone-link'
+  'upload-button', 'upload-label', 'next-button', 'back-button', 'audio-player', 'standalone-banner',
+  'standalone-link'
 ];
 
 class FakeElement {
@@ -293,7 +295,27 @@ const text = (environment, id) => environment.dom.get(id).textContent;
   assert.deepEqual(environment.confirmCalls, [], 'Skipping without a take must never prompt.');
 }
 
-// 4. A finished take leaves the record button available as "re-record".
+// 4. "Back" is the mirror of "next": it steps to the previous phrase and wraps.
+{
+  const environment = createEnvironment();
+  const back = environment.dom.get('back-button');
+  assert.equal(back.disabled, false, 'Back must be usable from the start.');
+  back.dispatch('click');
+  assert.equal(
+    text(environment, 'phrase-text'),
+    phrases[phrases.length - 1].text,
+    'Back from the first phrase must wrap to the last one.'
+  );
+  assert.equal(environment.dom.get('phrase-select').value, String(phrases.length - 1), 'The picker must follow a step back.');
+
+  back.dispatch('click');
+  assert.equal(text(environment, 'phrase-text'), phrases[phrases.length - 2].text, 'Back must keep stepping backwards.');
+  environment.dom.get('next-button').dispatch('click');
+  assert.equal(text(environment, 'phrase-text'), phrases[phrases.length - 1].text, 'Next must undo a step back.');
+  assert.deepEqual(environment.confirmCalls, [], 'Stepping back without a take must never prompt.');
+}
+
+// 5. A finished take leaves the record button available as "re-record".
 {
   const environment = createEnvironment();
   await recordTake(environment);
@@ -304,7 +326,7 @@ const text = (environment, id) => environment.dom.get(id).textContent;
   assert.equal(environment.dom.get('upload-button').disabled, false);
 }
 
-// 5. Re-recording discards the waiting take and starts a fresh one, no prompt.
+// 6. Re-recording discards the waiting take and starts a fresh one, no prompt.
 {
   const environment = createEnvironment();
   await recordTake(environment);
@@ -317,7 +339,7 @@ const text = (environment, id) => environment.dom.get(id).textContent;
   assert.equal(text(environment, 'record-label'), bootstrap.ui.record, 'The label returns to "record" while recording.');
 }
 
-// 6. Skipping with an unuploaded take asks first, and honours "no".
+// 7. Skipping with an unuploaded take asks first, and honours "no".
 {
   const environment = createEnvironment({ confirmResult: false });
   await recordTake(environment);
@@ -327,7 +349,7 @@ const text = (environment, id) => environment.dom.get(id).textContent;
   assert.equal(environment.dom.get('upload-button').disabled, false, 'The take must survive a refused skip.');
 }
 
-// 7. Confirming the warning skips the phrase and drops the take.
+// 8. Confirming the warning skips the phrase and drops the take.
 {
   const environment = createEnvironment({ confirmResult: true });
   await recordTake(environment);
@@ -338,7 +360,7 @@ const text = (environment, id) => environment.dom.get(id).textContent;
   assert.equal(environment.dom.get('upload-button').disabled, true, 'The discarded take must be gone.');
 }
 
-// 8. A refused pick rolls the select back so it cannot disagree with the screen.
+// 9. A refused pick rolls the select back so it cannot disagree with the screen.
 {
   const environment = createEnvironment({ confirmResult: false });
   await recordTake(environment);
@@ -349,21 +371,23 @@ const text = (environment, id) => environment.dom.get(id).textContent;
   assert.equal(text(environment, 'phrase-text'), phrases[0].text);
 }
 
-// 9. Navigation is locked while a take is in progress, and freed after it stops.
+// 10. Navigation is locked while a take is in progress, and freed after it stops.
 {
   const environment = createEnvironment();
   environment.dom.get('record-button').dispatch('click');
   await tick();
   assert.equal(environment.dom.get('next-button').disabled, true, 'No skipping mid-take.');
+  assert.equal(environment.dom.get('back-button').disabled, true, 'No stepping back mid-take.');
   assert.equal(environment.dom.get('phrase-select').disabled, true, 'No phrase switch mid-take.');
   environment.clock.now += 1500;
   environment.dom.get('stop-button').dispatch('click');
   await tick();
   assert.equal(environment.dom.get('next-button').disabled, false);
+  assert.equal(environment.dom.get('back-button').disabled, false);
   assert.equal(environment.dom.get('phrase-select').disabled, false);
 }
 
-// 10. A successful upload is tallied per phrase and shown in the picker.
+// 11. A successful upload is tallied per phrase and shown in the picker.
 {
   const environment = createEnvironment();
   await recordTake(environment);
@@ -379,7 +403,7 @@ const text = (environment, id) => environment.dom.get(id).textContent;
   );
 }
 
-// 11. A stored tally is restored on the next visit, on the phrase and the picker.
+// 12. A stored tally is restored on the next visit, on the phrase and the picker.
 {
   const environment = createEnvironment({ storageSeed: { [phrases[0].id]: 3 } });
   assert.ok(environment.dom.get('phrase-select').children[0].textContent.includes('3'), 'The stored count must show.');
@@ -390,21 +414,47 @@ const text = (environment, id) => environment.dom.get(id).textContent;
   );
 }
 
-// 12. After an upload the app moves on to a phrase that has no samples yet.
+// 13. An upload leaves the volunteer on the same phrase, ready for another take.
 {
-  const seed = Object.fromEntries(phrases.slice(1, 4).map((phrase) => [phrase.id, 1]));
-  const environment = createEnvironment({ storageSeed: seed });
+  const environment = createEnvironment();
+  environment.dom.get('phrase-select').value = '4';
+  environment.dom.get('phrase-select').dispatch('change');
   await recordTake(environment);
   await uploadTake(environment);
   environment.flushTimers();
+
+  assert.equal(text(environment, 'phrase-text'), phrases[4].text, 'The uploaded phrase must stay on screen.');
+  assert.equal(environment.dom.get('phrase-select').value, '4', 'The picker must stay on the uploaded phrase.');
+  assert.equal(text(environment, 'status'), bootstrap.ui.readyForAnother, 'The volunteer must be invited to record again.');
+  assert.equal(environment.dom.get('record-button').disabled, false, 'Recording another sample must be possible.');
+  assert.equal(text(environment, 'record-label'), bootstrap.ui.record, 'The uploaded take is gone, so this is a fresh record.');
+  assert.equal(environment.dom.get('upload-button').disabled, true, 'There is no take waiting to be uploaded.');
   assert.equal(
-    text(environment, 'phrase-text'),
-    phrases[4].text,
-    'The next phrase must be the first one still missing a sample, not simply index + 1.'
+    text(environment, 'phrase-note'),
+    bootstrap.ui.recordedCount.replace('{count}', '1'),
+    'The phrase must show the sample it just gained.'
   );
 }
 
-// 13. The completion card appears only once every phrase has a sample.
+// 14. A second sample of the same phrase is uploaded and tallied on top of the first.
+{
+  const environment = createEnvironment();
+  await recordTake(environment);
+  await uploadTake(environment);
+  environment.flushTimers();
+  await recordTake(environment);
+  await uploadTake(environment);
+  environment.flushTimers();
+
+  assert.deepEqual(
+    JSON.parse(environment.storage.get(UPLOAD_COUNTS_KEY)),
+    { [phrases[0].id]: 2 },
+    'Both samples must be tallied against the same phrase.'
+  );
+  assert.equal(text(environment, 'phrase-text'), phrases[0].text, 'The phrase must still be the one being recorded.');
+}
+
+// 15. Covering the last phrase is announced, without taking the phrase off screen.
 {
   const seed = Object.fromEntries(phrases.slice(1).map((phrase) => [phrase.id, 1]));
   const environment = createEnvironment({ storageSeed: seed });
@@ -412,19 +462,19 @@ const text = (environment, id) => environment.dom.get(id).textContent;
   await recordTake(environment);
   await uploadTake(environment);
   environment.flushTimers();
-  assert.equal(text(environment, 'phrase-text'), '✓', 'Covering the last remaining phrase must complete the set.');
-  assert.equal(text(environment, 'status'), bootstrap.ui.completed);
-  assert.equal(environment.dom.get('phrase-select').disabled, false, 'The picker must survive the completion card.');
+  assert.equal(text(environment, 'status'), bootstrap.ui.completed, 'Covering the set must be announced.');
+  assert.equal(text(environment, 'phrase-text'), phrases[0].text, 'The announcement must not replace the phrase.');
+  assert.equal(environment.dom.get('record-button').disabled, false, 'Extra samples must still be recordable.');
+  assert.equal(environment.dom.get('phrase-select').disabled, false, 'The picker must stay usable.');
 
-  // Picking a phrase leaves the card and makes recording possible again.
-  const select = environment.dom.get('phrase-select');
-  select.value = '2';
-  select.dispatch('change');
-  assert.equal(text(environment, 'phrase-text'), phrases[2].text);
-  assert.equal(environment.dom.get('record-button').disabled, false, 'Recording must resume after the card.');
+  // The congratulation is shown once; later uploads go back to the normal message.
+  await recordTake(environment);
+  await uploadTake(environment);
+  environment.flushTimers();
+  assert.equal(text(environment, 'status'), bootstrap.ui.readyForAnother, 'The completion message must not repeat.');
 }
 
-// 14. Uploading before every phrase is covered must not show the completion card.
+// 16. Uploading before every phrase is covered must not announce completion.
 {
   const environment = createEnvironment();
   environment.dom.get('phrase-select').value = String(phrases.length - 1);
@@ -432,11 +482,11 @@ const text = (environment, id) => environment.dom.get(id).textContent;
   await recordTake(environment);
   await uploadTake(environment);
   environment.flushTimers();
-  assert.notEqual(text(environment, 'phrase-text'), '✓', 'Reaching the last phrase is not the same as covering them all.');
-  assert.equal(text(environment, 'phrase-text'), phrases[0].text, 'It must wrap to the first uncovered phrase.');
+  assert.notEqual(text(environment, 'status'), bootstrap.ui.completed, 'Reaching the last phrase is not covering them all.');
+  assert.equal(text(environment, 'status'), bootstrap.ui.readyForAnother);
 }
 
-// 15. A failed upload keeps the take, and never tallies it.
+// 17. A failed upload keeps the take, and never tallies it.
 {
   const environment = createEnvironment({ uploadOk: false });
   await recordTake(environment);
@@ -446,13 +496,14 @@ const text = (environment, id) => environment.dom.get(id).textContent;
   assert.equal(text(environment, 'upload-label'), bootstrap.ui.retry, 'The button must offer a retry.');
 }
 
-// 16. An insecure page blocks recording but leaves phrase navigation usable.
+// 18. An insecure page blocks recording but leaves phrase navigation usable.
 {
   const environment = createEnvironment({ secureContext: false });
   assert.equal(environment.dom.get('record-button').disabled, true, 'Recording needs HTTPS.');
   assert.equal(environment.dom.get('next-button').disabled, false, 'Navigation must stay usable.');
+  assert.equal(environment.dom.get('back-button').disabled, false, 'Navigation must stay usable.');
   assert.equal(environment.dom.get('phrase-select').disabled, false, 'The picker must stay usable.');
   assert.equal(text(environment, 'status'), bootstrap.ui.insecureContext);
 }
 
-console.log('UI behaviour tests passed: phrase picker, skipping, re-recording, and upload tallies.');
+console.log('UI behaviour tests passed: phrase picker, next/back, re-recording, staying on the phrase, and tallies.');

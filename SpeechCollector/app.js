@@ -25,6 +25,7 @@
     upload: $('upload-button'),
     uploadLabel: $('upload-label'),
     next: $('next-button'),
+    back: $('back-button'),
     player: $('audio-player'),
     standalone: $('standalone-banner'),
     standaloneLink: $('standalone-link')
@@ -43,7 +44,6 @@
     analyser: null,
     animationId: 0,
     uploading: false,
-    completed: false,
     celebrated: false,
     microphoneUnavailable: false,
     uploadCounts: {}
@@ -158,6 +158,7 @@
     elements.play.addEventListener('click', togglePlayback);
     elements.upload.addEventListener('click', uploadRecording);
     elements.next.addEventListener('click', nextPhrase);
+    elements.back.addEventListener('click', previousPhrase);
     elements.phraseSelect.addEventListener('change', onPhraseSelected);
     elements.player.addEventListener('ended', updatePlaybackButton);
     elements.player.addEventListener('pause', updatePlaybackButton);
@@ -170,7 +171,7 @@
   }
 
   async function startRecording() {
-    if (state.uploading || state.recorder?.state === 'recording' || state.completed) return;
+    if (state.uploading || state.recorder?.state === 'recording') return;
 
     // Pressing the button while a take is waiting means "re-record": drop the
     // previous take rather than refusing until it is uploaded.
@@ -369,7 +370,7 @@
       setStatus(`<strong>${escapeHtml(config.ui.uploadSuccessTitle)}</strong><br>${escapeHtml(config.ui.uploadSuccessBody)}`, 'success', true);
       clearRecording();
       updateControls('uploading');
-      window.setTimeout(advanceAfterUpload, 1100);
+      window.setTimeout(finishUpload, 1100);
     } catch (error) {
       console.error(error);
       state.uploading = false;
@@ -381,7 +382,13 @@
 
   /** Skipping is always allowed; an unuploaded take is only discarded on confirmation. */
   function nextPhrase() {
-    goToPhrase(state.completed ? 0 : (state.phraseIndex + 1) % config.phrases.length);
+    goToPhrase((state.phraseIndex + 1) % config.phrases.length);
+  }
+
+  /** The mirror of "next": moving back is how a volunteer returns to a phrase they left. */
+  function previousPhrase() {
+    const count = config.phrases.length;
+    goToPhrase((state.phraseIndex - 1 + count) % count);
   }
 
   function onPhraseSelected() {
@@ -401,7 +408,6 @@
 
     const discarded = Boolean(state.recording);
     if (discarded) clearRecording();
-    state.completed = false;
     state.phraseIndex = index;
     renderPhrase();
     setStatus(discarded ? config.ui.recordingDiscarded : config.ui.ready, 'info');
@@ -413,39 +419,26 @@
   }
 
   /**
+   * Stays on the phrase that was just uploaded. Several samples of one phrase
+   * are worth more to the dataset than one sample each, so the app resets for
+   * another take instead of moving on; "next" and "back" are how a volunteer
+   * chooses to leave.
+   *
    * Phrases can be recorded in any order, so "done" is every phrase having at
-   * least one uploaded sample — not merely reaching the last index. The card is
-   * shown once; a volunteer collecting a second round keeps moving instead.
+   * least one uploaded sample — not merely reaching the last index. It is
+   * announced once, as a message, without taking the phrase off the screen.
    */
-  function advanceAfterUpload() {
+  function finishUpload() {
     state.uploading = false;
+    renderPhrase();
+
     if (allPhrasesCovered() && !state.celebrated) {
       state.celebrated = true;
-      state.completed = true;
-      elements.phraseText.textContent = '✓';
-      elements.phraseNote.textContent = '';
-      elements.phraseProgress.textContent = config.ui.completed;
-      elements.progressFill.style.width = '100%';
-      elements.next.querySelector('[data-i18n]').textContent = config.ui.restart;
       setStatus(config.ui.completed, 'success');
-      // Keeps the picker usable so a volunteer can jump straight back to any
-      // phrase instead of having to restart from the first one.
-      updateControls('idle');
       return;
     }
 
-    state.phraseIndex = nextPhraseIndex();
-    renderPhrase();
-    setStatus(config.ui.ready, 'info');
-  }
-
-  /** Prefers a phrase this device has not covered yet, else simply the next one. */
-  function nextPhraseIndex() {
-    for (let step = 1; step <= config.phrases.length; step += 1) {
-      const index = (state.phraseIndex + step) % config.phrases.length;
-      if (!uploadCount(config.phrases[index].id)) return index;
-    }
-    return (state.phraseIndex + 1) % config.phrases.length;
+    setStatus(config.ui.readyForAnother, 'info');
   }
 
   function allPhrasesCovered() {
@@ -460,7 +453,6 @@
       .replace('{current}', String(state.phraseIndex + 1))
       .replace('{total}', String(config.phrases.length));
     elements.progressFill.style.width = `${((state.phraseIndex + 1) / config.phrases.length) * 100}%`;
-    elements.next.querySelector('[data-i18n]').textContent = config.ui.next;
     elements.timer.textContent = config.ui.timerReady;
     syncPhraseSelect();
     drawIdleWaveform();
@@ -474,12 +466,13 @@
     const processing = mode === 'processing';
     const busy = recording || uploading || processing;
     // Enabled in "ready" too: the same button re-records over a waiting take.
-    elements.record.disabled = busy || state.completed || state.microphoneUnavailable;
+    elements.record.disabled = busy || state.microphoneUnavailable;
     elements.recordLabel.textContent = state.recording ? config.ui.reRecord : config.ui.record;
     elements.stop.disabled = !recording;
     elements.play.disabled = !ready || uploading;
     elements.upload.disabled = !ready || uploading;
     elements.next.disabled = busy;
+    elements.back.disabled = busy;
     elements.phraseSelect.disabled = busy;
     if (!uploading) elements.uploadLabel.textContent = config.ui.upload;
   }

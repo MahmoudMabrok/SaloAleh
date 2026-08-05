@@ -242,6 +242,9 @@ h1 {
 .button-secondary { color: var(--primary-dark); border: 2px solid #b9d8c7; background: white; }
 .button-accent { color: #302000; background: #f1c45f; }
 .button-ghost { color: var(--primary-dark); border: 1px solid var(--border); background: #f6faf7; }
+/* "Back" sits under "next" and is the lesser of the two moves, so it reads
+   quieter and keeps the forward path the obvious one. */
+.button-quiet { min-height: 48px; color: var(--muted); border: 1px solid var(--border); background: transparent; font-size: 0.98rem; }
 .button-wide { grid-column: 1 / -1; }
 
 .privacy-note {
