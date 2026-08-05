@@ -15,31 +15,20 @@
         <h1 id="hero-title" data-i18n="hero"></h1>
       </header>
 
-      <div class="progress-block">
-        <p class="eyebrow" data-i18n="currentPhrase"></p>
-        <p id="phrase-progress" class="phrase-progress" aria-live="polite"></p>
+      <div class="summary">
+        <p class="summary-line">
+          <span id="summary-phrases"></span>
+          <span id="summary-samples"></span>
+        </p>
         <div class="progress-track" aria-hidden="true">
           <span id="progress-fill"></span>
         </div>
       </div>
 
-      <div class="phrase-picker">
-        <label id="phrase-select-label" class="eyebrow" for="phrase-select" data-i18n="choosePhrase"></label>
-        <select id="phrase-select" class="phrase-select"></select>
-      </div>
+      <p class="list-hint" data-i18n="listHint"></p>
+      <p class="microphone-hint" data-i18n="microphoneHint"></p>
 
-      <div class="phrase-panel">
-        <p id="phrase-text" class="phrase-text" lang="ar"></p>
-        <p id="phrase-note" class="phrase-note" aria-live="polite"></p>
-      </div>
-
-      <div class="recorder-panel">
-        <canvas id="waveform" width="720" height="112" aria-label="موجة الصوت"></canvas>
-        <output id="timer" class="timer" aria-live="off">00:00.0</output>
-        <p class="microphone-hint" data-i18n="microphoneHint"></p>
-      </div>
-
-      <div id="status" class="status status-info" role="status" aria-live="polite"></div>
+      <div id="page-status" class="status status-info" role="status" aria-live="polite"></div>
 
       <div id="standalone-banner" class="standalone-banner" hidden>
         <a id="standalone-link" class="button button-primary button-wide" target="_blank" rel="noopener">
@@ -47,32 +36,17 @@
         </a>
       </div>
 
-      <div class="button-grid">
-        <button id="record-button" class="button button-primary" type="button">
-          <span aria-hidden="true">●</span><span id="record-label" data-i18n="record"></span>
-        </button>
-        <button id="stop-button" class="button button-danger" type="button" disabled>
-          <span aria-hidden="true">■</span><span data-i18n="stop"></span>
-        </button>
-        <button id="play-button" class="button button-secondary" type="button" disabled>
-          <span aria-hidden="true">▶</span><span id="play-label" data-i18n="play"></span>
-        </button>
-        <button id="upload-button" class="button button-accent" type="button" disabled>
-          <span aria-hidden="true">⬆</span><span id="upload-label" data-i18n="upload"></span>
-        </button>
-        <button id="next-button" class="button button-ghost button-wide" type="button">
-          <span data-i18n="next"></span><span aria-hidden="true">←</span>
-        </button>
-        <button id="back-button" class="button button-quiet button-wide" type="button">
-          <span aria-hidden="true">→</span><span data-i18n="back"></span>
-        </button>
-      </div>
-
-      <p class="skip-hint" data-i18n="skipHint"></p>
+      <ul id="phrase-list" class="phrase-list"></ul>
 
       <p class="privacy-note"><span aria-hidden="true">🔒</span> <span data-i18n="privacy"></span></p>
     </section>
   </main>
+
+  <div id="upload-all-bar" class="upload-all-bar" hidden>
+    <button id="upload-all-button" class="button button-primary button-wide" type="button">
+      <span aria-hidden="true">⬆</span><span id="upload-all-label"></span>
+    </button>
+  </div>
 
   <audio id="audio-player" preload="metadata"></audio>
   <script id="bootstrap-data" type="application/json"><?!= bootstrapJson ?></script>
@@ -81,4 +55,3 @@
   </script>
 </body>
 </html>
-
