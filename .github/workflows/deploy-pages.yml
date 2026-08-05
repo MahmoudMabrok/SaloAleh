@@ -55,6 +55,8 @@ jobs:
       - name: Build voice collector page
         run: |
           node SpeechCollector/build.mjs
+          node SpeechCollector/verify.mjs
+          node SpeechCollector/ui.test.mjs
           cp SpeechCollector/dist/voice.html _site/voice.html
 
       - name: Upload Pages artifact

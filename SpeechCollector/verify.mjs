@@ -29,6 +29,17 @@ assert.match(bootstrap.endpoint, /^https:\/\/script\.google\.com\/macros\/s\/[\w
 assert.ok(bootstrap.phrases.length > 0, 'The standalone page has no phrases.');
 assert.ok(bootstrap.ui.microphoneBlocked, 'The permissions-policy message is missing from the UI strings.');
 
+// The recorder markup and strings the phrase picker, skipping, and re-recording
+// depend on. app.js reads these by id and asserts nothing at runtime, so a
+// renamed element would only surface as a blank page in front of a volunteer.
+for (const elementId of ['phrase-select', 'phrase-note', 'record-label']) {
+  assert.ok(standalone.includes(`id="${elementId}"`), `dist/voice.html is missing #${elementId}.`);
+}
+for (const key of ['reRecord', 'choosePhrase', 'recordedCount', 'discardConfirm', 'recordingDiscarded', 'skipHint']) {
+  assert.ok(bootstrap.ui[key], `The "${key}" UI string is missing from the bootstrap payload.`);
+}
+assert.ok(bootstrap.ui.recordedCount.includes('{count}'), 'recordedCount must contain the {count} placeholder.');
+
 const manifest = JSON.parse(read('dist/appsscript.json'));
 assert.equal(manifest.runtimeVersion, 'V8');
 assert.equal(manifest.webapp.executeAs, 'USER_DEPLOYING');
