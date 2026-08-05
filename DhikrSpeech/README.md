@@ -83,7 +83,7 @@ in the runtime), installs anything missing and loads the config. There is nothin
 Create this structure in **My Drive**:
 
 ```text
-MyDrive/DhikrDataset/
+MyDrive/Dhikr Speech Dataset/
 ├── dataset/
 │   ├── 001/          every recording of phrase id 1
 │   ├── 002/

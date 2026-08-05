@@ -2,9 +2,9 @@
 
 The layout on Drive is::
 
-    DhikrDataset/dataset/001/*.wav      # one folder per phrase id
-    DhikrDataset/dataset/unknown/*.wav  # filler / out-of-vocabulary audio
-    DhikrDataset/phrases.json           # [{"id": 1, "text": "..."}, ...]
+    Dhikr Speech Dataset/dataset/001/*.wav      # one folder per phrase id
+    Dhikr Speech Dataset/dataset/unknown/*.wav  # filler / out-of-vocabulary audio
+    Dhikr Speech Dataset/phrases.json           # [{"id": 1, "text": "..."}, ...]
 
 Notebook 01 scans and validates, notebook 02 writes conditioned 16 kHz mono
 PCM16 copies plus ``processed/manifest.csv``. Everything downstream reads that

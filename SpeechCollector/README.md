@@ -93,7 +93,7 @@ phrases: [
 ]
 ```
 
-IDs must be unique positive integers. Drive subfolders are numeric and zero-padded (`001`, `002`, and so on); Arabic text is never used in folder names.
+IDs must be unique positive integers. Recordings are stored under a `dataset/` subfolder of the root folder (`{root}/dataset/{id}/`, set by `storage.datasetSubfolder`), one numeric zero-padded folder per phrase (`001`, `002`, and so on); Arabic text is never used in folder names. The `dataset/` level matches what the DhikrSpeech training pipeline scans.
 
 ## 2. Build the Apps Script files
 
@@ -182,8 +182,8 @@ Safari commonly records AAC audio in an M4A/MP4 container; Chrome commonly recor
 
 After a successful upload:
 
-1. Open the root Drive folder.
-2. Confirm that a subfolder such as `001` exists.
+1. Open the root Drive folder, then its `dataset/` subfolder.
+2. Confirm that a phrase subfolder such as `dataset/001` exists.
 3. Confirm that it contains a file like `001_20260803_183015_ab12cd.webm` or `.m4a`/`.wav`.
 4. Open the spreadsheet.
 5. Confirm that exactly one metadata row was appended and its Drive URL opens the file for the owner.

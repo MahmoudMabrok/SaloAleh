@@ -95,8 +95,9 @@ function saveAudio(request) {
     }
 
     const rootFolder = getOrCreateRootFolder_();
+    const datasetFolder = createFolderIfMissing(rootFolder, CONFIG.storage.datasetSubfolder);
     const phraseFolderName = padPhraseId_(validated.phrase.id);
-    const phraseFolder = createFolderIfMissing(rootFolder, phraseFolderName);
+    const phraseFolder = createFolderIfMissing(datasetFolder, phraseFolderName);
     const filename = createFilename_(validated.phrase.id, validated.mimeType);
     const blob = Utilities.newBlob(audioBytes, validated.mimeType, filename);
     const file = phraseFolder.createFile(blob);

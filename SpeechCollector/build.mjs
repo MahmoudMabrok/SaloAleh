@@ -50,6 +50,9 @@ function validateConfiguration(config) {
   if (!Number.isInteger(config.storage.phraseFolderDigits) || config.storage.phraseFolderDigits < 1) {
     throw new Error('phraseFolderDigits must be a positive integer.');
   }
+  if (typeof config.storage.datasetSubfolder !== 'string' || !config.storage.datasetSubfolder.trim()) {
+    throw new Error('storage.datasetSubfolder must be a non-empty string (the folder the trainer scans, e.g. "dataset").');
+  }
 }
 
 function write(filename, contents) {

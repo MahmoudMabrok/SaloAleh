@@ -34,6 +34,12 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     rootFolderId: "1v8qS5-8NBiQOstqHSBapEpGb0O5eQyRy",
     rootFolderName: "Dhikr Speech Dataset",
 
+    // Recordings are stored under `{root}/{datasetSubfolder}/{phraseId}/`.
+    // This mirrors the DhikrSpeech training pipeline's `paths.dataset_dir`
+    // (configs/config.yaml), which scans `dataset/` for the class folders, so
+    // the collector and the trainer agree on the layout.
+    datasetSubfolder: "dataset",
+
     // Leave blank to create a spreadsheet automatically on first upload.
     // Its ID is saved in Apps Script Properties for future uploads.
     spreadsheetId: "17nkSzNoyBB4PvCkaelLdyW82wFgcRPYoPAVDoEE5NoI",

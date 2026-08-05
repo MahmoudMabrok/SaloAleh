@@ -13,7 +13,7 @@ seed: 1337
 # are given as absolute paths, in which case they are used verbatim.
 paths:
   drive_root: /content/drive/MyDrive
-  project_dir: DhikrDataset
+  project_dir: "Dhikr Speech Dataset"
 
   dataset_dir: dataset          # raw recordings, one folder per class id
   processed_dir: processed      # 16 kHz mono PCM16 output of notebook 02

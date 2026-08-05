@@ -124,7 +124,7 @@ def _plain(value: Any) -> Any:
 @dataclass
 class PathsConfig:
     drive_root: str = "/content/drive/MyDrive"
-    project_dir: str = "DhikrDataset"
+    project_dir: str = "Dhikr Speech Dataset"
     dataset_dir: str = "dataset"
     processed_dir: str = "processed"
     noise_dir: str = "noise"
