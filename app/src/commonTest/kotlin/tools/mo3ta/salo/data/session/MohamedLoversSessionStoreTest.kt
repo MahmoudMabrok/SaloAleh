@@ -207,15 +207,44 @@ class MohamedLoversSessionStoreTest {
     @Test
     fun refundManualEntry_restoresAllowance() {
         store.recordManualEntry(d1, 8_000)
-        store.refundManualEntry(d1, 3_000)
+        assertEquals(3_000, store.refundManualEntry(d1, 3_000))
         assertEquals(MOHAMED_LOVERS_MANUAL_DAILY_CAP - 5_000, store.manualRemainingToday(d1))
     }
 
     @Test
     fun refundManualEntry_flooredAtCap() {
         store.recordManualEntry(d1, 1_000)
-        store.refundManualEntry(d1, 5_000)
+        // Only the 1_000 the ledger actually holds is given back, so the mirrored server delta
+        // never undercounts what was really used today.
+        assertEquals(1_000, store.refundManualEntry(d1, 5_000))
         assertEquals(MOHAMED_LOVERS_MANUAL_DAILY_CAP, store.manualRemainingToday(d1))
+    }
+
+    // --- Startup reconciliation with the server-side ledger ---
+
+    @Test
+    fun syncManualUsedFromRemote_adoptsRemoteOnAFreshInstall() {
+        // A reinstall wipes the local ledger; the server still knows today's usage.
+        assertEquals(6_000, store.syncManualUsedFromRemote(d1, 6_000))
+        assertEquals(MOHAMED_LOVERS_MANUAL_DAILY_CAP - 6_000, store.manualRemainingToday(d1))
+    }
+
+    @Test
+    fun syncManualUsedFromRemote_keepsTheHigherLocalLedger() {
+        store.recordManualEntry(d1, 7_000)
+        // A stale/failed server write must not hand back allowance that was already spent.
+        assertEquals(7_000, store.syncManualUsedFromRemote(d1, 2_000))
+        assertEquals(MOHAMED_LOVERS_MANUAL_DAILY_CAP - 7_000, store.manualRemainingToday(d1))
+    }
+
+    @Test
+    fun syncManualUsedFromRemote_ignoresNegativeAndScopesToTheDay() {
+        assertEquals(0, store.syncManualUsedFromRemote(d1, -500))
+        assertEquals(MOHAMED_LOVERS_MANUAL_DAILY_CAP, store.manualRemainingToday(d1))
+
+        store.syncManualUsedFromRemote(d1, 4_000)
+        // The ledger is per Cairo day — yesterday's usage never eats today's allowance.
+        assertEquals(MOHAMED_LOVERS_MANUAL_DAILY_CAP, store.manualRemainingToday(d2))
     }
 
     // --- Gradual new-user ramp: a lower dailyCap overrides the permanent cap ---

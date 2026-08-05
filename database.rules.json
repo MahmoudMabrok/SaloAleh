@@ -804,7 +804,12 @@
             },
             "externalLog": {
               "$entryKey": {
-                ".validate": "newData.isNumber() && newData.val() >= 0"
+                ".validate": "newData.isNumber()"
+              }
+            },
+            "externalDaily": {
+              "$dayKey": {
+                ".validate": "newData.isNumber()"
               }
             },
             "dailyBadge": {

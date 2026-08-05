@@ -389,7 +389,8 @@ class MohamedLoversViewModel(
         publishRoundStreak(round, streakResult.currentStreak, prevStreak)
         applyLeaderboard()
         flushPendingSession()
-        // Extension batches are external salawat too — large ones leave the same audit entry.
+        // Extension batches are external salawat too, so every one leaves the same audit entry.
+        // They do not consume the manual-entry allowance, so the daily ledger is left alone.
         viewModelScope.launch {
             repository.appendExternalLog(round, count, Instant.fromEpochMilliseconds(nowMs))
         }
@@ -462,8 +463,14 @@ class MohamedLoversViewModel(
         viewModelScope.launch {
             repository.incrementExternalCount(roundKey, applied)
             _state.update { it.copy(isSubmittingManualSalawat = false) }
-            // Audit trail for oversized batches; the applied (capped) amount is what was scored.
-            repository.appendExternalLog(roundKey, applied, Instant.fromEpochMilliseconds(nowMs))
+            // Audit trail for the push plus the server-side allowance ledger; the applied (capped)
+            // amount is what was scored, so it is what both sides record.
+            repository.appendExternalLog(
+                roundKey = roundKey,
+                count = applied,
+                at = Instant.fromEpochMilliseconds(nowMs),
+                countsTowardDailyCap = true,
+            )
         }
         sessionStore.saveLastSalawatTimestamp(nowMs)
     }
@@ -488,9 +495,10 @@ class MohamedLoversViewModel(
             return
         }
 
-        // A correction frees the manual-entry allowance again so a mis-entry can be re-added.
+        // A correction frees the manual-entry allowance again so a mis-entry can be re-added. The
+        // refund is mirrored to the server ledger below, so the startup sync cannot re-apply it.
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
-        sessionStore.refundManualEntry(today, applied)
+        val refunded = sessionStore.refundManualEntry(today, applied)
         // The daily-goal progress (the daily leaderboard/badge source) records activity and is
         // intentionally not walked back by a competition-total correction — same as the heart
         // index and streak below — so today's published daily count is unchanged here.
@@ -516,6 +524,19 @@ class MohamedLoversViewModel(
             viewModelScope.launch {
                 repository.decrementScore(roundKey, serverReduction)
                 _state.update { it.copy(isSubmittingManualSalawat = false) }
+            }
+        }
+        // The correction is an external push too — logged as a negative entry so the audit trail
+        // stays the net truth, and subtracted from the server allowance ledger so the freed
+        // allowance survives a reinstall exactly like the used allowance does.
+        if (refunded > 0) {
+            viewModelScope.launch {
+                repository.appendExternalLog(
+                    roundKey = roundKey,
+                    count = -refunded,
+                    at = Clock.System.now(),
+                    countsTowardDailyCap = true,
+                )
             }
         }
     }
@@ -707,6 +728,28 @@ class MohamedLoversViewModel(
 
     fun clearError() = _state.update { it.copy(error = null) }
 
+    /**
+     * Restore today's manual ("record external") allowance from the server ledger on startup. The
+     * local ledger is device-side only, so uninstalling and reinstalling used to reset it and hand
+     * the user a fresh daily cap; adopting the server's record for the Cairo day closes that hole.
+     * Fire-and-forget: a failed read simply leaves the local ledger in charge.
+     *
+     * Note this reads the ledger on the *current* round's player node, so external entries made
+     * earlier on a Friday (before the 19:00 round reset) are not visible to a device that
+     * reinstalled after the reset. The local ledger still covers that case for every device that
+     * did not reinstall mid-day.
+     */
+    private suspend fun syncExternalAllowance(roundKey: String) {
+        val now = Clock.System.now()
+        val today = now.toLocalDateTime(TimeZone.of("Africa/Cairo")).date
+        repository.fetchExternalUsedToday(roundKey, now).onSuccess { remoteUsed ->
+            sessionStore.syncManualUsedFromRemote(today, remoteUsed)
+            _state.update {
+                it.copy(manualRemaining = sessionStore.manualRemainingToday(today, manualDailyCap(today)))
+            }
+        }
+    }
+
     private fun connectToLeaderboardIfPossible() {
         val roundKey = state.value.roundKey
         if (!state.value.firebaseConfigured || roundKey.isNullOrBlank()) {
@@ -744,6 +787,7 @@ class MohamedLoversViewModel(
             // currently-installed version (fire-and-forget, like the rest of this startup sync).
             launch { repository.writeUserActivity(uid, today, getAppVersion(), getAppVersionCode()) }
             launch { repository.setSupporter(premiumStore.hasFeature(PremiumFeature.SUPPORTER_BADGE)) }
+            launch { syncExternalAllowance(roundKey) }
 
             if (!achievementsFetchedFromRtdb) {
                 achievementsFetchedFromRtdb = true

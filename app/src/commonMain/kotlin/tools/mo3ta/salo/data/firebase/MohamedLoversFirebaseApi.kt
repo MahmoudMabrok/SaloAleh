@@ -46,11 +46,24 @@ interface MohamedLoversFirebaseApi {
     suspend fun fetchSelfMedals(uid: String): Result<MohamedLoversMedals>
     suspend fun incrementExternalCount(roundKey: String, uid: String, count: Int): Result<Unit>
     /**
-     * Append one audit entry for a large external/manual batch at
-     * `players/{uid}/externalLog/{timeKey}`. Entries accumulate, so two batches landing in the same
-     * minute add up instead of overwriting each other.
+     * Append one audit entry for an external/manual batch at `players/{uid}/externalLog/{timeKey}`.
+     * Entries accumulate, so two batches landing in the same minute add up instead of overwriting
+     * each other; [count] is negative for a correction.
+     *
+     * A non-null [dayKey] additionally moves `players/{uid}/externalDaily/{dayKey}` by the same
+     * amount — the server-side mirror of the local per-Cairo-day manual allowance ledger. Pass null
+     * for pushes that do not consume that allowance (extension syncs), so they are audited only.
      */
-    suspend fun appendExternalLog(roundKey: String, uid: String, timeKey: String, count: Int): Result<Unit>
+    suspend fun appendExternalLog(
+        roundKey: String,
+        uid: String,
+        timeKey: String,
+        count: Int,
+        dayKey: String?,
+    ): Result<Unit>
+
+    /** Reads the manual allowance already consumed on [dayKey]; 0 when the node is absent. */
+    suspend fun fetchExternalDailyUsed(roundKey: String, uid: String, dayKey: String): Result<Int>
     /**
      * Lower the player's saved competition score by [amount] to correct a mistaken entry.
      * The score is floored at 0 (never negative). Returns the reduction actually applied.

@@ -260,23 +260,53 @@ class MohamedLoversFirebaseClient(
         uid: String,
         timeKey: String,
         count: Int,
+        dayKey: String?,
     ): Result<Unit> {
-        log.d { "appendExternalLog[$roundKey/$uid] $timeKey=$count" }
+        log.d { "appendExternalLog[$roundKey/$uid] $timeKey=$count day=$dayKey" }
         return runCatching {
-            // Written as a deep path inside the player patch so the node keeps carrying uid +
-            // schemaVersion (the write rule and required-field validate both read the merged state).
+            // Both halves go out as deep paths inside one player patch, so the node keeps carrying
+            // uid + schemaVersion (the write rule and required-field validate both read the merged
+            // state) and the audit entry can never land without its ledger counterpart.
+            val fields = buildList {
+                add("$EXTERNAL_LOG_PATH/$timeKey" to ServerValue.increment(count.toDouble()))
+                if (dayKey != null) {
+                    add("$EXTERNAL_DAILY_PATH/$dayKey" to ServerValue.increment(count.toDouble()))
+                }
+            }
             Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(
-                playerPatch(uid, "$EXTERNAL_LOG_PATH/$timeKey" to ServerValue.increment(count.toDouble()))
+                playerPatch(uid, *fields.toTypedArray())
             )
         }.also { result ->
             result.fold(
                 onSuccess = {
                     log.d { "appendExternalLog[$roundKey/$uid] ok" }
-                    mirror.mirrorExternalLog(roundKey, uid, timeKey, count)
+                    mirror.mirrorExternalLog(roundKey, uid, timeKey, count, dayKey)
                 },
                 onFailure = { error ->
                     log.e(error) { "appendExternalLog[$roundKey/$uid] failed" }
                     trackWriteFailure("append_external_log", error)
+                },
+            )
+        }
+    }
+
+    override suspend fun fetchExternalDailyUsed(
+        roundKey: String,
+        uid: String,
+        dayKey: String,
+    ): Result<Int> {
+        log.d { "fetchExternalDailyUsed[$roundKey/$uid] $dayKey" }
+        return runCatching {
+            val snapshot = Firebase.database.reference(playersPath(roundKey))
+                .child(uid).child(EXTERNAL_DAILY_PATH).child(dayKey)
+                .valueEvents.first()
+            (snapshot.value as? Number)?.toInt() ?: 0
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "fetchExternalDailyUsed[$roundKey/$uid] $dayKey=$it" } },
+                onFailure = { error ->
+                    log.e(error) { "fetchExternalDailyUsed[$roundKey/$uid] failed" }
+                    trackReadFailure("fetch_external_daily_used", error)
                 },
             )
         }
@@ -816,6 +846,9 @@ class MohamedLoversFirebaseClient(
         const val TOTAL_COUNT_KEY = "totalCount"
         const val TOTAL_EXTERNAL_KEY = "totalExternal"
         const val EXTERNAL_LOG_PATH = "externalLog"
+        // Per-Cairo-day manual-entry allowance consumed, mirroring the local ledger so the cap
+        // survives a reinstall (which wipes the device-side one).
+        const val EXTERNAL_DAILY_PATH = "externalDaily"
         const val IS_WINNER_KEY = "isWinner"
         const val WINNER_CODE_KEY = "winnerCode"
         const val COUNTRY_CODE_KEY = "countryCode"

@@ -11,6 +11,7 @@ import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.data.time.NetworkTimeProvider
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class MohamedLoversRepositoryExternalLogTest {
@@ -37,7 +38,7 @@ class MohamedLoversRepositoryExternalLogTest {
     private val at = LocalDateTime(2026, 8, 2, 12, 5).toInstant(TimeZone.of("Africa/Cairo"))
 
     @Test
-    fun large_batch_is_appended_under_its_cairo_minute() = runTest {
+    fun batch_is_appended_under_its_cairo_minute() = runTest {
         val (repo, fake) = buildRepo()
 
         val result = repo.appendExternalLog("R1", 5_000, at)
@@ -50,13 +51,58 @@ class MohamedLoversRepositoryExternalLogTest {
     }
 
     @Test
-    fun batch_at_or_below_threshold_is_not_logged() = runTest {
+    fun every_push_is_logged_regardless_of_size() = runTest {
         val (repo, fake) = buildRepo()
 
         assertTrue(repo.appendExternalLog("R1", 2_000, at).isSuccess)
         assertTrue(repo.appendExternalLog("R1", 1, at).isSuccess)
 
+        assertEquals(listOf(2_000, 1), fake.externalLogCalls.map { it.count })
+    }
+
+    @Test
+    fun zero_push_is_a_no_op() = runTest {
+        val (repo, fake) = buildRepo()
+
+        assertTrue(repo.appendExternalLog("R1", 0, at).isSuccess)
+
         assertTrue(fake.externalLogCalls.isEmpty())
+    }
+
+    @Test
+    fun only_cap_consuming_pushes_carry_the_daily_ledger_key() = runTest {
+        val (repo, fake) = buildRepo()
+
+        repo.appendExternalLog("R1", 5_000, at, countsTowardDailyCap = true)
+        repo.appendExternalLog("R1", 700, at)
+
+        assertEquals("2026-08-02", fake.externalLogCalls[0].dayKey)
+        assertNull(fake.externalLogCalls[1].dayKey)
+    }
+
+    @Test
+    fun correction_is_logged_as_a_negative_ledger_entry() = runTest {
+        val (repo, fake) = buildRepo()
+
+        repo.appendExternalLog("R1", -3_000, at, countsTowardDailyCap = true)
+
+        assertEquals(-3_000, fake.externalLogCalls[0].count)
+        assertEquals("2026-08-02", fake.externalLogCalls[0].dayKey)
+    }
+
+    @Test
+    fun used_today_reads_the_ledger_for_the_cairo_day() = runTest {
+        val (repo, fake) = buildRepo()
+        fake.externalDailyUsed["2026-08-02"] = 6_500
+
+        assertEquals(6_500, repo.fetchExternalUsedToday("R1", at).getOrNull())
+    }
+
+    @Test
+    fun used_today_is_zero_when_the_ledger_is_absent() = runTest {
+        val (repo, _) = buildRepo()
+
+        assertEquals(0, repo.fetchExternalUsedToday("R1", at).getOrNull())
     }
 
     @Test

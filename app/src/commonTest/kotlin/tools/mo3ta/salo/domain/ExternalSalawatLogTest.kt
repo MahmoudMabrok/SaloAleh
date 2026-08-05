@@ -17,12 +17,20 @@ class ExternalSalawatLogTest {
         LocalDateTime(year, month, day, hour, minute).toInstant(cairo)
 
     @Test
-    fun logs_only_batches_above_the_threshold() {
+    fun logs_every_non_zero_push_including_corrections() {
         assertFalse(ExternalSalawatLog.shouldLog(0))
-        assertFalse(ExternalSalawatLog.shouldLog(1_999))
-        assertFalse(ExternalSalawatLog.shouldLog(ExternalSalawatLog.MIN_LOGGED_COUNT))
-        assertTrue(ExternalSalawatLog.shouldLog(ExternalSalawatLog.MIN_LOGGED_COUNT + 1))
+        assertTrue(ExternalSalawatLog.shouldLog(1))
+        assertTrue(ExternalSalawatLog.shouldLog(1_999))
         assertTrue(ExternalSalawatLog.shouldLog(10_000))
+        assertTrue(ExternalSalawatLog.shouldLog(-3_000))
+    }
+
+    @Test
+    fun day_key_is_the_cairo_calendar_date() {
+        assertEquals("2026-08-02", ExternalSalawatLog.dayKey(cairoInstant(2026, 8, 2, 12, 5)))
+        assertEquals("2026-01-09", ExternalSalawatLog.dayKey(cairoInstant(2026, 1, 9, 2, 0)))
+        // 22:30 UTC in January is already the next Cairo day (UTC+2, no DST in winter).
+        assertEquals("2026-01-10", ExternalSalawatLog.dayKey(Instant.parse("2026-01-09T22:30:00Z")))
     }
 
     @Test

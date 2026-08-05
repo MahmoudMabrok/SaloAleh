@@ -128,14 +128,39 @@ class MohamedLoversRepository(
     }
 
     /**
-     * Record a large external/manual salawat batch under the player's `externalLog`, keyed by the
-     * Cairo minute it was entered. Batches at or below [ExternalSalawatLog.MIN_LOGGED_COUNT] are a
-     * no-op, so only oversized claims leave a trail.
+     * Record one external/manual salawat push under the player's `externalLog`, keyed by the Cairo
+     * minute it was entered — every push, so the log is the complete trail of what a user claimed.
+     * [count] is negative for a correction.
+     *
+     * [countsTowardDailyCap] also moves the server-side `externalDaily/{Cairo day}` ledger, the
+     * mirror of the local manual-entry allowance. Manual entries (and their corrections) consume
+     * that allowance; extension syncs do not, so they pass `false` and are audited only.
      */
-    suspend fun appendExternalLog(roundKey: String, count: Int, at: Instant): Result<Unit> {
+    suspend fun appendExternalLog(
+        roundKey: String,
+        count: Int,
+        at: Instant,
+        countsTowardDailyCap: Boolean = false,
+    ): Result<Unit> {
         if (!ExternalSalawatLog.shouldLog(count)) return Result.success(Unit)
         val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
-        return firebaseClient.appendExternalLog(roundKey, uid, ExternalSalawatLog.entryKey(at), count)
+        return firebaseClient.appendExternalLog(
+            roundKey = roundKey,
+            uid = uid,
+            timeKey = ExternalSalawatLog.entryKey(at),
+            count = count,
+            dayKey = if (countsTowardDailyCap) ExternalSalawatLog.dayKey(at) else null,
+        )
+    }
+
+    /**
+     * The manual-entry allowance already consumed on the Cairo day containing [at], as recorded on
+     * the server. Read at startup so a reinstall — which wipes the local ledger — cannot hand the
+     * user a fresh daily cap.
+     */
+    suspend fun fetchExternalUsedToday(roundKey: String, at: Instant): Result<Int> {
+        val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
+        return firebaseClient.fetchExternalDailyUsed(roundKey, uid, ExternalSalawatLog.dayKey(at))
     }
 
     suspend fun flushPendingSession(countryCode: String, todayCount: Int = 0): Result<Unit> {

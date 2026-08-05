@@ -46,14 +46,17 @@ class FirestoreMirror {
                 )
         }
 
-    fun mirrorExternalLog(roundKey: String, uid: String, timeKey: String, count: Int) =
+    fun mirrorExternalLog(roundKey: String, uid: String, timeKey: String, count: Int, dayKey: String?) =
         mirror("external-log[$roundKey/$uid/$timeKey]") {
+            val fields = mutableMapOf<String, Any>(
+                "externalLog" to mapOf(timeKey to FieldValue.increment(count)),
+            )
+            if (dayKey != null) {
+                fields["externalDaily"] = mapOf(dayKey to FieldValue.increment(count))
+            }
             fs.collection(ROUNDS_COLLECTION).document(roundKey)
                 .collection(PLAYERS_SUBCOLLECTION).document(uid)
-                .set(
-                    mapOf("externalLog" to mapOf(timeKey to FieldValue.increment(count))),
-                    merge = true,
-                )
+                .set(fields, merge = true)
         }
 
     fun mirrorResetPlayerScore(roundKey: String, uid: String) =
