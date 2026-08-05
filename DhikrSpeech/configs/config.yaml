@@ -155,8 +155,15 @@ model:
 # Training
 # ---------------------------------------------------------------------------
 training:
-  epochs: 60
-  batch_size: 64
+  # What matters for convergence is the number of *optimiser steps*, not epochs:
+  # steps = ceil(train_clips / batch_size) x epochs. 80 recordings at batch 64 is
+  # 2 steps per epoch, so a 60-epoch run is 120 gradient steps in total - a DS-CNN
+  # trained from scratch is barely off its initialisation there, which reads as
+  # "stuck at chance" even when the loss is in fact falling. Small batch + many
+  # epochs buys the steps back. Raise the batch again (64 - 128) and drop the
+  # epochs once the dataset is in the thousands of clips.
+  epochs: 300
+  batch_size: 16
   shuffle_buffer: 4096
   mixed_precision: true         # honoured only when a GPU is present
   class_weights: true
@@ -170,7 +177,9 @@ training:
 
   # cosine | exponential | plateau | none
   lr_schedule: cosine
-  warmup_epochs: 2
+  # Warmup is counted in epochs and converted to steps, so a tiny dataset needs
+  # more epochs of it to get the same number of warmup steps.
+  warmup_epochs: 5
   min_learning_rate: 1.0e-5
   plateau_factor: 0.5
   plateau_patience: 4
@@ -179,7 +188,9 @@ training:
     enabled: true
     monitor: val_accuracy
     mode: max
-    patience: 12
+    # Patience is in epochs; with a small dataset an epoch is a handful of steps,
+    # so a patience tuned for big-dataset epochs stops the run before it starts.
+    patience: 40
     min_delta: 0.001
     restore_best_weights: true
 

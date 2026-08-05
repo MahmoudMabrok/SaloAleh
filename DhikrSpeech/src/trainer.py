@@ -12,6 +12,7 @@ import json
 import logging
 import os
 import random
+import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Union
@@ -36,6 +37,8 @@ __all__ = [
     "TrainingArtifacts",
     "WarmupCosineDecay",
     "configure_mixed_precision",
+    "sanity_overfit",
+    "sanity_overfit_report",
     "set_global_seed",
 ]
 
@@ -203,6 +206,8 @@ class TrainingArtifacts:
     tensorboard_dir: Path
     csv_log_path: Path
     epochs_completed: int
+    num_classes: Optional[int] = None
+    resumed: bool = False
 
     def best_epoch(self, monitor: str = "val_accuracy", mode: str = "max") -> Optional[int]:
         values = self.history.get(monitor)
@@ -216,14 +221,64 @@ class TrainingArtifacts:
             return None
         return float(max(values) if mode == "max" else min(values))
 
+    @property
+    def chance_level(self) -> Optional[float]:
+        """Accuracy a constant prediction reaches on a balanced split."""
+        if not self.num_classes or self.num_classes < 2:
+            return None
+        return 1.0 / float(self.num_classes)
+
+    def diagnose(self) -> List[str]:
+        """Plain-language reading of the curves, so a dead run says so out loud."""
+        notes: List[str] = []
+        chance = self.chance_level
+        best_val = self.best_value("val_accuracy")
+        best_train = self.best_value("accuracy")
+        if chance is None or best_val is None or best_train is None:
+            return notes
+
+        # A hair above chance is still chance: a constant prediction scores
+        # exactly 1/num_classes on a balanced split.
+        margin = 1.25 * chance
+        if best_val <= margin and best_train <= margin:
+            notes.append(
+                "the model never learned anything - training accuracy is at chance too. "
+                "Look at the input pipeline, the label mapping and the number of optimiser "
+                "steps (steps_per_epoch x epochs) before touching the topology."
+            )
+        elif best_val <= margin:
+            notes.append(
+                "training accuracy climbed but validation stayed at chance: the model "
+                "memorised the training clips. Usually too few recordings or too few "
+                "speakers, sometimes BatchNorm moving statistics that never converged."
+            )
+        if self.resumed:
+            notes.append(
+                "this run RESUMED an earlier one (BackupAndRestore). The weights, the "
+                "optimiser state and the history above carry over from that run, so a "
+                "config change you made since then did not start from scratch. Use a new "
+                "RUN_NAME or Trainer.reset_run() for a clean comparison."
+            )
+        return notes
+
     def summary(self) -> str:
         lines = [f"run              : {self.run_name}", f"epochs completed : {self.epochs_completed}"]
+        best_train_epoch = self.best_epoch("accuracy")
+        if best_train_epoch is not None:
+            lines.append(
+                f"best accuracy    : {self.best_value('accuracy'):.4f} "
+                f"(epoch {best_train_epoch}, training split)"
+            )
         best_epoch = self.best_epoch()
         if best_epoch is not None:
+            chance = self.chance_level
+            suffix = f" - chance is {chance:.4f}" if chance else ""
             lines.append(
-                f"best val_accuracy: {self.best_value():.4f} (epoch {best_epoch})"
+                f"best val_accuracy: {self.best_value():.4f} (epoch {best_epoch}){suffix}"
             )
         lines.append(f"best model       : {self.best_model_path}")
+        for note in self.diagnose():
+            lines.append(f"\n!! {note}")
         return "\n".join(lines)
 
 
@@ -271,6 +326,33 @@ class Trainer:
     @property
     def csv_log_path(self) -> Path:
         return self.log_dir / "training_log.csv"
+
+    # -- resume state -------------------------------------------------------
+    @property
+    def is_resuming(self) -> bool:
+        """True when ``BackupAndRestore`` would pick an earlier run back up.
+
+        ``resume: true`` means re-running the notebook restores the weights *and*
+        the optimiser state of the previous run, so a config change made in
+        between is applied on top of the old model rather than from scratch.
+        """
+        if not self.config.training.resume or not self.backup_dir.is_dir():
+            return False
+        return any(self.backup_dir.iterdir())
+
+    def reset_run(self) -> None:
+        """Delete every artefact of this run so the next ``fit`` starts clean.
+
+        Removes the backup (epoch counter + optimiser state), the checkpoint, the
+        merged history and the CSV log. Use it whenever a hyperparameter changed
+        and the previous run must not bleed into the new one.
+        """
+        for target in (self.checkpoint_dir, self.log_dir):
+            if target.exists():
+                shutil.rmtree(target)
+        for directory in (self.checkpoint_dir, self.log_dir):
+            directory.mkdir(parents=True, exist_ok=True)
+        LOGGER.info("run '%s' reset - next fit starts from scratch", self.run_name)
 
     # -- compilation --------------------------------------------------------
     def compile(self) -> keras.Model:
@@ -354,6 +436,16 @@ class Trainer:
         if not self._compiled:
             self.compile()
 
+        resumed = self.is_resuming
+        if resumed:
+            LOGGER.warning(
+                "resuming run '%s' from %s - weights, optimiser state and epoch "
+                "counter come from the previous run. Call reset_run() or pick a new "
+                "run_name to start fresh.",
+                self.run_name,
+                self.backup_dir,
+            )
+
         history = self.model.fit(
             train_dataset,
             validation_data=validation_dataset,
@@ -364,7 +456,9 @@ class Trainer:
             verbose=verbose,
         )
 
-        merged = self._merge_history(history.history)
+        merged = self._merge_history(history.history) if resumed else {
+            key: [float(value) for value in values] for key, values in history.history.items()
+        }
         self.model.save_weights(str(self.last_weights_path))
         self.history_path.write_text(json.dumps(merged, indent=2), encoding="utf-8")
         self.config.save(self.checkpoint_dir / "config_snapshot.yaml")
@@ -384,6 +478,8 @@ class Trainer:
             tensorboard_dir=self.log_dir / "tensorboard",
             csv_log_path=self.csv_log_path,
             epochs_completed=epochs_completed,
+            num_classes=int(self.num_classes),
+            resumed=resumed,
         )
 
     def _merge_history(self, history: Dict[str, List[float]]) -> Dict[str, List[float]]:
@@ -409,6 +505,90 @@ class Trainer:
         self.model = load_trained_model(self.best_model_path)
         self._compiled = False
         return self.model
+
+
+def sanity_overfit(
+    model: keras.Model,
+    dataset,
+    steps: int = 200,
+    learning_rate: float = 1e-3,
+    verbose: int = 0,
+) -> Dict[str, float]:
+    """Train a throwaway copy of ``model`` on a handful of clips and report accuracy.
+
+    The standard first test when a run sits at chance. A correct pipeline drives a
+    few dozen *unaugmented* clips to near-100% training accuracy in a couple of
+    hundred steps - it only has to memorise them. If this stays at chance, the
+    fault is upstream of the hyperparameters: features, labels, or the model.
+
+    ``dataset`` must be batched, unaugmented and repeatable; it is consumed for
+    ``steps`` batches. ``model`` is cloned, so the caller's weights are untouched.
+    """
+    clone = keras.models.clone_model(model)
+    clone.compile(
+        optimizer=keras.optimizers.Adam(learning_rate=learning_rate),
+        loss=keras.losses.SparseCategoricalCrossentropy(),
+        metrics=[keras.metrics.SparseCategoricalAccuracy(name="accuracy")],
+    )
+    history = clone.fit(
+        dataset.repeat(),
+        epochs=1,
+        steps_per_epoch=int(steps),
+        verbose=verbose,
+        callbacks=[],
+    )
+    # training=True here: this measures the fit itself, not the moving statistics.
+    accuracy = float(history.history["accuracy"][-1])
+    loss = float(history.history["loss"][-1])
+
+    # A second pass in inference mode. A large gap between the two is the
+    # BatchNorm-moving-statistics failure, not an optimisation failure.
+    evaluated = clone.evaluate(dataset, verbose=0, return_dict=True)
+    return {
+        "train_accuracy": accuracy,
+        "train_loss": loss,
+        "inference_accuracy": float(evaluated.get("accuracy", float("nan"))),
+        "inference_loss": float(evaluated.get("loss", float("nan"))),
+        "steps": float(steps),
+    }
+
+
+def sanity_overfit_report(result: Dict[str, float], num_classes: int) -> str:
+    """Verdict for :func:`sanity_overfit`, written for the notebook output."""
+    chance = 1.0 / float(max(num_classes, 2))
+    train = result["train_accuracy"]
+    inference = result["inference_accuracy"]
+    lines = [
+        f"steps            : {int(result['steps'])}",
+        f"train accuracy   : {train:.4f} (chance {chance:.4f})",
+        f"inference accuracy: {inference:.4f}",
+    ]
+    if train <= 1.25 * chance:
+        lines.append(
+            "\nFAIL - the model cannot even memorise a handful of clips. The problem is "
+            "the data or the front-end, not the schedule: check that features are finite "
+            "and vary between classes, that class_index matches the folder, and that the "
+            "learning rate is not zero."
+        )
+    elif inference <= 1.25 * chance:
+        lines.append(
+            "\nFAIL - it memorised the clips in training mode but predicts chance in "
+            "inference mode. That is BatchNorm: the moving statistics never converged. "
+            "Lower model.bn_momentum (0.9 -> 0.8) or raise the number of steps per epoch."
+        )
+    elif train >= 0.9:
+        lines.append(
+            "\nPASS - the pipeline can learn. A real run stuck at chance is then a "
+            "data-quantity or schedule problem: more recordings and speakers, more "
+            "optimiser steps (smaller training.batch_size, more training.epochs), "
+            "lighter augmentation."
+        )
+    else:
+        lines.append(
+            "\nPARTIAL - it learns, but slowly. Raise `steps` and re-run before reading "
+            "anything into it."
+        )
+    return "\n".join(lines)
 
 
 def load_trained_model(path: PathLike) -> keras.Model:

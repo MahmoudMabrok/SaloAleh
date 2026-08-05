@@ -801,9 +801,21 @@ def make_tf_dataset(
         return features, label
 
     dataset = dataset.map(_feature_map, num_parallel_calls=tf.data.AUTOTUNE)
-    dataset = dataset.batch(
-        batch_size or config.training.batch_size, drop_remainder=drop_remainder
-    )
+
+    size = batch_size or config.training.batch_size
+    if training and not drop_remainder and len(records) > size:
+        # A trailing batch of one sample gives BatchNorm zero variance, which
+        # produces a garbage gradient step and poisons the moving statistics.
+        # Dropping it costs one clip per epoch and only when the split lands
+        # exactly on that remainder.
+        if len(records) % size == 1:
+            drop_remainder = True
+            LOGGER.info(
+                "dropping the trailing 1-sample batch (%d records / batch %d)",
+                len(records),
+                size,
+            )
+    dataset = dataset.batch(size, drop_remainder=drop_remainder)
     if config.training.prefetch:
         dataset = dataset.prefetch(tf.data.AUTOTUNE)
     return dataset
