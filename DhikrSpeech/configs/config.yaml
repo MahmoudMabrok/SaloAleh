@@ -156,13 +156,14 @@ model:
 # ---------------------------------------------------------------------------
 training:
   # What matters for convergence is the number of *optimiser steps*, not epochs:
-  # steps = ceil(train_clips / batch_size) x epochs. A few hundred recordings at
-  # batch 64 for 60 epochs is a few hundred steps, and a DS-CNN trained from
-  # scratch is still at chance there - it collapses to a single class and every
-  # curve stays flat. Small batch + many epochs buys the steps back. Raise the
-  # batch again (64 - 128) once the dataset is in the thousands of clips.
-  epochs: 200
-  batch_size: 32
+  # steps = ceil(train_clips / batch_size) x epochs. 80 recordings at batch 64 is
+  # 2 steps per epoch, so a 60-epoch run is 120 gradient steps in total - a DS-CNN
+  # trained from scratch is barely off its initialisation there, which reads as
+  # "stuck at chance" even when the loss is in fact falling. Small batch + many
+  # epochs buys the steps back. Raise the batch again (64 - 128) and drop the
+  # epochs once the dataset is in the thousands of clips.
+  epochs: 300
+  batch_size: 16
   shuffle_buffer: 4096
   mixed_precision: true         # honoured only when a GPU is present
   class_weights: true

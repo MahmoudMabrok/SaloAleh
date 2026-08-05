@@ -581,10 +581,14 @@ and the `!!` notes in `artifacts.summary()`). Work through it in this order:
    ~40 unaugmented clips in 200 steps. It has to reach ~1.0; the report tells you what a failure
    means. Everything below only matters once that passes.
 2. **Count the optimiser steps**, printed by the training cell as `total steps`. It is
-   `ceil(train_clips / batch_size) × epochs`, and it is what convergence actually depends on. A
-   DS-CNN from scratch needs thousands. 300 clips at batch 64 for 60 epochs is 300 steps — the model
-   is still at its initialisation, which *is* the constant prediction you are seeing. Lower
-   `training.batch_size`, raise `training.epochs`.
+   `ceil(train_clips / batch_size) × epochs`, and it is what convergence actually depends on — a
+   DS-CNN from scratch needs thousands, and the cell warns below 2000. 80 clips at batch 64 is
+   `2/2` steps per epoch, so a 60-epoch run is **120 gradient steps in total**; the model is still
+   at its initialisation, which *is* the constant prediction you are seeing. Watch the loss rather
+   than the accuracy to tell an undertrained run from a broken one: falling train loss with
+   accuracy near chance is a run that needs more steps, while a flat loss at `ln(num_classes)`
+   (2.30 for ten classes) is a run that is not learning at all. Lower `training.batch_size`, raise
+   `training.epochs`.
 3. **Check you are not resuming.** With `training.resume: true`, re-running the notebook restores
    the previous run's weights *and* optimiser state, and splices both runs' histories together — so
    a config change you made in between never took effect, and "epochs completed" counts epochs from
