@@ -707,23 +707,6 @@ class MohamedLoversViewModel(
 
     fun clearError() = _state.update { it.copy(error = null) }
 
-    fun openHeroesSheet() {
-        _state.update { it.copy(showHeroesSheet = true, heroesLoading = true) }
-        viewModelScope.launch {
-            repository.fetchHeroes()
-                .onSuccess { heroes ->
-                    _state.update {
-                        it.copy(heroesBoard = heroes?.takeIf { board -> board.hasAny }, heroesLoading = false)
-                    }
-                }
-                .onFailure {
-                    _state.update { it.copy(heroesLoading = false) }
-                }
-        }
-    }
-
-    fun dismissHeroesSheet() = _state.update { it.copy(showHeroesSheet = false) }
-
     private fun connectToLeaderboardIfPossible() {
         val roundKey = state.value.roundKey
         if (!state.value.firebaseConfigured || roundKey.isNullOrBlank()) {
@@ -891,6 +874,7 @@ class MohamedLoversViewModel(
         val selfProjectedTotal = selfRemoteTotal + pendingNet
         // Daily score is now the locally-tracked running day total (which already includes taps not
         // yet flushed to the server); fall back to the server-published todayCount when local is
+        // behind (e.g. right after a reinstall).
         // behind (e.g. right after a reinstall).
         val selfProjectedDaily = maxOf(state.value.todayCount, remoteSelfPlayer?.todayCount ?: 0)
         val selfDisplayScore = if (isDaily) selfProjectedDaily else selfProjectedTotal
