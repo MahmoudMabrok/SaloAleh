@@ -34,7 +34,7 @@ audio:
   channels: 1                   # 1 = mono. The pipeline only supports mono.
   bit_depth: 16                 # PCM16 output
   clip_seconds: 2.0             # fixed model input length (pad / crop to this)
-  file_extensions: [".wav", ".WAV", ".flac", ".ogg", ".m4a", ".mp3"]
+  file_extensions: [".wav", ".WAV", ".flac", ".ogg", ".m4a", ".mp3", ".webm"]
 
   # Recordings outside this range are reported by the validator.
   min_duration: 0.30
