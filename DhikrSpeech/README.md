@@ -206,10 +206,16 @@ This covers the two cases that actually happen:
 - **Colab disconnected mid-run** — reopen the notebook, run all, training picks up.
 - **More epochs wanted** — raise `training.epochs` and run again.
 
+It is also the trap to know about: **a resumed run applies your config change on top of the old
+model**, and prints one history for both runs. If you changed a hyperparameter because the last run
+went badly, resuming measures the old run again. The training cell prints `resuming a run`, and
+`artifacts.summary()` flags it.
+
 Related controls:
 
-- **Start fresh instead**: set a different `RUN_NAME` in the notebook (or delete the run folder).
-  A new name gets its own checkpoints, logs and history.
+- **Start fresh instead**: set `FRESH_START = True` in the notebook — it calls `trainer.reset_run()`,
+  which deletes the backup, checkpoint, history and CSV log for that run name. Or set a different
+  `RUN_NAME`, which gets its own checkpoints, logs and history.
 - **Never resume**: `training.resume: false`.
 - **Change the data, not the run**: after adding recordings, re-run `02` (it only processes new
   files) and then resume. To retrain from scratch on the enlarged dataset, use a new `RUN_NAME` —
@@ -545,6 +551,7 @@ but do not compare two runs' test accuracy to the third decimal unless the manif
 |---|---|
 | `dataset directory not found` | `paths.drive_root` / `project_dir` do not match Drive. Notebook 01 prints the resolved paths. |
 | `manifest not found` | Run `02_preprocessing` first. |
+| Accuracy pinned at exactly `1 / classes` and every clip predicted as the same class | The model collapsed — see [below](#a-run-stuck-at-chance). |
 | Training accuracy high, validation stuck at chance | BatchNorm momentum — see [above](#a-note-on-modelbn_momentum). |
 | Validation accuracy far below training | Genuine overfitting: more recordings, more speakers, stronger `augmentation.*`, or a smaller `model.width_multiplier`. |
 | One class always wrong | Check its clips in notebook 01 — usually mislabelled or near-silent takes. Notebook 04 lets you listen to the errors. |
@@ -555,6 +562,37 @@ but do not compare two runs' test accuracy to the third decimal unless the manif
 | Model works in Colab, fails on the phone | The Android front-end does not match. Compare against `model_meta.json` — sample rate, window, hop, centring and normalisation must all match. |
 | `OOM` during training | Lower `training.batch_size`, or `training.cache: false` for a dataset too large to hold in RAM. |
 | Arabic text renders as boxes in charts | Expected: matplotlib does not shape Arabic. Charts use class ids; the id → phrase table is printed in notebook 01. |
+
+### A run stuck at chance
+
+A summary like this is not a weak model, it is a dead one:
+
+```
+run              : ds_cnn
+epochs completed : 39
+best val_accuracy: 0.1000 (epoch 1)
+```
+
+`0.1000` with 10 classes is exactly what a constant prediction scores on a balanced split — the
+output does not depend on the input. Notebook 03 now says so out loud (`prediction_distribution()`
+and the `!!` notes in `artifacts.summary()`). Work through it in this order:
+
+1. **Run the sanity check** (notebook 03, section 6b). It asks a fresh copy of the model to memorise
+   ~40 unaugmented clips in 200 steps. It has to reach ~1.0; the report tells you what a failure
+   means. Everything below only matters once that passes.
+2. **Count the optimiser steps**, printed by the training cell as `total steps`. It is
+   `ceil(train_clips / batch_size) × epochs`, and it is what convergence actually depends on. A
+   DS-CNN from scratch needs thousands. 300 clips at batch 64 for 60 epochs is 300 steps — the model
+   is still at its initialisation, which *is* the constant prediction you are seeing. Lower
+   `training.batch_size`, raise `training.epochs`.
+3. **Check you are not resuming.** With `training.resume: true`, re-running the notebook restores
+   the previous run's weights *and* optimiser state, and splices both runs' histories together — so
+   a config change you made in between never took effect, and "epochs completed" counts epochs from
+   a run you already abandoned. Set `FRESH_START = True` (or a new `RUN_NAME`) after any config
+   change. The summary flags a resumed run.
+4. **Then look at the data**: `split_counts` in notebook 03 and the per-class table in notebook 01.
+   Ten classes need hundreds of clips each, from more than one or two speakers, before validation
+   accuracy means anything.
 
 ---
 

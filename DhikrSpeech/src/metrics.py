@@ -83,6 +83,25 @@ class EvaluationResult:
     def confidence(self) -> np.ndarray:
         return self.y_prob.max(axis=1)
 
+    def prediction_distribution(self) -> Dict[str, int]:
+        """How many clips were predicted as each class, most-predicted first."""
+        counts = np.bincount(self.y_pred, minlength=len(self.class_names))
+        order = np.argsort(counts)[::-1]
+        return {self.class_names[index]: int(counts[index]) for index in order}
+
+    @property
+    def collapsed_to(self) -> Optional[str]:
+        """The single class every clip was predicted as, when that happened.
+
+        A collapsed model scores exactly ``1 / num_classes`` on a balanced split,
+        which reads as "chance" but has a very different cause from noisy
+        predictions spread over all classes.
+        """
+        unique = np.unique(self.y_pred)
+        if unique.size != 1 or self.num_samples == 0:
+            return None
+        return self.class_names[int(unique[0])]
+
     def averaged(self, average: str = "macro") -> Dict[str, float]:
         precision, recall, f1, _ = precision_recall_fscore_support(
             self.y_true,
@@ -242,16 +261,22 @@ class EvaluationResult:
     def summary(self) -> str:
         macro = self.averaged("macro")
         weighted = self.averaged("weighted")
-        return "\n".join(
-            [
-                f"samples   : {self.num_samples}",
-                f"accuracy  : {self.accuracy:.4f}",
-                f"macro     : P {macro['precision']:.4f} | R {macro['recall']:.4f} | "
-                f"F1 {macro['f1']:.4f}",
-                f"weighted  : P {weighted['precision']:.4f} | R {weighted['recall']:.4f} | "
-                f"F1 {weighted['f1']:.4f}",
-            ]
-        )
+        lines = [
+            f"samples   : {self.num_samples}",
+            f"accuracy  : {self.accuracy:.4f}",
+            f"macro     : P {macro['precision']:.4f} | R {macro['recall']:.4f} | "
+            f"F1 {macro['f1']:.4f}",
+            f"weighted  : P {weighted['precision']:.4f} | R {weighted['recall']:.4f} | "
+            f"F1 {weighted['f1']:.4f}",
+        ]
+        collapsed = self.collapsed_to
+        if collapsed is not None:
+            lines.append(
+                f"\n!! every clip was predicted as '{collapsed}'. The model output does not "
+                f"depend on its input, so this accuracy is just that class's share of the "
+                f"split - not a partially working model."
+            )
+        return "\n".join(lines)
 
     def to_dataframe(self):
         import pandas as pd  # lazily imported: only notebooks need pandas
