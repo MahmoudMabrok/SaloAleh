@@ -40,6 +40,12 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     // the collector and the trainer agree on the layout.
     datasetSubfolder: "dataset",
 
+    // Folder for the negative class (see `unknownPrompt` below): anything that
+    // is not one of the phrases lands in `{root}/{datasetSubfolder}/unknown/`
+    // instead of a numeric phrase folder. Must match the pipeline's
+    // `classes.unknown_class`, and must not look like a padded phrase id.
+    unknownFolderName: "unknown",
+
     // The collector writes this file at the ROOT of the dataset folder (a
     // sibling of datasetSubfolder), regenerated from `phrases` below whenever
     // that list changes, so the DhikrSpeech pipeline finds its id->text labels
@@ -116,7 +122,8 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     uploadSuccessBody: "تم رفع العينة. يمكنك تسجيل عينة أخرى لنفس العبارة.",
     uploadFailedTitle: "فشل رفع التسجيل",
     uploadFailedBody: "احتفظنا بالتسجيل. تحقق من الإنترنت ثم حاول مجددًا.",
-    retry: "إعادة المحاولة"
+    retry: "إعادة المحاولة",
+    unknownBadge: "ليست ذكرًا"
   },
 
   spreadsheetColumns: [
@@ -158,5 +165,18 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     // Original Salawat prompts.
     { id: 9, text: "اللهم صل على محمد" },
     { id: 10, text: "اللهم صل وسلم على نبينا محمد" },
-  ]
+  ],
+
+  // The negative class. A model trained on phrases alone has nowhere to put
+  // ordinary speech, so it hands every word it hears to the nearest dhikr; this
+  // card asks for exactly that ordinary speech. Its recordings go to
+  // `{dataset}/unknownFolderName/` rather than a numeric phrase folder, and it
+  // is deliberately left out of phrases.json — `unknown` is a class, not a
+  // phrase, and the pipeline labels it from the folder name.
+  // Set to null to drop the card. Its id must not collide with a phrase id.
+  unknownPrompt: {
+    id: 0,
+    text: "قل أي كلمة عادية ليست ذكرًا",
+    note: "مثل «صباح الخير» أو «كيف حالك» أو أي كلمة تخطر ببالك. غيّر الكلمة في كل تسجيل — هذه العينات تعلّم النموذج ما ليس ذكرًا حتى لا يَعُدّ كلامك العادي."
+  }
 });

@@ -38,6 +38,11 @@
     uploadAllLabel: $('upload-all-label')
   };
 
+  // The phrases plus the out-of-vocabulary card, which asks for any ordinary
+  // word instead of a dhikr. It is a card like any other; only its destination
+  // folder differs, and the backend decides that from its id.
+  const prompts = collectPrompts();
+
   const state = {
     cards: [],
     // The card that owns the microphone. Only one take can run at a time, so
@@ -180,13 +185,22 @@
   // ---------------------------------------------------------------------------
 
   /**
-   * One recorder per phrase. Every element a card needs to update is kept on the
+   * The unknown card is appended last: the phrases are what a volunteer came
+   * for, and it reads as the odd one out at the end rather than mixed in.
+   */
+  function collectPrompts() {
+    const phrases = config.phrases.map((phrase) => ({ ...phrase, unknown: false }));
+    return config.unknownPrompt ? [...phrases, { ...config.unknownPrompt, unknown: true }] : phrases;
+  }
+
+  /**
+   * One recorder per prompt. Every element a card needs to update is kept on the
    * card itself, so redrawing never has to search the document for it.
    */
   function buildCards() {
     const fragment = document.createDocumentFragment();
-    config.phrases.forEach((phrase, index) => {
-      const card = createCard(phrase, index);
+    prompts.forEach((prompt, index) => {
+      const card = createCard(prompt, index);
       state.cards.push(card);
       fragment.appendChild(card.dom.root);
     });
@@ -194,19 +208,29 @@
     state.cards.forEach((card) => drawIdleWaveform(card));
   }
 
-  function createCard(phrase, index) {
-    const root = make('li', 'phrase-card', { id: `card-${index}` });
+  function createCard(prompt, index) {
+    const root = make('li', cardClassName(prompt, IDLE), { id: `card-${index}` });
 
     const head = make('div', 'card-head');
     head.appendChild(make('span', 'card-number', { text: String(index + 1) }));
+    if (prompt.unknown && config.ui.unknownBadge) {
+      head.appendChild(make('span', 'card-badge', { id: `badge-${index}`, text: config.ui.unknownBadge }));
+    }
     const tally = make('span', 'card-tally', { id: `tally-${index}` });
     head.appendChild(tally);
     root.appendChild(head);
 
     const panel = make('div', 'phrase-panel');
-    const text = make('p', 'phrase-text', { id: `phrase-${index}`, text: phrase.text });
+    const text = make('p', 'phrase-text', { id: `phrase-${index}`, text: prompt.text });
     text.lang = 'ar';
     panel.appendChild(text);
+    // Only the unknown card carries a note: "any word" needs an example to act
+    // on, while a dhikr is its own instruction.
+    if (prompt.note) {
+      const note = make('p', 'phrase-note', { id: `note-${index}`, text: prompt.note });
+      note.lang = 'ar';
+      panel.appendChild(note);
+    }
     root.appendChild(panel);
 
     const recorder = make('div', 'recorder-panel');
@@ -235,7 +259,7 @@
 
     const card = {
       index,
-      phrase,
+      prompt,
       status: IDLE,
       recording: null,
       message: '',
@@ -521,7 +545,7 @@
     try {
       const payload = {
         sample_id: card.recording.sampleId,
-        phrase_id: card.phrase.id,
+        phrase_id: card.prompt.id,
         duration_ms: card.recording.durationMs,
         sample_rate: card.recording.sampleRate,
         mime_type: card.recording.mimeType,
@@ -584,7 +608,7 @@
     const hasTake = Boolean(card.recording);
     const busyElsewhere = state.activeIndex !== -1 && state.activeIndex !== card.index;
 
-    card.dom.root.className = `phrase-card card-${card.status}`;
+    card.dom.root.className = cardClassName(card.prompt, card.status);
     card.dom.tally.textContent = tallyLabel(card);
 
     card.dom.status.className = card.message ? `status status-${card.messageType}` : 'status status-empty';
@@ -608,19 +632,24 @@
     return config.ui.upload;
   }
 
+  function cardClassName(prompt, status) {
+    return `phrase-card${prompt.unknown ? ' phrase-card-unknown' : ''} card-${status}`;
+  }
+
   function tallyLabel(card) {
-    const count = uploadCount(card.phrase.id);
+    const count = uploadCount(card.prompt.id);
     return count ? config.ui.recordedCount.replace('{count}', String(count)) : '';
   }
 
+  /** The unknown card counts towards coverage: the dataset needs it as much as a phrase. */
   function renderSummary() {
-    const covered = config.phrases.filter((phrase) => uploadCount(phrase.id) > 0).length;
-    const samples = config.phrases.reduce((total, phrase) => total + uploadCount(phrase.id), 0);
+    const covered = prompts.filter((prompt) => uploadCount(prompt.id) > 0).length;
+    const samples = prompts.reduce((total, prompt) => total + uploadCount(prompt.id), 0);
     elements.summaryPhrases.textContent = config.ui.summaryPhrases
       .replace('{recorded}', String(covered))
-      .replace('{total}', String(config.phrases.length));
+      .replace('{total}', String(prompts.length));
     elements.summarySamples.textContent = config.ui.summarySamples.replace('{count}', String(samples));
-    elements.progressFill.style.width = `${(covered / config.phrases.length) * 100}%`;
+    elements.progressFill.style.width = `${(covered / prompts.length) * 100}%`;
   }
 
   function renderUploadAllBar() {
@@ -643,7 +672,7 @@
   }
 
   function recordUploadedPhrase(card) {
-    state.uploadCounts[card.phrase.id] = uploadCount(card.phrase.id) + 1;
+    state.uploadCounts[card.prompt.id] = uploadCount(card.prompt.id) + 1;
     saveUploadCounts();
   }
 

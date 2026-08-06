@@ -29,6 +29,17 @@ assert.match(bootstrap.endpoint, /^https:\/\/script\.google\.com\/macros\/s\/[\w
 assert.ok(bootstrap.phrases.length > 0, 'The standalone page has no phrases.');
 assert.ok(bootstrap.ui.microphoneBlocked, 'The permissions-policy message is missing from the UI strings.');
 
+// The negative-class card. It is optional, but a page that ships it must ship
+// everything the card needs, and its id must not shadow a phrase.
+if (bootstrap.unknownPrompt) {
+  assert.ok(bootstrap.unknownPrompt.text, 'unknownPrompt has no text for the card to show.');
+  assert.ok(
+    !bootstrap.phrases.some((phrase) => phrase.id === bootstrap.unknownPrompt.id),
+    'unknownPrompt.id collides with a phrase id, so its uploads would be filed as that phrase.'
+  );
+  assert.ok(bootstrap.ui.unknownBadge, 'The unknownBadge UI string is missing from the bootstrap payload.');
+}
+
 // The shell app.js builds the per-phrase recorders into. The cards themselves
 // are created at runtime, so these containers are the only markup contract:
 // app.js reads them by id and asserts nothing, and a renamed element would
@@ -89,6 +100,50 @@ assert.ok(
   'phrasesJsonContent_ entries must each be {id: integer, text: non-empty string}.'
 );
 
+// The negative class is a folder, not a phrase: the pipeline labels it from the
+// folder name, so listing it in phrases.json would invent a phrase id for it.
+if (bootstrap.unknownPrompt) {
+  const unknownId = bootstrap.unknownPrompt.id;
+  assert.ok(
+    !generatedPhrases.some((phrase) => phrase.id === unknownId),
+    'phrases.json must not list the unknown prompt; it is a class folder, not a phrase.'
+  );
+
+  // An unknown-card upload is accepted and lands in the filler folder, under a
+  // filename that names it — never in a zero-padded phrase folder.
+  backendContext.payload = { ...validPayload, phrase_id: unknownId };
+  const unknownRequest = vm.runInContext('validateRequest_(payload)', backendContext);
+  assert.equal(unknownRequest.phrase.id, unknownId, 'The unknown prompt must be an accepted phrase_id.');
+  assert.equal(
+    vm.runInContext('classFolderName_(CONFIG.unknownPrompt)', backendContext),
+    'unknown',
+    'Unknown recordings must be filed under the dataset\'s unknown/ folder.'
+  );
+  assert.equal(
+    unknownRequest.phraseText,
+    'unknown',
+    'The sheet must record the class for an unknown sample, not the card\'s instruction text.'
+  );
+  // Apps Script services are unavailable here, so stub only what the filename
+  // helper touches; the naming rule is checkable without a deployment.
+  backendContext.Utilities = {
+    formatDate: () => '20260101_000000',
+    getUuid: () => 'abcdef00-0000-0000-0000-000000000000'
+  };
+  assert.match(
+    vm.runInContext('createFilename_(classFolderName_(CONFIG.unknownPrompt), "audio/webm")', backendContext),
+    /^unknown_/,
+    'An unknown recording\'s filename must carry its class, like a phrase folder\'s does.'
+  );
+  // Derived from the phrase's own id, not a literal: the phrase list is ordered
+  // for the page, so the first card is not necessarily id 1.
+  assert.equal(
+    vm.runInContext('classFolderName_(CONFIG.phrases[0])', backendContext),
+    String(bootstrap.phrases[0].id).padStart(3, '0'),
+    'A phrase must still be filed under its zero-padded id.'
+  );
+}
+
 backendContext.payload = { ...validPayload, phrase_id: 999 };
 assert.throws(
   () => vm.runInContext('validateRequest_(payload)', backendContext),
@@ -109,7 +164,7 @@ assert.throws(
 
 const requiredFunctions = [
   'doGet', 'doPost', 'saveAudio', 'createFolderIfMissing', 'appendSpreadsheetRow', 'jsonResponse',
-  'phrasesJsonContent_', 'ensurePhrasesFile_'
+  'phrasesJsonContent_', 'ensurePhrasesFile_', 'allPrompts_', 'classFolderName_'
 ];
 for (const functionName of requiredFunctions) {
   assert.equal(

@@ -43,6 +43,8 @@ function validateConfiguration(config) {
     ids.add(phrase.id);
   }
 
+  validateUnknownPrompt(config, ids);
+
   if (config.recording.minimumDurationMs < 1 ||
       config.recording.maximumDurationMs < config.recording.minimumDurationMs) {
     throw new Error('Recording duration limits are invalid.');
@@ -55,6 +57,33 @@ function validateConfiguration(config) {
   }
   if (typeof config.storage.phrasesFile !== 'string' || !config.storage.phrasesFile.trim()) {
     throw new Error('storage.phrasesFile must be a non-empty string (the labels file the collector writes, e.g. "phrases.json").');
+  }
+}
+
+/**
+ * The negative class is optional (set `unknownPrompt` to null to drop the card),
+ * but a half-configured one would silently file ordinary speech under a phrase,
+ * so every field it needs is checked here rather than at upload time.
+ */
+function validateUnknownPrompt(config, phraseIds) {
+  const prompt = config.unknownPrompt;
+  if (prompt === null || prompt === undefined) return;
+
+  if (typeof prompt !== 'object') throw new Error('unknownPrompt must be an object or null.');
+  if (!Number.isInteger(prompt.id) || prompt.id < 0) {
+    throw new Error(`unknownPrompt.id must be a non-negative integer: ${prompt.id}`);
+  }
+  if (phraseIds.has(prompt.id)) throw new Error(`unknownPrompt.id ${prompt.id} collides with a phrase id.`);
+  if (typeof prompt.text !== 'string' || !prompt.text.trim()) throw new Error('unknownPrompt has no text.');
+
+  const folder = config.storage.unknownFolderName;
+  if (typeof folder !== 'string' || !folder.trim()) {
+    throw new Error('storage.unknownFolderName is required when unknownPrompt is set (e.g. "unknown").');
+  }
+  // A digits-only name would collide with a zero-padded phrase folder, and the
+  // pipeline would read it as a phrase id instead of the filler class.
+  if (/^\d+$/.test(folder.trim())) {
+    throw new Error('storage.unknownFolderName must not be numeric; it would clash with a phrase folder.');
   }
 }
 
@@ -110,7 +139,8 @@ function bootstrapData(source) {
     },
     theme: source.theme,
     ui: source.ui,
-    phrases: source.phrases
+    phrases: source.phrases,
+    unknownPrompt: source.unknownPrompt || null
   };
 }
 

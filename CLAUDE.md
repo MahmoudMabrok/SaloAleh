@@ -336,7 +336,10 @@ Python, not part of the KMP build. Full docs in `DhikrSpeech/README.md`.
 - The app **warns when a model has no `unknown` class** — softmax gives silence and noise to a
   phrase, so such a model reports high confidence on non-dhikr audio and the scan count cannot be
   trusted without a high threshold. The real fix is `classes.include_unknown` plus an `unknown`
-  folder in the dataset.
+  folder in the dataset. That folder is filled by the collector: `SpeechCollector`'s last card
+  (`unknownPrompt` in its `config.ts`) asks volunteers for any ordinary word that is *not* a dhikr
+  and uploads it straight to `dataset/unknown/`. It is intentionally absent from `phrases.json` —
+  `unknown` is a class folder, and `scan_dataset` labels it from the folder name.
 - `classes.include_phrases` picks which phrase ids the model learns (currently `[1, 2, 3, 4]` — the
   four short, distinct phrases). Applied in `scan_dataset`, so it decides the class vocabulary, the
   manifest's class indices, the model's output width and `labels.txt`. Changing it requires re-running
