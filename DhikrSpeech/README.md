@@ -206,10 +206,16 @@ This covers the two cases that actually happen:
 - **Colab disconnected mid-run** — reopen the notebook, run all, training picks up.
 - **More epochs wanted** — raise `training.epochs` and run again.
 
+It is also the trap to know about: **a resumed run applies your config change on top of the old
+model**, and prints one history for both runs. If you changed a hyperparameter because the last run
+went badly, resuming measures the old run again. The training cell prints `resuming a run`, and
+`artifacts.summary()` flags it.
+
 Related controls:
 
-- **Start fresh instead**: set a different `RUN_NAME` in the notebook (or delete the run folder).
-  A new name gets its own checkpoints, logs and history.
+- **Start fresh instead**: set `FRESH_START = True` in the notebook — it calls `trainer.reset_run()`,
+  which deletes the backup, checkpoint, history and CSV log for that run name. Or set a different
+  `RUN_NAME`, which gets its own checkpoints, logs and history.
 - **Never resume**: `training.resume: false`.
 - **Change the data, not the run**: after adding recordings, re-run `02` (it only processes new
   files) and then resume. To retrain from scratch on the enlarged dataset, use a new `RUN_NAME` —
@@ -235,6 +241,22 @@ Related controls:
 Every variant is benchmarked (size, mean/median/p95 latency, arena estimate) and **verified against
 the Keras model on held-out clips**. The notebook recommends the smallest variant that still agrees
 with Keras.
+
+### Mixed precision and the converter
+
+Training on a GPU enables `mixed_float16`, so the checkpoint computes in float16 — and TFLite has
+**no float16 builtin kernels** for `Conv2D`, `DepthwiseConv2dNative` or `Relu`. Converting such a
+checkpoint directly fails for *every* variant, quantised or not:
+
+```
+Could not translate MLIR to FlatBuffer ...
+'tf.Conv2D' op is neither a custom op nor a flex op
+```
+
+`export_all` handles this: it rebuilds the model under a float32 policy and copies the weights over
+before converting. That is lossless — mixed precision keeps master weights in float32 the whole time
+and only casts for compute, so the rebuild drops the casts, not precision. Calling `convert_tflite`
+directly on a mixed-precision model still fails; run it through `to_float32_model` first.
 
 Two honest caveats about the benchmark table:
 
@@ -529,15 +551,56 @@ but do not compare two runs' test accuracy to the third decimal unless the manif
 |---|---|
 | `dataset directory not found` | `paths.drive_root` / `project_dir` do not match Drive. Notebook 01 prints the resolved paths. |
 | `manifest not found` | Run `02_preprocessing` first. |
+| Accuracy pinned at exactly `1 / classes` and every clip predicted as the same class | The model collapsed — see [below](#a-run-stuck-at-chance). |
 | Training accuracy high, validation stuck at chance | BatchNorm momentum — see [above](#a-note-on-modelbn_momentum). |
 | Validation accuracy far below training | Genuine overfitting: more recordings, more speakers, stronger `augmentation.*`, or a smaller `model.width_multiplier`. |
 | One class always wrong | Check its clips in notebook 01 — usually mislabelled or near-silent takes. Notebook 04 lets you listen to the errors. |
 | Colab disconnects | Re-run `03` with the same `RUN_NAME`; it resumes. |
+| `'tf.Conv2D' op is neither a custom op nor a flex op` | A mixed-precision (float16) checkpoint reached the converter. `export_all` rebuilds it in float32 automatically; if you call `convert_tflite` yourself, pass the model through `to_float32_model` first. |
 | `int8` conversion fails | Calibration data is empty or all one class. Ensure the `train` split is non-empty and `export.representative_samples` ≥ 100. |
 | Quantised model disagrees with Keras | Notebook 05 flags this. Increase `export.representative_samples`, or ship `dynamic_range` instead. |
 | Model works in Colab, fails on the phone | The Android front-end does not match. Compare against `model_meta.json` — sample rate, window, hop, centring and normalisation must all match. |
 | `OOM` during training | Lower `training.batch_size`, or `training.cache: false` for a dataset too large to hold in RAM. |
 | Arabic text renders as boxes in charts | Expected: matplotlib does not shape Arabic. Charts use class ids; the id → phrase table is printed in notebook 01. |
+
+### A run stuck at chance
+
+A summary like this is not a weak model, it is a dead one:
+
+```
+run              : ds_cnn
+epochs completed : 39
+best val_accuracy: 0.1000 (epoch 1)
+```
+
+`0.1000` with 10 classes is exactly what a constant prediction scores on a balanced split — the
+output does not depend on the input. Notebook 03 now says so out loud (`prediction_distribution()`
+and the `!!` notes in `artifacts.summary()`). Work through it in this order:
+
+1. **Run the sanity check** (notebook 03, section 6b). It asks a fresh copy of the model to memorise
+   ~40 unaugmented clips in 200 steps. It has to reach ~1.0; the report tells you what a failure
+   means. Everything below only matters once that passes.
+2. **Count the optimiser steps**, printed by the training cell as `total steps`. It is
+   `ceil(train_clips / batch_size) × epochs`, and it is what convergence actually depends on — a
+   DS-CNN from scratch needs thousands, and the cell warns below 2000. 80 clips at batch 64 is
+   `2/2` steps per epoch, so a 60-epoch run is **120 gradient steps in total**; the model is still
+   at its initialisation, which *is* the constant prediction you are seeing. Watch the loss rather
+   than the accuracy to tell an undertrained run from a broken one: falling train loss with
+   accuracy near chance is a run that needs more steps, while a flat loss at `ln(num_classes)`
+   (2.30 for ten classes) is a run that is not learning at all. Lower `training.batch_size`, raise
+   `training.epochs`.
+3. **Check you are not resuming.** With `training.resume: true`, re-running the notebook restores
+   the previous run's weights *and* optimiser state, and splices both runs' histories together — so
+   a config change you made in between never took effect, and "epochs completed" counts epochs from
+   a run you already abandoned. Set `FRESH_START = True` (or a new `RUN_NAME`) after any config
+   change. The summary flags a resumed run.
+4. **Then look at the data**, which is usually the real answer. Notebook 03 prints clips per class
+   for every split. If notebook 04 reports `samples : 10` for ten classes, the validation split is
+   one clip per class: accuracy can only be 0.0, 0.1, 0.2 … and its 95% interval runs from 0.02 to
+   0.40. That split cannot distinguish a working model from a broken one, and a dataset that thin
+   (≤ 13 clips per class, given how `assign_splits` floors the ratios) cannot train a 10-class
+   classifier from scratch at all. Aim for 50–100+ recordings per class from 10+ speakers before
+   the numbers start meaning anything.
 
 ---
 
