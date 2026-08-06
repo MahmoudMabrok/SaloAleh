@@ -39,6 +39,7 @@ from inference import (  # noqa: E402
     discover_models,
     display_label,
 )
+from sources import SourceError, configured_source, fetch, remote_cache_dir  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 LOGGER = logging.getLogger("dhikrspeech.space")
@@ -46,9 +47,11 @@ LOGGER = logging.getLogger("dhikrspeech.space")
 HERE = Path(__file__).resolve().parent
 MODEL_DIR = Path(os.environ.get("DHIKR_MODEL_DIR", HERE / "model"))
 UPLOAD_DIR = Path(tempfile.gettempdir()) / "dhikrspeech-uploads"
+REMOTE_DIR = remote_cache_dir()
 MAX_SCAN_SECONDS = float(os.environ.get("DHIKR_MAX_SCAN_SECONDS", "300"))
 
 _CACHE: Dict[str, DhikrModel] = {}
+_STARTUP_NOTE = ""
 
 PLOT_BG = "#101418"
 PLOT_FG = "#e6e6e6"
@@ -58,9 +61,38 @@ ACCENT = "#f2b544"
 # ---------------------------------------------------------------------------
 # Model registry
 # ---------------------------------------------------------------------------
+def fetch_startup_source() -> str:
+    """Pull the configured shared folder once, before the UI is built.
+
+    Never fatal: a Drive outage, a revoked share link or no network at all must
+    still leave a usable Space that can be handed a model by hand.
+    """
+    global _STARTUP_NOTE
+    source = configured_source(HERE)
+    if not source:
+        return ""
+    try:
+        result = fetch(source, REMOTE_DIR)
+    except SourceError as exc:
+        LOGGER.warning("startup fetch failed: %s", exc)
+        _STARTUP_NOTE = f"⚠️ Could not load the shared folder — {exc}"
+        return _STARTUP_NOTE
+    except Exception as exc:  # noqa: BLE001 - startup must not die on a fetch
+        LOGGER.warning("startup fetch failed: %s", exc, exc_info=True)
+        _STARTUP_NOTE = f"⚠️ Could not load the shared folder — {type(exc).__name__}: {exc}"
+        return _STARTUP_NOTE
+    LOGGER.info("%s", result.summary())
+    _STARTUP_NOTE = f"Loaded from the shared folder: `{result.source}`"
+    return _STARTUP_NOTE
+
+
 def available_models() -> List[str]:
-    """Every model on disk, from the bundled folder and from uploads."""
-    found = discover_models(MODEL_DIR) + discover_models(UPLOAD_DIR)
+    """Every model on disk: bundled, fetched from a shared folder, or uploaded."""
+    found = (
+        discover_models(MODEL_DIR)
+        + discover_models(REMOTE_DIR, recursive=True)
+        + discover_models(UPLOAD_DIR)
+    )
     seen, ordered = set(), []
     for path in found:
         key = str(path)
@@ -87,7 +119,37 @@ def get_model(path: Optional[str]) -> DhikrModel:
 
 
 def model_choice_label(path: str) -> str:
-    return Path(path).name
+    """Filename, plus where it came from when that is not obvious."""
+    resolved = Path(path)
+    if str(resolved).startswith(str(REMOTE_DIR)):
+        return f"{resolved.name}  (shared folder)"
+    if str(resolved).startswith(str(UPLOAD_DIR)):
+        return f"{resolved.name}  (uploaded)"
+    return resolved.name
+
+
+def fetch_source(source: str):
+    """Paste-a-link handler for the Load-a-model tab."""
+    try:
+        result = fetch(source, REMOTE_DIR, restrict_hosts=True)
+    except SourceError as exc:
+        raise gr.Error(str(exc)) from exc
+
+    for cached in [key for key in _CACHE if key.startswith(str(REMOTE_DIR))]:
+        _CACHE.pop(cached, None)
+
+    choices = available_models()
+    fetched = [path for path in choices if path.startswith(str(result.directory))]
+    selected = fetched[0] if fetched else (choices[0] if choices else None)
+    message = result.summary()
+    if not fetched:
+        message += "\n\n⚠️ No runnable model among them — the folder needs a `.tflite` file."
+    return (
+        gr.update(choices=[(model_choice_label(path), path) for path in choices], value=selected),
+        selected,
+        message,
+        model_info(selected) if selected else NO_MODEL,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -278,6 +340,9 @@ def scan_recording(
     )
     if truncated:
         note += f"\n\n⚠️ Recording truncated to the first {MAX_SCAN_SECONDS:g}s."
+    open_set = model.open_set_warning()
+    if open_set:
+        note += f"\n\n⚠️ {open_set}"
     if not detections:
         note += (
             "\n\nNothing crossed the threshold. Lower it, or check the single-clip tab "
@@ -333,9 +398,9 @@ def model_info(model_path: str) -> str:
         f"| trim | {'on' if frontend.config.audio.trim.enabled else 'off'} (top_db {frontend.config.audio.trim.top_db:g}) |",
     ]
 
-    warning = model.shape_mismatch()
-    if warning:
-        lines += ["", f"> ⚠️ {warning}"]
+    for warning in (model.shape_mismatch(), model.open_set_warning()):
+        if warning:
+            lines += ["", f"> ⚠️ {warning}"]
 
     benchmarks = model.meta.get("benchmarks") or []
     if benchmarks:
@@ -469,11 +534,14 @@ model/
 
 
 def build_demo() -> gr.Blocks:
+    startup_note = fetch_startup_source()
     initial = available_models()
     initial_selected = initial[0] if initial else None
 
     with gr.Blocks(title="DhikrSpeech · model playground", theme=gr.themes.Soft()) as demo:
         gr.Markdown(INTRO)
+        if startup_note:
+            gr.Markdown(startup_note)
 
         with gr.Row():
             model_dropdown = gr.Dropdown(
@@ -575,18 +643,40 @@ def build_demo() -> gr.Blocks:
 
         with gr.Tab("Load a model"):
             gr.Markdown(
-                "Upload an export from the notebook. Files land in a temporary folder, so on a "
-                "hosted Space they last only until it restarts — commit them to `model/` to make "
-                "them permanent."
+                "### From a shared folder\n"
+                "Point the Space at a **Google Drive folder** (shared as *Anyone with the link*), "
+                "a **Hugging Face repo**, or a direct file URL. Fetching the whole folder is what "
+                "keeps `labels.txt` and `model_meta.json` with the `.tflite` — a lone model file "
+                "loads with positional class names and a guessed front-end."
+            )
+            with gr.Row():
+                source_box = gr.Textbox(
+                    label="Folder or repo",
+                    placeholder="https://drive.google.com/drive/folders/…  ·  hf://user/repo",
+                    scale=4,
+                )
+                fetch_button = gr.Button("Fetch", variant="primary", scale=1)
+            fetch_status = gr.Markdown()
+
+            gr.Markdown(
+                "---\n### Or upload the files\n"
+                "Both routes land in a temporary folder, so on a hosted Space they last only "
+                "until it restarts. Commit the export to `model/`, or set `DHIKR_MODEL_SOURCE` / "
+                "`model_source.txt` to the shared folder, to have it there on every start."
             )
             upload_files = gr.File(
                 file_count="multiple",
                 file_types=[".tflite", ".txt", ".json"],
                 label="dhikr_*.tflite + labels.txt + model_meta.json",
             )
-            upload_button = gr.Button("Install", variant="primary")
+            upload_button = gr.Button("Install", variant="secondary")
             upload_status = gr.Markdown()
 
+            fetch_button.click(
+                fetch_source,
+                inputs=[source_box],
+                outputs=[model_dropdown, selected_model, fetch_status, info_markdown],
+            )
             upload_button.click(
                 install_uploads,
                 inputs=[upload_files],

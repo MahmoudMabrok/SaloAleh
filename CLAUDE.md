@@ -326,7 +326,17 @@ Python, not part of the KMP build. Full docs in `DhikrSpeech/README.md`.
   period only merges runs split by a brief dip — a plain refractory timer would split any phrase
   that outlasts it. Deploy with `space/deploy.sh <user>/<space>`, which stages `src/`,
   `configs/config.yaml` and `phrases.json` into the Space repo (they are gitignored inside
-  `space/` so the pipeline stays single-sourced).
+  `space/` so the pipeline stays single-sourced) and creates the Space private if absent.
+- **Models come from a shared folder, not from git** (`space/sources.py`). `space/model_source.txt`
+  (overridable by `DHIKR_MODEL_SOURCE`) names a Google Drive folder, `hf://user/repo`, direct URL or
+  local path, fetched on startup into an ephemeral cache; the *Load a model* tab also takes a link
+  at runtime, restricted to an allowlist of hosts because a public Space's paste field is reachable
+  by anyone. Drive files are fetched one at a time so one throttled file cannot lose the whole
+  export, and `saved_model/` is skipped unless `DHIKR_FETCH_SAVEDMODEL=1`.
+- The app **warns when a model has no `unknown` class** — softmax gives silence and noise to a
+  phrase, so such a model reports high confidence on non-dhikr audio and the scan count cannot be
+  trusted without a high threshold. The real fix is `classes.include_unknown` plus an `unknown`
+  folder in the dataset.
 - `classes.include_phrases` picks which phrase ids the model learns (currently `[1, 2, 3, 4]` — the
   four short, distinct phrases). Applied in `scan_dataset`, so it decides the class vocabulary, the
   manifest's class indices, the model's output width and `labels.txt`. Changing it requires re-running

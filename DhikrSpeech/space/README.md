@@ -35,8 +35,38 @@ Audio is processed in memory for the length of the request and never written to 
 
 ## Adding a model
 
-The exports are not in git (they are produced on Drive by section **05 · Export** of
-`notebooks/DhikrSpeech.ipynb`). Put them in `model/`:
+The exports are not in git — they are produced on Drive by section **05 · Export** of
+`notebooks/DhikrSpeech.ipynb`. There are three ways in, and the first needs no copying at all.
+
+### 1 · From a shared folder (default)
+
+`model_source.txt` holds a link the Space pulls on every start, so a fresh deploy comes up with a
+model already loaded:
+
+```
+https://drive.google.com/drive/folders/<id>     # share as "Anyone with the link"
+hf://<user>/<repo>                              # a Hugging Face model repo
+https://example.com/dhikr_int8.tflite           # a direct file URL
+/mnt/exports                                    # a local path
+```
+
+`DHIKR_MODEL_SOURCE` overrides the file, so a hosted Space can be repointed from its **Settings →
+Variables** without a commit. The **Load a model** tab also takes a link at runtime.
+
+Only the export is fetched (`*.tflite`, `labels.txt`, `model_meta.json`, …) — a `saved_model/`
+directory is skipped unless `DHIKR_FETCH_SAVEDMODEL=1`, since the Space runs LiteRT and could not
+load one anyway. Files are fetched individually and a refusal on one does not lose the rest: Drive
+throttles per file once a link has seen traffic, and an all-or-nothing folder download would cost
+the whole export over a single throttled file.
+
+Two caveats about Drive specifically: the folder must be shared as **Anyone with the link**, and
+Drive rate-limits popular files hard enough that a busy public Space will see failures. A Hugging
+Face model repo is the more reliable home — `hf://user/repo` works the same way, supports private
+repos through an `HF_TOKEN` secret, and is versioned.
+
+### 2 · Committed to the Space
+
+Put the export in `model/`:
 
 ```
 model/
@@ -57,8 +87,25 @@ All three matter:
 Several `.tflite` files can live side by side — the dropdown at the top switches between them, so
 comparing `int8` against `float32` on the same clip is one click.
 
-Anything uploaded through the **Load a model** tab goes to a temp folder and is lost on restart;
-commit it to `model/` to keep it.
+### 3 · Uploaded at runtime
+
+The **Load a model** tab takes the files directly. They go to a temp folder and are lost on restart;
+use one of the first two routes to make a model stick.
+
+---
+
+## A model with no `unknown` class
+
+If the export's classes are all phrases, the app says so on the scan tab and in the model info.
+It is worth understanding why: softmax always sums to 1, so a model that only knows phrases has
+nowhere to put silence, breathing or background speech — it assigns all of that mass to phrases and
+reports high confidence while doing it. The classifier is not broken; it was never given the option
+to say "that was not a dhikr".
+
+For a counter this matters more than accuracy does, because most of a recording is *not* dhikr. Two
+things help, in order: train with an `unknown` folder (`classes.include_unknown` in
+`configs/config.yaml`), and until then raise the confidence threshold on the scan tab and read the
+per-window probability plot rather than the count alone.
 
 ---
 
@@ -84,9 +131,13 @@ copied in. `deploy.sh` does exactly that — it stages `space/` plus `src/`, `co
 `phrases.json`, then pushes:
 
 ```bash
-export HF_TOKEN=hf_...                       # a write token
+export HF_TOKEN=hf_...                       # a write token from huggingface.co/settings/tokens
 ./deploy.sh <your-username>/dhikrspeech
 ```
+
+The Space is created if it does not exist yet, **private**, because publishing a model to a public
+URL is not a deploy script's decision — flip it from the Space's *Settings* page when you are ready.
+Re-running the script updates it in place.
 
 The staged copies (`src/`, `configs/`, `phrases.json` inside `space/`) are gitignored in this repo —
 they exist only in the Space, so there is one source of truth for the pipeline code.

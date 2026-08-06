@@ -40,10 +40,23 @@ STAGING="$(mktemp -d)"
 trap 'rm -rf "$STAGING"' EXIT
 
 echo "==> staging $SPACE_ID"
-git clone --depth 1 "https://oauth2:${HF_TOKEN}@huggingface.co/spaces/${SPACE_ID}" "$STAGING/space" 2>/dev/null || {
-  echo "could not clone the Space - create it first at https://huggingface.co/new-space (SDK: gradio)" >&2
-  exit 1
-}
+if ! git clone --depth 1 "https://oauth2:${HF_TOKEN}@huggingface.co/spaces/${SPACE_ID}" "$STAGING/space" 2>/dev/null; then
+  # No Space there yet. Create it rather than sending the user to the web UI;
+  # private by default, because publishing someone's model to a public URL is
+  # not something a deploy script should decide.
+  echo "==> $SPACE_ID does not exist yet, creating it (private)"
+  if ! command -v hf >/dev/null 2>&1; then
+    echo "the 'hf' CLI is needed to create a Space: pip install -U huggingface_hub" >&2
+    echo "or create it by hand at https://huggingface.co/new-space (SDK: gradio), then re-run" >&2
+    exit 1
+  fi
+  HF_TOKEN="$HF_TOKEN" hf repo create "$SPACE_ID" \
+    --repo-type space --space-sdk gradio --private --exist-ok --token "$HF_TOKEN" \
+    || { echo "could not create $SPACE_ID - check the token has write access" >&2; exit 1; }
+  git clone --depth 1 "https://oauth2:${HF_TOKEN}@huggingface.co/spaces/${SPACE_ID}" "$STAGING/space" \
+    || { echo "created $SPACE_ID but could not clone it" >&2; exit 1; }
+  echo "==> created. Make it public later from the Space's Settings page."
+fi
 
 CHECKOUT="$STAGING/space"
 # Everything the Space owns is replaced; .git and any model/ already committed

@@ -277,8 +277,13 @@ recording — which is what the app actually needs. `space/` is a Gradio app for
 ```bash
 cd space
 pip install -r requirements.txt
-DHIKR_MODEL_DIR=~/Drive/exports python app.py       # http://127.0.0.1:7860
+python app.py                                       # http://127.0.0.1:7860
 ```
+
+It pulls the export from the shared folder named in `space/model_source.txt` on startup — a Google
+Drive folder, a `hf://user/repo`, a direct URL or a local path — so there is nothing to copy.
+`DHIKR_MODEL_SOURCE` overrides it, `DHIKR_MODEL_DIR` points at a local exports folder instead, and
+the *Load a model* tab takes a link or the files directly.
 
 Four tabs: classify one clip (with the log-mel the model saw), scan a long recording and count the
 dhikr in it, read the export's metadata and benchmarks, and swap models without redeploying.
@@ -289,6 +294,11 @@ It runs on **LiteRT**, not TensorFlow, so it installs in seconds. It also reads 
 `model_meta.json` rather than `configs/config.yaml` — the exported metadata is what the weights were
 trained with, and a config retuned since the export would otherwise feed the model features it has
 never seen. When the two disagree about the input shape, the app says so on screen.
+
+It also warns when a model has **no `unknown` class**. That is worth watching for: softmax sums to 1,
+so a model trained only on phrases has nowhere to put silence or background noise and hands it to a
+phrase instead, confidently. Accuracy on held-out *phrase* clips stays high while the counter fires
+on nothing at all — which is exactly the failure the evaluation notebook cannot see.
 
 To publish it as a Hugging Face Space, `space/deploy.sh` stages `src/`, `configs/config.yaml` and
 `phrases.json` alongside the app and pushes — the Space is a separate git repo and cannot import

@@ -1,0 +1,19 @@
+# Shared folder the Space pulls its models from on startup.
+#
+# The exports live on Google Drive, not in git, so without this a deployed Space
+# would come up empty every time. The first non-comment line is used.
+#
+# Accepted forms:
+#   https://drive.google.com/drive/folders/<id>     (share as "Anyone with the link")
+#   hf://<user>/<repo>                              (Hugging Face model repo)
+#   https://example.com/dhikr_int8.tflite           (direct file URL)
+#   /mnt/exports                                    (local path)
+#
+# DHIKR_MODEL_SOURCE overrides this, so a Space can be repointed from its
+# settings without a commit. Delete the line below to start empty instead.
+#
+# Note: Drive rate-limits heavily downloaded files and its share links are easy
+# to revoke by accident. A Hugging Face model repo is the more reliable home for
+# a public Space - the fetcher takes either.
+
+https://drive.google.com/drive/folders/12aDsCvHrSck_iY7Gcwkx3iB_IPn_iSsW

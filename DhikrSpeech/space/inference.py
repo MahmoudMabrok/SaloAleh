@@ -397,6 +397,29 @@ class DhikrModel:
     def display_labels(self) -> List[str]:
         return [display_label(label, self.phrases) for label in self.labels]
 
+    @property
+    def has_unknown(self) -> bool:
+        return any(label.lower() == UNKNOWN_LABEL for label in self.labels)
+
+    def open_set_warning(self) -> Optional[str]:
+        """Warn when the model has no way to say "that was not a dhikr".
+
+        Softmax always sums to 1, so a model trained only on phrases assigns all
+        of that mass to phrases - silence, breathing and speech included. It is
+        not a bug in the model, but it changes how the scan tab must be read:
+        with no ``unknown`` class the threshold is the *only* thing standing
+        between background noise and a count.
+        """
+        if self.has_unknown:
+            return None
+        return (
+            f"This model has no `unknown` class (its {self.num_classes} outputs are all "
+            "phrases), so every window is scored as one phrase or another — including "
+            "silence and background noise. Expect false counts when scanning, and lean "
+            "on a high confidence threshold. Training with an `unknown` folder "
+            "(`classes.include_unknown`) is the real fix."
+        )
+
     def shape_mismatch(self) -> Optional[str]:
         """Human-readable warning when the front-end and the model disagree."""
         expected = self.frontend.input_shape  # (frames, mels, 1)
@@ -591,19 +614,39 @@ def count_detections(
 # ---------------------------------------------------------------------------
 # Discovery
 # ---------------------------------------------------------------------------
-def discover_models(folder: Path) -> List[Path]:
-    """Exported models in ``folder``, smallest last-modified-first ordering aside.
+def discover_models(folder: Path, recursive: bool = False) -> List[Path]:
+    """Exported models in ``folder``.
 
     ``.tflite`` files come first because they are what the Space is built to run;
     a SavedModel directory or ``.keras`` file is listed after them so a checkout
     with TensorFlow available can still use it.
+
+    ``recursive`` is for fetched folders: a shared Drive folder or a Hub snapshot
+    keeps its own structure (``exports/dhikr_int8.tflite``), so a top-level glob
+    would find nothing. A SavedModel's own subdirectories are skipped - it is one
+    model, not a folder of them.
     """
     folder = Path(folder)
     if not folder.exists():
         return []
-    tflite = sorted(folder.glob("*.tflite"))
-    keras_files = sorted(folder.glob("*.keras")) + sorted(folder.glob("*.h5"))
-    saved_models = sorted(
-        path for path in folder.iterdir() if path.is_dir() and (path / "saved_model.pb").exists()
-    )
+
+    if recursive:
+        candidates = sorted(folder.rglob("*"))
+    else:
+        candidates = sorted(folder.iterdir())
+
+    saved_models = [
+        path for path in candidates if path.is_dir() and (path / "saved_model.pb").exists()
+    ]
+    def inside_saved_model(path: Path) -> bool:
+        return any(root in path.parents for root in saved_models)
+
+    tflite, keras_files = [], []
+    for path in candidates:
+        if not path.is_file() or inside_saved_model(path):
+            continue
+        if path.suffix.lower() == ".tflite":
+            tflite.append(path)
+        elif path.suffix.lower() in (".keras", ".h5"):
+            keras_files.append(path)
     return tflite + keras_files + saved_models
