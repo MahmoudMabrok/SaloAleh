@@ -24,6 +24,7 @@ import statistics
 import time
 import warnings
 from dataclasses import asdict, dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
@@ -42,7 +43,10 @@ PathLike = Union[str, Path]
 __all__ = [
     "BenchmarkResult",
     "ExportedModel",
+    "HISTORY_DIRNAME",
     "VerificationResult",
+    "archive_export",
+    "archive_folder_name",
     "benchmark_tflite",
     "convert_tflite",
     "export_all",
@@ -57,6 +61,11 @@ __all__ = [
 ]
 
 _MODES = ("float32", "dynamic_range", "int8")
+
+# Subfolder of the export root that keeps a dated snapshot of every published
+# model. The Space's Drive fetcher skips it (see space/sources.py) so pointing a
+# Space at the export root pulls only the latest model, not the whole archive.
+HISTORY_DIRNAME = "history"
 
 
 # ---------------------------------------------------------------------------
@@ -679,3 +688,69 @@ def export_all(
         metrics=metrics,
     )
     return bundle
+
+
+# ---------------------------------------------------------------------------
+# History archive
+# ---------------------------------------------------------------------------
+def archive_folder_name(
+    include_phrases: Optional[Sequence[int]],
+    accuracy: Optional[float],
+    when: datetime,
+) -> str:
+    """Build the ``<datetime>_<phrases>_<accuracy>`` name for a history snapshot.
+
+    ``include_phrases`` is ``config.classes.include_phrases`` - the phrase ids the
+    model was trained on (``None``/empty means every folder, rendered ``pall``).
+    ``accuracy`` is the model's measured accuracy (0-1); rendered ``accNA`` when it
+    is unknown so a missing evaluation is visible rather than silently dropped.
+    """
+    stamp = when.strftime("%Y-%m-%d_%H-%M-%S")
+    if include_phrases:
+        phrases = "p" + "-".join(str(int(value)) for value in include_phrases)
+    else:
+        phrases = "pall"
+    accuracy_tag = (
+        f"acc{float(accuracy):.4f}"
+        if isinstance(accuracy, (int, float)) and not isinstance(accuracy, bool)
+        else "accNA"
+    )
+    return f"{stamp}_{phrases}_{accuracy_tag}"
+
+
+def archive_export(
+    exports_dir: PathLike,
+    *,
+    include_phrases: Optional[Sequence[int]] = None,
+    accuracy: Optional[float] = None,
+    when: Optional[datetime] = None,
+    include_saved_model: bool = False,
+) -> Path:
+    """Snapshot the freshly-written export into a dated history folder.
+
+    ``export_all`` overwrites the export root every run, so the root always holds
+    the latest model - what the app ships. This copies that export into
+    ``<exports_dir>/<HISTORY_DIRNAME>/<name>`` (``name`` from
+    :func:`archive_folder_name`) so past exports are never overwritten and stay
+    browsable. Only the top-level export files are copied - the ``.tflite``
+    variants and their sidecars (``labels.txt``, ``model_meta.json``,
+    ``mel_filterbank.json``); the bulky ``saved_model/`` directory is skipped
+    unless ``include_saved_model`` is set, and the history folder never copies
+    into itself (both are directories, and only regular files are copied).
+
+    Call it after ``mel_filterbank.json`` has been written so the snapshot is
+    complete. Returns the snapshot directory.
+    """
+    source = Path(exports_dir)
+    stamp = when or datetime.now()
+    target = source / HISTORY_DIRNAME / archive_folder_name(
+        include_phrases, accuracy, stamp
+    )
+    target.mkdir(parents=True, exist_ok=True)
+
+    for entry in sorted(source.iterdir()):
+        if entry.is_file():
+            shutil.copy2(entry, target / entry.name)
+        elif include_saved_model and entry.name == "saved_model":
+            shutil.copytree(entry, target / entry.name, dirs_exist_ok=True)
+    return target

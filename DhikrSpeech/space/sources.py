@@ -225,8 +225,16 @@ def _wanted_from_drive(relative_path: str) -> bool:
     materially reduces the chance of tripping its rate limit. SavedModel content
     is skipped unless asked for: the Space runs LiteRT, so it could not load one
     anyway without TensorFlow added to requirements.
+
+    The export root also keeps a ``history/`` subfolder of dated snapshots of
+    every published model (see ``archive_export`` in src/export.py). Pointing a
+    Space at the root should load the latest model, not every archived one, so
+    ``history/`` is skipped wholesale here; to load an old model, point the Space
+    straight at its ``history/<name>/`` subfolder instead.
     """
     parts = Path(relative_path).parts
+    if any(part == "history" for part in parts[:-1]):
+        return False
     if any(part == "saved_model" or part.endswith(".savedmodel") for part in parts[:-1]):
         if os.environ.get("DHIKR_FETCH_SAVEDMODEL", "").strip().lower() not in ("1", "true", "yes"):
             return False
