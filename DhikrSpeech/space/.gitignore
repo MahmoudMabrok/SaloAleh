@@ -1,0 +1,14 @@
+# Staged copies of the shared pipeline code. deploy.sh puts them here on its way
+# to the Space; in this repo the originals one level up are the only source.
+/src/
+/configs/
+/phrases.json
+
+# Exported models are produced on Drive, not tracked here.
+model/*
+!model/.gitkeep
+
+__pycache__/
+*.py[cod]
+.gradio/
+flagged/
