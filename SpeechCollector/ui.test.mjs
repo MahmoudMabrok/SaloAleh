@@ -10,9 +10,10 @@
  * every element the app creates and resolves it by id — `record-3` is the
  * record button on the fourth card, exactly as in the real page.
  *
- * Covered: one card per phrase, one take at a time across the whole list,
- * re-recording, per-card upload, the serialized upload-all bar, failure
- * handling, and the per-phrase tally.
+ * Covered: one card per prompt (the phrases plus the negative-class card that
+ * asks for a word which is not a dhikr), one take at a time across the whole
+ * list, re-recording, per-card upload, the serialized upload-all bar, failure
+ * handling, and the per-prompt tally.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -33,6 +34,9 @@ const bootstrap = JSON.parse(
 );
 
 const phrases = bootstrap.phrases;
+// The page offers one card per prompt: every phrase, then the unknown card.
+const prompts = bootstrap.unknownPrompt ? [...phrases, bootstrap.unknownPrompt] : [...phrases];
+const unknownIndex = prompts.length - 1;
 const UPLOAD_COUNTS_KEY = 'speech_collector_upload_counts';
 
 // The static shell from Index.html. Everything else is created by the app.
@@ -242,7 +246,11 @@ function createEnvironment({ secureContext = true, storageSeed = null, uploadOk 
   source.runInContext(context);
 
   return {
-    dom: { get: (id) => assertFound(findById(id), id) },
+    dom: {
+      get: (id) => assertFound(findById(id), id),
+      /** Nullable lookup, for asserting that an element was *not* created. */
+      find: (id) => findById(id)
+    },
     storage,
     clock,
     recorders,
@@ -292,18 +300,18 @@ async function uploadTake(environment, index) {
 const text = (environment, id) => environment.dom.get(id).textContent;
 const disabled = (environment, id) => environment.dom.get(id).disabled;
 
-// 1. Every phrase gets its own card, with its own controls and its own text.
+// 1. Every prompt gets its own card, with its own controls and its own text.
 {
   const environment = createEnvironment();
-  phrases.forEach((phrase, index) => {
-    assert.equal(text(environment, `phrase-${index}`), phrase.text, `Card ${index} must show its phrase.`);
+  prompts.forEach((prompt, index) => {
+    assert.equal(text(environment, `phrase-${index}`), prompt.text, `Card ${index} must show its prompt.`);
     for (const role of ['record', 'stop', 'play', 'upload']) {
       assert.ok(environment.dom.get(`${role}-${index}`), `Card ${index} must have its own ${role} button.`);
     }
   });
   assert.equal(
     text(environment, 'summary-phrases'),
-    bootstrap.ui.summaryPhrases.replace('{recorded}', '0').replace('{total}', String(phrases.length))
+    bootstrap.ui.summaryPhrases.replace('{recorded}', '0').replace('{total}', String(prompts.length))
   );
 }
 
@@ -404,7 +412,7 @@ const disabled = (environment, id) => environment.dom.get(id).disabled;
   assert.equal(text(environment, 'summary-samples'), bootstrap.ui.summarySamples.replace('{count}', '2'));
   assert.equal(
     text(environment, 'summary-phrases'),
-    bootstrap.ui.summaryPhrases.replace('{recorded}', '1').replace('{total}', String(phrases.length)),
+    bootstrap.ui.summaryPhrases.replace('{recorded}', '1').replace('{total}', String(prompts.length)),
     'Two samples of one phrase still cover one phrase.'
   );
 }
@@ -464,7 +472,7 @@ const disabled = (environment, id) => environment.dom.get(id).disabled;
   assert.equal(environment.dom.get('upload-all-bar').hidden, true, 'Nothing is waiting any more.');
   assert.equal(
     text(environment, 'summary-phrases'),
-    bootstrap.ui.summaryPhrases.replace('{recorded}', '3').replace('{total}', String(phrases.length))
+    bootstrap.ui.summaryPhrases.replace('{recorded}', '3').replace('{total}', String(prompts.length))
   );
 }
 
@@ -491,7 +499,7 @@ const disabled = (environment, id) => environment.dom.get(id).disabled;
   assert.equal(text(environment, 'summary-samples'), bootstrap.ui.summarySamples.replace('{count}', '4'));
   assert.equal(
     text(environment, 'summary-phrases'),
-    bootstrap.ui.summaryPhrases.replace('{recorded}', '2').replace('{total}', String(phrases.length))
+    bootstrap.ui.summaryPhrases.replace('{recorded}', '2').replace('{total}', String(prompts.length))
   );
 }
 
@@ -499,9 +507,62 @@ const disabled = (environment, id) => environment.dom.get(id).disabled;
 {
   const environment = createEnvironment({ secureContext: false });
   assert.equal(text(environment, 'page-status'), bootstrap.ui.insecureContext);
-  phrases.forEach((phrase, index) => {
+  prompts.forEach((prompt, index) => {
     assert.equal(disabled(environment, `record-${index}`), true, `Card ${index} must not offer recording.`);
   });
 }
 
-console.log('UI behaviour tests passed: per-phrase recorders, single-take locking, uploads, and tallies.');
+// 15. The negative-class card comes last, asks for a word that is not a dhikr,
+//     and marks itself as the odd one out so it is not read as a phrase.
+if (bootstrap.unknownPrompt) {
+  const environment = createEnvironment();
+  assert.equal(
+    text(environment, `phrase-${unknownIndex}`),
+    bootstrap.unknownPrompt.text,
+    'The last card must ask for a word that is not a dhikr.'
+  );
+  assert.equal(
+    text(environment, `note-${unknownIndex}`),
+    bootstrap.unknownPrompt.note,
+    'The card must carry its example note; "any word" is not actionable on its own.'
+  );
+  assert.equal(text(environment, `badge-${unknownIndex}`), bootstrap.ui.unknownBadge);
+  assert.match(
+    environment.dom.get(`card-${unknownIndex}`).className,
+    /phrase-card-unknown/,
+    'The card must be styled apart from the phrases.'
+  );
+  assert.equal(
+    environment.dom.find('note-0'),
+    null,
+    'A dhikr card carries no note: the phrase is its own instruction.'
+  );
+}
+
+// 16. An unknown take uploads under its own id, which is what sends it to the
+//     dataset's unknown/ folder, and tallies against itself alone.
+if (bootstrap.unknownPrompt) {
+  const environment = createEnvironment();
+  await recordTake(environment, unknownIndex);
+  await uploadTake(environment, unknownIndex);
+
+  assert.equal(
+    environment.uploads[0].phrase_id,
+    bootstrap.unknownPrompt.id,
+    'The payload must carry the unknown prompt\'s id, not a phrase id.'
+  );
+  assert.deepEqual(
+    JSON.parse(environment.storage.get(UPLOAD_COUNTS_KEY)),
+    { [bootstrap.unknownPrompt.id]: 1 },
+    'An unknown sample must be tallied against the unknown card only.'
+  );
+  assert.equal(text(environment, `tally-${unknownIndex}`), bootstrap.ui.recordedCount.replace('{count}', '1'));
+  assert.equal(text(environment, 'tally-0'), '', 'No phrase may be credited with the unknown sample.');
+  assert.equal(
+    text(environment, 'summary-phrases'),
+    bootstrap.ui.summaryPhrases.replace('{recorded}', '1').replace('{total}', String(prompts.length)),
+    'The unknown card counts towards coverage like any other prompt.'
+  );
+}
+
+console.log('UI behaviour tests passed: per-prompt recorders, the unknown card, single-take locking, uploads, and tallies.');

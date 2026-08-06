@@ -29,7 +29,8 @@ function doGet() {
     },
     theme: CONFIG.theme,
     ui: CONFIG.ui,
-    phrases: CONFIG.phrases
+    phrases: CONFIG.phrases,
+    unknownPrompt: CONFIG.unknownPrompt || null
   });
 
   return template.evaluate()
@@ -98,17 +99,17 @@ function saveAudio(request) {
     const rootFolder = getOrCreateRootFolder_();
     ensurePhrasesFile_(rootFolder);
     const datasetFolder = createFolderIfMissing(rootFolder, CONFIG.storage.datasetSubfolder);
-    const phraseFolderName = padPhraseId_(validated.phrase.id);
-    const phraseFolder = createFolderIfMissing(datasetFolder, phraseFolderName);
-    const filename = createFilename_(validated.phrase.id, validated.mimeType);
+    const classFolderName = classFolderName_(validated.phrase);
+    const classFolder = createFolderIfMissing(datasetFolder, classFolderName);
+    const filename = createFilename_(classFolderName, validated.mimeType);
     const blob = Utilities.newBlob(audioBytes, validated.mimeType, filename);
-    const file = phraseFolder.createFile(blob);
+    const file = classFolder.createFile(blob);
 
     try {
       const row = {
         sample_id: validated.sampleId,
         phrase_id: validated.phrase.id,
-        phrase_text: validated.phrase.text,
+        phrase_text: validated.phraseText,
         filename: filename,
         duration_ms: validated.durationMs,
         sample_rate: validated.sampleRate,
@@ -139,13 +140,38 @@ function saveAudio(request) {
   }
 }
 
+/**
+ * Every prompt the page offers: the phrases plus the out-of-vocabulary card,
+ * which is a class of its own rather than a phrase.
+ */
+function allPrompts_() {
+  return CONFIG.unknownPrompt ? CONFIG.phrases.concat([CONFIG.unknownPrompt]) : CONFIG.phrases;
+}
+
+function isUnknownPrompt_(prompt) {
+  return Boolean(CONFIG.unknownPrompt) && prompt.id === CONFIG.unknownPrompt.id;
+}
+
+/**
+ * The dataset class folder a prompt writes into: the configured `unknown`
+ * folder for the negative class, a zero-padded phrase id for everything else.
+ * These are the folder names the DhikrSpeech pipeline scans as its classes.
+ */
+function classFolderName_(prompt) {
+  return isUnknownPrompt_(prompt) ? CONFIG.storage.unknownFolderName : padPhraseId_(prompt.id);
+}
+
 /** Returns the existing child folder or creates it when missing. */
 function createFolderIfMissing(parentFolder, folderName) {
   const matches = parentFolder.getFoldersByName(folderName);
   return matches.hasNext() ? matches.next() : parentFolder.createFolder(folderName);
 }
 
-/** The phrases.json body the DhikrSpeech pipeline reads: a plain [{id, text}] list. */
+/**
+ * The phrases.json body the DhikrSpeech pipeline reads: a plain [{id, text}]
+ * list. The unknown prompt is intentionally absent — it is a class folder, not
+ * a phrase id, and the pipeline labels it from the folder name.
+ */
 function phrasesJsonContent_() {
   const phrases = CONFIG.phrases.map(function(phrase) {
     return { id: phrase.id, text: phrase.text };
@@ -203,7 +229,7 @@ function validateRequest_(request) {
   }
 
   const phraseId = Number(request.phrase_id);
-  const phrase = CONFIG.phrases.find(function(item) { return item.id === phraseId; });
+  const phrase = allPrompts_().find(function(item) { return item.id === phraseId; });
   if (!Number.isInteger(phraseId) || !phrase) {
     throw publicError_('INVALID_PHRASE', 'phrase_id is not valid.');
   }
@@ -242,6 +268,9 @@ function validateRequest_(request) {
 
   return {
     phrase: phrase,
+    // What the volunteer actually said. The unknown card's own text is an
+    // instruction, not a spoken phrase, so the sheet records the class name.
+    phraseText: isUnknownPrompt_(phrase) ? CONFIG.storage.unknownFolderName : phrase.text,
     sampleId: sampleId,
     durationMs: durationMs,
     mimeType: mimeType,
@@ -352,10 +381,10 @@ function findExistingSample_(sheet, sampleId) {
   };
 }
 
-function createFilename_(phraseId, mimeType) {
+function createFilename_(classFolderName, mimeType) {
   const timestamp = Utilities.formatDate(new Date(), CONFIG.app.timezone, 'yyyyMMdd_HHmmss');
   const suffix = Utilities.getUuid().replace(/-/g, '').slice(0, 6).toLowerCase();
-  return padPhraseId_(phraseId) + '_' + timestamp + '_' + suffix + extensionForMime_(mimeType);
+  return classFolderName + '_' + timestamp + '_' + suffix + extensionForMime_(mimeType);
 }
 
 function padPhraseId_(phraseId) {

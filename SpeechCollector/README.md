@@ -95,6 +95,24 @@ phrases: [
 
 IDs must be unique positive integers. Recordings are stored under a `dataset/` subfolder of the root folder (`{root}/dataset/{id}/`, set by `storage.datasetSubfolder`), one numeric zero-padded folder per phrase (`001`, `002`, and so on); Arabic text is never used in folder names. The `dataset/` level matches what the DhikrSpeech training pipeline scans.
 
+### The unknown card (words that are not a dhikr)
+
+The last card on the page asks the volunteer for **any ordinary word that is not a dhikr** — "صباح الخير", "كيف حالك", anything. These are the model's negative examples: a classifier trained on phrases alone has nowhere to put ordinary speech, so it hands every word it hears to the nearest dhikr and over-counts. The card is configured by `unknownPrompt` in `config.ts`:
+
+```js
+unknownPrompt: {
+  id: 0,
+  text: "قل أي كلمة عادية ليست ذكرًا",
+  note: "مثل «صباح الخير» أو …"
+}
+```
+
+- Its recordings go to `{root}/dataset/unknown/` (`storage.unknownFolderName`), not to a numeric phrase folder, and their filenames start with `unknown_`. That is exactly the folder DhikrSpeech's `classes.unknown_class` scans, so no manual sorting is needed.
+- Its `id` must not collide with a phrase id, and `unknownFolderName` must not be numeric — the build refuses both, because either would file ordinary speech as a phrase.
+- It is deliberately **left out of `phrases.json`**: `unknown` is a class folder, not a phrase, and the pipeline labels it from the folder name. The spreadsheet row records `phrase_text` as `unknown` for the same reason — the card's own text is an instruction, not something anyone said.
+- Set `unknownPrompt: null` to drop the card entirely.
+- The `note` is shown under the prompt as an example. Only this card has one; a dhikr is its own instruction.
+
 The collector also writes `phrases.json` (set by `storage.phrasesFile`) at the **root** of the dataset folder — a sibling of `dataset/` — regenerated from this `phrases` list whenever it changes. That is the id→text label file the DhikrSpeech pipeline reads, so there is no separate step to create or upload it: change `phrases` here, redeploy, and the next upload refreshes the file. (If you ever delete it in Drive, edit a phrase or clear the `SPEECH_COLLECTOR_PHRASES_SIGNATURE` script property to force a rewrite.)
 
 ## 2. Build the Apps Script files
@@ -113,7 +131,7 @@ Successful output looks like:
 ```text
 Built Apps Script project in .../SpeechCollector/dist
 Verification passed: build output, manifest, syntax, and request validation are valid.
-UI behaviour tests passed: per-phrase recorders, single-take locking, uploads, and tallies.
+UI behaviour tests passed: per-prompt recorders, the unknown card, single-take locking, uploads, and tallies.
 ```
 
 Re-run these commands after every change to `config.ts`, `Code.gs`, `Index.html`, `app.js`, `styles.css`, or `appsscript.json`. `ui.test.mjs` runs `app.js` against a minimal DOM stub and drives the buttons on the generated cards, so it catches a broken recorder, a card that fails to lock while another records, or a mis-queued upload before the page reaches a volunteer. The Pages workflow runs all three before publishing `voice.html`.
@@ -188,8 +206,8 @@ Safari commonly records AAC audio in an M4A/MP4 container; Chrome commonly recor
 After a successful upload:
 
 1. Open the root Drive folder, then its `dataset/` subfolder.
-2. Confirm that a phrase subfolder such as `dataset/001` exists.
-3. Confirm that it contains a file like `001_20260803_183015_ab12cd.webm` or `.m4a`/`.wav`.
+2. Confirm that a phrase subfolder such as `dataset/001` exists — and, after a take on the last card, `dataset/unknown`.
+3. Confirm that it contains a file like `001_20260803_183015_ab12cd.webm` (or `unknown_20260803_183015_ab12cd.webm`) or `.m4a`/`.wav`.
 4. Open the spreadsheet.
 5. Confirm that exactly one metadata row was appended and its Drive URL opens the file for the owner.
 
@@ -206,9 +224,9 @@ Drive files remain private unless the owner separately changes their sharing set
 - Uses a stable random `sample_id` for retries. If the direct POST succeeds but its response is interrupted, retrying returns the existing row rather than creating a duplicate.
 - Tallies a sample only after the server confirms success.
 
-### One recorder per phrase
+### One recorder per prompt
 
-There is no navigation. Every phrase is a card on the same page, carrying its own waveform, timer, status line, and four buttons (**تسجيل**, **إيقاف**, **استماع**, **رفع التسجيل**). A volunteer records and uploads whichever phrases they like, in any order, as many times as they like.
+There is no navigation. Every phrase is a card on the same page — plus the unknown card at the end — each carrying its own waveform, timer, status line, and four buttons (**تسجيل**, **إيقاف**, **استماع**, **رفع التسجيل**). A volunteer records and uploads whichever cards they like, in any order, as many times as they like.
 
 - **Record any card.** Tapping **تسجيل** starts that card and locks every other card's record button — there is one microphone, so there is one take at a time. The 1s minimum and 5s auto-stop are unchanged.
 - **Re-record.** Once a take is waiting, that card's record button becomes **إعادة التسجيل**: pressing it drops the take and starts a new one. No confirmation — pressing it already says so.
@@ -224,8 +242,8 @@ There is no navigation. Every phrase is a card on the same page, carrying its ow
 
 The Apps Script backend:
 
-- Accepts only phrase IDs present in `config.ts`.
-- Replaces client-supplied phrase text with the trusted configured phrase text.
+- Accepts only phrase IDs present in `config.ts` (plus the `unknownPrompt` id when one is configured).
+- Replaces client-supplied phrase text with the trusted configured phrase text, and decides the destination folder from the id — a client cannot choose where its audio is filed.
 - Enforces duration, MIME type, base64 syntax, sample-rate range, and maximum upload size.
 - Generates the filename and Drive folder name on the server.
 - Limits metadata lengths and prevents spreadsheet formula injection.

@@ -115,6 +115,11 @@ classify a cough, a TV, or "good morning" as whichever phrase sounds closest, an
 becomes a phantom count. Fill it with ordinary speech, silence, room tone and background noise.
 Aim for at least as many `unknown` clips as an average phrase class.
 
+Volunteer speech for this folder arrives on its own: the last card in `SpeechCollector` asks for any
+ordinary word that is *not* a dhikr and uploads it directly to `dataset/unknown/`. It is not listed
+in `phrases.json` — `scan_dataset` labels the folder by name — so nothing here needs configuring
+beyond `classes.include_unknown`. Silence, room tone and noise still have to be added by hand.
+
 ### What makes a good recording
 
 | | |
