@@ -42,7 +42,7 @@ classes:
   # Phrase ids from phrases.json. null (or []) trains on every folder found.
   # [1, 2, 3, 4] = the four short, distinct phrases:
   #   1 سبحان الله | 2 الحمد لله | 3 الله أكبر | 4 لا إله إلا الله
-  include_phrases: [1,2]
+  include_phrases: [6,7]
   # Keep the `unknown` filler folder when one exists. It is not a phrase id, so
   # the selection above never covers it.
   include_unknown: true
