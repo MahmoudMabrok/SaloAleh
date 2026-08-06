@@ -537,18 +537,30 @@ def sanity_overfit(
         verbose=verbose,
         callbacks=[],
     )
-    # training=True here: this measures the fit itself, not the moving statistics.
-    accuracy = float(history.history["accuracy"][-1])
-    loss = float(history.history["loss"][-1])
+    # Keras averages a metric over every step of the epoch, so this includes the
+    # steps at the very start when the model still knew nothing. It describes the
+    # run, not the model the run produced - never judge the outcome by it.
+    running_accuracy = float(history.history["accuracy"][-1])
 
-    # A second pass in inference mode. A large gap between the two is the
-    # BatchNorm-moving-statistics failure, not an optimisation failure.
+    # The model the run produced, in inference mode: this is the verdict.
     evaluated = clone.evaluate(dataset, verbose=0, return_dict=True)
+
+    # Same clips in training mode, so BatchNorm uses batch statistics instead of
+    # its moving averages. Run last: a training=True pass updates those averages.
+    # Dropout is active here too, so a few points below the inference number is
+    # normal; a collapse to chance in *inference* while this stays high is not.
+    correct = total = 0
+    for features, labels in dataset:
+        predicted = tf.argmax(clone(features, training=True), axis=-1, output_type=tf.int32)
+        labels = tf.cast(tf.reshape(labels, [-1]), tf.int32)
+        correct += int(tf.reduce_sum(tf.cast(tf.equal(predicted, labels), tf.int32)))
+        total += int(tf.size(labels))
+
     return {
-        "train_accuracy": accuracy,
-        "train_loss": loss,
+        "running_accuracy": running_accuracy,
         "inference_accuracy": float(evaluated.get("accuracy", float("nan"))),
         "inference_loss": float(evaluated.get("loss", float("nan"))),
+        "train_mode_accuracy": float(correct) / float(total) if total else float("nan"),
         "steps": float(steps),
     }
 
@@ -556,37 +568,39 @@ def sanity_overfit(
 def sanity_overfit_report(result: Dict[str, float], num_classes: int) -> str:
     """Verdict for :func:`sanity_overfit`, written for the notebook output."""
     chance = 1.0 / float(max(num_classes, 2))
-    train = result["train_accuracy"]
     inference = result["inference_accuracy"]
+    train_mode = result["train_mode_accuracy"]
     lines = [
-        f"steps            : {int(result['steps'])}",
-        f"train accuracy   : {train:.4f} (chance {chance:.4f})",
-        f"inference accuracy: {inference:.4f}",
+        f"steps             : {int(result['steps'])}",
+        f"final accuracy    : {inference:.4f} (chance {chance:.4f})  <- the verdict",
+        f"train-mode accuracy: {train_mode:.4f} (BatchNorm on batch statistics)",
+        f"accuracy over run : {result['running_accuracy']:.4f} (averaged across all "
+        f"{int(result['steps'])} steps, so it starts at chance - ignore it)",
     ]
-    if train <= 1.25 * chance:
+    if inference >= 0.9:
+        lines.append(
+            "\nPASS - the pipeline can learn. Features, labels and topology are fine, so "
+            "a real run stuck at chance is a data-quantity or schedule problem: more "
+            "recordings and speakers, more optimiser steps (smaller training.batch_size, "
+            "more training.epochs), lighter augmentation."
+        )
+    elif train_mode >= 0.9:
+        lines.append(
+            "\nFAIL - it memorised the clips in training mode but not in inference mode. "
+            "That is BatchNorm: the moving statistics never converged. Lower "
+            "model.bn_momentum (0.9 -> 0.8) or raise the number of steps per epoch."
+        )
+    elif max(inference, train_mode) <= 1.25 * chance:
         lines.append(
             "\nFAIL - the model cannot even memorise a handful of clips. The problem is "
             "the data or the front-end, not the schedule: check that features are finite "
             "and vary between classes, that class_index matches the folder, and that the "
             "learning rate is not zero."
         )
-    elif inference <= 1.25 * chance:
-        lines.append(
-            "\nFAIL - it memorised the clips in training mode but predicts chance in "
-            "inference mode. That is BatchNorm: the moving statistics never converged. "
-            "Lower model.bn_momentum (0.9 -> 0.8) or raise the number of steps per epoch."
-        )
-    elif train >= 0.9:
-        lines.append(
-            "\nPASS - the pipeline can learn. A real run stuck at chance is then a "
-            "data-quantity or schedule problem: more recordings and speakers, more "
-            "optimiser steps (smaller training.batch_size, more training.epochs), "
-            "lighter augmentation."
-        )
     else:
         lines.append(
-            "\nPARTIAL - it learns, but slowly. Raise `steps` and re-run before reading "
-            "anything into it."
+            "\nPARTIAL - it is learning but has not finished memorising. Raise `steps` "
+            "and re-run before reading anything into it."
         )
     return "\n".join(lines)
 
