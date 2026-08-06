@@ -316,6 +316,10 @@ class Trainer:
         return self.checkpoint_dir / "best_model.keras"
 
     @property
+    def snapshot_path(self) -> Path:
+        return self.checkpoint_dir / "config_snapshot.yaml"
+
+    @property
     def last_weights_path(self) -> Path:
         return self.checkpoint_dir / "last.weights.h5"
 
@@ -438,6 +442,7 @@ class Trainer:
 
         resumed = self.is_resuming
         if resumed:
+            self._reject_incompatible_resume()
             LOGGER.warning(
                 "resuming run '%s' from %s - weights, optimiser state and epoch "
                 "counter come from the previous run. Call reset_run() or pick a new "
@@ -480,6 +485,32 @@ class Trainer:
             epochs_completed=epochs_completed,
             num_classes=int(self.num_classes),
             resumed=resumed,
+        )
+
+    def _reject_incompatible_resume(self) -> None:
+        """Refuse to restore a backup trained on a different class vocabulary.
+
+        Changing ``classes.include_phrases`` changes the width of the model's
+        output, so restoring the old optimiser state fails deep inside Keras with
+        a shape error that says nothing about the cause.
+        """
+        if not self.snapshot_path.is_file():
+            return
+        try:
+            previous = Config.load(self.snapshot_path)
+        except Exception as exc:  # noqa: BLE001 - a stale snapshot must not block a run
+            LOGGER.warning("ignoring unreadable config snapshot at %s: %s", self.snapshot_path, exc)
+            return
+
+        before = previous.classes.include_phrases
+        now = self.config.classes.include_phrases
+        if before == now:
+            return
+        raise ValueError(
+            f"run '{self.run_name}' was trained on classes.include_phrases={before}, "
+            f"but the config now says {now}. The model's output width changed, so the "
+            f"backup cannot be restored. Set FRESH_START = True (or pick a new RUN_NAME) "
+            f"and re-run 02_preprocessing so the manifest matches."
         )
 
     def _merge_history(self, history: Dict[str, List[float]]) -> Dict[str, List[float]]:

@@ -27,6 +27,27 @@ paths:
   unknown_class: unknown        # folder holding out-of-vocabulary / filler audio
 
 # ---------------------------------------------------------------------------
+# Classes - which phrases the model learns to tell apart
+# ---------------------------------------------------------------------------
+# Ten classes need a lot of recordings. Training on a subset is the cheapest way
+# to get a working model out of a small dataset: the same clips give more per
+# class, and chance accuracy rises from 1/10 to 1/4, so the numbers start meaning
+# something much sooner. Add the rest back as the dataset grows.
+#
+# The selection decides the class vocabulary, the class indices frozen into the
+# manifest, the width of the model's output and labels.txt. After changing it,
+# re-run 02_preprocessing and train under a fresh run (FRESH_START / RUN_NAME) -
+# an old checkpoint has the wrong number of outputs.
+classes:
+  # Phrase ids from phrases.json. null (or []) trains on every folder found.
+  # [1, 2, 3, 4] = the four short, distinct phrases:
+  #   1 سبحان الله | 2 الحمد لله | 3 الله أكبر | 4 لا إله إلا الله
+  include_phrases: [1, 2, 3, 4]
+  # Keep the `unknown` filler folder when one exists. It is not a phrase id, so
+  # the selection above never covers it.
+  include_unknown: true
+
+# ---------------------------------------------------------------------------
 # Audio
 # ---------------------------------------------------------------------------
 audio:

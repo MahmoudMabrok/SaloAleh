@@ -504,6 +504,7 @@ The ones worth knowing:
 | `split.group_regex` | keep one speaker's clips inside one split |
 | `model.*` | DS-CNN width, depth, dropout |
 | `model.bn_momentum` | BatchNorm moving-average momentum — see below |
+| `classes.*` | which phrase ids the model learns — see [below](#training-on-a-subset-of-phrases) |
 | `training.*` | epochs, batch size, optimizer, schedule, early stopping |
 | `evaluation.confidence_threshold` | the on-device reject gate |
 | `export.*` | which variants to build, calibration size, benchmark runs |
@@ -562,6 +563,34 @@ but do not compare two runs' test accuracy to the third decimal unless the manif
 | Model works in Colab, fails on the phone | The Android front-end does not match. Compare against `model_meta.json` — sample rate, window, hop, centring and normalisation must all match. |
 | `OOM` during training | Lower `training.batch_size`, or `training.cache: false` for a dataset too large to hold in RAM. |
 | Arabic text renders as boxes in charts | Expected: matplotlib does not shape Arabic. Charts use class ids; the id → phrase table is printed in notebook 01. |
+
+### Training on a subset of phrases
+
+Ten classes need a lot of recordings. `classes.include_phrases` narrows the vocabulary, which is the
+cheapest way to get a working model out of a small dataset — the same clips give more per class, and
+chance accuracy rises from 1/10 to 1/4, so validation numbers start meaning something much sooner.
+
+```yaml
+classes:
+  include_phrases: [1, 2, 3, 4]   # null or [] trains on every folder found
+  include_unknown: true           # keep the `unknown` filler folder if it exists
+```
+
+This is the shipped default: the four short, distinct phrases (سبحان الله / الحمد لله / الله أكبر /
+لا إله إلا الله). Add ids back as the dataset grows.
+
+The filter is applied where the dataset is indexed, so it decides the class vocabulary, the class
+indices frozen into the manifest, the width of the model's output and `labels.txt` — nothing
+downstream needs to know about it. Class indices stay contiguous from 0 whatever you select, and
+notebook 01's phrase table gains a `trained` column showing what is in and what is out.
+
+Two things to do after changing it:
+
+1. **Re-run `02_preprocessing`** — the manifest still carries the old classes otherwise. Already
+   conditioned clips are skipped, so it is quick.
+2. **Train under a fresh run** — `FRESH_START = True`, or a new `RUN_NAME`. An old checkpoint has
+   the wrong number of outputs; `Trainer` compares the run's config snapshot and refuses to restore
+   an incompatible backup rather than failing later with a shape error.
 
 ### A run stuck at chance
 
