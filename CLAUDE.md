@@ -316,6 +316,17 @@ Python, not part of the KMP build. Full docs in `DhikrSpeech/README.md`.
   deleted deliberately — do not recreate them, and make every notebook change here.
 - `configs/config.yaml` is the only place settings live; the notebooks read it and hold no
   thresholds or hyperparameters of their own. All logic lives in `DhikrSpeech/src/`.
+- **`DhikrSpeech/space/` is the Gradio app for testing an export** (classify a clip, scan a
+  recording and count the dhikr in it, read the export metadata). It imports the front-end from
+  `src/` rather than reimplementing it, and it derives that front-end from the export's
+  `model_meta.json` — not `config.yaml` — so a retuned config cannot silently feed the model
+  features it was never trained on. Runs on LiteRT, so it does **not** install TensorFlow; a
+  `.keras`/SavedModel export needs `tensorflow` added to `space/requirements.txt`. Counting is
+  run-based (a run of agreeing above-threshold windows is one dhikr, however long); the refractory
+  period only merges runs split by a brief dip — a plain refractory timer would split any phrase
+  that outlasts it. Deploy with `space/deploy.sh <user>/<space>`, which stages `src/`,
+  `configs/config.yaml` and `phrases.json` into the Space repo (they are gitignored inside
+  `space/` so the pipeline stays single-sourced).
 - `classes.include_phrases` picks which phrase ids the model learns (currently `[1, 2, 3, 4]` — the
   four short, distinct phrases). Applied in `scan_dataset`, so it decides the class vocabulary, the
   manifest's class indices, the model's output width and `labels.txt`. Changing it requires re-running

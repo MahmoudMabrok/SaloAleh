@@ -1,0 +1,19 @@
+# DhikrSpeech Space - deliberately does NOT install TensorFlow.
+#
+# TensorFlow is a ~600 MB wheel and the Space only ever runs inference on an
+# exported flatbuffer, so it uses the LiteRT runtime instead (~30 MB). Add
+# `tensorflow` here only if you need to load a .keras / SavedModel export
+# directly; every .tflite variant works without it.
+
+gradio>=4.44,<6.0
+
+ai-edge-litert>=1.0            # TFLite interpreter without TensorFlow
+
+numpy>=1.26,<3.0
+scipy>=1.11
+librosa>=0.10.1                # the training front-end, reused verbatim
+soundfile>=0.12.1
+soxr>=0.3.7
+audioread>=3.0
+matplotlib>=3.7
+PyYAML>=6.0

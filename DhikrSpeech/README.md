@@ -28,7 +28,8 @@ recordings on Drive
 - [3 · Train](#3--train)
 - [4 · Resume training](#4--resume-training)
 - [5 · Export](#5--export)
-- [6 · Integrate into Android](#6--integrate-into-android)
+- [6 · Test the export](#6--test-the-export)
+- [7 · Integrate into Android](#7--integrate-into-android)
 - [Configuration](#configuration)
 - [Growing the dataset](#growing-the-dataset)
 - [Troubleshooting](#troubleshooting)
@@ -53,6 +54,10 @@ DhikrSpeech/
 │   ├── visualization.py          every chart
 │   └── export.py                 SavedModel, TFLite, benchmark, verification
 ├── configs/config.yaml           the only place settings live
+├── space/                        Gradio app for testing an export (Hugging Face Space)
+│   ├── app.py                    four tabs: clip, scan, model info, load a model
+│   ├── inference.py              model loading, sliding-window scan, counting
+│   └── deploy.sh                 stage src/ + configs/ into a Space and push
 ├── requirements.txt
 └── README.md
 ```
@@ -263,7 +268,35 @@ Two honest caveats about the benchmark table:
 
 ---
 
-## 6 · Integrate into Android
+## 6 · Test the export
+
+Section 04 reports how the model scores on held-out clips. It cannot tell you how the exported
+flatbuffer behaves on audio someone just spoke, or whether it can **count** dhikr in a continuous
+recording — which is what the app actually needs. `space/` is a Gradio app for exactly that:
+
+```bash
+cd space
+pip install -r requirements.txt
+DHIKR_MODEL_DIR=~/Drive/exports python app.py       # http://127.0.0.1:7860
+```
+
+Four tabs: classify one clip (with the log-mel the model saw), scan a long recording and count the
+dhikr in it, read the export's metadata and benchmarks, and swap models without redeploying.
+Several `.tflite` variants can be loaded side by side, so comparing `int8` against `float32` on the
+same clip is one click.
+
+It runs on **LiteRT**, not TensorFlow, so it installs in seconds. It also reads the front-end from
+`model_meta.json` rather than `configs/config.yaml` — the exported metadata is what the weights were
+trained with, and a config retuned since the export would otherwise feed the model features it has
+never seen. When the two disagree about the input shape, the app says so on screen.
+
+To publish it as a Hugging Face Space, `space/deploy.sh` stages `src/`, `configs/config.yaml` and
+`phrases.json` alongside the app and pushes — the Space is a separate git repo and cannot import
+from a parent folder, but the pipeline code stays single-sourced here. See `space/README.md`.
+
+---
+
+## 7 · Integrate into Android
 
 Copy into `app/src/main/assets/`:
 
