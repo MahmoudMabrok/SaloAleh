@@ -697,19 +697,26 @@ def archive_folder_name(
     include_phrases: Optional[Sequence[int]],
     accuracy: Optional[float],
     when: datetime,
+    include_unknown: bool = False,
 ) -> str:
     """Build the ``<datetime>_<phrases>_<accuracy>`` name for a history snapshot.
 
     ``include_phrases`` is ``config.classes.include_phrases`` - the phrase ids the
     model was trained on (``None``/empty means every folder, rendered ``pall``).
-    ``accuracy`` is the model's measured accuracy (0-1); rendered ``accNA`` when it
-    is unknown so a missing evaluation is visible rather than silently dropped.
+    ``include_unknown`` is ``config.classes.include_unknown``; it also decides the
+    class vocabulary, so a ``+unk`` marker is folded into the phrases token to keep
+    two otherwise-identical selections apart (the repo treats a missing ``unknown``
+    class as a correctness concern). ``accuracy`` is the model's measured accuracy
+    (0-1); rendered ``accNA`` when it is unknown so a missing evaluation is visible
+    rather than silently dropped.
     """
     stamp = when.strftime("%Y-%m-%d_%H-%M-%S")
     if include_phrases:
         phrases = "p" + "-".join(str(int(value)) for value in include_phrases)
     else:
         phrases = "pall"
+    if include_unknown:
+        phrases += "+unk"
     accuracy_tag = (
         f"acc{float(accuracy):.4f}"
         if isinstance(accuracy, (int, float)) and not isinstance(accuracy, bool)
@@ -722,6 +729,7 @@ def archive_export(
     exports_dir: PathLike,
     *,
     include_phrases: Optional[Sequence[int]] = None,
+    include_unknown: bool = False,
     accuracy: Optional[float] = None,
     when: Optional[datetime] = None,
     include_saved_model: bool = False,
@@ -738,19 +746,30 @@ def archive_export(
     unless ``include_saved_model`` is set, and the history folder never copies
     into itself (both are directories, and only regular files are copied).
 
+    ``shutil.copyfile`` is used rather than ``copy2``: the target is usually a
+    Google Drive FUSE mount, where copying file metadata (``copystat``) can raise
+    even though the bytes copy fine, and the archive must never fail an
+    already-complete export. Genuine IO errors still propagate; the notebook wraps
+    the call so a failed archive warns instead of ending a good run.
+
     Call it after ``mel_filterbank.json`` has been written so the snapshot is
     complete. Returns the snapshot directory.
     """
     source = Path(exports_dir)
     stamp = when or datetime.now()
     target = source / HISTORY_DIRNAME / archive_folder_name(
-        include_phrases, accuracy, stamp
+        include_phrases, accuracy, stamp, include_unknown
     )
     target.mkdir(parents=True, exist_ok=True)
 
     for entry in sorted(source.iterdir()):
         if entry.is_file():
-            shutil.copy2(entry, target / entry.name)
+            shutil.copyfile(entry, target / entry.name)
         elif include_saved_model and entry.name == "saved_model":
-            shutil.copytree(entry, target / entry.name, dirs_exist_ok=True)
+            shutil.copytree(
+                entry,
+                target / entry.name,
+                dirs_exist_ok=True,
+                copy_function=shutil.copyfile,
+            )
     return target

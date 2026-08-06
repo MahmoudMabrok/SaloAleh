@@ -333,6 +333,18 @@ Python, not part of the KMP build. Full docs in `DhikrSpeech/README.md`.
   at runtime, restricted to an allowlist of hosts because a public Space's paste field is reachable
   by anyone. Drive files are fetched one at a time so one throttled file cannot lose the whole
   export, and `saved_model/` is skipped unless `DHIKR_FETCH_SAVEDMODEL=1`.
+- **Every export is archived to `exports/history/<datetime>_<phrases>_<accuracy>/`** by
+  `archive_export`/`archive_folder_name` (`src/export.py`, `HISTORY_DIRNAME`), called from the
+  notebook's `05 · Export` **after** the filterbank is written so the snapshot is complete. The
+  export root still holds the latest model (what the app ships); the `history/` subfolder keeps a
+  dated, browsable snapshot of every published model — the `.tflite` variants plus their sidecars
+  (`labels.txt`, `model_meta.json`, `mel_filterbank.json`); the bulky `saved_model/` is excluded.
+  `<phrases>` is `config.classes.include_phrases` (`p6-7`, or `pall` for all folders) with a `+unk`
+  marker appended when `config.classes.include_unknown` is on, and `<accuracy>` the evaluation-split
+  accuracy from `reports/evaluation.json` (`accNA` when absent).
+  The Space's Drive fetcher **skips `history/` wholesale** (`_wanted_from_drive` in
+  `space/sources.py`, same shape as the `saved_model/` skip), so a Space pointed at the export root
+  loads only the latest model — point it at a `history/<name>/` subfolder to publish an older one.
 - The app **warns when a model has no `unknown` class** — softmax gives silence and noise to a
   phrase, so such a model reports high confidence on non-dhikr audio and the scan count cannot be
   trusted without a high threshold. The real fix is `classes.include_unknown` plus an `unknown`
