@@ -93,6 +93,12 @@ phrases: [
 ]
 ```
 
+The order of the list is the order the cards appear on the page and nothing
+else — put the phrases you most need samples of at the top. An `id` is the
+phrase's identity everywhere else (its Drive folder, its class in the trained
+model, its local upload tally), so reorder freely but never renumber an id:
+existing recordings would then belong to the wrong class.
+
 IDs must be unique positive integers. Recordings are stored under a `dataset/` subfolder of the root folder (`{root}/dataset/{id}/`, set by `storage.datasetSubfolder`), one numeric zero-padded folder per phrase (`001`, `002`, and so on); Arabic text is never used in folder names. The `dataset/` level matches what the DhikrSpeech training pipeline scans.
 
 ### The unknown card (words that are not a dhikr)
@@ -113,7 +119,7 @@ unknownPrompt: {
 - Set `unknownPrompt: null` to drop the card entirely.
 - The `note` is shown under the prompt as an example. Only this card has one; a dhikr is its own instruction.
 
-The collector also writes `phrases.json` (set by `storage.phrasesFile`) at the **root** of the dataset folder — a sibling of `dataset/` — regenerated from this `phrases` list whenever it changes. That is the id→text label file the DhikrSpeech pipeline reads, so there is no separate step to create or upload it: change `phrases` here, redeploy, and the next upload refreshes the file. (If you ever delete it in Drive, edit a phrase or clear the `SPEECH_COLLECTOR_PHRASES_SIGNATURE` script property to force a rewrite.)
+The collector also writes `phrases.json` (set by `storage.phrasesFile`) at the **root** of the dataset folder — a sibling of `dataset/` — regenerated from this `phrases` list whenever it changes. It is written sorted by id, so changing the on-page order alone leaves it (and the training pipeline) untouched. That is the id→text label file the DhikrSpeech pipeline reads, so there is no separate step to create or upload it: change `phrases` here, redeploy, and the next upload refreshes the file. (If you ever delete it in Drive, edit a phrase or clear the `SPEECH_COLLECTOR_PHRASES_SIGNATURE` script property to force a rewrite.)
 
 ## 2. Build the Apps Script files
 

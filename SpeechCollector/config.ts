@@ -18,7 +18,7 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     // The Apps Script /exec URL of this project. The standalone page is not
     // served by Apps Script, so it cannot call ScriptApp.getService().getUrl()
     // and needs the deployment URL as its upload endpoint.
-    webAppUrl: "https://script.google.com/macros/s/AKfycbwxiX4ztcQMl9m0K1tDcvsLTZiU6EkWk8Np9nPfdFOAnX3cnuGAsHeQ3IHv4TJANI6PFQ/exec",
+    webAppUrl: "https://script.google.com/macros/s/AKfycbyf_55s33KUlWU8UWF4pjaO_7NY5tYjmt2ssGphxvXJSyM6hTUsMPtz5_Mv6ojvKm4G7A/exec",
 
     // Public URL of dist/voice.html. Apps Script renders every web app inside a
     // googleusercontent.com sandbox iframe that does not delegate the
@@ -141,7 +141,18 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     "drive_url"
   ],
 
+  // The list order is the order the cards appear on the page — nothing more.
+  // `id` is the phrase's identity everywhere else: the Drive folder it is
+  // stored in, the class the model learns, and the key of the local upload
+  // tally. Reorder freely to change what volunteers see first; never renumber
+  // an id, or already-collected recordings would land in the wrong class.
+  // phrases.json is written sorted by id, so this order does not reach the
+  // training pipeline.
   phrases: [
+    // Original short Tasbeeh prompt — most needed, so it leads the page.
+    { id: 7, text: "سبحان الله العظيم وبحمده" },
+    // Zabad challenge.
+    { id: 6, text: "سبحان الله وبحمده" },
     // Baqiyat challenge (also reused by the Ten Days challenge).
     { id: 1, text: "سبحان الله" },
     { id: 2, text: "الحمد لله" },
@@ -149,10 +160,6 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     { id: 4, text: "لا إله إلا الله" },
     // Original short Istighfar prompt.
     { id: 5, text: "أستغفر الله" },
-    // Zabad challenge.
-    { id: 6, text: "سبحان الله وبحمده" },
-    // Original short Tasbeeh prompt.
-    { id: 7, text: "سبحان الله العظيم وبحمده" },
     // Baqiyat challenge.
     { id: 8, text: "لا حول ولا قوة إلا بالله" },
     // Original Salawat prompts.
