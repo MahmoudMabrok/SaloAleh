@@ -8,7 +8,7 @@ sdk_version: 5.50.0
 app_file: app.py
 pinned: false
 license: mit
-short_description: Test the offline Arabic dhikr phrase spotter shipped in SaloAleh
+short_description: Test an offline Arabic dhikr phrase spotter and counter
 ---
 
 # DhikrSpeech · model playground

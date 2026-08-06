@@ -36,6 +36,45 @@ fi
 
 SPACE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SPACE_DIR")"
+
+# The Hub validates the README front matter in a pre-receive hook, so a bad
+# field is only reported after cloning, staging and pushing. Check it here
+# instead - it costs a second and fails on the line that is wrong.
+python3 - "$SPACE_DIR/README.md" <<'PREFLIGHT' || exit 1
+import re, sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+match = re.match(r"^---\n(.*?)\n---\n", text, re.S)
+if not match:
+    sys.exit("README.md has no YAML front matter - a Space needs one.")
+
+fields = {}
+for line in match.group(1).splitlines():
+    if ":" in line and not line.startswith((" ", "\t", "#")):
+        key, _, value = line.partition(":")
+        fields[key.strip()] = value.strip()
+
+problems = []
+# Limits the Hub enforces on push.
+for key, limit in (("short_description", 60), ("title", 100)):
+    value = fields.get(key, "")
+    if len(value) > limit:
+        problems.append(f"{key} is {len(value)} chars, limit is {limit}: {value!r}")
+for key in ("title", "sdk", "app_file"):
+    if not fields.get(key):
+        problems.append(f"{key} is missing")
+colours = {"red","yellow","green","blue","indigo","purple","pink","gray"}
+for key in ("colorFrom", "colorTo"):
+    if fields.get(key) and fields[key] not in colours:
+        problems.append(f"{key}={fields[key]!r} is not one of {', '.join(sorted(colours))}")
+if fields.get("sdk") not in (None, "gradio", "streamlit", "docker", "static"):
+    problems.append(f"sdk={fields['sdk']!r} is not a Spaces SDK")
+
+if problems:
+    sys.exit("README.md front matter would be rejected by the Hub:\n  - " + "\n  - ".join(problems))
+print("==> front matter OK")
+PREFLIGHT
 STAGING="$(mktemp -d)"
 trap 'rm -rf "$STAGING"' EXIT
 
@@ -64,7 +103,11 @@ CHECKOUT="$STAGING/space"
 find "$CHECKOUT" -mindepth 1 -maxdepth 1 \
   ! -name '.git' ! -name 'model' -exec rm -rf {} +
 
-cp "$SPACE_DIR"/{app.py,inference.py,requirements.txt,README.md} "$CHECKOUT/"
+# Every top-level module, not a hand-kept list - forgetting one here ships a
+# Space that dies on import, and the failure only shows in the build log.
+cp "$SPACE_DIR"/*.py "$CHECKOUT/"
+cp "$SPACE_DIR"/{requirements.txt,README.md} "$CHECKOUT/"
+[[ -f "$SPACE_DIR/model_source.txt" ]] && cp "$SPACE_DIR/model_source.txt" "$CHECKOUT/"
 cp -r "$PROJECT_DIR/src" "$CHECKOUT/src"
 mkdir -p "$CHECKOUT/configs"
 cp "$PROJECT_DIR/configs/config.yaml" "$CHECKOUT/configs/config.yaml"
