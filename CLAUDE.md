@@ -311,10 +311,9 @@ All workflows use secrets: `FIREBASE_SERVICE_ACCOUNT`, `FIREBASE_DATABASE_URL`.
 `SpeechCollector/`, recruited from the app's Voice dhikr screen) into a quantised TFLite model.
 Python, not part of the KMP build. Full docs in `DhikrSpeech/README.md`.
 
-- **`notebooks/DhikrSpeech.ipynb` is the notebook actually used.** It is the all-in-one version of
-  the five stage notebooks (`01_dataset` … `05_export`). **Any change to a stage notebook must be
-  mirrored into it in the same commit** — cells are kept byte-identical, so parity can be checked by
-  comparing cell sources. Editing only the split notebooks ships a change the user never runs.
+- **`notebooks/DhikrSpeech.ipynb` is the only notebook.** It runs the whole pipeline top to bottom in
+  five sections (`01 · Dataset` … `05 · Export`). The per-stage notebooks it was built from were
+  deleted deliberately — do not recreate them, and make every notebook change here.
 - `configs/config.yaml` is the only place settings live; the notebooks read it and hold no
   thresholds or hyperparameters of their own. All logic lives in `DhikrSpeech/src/`.
 - `classes.include_phrases` picks which phrase ids the model learns (currently `[1, 2, 3, 4]` — the
