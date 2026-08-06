@@ -64,7 +64,9 @@ CHECKOUT="$STAGING/space"
 find "$CHECKOUT" -mindepth 1 -maxdepth 1 \
   ! -name '.git' ! -name 'model' -exec rm -rf {} +
 
-cp "$SPACE_DIR"/{app.py,inference.py,requirements.txt,README.md} "$CHECKOUT/"
+# All top-level modules (app.py, inference.py, sources.py, ...) ship, so adding
+# a new module never silently breaks the deploy the way a hand-kept list would.
+cp "$SPACE_DIR"/*.py "$SPACE_DIR"/{requirements.txt,README.md,model_source.txt} "$CHECKOUT/"
 cp -r "$PROJECT_DIR/src" "$CHECKOUT/src"
 mkdir -p "$CHECKOUT/configs"
 cp "$PROJECT_DIR/configs/config.yaml" "$CHECKOUT/configs/config.yaml"

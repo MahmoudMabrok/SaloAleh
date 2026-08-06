@@ -6,6 +6,7 @@ colorTo: gray
 sdk: gradio
 sdk_version: 5.50.0
 app_file: app.py
+suggested_hardware: zero-a10g
 pinned: false
 license: mit
 short_description: Test an offline Arabic dhikr phrase spotter and counter

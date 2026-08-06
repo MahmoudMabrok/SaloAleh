@@ -7,6 +7,9 @@
 
 gradio>=4.44,<6.0
 
+spaces                        # Hugging Face ZeroGPU runtime (the only free tier);
+                              # provides the @spaces.GPU marker the platform requires
+
 ai-edge-litert>=1.0            # TFLite interpreter without TensorFlow
 
 gdown>=5.2                     # pull exports from a shared Google Drive folder
