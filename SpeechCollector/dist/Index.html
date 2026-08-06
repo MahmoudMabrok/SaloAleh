@@ -185,6 +185,15 @@ h1 {
 
 .card-tally:empty { display: none; }
 
+.card-badge {
+  padding: 2px 9px;
+  border-radius: 99px;
+  background: #fdf3dc;
+  color: #7a5410;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
 .phrase-panel {
   display: grid;
   place-items: center;
@@ -201,6 +210,24 @@ h1 {
   font-weight: 700;
   line-height: 1.55;
 }
+
+.phrase-note {
+  margin: 9px 0 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 400;
+  line-height: 1.7;
+}
+
+/* The negative-class card: an instruction, not a dhikr to read aloud. Its panel
+   is toned away from the green so it does not read as one more phrase. */
+.phrase-card-unknown .phrase-panel {
+  border-color: #ecdcb4;
+  background: linear-gradient(155deg, #fffdf8, #fbf1dc);
+}
+
+.phrase-card-unknown .phrase-text { font-size: clamp(1.15rem, 4.6vw, 1.4rem); }
 
 .recorder-panel {
   margin-top: 11px;
@@ -418,6 +445,11 @@ h1 {
     uploadAllLabel: $('upload-all-label')
   };
 
+  // The phrases plus the out-of-vocabulary card, which asks for any ordinary
+  // word instead of a dhikr. It is a card like any other; only its destination
+  // folder differs, and the backend decides that from its id.
+  const prompts = collectPrompts();
+
   const state = {
     cards: [],
     // The card that owns the microphone. Only one take can run at a time, so
@@ -560,13 +592,22 @@ h1 {
   // ---------------------------------------------------------------------------
 
   /**
-   * One recorder per phrase. Every element a card needs to update is kept on the
+   * The unknown card is appended last: the phrases are what a volunteer came
+   * for, and it reads as the odd one out at the end rather than mixed in.
+   */
+  function collectPrompts() {
+    const phrases = config.phrases.map((phrase) => ({ ...phrase, unknown: false }));
+    return config.unknownPrompt ? [...phrases, { ...config.unknownPrompt, unknown: true }] : phrases;
+  }
+
+  /**
+   * One recorder per prompt. Every element a card needs to update is kept on the
    * card itself, so redrawing never has to search the document for it.
    */
   function buildCards() {
     const fragment = document.createDocumentFragment();
-    config.phrases.forEach((phrase, index) => {
-      const card = createCard(phrase, index);
+    prompts.forEach((prompt, index) => {
+      const card = createCard(prompt, index);
       state.cards.push(card);
       fragment.appendChild(card.dom.root);
     });
@@ -574,19 +615,29 @@ h1 {
     state.cards.forEach((card) => drawIdleWaveform(card));
   }
 
-  function createCard(phrase, index) {
-    const root = make('li', 'phrase-card', { id: `card-${index}` });
+  function createCard(prompt, index) {
+    const root = make('li', cardClassName(prompt, IDLE), { id: `card-${index}` });
 
     const head = make('div', 'card-head');
     head.appendChild(make('span', 'card-number', { text: String(index + 1) }));
+    if (prompt.unknown && config.ui.unknownBadge) {
+      head.appendChild(make('span', 'card-badge', { id: `badge-${index}`, text: config.ui.unknownBadge }));
+    }
     const tally = make('span', 'card-tally', { id: `tally-${index}` });
     head.appendChild(tally);
     root.appendChild(head);
 
     const panel = make('div', 'phrase-panel');
-    const text = make('p', 'phrase-text', { id: `phrase-${index}`, text: phrase.text });
+    const text = make('p', 'phrase-text', { id: `phrase-${index}`, text: prompt.text });
     text.lang = 'ar';
     panel.appendChild(text);
+    // Only the unknown card carries a note: "any word" needs an example to act
+    // on, while a dhikr is its own instruction.
+    if (prompt.note) {
+      const note = make('p', 'phrase-note', { id: `note-${index}`, text: prompt.note });
+      note.lang = 'ar';
+      panel.appendChild(note);
+    }
     root.appendChild(panel);
 
     const recorder = make('div', 'recorder-panel');
@@ -615,7 +666,7 @@ h1 {
 
     const card = {
       index,
-      phrase,
+      prompt,
       status: IDLE,
       recording: null,
       message: '',
@@ -901,7 +952,7 @@ h1 {
     try {
       const payload = {
         sample_id: card.recording.sampleId,
-        phrase_id: card.phrase.id,
+        phrase_id: card.prompt.id,
         duration_ms: card.recording.durationMs,
         sample_rate: card.recording.sampleRate,
         mime_type: card.recording.mimeType,
@@ -964,7 +1015,7 @@ h1 {
     const hasTake = Boolean(card.recording);
     const busyElsewhere = state.activeIndex !== -1 && state.activeIndex !== card.index;
 
-    card.dom.root.className = `phrase-card card-${card.status}`;
+    card.dom.root.className = cardClassName(card.prompt, card.status);
     card.dom.tally.textContent = tallyLabel(card);
 
     card.dom.status.className = card.message ? `status status-${card.messageType}` : 'status status-empty';
@@ -988,19 +1039,24 @@ h1 {
     return config.ui.upload;
   }
 
+  function cardClassName(prompt, status) {
+    return `phrase-card${prompt.unknown ? ' phrase-card-unknown' : ''} card-${status}`;
+  }
+
   function tallyLabel(card) {
-    const count = uploadCount(card.phrase.id);
+    const count = uploadCount(card.prompt.id);
     return count ? config.ui.recordedCount.replace('{count}', String(count)) : '';
   }
 
+  /** The unknown card counts towards coverage: the dataset needs it as much as a phrase. */
   function renderSummary() {
-    const covered = config.phrases.filter((phrase) => uploadCount(phrase.id) > 0).length;
-    const samples = config.phrases.reduce((total, phrase) => total + uploadCount(phrase.id), 0);
+    const covered = prompts.filter((prompt) => uploadCount(prompt.id) > 0).length;
+    const samples = prompts.reduce((total, prompt) => total + uploadCount(prompt.id), 0);
     elements.summaryPhrases.textContent = config.ui.summaryPhrases
       .replace('{recorded}', String(covered))
-      .replace('{total}', String(config.phrases.length));
+      .replace('{total}', String(prompts.length));
     elements.summarySamples.textContent = config.ui.summarySamples.replace('{count}', String(samples));
-    elements.progressFill.style.width = `${(covered / config.phrases.length) * 100}%`;
+    elements.progressFill.style.width = `${(covered / prompts.length) * 100}%`;
   }
 
   function renderUploadAllBar() {
@@ -1023,7 +1079,7 @@ h1 {
   }
 
   function recordUploadedPhrase(card) {
-    state.uploadCounts[card.phrase.id] = uploadCount(card.phrase.id) + 1;
+    state.uploadCounts[card.prompt.id] = uploadCount(card.prompt.id) + 1;
     saveUploadCounts();
   }
 

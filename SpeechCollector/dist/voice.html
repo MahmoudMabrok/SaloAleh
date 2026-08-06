@@ -185,6 +185,15 @@ h1 {
 
 .card-tally:empty { display: none; }
 
+.card-badge {
+  padding: 2px 9px;
+  border-radius: 99px;
+  background: #fdf3dc;
+  color: #7a5410;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
 .phrase-panel {
   display: grid;
   place-items: center;
@@ -201,6 +210,24 @@ h1 {
   font-weight: 700;
   line-height: 1.55;
 }
+
+.phrase-note {
+  margin: 9px 0 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 400;
+  line-height: 1.7;
+}
+
+/* The negative-class card: an instruction, not a dhikr to read aloud. Its panel
+   is toned away from the green so it does not read as one more phrase. */
+.phrase-card-unknown .phrase-panel {
+  border-color: #ecdcb4;
+  background: linear-gradient(155deg, #fffdf8, #fbf1dc);
+}
+
+.phrase-card-unknown .phrase-text { font-size: clamp(1.15rem, 4.6vw, 1.4rem); }
 
 .recorder-panel {
   margin-top: 11px;
@@ -376,7 +403,7 @@ h1 {
   </div>
 
   <audio id="audio-player" preload="metadata"></audio>
-  <script id="bootstrap-data" type="application/json">{"endpoint":"https://script.google.com/macros/s/AKfycbwxiX4ztcQMl9m0K1tDcvsLTZiU6EkWk8Np9nPfdFOAnX3cnuGAsHeQ3IHv4TJANI6PFQ/exec","standaloneUrl":"https://mahmoudmabrok.github.io/SaloAleh/voice.html","app":{"title":"Dhikr Speech Dataset","htmlTitle":"Arabic Speech Dataset Collector","language":"ar","direction":"rtl","timezone":"Africa/Cairo"},"recording":{"minimumDurationMs":1000,"maximumDurationMs":5000,"maximumUploadBytes":5242880,"preferredSampleRate":16000,"preferredChannelCount":1,"acceptedMimeTypes":["audio/wav","audio/x-wav","audio/webm","audio/ogg","audio/mp4","audio/mpeg"]},"theme":{"primary":"#176b45","primaryDark":"#0d4f32","primarySoft":"#e9f6ef","accent":"#d6a53a","pageBackground":"#f4f8f5","cardBackground":"#ffffff","text":"#17362a","mutedText":"#61746b","danger":"#b3261e"},"ui":{"hero":"❤️ ساعدنا في بناء ميزة الذكر بالصوت","listHint":"لكل عبارة مسجّلها الخاص. سجّل وارفع أي عبارة على حدة، وكرّرها كما تشاء — كل عينة إضافية تفيدنا.","summaryPhrases":"{recorded} من {total} عبارات لها تسجيل","summarySamples":"{count} عينة مرفوعة","recordedCount":"✓ {count} عينة مرفوعة","record":"تسجيل","reRecord":"إعادة التسجيل","stop":"إيقاف","play":"استماع","pause":"إيقاف الاستماع","upload":"رفع التسجيل","uploading":"جارٍ الرفع…","uploadQueued":"في الانتظار…","uploadAll":"رفع كل التسجيلات الجاهزة ({count})","timerReady":"00:00.0","microphoneHint":"اقرأ العبارة بصوت واضح في مكان هادئ.","privacy":"لا نجمع الاسم أو البريد أو الهاتف أو الموقع. يُحفظ التسجيل والبيانات التقنية الأساسية فقط.","ready":"اضغط «تسجيل» عند أي عبارة واسمح باستخدام الميكروفون.","recording":"جارٍ التسجيل…","recordingReady":"التسجيل جاهز. استمع إليه أو ارفعه.","microphoneDenied":"تم رفض إذن الميكروفون. افتح إعدادات الموقع في المتصفح، فعّل الميكروفون، ثم أعد تحميل الصفحة.","microphoneBlocked":"المتصفح لا يعرض طلب الإذن لأن الصفحة معروضة داخل إطار لا يسمح بالميكروفون. افتح صفحة التسجيل في نافذة مستقلة ثم اضغط «تسجيل».","microphoneMissing":"لم يُعثر على ميكروفون متاح. وصّل ميكروفونًا أو تحقق من إعدادات الصوت ثم حاول مجددًا.","microphoneBusy":"الميكروفون مشغول بتطبيق آخر. أغلق التطبيقات التي تستخدمه ثم حاول مجددًا.","insecureContext":"التسجيل يتطلب فتح الصفحة عبر رابط https. افتح الرابط الرسمي للصفحة ثم حاول مجددًا.","openStandalone":"فتح صفحة التسجيل","unsupported":"هذا المتصفح لا يدعم تسجيل الصوت. جرّب إصدارًا حديثًا من Chrome أو Safari.","tooShort":"التسجيل قصير جدًا. سجّل لمدة ثانية واحدة على الأقل.","tooLarge":"حجم التسجيل كبير جدًا. سجّل مقطعًا أقصر ثم حاول مجددًا.","uploadSuccessTitle":"✅ شكرًا لك!","uploadSuccessBody":"تم رفع العينة. يمكنك تسجيل عينة أخرى لنفس العبارة.","uploadFailedTitle":"فشل رفع التسجيل","uploadFailedBody":"احتفظنا بالتسجيل. تحقق من الإنترنت ثم حاول مجددًا.","retry":"إعادة المحاولة"},"phrases":[{"id":1,"text":"سبحان الله"},{"id":2,"text":"الحمد لله"},{"id":3,"text":"الله أكبر"},{"id":4,"text":"لا إله إلا الله"},{"id":5,"text":"أستغفر الله"},{"id":6,"text":"سبحان الله وبحمده"},{"id":7,"text":"سبحان الله العظيم وبحمده"},{"id":8,"text":"لا حول ولا قوة إلا بالله"},{"id":9,"text":"اللهم صل على محمد"},{"id":10,"text":"اللهم صل وسلم على نبينا محمد"}]}</script>
+  <script id="bootstrap-data" type="application/json">{"endpoint":"https://script.google.com/macros/s/AKfycbwxiX4ztcQMl9m0K1tDcvsLTZiU6EkWk8Np9nPfdFOAnX3cnuGAsHeQ3IHv4TJANI6PFQ/exec","standaloneUrl":"https://mahmoudmabrok.github.io/SaloAleh/voice.html","app":{"title":"Dhikr Speech Dataset","htmlTitle":"Arabic Speech Dataset Collector","language":"ar","direction":"rtl","timezone":"Africa/Cairo"},"recording":{"minimumDurationMs":1000,"maximumDurationMs":5000,"maximumUploadBytes":5242880,"preferredSampleRate":16000,"preferredChannelCount":1,"acceptedMimeTypes":["audio/wav","audio/x-wav","audio/webm","audio/ogg","audio/mp4","audio/mpeg"]},"theme":{"primary":"#176b45","primaryDark":"#0d4f32","primarySoft":"#e9f6ef","accent":"#d6a53a","pageBackground":"#f4f8f5","cardBackground":"#ffffff","text":"#17362a","mutedText":"#61746b","danger":"#b3261e"},"ui":{"hero":"❤️ ساعدنا في بناء ميزة الذكر بالصوت","listHint":"لكل عبارة مسجّلها الخاص. سجّل وارفع أي عبارة على حدة، وكرّرها كما تشاء — كل عينة إضافية تفيدنا.","summaryPhrases":"{recorded} من {total} عبارات لها تسجيل","summarySamples":"{count} عينة مرفوعة","recordedCount":"✓ {count} عينة مرفوعة","record":"تسجيل","reRecord":"إعادة التسجيل","stop":"إيقاف","play":"استماع","pause":"إيقاف الاستماع","upload":"رفع التسجيل","uploading":"جارٍ الرفع…","uploadQueued":"في الانتظار…","uploadAll":"رفع كل التسجيلات الجاهزة ({count})","timerReady":"00:00.0","microphoneHint":"اقرأ العبارة بصوت واضح في مكان هادئ.","privacy":"لا نجمع الاسم أو البريد أو الهاتف أو الموقع. يُحفظ التسجيل والبيانات التقنية الأساسية فقط.","ready":"اضغط «تسجيل» عند أي عبارة واسمح باستخدام الميكروفون.","recording":"جارٍ التسجيل…","recordingReady":"التسجيل جاهز. استمع إليه أو ارفعه.","microphoneDenied":"تم رفض إذن الميكروفون. افتح إعدادات الموقع في المتصفح، فعّل الميكروفون، ثم أعد تحميل الصفحة.","microphoneBlocked":"المتصفح لا يعرض طلب الإذن لأن الصفحة معروضة داخل إطار لا يسمح بالميكروفون. افتح صفحة التسجيل في نافذة مستقلة ثم اضغط «تسجيل».","microphoneMissing":"لم يُعثر على ميكروفون متاح. وصّل ميكروفونًا أو تحقق من إعدادات الصوت ثم حاول مجددًا.","microphoneBusy":"الميكروفون مشغول بتطبيق آخر. أغلق التطبيقات التي تستخدمه ثم حاول مجددًا.","insecureContext":"التسجيل يتطلب فتح الصفحة عبر رابط https. افتح الرابط الرسمي للصفحة ثم حاول مجددًا.","openStandalone":"فتح صفحة التسجيل","unsupported":"هذا المتصفح لا يدعم تسجيل الصوت. جرّب إصدارًا حديثًا من Chrome أو Safari.","tooShort":"التسجيل قصير جدًا. سجّل لمدة ثانية واحدة على الأقل.","tooLarge":"حجم التسجيل كبير جدًا. سجّل مقطعًا أقصر ثم حاول مجددًا.","uploadSuccessTitle":"✅ شكرًا لك!","uploadSuccessBody":"تم رفع العينة. يمكنك تسجيل عينة أخرى لنفس العبارة.","uploadFailedTitle":"فشل رفع التسجيل","uploadFailedBody":"احتفظنا بالتسجيل. تحقق من الإنترنت ثم حاول مجددًا.","retry":"إعادة المحاولة","unknownBadge":"ليست ذكرًا"},"phrases":[{"id":1,"text":"سبحان الله"},{"id":2,"text":"الحمد لله"},{"id":3,"text":"الله أكبر"},{"id":4,"text":"لا إله إلا الله"},{"id":5,"text":"أستغفر الله"},{"id":6,"text":"سبحان الله وبحمده"},{"id":7,"text":"سبحان الله العظيم وبحمده"},{"id":8,"text":"لا حول ولا قوة إلا بالله"},{"id":9,"text":"اللهم صل على محمد"},{"id":10,"text":"اللهم صل وسلم على نبينا محمد"}],"unknownPrompt":{"id":0,"text":"قل أي كلمة عادية ليست ذكرًا","note":"مثل «صباح الخير» أو «كيف حالك» أو أي كلمة تخطر ببالك. غيّر الكلمة في كل تسجيل — هذه العينات تعلّم النموذج ما ليس ذكرًا حتى لا يَعُدّ كلامك العادي."}}</script>
   <script>
 'use strict';
 
@@ -417,6 +444,11 @@ h1 {
     uploadAll: $('upload-all-button'),
     uploadAllLabel: $('upload-all-label')
   };
+
+  // The phrases plus the out-of-vocabulary card, which asks for any ordinary
+  // word instead of a dhikr. It is a card like any other; only its destination
+  // folder differs, and the backend decides that from its id.
+  const prompts = collectPrompts();
 
   const state = {
     cards: [],
@@ -560,13 +592,22 @@ h1 {
   // ---------------------------------------------------------------------------
 
   /**
-   * One recorder per phrase. Every element a card needs to update is kept on the
+   * The unknown card is appended last: the phrases are what a volunteer came
+   * for, and it reads as the odd one out at the end rather than mixed in.
+   */
+  function collectPrompts() {
+    const phrases = config.phrases.map((phrase) => ({ ...phrase, unknown: false }));
+    return config.unknownPrompt ? [...phrases, { ...config.unknownPrompt, unknown: true }] : phrases;
+  }
+
+  /**
+   * One recorder per prompt. Every element a card needs to update is kept on the
    * card itself, so redrawing never has to search the document for it.
    */
   function buildCards() {
     const fragment = document.createDocumentFragment();
-    config.phrases.forEach((phrase, index) => {
-      const card = createCard(phrase, index);
+    prompts.forEach((prompt, index) => {
+      const card = createCard(prompt, index);
       state.cards.push(card);
       fragment.appendChild(card.dom.root);
     });
@@ -574,19 +615,29 @@ h1 {
     state.cards.forEach((card) => drawIdleWaveform(card));
   }
 
-  function createCard(phrase, index) {
-    const root = make('li', 'phrase-card', { id: `card-${index}` });
+  function createCard(prompt, index) {
+    const root = make('li', cardClassName(prompt, IDLE), { id: `card-${index}` });
 
     const head = make('div', 'card-head');
     head.appendChild(make('span', 'card-number', { text: String(index + 1) }));
+    if (prompt.unknown && config.ui.unknownBadge) {
+      head.appendChild(make('span', 'card-badge', { id: `badge-${index}`, text: config.ui.unknownBadge }));
+    }
     const tally = make('span', 'card-tally', { id: `tally-${index}` });
     head.appendChild(tally);
     root.appendChild(head);
 
     const panel = make('div', 'phrase-panel');
-    const text = make('p', 'phrase-text', { id: `phrase-${index}`, text: phrase.text });
+    const text = make('p', 'phrase-text', { id: `phrase-${index}`, text: prompt.text });
     text.lang = 'ar';
     panel.appendChild(text);
+    // Only the unknown card carries a note: "any word" needs an example to act
+    // on, while a dhikr is its own instruction.
+    if (prompt.note) {
+      const note = make('p', 'phrase-note', { id: `note-${index}`, text: prompt.note });
+      note.lang = 'ar';
+      panel.appendChild(note);
+    }
     root.appendChild(panel);
 
     const recorder = make('div', 'recorder-panel');
@@ -615,7 +666,7 @@ h1 {
 
     const card = {
       index,
-      phrase,
+      prompt,
       status: IDLE,
       recording: null,
       message: '',
@@ -901,7 +952,7 @@ h1 {
     try {
       const payload = {
         sample_id: card.recording.sampleId,
-        phrase_id: card.phrase.id,
+        phrase_id: card.prompt.id,
         duration_ms: card.recording.durationMs,
         sample_rate: card.recording.sampleRate,
         mime_type: card.recording.mimeType,
@@ -964,7 +1015,7 @@ h1 {
     const hasTake = Boolean(card.recording);
     const busyElsewhere = state.activeIndex !== -1 && state.activeIndex !== card.index;
 
-    card.dom.root.className = `phrase-card card-${card.status}`;
+    card.dom.root.className = cardClassName(card.prompt, card.status);
     card.dom.tally.textContent = tallyLabel(card);
 
     card.dom.status.className = card.message ? `status status-${card.messageType}` : 'status status-empty';
@@ -988,19 +1039,24 @@ h1 {
     return config.ui.upload;
   }
 
+  function cardClassName(prompt, status) {
+    return `phrase-card${prompt.unknown ? ' phrase-card-unknown' : ''} card-${status}`;
+  }
+
   function tallyLabel(card) {
-    const count = uploadCount(card.phrase.id);
+    const count = uploadCount(card.prompt.id);
     return count ? config.ui.recordedCount.replace('{count}', String(count)) : '';
   }
 
+  /** The unknown card counts towards coverage: the dataset needs it as much as a phrase. */
   function renderSummary() {
-    const covered = config.phrases.filter((phrase) => uploadCount(phrase.id) > 0).length;
-    const samples = config.phrases.reduce((total, phrase) => total + uploadCount(phrase.id), 0);
+    const covered = prompts.filter((prompt) => uploadCount(prompt.id) > 0).length;
+    const samples = prompts.reduce((total, prompt) => total + uploadCount(prompt.id), 0);
     elements.summaryPhrases.textContent = config.ui.summaryPhrases
       .replace('{recorded}', String(covered))
-      .replace('{total}', String(config.phrases.length));
+      .replace('{total}', String(prompts.length));
     elements.summarySamples.textContent = config.ui.summarySamples.replace('{count}', String(samples));
-    elements.progressFill.style.width = `${(covered / config.phrases.length) * 100}%`;
+    elements.progressFill.style.width = `${(covered / prompts.length) * 100}%`;
   }
 
   function renderUploadAllBar() {
@@ -1023,7 +1079,7 @@ h1 {
   }
 
   function recordUploadedPhrase(card) {
-    state.uploadCounts[card.phrase.id] = uploadCount(card.phrase.id) + 1;
+    state.uploadCounts[card.prompt.id] = uploadCount(card.prompt.id) + 1;
     saveUploadCounts();
   }
 
