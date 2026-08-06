@@ -169,13 +169,15 @@ function createFolderIfMissing(parentFolder, folderName) {
 
 /**
  * The phrases.json body the DhikrSpeech pipeline reads: a plain [{id, text}]
- * list. The unknown prompt is intentionally absent — it is a class folder, not
- * a phrase id, and the pipeline labels it from the folder name.
+ * list, sorted by id. CONFIG.phrases is ordered for the page, so sorting here
+ * keeps the label file (and its change signature) stable when the cards are
+ * reordered. The unknown prompt is intentionally absent — it is a class folder,
+ * not a phrase id, and the pipeline labels it from the folder name.
  */
 function phrasesJsonContent_() {
   const phrases = CONFIG.phrases.map(function(phrase) {
     return { id: phrase.id, text: phrase.text };
-  });
+  }).sort(function(a, b) { return a.id - b.id; });
   return JSON.stringify(phrases, null, 2) + '\n';
 }
 

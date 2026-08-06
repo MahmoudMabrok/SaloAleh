@@ -135,9 +135,11 @@ if (bootstrap.unknownPrompt) {
     /^unknown_/,
     'An unknown recording\'s filename must carry its class, like a phrase folder\'s does.'
   );
+  // Derived from the phrase's own id, not a literal: the phrase list is ordered
+  // for the page, so the first card is not necessarily id 1.
   assert.equal(
     vm.runInContext('classFolderName_(CONFIG.phrases[0])', backendContext),
-    '001',
+    String(bootstrap.phrases[0].id).padStart(3, '0'),
     'A phrase must still be filed under its zero-padded id.'
   );
 }
