@@ -4,17 +4,17 @@ Training pipeline for an **offline Arabic dhikr phrase spotter**. It takes short
 phrases from Google Drive and produces a quantised TensorFlow Lite model that runs on Android with
 no network access.
 
-Five Colab notebooks, one config file, one reusable Python package. The notebooks orchestrate;
-every piece of logic lives in `src/` so nothing is duplicated between them.
+One Colab notebook, one config file, one reusable Python package. The notebook orchestrates;
+every piece of logic lives in `src/` so nothing is duplicated between its sections.
 
 ```
 recordings on Drive
-   └─ 01_dataset       inspect + validate
-   └─ 02_preprocessing condition to 16 kHz mono, freeze the splits
-   └─ 03_training      DS-CNN, TensorBoard, checkpoints, resume
-   └─ 04_evaluation    metrics, confusion matrix, ROC, error analysis
-   └─ 05_export        SavedModel + 3 TFLite variants, benchmarked and verified
-                          └─ app/src/main/assets/
+   └─ 01 · Dataset       inspect + validate
+   └─ 02 · Preprocessing condition to 16 kHz mono, freeze the splits
+   └─ 03 · Training      DS-CNN, TensorBoard, checkpoints, resume
+   └─ 04 · Evaluation    metrics, confusion matrix, ROC, error analysis
+   └─ 05 · Export        SavedModel + 3 TFLite variants, benchmarked and verified
+                            └─ app/src/main/assets/
 ```
 
 ---
@@ -40,11 +40,7 @@ recordings on Drive
 ```text
 DhikrSpeech/
 ├── notebooks/
-│   ├── 01_dataset.ipynb          explore + validate the recordings
-│   ├── 02_preprocessing.ipynb    condition audio, split, write the manifest
-│   ├── 03_training.ipynb         train the DS-CNN
-│   ├── 04_evaluation.ipynb       metrics, charts, error analysis
-│   └── 05_export.ipynb           TFLite export, benchmark, verify
+│   └── DhikrSpeech.ipynb         the whole pipeline, five sections, run top to bottom
 ├── src/
 │   ├── config.py                 typed config loaded from configs/config.yaml
 │   ├── audio.py                  decode, trim, normalise, fit length, write WAV
@@ -61,7 +57,7 @@ DhikrSpeech/
 └── README.md
 ```
 
-The notebooks contain no thresholds, paths or hyperparameters of their own — they read
+The notebook contains no thresholds, paths or hyperparameters of its own — it reads
 `configs/config.yaml`. Change behaviour there, not in a cell.
 
 ---
@@ -69,12 +65,12 @@ The notebooks contain no thresholds, paths or hyperparameters of their own — t
 ## Quick start
 
 1. Put your recordings on Drive (below).
-2. Open `notebooks/01_dataset.ipynb` in Colab → **Runtime → Run all**.
-3. Repeat for `02` → `03` → `04` → `05`.
+2. Open `notebooks/DhikrSpeech.ipynb` in Colab → **Runtime → Change runtime type → GPU**.
+3. **Runtime → Run all**, or run section by section — `01 · Dataset` through `05 · Export`.
 4. Copy `exports/*.tflite`, `labels.txt`, `model_meta.json` and `mel_filterbank.json` into the app.
 
-Each notebook's first cell mounts Drive, finds the project (cloning the repo if it is not already
-in the runtime), installs anything missing and loads the config. There is nothing else to set up.
+The first cell mounts Drive, finds the project (cloning the repo if it is not already in the
+runtime), installs anything missing and loads the config. There is nothing else to set up.
 
 ---
 
@@ -120,7 +116,7 @@ Aim for at least as many `unknown` clips as an average phrase class.
 |---|---|
 | length | 1–3 seconds, one phrase per file |
 | format | WAV preferred; FLAC/OGG/MP3/M4A are decoded too |
-| rate | anything — notebook 02 resamples to 16 kHz mono |
+| rate | anything — section 02 resamples to 16 kHz mono |
 | count | **50 minimum per class**, 200+ for a usable model, 500+ for a good one |
 | variety | many speakers, distances, rooms and phones; this matters more than raw count |
 
@@ -131,7 +127,7 @@ straight to Drive in this layout.
 
 ## 2 · Mount Drive and open a notebook
 
-Upload the `notebooks/` folder to Colab (or open the files from GitHub with
+Upload `notebooks/DhikrSpeech.ipynb` to Colab (or open it from GitHub with
 **File → Open notebook → GitHub**), then run the first cell. It:
 
 1. calls `drive.mount("/content/drive")` — approve the permission prompt,
@@ -153,9 +149,9 @@ and point `paths.drive_root` in the config at a local directory.
 
 ## 3 · Train
 
-Run `01` and `02` first — training reads `processed/manifest.csv`, which notebook 02 writes.
+Run sections `01` and `02` first — training reads `processed/manifest.csv`, which section 02 writes.
 
-In `03_training.ipynb`: **Runtime → Change runtime type → GPU**, then **Run all**.
+Set **Runtime → Change runtime type → GPU** before starting, or training falls back to CPU.
 
 What the config turns on, all reported in the notebook as it runs:
 
@@ -169,7 +165,7 @@ What the config turns on, all reported in the notebook as it runs:
 | class weights | `training.class_weights` (balances uneven classes) |
 | label smoothing | `training.label_smoothing` |
 | LR schedule | `training.lr_schedule` — `cosine` (with warmup), `exponential`, `plateau`, `none` |
-| train/val split | `split.*`, applied once in notebook 02 and reused everywhere |
+| train/val split | `split.*`, applied once in section 02 and reused everywhere |
 | seed | `seed` — seeds Python, NumPy, TensorFlow and augmentation |
 
 Everything is written to Drive as training runs, so a disconnected Colab session loses nothing:
@@ -196,7 +192,7 @@ that — usable for a smoke test, painful for a real run.
 
 ## 4 · Resume training
 
-**Re-run `03_training.ipynb` with the same `RUN_NAME`.** `BackupAndRestore` restores the optimizer
+**Re-run section `03 · Training` with the same `RUN_NAME`.** `BackupAndRestore` restores the optimizer
 state and the epoch counter from `checkpoints/<run>/backup/`, so training continues from where it
 stopped rather than restarting. `history.json` accumulates across runs, so the charts stay
 continuous.
@@ -225,7 +221,7 @@ Related controls:
 
 ## 5 · Export
 
-`05_export.ipynb` writes to `exports/` on Drive:
+Section `05 · Export` writes to `exports/` on Drive:
 
 | file | purpose |
 |---|---|
@@ -272,7 +268,7 @@ Two honest caveats about the benchmark table:
 Copy into `app/src/main/assets/`:
 
 ```text
-dhikr_int8.tflite       (or whichever variant notebook 05 recommends)
+dhikr_int8.tflite       (or whichever variant section 05 recommends)
 labels.txt
 model_meta.json
 mel_filterbank.json
@@ -300,7 +296,7 @@ android {
 
 The TFLite model input is a `(frames, n_mels, 1)` **log mel spectrogram**, not a waveform. The app
 must reproduce the training front-end exactly — a mismatch here is the single most common reason a
-model that scored 98 % in notebook 04 behaves randomly on a phone.
+model that scored 98 % in section 04 behaves randomly on a phone.
 
 Every parameter is in `model_meta.json`; with the defaults in this repository:
 
@@ -476,14 +472,14 @@ val quantized = ((value / params.scale) + params.zeroPoint).toInt().coerceIn(-12
 
 Three rules keep a live counter honest:
 
-1. **Reject low confidence.** Discard predictions below the threshold chosen in notebook 04
+1. **Reject low confidence.** Discard predictions below the threshold chosen in section 04
    (`evaluation.confidence_threshold`). Without this the model labels every sound as *something*.
 2. **Reject `unknown`.** It is a real class in the model and must never increment a counter.
 3. **Debounce.** Run inference on a sliding window (for example every 250 ms over the last 2 s) and
    require the same class to win several consecutive windows before counting it once. Then hold a
    short refractory period so one spoken phrase cannot count twice.
 
-Notebook 04's threshold sweep gives the accuracy and accept-rate for each threshold, which is how
+Section 04's threshold sweep gives the accuracy and accept-rate for each threshold, which is how
 you trade missed counts against phantom counts for your users.
 
 ---
@@ -504,6 +500,7 @@ The ones worth knowing:
 | `split.group_regex` | keep one speaker's clips inside one split |
 | `model.*` | DS-CNN width, depth, dropout |
 | `model.bn_momentum` | BatchNorm moving-average momentum — see below |
+| `classes.*` | which phrase ids the model learns — see [below](#training-on-a-subset-of-phrases) |
 | `training.*` | epochs, batch size, optimizer, schedule, early stopping |
 | `evaluation.confidence_threshold` | the on-device reject gate |
 | `export.*` | which variants to build, calibration size, benchmark runs |
@@ -511,7 +508,7 @@ The ones worth knowing:
 Config is validated on load: an unknown or misspelled key raises immediately rather than being
 silently ignored.
 
-After changing anything under `audio.*` or `features.*`, re-run notebook 02 with `OVERWRITE = True`
+After changing anything under `audio.*` or `features.*`, re-run section 02 with `OVERWRITE = True`
 and train a fresh run — existing processed clips and checkpoints were built with the old settings.
 
 ### A note on `model.bn_momentum`
@@ -539,7 +536,7 @@ The pipeline is built to be re-run as recordings accumulate:
 **Adding a new phrase** means a new class: create the folder, add it to `phrases.json`, and train a
 new run. The output layer changes shape, so an existing run cannot be resumed into it.
 
-Re-splitting note: `assign_splits` re-randomises from the seed each time notebook 02 runs, so a clip
+Re-splitting note: `assign_splits` re-randomises from the seed each time section 02 runs, so a clip
 can move between train and test as the dataset grows. That is fine for tracking progress over time,
 but do not compare two runs' test accuracy to the third decimal unless the manifest was unchanged.
 
@@ -549,19 +546,47 @@ but do not compare two runs' test accuracy to the third decimal unless the manif
 
 | symptom | cause and fix |
 |---|---|
-| `dataset directory not found` | `paths.drive_root` / `project_dir` do not match Drive. Notebook 01 prints the resolved paths. |
-| `manifest not found` | Run `02_preprocessing` first. |
+| `dataset directory not found` | `paths.drive_root` / `project_dir` do not match Drive. Section 01 prints the resolved paths. |
+| `manifest not found` | Run section `02 · Preprocessing` first. |
 | Accuracy pinned at exactly `1 / classes` and every clip predicted as the same class | The model collapsed — see [below](#a-run-stuck-at-chance). |
 | Training accuracy high, validation stuck at chance | BatchNorm momentum — see [above](#a-note-on-modelbn_momentum). |
 | Validation accuracy far below training | Genuine overfitting: more recordings, more speakers, stronger `augmentation.*`, or a smaller `model.width_multiplier`. |
-| One class always wrong | Check its clips in notebook 01 — usually mislabelled or near-silent takes. Notebook 04 lets you listen to the errors. |
+| One class always wrong | Check its clips in section 01 — usually mislabelled or near-silent takes. Section 04 lets you listen to the errors. |
 | Colab disconnects | Re-run `03` with the same `RUN_NAME`; it resumes. |
 | `'tf.Conv2D' op is neither a custom op nor a flex op` | A mixed-precision (float16) checkpoint reached the converter. `export_all` rebuilds it in float32 automatically; if you call `convert_tflite` yourself, pass the model through `to_float32_model` first. |
 | `int8` conversion fails | Calibration data is empty or all one class. Ensure the `train` split is non-empty and `export.representative_samples` ≥ 100. |
-| Quantised model disagrees with Keras | Notebook 05 flags this. Increase `export.representative_samples`, or ship `dynamic_range` instead. |
+| Quantised model disagrees with Keras | Section 05 flags this. Increase `export.representative_samples`, or ship `dynamic_range` instead. |
 | Model works in Colab, fails on the phone | The Android front-end does not match. Compare against `model_meta.json` — sample rate, window, hop, centring and normalisation must all match. |
 | `OOM` during training | Lower `training.batch_size`, or `training.cache: false` for a dataset too large to hold in RAM. |
-| Arabic text renders as boxes in charts | Expected: matplotlib does not shape Arabic. Charts use class ids; the id → phrase table is printed in notebook 01. |
+| Arabic text renders as boxes in charts | Expected: matplotlib does not shape Arabic. Charts use class ids; the id → phrase table is printed in section 01. |
+
+### Training on a subset of phrases
+
+Ten classes need a lot of recordings. `classes.include_phrases` narrows the vocabulary, which is the
+cheapest way to get a working model out of a small dataset — the same clips give more per class, and
+chance accuracy rises from 1/10 to 1/4, so validation numbers start meaning something much sooner.
+
+```yaml
+classes:
+  include_phrases: [1, 2, 3, 4]   # null or [] trains on every folder found
+  include_unknown: true           # keep the `unknown` filler folder if it exists
+```
+
+This is the shipped default: the four short, distinct phrases (سبحان الله / الحمد لله / الله أكبر /
+لا إله إلا الله). Add ids back as the dataset grows.
+
+The filter is applied where the dataset is indexed, so it decides the class vocabulary, the class
+indices frozen into the manifest, the width of the model's output and `labels.txt` — nothing
+downstream needs to know about it. Class indices stay contiguous from 0 whatever you select, and
+section 01's phrase table gains a `trained` column showing what is in and what is out.
+
+Two things to do after changing it:
+
+1. **Re-run section `02 · Preprocessing`** — the manifest still carries the old classes otherwise. Already
+   conditioned clips are skipped, so it is quick.
+2. **Train under a fresh run** — `FRESH_START = True`, or a new `RUN_NAME`. An old checkpoint has
+   the wrong number of outputs; `Trainer` compares the run's config snapshot and refuses to restore
+   an incompatible backup rather than failing later with a shape error.
 
 ### A run stuck at chance
 
@@ -574,10 +599,10 @@ best val_accuracy: 0.1000 (epoch 1)
 ```
 
 `0.1000` with 10 classes is exactly what a constant prediction scores on a balanced split — the
-output does not depend on the input. Notebook 03 now says so out loud (`prediction_distribution()`
+output does not depend on the input. Section 03 now says so out loud (`prediction_distribution()`
 and the `!!` notes in `artifacts.summary()`). Work through it in this order:
 
-1. **Run the sanity check** (notebook 03, section 6b). It asks a fresh copy of the model to memorise
+1. **Run the sanity check** (section 03, section 6b). It asks a fresh copy of the model to memorise
    ~40 unaugmented clips in 200 steps. It has to reach ~1.0; the report tells you what a failure
    means. Everything below only matters once that passes.
 2. **Count the optimiser steps**, printed by the training cell as `total steps`. It is
@@ -594,8 +619,8 @@ and the `!!` notes in `artifacts.summary()`). Work through it in this order:
    a config change you made in between never took effect, and "epochs completed" counts epochs from
    a run you already abandoned. Set `FRESH_START = True` (or a new `RUN_NAME`) after any config
    change. The summary flags a resumed run.
-4. **Then look at the data**, which is usually the real answer. Notebook 03 prints clips per class
-   for every split. If notebook 04 reports `samples : 10` for ten classes, the validation split is
+4. **Then look at the data**, which is usually the real answer. Section 03 prints clips per class
+   for every split. If section 04 reports `samples : 10` for ten classes, the validation split is
    one clip per class: accuracy can only be 0.0, 0.1, 0.2 … and its 95% interval runs from 0.02 to
    0.40. That split cannot distinguish a working model from a broken one, and a dataset that thin
    (≤ 13 clips per class, given how `assign_splits` floors the ratios) cannot train a 10-class

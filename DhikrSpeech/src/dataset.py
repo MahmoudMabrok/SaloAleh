@@ -35,7 +35,7 @@ from .audio import (
     rms_dbfs,
     write_wav,
 )
-from .config import AudioConfig, Config, SplitConfig
+from .config import AudioConfig, ClassesConfig, Config, SplitConfig
 
 LOGGER = logging.getLogger(__name__)
 
@@ -174,8 +174,15 @@ def scan_dataset(
     phrases: Sequence[Phrase],
     unknown_class: str = "unknown",
     extensions: Sequence[str] = (".wav",),
+    classes: Optional[ClassesConfig] = None,
 ) -> DatasetIndex:
-    """Index every recording under ``dataset_dir``, one folder per class."""
+    """Index every recording under ``dataset_dir``, one folder per class.
+
+    ``classes`` restricts the vocabulary to the configured phrase ids. This is
+    the single point where the class list is decided, so the selection flows into
+    the manifest, the class indices, the model's output width and ``labels.txt``
+    without anything downstream needing to know about it.
+    """
     root = Path(dataset_dir)
     if not root.is_dir():
         raise FileNotFoundError(f"dataset directory not found: {root}")
@@ -189,6 +196,31 @@ def scan_dataset(
     )
     if not class_dirs:
         raise FileNotFoundError(f"no class folders inside {root}")
+
+    if classes is not None and classes.enabled:
+        found = {entry.name for entry in class_dirs}
+        class_dirs = [
+            entry for entry in class_dirs if classes.selects(entry.name, unknown_class)
+        ]
+        # `unknown` alone is not a vocabulary: check the selected phrases exist,
+        # rather than that anything at all survived the filter.
+        if not [entry for entry in class_dirs if entry.name != unknown_class]:
+            raise FileNotFoundError(
+                f"classes.include_phrases selects {classes.folders}, none of which exist "
+                f"under {root} (found: {', '.join(sorted(found)) or 'nothing'})"
+            )
+        absent = [name for name in (classes.folders or []) if name not in found]
+        if absent:
+            LOGGER.warning(
+                "classes.include_phrases asks for %s, which have no dataset folder",
+                ", ".join(absent),
+            )
+        LOGGER.info(
+            "class selection active: %d of %d folders (%s)",
+            len(class_dirs),
+            len(found),
+            ", ".join(entry.name for entry in class_dirs),
+        )
 
     class_names = [entry.name for entry in class_dirs]
     class_to_index = {name: index for index, name in enumerate(class_names)}
@@ -218,7 +250,12 @@ def scan_dataset(
                 )
             )
 
-    missing = sorted(set(phrase.folder for phrase in phrases) - set(class_names))
+    wanted = set(phrase.folder for phrase in phrases)
+    if classes is not None and classes.enabled:
+        # Folders excluded on purpose are not "missing"; only report gaps in the
+        # selection, which scan_dataset has already warned about above.
+        wanted &= set(classes.folders or [])
+    missing = sorted(wanted - set(class_names))
     if missing:
         LOGGER.warning("phrases without a dataset folder: %s", ", ".join(missing))
 

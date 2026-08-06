@@ -21,6 +21,7 @@ LOGGER = logging.getLogger(__name__)
 __all__ = [
     "AudioConfig",
     "AugmentationConfig",
+    "ClassesConfig",
     "Config",
     "EvaluationConfig",
     "ExportConfig",
@@ -332,6 +333,57 @@ class AugmentationConfig:
 
 
 @dataclass
+class ClassesConfig:
+    """Which phrases the model is trained to tell apart.
+
+    Restricting the vocabulary is the cheapest way to get a working model out of
+    a small dataset: the same recordings give more clips per class, and chance
+    accuracy rises from 1/10 to 1/4, so validation numbers start meaning
+    something much sooner.
+
+    The selection is applied when the dataset is indexed, so it decides the class
+    vocabulary, the class indices frozen into the manifest and the width of the
+    model's output. **Changing it means re-running preprocessing** and training
+    under a fresh run name.
+    """
+
+    include_phrases: Optional[List[int]] = None
+    include_unknown: bool = True
+
+    def __post_init__(self) -> None:
+        if self.include_phrases is None:
+            return
+        ids = [int(value) for value in self.include_phrases]
+        if not ids:
+            self.include_phrases = None  # an empty list reads as "no filter"
+            return
+        if len(set(ids)) != len(ids):
+            raise ValueError("classes.include_phrases contains duplicate ids")
+        if any(identifier < 1 for identifier in ids):
+            raise ValueError("classes.include_phrases ids must be 1 or greater")
+        self.include_phrases = sorted(set(ids))
+
+    @property
+    def enabled(self) -> bool:
+        return self.include_phrases is not None
+
+    @property
+    def folders(self) -> Optional[List[str]]:
+        """The selected ids as zero-padded folder names, or None for "all"."""
+        if self.include_phrases is None:
+            return None
+        return [f"{identifier:03d}" for identifier in self.include_phrases]
+
+    def selects(self, label: str, unknown_class: str = "unknown") -> bool:
+        """Whether a dataset folder belongs to the configured vocabulary."""
+        if not self.enabled:
+            return True
+        if label == unknown_class:
+            return self.include_unknown
+        return label in (self.folders or [])
+
+
+@dataclass
 class SplitConfig:
     val_ratio: float = 0.15
     test_ratio: float = 0.10
@@ -460,6 +512,7 @@ class ExportConfig:
 class Config:
     seed: int = 1337
     paths: PathsConfig = field(default_factory=PathsConfig)
+    classes: ClassesConfig = field(default_factory=ClassesConfig)
     audio: AudioConfig = field(default_factory=AudioConfig)
     features: FeatureConfig = field(default_factory=FeatureConfig)
     augmentation: AugmentationConfig = field(default_factory=AugmentationConfig)
@@ -539,6 +592,12 @@ class Config:
         return "\n".join(
             [
                 f"project root      : {self.paths.root}",
+                f"classes           : "
+                + (
+                    f"phrases {self.classes.include_phrases} only"
+                    if self.classes.enabled
+                    else "every folder in the dataset"
+                ),
                 f"sample rate       : {self.audio.sample_rate} Hz, mono, PCM{self.audio.bit_depth}",
                 f"clip length       : {self.audio.clip_seconds:g} s "
                 f"({self.audio.clip_samples} samples)",

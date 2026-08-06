@@ -305,6 +305,30 @@ All workflows use secrets: `FIREBASE_SERVICE_ACCOUNT`, `FIREBASE_DATABASE_URL`.
 
 `chrome-extension/` — floating window dhikr counter that syncs via phone UUID. Not part of KMP build.
 
+## DhikrSpeech (offline dhikr phrase spotter)
+
+`DhikrSpeech/` — Colab training pipeline that turns volunteer recordings (collected by
+`SpeechCollector/`, recruited from the app's Voice dhikr screen) into a quantised TFLite model.
+Python, not part of the KMP build. Full docs in `DhikrSpeech/README.md`.
+
+- **`notebooks/DhikrSpeech.ipynb` is the only notebook.** It runs the whole pipeline top to bottom in
+  five sections (`01 · Dataset` … `05 · Export`). The per-stage notebooks it was built from were
+  deleted deliberately — do not recreate them, and make every notebook change here.
+- `configs/config.yaml` is the only place settings live; the notebooks read it and hold no
+  thresholds or hyperparameters of their own. All logic lives in `DhikrSpeech/src/`.
+- `classes.include_phrases` picks which phrase ids the model learns (currently `[1, 2, 3, 4]` — the
+  four short, distinct phrases). Applied in `scan_dataset`, so it decides the class vocabulary, the
+  manifest's class indices, the model's output width and `labels.txt`. Changing it requires re-running
+  preprocessing and a fresh training run; `Trainer` refuses an incompatible backup.
+- Convergence follows **optimiser steps** (`ceil(train_clips / batch_size) × epochs`), not epochs.
+  The dataset is small, so the defaults are tuned small-batch/many-epochs and the training cell warns
+  under 2000 steps.
+- `training.resume: true` means re-running restores weights, optimiser state and epoch counter; set
+  `FRESH_START = True` after any config change or the change is applied on top of the old model.
+- Accuracy at exactly `1 / num_classes` with one predicted class is a collapsed model, not a weak
+  one. The notebooks flag this; section 6b's sanity check (memorise ~40 unaugmented clips) separates
+  a pipeline bug from a data-quantity problem.
+
 ## Conventions
 
 - All UI in Arabic, RTL layout
