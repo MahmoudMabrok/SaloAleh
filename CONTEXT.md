@@ -187,16 +187,13 @@ Two things this depends on, both outside the codebase:
 
 ### Defense in depth (rules)
 
-`database.rules.json` bounds `players/$uid/totalCount` two ways per write:
+`database.rules.json` validates `players/$uid/totalCount` as **a non-negative number only** (`isNumber() && >= 0`). There is no per-write blast-radius cap and no per-day rate limit.
 
-- **Blast-radius cap** — a single write may raise `totalCount` by at most `previous + 10000`.
-- **Daily cap (rate limit)** — `totalCount` may not exceed `yesterdayTotalScore + 50000`. `yesterdayTotalScore` is a **server-only baseline** (`.write: false`) that `generate-stats.js` re-stamps to each player's current `totalCount` every day at 23:45 Cairo, so this caps a player's gain to **50,000 per Cairo day**. When the baseline is absent (a player's first day in a round, before the first cron stamp) it defaults to `0`, so the day-one ceiling is a flat 50,000 total — still bounded, never open.
+The earlier rate limit (`totalCount <= yesterdayTotalScore + N`) was **removed deliberately**: it anchored every write to a server-stamped daily baseline, which made legitimate large entries (manual "record external" batches, extension syncs, catching up after a stale baseline) fail with a permission-denied that the client could not distinguish from a real error. Abuse is now handled by **recording, not blocking** — `generate-stats.js` flags outliers into `abnormal_users/{dateKey}/{uid}` (fixed 12k/day threshold) and `users/{uid}/paceFlags/{dateKey}` (day-of-round accumulation ceiling), both server-only and reviewed after the fact.
 
-Together: at most **+10,000 per write and +50,000 per day**. The `50,000` is deliberately generous — the largest single-player daily gain ever observed in `stats/*.json` is ~16,500 (community-wide peak ~75,000/day across *all* players), so it clears any real user by ~3× while cutting the exploit ceiling from effectively unbounded to 50k/day.
+`yesterdayTotalScore` is still a **server-only baseline** (`.write: false`) re-stamped daily by `generate-stats.js` at 23:45 Cairo — it is kept because `computeTodayScore` falls back to the `totalCount - yesterdayTotalScore` diff for clients that don't publish `todayCount`, and because the streak-breaking cron compares against it. It no longer gates any write.
 
-Why this works where the earlier attempt didn't: a pure time-pacing rule can't give a low daily ceiling while still allowing an instant 10k manual entry (the two are the same shape to a stateless rule). Anchoring to the server-stamped `yesterdayTotalScore` gives a real per-day accumulator the client can't forge, so the cap is enforced **for every client regardless of app version** — it binds users who never updated, and a single legitimate manual/extension 10k entry is never rejected.
-
-Notes: the cap governs *future* growth only — it does not retroactively shrink an already-inflated `totalCount` (clean those up with an admin recompute). Non-increasing writes (admin/`decrementScore`) always pass since they move below the ceiling. The rule depends on `generate-stats.js` continuing to stamp `yesterdayTotalScore` daily; if that cron is down for several consecutive days the baseline goes stale and the effective window widens (one missed day is still well within headroom).
+What still bounds the write path: `.write` requires `newData.child('uid').val() === $uid` (a client can only write its own player node), `.validate` requires `hasChildren(['uid', 'schemaVersion'])` with `schemaVersion >= 1` (obsolete builds are denied outright), and `$other: false` rejects unknown keys.
 
 ### What App Check does *not* cover
 
