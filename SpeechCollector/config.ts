@@ -134,7 +134,18 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     "drive_url"
   ],
 
+  // The list order is the order the cards appear on the page — nothing more.
+  // `id` is the phrase's identity everywhere else: the Drive folder it is
+  // stored in, the class the model learns, and the key of the local upload
+  // tally. Reorder freely to change what volunteers see first; never renumber
+  // an id, or already-collected recordings would land in the wrong class.
+  // phrases.json is written sorted by id, so this order does not reach the
+  // training pipeline.
   phrases: [
+    // Original short Tasbeeh prompt — most needed, so it leads the page.
+    { id: 7, text: "سبحان الله العظيم وبحمده" },
+    // Zabad challenge.
+    { id: 6, text: "سبحان الله وبحمده" },
     // Baqiyat challenge (also reused by the Ten Days challenge).
     { id: 1, text: "سبحان الله" },
     { id: 2, text: "الحمد لله" },
@@ -142,10 +153,6 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     { id: 4, text: "لا إله إلا الله" },
     // Original short Istighfar prompt.
     { id: 5, text: "أستغفر الله" },
-    // Zabad challenge.
-    { id: 6, text: "سبحان الله وبحمده" },
-    // Original short Tasbeeh prompt.
-    { id: 7, text: "سبحان الله العظيم وبحمده" },
     // Baqiyat challenge.
     { id: 8, text: "لا حول ولا قوة إلا بالله" },
     // Original Salawat prompts.

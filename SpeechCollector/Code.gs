@@ -145,11 +145,16 @@ function createFolderIfMissing(parentFolder, folderName) {
   return matches.hasNext() ? matches.next() : parentFolder.createFolder(folderName);
 }
 
-/** The phrases.json body the DhikrSpeech pipeline reads: a plain [{id, text}] list. */
+/**
+ * The phrases.json body the DhikrSpeech pipeline reads: a plain [{id, text}]
+ * list, sorted by id. CONFIG.phrases is ordered for the page, so sorting here
+ * keeps the label file (and its change signature) stable when the cards are
+ * reordered.
+ */
 function phrasesJsonContent_() {
   const phrases = CONFIG.phrases.map(function(phrase) {
     return { id: phrase.id, text: phrase.text };
-  });
+  }).sort(function(a, b) { return a.id - b.id; });
   return JSON.stringify(phrases, null, 2) + '\n';
 }
 
