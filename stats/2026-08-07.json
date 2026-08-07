@@ -1,0 +1,119 @@
+{
+  "allTimeSalawat": 2854028,
+  "weekSalawat": 13333,
+  "todaySalawat": 13333,
+  "activePlayers": 35,
+  "countriesCount": 5,
+  "countries": [
+    "EG",
+    "GN",
+    "NA",
+    "SA",
+    "YE"
+  ],
+  "topScore": 4257,
+  "roundKey": "2026-08-14",
+  "leaderboard": [
+    {
+      "countryCode": "EG",
+      "dailyBadge": "star",
+      "goldMedals": 2,
+      "nickname": "المحبة لله والرسول ﷺ",
+      "rank": 1,
+      "rankChange": "same",
+      "score": 3598,
+      "silverMedals": 1,
+      "uid": "6059a577e42ed69ff5ca13aff67f692fa5921e6600590e5fede1fe59d84f2df1"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "crescent",
+      "nickname": "MF1979",
+      "rank": 2,
+      "rankChange": "same",
+      "score": 2981,
+      "silverMedals": 1,
+      "uid": "a6edef5b54050a0eeff694c23ec03d8ff1e6110d49bf2452f2bc7a9c52f706ba"
+    },
+    {
+      "bronzeMedals": 1,
+      "countryCode": "SA",
+      "dailyBadge": "star",
+      "nickname": "لاشين",
+      "rank": 3,
+      "rankChange": "same",
+      "score": 2304,
+      "silverMedals": 2,
+      "uid": "092d20eeafb6b68719e19fcd41f072811d333b4f561862f7b13734d0d633db00"
+    },
+    {
+      "bronzeMedals": 2,
+      "countryCode": "EG",
+      "dailyBadge": "lantern",
+      "nickname": "أميمة جبر",
+      "rank": 4,
+      "rankChange": "same",
+      "score": 1913,
+      "uid": "e477222c0701dd0f1939150e456079f547c978120b2eaf3977fbcfb14349a880"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "nickname": "رضا الله غايتي🩷",
+      "rank": 5,
+      "rankChange": "same",
+      "roundStreak": 8,
+      "score": 1137,
+      "uid": "f154ba230f7f874a00909ab9afcc3b38d0c6957c843e688349588bfb6652d994"
+    },
+    {
+      "countryCode": "EG",
+      "nickname": "ايه",
+      "rank": 6,
+      "rankChange": "same",
+      "score": 286,
+      "uid": "187fd58d0668670c2478e0337aa70a1873e3ead80e8c43c03ee1eebc359849a8"
+    },
+    {
+      "countryCode": "EG",
+      "goldMedals": 7,
+      "nickname": "يونس",
+      "rank": 7,
+      "rankChange": "same",
+      "score": 267,
+      "silverMedals": 3,
+      "uid": "5a4b1d0ed314c539aefe3fedeb07054b2acf361dd98189761e80e047fbf80305"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "heart",
+      "nickname": "الهدي",
+      "rank": 8,
+      "rankChange": "same",
+      "roundStreak": 3,
+      "score": 200,
+      "uid": "76626e020a7d45932223ba5eeee768bb507287201287313a7110c1d34c9078c6"
+    },
+    {
+      "countryCode": "EG",
+      "goldMedals": 1,
+      "nickname": "محمود",
+      "rank": 9,
+      "rankChange": "same",
+      "score": 139,
+      "silverMedals": 1,
+      "uid": "cf0116cf9c1bf2ef2965b238768139059a0088bbb734739297ac650ede2fd00b"
+    },
+    {
+      "countryCode": "NA",
+      "dailyBadge": "sprout",
+      "nickname": "محب ال محمد",
+      "rank": 10,
+      "rankChange": "same",
+      "roundStreak": 1,
+      "score": 103,
+      "uid": "0143fca37ed04f6c88a054352ff2242fcdc37dbf2560ab92778ea0c6f4c3b36e"
+    }
+  ],
+  "updatedAt": "2026-08-07T20:58:08.955Z"
+}
