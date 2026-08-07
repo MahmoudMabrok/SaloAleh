@@ -70,6 +70,13 @@ object AppAnalytics {
     const val STREAK_BADGE_ANNOUNCEMENT_DISMISSED = "streak_badge_announcement_dismissed"
     const val OPEN_VOICE_DHIKR = "open_voice_dhikr"
     const val VOICE_DHIKR_FORM_OPENED = "voice_dhikr_form_opened"
+
+    const val OPEN_ACCOUNT_BACKUP = "open_account_backup"
+    const val BACKUP_CODE_COPIED = "backup_code_copied"
+    const val BACKUP_CODE_SHARED = "backup_code_shared"
+    const val ACCOUNT_RESTORE_STARTED = "account_restore_started"
+    const val ACCOUNT_RESTORE_SUCCESS = "account_restore_success"
+    const val ACCOUNT_RESTORE_FAILED = "account_restore_failed"
     const val REVIEW_DIALOG_SHOWN = "review_dialog_shown"
     const val REVIEW_DIALOG_GO_TO_STORE = "review_dialog_go_to_store"
     const val REVIEW_DIALOG_DISMISSED = "review_dialog_dismissed"

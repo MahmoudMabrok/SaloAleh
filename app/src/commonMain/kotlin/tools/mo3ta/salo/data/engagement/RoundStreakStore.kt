@@ -71,6 +71,20 @@ class RoundStreakStore(private val settings: Settings) {
         }
     }
 
+    /**
+     * Adopt the streak a restored account had published to its player node. The server carries
+     * the count but not the day it was last extended, so [lastActive] is supplied by the caller:
+     * today when the account already sent salawat today (the count already includes today), and
+     * yesterday otherwise (so today's first salawat extends it and a silent day still breaks it).
+     *
+     * Earned badges are not restored — they are local-only history that the server never held.
+     */
+    fun restoreStreak(streak: Int, lastActive: LocalDate) {
+        if (streak <= 0) return
+        settings.putInt(KEY_COUNT, streak)
+        settings.putString(KEY_LAST_ACTIVE, lastActive.toString())
+    }
+
     fun getEarnedBadges(): List<Achievement.RoundStreakBadge> =
         getEarnedBadgesRaw().map { Achievement.RoundStreakBadge(it.roundKey, it.date) }
 

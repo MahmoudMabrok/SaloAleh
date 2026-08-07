@@ -248,6 +248,22 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         return sha256hex(raw)
     }
 
+    /**
+     * Adopt a restored account: persist its raw uid (the backup code) as this device's identity
+     * and drop the FCM token, so the next app start registers a fresh token under the restored
+     * uid instead of leaving the previous account's token pointing at this device.
+     */
+    fun adoptRestoredUid(rawUid: String) {
+        settings.putString(KEY_UID, rawUid)
+        settings.remove(KEY_FCM_TOKEN)
+        settings.putBoolean(KEY_FCM_TOKEN_SYNCED, false)
+    }
+
+    /** Overwrite the install date with the restored account's, so its age is preserved. */
+    fun setInstallDate(date: String) {
+        if (date.isNotBlank()) settings.putString(KEY_INSTALL_DATE, date)
+    }
+
     @OptIn(kotlin.uuid.ExperimentalUuidApi::class)
     fun getRawUid(): String {
         return settings.getStringOrNull(KEY_UID)?.takeIf { it.isNotBlank() }

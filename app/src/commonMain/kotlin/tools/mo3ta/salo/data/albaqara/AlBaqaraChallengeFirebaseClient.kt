@@ -181,6 +181,30 @@ class AlBaqaraChallengeFirebaseClient(
         }
     }
 
+    /**
+     * Read the lifetime total the server holds for [uid]. Used by account restore: the publish is
+     * absolute, so a restored device must adopt this value before it can publish its own.
+     * Returns 0 when the node is absent.
+     */
+    suspend fun fetchUserTotal(uid: String): Result<Int> {
+        log.d { "fetchUserTotal[$uid]" }
+        return runCatching {
+            val snapshot = Firebase.database.reference("$ROOT_PATH/$USERS_PATH/$uid")
+                .child(TOTAL_COUNT_KEY)
+                .valueEvents
+                .first()
+            (snapshot.value as? Number)?.toInt()?.coerceAtLeast(0) ?: 0
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "fetchUserTotal[$uid]=$it" } },
+                onFailure = { error ->
+                    log.e(error) { "fetchUserTotal[$uid] failed" }
+                    trackReadFailure("fetch_user_total", error)
+                },
+            )
+        }
+    }
+
     private fun trackWriteFailure(operation: String, error: Throwable) {
         analyticsManager.logFirebaseError(
             surface = "albaqara_challenge",

@@ -72,4 +72,27 @@ class DailyGoalStoreTest {
         store.recordTap(LocalDate(2026, 4, 28), 5) // Tuesday
         assertEquals(5, store.todayProgress(LocalDate(2026, 4, 28)))
     }
+
+    @Test
+    fun restoreProgress_adoptsTheServersDayCount() {
+        val settings = MapSettings()
+        val store = store(settings)
+        val today = LocalDate(2026, 4, 27)
+
+        store.restoreProgress(today, 640)
+
+        assertEquals(640, store.todayProgress(today))
+        // Anchored to the restored day only — the next Cairo day still starts from zero.
+        assertEquals(0, store.todayProgress(LocalDate(2026, 4, 28)))
+    }
+
+    @Test
+    fun restoreProgress_clampsNegativeCounts() {
+        val store = store()
+        val today = LocalDate(2026, 4, 27)
+
+        store.restoreProgress(today, -5)
+
+        assertEquals(0, store.todayProgress(today))
+    }
 }

@@ -89,6 +89,15 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
     override suspend fun fetchUserAchievements(uid: String): Result<Map<String, UserAchievement>> =
         Result.success(emptyMap())
 
+    var accountSnapshots: MutableMap<String, AccountSnapshot?> = mutableMapOf()
+    var accountSnapshotResult: Result<AccountSnapshot?>? = null
+    val accountSnapshotCalls = mutableListOf<Pair<String, String>>()
+
+    override suspend fun fetchAccountSnapshot(uid: String, roundKey: String): Result<AccountSnapshot?> {
+        accountSnapshotCalls += uid to roundKey
+        return accountSnapshotResult ?: Result.success(accountSnapshots[uid])
+    }
+
     var selfMedalsResult: Result<MohamedLoversMedals> = Result.success(MohamedLoversMedals())
     override suspend fun fetchSelfMedals(uid: String): Result<MohamedLoversMedals> = selfMedalsResult
 

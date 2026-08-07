@@ -44,11 +44,15 @@ import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.data.update.UpdateChecker
 import tools.mo3ta.salo.data.security.AutoClickGuardStore
 import tools.mo3ta.salo.data.update.UpdatePromptStore
+import tools.mo3ta.salo.domain.AccountRestoreManager
+import tools.mo3ta.salo.domain.ChallengeLifetimeLink
+import tools.mo3ta.salo.data.session.LocalAccountReset
 import tools.mo3ta.salo.domain.MohamedLoversRepository
 import tools.mo3ta.salo.data.tendays.TenDaysStore
 import tools.mo3ta.salo.data.tendays.TenDaysFirebaseClient
 import tools.mo3ta.salo.audio.TakbeerSoundPlayer
 import tools.mo3ta.salo.audio.createTakbeerSoundPlayer
+import tools.mo3ta.salo.presentation.AccountBackupViewModel
 import tools.mo3ta.salo.presentation.AchievementsViewModel
 import tools.mo3ta.salo.presentation.BaqiyatViewModel
 import tools.mo3ta.salo.presentation.ChallengesViewModel
@@ -104,6 +108,22 @@ val appModule = module {
     single { MilestoneTracker(get()) }
     single { DailyHadithStore(get()) }
     single { MohamedLoversRepository(get(), get(), get(), get(), get()) }
+    single { LocalAccountReset(get()) }
+    // One link per challenge that keeps a lifetime "total over time" counter, so restoring an
+    // account adopts the server's totals instead of republishing this device's zeroes over them.
+    single {
+        listOf(
+            ChallengeLifetimeLink("dhikr", get<DhikrChallengeFirebaseClient>()::fetchUserTotal, get<DhikrChallengeStore>()::restoreLifetime),
+            ChallengeLifetimeLink("baqiyat", get<BaqiyatFirebaseClient>()::fetchUserTotal, get<BaqiyatStore>()::restoreLifetime),
+            ChallengeLifetimeLink("istighfar", get<IstighfarChallengeFirebaseClient>()::fetchUserTotal, get<IstighfarChallengeStore>()::restoreLifetime),
+            ChallengeLifetimeLink("zabad", get<ZabadChallengeFirebaseClient>()::fetchUserTotal, get<ZabadChallengeStore>()::restoreLifetime),
+            ChallengeLifetimeLink("quran", get<QuranChallengeFirebaseClient>()::fetchUserTotal, get<QuranChallengeStore>()::restoreLifetime),
+            ChallengeLifetimeLink("albaqara", get<AlBaqaraChallengeFirebaseClient>()::fetchUserTotal, get<AlBaqaraChallengeStore>()::restoreLifetime),
+            ChallengeLifetimeLink("alfhasana", get<AlfHasanaChallengeFirebaseClient>()::fetchUserTotal, get<AlfHasanaChallengeStore>()::restoreLifetime),
+            ChallengeLifetimeLink("ghars", get<GharsChallengeFirebaseClient>()::fetchUserTotal, get<GharsChallengeStore>()::restoreLifetime),
+        )
+    }
+    single { AccountRestoreManager(get(), get(), get(), get(), get(), get(), get(), get()) }
     single { createHttpClient() }
     single { HadithRemoteDataSource(get()) }
     single { HadithListRepository(get()) }
@@ -118,6 +138,7 @@ val appModule = module {
     viewModel { KalimatChallengeViewModel(get(), get(), get(), get(), get()) }
     viewModel { BaqiyatViewModel(get(), get(), get(), get(), get()) }
     viewModel { AchievementsViewModel(get(), get(), get()) }
+    viewModel { AccountBackupViewModel(get()) }
     viewModel { ChallengesViewModel(get()) }
     viewModel { HadithListViewModel(get()) }
     single { TenDaysStore(get()) }

@@ -34,6 +34,16 @@ class DailyGoalStore(private val settings: Settings) {
 
     fun isGoalComplete(today: LocalDate): Boolean = todayProgress(today) >= todayTarget(today)
 
+    /**
+     * Adopt the day's count published by a restored account. This value is written to the player
+     * node as an absolute `todayCount`, so without it the first tap after a restore would publish
+     * a count of 1 and wipe out the day's standing on the daily leaderboard.
+     */
+    fun restoreProgress(today: LocalDate, progress: Int) {
+        settings.putString(KEY_DATE, today.toString())
+        settings.putInt(KEY_PROGRESS, progress.coerceAtLeast(0))
+    }
+
     private companion object {
         const val KEY_DATE = "daily_goal_date"
         const val KEY_PROGRESS = "daily_goal_progress"

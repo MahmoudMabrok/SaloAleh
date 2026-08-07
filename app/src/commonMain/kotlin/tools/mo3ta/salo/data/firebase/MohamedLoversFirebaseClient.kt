@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.onEach
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.logFirebaseError
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
+import tools.mo3ta.salo.domain.AccountSnapshot
 import tools.mo3ta.salo.domain.AppUpdateConfig
 import tools.mo3ta.salo.domain.FirebaseLeaderboard
 import tools.mo3ta.salo.domain.FirebaseLeaderboardEntry
@@ -434,6 +435,46 @@ class MohamedLoversFirebaseClient(
                 onFailure = { error ->
                     log.e(error) { "writeNotificationPrefs[$uid] failed" }
                     trackWriteFailure("write_notification_prefs", error)
+                },
+            )
+        }
+    }
+
+    override suspend fun fetchAccountSnapshot(
+        uid: String,
+        roundKey: String,
+    ): Result<AccountSnapshot?> {
+        log.d { "fetchAccountSnapshot[$roundKey/$uid]" }
+        return runCatching {
+            val installDateSnapshot = Firebase.database
+                .reference("$ROOT_PATH/$USERS_PATH/$uid/$INSTALL_DATE_KEY")
+                .valueEvents.first()
+            val playerSnapshot = Firebase.database.reference(playersPath(roundKey)).child(uid)
+                .valueEvents.first()
+            val achievements = fetchUserAchievements(uid).getOrDefault(emptyMap())
+
+            // installDate is stamped on every app start, so its absence together with an absent
+            // player node and no achievement history means there is no such account to restore.
+            val installDate = installDateSnapshot.value as? String ?: ""
+            if (installDate.isBlank() && !playerSnapshot.exists && achievements.isEmpty()) {
+                return@runCatching null
+            }
+
+            val player = playerSnapshot.value as? Map<*, *>
+            AccountSnapshot(
+                installDate = installDate,
+                achievements = achievements,
+                totalCount = (player?.get(TOTAL_COUNT_KEY) as? Number)?.toInt()?.coerceAtLeast(0) ?: 0,
+                todayCount = (player?.get(TODAY_COUNT_KEY) as? Number)?.toInt()?.coerceAtLeast(0) ?: 0,
+                roundStreak = (player?.get(ROUND_STREAK_KEY) as? Number)?.toInt()?.coerceAtLeast(0) ?: 0,
+                nickname = player?.get(NICKNAME_KEY) as? String ?: "",
+            )
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "fetchAccountSnapshot[$roundKey/$uid] = $it" } },
+                onFailure = { error ->
+                    log.e(error) { "fetchAccountSnapshot[$roundKey/$uid] failed" }
+                    trackReadFailure("fetch_account_snapshot", error)
                 },
             )
         }

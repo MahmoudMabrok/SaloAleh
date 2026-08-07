@@ -95,6 +95,7 @@ fun SettingsScreen(
     onOpenPaywall: () -> Unit = {},
     onOpenReferral: () -> Unit = {},
     onOpenVoiceDhikr: () -> Unit = {},
+    onOpenAccountBackup: () -> Unit = {},
 ) {
     val store: NotificationSettingsStore = koinInject()
     val hadithStore: DailyHadithStore = koinInject()
@@ -236,6 +237,23 @@ fun SettingsScreen(
                 onClick = {
                     analyticsManager.logAction(AppAnalytics.OPEN_VOICE_DHIKR)
                     onOpenVoiceDhikr()
+                },
+            )
+
+            Text(
+                text = stringResource(Res.string.settings_account_header),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 24.dp, bottom = 8.dp),
+            )
+
+            SettingLinkRow(
+                label = stringResource(Res.string.settings_account_backup),
+                labelColor = MohamedLoversPalette.GoldGlow,
+                onClick = {
+                    analyticsManager.logAction(AppAnalytics.OPEN_ACCOUNT_BACKUP)
+                    onOpenAccountBackup()
                 },
             )
 
