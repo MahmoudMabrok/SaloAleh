@@ -45,6 +45,7 @@ import tools.mo3ta.salo.data.zabad.ZabadChallengeStore
 import tools.mo3ta.salo.data.ghars.GharsChallengeStore
 import tools.mo3ta.salo.data.alfhasana.AlfHasanaChallengeStore
 import tools.mo3ta.salo.data.kalimat.KalimatChallengeStore
+import tools.mo3ta.salo.data.hawqala.HawqalaChallengeStore
 import tools.mo3ta.salo.input.isSyntheticTap
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.domain.ChallengeType
@@ -60,7 +61,8 @@ class FloatingBubbleService : Service() {
         ZABAD("zabad"),
         GHARS("ghars"),
         ALF_HASANA("alf_hasana"),
-        KALIMAT("kalimat");
+        KALIMAT("kalimat"),
+        HAWQALA("hawqala");
 
         /**
          * NotificationAction id for this type's challenge screen, or null for salawat
@@ -75,6 +77,7 @@ class FloatingBubbleService : Service() {
                 GHARS -> "open_ghars_challenge"
                 ALF_HASANA -> "open_alf_hasana_challenge"
                 KALIMAT -> "open_kalimat_challenge"
+                HAWQALA -> "open_hawqala_challenge"
             }
 
         companion object {
@@ -108,6 +111,7 @@ class FloatingBubbleService : Service() {
     private val gharsStore: GharsChallengeStore by inject()
     private val alfHasanaStore: AlfHasanaChallengeStore by inject()
     private val kalimatStore: KalimatChallengeStore by inject()
+    private val hawqalaStore: HawqalaChallengeStore by inject()
     private val challengeBadgeStore: ChallengeBadgeStore by inject()
     private val analyticsManager: tools.mo3ta.salo.analytics.AnalyticsManager by inject()
 
@@ -164,6 +168,7 @@ class FloatingBubbleService : Service() {
         BubbleType.GHARS -> "ghars_challenge_pending"
         BubbleType.ALF_HASANA -> "alf_hasana_challenge_pending"
         BubbleType.KALIMAT -> "kalimat_challenge_pending"
+        BubbleType.HAWQALA -> "hawqala_challenge_pending"
     }
 
     // The number shown inside the bubble for the current type.
@@ -175,6 +180,7 @@ class FloatingBubbleService : Service() {
         BubbleType.GHARS -> gharsStore.todayCount(cairoToday())
         BubbleType.ALF_HASANA -> alfHasanaStore.todayCount(cairoToday())
         BubbleType.KALIMAT -> kalimatStore.todayCount(cairoToday())
+        BubbleType.HAWQALA -> hawqalaStore.todayCount(cairoToday())
     }
 
     private fun Int.dp(): Int =
@@ -345,6 +351,20 @@ class FloatingBubbleService : Service() {
             notifTitle = "الكلمات الأربع",
             notifText = "سبحان الله وبحمده",
             goal = ChallengeType.KALIMAT.dailyGoal,
+            subtitle = BubbleSubtitle.NONE,
+        )
+        BubbleType.HAWQALA -> BubbleTheme(
+            gradientStart = Color.parseColor("#2E1B4D"),
+            gradientEnd = Color.parseColor("#0E1026"),
+            ringColor = Color.parseColor("#A78BFA"),
+            countColor = Color.parseColor("#C9B6FA"),
+            label = "كنوز",
+            name = "كنوز الجنة",
+            contentDescription = "اضغط للذكر",
+            tooltip = "لا حول ولا قوة إلا بالله",
+            notifTitle = "كنوز الجنة",
+            notifText = "لا حول ولا قوة إلا بالله",
+            goal = ChallengeType.HAWQALA.dailyGoal,
             subtitle = BubbleSubtitle.NONE,
         )
     }
@@ -801,6 +821,8 @@ class FloatingBubbleService : Service() {
                 recordChallengeTap(alfHasanaStore.incrementToday(today), ChallengeType.ALF_HASANA, today)
             BubbleType.KALIMAT ->
                 recordChallengeTap(kalimatStore.incrementToday(today), ChallengeType.KALIMAT, today)
+            BubbleType.HAWQALA ->
+                recordChallengeTap(hawqalaStore.incrementToday(today), ChallengeType.HAWQALA, today)
         }
     }
 

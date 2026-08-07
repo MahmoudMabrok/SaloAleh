@@ -432,6 +432,7 @@ actual fun ChallengeBubbleButton(challengeType: String) {
         FloatingBubbleService.BubbleType.GHARS.id -> Color(0xFFC4762A)
         FloatingBubbleService.BubbleType.ALF_HASANA.id -> Color(0xFFE9C462)
         FloatingBubbleService.BubbleType.KALIMAT.id -> Color(0xFFE07A9E)
+        FloatingBubbleService.BubbleType.HAWQALA.id -> Color(0xFFA78BFA)
         else -> MohamedLoversPalette.GoldHighlight
     }
 

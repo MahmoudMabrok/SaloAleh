@@ -9,6 +9,7 @@ const QURAN_CHALLENGE_ROOT = 'quran_challenge';
 const ALBAQARA_CHALLENGE_ROOT = 'albaqara_challenge';
 const ALF_HASANA_CHALLENGE_ROOT = 'alf_hasana_challenge';
 const KALIMAT_CHALLENGE_ROOT = 'kalimat_challenge';
+const HAWQALA_CHALLENGE_ROOT = 'hawqala_challenge';
 const MOHAMED_LOVERS_ROOT = 'mohamed_lovers';
 
 // A day's salawat above this is treated as abnormal and recorded for admin review.
@@ -242,6 +243,16 @@ const CHALLENGE_TOP3_MESSAGES = {
       body: 'تراجع ترتيبك في تحدي الكلمات الأربع — أكثِر من التسبيح وارتقِ!',
     },
   },
+  hawqala: {
+    dropped: {
+      title: 'مكانك في تحدي كنوز الجنة يناديك 💎',
+      body: 'كنت من المتصدرين في تحدي كنوز الجنة — عُد وقل: لا حول ولا قوة إلا بالله، فإنها من كنوز الجنة!',
+    },
+    lost_position: {
+      title: 'المنافسة تشتد في تحدي كنوز الجنة 🔥',
+      body: 'تراجع ترتيبك في تحدي كنوز الجنة — أكثِر من الحوقلة وارتقِ!',
+    },
+  },
 };
 
 function normalizeDhikrCount(value) {
@@ -429,6 +440,20 @@ function buildAlfHasanaChallengeDailyRanking(dateKey, users, rootPath = ALF_HASA
   };
 }
 
+function buildHawqalaChallengeDailyRanking(dateKey, users, rootPath = HAWQALA_CHALLENGE_ROOT) {
+  const ranking = buildDailyCountChallengeRanking({
+    dateKey,
+    players: users,
+    rootPath,
+    playersPath: 'users',
+  });
+
+  return {
+    ...ranking,
+    totalTodayHawqala: ranking.totalCount,
+  };
+}
+
 function buildKalimatChallengeDailyRanking(dateKey, users, rootPath = KALIMAT_CHALLENGE_ROOT) {
   const ranking = buildDailyCountChallengeRanking({
     dateKey,
@@ -458,6 +483,7 @@ const CHALLENGE_PARTICIPANT_CONFIG = {
   [ALBAQARA_CHALLENGE_ROOT]:  { playersPath: 'users',   nested: true,  build: buildAlBaqaraChallengeDailyRanking },
   [ALF_HASANA_CHALLENGE_ROOT]: { playersPath: 'users',   nested: true,  build: buildAlfHasanaChallengeDailyRanking },
   [KALIMAT_CHALLENGE_ROOT]:    { playersPath: 'users',   nested: true,  build: buildKalimatChallengeDailyRanking },
+  [HAWQALA_CHALLENGE_ROOT]:    { playersPath: 'users',   nested: true,  build: buildHawqalaChallengeDailyRanking },
 };
 
 // Reads a daily count-challenge's raw participant node and returns the users
@@ -819,6 +845,7 @@ module.exports = {
   ALBAQARA_CHALLENGE_ROOT,
   ALF_HASANA_CHALLENGE_ROOT,
   KALIMAT_CHALLENGE_ROOT,
+  HAWQALA_CHALLENGE_ROOT,
   MOHAMED_LOVERS_ROOT,
   ABNORMAL_DAILY_THRESHOLD,
   PACE_DAILY_INCREMENT,
@@ -841,6 +868,7 @@ module.exports = {
   buildAlBaqaraChallengeDailyRanking,
   buildAlfHasanaChallengeDailyRanking,
   buildKalimatChallengeDailyRanking,
+  buildHawqalaChallengeDailyRanking,
   readChallengeRankedUsers,
   awardChallengeMedals,
   attachChallengeMedals,

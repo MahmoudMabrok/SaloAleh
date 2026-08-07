@@ -52,6 +52,7 @@ import tools.mo3ta.salo.ui.DhikrRewardsScreen
 import tools.mo3ta.salo.ui.IstighfarRewardsScreen
 import tools.mo3ta.salo.ui.AlBaqaraChallengeScreen
 import tools.mo3ta.salo.ui.AlfHasanaChallengeScreen
+import tools.mo3ta.salo.ui.HawqalaChallengeScreen
 import tools.mo3ta.salo.ui.KalimatChallengeScreen
 import tools.mo3ta.salo.ui.ZabadScreen
 import tools.mo3ta.salo.ui.GharsScreen
@@ -184,6 +185,7 @@ fun App(
         var showAlBaqaraChallenge by remember { mutableStateOf(false) }
         var showAlfHasanaChallenge by remember { mutableStateOf(false) }
         var showKalimatChallenge by remember { mutableStateOf(false) }
+        var showHawqalaChallenge by remember { mutableStateOf(false) }
         // Set when a challenge push is tapped: the just-opened challenge screen auto-opens
         // its leaderboard sheet once, then clears the flag.
         var openChallengeLeaderboard by remember { mutableStateOf(false) }
@@ -209,6 +211,7 @@ fun App(
                 showAlBaqaraChallenge ||
                 showAlfHasanaChallenge ||
                 showKalimatChallenge ||
+                showHawqalaChallenge ||
                 showTakbeerSession ||
                 showTenDays ||
                 showExtensionQr ||
@@ -229,6 +232,7 @@ fun App(
                 showAlBaqaraChallenge -> showAlBaqaraChallenge = false
                 showAlfHasanaChallenge -> showAlfHasanaChallenge = false
                 showKalimatChallenge -> showKalimatChallenge = false
+                showHawqalaChallenge -> showHawqalaChallenge = false
                 showTakbeerSession -> showTakbeerSession = false
                 showTenDays -> showTenDays = false
                 showExtensionQr -> showExtensionQr = false
@@ -252,6 +256,7 @@ fun App(
                 NotificationAction.OPEN_GHARS_CHALLENGE -> showGharsChallenge = true
                 NotificationAction.OPEN_ALF_HASANA_CHALLENGE -> showAlfHasanaChallenge = true
                 NotificationAction.OPEN_KALIMAT_CHALLENGE -> showKalimatChallenge = true
+                NotificationAction.OPEN_HAWQALA_CHALLENGE -> showHawqalaChallenge = true
                 else -> Unit
             }
             onOpenChallengeHandled()
@@ -296,6 +301,7 @@ fun App(
             showAlBaqaraChallenge ||
             showAlfHasanaChallenge ||
             showKalimatChallenge ||
+            showHawqalaChallenge ||
             showTakbeerSession ||
             showTenDays ||
             showExtensionQr ||
@@ -379,6 +385,12 @@ fun App(
                 onLeaderboardAutoOpened = { openChallengeLeaderboard = false },
                 manualEntryEnabled = manualEntryEnabled,
             )
+            showHawqalaChallenge -> HawqalaChallengeScreen(
+                onBack = { showHawqalaChallenge = false },
+                openLeaderboard = openChallengeLeaderboard,
+                onLeaderboardAutoOpened = { openChallengeLeaderboard = false },
+                manualEntryEnabled = manualEntryEnabled,
+            )
             else -> SaloTabScaffold(
                 selectedTab = selectedTab,
                 onTabSelected = { selectedTab = it },
@@ -408,6 +420,7 @@ fun App(
                                 onOpenAlBaqaraChallenge = { showAlBaqaraChallenge = true },
                                 onOpenAlfHasanaChallenge = { showAlfHasanaChallenge = true },
                                 onOpenKalimatChallenge = { showKalimatChallenge = true },
+                                onOpenHawqalaChallenge = { showHawqalaChallenge = true },
                             )
                             SaloTab.Achievements -> AchievementsScreen(
                                 onBack = { selectedTab = SaloTab.MohamedLovers },
@@ -721,6 +734,10 @@ fun App(
                         }
                         NotificationAction.OPEN_KALIMAT_CHALLENGE -> {
                             showKalimatChallenge = true
+                            openChallengeLeaderboard = true
+                        }
+                        NotificationAction.OPEN_HAWQALA_CHALLENGE -> {
+                            showHawqalaChallenge = true
                             openChallengeLeaderboard = true
                         }
                         NotificationAction.NONE -> Unit

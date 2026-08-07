@@ -24,6 +24,8 @@ import tools.mo3ta.salo.data.alfhasana.AlfHasanaChallengeFirebaseClient
 import tools.mo3ta.salo.data.alfhasana.AlfHasanaChallengeStore
 import tools.mo3ta.salo.data.kalimat.KalimatChallengeFirebaseClient
 import tools.mo3ta.salo.data.kalimat.KalimatChallengeStore
+import tools.mo3ta.salo.data.hawqala.HawqalaChallengeFirebaseClient
+import tools.mo3ta.salo.data.hawqala.HawqalaChallengeStore
 import tools.mo3ta.salo.data.engagement.ChallengeBadgeStore
 import tools.mo3ta.salo.data.engagement.DailyGoalStore
 import tools.mo3ta.salo.data.engagement.EngagementStore
@@ -64,6 +66,7 @@ import tools.mo3ta.salo.presentation.GharsChallengeViewModel
 import tools.mo3ta.salo.presentation.QuranChallengeViewModel
 import tools.mo3ta.salo.presentation.AlfHasanaChallengeViewModel
 import tools.mo3ta.salo.presentation.KalimatChallengeViewModel
+import tools.mo3ta.salo.presentation.HawqalaChallengeViewModel
 import tools.mo3ta.salo.presentation.HadithListViewModel
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
 import tools.mo3ta.salo.presentation.TakbeerSessionViewModel
@@ -98,6 +101,8 @@ val appModule = module {
     single { AlfHasanaChallengeFirebaseClient(get()) }
     single { KalimatChallengeStore(get()) }
     single { KalimatChallengeFirebaseClient(get()) }
+    single { HawqalaChallengeStore(get()) }
+    single { HawqalaChallengeFirebaseClient(get()) }
     single { BaqiyatStore(get()) }
     single { BaqiyatFirebaseClient(get(), get()) }
     single { LanguageStore(get()) }
@@ -121,6 +126,7 @@ val appModule = module {
             ChallengeLifetimeLink("albaqara", get<AlBaqaraChallengeFirebaseClient>()::fetchUserTotal, get<AlBaqaraChallengeStore>()::restoreLifetime),
             ChallengeLifetimeLink("alfhasana", get<AlfHasanaChallengeFirebaseClient>()::fetchUserTotal, get<AlfHasanaChallengeStore>()::restoreLifetime),
             ChallengeLifetimeLink("ghars", get<GharsChallengeFirebaseClient>()::fetchUserTotal, get<GharsChallengeStore>()::restoreLifetime),
+            ChallengeLifetimeLink("hawqala", get<HawqalaChallengeFirebaseClient>()::fetchUserTotal, get<HawqalaChallengeStore>()::restoreLifetime),
         )
     }
     single { AccountRestoreManager(get(), get(), get(), get(), get(), get(), get(), get()) }
@@ -136,6 +142,7 @@ val appModule = module {
     viewModel { QuranChallengeViewModel(get(), get(), get(), get(), get()) }
     viewModel { AlfHasanaChallengeViewModel(get(), get(), get(), get(), get()) }
     viewModel { KalimatChallengeViewModel(get(), get(), get(), get(), get()) }
+    viewModel { HawqalaChallengeViewModel(get(), get(), get(), get(), get()) }
     viewModel { BaqiyatViewModel(get(), get(), get(), get(), get()) }
     viewModel { AchievementsViewModel(get(), get(), get()) }
     viewModel { AccountBackupViewModel(get()) }
