@@ -52,9 +52,24 @@ for (const elementId of [
 }
 for (const key of [
   'record', 'reRecord', 'stop', 'play', 'pause', 'upload', 'uploading', 'uploadQueued', 'uploadAll',
-  'retry', 'recordedCount', 'listHint', 'summaryPhrases', 'summarySamples', 'tooLarge'
+  'retry', 'recordedCount', 'listHint', 'summaryPhrases', 'summarySamples', 'tooLarge', 'singleTakeRule'
 ]) {
   assert.ok(bootstrap.ui[key], `The "${key}" UI string is missing from the bootstrap payload.`);
+}
+
+// A clip holding the phrase more than once is unusable to the trainer, so the
+// single-utterance rule must reach the page: the box that carries it, and the
+// wording of every string that tells a volunteer how long a take is.
+assert.ok(
+  standalone.includes('data-i18n="singleTakeRule"'),
+  'dist/voice.html does not render the single-utterance rule.'
+);
+for (const key of ['singleTakeRule', 'listHint', 'microphoneHint', 'recording', 'recordingReady']) {
+  assert.match(
+    bootstrap.ui[key],
+    /مرة واحدة|نطق واحد|ذكر واحد/,
+    `The "${key}" string must say that a recording holds one utterance.`
+  );
 }
 assert.ok(bootstrap.ui.recordedCount.includes('{count}'), 'recordedCount must contain the {count} placeholder.');
 assert.ok(bootstrap.ui.uploadAll.includes('{count}'), 'uploadAll must contain the {count} placeholder.');
