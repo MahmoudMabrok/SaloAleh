@@ -216,6 +216,21 @@ Every app start publishes the build the device is running to its user node, so t
 - RTDB rules: `appVersion` validates `isString()` with length `1..32`, `appVersionCode` `isNumber() && >= 0`, both under the existing `users/$uid` write grant (the node's `$other: false` means the keys had to be whitelisted). Mirrored to Firestore `mohamed_lovers_users/{uid}` by the same map.
 - Tests: `commonTest/domain/MohamedLoversRepositoryUserActivityTest.kt`.
 
+### Account backup code & restore
+
+Settings screen that exports the device's identity as a copy-pasteable **backup code** and takes one to move an account onto this device. The app has no accounts and no Firebase Auth, so before this there was no recovery path at all: an uninstall/reinstall the OS did not restore (always the case on iOS, and on Android outside the setup-time restore flow) minted a brand-new uid and orphaned the old score, medals and achievements.
+
+- Core files: `domain/AccountBackupCode.kt` (`parseBackupCode`), `domain/AccountRestoreModels.kt` (`AccountSnapshot`, `AccountRestoreResult`), `domain/AccountRestoreManager.kt` (+ `ChallengeLifetimeLink`), `data/session/LocalAccountReset.kt`, `data/firebase/MohamedLoversFirebaseClient.kt` (`fetchAccountSnapshot`), `presentation/AccountBackupViewModel.kt`, `ui/settings/AccountBackupScreen.kt`, `ui/settings/SettingsScreen.kt` (account section), `App.kt` (`showAccountBackup` route).
+- **The code is the raw uid** (`user_uid`, a UUID) — never the derived `sha256hex` id, which is one-way. `parseBackupCode` tolerates whitespace, case and missing dashes, and recognises a 64-hex digest so the screen can say "that is your public id, not your backup code" instead of silently adopting an empty account.
+- **Restore is read-then-commit.** Every network read (`fetchAccountSnapshot` + one `fetchUserTotal` per challenge) happens *before* any local mutation, so an offline or unknown-code attempt leaves the device untouched. Only a confirmed account triggers `LocalAccountReset.wipeAccountData()` and the hydrate.
+- **Why a full wipe:** most of the key-value store is account-scoped, and several server writes are **absolute** — `players/{uid}/todayCount` and each challenge's `users/{uid}/totalCount`. A restore that kept this device's zeroes would publish them over the restored account's real values on the next tap/screen visit. `LocalAccountReset` therefore clears everything and re-applies an allowlist of *device* keys: language, notification toggles, salawat variant, already-seen promo/tooltip flags, and purchases (Play entitlements follow the Google account and are re-queried at startup anyway).
+- **FCM is deliberately not preserved** — the token keys are dropped so `MainActivity.ensureFcmTokenSynced()` registers a fresh token under the restored uid on the next start.
+- **What comes back from RTDB:** rank achievements (`users/{uid}/achievements` → `eng_rank_achievements`, dated from the round key), `installDate`, and from the round player node `todayCount` (→ `DailyGoalStore.setTodayProgress`), `roundStreak` (→ `RoundStreakStore.restoreStreak`) and `nickname` (only when it differs from the uid suffix, i.e. a real nickname). Each challenge's lifetime total comes back via `fetchUserTotal` → `restoreLifetime` (max-wins, so a failed read can never lower a total). The competition score and medals need no hydration — they are server-owned and re-appear with the uid. The streak's last-active day is reconstructed as today when `todayCount > 0` and yesterday otherwise, so it neither double-counts nor stalls.
+- **Not restored** (the server never held it): heart index, challenge badges/streaks, engagement streak, personal best rank, notification preferences (`users/{uid}` is `.read: false` apart from the paths below).
+- RTDB rules: `users/{uid}/installDate` gained `.read: true` — it is the existence probe (stamped on every app start, so any real account has one) and the only user-node field the restore needs. Everything else it reads was already client-readable (`achievements`, the round `players` node, each challenge's `users/{uid}/totalCount`). Deploy with `firebase deploy --only database` **before** shipping the build, or restore reports "no such account" for every code.
+- The restored identity is picked up by a **restart** — the success dialog says so — because the ViewModels and the leaderboard listener bind the uid at construction.
+- Tests: `commonTest/domain/AccountBackupCodeTest.kt`, `commonTest/domain/AccountRestoreManagerTest.kt`, `commonTest/data/session/LocalAccountResetTest.kt`, plus `setTodayProgress`/`restoreLifetime` cases in `DailyGoalStoreTest` and `GharsChallengeStoreTest`.
+
 ### Required-field write gate (`schemaVersion`)
 
 Server-side hard backstop that pairs with the force-update prompt: builds that predate this field are **denied at the DB** on the main competition write path, so an obsolete client cannot save salawat even if it dodges the update dialog.
@@ -245,7 +260,7 @@ mohamed_lovers/
 │   └── minSupportedVersionCode           # lowest allowed integer versionCode; lower builds are force-blocked to update
 ├── abnormal_users/{dateKey}/{uid}        # server-only: {count,totalCount,countryCode} for users > 12k/day
 ├── users/{uid}/                          # per-device user data
-│   ├── fcmToken, installDate, lastOpenDate, lastRivalNotifDate
+│   ├── fcmToken, installDate (client-readable: account-restore probe), lastOpenDate, lastRivalNotifDate
 │   ├── appVersion, appVersionCode        # build the user is running; refreshed on every app start
 │   ├── reminderNotifsEnabled            # client opt-in for notify-users.js push (Settings; absent = on)
 │   ├── leaderboardNotifsEnabled         # client opt-in for populate-leaderboard.js push (Settings; absent = on)

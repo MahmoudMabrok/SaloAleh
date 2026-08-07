@@ -132,6 +132,16 @@ class BaqiyatStore(private val settings: Settings) {
      */
     fun lifetimeCount(): Int = settings.getInt(KEY_LIFETIME, 0)
 
+    /**
+     * Adopt the lifetime total the server holds for a restored account. The publish is absolute,
+     * so a restored device that started from 0 would overwrite the account's real total on the
+     * next screen visit; the higher of the two values wins to keep that one-way.
+     */
+    fun restoreLifetime(total: Int) {
+        val restored = total.coerceAtLeast(0)
+        if (restored > settings.getInt(KEY_LIFETIME, 0)) settings.putInt(KEY_LIFETIME, restored)
+    }
+
     private fun addLifetime(delta: Int) {
         if (delta <= 0) return
         settings.putInt(KEY_LIFETIME, settings.getInt(KEY_LIFETIME, 0) + delta)

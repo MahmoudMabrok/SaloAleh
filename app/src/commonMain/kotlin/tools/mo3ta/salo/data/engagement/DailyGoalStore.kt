@@ -36,8 +36,8 @@ class DailyGoalStore(private val settings: Settings) {
 
     /**
      * Overwrite today's progress with [value]. Used only to reconcile the local count with
-     * server-side evidence (the published daily badge, or the daily push cap) — ordinary salawat
-     * always go through [recordTap].
+     * server-side evidence (the published daily badge, the daily push cap, or the day count an
+     * account restore adopts) — ordinary salawat always go through [recordTap].
      */
     fun setTodayProgress(today: LocalDate, value: Int) {
         settings.putString(KEY_DATE, today.toString())

@@ -9,6 +9,7 @@ import kotlinx.serialization.json.Json
 import tools.mo3ta.salo.domain.Achievement
 import tools.mo3ta.salo.domain.BadgeType
 import tools.mo3ta.salo.domain.EngagementData
+import tools.mo3ta.salo.domain.UserAchievement
 
 class EngagementStore(private val settings: Settings) {
 
@@ -187,6 +188,28 @@ class EngagementStore(private val settings: Settings) {
             score = score,
             winnerCode = winnerCode,
         )
+    }
+
+    /**
+     * Replace the local rank history with the copy the server holds at
+     * `mohamed_lovers/users/{uid}/achievements` (account restore).
+     *
+     * The server entry has no earned-date, so the round key — the round's Friday date — is used
+     * as the date, falling back to [fallbackDate] for any key that is not a date.
+     */
+    fun restoreRankAchievements(achievements: Map<String, UserAchievement>, fallbackDate: LocalDate) {
+        val entries = achievements.entries
+            .sortedBy { it.key }
+            .map { (roundKey, achievement) ->
+                RankEntry(
+                    roundKey = roundKey,
+                    rank = achievement.rank,
+                    date = runCatching { LocalDate.parse(roundKey) }.getOrDefault(fallbackDate),
+                    score = achievement.score,
+                    winnerCode = achievement.winnerCode,
+                )
+            }
+        settings.putString(KEY_RANK_ACHIEVEMENTS, encodeRankAchievements(entries))
     }
 
     fun getAllAchievements(): List<Achievement> {

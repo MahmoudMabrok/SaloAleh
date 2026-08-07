@@ -1,6 +1,7 @@
 package tools.mo3ta.salo.data.firebase
 
 import kotlinx.coroutines.flow.Flow
+import tools.mo3ta.salo.domain.AccountSnapshot
 import tools.mo3ta.salo.domain.AppUpdateConfig
 import tools.mo3ta.salo.domain.DailyBadgeAdjustment
 import tools.mo3ta.salo.domain.FirebaseLeaderboard
@@ -42,6 +43,11 @@ interface MohamedLoversFirebaseApi {
         remindersEnabled: Boolean,
         leaderboardEnabled: Boolean,
     ): Result<Unit>
+    /**
+     * Read everything a restore needs about [uid] in one pass, or null when the account does not
+     * exist. Reads only client-readable paths (the round player node, achievements, installDate).
+     */
+    suspend fun fetchAccountSnapshot(uid: String, roundKey: String): Result<AccountSnapshot?>
     suspend fun fetchUserAchievements(uid: String): Result<Map<String, UserAchievement>>
     /** Reads the current user's cumulative podium medals from `users/{uid}/medals`. */
     suspend fun fetchSelfMedals(uid: String): Result<MohamedLoversMedals>

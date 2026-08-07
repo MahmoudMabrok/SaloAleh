@@ -650,6 +650,7 @@
             ".validate": "newData.isString() && newData.val().length > 0"
           },
           "installDate": {
+            ".read": true,
             ".validate": "newData.isString() && newData.val().length == 10"
           },
           "lastOpenDate": {

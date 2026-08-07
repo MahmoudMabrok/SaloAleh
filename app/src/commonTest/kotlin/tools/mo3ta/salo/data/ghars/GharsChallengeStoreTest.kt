@@ -128,4 +128,28 @@ class GharsChallengeStoreTest {
         store.addToday(next, 300)
         assertEquals(300, store.todayCount(next))
     }
+
+    @Test
+    fun restoreLifetime_adoptsTheServersTotal() {
+        val settings = MapSettings()
+        val store = GharsChallengeStore(settings)
+
+        store.restoreLifetime(4200)
+
+        assertEquals(4200, store.lifetimeCount())
+    }
+
+    @Test
+    fun restoreLifetime_neverLowersALargerLocalTotal() {
+        val settings = MapSettings()
+        val store = GharsChallengeStore(settings)
+        val today = LocalDate(2026, 5, 12)
+        repeat(3) { store.incrementToday(today) }
+
+        store.restoreLifetime(0)
+        assertEquals(3, store.lifetimeCount())
+
+        store.restoreLifetime(2)
+        assertEquals(3, store.lifetimeCount())
+    }
 }
