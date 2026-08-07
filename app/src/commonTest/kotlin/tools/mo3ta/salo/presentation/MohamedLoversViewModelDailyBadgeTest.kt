@@ -58,7 +58,7 @@ class MohamedLoversViewModelDailyBadgeTest {
         }
         val sessionStore = MohamedLoversSessionStore(MapSettings())
         val premiumStore = PremiumStore(MapSettings())
-        val repo = MohamedLoversRepository(fake, networkTime, sessionStore, countryCode, premiumStore)
+        val repo = MohamedLoversRepository(fake, networkTime, sessionStore, countryCode)
         return MohamedLoversViewModel(
             repository = repo,
             engagementStore = EngagementStore(MapSettings()),

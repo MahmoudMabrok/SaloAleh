@@ -5,7 +5,6 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
-import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.country.CountryCodeProvider
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.data.time.NetworkTimeProvider
@@ -30,7 +29,6 @@ class MohamedLoversRepositoryExternalLogTest {
             networkTime,
             MohamedLoversSessionStore(MapSettings()),
             countryCode,
-            PremiumStore(MapSettings()),
         )
         return repo to firebaseApi
     }

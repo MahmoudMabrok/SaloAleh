@@ -21,7 +21,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -31,7 +30,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,7 +40,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import tools.mo3ta.salo.generated.resources.Res
@@ -50,13 +47,11 @@ import tools.mo3ta.salo.generated.resources.*
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.BillingAnalytics
 import tools.mo3ta.salo.data.billing.BillingManager
-import tools.mo3ta.salo.data.billing.FeatureFlags
 import tools.mo3ta.salo.data.billing.PremiumFeature
 import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.billing.ProductRegistry
 import tools.mo3ta.salo.data.billing.SubscriptionPeriod
 import tools.mo3ta.salo.data.billing.SupportTier
-import tools.mo3ta.salo.domain.MohamedLoversRepository
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 
 private val ScreenBg = Color(0xFF0f0f1a)
@@ -71,8 +66,6 @@ fun PaywallScreen(onBack: () -> Unit) {
     val billingManager: BillingManager = koinInject()
     val premiumStore: PremiumStore = koinInject()
     val analyticsManager: AnalyticsManager = koinInject()
-    val repository: MohamedLoversRepository = koinInject()
-    val scope = rememberCoroutineScope()
 
     val prices by billingManager.productPrices.collectAsState()
 
@@ -81,14 +74,13 @@ fun PaywallScreen(onBack: () -> Unit) {
     // One-time purchasers still lack a renewing subscription; the subscription selection stays
     // visible for them so they can start one, while active subscribers only manage their plan.
     val hasActiveSubscription = premiumStore.hasActiveSubscription
-    var scoreMasked by remember { mutableStateOf(premiumStore.isScoreMasked) }
     var selectedPeriod by remember { mutableStateOf(SubscriptionPeriod.MONTHLY) }
 
     val visibleTiers = remember(selectedPeriod) {
         ProductRegistry.subscriptionTiers.filter { it.period == selectedPeriod }
     }
-    val basicTier = visibleTiers.firstOrNull { !it.features.contains(PremiumFeature.SCORE_MASK) }
-    val premiumTier = visibleTiers.firstOrNull { it.features.contains(PremiumFeature.SCORE_MASK) }
+    val basicTier = visibleTiers.firstOrNull { !it.features.contains(PremiumFeature.LIVE_LEADERBOARD) }
+    val premiumTier = visibleTiers.firstOrNull { it.features.contains(PremiumFeature.LIVE_LEADERBOARD) }
     var selectedTier by remember(selectedPeriod) { mutableStateOf(visibleTiers.lastOrNull() ?: visibleTiers.first()) }
 
     LaunchedEffect(Unit) {
@@ -191,44 +183,6 @@ fun PaywallScreen(onBack: () -> Unit) {
 
             if (isPremium && currentTier != null) {
                 CurrentPlanCard(features = currentTier.features)
-                if (FeatureFlags.SCORE_MASKING_ENABLED && PremiumFeature.SCORE_MASK in currentTier.features) {
-                    Spacer(Modifier.height(12.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(CardBg)
-                            .border(1.dp, CardBorder, RoundedCornerShape(12.dp))
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(Res.string.paywall_hide_score_title),
-                                color = Color.White,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Medium,
-                            )
-                            Text(
-                                text = stringResource(Res.string.paywall_score_hidden_description),
-                                color = Color.White.copy(alpha = 0.5f),
-                                fontSize = 12.sp,
-                            )
-                        }
-                        Switch(
-                            checked = scoreMasked,
-                            onCheckedChange = { checked ->
-                                scoreMasked = checked
-                                premiumStore.isScoreMasked = checked
-                                scope.launch { repository.setScoreMasked(checked) }
-                                analyticsManager.logAction(
-                                    BillingAnalytics.SCORE_MASK_TOGGLED,
-                                    mapOf(BillingAnalytics.PARAM_ENABLED to checked.toString()),
-                                )
-                            },
-                        )
-                    }
-                }
             }
 
             // Subscription selection: shown for free users and for one-time purchasers who do not
@@ -276,7 +230,7 @@ fun PaywallScreen(onBack: () -> Unit) {
                             "👁️" to stringResource(Res.string.paywall_friday_scores_title),
                             "🏆" to stringResource(Res.string.paywall_others_achievements_title),
                         ),
-                        isSelected = !selectedTier.features.contains(PremiumFeature.SCORE_MASK),
+                        isSelected = !selectedTier.features.contains(PremiumFeature.LIVE_LEADERBOARD),
                         onClick = { selectedTier = basicTier },
                     )
                     Spacer(Modifier.height(10.dp))
@@ -289,12 +243,11 @@ fun PaywallScreen(onBack: () -> Unit) {
                         price = prices[premiumTier.productId] ?: "...",
                         features = listOf(
                             "📡" to stringResource(Res.string.paywall_live_leaderboard_title),
-                            "🔒" to stringResource(Res.string.paywall_hide_score_title),
                             "⭐" to stringResource(Res.string.paywall_supporter_badge_title),
                             "👁️" to stringResource(Res.string.paywall_friday_scores_title),
                             "🏆" to stringResource(Res.string.paywall_others_achievements_title),
                         ),
-                        isSelected = selectedTier.features.contains(PremiumFeature.SCORE_MASK),
+                        isSelected = selectedTier.features.contains(PremiumFeature.LIVE_LEADERBOARD),
                         onClick = { selectedTier = premiumTier },
                     )
                 }
@@ -406,7 +359,6 @@ private fun CurrentPlanCard(features: Set<PremiumFeature>) {
 }
 
 private fun PremiumFeature.icon(): String = when (this) {
-    PremiumFeature.SCORE_MASK -> "🔒"
     PremiumFeature.SUPPORTER_BADGE -> "⭐"
     PremiumFeature.FRIDAY_SCORES -> "👁️"
     PremiumFeature.OTHERS_ACHIEVEMENTS -> "🏆"
@@ -415,7 +367,6 @@ private fun PremiumFeature.icon(): String = when (this) {
 
 @Composable
 private fun PremiumFeature.label(): String = when (this) {
-    PremiumFeature.SCORE_MASK -> stringResource(Res.string.paywall_hide_score_title)
     PremiumFeature.SUPPORTER_BADGE -> stringResource(Res.string.paywall_supporter_badge_title)
     PremiumFeature.FRIDAY_SCORES -> stringResource(Res.string.paywall_friday_scores_title)
     PremiumFeature.OTHERS_ACHIEVEMENTS -> stringResource(Res.string.paywall_others_achievements_title)

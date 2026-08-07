@@ -594,7 +594,6 @@ async function populateMohamedLoversRound(db, admin, roundKey, isFinal) {
         countryCode: typeof data.countryCode === 'string' ? data.countryCode : 'NA',
         yesterdayTotalScore: typeof data.yesterdayTotalScore === 'number' ? data.yesterdayTotalScore : 0,
         todayCount: typeof data.todayCount === 'number' ? data.todayCount : null,
-        scoreMasked: data.scoreMasked === true,
         isSupporter: data.isSupporter === true,
         dailyBadge: typeof data.dailyBadge === 'string' ? data.dailyBadge : null,
         roundStreak: typeof data.roundStreak === 'number' && data.roundStreak > 0 ? data.roundStreak : null,
@@ -629,7 +628,6 @@ async function populateMohamedLoversRound(db, admin, roundKey, isFinal) {
       score: player.score,
       countryCode: player.countryCode,
     };
-    if (player.scoreMasked) entry.scoreMasked = true;
     if (player.isSupporter) entry.isSupporter = true;
     if (player.dailyBadge) entry.dailyBadge = player.dailyBadge;
     if (player.roundStreak) entry.roundStreak = player.roundStreak;
@@ -653,7 +651,6 @@ async function populateMohamedLoversRound(db, admin, roundKey, isFinal) {
       score: player.dailyScore,
       countryCode: player.countryCode,
     };
-    if (player.scoreMasked) entry.scoreMasked = true;
     if (player.isSupporter) entry.isSupporter = true;
     if (player.dailyBadge) entry.dailyBadge = player.dailyBadge;
     if (player.roundStreak) entry.roundStreak = player.roundStreak;

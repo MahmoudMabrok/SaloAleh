@@ -5,7 +5,6 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
-import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.billing.ProductRegistry
 import tools.mo3ta.salo.data.country.CountryCodeProvider
 import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseApi
@@ -17,7 +16,6 @@ class MohamedLoversRepository(
     private val networkTimeProvider: NetworkTimeProvider,
     private val sessionStore: MohamedLoversSessionStore,
     private val countryCodeProvider: CountryCodeProvider,
-    private val premiumStore: PremiumStore,
 ) {
     suspend fun bootstrap(): MohamedLoversBootstrap {
         val window = networkTimeProvider.getCompetitionWindow()
@@ -78,9 +76,6 @@ class MohamedLoversRepository(
         return firebaseClient.resetPlayerScore(roundKey, uid)
     }
 
-    suspend fun setScoreMasked(roundKey: String, uid: String, masked: Boolean): Result<Unit> =
-        firebaseClient.setScoreMasked(roundKey, uid, masked)
-
     suspend fun recordPurchase(productId: String): Result<Unit> {
         val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
         val productType = ProductRegistry.typeFor(productId).name
@@ -111,15 +106,6 @@ class MohamedLoversRepository(
     suspend fun writeRoundStreak(roundKey: String, streak: Int): Result<Unit> {
         val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
         return firebaseClient.writeRoundStreak(roundKey, uid, streak)
-    }
-
-    suspend fun setScoreMasked(masked: Boolean): Result<Unit> {
-        val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
-        val roundKey = networkTimeProvider.getCompetitionWindow().roundKey
-            ?: return Result.failure(IllegalStateException("No active round"))
-        // Bind the local mask flag to this round so it is cleared once the next round starts.
-        premiumStore.scoreMaskedRoundKey = if (masked) roundKey else null
-        return firebaseClient.setScoreMasked(roundKey, uid, masked)
     }
 
     suspend fun incrementExternalCount(roundKey: String, count: Int): Result<Unit> {
