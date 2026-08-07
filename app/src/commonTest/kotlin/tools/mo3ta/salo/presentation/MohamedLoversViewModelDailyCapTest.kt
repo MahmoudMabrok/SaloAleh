@@ -197,6 +197,14 @@ class MohamedLoversViewModelDailyCapTest {
         assertEquals(5_000, f.vm.state.value.todayCount)
         assertEquals(5_000, f.vm.state.value.badgeAdjustedTo)
         assertEquals("crown", f.vm.state.value.currentDailyBadge)
+
+        // The adjustment is recorded under the user node for abnormal-user review.
+        val logged = fake.badgeAdjustmentCalls.single().adjustment
+        assertEquals("badge_above_progress", logged.case)
+        assertEquals(0, logged.progress, "the short count as it was found, before the raise")
+        assertEquals("crown", logged.badgeKey)
+        assertEquals(5_000, logged.badgeValue)
+        assertTrue(logged.atMs > 0L)
     }
 
     @Test
@@ -214,6 +222,7 @@ class MohamedLoversViewModelDailyCapTest {
 
         assertEquals(6_000, f.dailyGoalStore.todayProgress(today))
         assertNull(f.vm.state.value.badgeAdjustedTo)
+        assertTrue(fake.badgeAdjustmentCalls.isEmpty(), "a no-op adjustment must not be logged")
     }
 
     @Test
@@ -243,5 +252,7 @@ class MohamedLoversViewModelDailyCapTest {
         selfPlayerFlow.emit(Result.success(player))
 
         assertNull(f.vm.state.value.badgeAdjustedTo)
+        // ...and the second snapshot must not add a second log entry either.
+        assertEquals(1, fake.badgeAdjustmentCalls.size)
     }
 }

@@ -35,6 +35,7 @@ import tools.mo3ta.salo.data.billing.PremiumFeature
 import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.domain.DailyBadge
+import tools.mo3ta.salo.domain.DailyBadgeAdjustmentLog
 import tools.mo3ta.salo.domain.FirebaseLeaderboard
 import tools.mo3ta.salo.domain.MohamedLoversCompetitionWindow
 import tools.mo3ta.salo.domain.MohamedLoversMedals
@@ -983,6 +984,10 @@ class MohamedLoversViewModel(
      * it reached the server, so a lower local count means the device lost the day's progress (a
      * reinstall, cleared storage, or a mid-day switch). A one-shot warning is surfaced with it.
      * No-op when the badge is absent or already covered by the local count.
+     *
+     * Every adjustment is also recorded under the user node (`badgeAdjustments`) with the time, the
+     * short count it found and the badge it adopted — a device producing these repeatedly is worth
+     * reviewing. The log write is fire-and-forget and never gates the adjustment itself.
      */
     private fun reconcileDailyBadge(player: MohamedLoversPlayer, today: LocalDate) {
         val badge = DailyBadge.fromKey(player.dailyBadge) ?: return
@@ -995,6 +1000,15 @@ class MohamedLoversViewModel(
                 dailyGoalProgress = adjusted,
                 currentDailyBadge = badge.key,
                 badgeAdjustedTo = adjusted,
+            )
+        }
+        if (!state.value.firebaseConfigured) return
+        viewModelScope.launch {
+            repository.logDailyBadgeAdjustment(
+                case = DailyBadgeAdjustmentLog.CASE_BADGE_ABOVE_PROGRESS,
+                at = Clock.System.now(),
+                progress = local,
+                badge = badge,
             )
         }
     }

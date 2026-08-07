@@ -205,6 +205,8 @@ Being client-side, this is **not** a security boundary — a modded build simply
 
 The server-published `dailyBadge` is used in the reverse direction — as evidence of a **minimum** day count. Because a badge is only published *after* the score that earned it reached the server, a local count below the badge's threshold means the device lost its progress; the client adopts the badge's value and warns the user (`reconcileDailyBadge`). The cron clears `dailyBadge` nightly, so the signal can never leak across days.
 
+Each such reconciliation is recorded at `users/{uid}/badgeAdjustments/{Cairo minute}` = `{case, at, serverAt, progress, badge, badgeValue}` — a third record-only tracking stream alongside `abnormal_users` and `paceFlags`, and the only one written by the client rather than the cron. It captures the short count *before* the raise and the badge value adopted, so the size of the gap is visible, plus both the device clock (`at`) and the server's (`serverAt`) so a manipulated clock shows up as drift between them. A single entry is unremarkable — reinstall, cleared storage, a second device mid-day — so the signal is a device that emits them repeatedly, or one whose entries always restore a large count. The node is client-writable but `.read: false`, so only the admin scripts can review it.
+
 ### What App Check does *not* cover
 
 App Check attests **the app**, not **the user's intent**. A genuine, unmodified build being driven abusively is fully attested and passes every check. The remaining surface is therefore entirely on-device:

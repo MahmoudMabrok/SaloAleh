@@ -158,6 +158,32 @@ class MohamedLoversRepository(
      * the server. Read at startup so a reinstall — which wipes the local ledger — cannot hand the
      * user a fresh daily cap.
      */
+    /**
+     * Records one daily-badge score reconciliation under the user node, so devices that keep losing
+     * their day count can be reviewed. [progress] is today's local count *before* the raise and
+     * [badge] the server-published badge that triggered it. Record-only and fire-and-forget — a
+     * failure here never affects the adjustment the user already saw.
+     */
+    suspend fun logDailyBadgeAdjustment(
+        case: String,
+        at: Instant,
+        progress: Int,
+        badge: DailyBadge,
+    ): Result<Unit> {
+        val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
+        return firebaseClient.appendBadgeAdjustmentLog(
+            uid = uid,
+            timeKey = DailyBadgeAdjustmentLog.entryKey(at),
+            adjustment = DailyBadgeAdjustment(
+                case = case,
+                atMs = at.toEpochMilliseconds(),
+                progress = progress,
+                badgeKey = badge.key,
+                badgeValue = badge.threshold,
+            ),
+        )
+    }
+
     suspend fun fetchExternalUsedToday(roundKey: String, at: Instant): Result<Int> {
         val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
         return firebaseClient.fetchExternalDailyUsed(roundKey, uid, ExternalSalawatLog.dayKey(at))

@@ -172,7 +172,10 @@ The server-published daily badge is treated as evidence of a **minimum** day cou
 
 - `MohamedLoversPlayer.dailyBadge` is parsed from the player node (`toPlayer()`), and `MohamedLoversViewModel.reconcileDailyBadge` runs on every self-player snapshot. When `DailyBadge.fromKey(player.dailyBadge).threshold > DailyGoalStore.todayProgress`, the local count is raised to the badge value (`raiseTodayProgress`) and a one-shot toast warns the user (`mohamed_lovers_badge_score_adjusted`, all four locales, cleared via `dismissBadgeAdjustment()`). Equal-or-lower badges are a no-op, so the reconcile is self-limiting and the toast fires once.
 - Safe across days because `generate-stats.js` **clears `dailyBadge` nightly at 23:45 Cairo** — a badge on the node always belongs to the current Cairo day, so it can never inflate tomorrow's count. Badge thresholds top out at 10,000, well under the 25k push cap, so the two never fight.
-- Tests: `commonTest/presentation/MohamedLoversViewModelDailyCapTest.kt`.
+- **Abnormal-user trail.** Every adjustment is recorded at RTDB `mohamed_lovers/users/{uid}/badgeAdjustments/{yyyy-MM-dd HH;mm}` (Cairo minute, same key format as `externalLog`) = `{case, at, serverAt, progress, badge, badgeValue}`. `progress` is the short count **as it was found, before the raise**; `badgeValue` is what it was raised to; `at` is the device clock and `serverAt` a `ServerValue.TIMESTAMP`, so a wide gap between them flags a manipulated device clock. `case` is `badge_above_progress` (the only case today — the field exists so future reconciliation reasons share the node). One adjustment is normal (reinstall, cleared storage, second device); a device producing them repeatedly is the signal.
+- Core files for the log: `domain/DailyBadgeAdjustmentLog.kt` (`DailyBadgeAdjustment`, `CASE_BADGE_ABOVE_PROGRESS`, `entryKey`), `domain/MohamedLoversRepository.kt` (`logDailyBadgeAdjustment`), `data/firebase/MohamedLoversFirebaseClient.kt` (`BADGE_ADJUSTMENTS_PATH`, `appendBadgeAdjustmentLog`). The write is fire-and-forget from `reconcileDailyBadge` and never gates the adjustment the user already saw.
+- RTDB rules: `users/{uid}/badgeAdjustments/$entryKey` validates `hasChildren(['case','at','progress','badge','badgeValue'])` with a per-field validator and `$other: false`, under the existing cascading `users/$uid` write grant (the node's own `$other: false` meant the key had to be whitelisted). The user node is `.read: false`, so the client writes but never reads it back; admin scripts bypass. No Firestore mirror — matching `scoreHistory`/`paceFlags`, the other per-user tracking nodes.
+- Tests: `commonTest/domain/MohamedLoversRepositoryBadgeAdjustmentTest.kt` (log contents + Cairo-minute key), `commonTest/presentation/MohamedLoversViewModelDailyCapTest.kt`.
 
 ### External-entry log & server-backed manual cap
 
@@ -248,6 +251,7 @@ mohamed_lovers/
 │   ├── leaderboardNotifsEnabled         # client opt-in for populate-leaderboard.js push (Settings; absent = on)
 │   ├── scoreHistory/{dateKey}            # server-only daily per-user score snapshot (that day's total)
 │   ├── paceFlags/{dateKey}               # server-only: {totalCount,dayOfRound,threshold,countryCode} when round total > dayOfRound×11k
+│   ├── badgeAdjustments/{yyyy-MM-dd HH;mm} # client-written: {case,at,serverAt,progress,badge,badgeValue} per daily-badge reconciliation
 │   └── achievements/{roundKey}/          # rank, score, date
 └── {roundKey}/                           # e.g. "2026-05-16" (next Friday Cairo date)
     ├── roundTotal, roundPlayerCount      # server-computed aggregates

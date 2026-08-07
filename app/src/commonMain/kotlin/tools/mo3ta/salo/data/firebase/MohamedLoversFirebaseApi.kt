@@ -2,6 +2,7 @@ package tools.mo3ta.salo.data.firebase
 
 import kotlinx.coroutines.flow.Flow
 import tools.mo3ta.salo.domain.AppUpdateConfig
+import tools.mo3ta.salo.domain.DailyBadgeAdjustment
 import tools.mo3ta.salo.domain.FirebaseLeaderboard
 import tools.mo3ta.salo.domain.HeroesBoard
 import tools.mo3ta.salo.domain.MohamedLoversMedals
@@ -64,6 +65,17 @@ interface MohamedLoversFirebaseApi {
 
     /** Reads the manual allowance already consumed on [dayKey]; 0 when the node is absent. */
     suspend fun fetchExternalDailyUsed(roundKey: String, uid: String, dayKey: String): Result<Int>
+
+    /**
+     * Records one daily-badge reconciliation at `users/{uid}/badgeAdjustments/{timeKey}`, so a
+     * device that repeatedly loses its day count can be spotted. Record-only; see
+     * [tools.mo3ta.salo.domain.DailyBadgeAdjustmentLog].
+     */
+    suspend fun appendBadgeAdjustmentLog(
+        uid: String,
+        timeKey: String,
+        adjustment: DailyBadgeAdjustment,
+    ): Result<Unit>
     /**
      * Lower the player's saved competition score by [amount] to correct a mistaken entry.
      * The score is floored at 0 (never negative). Returns the reduction actually applied.
