@@ -33,7 +33,26 @@ __all__ = [
     "EvaluationResult",
     "evaluate_model",
     "predict_dataset",
+    "wilson_interval",
 ]
+
+
+def wilson_interval(proportion: float, count: int, z: float = 1.96) -> Tuple[float, float]:
+    """Wilson score interval for ``proportion`` measured on ``count`` samples.
+
+    A split of a few dozen clips cannot measure a model: a proportion over ``n``
+    samples only takes values in steps of ``1/n``, and its interval spans most of
+    the range. Reporting the interval next to the point estimate keeps a number
+    like "0.10 on 10 clips" from being read as a result.
+    """
+    n = float(count)
+    if n <= 0:
+        return (float("nan"), float("nan"))
+    p = float(proportion)
+    denominator = 1.0 + z * z / n
+    center = (p + z * z / (2.0 * n)) / denominator
+    half = z * np.sqrt(p * (1.0 - p) / n + z * z / (4.0 * n * n)) / denominator
+    return (float(max(center - half, 0.0)), float(min(center + half, 1.0)))
 
 
 @dataclass
@@ -84,21 +103,8 @@ class EvaluationResult:
         return self.y_prob.max(axis=1)
 
     def accuracy_interval(self, z: float = 1.96) -> Tuple[float, float]:
-        """95% Wilson score interval for the accuracy.
-
-        A split of a few dozen clips cannot measure a model: accuracy on ``n``
-        samples only takes values in steps of ``1/n``, and its interval spans most
-        of the range. Reporting the interval next to the point estimate keeps a
-        number like "0.10 on 10 clips" from being read as a result.
-        """
-        n = float(self.num_samples)
-        if n <= 0:
-            return (float("nan"), float("nan"))
-        p = self.accuracy
-        denominator = 1.0 + z * z / n
-        center = (p + z * z / (2.0 * n)) / denominator
-        half = z * np.sqrt(p * (1.0 - p) / n + z * z / (4.0 * n * n)) / denominator
-        return (float(max(center - half, 0.0)), float(min(center + half, 1.0)))
+        """95% Wilson score interval for the accuracy."""
+        return wilson_interval(self.accuracy, self.num_samples, z)
 
     def prediction_distribution(self) -> Dict[str, int]:
         """How many clips were predicted as each class, most-predicted first."""

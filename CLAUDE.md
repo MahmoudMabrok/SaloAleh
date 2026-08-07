@@ -312,8 +312,27 @@ All workflows use secrets: `FIREBASE_SERVICE_ACCOUNT`, `FIREBASE_DATABASE_URL`.
 Python, not part of the KMP build. Full docs in `DhikrSpeech/README.md`.
 
 - **`notebooks/DhikrSpeech.ipynb` is the only notebook.** It runs the whole pipeline top to bottom in
-  five sections (`01 · Dataset` … `05 · Export`). The per-stage notebooks it was built from were
+  five sections (`01 · Dataset` … `05 · Export`), plus an optional `06 · Experiment` that is not part
+  of the pipeline and is skipped by a normal run. The per-stage notebooks it was built from were
   deleted deliberately — do not recreate them, and make every notebook change here.
+- **Section `06 · Experiment` answers "one model per dhikr?"** — the recurring proposal to replace the
+  multi-class model with N binary detectors. `src/experiments.py` trains one one-vs-rest model per
+  phrase and scores them against the multi-class model on the *same* clips, holding the manifest,
+  splits, architecture, augmentation, optimiser, seed and epoch budget fixed so the difference is the
+  approach. It reports three things separately because they can disagree: per-phrase detection
+  (threshold-free AUC/AP), naming the right phrase (both sides restricted to the phrase columns, so
+  `unknown` cannot absorb a mistake), and staying quiet on `unknown` clips (same accept rule for
+  both). It is built to be able to return a **tie** — Wilson intervals sit next to every accuracy and
+  a sub-`0.02` AUC difference is reported as noise, not a winner. The expected result is that
+  one-vs-rest loses on the nested-prefix phrases (`سبحان الله` ⊂ `سبحان الله وبحمده` ⊂
+  `سبحان الله العظيم وبحمده`, `اللهم صل على محمد` ⊂ `اللهم صل وسلم على نبينا محمد`), which softmax
+  learns as competing outputs and a binary detector never sees as a label. Runs land in
+  `checkpoints/ovr_{phrase}/`, separate from the shipped run, and are never exported.
+- **`DhikrSpeech/tests/` is pytest over the scoring logic only** (`python3 -m pytest DhikrSpeech/tests`,
+  needs numpy/scikit-learn/librosa but **not** TensorFlow — `experiments.py` imports `models`/`trainer`
+  lazily inside the training function to keep it that way). Training itself is not covered: it needs a
+  GPU and the dataset on Drive. What is covered is the arithmetic that could silently produce a wrong
+  verdict.
 - `configs/config.yaml` is the only place settings live; the notebooks read it and hold no
   thresholds or hyperparameters of their own. All logic lives in `DhikrSpeech/src/`.
 - **`DhikrSpeech/space/` is the Gradio app for testing an export** (classify a clip, scan a

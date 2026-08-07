@@ -36,7 +36,8 @@ _EXPORTS = {
         "scan_dataset",
         "validate_dataset",
     ),
-    "metrics": ("EvaluationResult", "evaluate_model"),
+    "metrics": ("EvaluationResult", "evaluate_model", "wilson_interval"),
+    "experiments": ("ComparisonReport", "compare_one_vs_rest", "train_one_vs_rest"),
     "models": ("build_model", "model_summary_text"),
     "trainer": ("Trainer", "set_global_seed"),
     "export": (
@@ -56,7 +57,18 @@ _SYMBOL_TO_MODULE = {
 __all__ = sorted(_SYMBOL_TO_MODULE) + sorted(_EXPORTS) + ["__version__"]
 
 if TYPE_CHECKING:  # pragma: no cover - import-time hints for editors only
-    from . import audio, augmentation, config, dataset, export, features, metrics, models, trainer
+    from . import (
+        audio,
+        augmentation,
+        config,
+        dataset,
+        experiments,
+        export,
+        features,
+        metrics,
+        models,
+        trainer,
+    )
     from .config import Config, default_config_path, load_config, package_root
 
 
