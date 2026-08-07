@@ -21,14 +21,15 @@ class SalawatManualCapTest {
     }
 
     @Test
-    fun dayTen_reachesMaxCap() {
-        // Install day is day 1, so day 10 is nine days later.
-        assertEquals(SalawatManualCap.MAX_DAILY_CAP, SalawatManualCap.dailyCap(LocalDate(2026, 7, 31), install))
-        assertEquals(10_000, SalawatManualCap.MAX_DAILY_CAP)
+    fun dayFifteen_reachesMaxCap() {
+        // Install day is day 1, so day 15 is fourteen days later.
+        assertEquals(10_000, SalawatManualCap.dailyCap(LocalDate(2026, 7, 31), install))
+        assertEquals(SalawatManualCap.MAX_DAILY_CAP, SalawatManualCap.dailyCap(LocalDate(2026, 8, 5), install))
+        assertEquals(15_000, SalawatManualCap.MAX_DAILY_CAP)
     }
 
     @Test
-    fun afterDayTen_staysFlatAtMax() {
+    fun afterTheRamp_staysFlatAtMax() {
         assertEquals(SalawatManualCap.MAX_DAILY_CAP, SalawatManualCap.dailyCap(LocalDate(2026, 8, 15), install))
         assertEquals(SalawatManualCap.MAX_DAILY_CAP, SalawatManualCap.dailyCap(LocalDate(2027, 1, 1), install))
     }

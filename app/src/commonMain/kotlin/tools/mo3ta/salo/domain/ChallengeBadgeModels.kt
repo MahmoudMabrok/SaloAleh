@@ -21,7 +21,7 @@ const val BAQIYAT_MANUAL_DAILY_CAP = 2_000
  * the app is typed in. Regular in-app tapping is uncapped; only these external batches are
  * limited so a single manual entry can't flood the leaderboard. Resets each Cairo day.
  */
-const val MOHAMED_LOVERS_MANUAL_DAILY_CAP = 10_000
+const val MOHAMED_LOVERS_MANUAL_DAILY_CAP = 15_000
 
 /**
  * The daily challenges that award a repeatable achievement badge. A "win" is
