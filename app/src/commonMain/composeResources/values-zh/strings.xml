@@ -557,6 +557,8 @@
     <string name="manual_mode_subtract">➖ 扣除</string>
     <string name="manual_subtract_submit">✦ 从计数中扣除 ✦</string>
     <string name="manual_subtract_hint">用于修正误加的数目 — 将从当前总数中扣除，且不会低于零</string>
+    <string name="mohamed_lovers_daily_cap_reached">您已达到今日竞赛上限（%1$d），超出部分今天不计入。</string>
+    <string name="mohamed_lovers_badge_score_adjusted">已根据服务器保存的徽章将今日数量设为 %1$d。</string>
 
     <!-- Share Card -->
     <string name="share_card_out_of_participants">共 %1$d 位参与者</string>

@@ -64,6 +64,8 @@ import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.grace_warning
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_badge_score_adjusted
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_daily_cap_reached
 import tools.mo3ta.salo.generated.resources.grace_warning_cta
 import tools.mo3ta.salo.generated.resources.grace_warning_title
 import tools.mo3ta.salo.generated.resources.heart_index_label
@@ -116,6 +118,7 @@ import tools.mo3ta.salo.ui.components.RoundEndBanner
 import tools.mo3ta.salo.ui.components.OvertakeOverlay
 import tools.mo3ta.salo.ui.components.MilestoneCelebration
 import tools.mo3ta.salo.domain.DailyBadge
+import tools.mo3ta.salo.domain.MOHAMED_LOVERS_DAILY_PUSH_CAP
 import tools.mo3ta.salo.ui.components.DailyBadgeInfoDialog
 import tools.mo3ta.salo.ui.components.DailyBadgeTiersSheet
 import tools.mo3ta.salo.ui.components.MedalInfoDialog
@@ -149,6 +152,10 @@ fun MohamedLoversScreen(
     val rewardText = stringResource(Res.string.mohamed_lovers_reward_text)
     val waitingNetworkLabel = stringResource(Res.string.mohamed_lovers_blocked_waiting_network)
     val firebaseOffLabel = stringResource(Res.string.mohamed_lovers_blocked_firebase_off)
+    val dailyCapReachedLabel =
+        stringResource(Res.string.mohamed_lovers_daily_cap_reached, MOHAMED_LOVERS_DAILY_PUSH_CAP)
+    val badgeAdjustedLabel =
+        stringResource(Res.string.mohamed_lovers_badge_score_adjusted, state.badgeAdjustedTo ?: 0)
 
     DisposableEffect(lifecycleOwner, viewModel) {
         val observer = LifecycleEventObserver { _, event ->
@@ -175,6 +182,22 @@ fun MohamedLoversScreen(
         if (!message.isNullOrBlank()) {
             showPlatformToast(message)
             viewModel.clearError()
+        }
+    }
+
+    // Daily competition push cap: the flush dropped salawat that no longer fit under today's cap.
+    LaunchedEffect(state.dailyCapDiscarded) {
+        if (state.dailyCapDiscarded != null) {
+            showPlatformToast(dailyCapReachedLabel)
+            viewModel.dismissDailyCapNotice()
+        }
+    }
+
+    // The local day count was behind the badge the server already recorded, so it adopted it.
+    LaunchedEffect(state.badgeAdjustedTo) {
+        state.badgeAdjustedTo?.let {
+            showPlatformToast(badgeAdjustedLabel)
+            viewModel.dismissBadgeAdjustment()
         }
     }
 

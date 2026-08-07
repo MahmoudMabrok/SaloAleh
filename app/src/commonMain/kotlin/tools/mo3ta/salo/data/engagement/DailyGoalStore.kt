@@ -34,6 +34,32 @@ class DailyGoalStore(private val settings: Settings) {
 
     fun isGoalComplete(today: LocalDate): Boolean = todayProgress(today) >= todayTarget(today)
 
+    /**
+     * Overwrite today's progress with [value]. Used only to reconcile the local count with
+     * server-side evidence (the published daily badge, or the daily push cap) — ordinary salawat
+     * always go through [recordTap].
+     */
+    fun setTodayProgress(today: LocalDate, value: Int) {
+        settings.putString(KEY_DATE, today.toString())
+        settings.putInt(KEY_PROGRESS, value.coerceAtLeast(0))
+    }
+
+    /** Lowers today's progress to at most [max]. Returns the resulting progress. */
+    fun clampTodayProgress(today: LocalDate, max: Int): Int {
+        val current = todayProgress(today)
+        if (current <= max) return current
+        setTodayProgress(today, max)
+        return max
+    }
+
+    /** Raises today's progress to at least [min]. Returns the resulting progress. */
+    fun raiseTodayProgress(today: LocalDate, min: Int): Int {
+        val current = todayProgress(today)
+        if (current >= min) return current
+        setTodayProgress(today, min)
+        return min
+    }
+
     private companion object {
         const val KEY_DATE = "daily_goal_date"
         const val KEY_PROGRESS = "daily_goal_progress"

@@ -135,6 +135,50 @@ class MohamedLoversRepositoryFlushTest {
     }
 
     @Test
+    fun flush_pushes_only_the_allowance_and_discards_the_rest() = runTest {
+        val store = MohamedLoversSessionStore(MapSettings())
+        store.incrementPendingClick("R1", 30_000)
+        val (repo, fake) = buildRepo(sessionStore = store)
+
+        val result = repo.flushPendingSession("EG", allowance = MOHAMED_LOVERS_DAILY_PUSH_CAP)
+
+        assertEquals(1, fake.incrementCalls.size)
+        assertEquals(MOHAMED_LOVERS_DAILY_PUSH_CAP, fake.incrementCalls[0].delta)
+        assertEquals(MOHAMED_LOVERS_DAILY_PUSH_CAP, result.getOrThrow().pushed)
+        assertEquals(5_000, result.getOrThrow().discarded)
+        // The pending is cleared in full — the excess is dropped, not carried to tomorrow.
+        assertEquals(0, store.getPendingSession("R1").clickCount)
+    }
+
+    @Test
+    fun flush_with_no_allowance_left_pushes_nothing_and_drops_pending() = runTest {
+        val store = MohamedLoversSessionStore(MapSettings())
+        store.incrementPendingClick("R1", 400)
+        val (repo, fake) = buildRepo(sessionStore = store)
+
+        val result = repo.flushPendingSession("EG", allowance = 0)
+
+        assertTrue(fake.incrementCalls.isEmpty(), "nothing may be pushed once the cap is spent")
+        assertEquals(0, result.getOrThrow().pushed)
+        assertEquals(400, result.getOrThrow().discarded)
+        assertEquals(0, store.getPendingSession("R1").clickCount)
+    }
+
+    @Test
+    fun flush_allowance_is_shared_across_pending_rounds() = runTest {
+        val store = MohamedLoversSessionStore(MapSettings())
+        store.incrementPendingClick("R1", 700)
+        store.incrementPendingClick("R2", 700)
+        val (repo, fake) = buildRepo(sessionStore = store)
+
+        val result = repo.flushPendingSession("EG", allowance = 1_000)
+
+        assertEquals(1_000, result.getOrThrow().pushed)
+        assertEquals(400, result.getOrThrow().discarded)
+        assertEquals(listOf(700, 300), fake.incrementCalls.map { it.delta })
+    }
+
+    @Test
     fun flush_auth_failure_does_not_clear_pending() = runTest {
         val store = MohamedLoversSessionStore(MapSettings())
         store.incrementPendingClick("R1", 5)

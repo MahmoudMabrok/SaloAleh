@@ -2,10 +2,12 @@ package tools.mo3ta.salo.data.session
 
 import com.russhwolf.settings.MapSettings
 import kotlinx.datetime.LocalDate
+import tools.mo3ta.salo.domain.MOHAMED_LOVERS_DAILY_PUSH_CAP
 import tools.mo3ta.salo.domain.MOHAMED_LOVERS_MANUAL_DAILY_CAP
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class MohamedLoversSessionStoreTest {
@@ -267,6 +269,67 @@ class MohamedLoversSessionStoreTest {
         store.recordManualEntry(d1, 5_000, dailyCap = 2_000)
         assertEquals(0, store.manualRemainingToday(d1, dailyCap = 2_000))
         assertEquals(MOHAMED_LOVERS_MANUAL_DAILY_CAP - 2_000, store.manualRemainingToday(d1))
+    }
+
+    // --- Daily competition push cap ---
+
+    @Test
+    fun dailyPush_startsWithTheFullCap() {
+        assertEquals(0, store.dailyPushUsed(d1))
+        assertEquals(MOHAMED_LOVERS_DAILY_PUSH_CAP, store.dailyPushRemaining(d1))
+    }
+
+    @Test
+    fun recordDailyPush_accumulatesAndDrainsTheAllowance() {
+        store.recordDailyPush(d1, 10_000)
+        store.recordDailyPush(d1, 5_000)
+        assertEquals(15_000, store.dailyPushUsed(d1))
+        assertEquals(MOHAMED_LOVERS_DAILY_PUSH_CAP - 15_000, store.dailyPushRemaining(d1))
+    }
+
+    @Test
+    fun dailyPush_resetsOnANewCairoDay() {
+        store.recordDailyPush(d1, MOHAMED_LOVERS_DAILY_PUSH_CAP)
+        assertEquals(0, store.dailyPushRemaining(d1))
+        assertEquals(0, store.dailyPushUsed(d2))
+        assertEquals(MOHAMED_LOVERS_DAILY_PUSH_CAP, store.dailyPushRemaining(d2))
+    }
+
+    @Test
+    fun syncDailyPushFromRemote_adoptsTheServerTotalAfterAReinstall() {
+        // Local ledger is empty (fresh install), the server already recorded 18k for the day.
+        assertEquals(18_000, store.syncDailyPushFromRemote(d1, 18_000))
+        assertEquals(MOHAMED_LOVERS_DAILY_PUSH_CAP - 18_000, store.dailyPushRemaining(d1))
+    }
+
+    @Test
+    fun syncDailyPushFromRemote_keepsTheLocalLedgerWhenItIsAhead() {
+        // A round rollover zeroes the server-side day total mid-day; the local ledger must win.
+        store.recordDailyPush(d1, 20_000)
+        assertEquals(20_000, store.syncDailyPushFromRemote(d1, 0))
+        assertEquals(MOHAMED_LOVERS_DAILY_PUSH_CAP - 20_000, store.dailyPushRemaining(d1))
+    }
+
+    @Test
+    fun baselineIsStoredWithItsFetchTimeAndClearedOnANewDay() {
+        store.saveDailyBaseline(d1, yesterdayTotalScore = 9_000, atMs = 1_700_000_000_000L)
+        assertEquals(9_000, store.dailyBaseline(d1))
+        assertEquals(1_700_000_000_000L, store.dailyBaselineFetchedAt(d1))
+        // The next Cairo day starts without a baseline until a fresh snapshot arrives.
+        assertNull(store.dailyBaseline(d2))
+        assertEquals(0L, store.dailyBaselineFetchedAt(d2))
+    }
+
+    @Test
+    fun baselineIsNullBeforeAnyFetch() {
+        assertNull(store.dailyBaseline(d1))
+    }
+
+    @Test
+    fun savingTheBaselineDoesNotDisturbTheDaysUsage() {
+        store.recordDailyPush(d1, 4_000)
+        store.saveDailyBaseline(d1, yesterdayTotalScore = 9_000, atMs = 1L)
+        assertEquals(4_000, store.dailyPushUsed(d1))
     }
 
     // --- Legacy migration ---

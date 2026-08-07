@@ -151,6 +151,29 @@ Client-published per-Cairo-day salawat total that drives the daily leaderboard d
 - RTDB rules: `players/{uid}/todayCount` validates `isNumber() && >= 0` (client-writable, absolute). `users/{uid}/scoreHistory`, `users/{uid}/paceFlags`, and top-level `mohamed_lovers/abnormal_users` are server-only — `scoreHistory`/`paceFlags` use the `.validate: false` pattern (the cascading `users/$uid` write grant reaches them, so `.write:false` would be useless); `abnormal_users` is an explicit named node (`.read:false`, `.write:false`) so it isn't shadowed by the `$round` wildcard, and the Admin SDK bypasses both. No Firestore mirror (RTDB is the source of truth for these).
 - Tests: `commonTest/data/engagement/DailyGoalStoreTest.kt` (daily progress), `scripts/abnormal-users.test.js` (`computeTodayScore` + `buildDailyScoreSnapshots` incl. pace flags + `roundDayNumber`).
 
+### Daily competition push cap (25k/day)
+
+Hard client-side ceiling on how much competition score may reach Firebase in one Cairo day, across every source (taps, manual entry, extension sync) and every round. Sits *below* the server's record-only `abnormal_users`/`paceFlags` tracking: the cap actually blocks the write, the server flags still record what got through.
+
+- Core files: `domain/SalawatDailyCap.kt` (`MOHAMED_LOVERS_DAILY_PUSH_CAP = 25_000`, `serverDayTotal`/`remaining`/`allowedPush`), `data/session/MohamedLoversSessionStore.kt` (the per-day ledger), `domain/MohamedLoversRepository.kt` (`flushPendingSession(..., allowance)` → `MohamedLoversFlushResult`), `presentation/MohamedLoversViewModel.kt` (`reconcileFromSelfPlayer`, `manualRemainingNow`), `ui/MohamedLoversScreen.kt` (toast).
+- **Two-sided ledger.** How much has been pushed today is `max(local, server)`:
+  - local — `ml_push_date`/`ml_push_used` in `MohamedLoversSessionStore` (`dailyPushUsed`/`recordDailyPush`), advanced by the amount each flush actually pushed;
+  - server — `SalawatDailyCap.serverDayTotal(totalCount, yesterdayTotalScore)`, i.e. the round total minus the baseline the 23:45 Cairo cron stamps, merged in by `syncDailyPushFromRemote` on every self-player snapshot.
+  Taking the higher covers both holes: the server total survives a **reinstall** (which wipes the local ledger), the local ledger survives a **Friday 19:00 round rollover** (which zeroes the server-side day total mid-day). Neither alone is enough.
+- **Baseline persistence.** `yesterdayTotalScore` is stored with the Cairo day *and* the epoch-ms it was fetched (`ml_push_baseline`/`ml_push_baseline_at`, `saveDailyBaseline`/`dailyBaseline`/`dailyBaselineFetchedAt`), so a user who leaves and comes back later the same day still knows where the day started without waiting for a snapshot. Both are cleared when the ledger rolls onto a new Cairo day.
+- **Enforcement is at the flush**, the last point before the network write. `flushPendingSession` clamps each round's pending to what is left of the allowance and **clears the pending in full either way** — score above the cap is *discarded, not deferred to tomorrow*, so the on-screen number falls back in line with the remote one instead of retrying forever. The very first push of a day goes through the same path, so it is capped too. The published absolute `todayCount` is clamped to the cap, and on a capped flush `DailyGoalStore.clampTodayProgress` pulls the local day count down to match, keeping the self row, the badge and the daily leaderboard on one number.
+- The manual sheet's remaining allowance is `min(manual cap, push cap remaining)` (`manualRemainingNow`), and `submitManualSalawat` clamps to the push allowance **before** touching the manual ledger — so the ledger never records salawat that the flush would immediately discard.
+- UI: `MohamedLoversUiState.dailyCapDiscarded` is a one-shot toast (`mohamed_lovers_daily_cap_reached`, all four locales), cleared via `dismissDailyCapNotice()`.
+- Tests: `commonTest/domain/SalawatDailyCapTest.kt`, the cap cases in `commonTest/domain/MohamedLoversRepositoryFlushTest.kt` and `commonTest/data/session/MohamedLoversSessionStoreTest.kt`, `commonTest/presentation/MohamedLoversViewModelDailyCapTest.kt`.
+
+### Daily-badge score reconciliation
+
+The server-published daily badge is treated as evidence of a **minimum** day count: a badge only lands after the score that earned it reached the server (`publishDailyBadgeIfChanged` runs after the flush), so a local count below the badge's threshold means the device lost today's progress — a reinstall, cleared storage, or a mid-day device switch.
+
+- `MohamedLoversPlayer.dailyBadge` is parsed from the player node (`toPlayer()`), and `MohamedLoversViewModel.reconcileDailyBadge` runs on every self-player snapshot. When `DailyBadge.fromKey(player.dailyBadge).threshold > DailyGoalStore.todayProgress`, the local count is raised to the badge value (`raiseTodayProgress`) and a one-shot toast warns the user (`mohamed_lovers_badge_score_adjusted`, all four locales, cleared via `dismissBadgeAdjustment()`). Equal-or-lower badges are a no-op, so the reconcile is self-limiting and the toast fires once.
+- Safe across days because `generate-stats.js` **clears `dailyBadge` nightly at 23:45 Cairo** — a badge on the node always belongs to the current Cairo day, so it can never inflate tomorrow's count. Badge thresholds top out at 10,000, well under the 25k push cap, so the two never fight.
+- Tests: `commonTest/presentation/MohamedLoversViewModelDailyCapTest.kt`.
+
 ### External-entry log & server-backed manual cap
 
 Audit trail for externally-recorded salawat plus the server-side mirror of the manual ("record external") daily allowance. **Every** external push — manual entry, Chrome-extension sync, and corrections — is stamped onto the player node as it happens, so each claim leaves a timestamped record next to the score it produced. The cap-consuming half of the same write makes the daily allowance survive a reinstall.

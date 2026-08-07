@@ -40,6 +40,8 @@ import tools.mo3ta.salo.domain.MohamedLoversCompetitionWindow
 import tools.mo3ta.salo.domain.MohamedLoversMedals
 import tools.mo3ta.salo.domain.MohamedLoversPlayer
 import tools.mo3ta.salo.domain.MohamedLoversRepository
+import tools.mo3ta.salo.domain.MOHAMED_LOVERS_DAILY_PUSH_CAP
+import tools.mo3ta.salo.domain.SalawatDailyCap
 import tools.mo3ta.salo.domain.SalawatManualCap
 import tools.mo3ta.salo.domain.buildMohamedLoversDisplayTag
 import tools.mo3ta.salo.ui.getAppVersion
@@ -103,7 +105,7 @@ class MohamedLoversViewModel(
                 dailyGoalTarget = dailyGoalStore.todayTarget(today),
                 dailyGoalProgress = todayProgress,
                 currentDailyBadge = DailyBadge.fromTapCount(todayProgress)?.key,
-                manualRemaining = sessionStore.manualRemainingToday(today, manualDailyCap(today)),
+                manualRemaining = manualRemainingNow(today),
                 todayCount = todayProgress,
             )
         }
@@ -295,10 +297,23 @@ class MohamedLoversViewModel(
                 _state.update { it.copy(isSavingSession = true, error = null) }
 
                 val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
+                // Last gate before the network write: whatever is pending is clamped to what is
+                // left of the day's cap, and the published day count is clamped to the cap too so
+                // the daily leaderboard can never rank a score the player was not allowed to push.
+                val allowance = sessionStore.dailyPushRemaining(today)
                 val result = repository.flushPendingSession(
                     countryCode = state.value.countryCode,
-                    todayCount = dailyGoalStore.todayProgress(today),
+                    todayCount = dailyGoalStore.todayProgress(today).coerceAtMost(MOHAMED_LOVERS_DAILY_PUSH_CAP),
+                    allowance = allowance,
                 )
+                val flush = result.getOrNull()
+                if (flush != null && flush.pushed > 0) sessionStore.recordDailyPush(today, flush.pushed)
+                val cappedTodayCount = if (flush != null && flush.discarded > 0) {
+                    // "Reset the local number to match the remote one": the discarded salawat never
+                    // scored, so today's local count is pulled back to the cap as well, keeping the
+                    // self row, the badge and the published daily count on the same number.
+                    dailyGoalStore.clampTodayProgress(today, MOHAMED_LOVERS_DAILY_PUSH_CAP)
+                } else null
                 val latestPending = repository.getPendingSession(roundKey)
                 inFlightFlush = 0
 
@@ -306,6 +321,9 @@ class MohamedLoversViewModel(
                     it.copy(
                         isSavingSession = false,
                         sessionClicks = latestPending.clickCount,
+                        todayCount = cappedTodayCount ?: it.todayCount,
+                        dailyGoalProgress = cappedTodayCount ?: it.dailyGoalProgress,
+                        dailyCapDiscarded = flush?.discarded?.takeIf { d -> d > 0 } ?: it.dailyCapDiscarded,
                         error = result.exceptionOrNull()?.message
                             ?.takeIf { msg -> msg.isNotBlank() }
                             ?.let(MohamedLoversError::Raw),
@@ -401,7 +419,7 @@ class MohamedLoversViewModel(
         _state.update {
             it.copy(
                 showManualSalawatSheet = true,
-                manualRemaining = sessionStore.manualRemainingToday(today, manualDailyCap(today)),
+                manualRemaining = manualRemainingNow(today),
             )
         }
     }
@@ -422,6 +440,16 @@ class MohamedLoversViewModel(
     private fun manualDailyCap(today: LocalDate): Int =
         SalawatManualCap.dailyCap(today, installDate(today), state.value.roundStreak)
 
+    /**
+     * Manual allowance that can actually be scored right now: the manual-entry cap, further limited
+     * by what is left of the day's competition push cap. Without the second limit the sheet would
+     * offer allowance for salawat that the flush would immediately discard.
+     */
+    private fun manualRemainingNow(today: LocalDate): Int = minOf(
+        sessionStore.manualRemainingToday(today, manualDailyCap(today)),
+        sessionStore.dailyPushRemaining(today),
+    )
+
     fun submitManualSalawat(count: Int) {
         val roundKey = state.value.roundKey ?: return
         if (count <= 0) return
@@ -429,9 +457,18 @@ class MohamedLoversViewModel(
         // Clamp to the day's remaining external-entry allowance so a single manual batch can't
         // flood the competition score. Regular taps are uncapped and never touch this ledger.
         val cap = manualDailyCap(today)
-        val applied = sessionStore.recordManualEntry(today, count, cap)
+        // Clamp to what the day's push cap still allows *before* touching the manual ledger, so the
+        // ledger only ever records salawat that can actually reach the server.
+        val pushable = count.coerceAtMost(sessionStore.dailyPushRemaining(today))
+        val applied = if (pushable > 0) sessionStore.recordManualEntry(today, pushable, cap) else 0
         if (applied <= 0) {
-            _state.update { it.copy(showManualSalawatSheet = false, manualRemaining = 0) }
+            _state.update {
+                it.copy(
+                    showManualSalawatSheet = false,
+                    manualRemaining = 0,
+                    dailyCapDiscarded = if (pushable <= 0) count else it.dailyCapDiscarded,
+                )
+            }
             return
         }
         val nowMs = Clock.System.now().toEpochMilliseconds()
@@ -454,7 +491,7 @@ class MohamedLoversViewModel(
                 showHeartRefillNudge = shouldShowHeartRefillNudge(heart.first, heart.second),
                 roundStreak = streakResult.currentStreak,
                 roundStreakCelebration = streakResult.newlyEarnedBadge ?: it.roundStreakCelebration,
-                manualRemaining = sessionStore.manualRemainingToday(today, cap),
+                manualRemaining = manualRemainingNow(today),
             )
         }
         publishRoundStreak(roundKey, streakResult.currentStreak, prevStreak)
@@ -515,7 +552,7 @@ class MohamedLoversViewModel(
                 todayCount = todayTotal,
                 showManualSalawatSheet = false,
                 isSubmittingManualSalawat = serverReduction > 0,
-                manualRemaining = sessionStore.manualRemainingToday(today, manualDailyCap(today)),
+                manualRemaining = manualRemainingNow(today),
             )
         }
         applyLeaderboard()
@@ -745,7 +782,7 @@ class MohamedLoversViewModel(
         repository.fetchExternalUsedToday(roundKey, now).onSuccess { remoteUsed ->
             sessionStore.syncManualUsedFromRemote(today, remoteUsed)
             _state.update {
-                it.copy(manualRemaining = sessionStore.manualRemainingToday(today, manualDailyCap(today)))
+                it.copy(manualRemaining = manualRemainingNow(today))
             }
         }
     }
@@ -822,8 +859,11 @@ class MohamedLoversViewModel(
             selfJob?.cancel()
             selfJob = launch {
                 repository.observeSelfPlayer(roundKey, uid).collectLatest { result ->
-                    result.onSuccess { player -> remoteSelfPlayer = player; applyLeaderboard() }
-                        .onFailure { t -> _state.update { it.copy(error = t.toLoversError()) } }
+                    result.onSuccess { player ->
+                        remoteSelfPlayer = player
+                        reconcileFromSelfPlayer(player)
+                        applyLeaderboard()
+                    }.onFailure { t -> _state.update { it.copy(error = t.toLoversError()) } }
                 }
             }
 
@@ -906,6 +946,64 @@ class MohamedLoversViewModel(
             }
         }
     }
+
+    /**
+     * Reconciles the two pieces of server-side truth on every self-player snapshot:
+     *
+     * 1. **The day's push baseline.** `yesterdayTotalScore` is re-stamped nightly at 23:45 Cairo, so
+     *    during a Cairo day `totalCount - yesterdayTotalScore` is what the server has recorded for
+     *    today. It is persisted with its fetch time so a user who leaves and comes back later the
+     *    same day still knows where the day started, and merged into the local push ledger by taking
+     *    the higher of the two — which keeps the cap honest across both a reinstall (local ledger
+     *    wiped, server total intact) and a Friday round rollover (server total zeroed mid-day,
+     *    local ledger intact).
+     * 2. **The published daily badge.** The badge is server-owned evidence of a minimum day count
+     *    (and is cleared nightly by the same cron, so it is never stale across days). When it claims
+     *    more than the local count knows about, the local count adopts the badge's value and the
+     *    user is warned — see [reconcileDailyBadge].
+     */
+    private fun reconcileFromSelfPlayer(player: MohamedLoversPlayer?) {
+        if (player == null) return
+        val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
+        sessionStore.saveDailyBaseline(
+            today = today,
+            yesterdayTotalScore = player.yesterdayTotalScore,
+            atMs = Clock.System.now().toEpochMilliseconds(),
+        )
+        sessionStore.syncDailyPushFromRemote(
+            today = today,
+            serverDayTotal = SalawatDailyCap.serverDayTotal(player.totalCount, player.yesterdayTotalScore),
+        )
+        reconcileDailyBadge(player, today)
+    }
+
+    /**
+     * Raises today's local count to the threshold of the server-published daily badge when the badge
+     * claims more than the local count does — the badge only ever lands after the score that earned
+     * it reached the server, so a lower local count means the device lost the day's progress (a
+     * reinstall, cleared storage, or a mid-day switch). A one-shot warning is surfaced with it.
+     * No-op when the badge is absent or already covered by the local count.
+     */
+    private fun reconcileDailyBadge(player: MohamedLoversPlayer, today: LocalDate) {
+        val badge = DailyBadge.fromKey(player.dailyBadge) ?: return
+        val local = dailyGoalStore.todayProgress(today)
+        if (badge.threshold <= local) return
+        val adjusted = dailyGoalStore.raiseTodayProgress(today, badge.threshold)
+        _state.update {
+            it.copy(
+                todayCount = adjusted,
+                dailyGoalProgress = adjusted,
+                currentDailyBadge = badge.key,
+                badgeAdjustedTo = adjusted,
+            )
+        }
+    }
+
+    /** Clears the "score raised to your saved badge" warning once it has been shown. */
+    fun dismissBadgeAdjustment() = _state.update { it.copy(badgeAdjustedTo = null) }
+
+    /** Clears the "daily cap reached" warning once it has been shown. */
+    fun dismissDailyCapNotice() = _state.update { it.copy(dailyCapDiscarded = null) }
 
     private fun applyLeaderboard() {
         // Mid mode-switch the cached entries still belong to the previous mode. Leave the

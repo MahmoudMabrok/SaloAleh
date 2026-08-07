@@ -826,6 +826,7 @@ class MohamedLoversFirebaseClient(
             yesterdayTotalScore = (map[YESTERDAY_TOTAL_SCORE_KEY] as? Number)?.toInt() ?: 0,
             todayCount = (map[TODAY_COUNT_KEY] as? Number)?.toInt() ?: 0,
             nickname = map[NICKNAME_KEY] as? String ?: "",
+            dailyBadge = map[DAILY_BADGE_KEY] as? String ?: "",
         )
     }
 
