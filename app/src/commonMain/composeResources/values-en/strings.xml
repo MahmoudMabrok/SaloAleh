@@ -972,4 +972,7 @@
     <string name="backup_error_same">That account is already the one in use on this device.</string>
     <string name="backup_error_not_found">No account exists for that code.</string>
     <string name="backup_error_failed">Could not reach the server. Check your connection and try again.</string>
+    <string name="backup_public_id_header">Your public id</string>
+    <string name="backup_public_id_desc">This is the id your account is known by in the competition (its last 6 characters are your name on the leaderboard: %1$s). It is derived from the restore code one way, which is why it looks nothing like it — and why it cannot restore an account on its own.</string>
+    <string name="backup_public_id_copy">Copy public id</string>
 </resources>

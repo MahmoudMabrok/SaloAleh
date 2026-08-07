@@ -171,6 +171,47 @@ fun AccountBackupScreen(onBack: () -> Unit) {
                 lineHeight = 18.sp,
             )
 
+            // The code and the id it derives to look nothing alike, so they are shown together:
+            // the id (and its last 6 characters, the leaderboard name) is what the user already
+            // recognises, and seeing it here is the only way to confirm the code is really theirs.
+            SectionHeader(stringResource(Res.string.backup_public_id_header))
+
+            Text(
+                text = stringResource(Res.string.backup_public_id_desc, state.publicId.takeLast(6)),
+                color = Color.White.copy(alpha = 0.75f),
+                fontSize = 13.sp,
+                lineHeight = 20.sp,
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            Text(
+                text = state.publicId,
+                color = Color.White.copy(alpha = 0.7f),
+                fontSize = 12.sp,
+                fontFamily = FontFamily.Monospace,
+                lineHeight = 20.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color.White.copy(alpha = 0.05f))
+                    .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
+                    .padding(horizontal = 12.dp, vertical = 12.dp),
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            OutlinedButton(
+                onClick = {
+                    copyToClipboard(state.publicId)
+                    showPlatformToast(copiedToast)
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(Res.string.backup_public_id_copy), color = Color.White)
+            }
+
             SectionHeader(stringResource(Res.string.backup_restore_header))
 
             Text(

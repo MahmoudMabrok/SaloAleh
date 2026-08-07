@@ -13,6 +13,8 @@ import tools.mo3ta.salo.domain.AccountRestoreResult
 data class AccountBackupUiState(
     /** This device's backup code, shown for the user to copy and keep. */
     val backupCode: String = "",
+    /** The id derived from [backupCode]; shown so the user can confirm the two belong together. */
+    val publicId: String = "",
     val codeInput: String = "",
     val restoring: Boolean = false,
     /** Set once a restore attempt finishes; drives the result dialog. */
@@ -23,7 +25,12 @@ class AccountBackupViewModel(
     private val restoreManager: AccountRestoreManager,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(AccountBackupUiState(backupCode = restoreManager.currentBackupCode()))
+    private val _state = MutableStateFlow(
+        AccountBackupUiState(
+            backupCode = restoreManager.currentBackupCode(),
+            publicId = restoreManager.currentPublicId(),
+        ),
+    )
     val state: StateFlow<AccountBackupUiState> = _state.asStateFlow()
 
     fun onCodeInputChange(value: String) {
@@ -39,9 +46,10 @@ class AccountBackupViewModel(
                 current.copy(
                     restoring = false,
                     result = result,
-                    // A restore rewrites the device's identity, so the displayed code has to
-                    // follow it; a failed attempt leaves the old code in place.
+                    // A restore rewrites the device's identity, so the displayed code and id
+                    // have to follow it; a failed attempt leaves the old pair in place.
                     backupCode = restoreManager.currentBackupCode(),
+                    publicId = restoreManager.currentPublicId(),
                     codeInput = if (result is AccountRestoreResult.Restored) "" else current.codeInput,
                 )
             }

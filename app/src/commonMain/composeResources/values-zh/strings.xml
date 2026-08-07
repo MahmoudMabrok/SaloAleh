@@ -934,4 +934,7 @@
     <string name="backup_error_same">该账户已经是本设备正在使用的账户。</string>
     <string name="backup_error_not_found">没有找到与该码对应的账户。</string>
     <string name="backup_error_failed">无法连接服务器，请检查网络后重试。</string>
+    <string name="backup_public_id_header">你的公开 ID</string>
+    <string name="backup_public_id_desc">这是你的账户在竞赛中使用的 ID（其末 6 位就是排行榜上的名字：%1$s）。它由恢复码单向推导而来，因此看起来与恢复码完全不同，也无法单独用于恢复账户。</string>
+    <string name="backup_public_id_copy">复制公开 ID</string>
 </resources>

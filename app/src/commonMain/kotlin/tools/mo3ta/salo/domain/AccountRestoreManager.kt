@@ -49,6 +49,16 @@ class AccountRestoreManager(
     /** This device's own backup code — the raw uid the user should save to restore later. */
     fun currentBackupCode(): String = sessionStore.getRawUid()
 
+    /**
+     * The public id derived from the backup code (`sha256hex`) — the key the account lives under
+     * on the server and whose last 6 characters name the user on the leaderboard.
+     *
+     * Shown next to the code purely so the user can verify the pairing: the two strings look
+     * nothing alike, and without seeing them together there is no way to tell that the code
+     * really belongs to the account on screen.
+     */
+    fun currentPublicId(): String = sessionStore.getOrCreateUid()
+
     suspend fun restore(input: String): AccountRestoreResult {
         val code = when (val parsed = parseBackupCode(input)) {
             is BackupCodeParseResult.Valid -> parsed.code

@@ -934,4 +934,7 @@
     <string name="backup_error_same">یہ اکاؤنٹ پہلے ہی اس آلے پر استعمال ہو رہا ہے۔</string>
     <string name="backup_error_not_found">اس کوڈ کا کوئی اکاؤنٹ موجود نہیں۔</string>
     <string name="backup_error_failed">سرور تک رسائی نہیں ہو سکی۔ اپنا انٹرنیٹ دیکھ کر دوبارہ کوشش کریں۔</string>
+    <string name="backup_public_id_header">آپ کی عوامی شناخت</string>
+    <string name="backup_public_id_desc">مقابلے میں آپ کا اکاؤنٹ اسی شناخت سے پہچانا جاتا ہے (اس کے آخری ۶ حروف لیڈر بورڈ پر آپ کا نام ہیں: %1$s)۔ یہ بحالی کوڈ سے یک طرفہ طور پر اخذ کی گئی ہے، اسی لیے دونوں بالکل مختلف نظر آتے ہیں اور یہ اکیلی اکاؤنٹ بحال نہیں کر سکتی۔</string>
+    <string name="backup_public_id_copy">عوامی شناخت کاپی کریں</string>
 </resources>

@@ -984,4 +984,7 @@
     <string name="backup_error_same">هذا هو الحساب المستخدم على هذا الجهاز بالفعل.</string>
     <string name="backup_error_not_found">لا يوجد حساب بهذا الرمز.</string>
     <string name="backup_error_failed">تعذّر الاتصال بالخادم. تأكد من الإنترنت وحاول مجددًا.</string>
+    <string name="backup_public_id_header">معرّفك العام</string>
+    <string name="backup_public_id_desc">هذا هو المعرّف الذي يظهر به حسابك في المنافسة (آخر ٦ أحرف منه هي اسمك على اللوحة: %1$s). وهو مشتقّ من رمز الاستعادة بطريقة لا يمكن عكسها — لذلك يختلف شكله عن الرمز تمامًا، ولا يصلح وحده لاستعادة الحساب.</string>
+    <string name="backup_public_id_copy">نسخ المعرّف العام</string>
 </resources>
