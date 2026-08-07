@@ -351,7 +351,9 @@ All workflows use secrets: `FIREBASE_SERVICE_ACCOUNT`, `FIREBASE_DATABASE_URL`.
 
 `DhikrSpeech/` — Colab training pipeline that turns volunteer recordings (collected by
 `SpeechCollector/`, recruited from the app's Voice dhikr screen) into a quantised TFLite model.
-Python, not part of the KMP build. Full docs in `DhikrSpeech/README.md`.
+Python, not part of the KMP build. Full docs in `DhikrSpeech/README.md`; the concepts behind the
+pipeline (for someone with no ML/audio background, and the reference when explaining the model to
+other engineers) are in `DhikrSpeech/docs/LEARNING_GUIDE.md`.
 
 - **`notebooks/DhikrSpeech.ipynb` is the only notebook.** It runs the whole pipeline top to bottom in
   five sections (`01 · Dataset` … `05 · Export`), plus an optional `06 · Experiment` that is not part

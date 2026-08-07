@@ -21,6 +21,12 @@ recordings on Drive
 
 ## Contents
 
+> **New to machine learning or to audio?** Read
+> [`docs/LEARNING_GUIDE.md`](docs/LEARNING_GUIDE.md) first. It explains *why* every part of this
+> pipeline is the way it is — sampling, spectrograms, convolutions, quantisation, the counting
+> logic — assuming no ML background. This README is the operational how-to; that one is the
+> background.
+
 - [Layout](#layout)
 - [Quick start](#quick-start)
 - [1 · Upload the dataset](#1--upload-the-dataset)
@@ -62,6 +68,8 @@ DhikrSpeech/
 │   ├── app.py                    four tabs: clip, scan, model info, load a model
 │   ├── inference.py              model loading, sliding-window scan, counting
 │   └── deploy.sh                 stage src/ + configs/ into a Space and push
+├── docs/
+│   └── LEARNING_GUIDE.md         the concepts behind the pipeline, from zero ML background
 ├── requirements.txt
 └── README.md
 ```
