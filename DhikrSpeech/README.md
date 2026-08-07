@@ -598,7 +598,8 @@ but do not compare two runs' test accuracy to the third decimal unless the manif
 | `manifest not found` | Run section `02 · Preprocessing` first. |
 | Accuracy pinned at exactly `1 / classes` and every clip predicted as the same class | The model collapsed — see [below](#a-run-stuck-at-chance). |
 | Training accuracy high, validation stuck at chance | BatchNorm momentum — see [above](#a-note-on-modelbn_momentum). |
-| Validation accuracy far below training | Genuine overfitting: more recordings, more speakers, stronger `augmentation.*`, or a smaller `model.width_multiplier`. |
+| Validation accuracy far below training | Genuine overfitting — see [below](#a-run-that-overfits). |
+| Validation peaks in the first few epochs and never improves | Same thing: the dataset had nothing left to teach after those epochs. See [below](#a-run-that-overfits). |
 | One class always wrong | Check its clips in section 01 — usually mislabelled or near-silent takes. Section 04 lets you listen to the errors. |
 | Colab disconnects | Re-run `03` with the same `RUN_NAME`; it resumes. |
 | `'tf.Conv2D' op is neither a custom op nor a flex op` | A mixed-precision (float16) checkpoint reached the converter. `export_all` rebuilds it in float32 automatically; if you call `convert_tflite` yourself, pass the model through `to_float32_model` first. |
@@ -674,6 +675,52 @@ and the `!!` notes in `artifacts.summary()`). Work through it in this order:
    (≤ 13 clips per class, given how `assign_splits` floors the ratios) cannot train a 10-class
    classifier from scratch at all. Aim for 50–100+ recordings per class from 10+ speakers before
    the numbers start meaning anything.
+
+### A run that overfits
+
+The other failure, and the one a small dataset produces by default. Training accuracy reaches 1.0,
+validation stops well short of it and never catches up:
+
+```
+run              : ds_cnn
+epochs completed : 50
+best accuracy    : 1.0000 (epoch 32, training split)
+best val_accuracy: 0.8000 (epoch 10) - chance is 0.3333
+restored weights : epoch 10 - train 0.8700 / val 0.8000 (this is the checkpoint)
+val split        : 20 clips (one clip = 5.0 accuracy points)
+```
+
+Read those lines carefully, because the first two describe **two different models**. `best accuracy`
+is whatever the run drifted to by epoch 32; the checkpoint on disk is epoch 10, restored by early
+stopping. `restored weights` is the pair that actually shipped — compare *those* two numbers when
+you want the gap of one model. Section 03 prints all of it and appends `!!` notes explaining what it
+sees.
+
+Nothing is broken here. The model learned the training recordings, which is what a network with more
+parameters than recordings does. Work through it in this order — the first item is almost always the
+answer, and the rest buy a point or two while hiding the real limit:
+
+1. **More recordings, and more speakers.** Variety matters more than count: the same voice recorded
+   twice is close to one recording, so 200 clips from 3 people generalise worse than 100 from 20.
+   The [Voice dhikr screen](../CLAUDE.md) in the app recruits volunteers for exactly this.
+2. **Watch for speaker leakage.** `assign_splits` is stratified per class but has no idea who is
+   speaking, so with `split.group_regex: null` the same voice lands in train *and* val — which makes
+   validation accuracy **optimistic**, and the real gap larger than the one printed. Files uploaded
+   by `SpeechCollector` are named `<class>_<timestamp>_<suffix>`, with no speaker token, so there is
+   nothing to group on automatically. If you record a batch yourself, name the files with a speaker
+   prefix and set `split.group_regex` to match it.
+3. **Less capacity.** `model.width_multiplier: 0.5` quarters the parameter count; `model.dropout`
+   already defaults to `0.3`. Raise the multiplier back toward `1.0` as the dataset grows.
+4. **Stronger augmentation.** Widen the ranges under `augmentation.*`, and drop real room recordings
+   into `noise/` — that is the cheapest accuracy win for a phone-deployed model.
+
+Note also how coarse the measurement is. On a 20-clip validation split one recording is worth 5
+accuracy points, so 0.80 and 0.85 are the same result. The summary prints the resolution and says so
+when the split is too small to measure a gap at all.
+
+Both `epochs` and `early_stopping.patience` are irrelevant to this failure. Validation peaked at
+epoch 10 of 50; the other 40 epochs only fitted the training split harder, and a longer patience
+would have added more of them.
 
 ---
 

@@ -160,8 +160,16 @@ model:
   blocks: 4
   block_filters: 64
   block_kernel: [3, 3]
+  # Capacity should track the dataset. At a few hundred clips this network has more
+  # parameters than it has recordings to fit, and it will drive training accuracy to
+  # 1.0 while validation plateaus. 0.5 quarters the parameter count and is the first
+  # knob to reach for once the run reports an overfitting gap; raise it back toward
+  # 1.0 as the dataset grows into the thousands of clips.
   width_multiplier: 1.0
-  dropout: 0.2
+  # 0.3 rather than the usual 0.2: with a small, single-session dataset the network
+  # can memorise a clip from a handful of frames, and the extra dropout costs almost
+  # nothing here. Lower it again when train and val accuracy move together.
+  dropout: 0.3
   use_bias: false
   activation: relu
   pool: gap                     # gap | flatten
@@ -190,9 +198,12 @@ training:
   class_weights: true
   label_smoothing: 0.1
 
-  optimizer: adam               # adam | adamw | sgd | rmsprop
+  # adamw, not adam: `weight_decay` below is only honoured by adamw and sgd, so
+  # under plain adam the decay is configured and silently ignored. On a dataset this
+  # small that is a regulariser given away for free.
+  optimizer: adamw              # adam | adamw | sgd | rmsprop
   learning_rate: 1.0e-3
-  weight_decay: 1.0e-4          # adamw / sgd only
+  weight_decay: 1.0e-4          # adamw / sgd only - ignored under adam / rmsprop
   momentum: 0.9                 # sgd only
   gradient_clip_norm: 1.0       # null disables clipping
 

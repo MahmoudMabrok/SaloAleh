@@ -31,6 +31,20 @@ LOGGER = logging.getLogger(__name__)
 
 PathLike = Union[str, Path]
 
+# Thresholds used by TrainingArtifacts.diagnose(). They describe the small-dataset
+# regime this project lives in - a few hundred clips - not a general rule.
+#
+# OVERFIT_GAP: training accuracy this far above the best validation accuracy is a
+#   model that learned the clips rather than the phrase. 15 points is well outside
+#   what the dropout/augmentation gap alone explains.
+# EARLY_PEAK_FRACTION: validation peaking inside this fraction of the run means the
+#   remaining epochs only fitted the training split harder.
+# COARSE_VAL_SPLIT: below this many validation clips one clip is worth more than
+#   three accuracy points, so a "gap" can be two unlucky recordings.
+OVERFIT_GAP = 0.15
+EARLY_PEAK_FRACTION = 0.4
+COARSE_VAL_SPLIT = 30
+
 __all__ = [
     "SparseCategoricalCrossentropyWithSmoothing",
     "Trainer",
@@ -208,6 +222,7 @@ class TrainingArtifacts:
     epochs_completed: int
     num_classes: Optional[int] = None
     resumed: bool = False
+    val_size: Optional[int] = None
 
     def best_epoch(self, monitor: str = "val_accuracy", mode: str = "max") -> Optional[int]:
         values = self.history.get(monitor)
@@ -221,12 +236,26 @@ class TrainingArtifacts:
             return None
         return float(max(values) if mode == "max" else min(values))
 
+    def value_at(self, monitor: str, epoch: int) -> Optional[float]:
+        """One metric at one (1-based) epoch, or None when it was not recorded."""
+        values = self.history.get(monitor)
+        if not values or epoch < 1 or epoch > len(values):
+            return None
+        return float(values[epoch - 1])
+
     @property
     def chance_level(self) -> Optional[float]:
         """Accuracy a constant prediction reaches on a balanced split."""
         if not self.num_classes or self.num_classes < 2:
             return None
         return 1.0 / float(self.num_classes)
+
+    @property
+    def val_resolution(self) -> Optional[float]:
+        """Accuracy one validation clip is worth - the granularity of val_accuracy."""
+        if not self.val_size or self.val_size < 1:
+            return None
+        return 1.0 / float(self.val_size)
 
     def diagnose(self) -> List[str]:
         """Plain-language reading of the curves, so a dead run says so out loud."""
@@ -252,12 +281,71 @@ class TrainingArtifacts:
                 "memorised the training clips. Usually too few recordings or too few "
                 "speakers, sometimes BatchNorm moving statistics that never converged."
             )
+        else:
+            notes.extend(self._generalisation_notes(best_train, best_val))
+
         if self.resumed:
             notes.append(
                 "this run RESUMED an earlier one (BackupAndRestore). The weights, the "
                 "optimiser state and the history above carry over from that run, so a "
                 "config change you made since then did not start from scratch. Use a new "
                 "RUN_NAME or Trainer.reset_run() for a clean comparison."
+            )
+        return notes
+
+    def _generalisation_notes(self, best_train: float, best_val: float) -> List[str]:
+        """Notes for a run that learned something but did not generalise.
+
+        The "stayed at chance" cases above are their own failure; this is the other
+        one, and the one a small dataset produces by default: validation climbs off
+        chance, plateaus early, and training accuracy keeps going to 1.0 without it.
+        """
+        notes: List[str] = []
+        gap = best_train - best_val
+        best_epoch = self.best_epoch() or 0
+
+        if gap >= OVERFIT_GAP:
+            restored = ""
+            train_at_best = self.value_at("accuracy", best_epoch)
+            if train_at_best is not None:
+                restored = (
+                    f" The weights that were kept are epoch {best_epoch}'s "
+                    f"(train {train_at_best:.2f} / val {best_val:.2f}); the "
+                    f"{best_train:.2f} training accuracy belongs to a later, worse model."
+                )
+            notes.append(
+                f"overfitting: training accuracy reached {best_train:.2f} but validation "
+                f"stopped at {best_val:.2f}, a gap of {gap * 100:.0f} points. The model is "
+                f"learning these recordings, not the phrases.{restored} In the order that "
+                "actually works: more recordings and more speakers first (variety beats "
+                "count - the same voice recorded twice is close to one recording), then "
+                "less capacity (model.width_multiplier 1.0 -> 0.5, model.dropout up), then "
+                "stronger augmentation.*. Reaching for the hyperparameters first buys a "
+                "point or two and hides the real limit."
+            )
+
+        if (
+            best_epoch
+            and self.epochs_completed >= 10
+            and best_epoch <= max(int(self.epochs_completed * EARLY_PEAK_FRACTION), 1)
+        ):
+            notes.append(
+                f"validation peaked at epoch {best_epoch} of {self.epochs_completed} and "
+                "never beat it again: the run had learned everything this dataset can teach "
+                "it within the first few epochs, and the rest only fitted the training split "
+                f"harder. Early stopping restored the epoch-{best_epoch} weights, so the "
+                "checkpoint is the best one seen - but more epochs will not help this "
+                "dataset, and neither will a longer patience."
+            )
+
+        resolution = self.val_resolution
+        if resolution is not None and self.val_size and self.val_size < COARSE_VAL_SPLIT:
+            notes.append(
+                f"the validation split is {self.val_size} clips, so one clip is "
+                f"{resolution * 100:.1f} accuracy points and val_accuracy can only take "
+                f"{self.val_size + 1} distinct values. Treat every number above as coarse: "
+                "a 'gap' of two clips is not a measurement. Grow the dataset before reading "
+                "anything into a difference this small."
             )
         return notes
 
@@ -275,6 +363,23 @@ class TrainingArtifacts:
             suffix = f" - chance is {chance:.4f}" if chance else ""
             lines.append(
                 f"best val_accuracy: {self.best_value():.4f} (epoch {best_epoch}){suffix}"
+            )
+            # The two "best" lines above are two different models: the best training
+            # accuracy is whatever the run drifted to, the checkpoint is the best
+            # validation epoch. Spell out the pair that actually shipped, so the
+            # train/val gap being read is the gap of one model.
+            restored_train = self.value_at("accuracy", best_epoch)
+            restored_val = self.value_at("val_accuracy", best_epoch)
+            if restored_train is not None and restored_val is not None:
+                lines.append(
+                    f"restored weights : epoch {best_epoch} - train {restored_train:.4f} / "
+                    f"val {restored_val:.4f} (this is the checkpoint)"
+                )
+        if self.val_size:
+            resolution = self.val_resolution or 0.0
+            lines.append(
+                f"val split        : {self.val_size} clips "
+                f"(one clip = {resolution * 100:.1f} accuracy points)"
             )
         lines.append(f"best model       : {self.best_model_path}")
         for note in self.diagnose():
@@ -436,7 +541,15 @@ class Trainer:
         epochs: Optional[int] = None,
         initial_epoch: int = 0,
         verbose: int = 1,
+        val_size: Optional[int] = None,
     ) -> TrainingArtifacts:
+        """Run ``fit`` and return the artefacts.
+
+        ``val_size`` is the number of validation *clips* (not batches). It is only
+        used to report how coarse ``val_accuracy`` is - on a split of a few dozen
+        clips a single recording moves it by several points, which is the difference
+        between a real train/val gap and two unlucky takes.
+        """
         if not self._compiled:
             self.compile()
 
@@ -485,6 +598,7 @@ class Trainer:
             epochs_completed=epochs_completed,
             num_classes=int(self.num_classes),
             resumed=resumed,
+            val_size=int(val_size) if val_size else None,
         )
 
     def _reject_incompatible_resume(self) -> None:

@@ -409,7 +409,7 @@ class ModelConfig:
     block_filters: int = 64
     block_kernel: List[int] = field(default_factory=lambda: [3, 3])
     width_multiplier: float = 1.0
-    dropout: float = 0.2
+    dropout: float = 0.3
     use_bias: bool = False
     activation: str = "relu"
     pool: str = "gap"
@@ -457,7 +457,8 @@ class TrainingConfig:
     mixed_precision: bool = True
     class_weights: bool = True
     label_smoothing: float = 0.1
-    optimizer: str = "adam"
+    # adamw so that `weight_decay` is actually applied; plain adam ignores it.
+    optimizer: str = "adamw"
     learning_rate: float = 1e-3
     weight_decay: float = 1e-4
     momentum: float = 0.9

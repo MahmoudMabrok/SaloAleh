@@ -364,6 +364,15 @@ Python, not part of the KMP build. Full docs in `DhikrSpeech/README.md`.
 - Accuracy at exactly `1 / num_classes` with one predicted class is a collapsed model, not a weak
   one. The notebooks flag this; section 6b's sanity check (memorise ~40 unaugmented clips) separates
   a pipeline bug from a data-quantity problem.
+- **Train accuracy at 1.0 with validation plateaued below it is overfitting, and `artifacts.diagnose()`
+  says so** — along with the epoch validation peaked at, and how many accuracy points one validation
+  clip is worth. `summary()`'s `best accuracy` and `best val_accuracy` lines are *two different
+  models* (the best training epoch vs. the restored checkpoint); the `restored weights` line is the
+  pair that shipped, and the only one whose train/val gap means anything. The regularisation defaults
+  (`model.dropout: 0.3`, `optimizer: adamw` so `weight_decay` is actually applied) are set for the
+  few-hundred-clip regime — relax them as the dataset grows. The real fix is always more recordings
+  from more speakers; `split.group_regex: null` also means the same voice can sit in train and val,
+  so the printed validation accuracy is optimistic.
 
 ## Conventions
 
