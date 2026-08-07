@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.Balance
 import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.Diamond
 import androidx.compose.material.icons.filled.Forest
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Waves
@@ -72,6 +73,8 @@ import tools.mo3ta.salo.generated.resources.challenge_baqiyat_body
 import tools.mo3ta.salo.generated.resources.challenge_baqiyat_title
 import tools.mo3ta.salo.generated.resources.challenge_alf_hasana_body
 import tools.mo3ta.salo.generated.resources.challenge_alf_hasana_title
+import tools.mo3ta.salo.generated.resources.challenge_hawqala_body
+import tools.mo3ta.salo.generated.resources.challenge_hawqala_title
 import tools.mo3ta.salo.generated.resources.challenge_kalimat_body
 import tools.mo3ta.salo.generated.resources.challenge_kalimat_title
 import tools.mo3ta.salo.generated.resources.challenge_dhikr_body
@@ -138,6 +141,7 @@ fun ChallengesScreen(
     onOpenAlBaqaraChallenge: () -> Unit,
     onOpenAlfHasanaChallenge: () -> Unit,
     onOpenKalimatChallenge: () -> Unit,
+    onOpenHawqalaChallenge: () -> Unit,
 ) {
     val analyticsManager: AnalyticsManager = koinInject()
     val viewModel: ChallengesViewModel = koinViewModel()
@@ -204,6 +208,23 @@ fun ChallengesScreen(
                     mapOf(AppAnalytics.PARAM_SOURCE to "challenges"),
                 )
                 onOpenAlfHasanaChallenge()
+            },
+        ),
+        ChallengeItem(
+            titleRes = Res.string.challenge_hawqala_title,
+            bodyRes = Res.string.challenge_hawqala_body,
+            icon = Icons.Default.Diamond,
+            accent = Color(0xFFA78BFA),
+            total = totals.hawqala,
+            overallTotal = overallTotals.hawqala,
+            streak = streaks[ChallengeType.HAWQALA] ?: 0,
+            participatedToday = ChallengeType.HAWQALA in participatedToday,
+            onClick = {
+                analyticsManager.logAction(
+                    AppAnalytics.OPEN_HAWQALA_CHALLENGE,
+                    mapOf(AppAnalytics.PARAM_SOURCE to "challenges"),
+                )
+                onOpenHawqalaChallenge()
             },
         ),
         ChallengeItem(

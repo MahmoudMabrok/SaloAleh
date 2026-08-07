@@ -37,4 +37,5 @@ enum class ChallengeType(val id: String, val dailyGoal: Int) {
     GHARS("ghars", GHARS_CHALLENGE_DAILY_GOAL),
     ALF_HASANA("alf_hasana", ALF_HASANA_CHALLENGE_DAILY_GOAL),
     KALIMAT("kalimat", KALIMAT_CHALLENGE_DAILY_GOAL),
+    HAWQALA("hawqala", HAWQALA_CHALLENGE_DAILY_GOAL),
 }

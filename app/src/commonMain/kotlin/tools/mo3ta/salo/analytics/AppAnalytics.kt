@@ -47,6 +47,10 @@ object AppAnalytics {
     const val OPEN_MANUAL_ALF_HASANA = "open_manual_alf_hasana"
     const val ALF_HASANA_TAP = "alf_hasana_tap"
     const val ALF_HASANA_SCREEN_VIEW = "alf_hasana_screen_view"
+    const val OPEN_HAWQALA_CHALLENGE = "open_hawqala_challenge"
+    const val OPEN_MANUAL_HAWQALA = "open_manual_hawqala"
+    const val HAWQALA_TAP = "hawqala_tap"
+    const val HAWQALA_SCREEN_VIEW = "hawqala_screen_view"
 
     const val OPEN_KALIMAT_CHALLENGE = "open_kalimat_challenge"
     const val OPEN_MANUAL_KALIMAT = "open_manual_kalimat"
