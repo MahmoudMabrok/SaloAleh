@@ -285,16 +285,13 @@ private fun KalimatHeroZone(
                 }
             }
 
-            if (manualEntryVisible) {
-                KalimatManualEntryButton(onClick = onManualEntryClick)
-            }
-
-            Spacer(Modifier.height(14.dp))
-
-            // The full four-word dhikr the user actually recites is highlighted in place inside the
-            // hadith transcript, rather than repeated as a standalone (and incomplete) heading above
-            // it. The reward breakdown stays behind the "what you gain" button — matching the other
-            // challenge screens.
+            // The narration comes first and comes whole: it sits directly under the header, is
+            // measured before anything that can flex, and carries no maxLines — so the transcript is
+            // never the thing that gives way when the screen is short. Only the scale below it
+            // shrinks. The full four-word dhikr the user actually recites is highlighted in place
+            // inside the transcript, rather than repeated as a standalone (and incomplete) heading
+            // above it. The reward breakdown stays behind the "what you gain" button — matching the
+            // other challenge screens.
             Text(
                 text = kalimatHadithHighlighted(),
                 color = KalimatColors.LightGold.copy(alpha = 0.82f),
@@ -310,6 +307,11 @@ private fun KalimatHeroZone(
                 fontSize = 11.sp,
                 textAlign = TextAlign.Center,
             )
+
+            if (manualEntryVisible) {
+                Spacer(Modifier.height(14.dp))
+                KalimatManualEntryButton(onClick = onManualEntryClick)
+            }
 
             // The hadith, played out: the day's pan fills on its own, every tasbiha sends the four
             // words into the other one, and a completed round tips the beam and empties it again.
