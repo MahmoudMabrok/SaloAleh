@@ -726,7 +726,10 @@ and the `!!` notes in `artifacts.summary()`). Work through it in this order:
    the previous run's weights *and* optimiser state, and splices both runs' histories together — so
    a config change you made in between never took effect, and "epochs completed" counts epochs from
    a run you already abandoned. Set `FRESH_START = True` (or a new `RUN_NAME`) after any config
-   change. The summary flags a resumed run.
+   change. The summary flags a resumed run, and `fit` compares the config against the snapshot
+   stored with the backup — it raises when `classes.include_phrases` changed (the output width
+   moved, so the restore cannot work) and logs a `WARNING` listing every other setting that drifted,
+   because those restore *successfully* and quietly train something the config no longer describes.
 4. **Then look at the data**, which is usually the real answer. Section 03 prints clips per class
    for every split. If section 04 reports `samples : 10` for ten classes, the validation split is
    one clip per class: accuracy can only be 0.0, 0.1, 0.2 … and its 95% interval runs from 0.02 to

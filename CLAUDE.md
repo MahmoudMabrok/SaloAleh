@@ -374,7 +374,8 @@ Python, not part of the KMP build. Full docs in `DhikrSpeech/README.md`.
   needs numpy/scikit-learn/librosa but **not** TensorFlow — `experiments.py` imports `models`/`trainer`
   lazily inside the training function to keep it that way). Training itself is not covered: it needs a
   GPU and the dataset on Drive. What is covered is the arithmetic that could silently produce a wrong
-  verdict.
+  verdict — including `test_trainer_diagnostics.py` (the overfitting notes and the resume guard),
+  which stubs TensorFlow only when it is genuinely absent so it never shadows a real install.
 - `configs/config.yaml` is the only place settings live; the notebooks read it and hold no
   thresholds or hyperparameters of their own. All logic lives in `DhikrSpeech/src/`.
 - **`DhikrSpeech/space/` is the Gradio app for testing an export** (classify a clip, scan a
@@ -422,6 +423,10 @@ Python, not part of the KMP build. Full docs in `DhikrSpeech/README.md`.
   under 2000 steps.
 - `training.resume: true` means re-running restores weights, optimiser state and epoch counter; set
   `FRESH_START = True` after any config change or the change is applied on top of the old model.
+  `Trainer._check_resume_compatibility` diffs the live config against the snapshot saved with the
+  backup: a changed `classes.include_phrases` raises (the output width moved), and any other drift
+  in the `RESUME_SENSITIVE_SECTIONS` logs a WARNING naming each key — those restore successfully and
+  silently train something the config no longer describes. `paths`/`evaluation`/`export` are ignored.
 - Accuracy at exactly `1 / num_classes` with one predicted class is a collapsed model, not a weak
   one. The notebooks flag this; section 6b's sanity check (memorise ~40 unaugmented clips) separates
   a pipeline bug from a data-quantity problem.
