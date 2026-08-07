@@ -31,6 +31,7 @@ recordings on Drive
 - [6 · Test the export](#6--test-the-export)
 - [7 · Integrate into Android](#7--integrate-into-android)
 - [Configuration](#configuration)
+- [One model per dhikr?](#one-model-per-dhikr)
 - [Growing the dataset](#growing-the-dataset)
 - [Troubleshooting](#troubleshooting)
 
@@ -42,6 +43,7 @@ recordings on Drive
 DhikrSpeech/
 ├── notebooks/
 │   └── DhikrSpeech.ipynb         the whole pipeline, five sections, run top to bottom
+│                                 (+ section 06, an optional one-vs-rest experiment)
 ├── src/
 │   ├── config.py                 typed config loaded from configs/config.yaml
 │   ├── audio.py                  decode, trim, normalise, fit length, write WAV
@@ -51,8 +53,10 @@ DhikrSpeech/
 │   ├── models.py                 DS-CNN
 │   ├── trainer.py                seeds, schedules, callbacks, resume
 │   ├── metrics.py                accuracy / P / R / F1 / ROC / error analysis
+│   ├── experiments.py            one-vs-rest vs. multi-class comparison (section 06)
 │   ├── visualization.py          every chart
 │   └── export.py                 SavedModel, TFLite, benchmark, verification
+├── tests/                        pytest — the scoring logic, no TensorFlow needed
 ├── configs/config.yaml           the only place settings live
 ├── space/                        Gradio app for testing an export (Hugging Face Space)
 │   ├── app.py                    four tabs: clip, scan, model info, load a model
@@ -569,6 +573,61 @@ accuracy sits exactly at chance**, because in inference mode the model collapses
 
 The default here is `0.9`, which converges in about 50 steps. Raise it toward `0.99` only once the
 dataset is large enough to give hundreds of steps per epoch.
+
+---
+
+## One model per dhikr?
+
+A recurring proposal: instead of one model that classifies every phrase, train **one binary detector
+per dhikr**, each specialised in its own phrase. Section `06 · Experiment` of the notebook answers it
+for your dataset instead of arguing about it — it trains one one-vs-rest model per phrase and scores
+them against the multi-class model on the same clips.
+
+It is optional and it is not free: one training run per phrase, on top of the one you already have.
+Nothing it does touches the exported model.
+
+**What is held fixed**, so the result is about the approach rather than the setup: the same manifest
+and splits, the same architecture, the same augmentation, the same optimiser, the same seed and the
+same epoch budget. The evaluation dataset is built once and every model runs over those same tensors,
+so the comparison is per-clip.
+
+**Three questions**, because they can disagree:
+
+| question | metric | why it matters |
+|---|---|---|
+| Can it detect *this* phrase? | ROC-AUC / average precision per phrase | Threshold-free — neither side wins on tuning |
+| Can it name the *right* phrase? | accuracy on phrase clips, both restricted to the phrase columns | Where the nested phrases decide it |
+| Can it stay quiet on non-dhikr? | accept rate on `unknown` clips, at one shared threshold | A committee of binaries has no `unknown` output, only a threshold |
+
+The committee of binaries predicts by `argmax` over the per-model positive scores — the deployment
+shape the proposal implies — and the multi-class model is scored by `argmax` over the same phrases.
+
+**What to expect, and why.** The prior is that one-vs-rest loses, for reasons that are structural
+rather than tuning:
+
+- **The phrases are nested prefixes.** `سبحان الله` ⊂ `سبحان الله وبحمده` ⊂
+  `سبحان الله العظيم وبحمده`, and `اللهم صل على محمد` ⊂ `اللهم صل وسلم على نبينا محمد`. A softmax
+  learns the boundary between them because they compete for the same probability mass; the other
+  phrases are free hard negatives. A binary detector is never shown that distinction as a label.
+- **It discards a true constraint.** Exactly one phrase was spoken. Softmax encodes that; N
+  independent binaries do not.
+- **N backbones is the wrong direction on a small dataset.** Only the final `Dense` layer shrinks —
+  the DS-CNN backbone is ~all the parameters and ~all the MACs. Ten binary models is ten times the
+  capacity, the size and (if run together) the inference cost, on the same clips.
+- **Each model faces a 1:N imbalance.** `train_one_vs_rest` applies class weights for exactly this
+  reason, so the experiment does not understate one-vs-rest for the wrong cause.
+
+The one thing it genuinely buys is operational: adding a phrase means training one new model instead
+of invalidating every checkpoint. Cheap to have, expensive to pay for in accuracy.
+
+**A tie is the expected outcome, and the report says so** rather than picking a winner from noise. It
+reports Wilson intervals next to every accuracy and refuses to call a difference smaller than 0.02
+AUC a result — on a split of a few dozen clips that is one or two recordings landing differently.
+
+If what you actually want is *per-dhikr decisions* rather than N models, two cheaper routes reach it
+without giving up the shared backbone: mask the softmax to the expected phrase plus `unknown` at
+inference time (the app knows which dhikr a screen is counting), and give each phrase its own
+threshold instead of one global number.
 
 ---
 

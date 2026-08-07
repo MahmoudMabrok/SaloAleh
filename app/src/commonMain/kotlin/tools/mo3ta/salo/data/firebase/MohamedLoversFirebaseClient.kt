@@ -14,6 +14,7 @@ import tools.mo3ta.salo.analytics.logFirebaseError
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.domain.AccountSnapshot
 import tools.mo3ta.salo.domain.AppUpdateConfig
+import tools.mo3ta.salo.domain.DailyBadgeAdjustment
 import tools.mo3ta.salo.domain.FirebaseLeaderboard
 import tools.mo3ta.salo.domain.FirebaseLeaderboardEntry
 import tools.mo3ta.salo.domain.HeroesBoard
@@ -286,6 +287,40 @@ class MohamedLoversFirebaseClient(
                 onFailure = { error ->
                     log.e(error) { "appendExternalLog[$roundKey/$uid] failed" }
                     trackWriteFailure("append_external_log", error)
+                },
+            )
+        }
+    }
+
+    override suspend fun appendBadgeAdjustmentLog(
+        uid: String,
+        timeKey: String,
+        adjustment: DailyBadgeAdjustment,
+    ): Result<Unit> {
+        log.d {
+            "appendBadgeAdjustmentLog[$uid] $timeKey case=${adjustment.case} " +
+                "progress=${adjustment.progress} badge=${adjustment.badgeKey}(${adjustment.badgeValue})"
+        }
+        val fields = mapOf<String, Any>(
+            ADJUSTMENT_CASE_KEY to adjustment.case,
+            // The device's clock, next to the server's own stamp — a wide gap between them is
+            // itself worth flagging, so both are kept rather than trusting either alone.
+            ADJUSTMENT_AT_KEY to adjustment.atMs,
+            ADJUSTMENT_SERVER_AT_KEY to ServerValue.TIMESTAMP,
+            ADJUSTMENT_PROGRESS_KEY to adjustment.progress,
+            ADJUSTMENT_BADGE_KEY to adjustment.badgeKey,
+            ADJUSTMENT_BADGE_VALUE_KEY to adjustment.badgeValue,
+        )
+        return runCatching {
+            Firebase.database
+                .reference("$ROOT_PATH/$USERS_PATH/$uid/$BADGE_ADJUSTMENTS_PATH/$timeKey")
+                .updateChildren(fields)
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "appendBadgeAdjustmentLog[$uid] ok" } },
+                onFailure = { error ->
+                    log.e(error) { "appendBadgeAdjustmentLog[$uid] failed" }
+                    trackWriteFailure("append_badge_adjustment_log", error)
                 },
             )
         }
@@ -867,6 +902,7 @@ class MohamedLoversFirebaseClient(
             yesterdayTotalScore = (map[YESTERDAY_TOTAL_SCORE_KEY] as? Number)?.toInt() ?: 0,
             todayCount = (map[TODAY_COUNT_KEY] as? Number)?.toInt() ?: 0,
             nickname = map[NICKNAME_KEY] as? String ?: "",
+            dailyBadge = map[DAILY_BADGE_KEY] as? String ?: "",
         )
     }
 
@@ -919,6 +955,14 @@ class MohamedLoversFirebaseClient(
         // lastOpenDate, so the server can see which versions are still in the wild.
         const val APP_VERSION_KEY = "appVersion"
         const val APP_VERSION_CODE_KEY = "appVersionCode"
+        // Record-only trail of daily-badge score reconciliations (see DailyBadgeAdjustmentLog).
+        const val BADGE_ADJUSTMENTS_PATH = "badgeAdjustments"
+        const val ADJUSTMENT_CASE_KEY = "case"
+        const val ADJUSTMENT_AT_KEY = "at"
+        const val ADJUSTMENT_SERVER_AT_KEY = "serverAt"
+        const val ADJUSTMENT_PROGRESS_KEY = "progress"
+        const val ADJUSTMENT_BADGE_KEY = "badge"
+        const val ADJUSTMENT_BADGE_VALUE_KEY = "badgeValue"
         const val REMINDER_NOTIFS_ENABLED_KEY = "reminderNotifsEnabled"
         const val LEADERBOARD_NOTIFS_ENABLED_KEY = "leaderboardNotifsEnabled"
         const val ACHIEVEMENTS_PATH = "achievements"

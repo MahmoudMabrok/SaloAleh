@@ -586,6 +586,8 @@
     <string name="manual_mode_subtract">➖ Subtract</string>
     <string name="manual_subtract_submit">✦ Subtract from count ✦</string>
     <string name="manual_subtract_hint">To fix a count added by mistake — it is subtracted from your current total and never goes below zero</string>
+    <string name="mohamed_lovers_daily_cap_reached">You reached today’s competition limit (%1$d); extra salawat are not counted today.</string>
+    <string name="mohamed_lovers_badge_score_adjusted">Today’s count was set to %1$d to match the badge saved on the server.</string>
 
     <!-- Share Card -->
     <string name="share_card_out_of_participants">out of %1$d participants</string>

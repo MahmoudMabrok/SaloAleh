@@ -195,6 +195,18 @@ The earlier rate limit (`totalCount <= yesterdayTotalScore + N`) was **removed d
 
 What still bounds the write path: `.write` requires `newData.child('uid').val() === $uid` (a client can only write its own player node), `.validate` requires `hasChildren(['uid', 'schemaVersion'])` with `schemaVersion >= 1` (obsolete builds are denied outright), and `$other: false` rejects unknown keys.
 
+### Client-side daily push cap (25k/Cairo day)
+
+Since the rules deliberately do not rate-limit, the blast radius is bounded **on the client** instead: `MOHAMED_LOVERS_DAILY_PUSH_CAP = 25_000` (`domain/SalawatDailyCap.kt`) is the most any device will push into the competition in one Cairo day, counted across taps, manual entry and extension sync, and across a round boundary. It is enforced in `MohamedLoversRepository.flushPendingSession` — the last step before the network write — and the excess is **discarded rather than deferred**, so a capped day cannot spill into the next one.
+
+The day's usage is reconstructed from two independent sources, taking the higher: the device-local ledger (`ml_push_used`, keyed by Cairo day) and the server-derived `totalCount - yesterdayTotalScore` read off the player node on every self snapshot. Each covers the other's blind spot — the server total survives a reinstall, the local ledger survives the Friday 19:00 round rollover that zeroes the server-side day total mid-day. The `yesterdayTotalScore` baseline is persisted with the timestamp it was fetched at, so a user who closes the app and returns hours later still knows where the day started.
+
+Being client-side, this is **not** a security boundary — a modded build simply would not honour it (App Check is what makes modded builds fail, and `schemaVersion` is what retires old ones). It is a correctness/blast-radius bound for genuine builds, sitting above the server's record-only thresholds: `abnormal_users` still flags at 12k/day and `paceFlags` at the day-of-round ceiling, so a heavy-but-capped day is still recorded for review.
+
+The server-published `dailyBadge` is used in the reverse direction — as evidence of a **minimum** day count. Because a badge is only published *after* the score that earned it reached the server, a local count below the badge's threshold means the device lost its progress; the client adopts the badge's value and warns the user (`reconcileDailyBadge`). The cron clears `dailyBadge` nightly, so the signal can never leak across days.
+
+Each such reconciliation is recorded at `users/{uid}/badgeAdjustments/{Cairo minute}` = `{case, at, serverAt, progress, badge, badgeValue}` — a third record-only tracking stream alongside `abnormal_users` and `paceFlags`, and the only one written by the client rather than the cron. It captures the short count *before* the raise and the badge value adopted, so the size of the gap is visible, plus both the device clock (`at`) and the server's (`serverAt`) so a manipulated clock shows up as drift between them. A single entry is unremarkable — reinstall, cleared storage, a second device mid-day — so the signal is a device that emits them repeatedly, or one whose entries always restore a large count. The node is client-writable but `.read: false`, so only the admin scripts can review it.
+
 ### What App Check does *not* cover
 
 App Check attests **the app**, not **the user's intent**. A genuine, unmodified build being driven abusively is fully attested and passes every check. The remaining surface is therefore entirely on-device:

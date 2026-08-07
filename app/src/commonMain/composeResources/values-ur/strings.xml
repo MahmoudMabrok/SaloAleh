@@ -557,6 +557,8 @@
     <string name="manual_mode_subtract">➖ کمی</string>
     <string name="manual_subtract_submit">✦ تعداد سے کم کریں ✦</string>
     <string name="manual_subtract_hint">غلطی سے شامل کیے گئے عدد کو درست کرنے کے لیے — یہ آپ کے موجودہ مجموعے سے کم ہوگا اور کبھی صفر سے نیچے نہیں جائے گا</string>
+    <string name="mohamed_lovers_daily_cap_reached">آپ آج کی مقابلے کی حد (%1$d) تک پہنچ گئے؛ اضافی درود آج شمار نہیں ہوں گے۔</string>
+    <string name="mohamed_lovers_badge_score_adjusted">سرور پر محفوظ تمغے کے مطابق آج کی تعداد %1$d مقرر کر دی گئی۔</string>
 
     <!-- Share Card -->
     <string name="share_card_out_of_participants">%1$d شرکاء میں سے</string>

@@ -3,8 +3,10 @@ package tools.mo3ta.salo.data.session
 import com.russhwolf.settings.Settings
 import kotlinx.datetime.LocalDate
 import tools.mo3ta.salo.data.crypto.sha256hex
+import tools.mo3ta.salo.domain.MOHAMED_LOVERS_DAILY_PUSH_CAP
 import tools.mo3ta.salo.domain.MOHAMED_LOVERS_MANUAL_DAILY_CAP
 import tools.mo3ta.salo.domain.MohamedLoversPendingSession
+import tools.mo3ta.salo.domain.SalawatDailyCap
 
 class MohamedLoversSessionStore(private val settings: Settings) {
 
@@ -218,6 +220,82 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         settings.putInt(KEY_MANUAL_USED, 0)
     }
 
+    // ---- Daily competition push cap ------------------------------------------------------------
+    // Everything below tracks how much competition score this device has pushed to Firebase on the
+    // current Cairo day, so the push can be clamped to MOHAMED_LOVERS_DAILY_PUSH_CAP. It is a
+    // separate ledger from the manual-entry one above: the manual cap limits only the "record
+    // external" sheet, while this one is the last gate before *any* competition write.
+
+    /** How much competition score this device has pushed to Firebase on [today] (Cairo). */
+    fun dailyPushUsed(today: LocalDate): Int {
+        if (settings.getStringOrNull(KEY_PUSH_DATE) != today.toString()) return 0
+        return settings.getInt(KEY_PUSH_USED, 0)
+    }
+
+    /** How much may still be pushed to the competition on [today] under [dailyCap]. */
+    fun dailyPushRemaining(today: LocalDate, dailyCap: Int = MOHAMED_LOVERS_DAILY_PUSH_CAP): Int =
+        SalawatDailyCap.remaining(dailyPushUsed(today), dailyCap)
+
+    /** Records [amount] as pushed to Firebase on [today]; returns the new cumulative total. */
+    fun recordDailyPush(today: LocalDate, amount: Int): Int {
+        ensurePushToday(today)
+        if (amount <= 0) return settings.getInt(KEY_PUSH_USED, 0)
+        val used = settings.getInt(KEY_PUSH_USED, 0) + amount
+        settings.putInt(KEY_PUSH_USED, used)
+        return used
+    }
+
+    /**
+     * Reconcile today's push ledger with [serverDayTotal] — the day total derived from the player
+     * node (`totalCount - yesterdayTotalScore`). Takes the **higher** of the two, exactly like
+     * [syncManualUsedFromRemote]: a reinstall (local 0) adopts what the server already recorded for
+     * the day, while a local push the server snapshot has not caught up with — or a round rollover,
+     * which zeroes the server-side day total mid-day — never hands out a fresh allowance.
+     * Returns the reconciled amount.
+     */
+    fun syncDailyPushFromRemote(today: LocalDate, serverDayTotal: Int): Int {
+        ensurePushToday(today)
+        val used = settings.getInt(KEY_PUSH_USED, 0)
+        val reconciled = maxOf(used, serverDayTotal.coerceAtLeast(0))
+        if (reconciled != used) settings.putInt(KEY_PUSH_USED, reconciled)
+        return reconciled
+    }
+
+    /**
+     * Persist the `yesterdayTotalScore` baseline last read from Firebase together with the epoch
+     * millis it was read at. The baseline is what today's server-side count is measured against, so
+     * keeping it (and its timing) on disk means a user who leaves and comes back later the same day
+     * still knows where the day started without waiting for a fresh snapshot.
+     */
+    fun saveDailyBaseline(today: LocalDate, yesterdayTotalScore: Int, atMs: Long) {
+        ensurePushToday(today)
+        settings.putInt(KEY_PUSH_BASELINE, yesterdayTotalScore.coerceAtLeast(0))
+        settings.putLong(KEY_PUSH_BASELINE_AT, atMs)
+    }
+
+    /** The stored baseline, or null when none has been fetched on [today] (a new Cairo day cleared it). */
+    fun dailyBaseline(today: LocalDate): Int? {
+        if (settings.getStringOrNull(KEY_PUSH_DATE) != today.toString()) return null
+        if (settings.getLong(KEY_PUSH_BASELINE_AT, 0L) <= 0L) return null
+        return settings.getInt(KEY_PUSH_BASELINE, 0)
+    }
+
+    /** Epoch millis the baseline above was fetched at, or 0 when it is absent/stale. */
+    fun dailyBaselineFetchedAt(today: LocalDate): Long {
+        if (settings.getStringOrNull(KEY_PUSH_DATE) != today.toString()) return 0L
+        return settings.getLong(KEY_PUSH_BASELINE_AT, 0L)
+    }
+
+    /** Rolls the push ledger onto [today], clearing the previous day's usage and stale baseline. */
+    private fun ensurePushToday(today: LocalDate) {
+        val date = today.toString()
+        if (settings.getStringOrNull(KEY_PUSH_DATE) == date) return
+        settings.putString(KEY_PUSH_DATE, date)
+        settings.putInt(KEY_PUSH_USED, 0)
+        settings.remove(KEY_PUSH_BASELINE)
+        settings.remove(KEY_PUSH_BASELINE_AT)
+    }
+
     fun getNickname(): String? = settings.getStringOrNull(KEY_NICKNAME)?.takeIf { it.isNotBlank() }
 
     fun getPublishedName(): String =
@@ -292,6 +370,12 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         // Per-Cairo-day ledger for manual ("record external") entry into the competition.
         const val KEY_MANUAL_DATE = "ml_manual_date"
         const val KEY_MANUAL_USED = "ml_manual_used"
+        // Per-Cairo-day ledger for the hard competition push cap, plus the yesterdayTotalScore
+        // baseline (and when it was fetched) the server-side day total is measured against.
+        const val KEY_PUSH_DATE = "ml_push_date"
+        const val KEY_PUSH_USED = "ml_push_used"
+        const val KEY_PUSH_BASELINE = "ml_push_baseline"
+        const val KEY_PUSH_BASELINE_AT = "ml_push_baseline_at"
         const val KEY_NICKNAME = "user_nickname"
         const val KEY_NICKNAME_ENABLED = "nickname_enabled"
         const val KEY_NICKNAME_ANNOUNCEMENT_SHOWN = "nickname_announcement_shown"

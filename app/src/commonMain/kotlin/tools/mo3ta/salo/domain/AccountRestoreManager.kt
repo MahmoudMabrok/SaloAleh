@@ -74,7 +74,7 @@ class AccountRestoreManager(
         sessionStore.adoptRestoredUid(code)
         sessionStore.setInstallDate(snapshot.installDate)
         engagementStore.restoreRankAchievements(snapshot.achievements, today)
-        dailyGoalStore.restoreProgress(today, snapshot.todayCount)
+        dailyGoalStore.setTodayProgress(today, snapshot.todayCount)
         roundStreakStore.restoreStreak(
             streak = snapshot.roundStreak,
             // The server carries the count, not the day it was last extended: a day that already

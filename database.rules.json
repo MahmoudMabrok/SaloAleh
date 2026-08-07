@@ -727,6 +727,30 @@
               ".validate": false
             }
           },
+          "badgeAdjustments": {
+            "$entryKey": {
+              ".validate": "newData.hasChildren(['case', 'at', 'progress', 'badge', 'badgeValue'])",
+              "case": {
+                ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 40"
+              },
+              "at": {
+                ".validate": "newData.isNumber() && newData.val() > 0"
+              },
+              "serverAt": {
+                ".validate": "newData.isNumber() && newData.val() > 0"
+              },
+              "progress": {
+                ".validate": "newData.isNumber() && newData.val() >= 0"
+              },
+              "badge": {
+                ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 32"
+              },
+              "badgeValue": {
+                ".validate": "newData.isNumber() && newData.val() >= 0"
+              },
+              "$other": { ".validate": false }
+            }
+          },
           "purchases": {
             "$productId": {
               ".validate": "newData.hasChildren(['productId', 'productType', 'purchaseDate'])",

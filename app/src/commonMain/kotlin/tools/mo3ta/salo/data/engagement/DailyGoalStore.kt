@@ -35,13 +35,29 @@ class DailyGoalStore(private val settings: Settings) {
     fun isGoalComplete(today: LocalDate): Boolean = todayProgress(today) >= todayTarget(today)
 
     /**
-     * Adopt the day's count published by a restored account. This value is written to the player
-     * node as an absolute `todayCount`, so without it the first tap after a restore would publish
-     * a count of 1 and wipe out the day's standing on the daily leaderboard.
+     * Overwrite today's progress with [value]. Used only to reconcile the local count with
+     * server-side evidence (the published daily badge, the daily push cap, or the day count an
+     * account restore adopts) — ordinary salawat always go through [recordTap].
      */
-    fun restoreProgress(today: LocalDate, progress: Int) {
+    fun setTodayProgress(today: LocalDate, value: Int) {
         settings.putString(KEY_DATE, today.toString())
-        settings.putInt(KEY_PROGRESS, progress.coerceAtLeast(0))
+        settings.putInt(KEY_PROGRESS, value.coerceAtLeast(0))
+    }
+
+    /** Lowers today's progress to at most [max]. Returns the resulting progress. */
+    fun clampTodayProgress(today: LocalDate, max: Int): Int {
+        val current = todayProgress(today)
+        if (current <= max) return current
+        setTodayProgress(today, max)
+        return max
+    }
+
+    /** Raises today's progress to at least [min]. Returns the resulting progress. */
+    fun raiseTodayProgress(today: LocalDate, min: Int): Int {
+        val current = todayProgress(today)
+        if (current >= min) return current
+        setTodayProgress(today, min)
+        return min
     }
 
     private companion object {

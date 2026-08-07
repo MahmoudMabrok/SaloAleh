@@ -122,6 +122,24 @@ h1 {
   line-height: 1.7;
 }
 
+/* The single-utterance rule. A clip holding the phrase twice is unusable to the
+   trainer, so this is the one instruction that gets its own box rather than
+   sitting in the muted hint text a volunteer scrolls past. */
+.single-take-rule {
+  display: flex;
+  gap: 8px;
+  margin: 15px 0 0;
+  padding: 11px 13px;
+  border: 1px solid #ecdcb4;
+  border-inline-start: 4px solid var(--accent);
+  border-radius: 14px;
+  background: #fffaf0;
+  color: #6c4a0d;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
 /* ---- one recorder per phrase -------------------------------------------- */
 
 .phrase-list {

@@ -14,6 +14,21 @@ data class MohamedLoversPlayer(
     val yesterdayTotalScore: Int = 0,
     val todayCount: Int = 0,
     val nickname: String = "",
+    /** Server-published daily badge key for the current Cairo day (cleared nightly by the cron). */
+    val dailyBadge: String = "",
+)
+
+/**
+ * Outcome of one flush of the pending session to Firebase.
+ *
+ * [pushed] is what actually reached the server; [discarded] is the pending score that was dropped
+ * because it did not fit under the day's [MOHAMED_LOVERS_DAILY_PUSH_CAP]. Discarded score is not
+ * carried over to the next day — the local pending is cleared so the on-screen number goes back to
+ * matching the remote one.
+ */
+data class MohamedLoversFlushResult(
+    val pushed: Int = 0,
+    val discarded: Int = 0,
 )
 
 /**

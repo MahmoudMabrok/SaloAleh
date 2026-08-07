@@ -151,6 +151,32 @@ Client-published per-Cairo-day salawat total that drives the daily leaderboard d
 - RTDB rules: `players/{uid}/todayCount` validates `isNumber() && >= 0` (client-writable, absolute). `users/{uid}/scoreHistory`, `users/{uid}/paceFlags`, and top-level `mohamed_lovers/abnormal_users` are server-only — `scoreHistory`/`paceFlags` use the `.validate: false` pattern (the cascading `users/$uid` write grant reaches them, so `.write:false` would be useless); `abnormal_users` is an explicit named node (`.read:false`, `.write:false`) so it isn't shadowed by the `$round` wildcard, and the Admin SDK bypasses both. No Firestore mirror (RTDB is the source of truth for these).
 - Tests: `commonTest/data/engagement/DailyGoalStoreTest.kt` (daily progress), `scripts/abnormal-users.test.js` (`computeTodayScore` + `buildDailyScoreSnapshots` incl. pace flags + `roundDayNumber`).
 
+### Daily competition push cap (25k/day)
+
+Hard client-side ceiling on how much competition score may reach Firebase in one Cairo day, across every source (taps, manual entry, extension sync) and every round. Sits *below* the server's record-only `abnormal_users`/`paceFlags` tracking: the cap actually blocks the write, the server flags still record what got through.
+
+- Core files: `domain/SalawatDailyCap.kt` (`MOHAMED_LOVERS_DAILY_PUSH_CAP = 25_000`, `serverDayTotal`/`remaining`/`allowedPush`), `data/session/MohamedLoversSessionStore.kt` (the per-day ledger), `domain/MohamedLoversRepository.kt` (`flushPendingSession(..., allowance)` → `MohamedLoversFlushResult`), `presentation/MohamedLoversViewModel.kt` (`reconcileFromSelfPlayer`, `manualRemainingNow`), `ui/MohamedLoversScreen.kt` (toast).
+- **Two-sided ledger.** How much has been pushed today is `max(local, server)`:
+  - local — `ml_push_date`/`ml_push_used` in `MohamedLoversSessionStore` (`dailyPushUsed`/`recordDailyPush`), advanced by the amount each flush actually pushed;
+  - server — `SalawatDailyCap.serverDayTotal(totalCount, yesterdayTotalScore)`, i.e. the round total minus the baseline the 23:45 Cairo cron stamps, merged in by `syncDailyPushFromRemote` on every self-player snapshot.
+  Taking the higher covers both holes: the server total survives a **reinstall** (which wipes the local ledger), the local ledger survives a **Friday 19:00 round rollover** (which zeroes the server-side day total mid-day). Neither alone is enough.
+- **Baseline persistence.** `yesterdayTotalScore` is stored with the Cairo day *and* the epoch-ms it was fetched (`ml_push_baseline`/`ml_push_baseline_at`, `saveDailyBaseline`/`dailyBaseline`/`dailyBaselineFetchedAt`), so a user who leaves and comes back later the same day still knows where the day started without waiting for a snapshot. Both are cleared when the ledger rolls onto a new Cairo day.
+- **Enforcement is at the flush**, the last point before the network write. `flushPendingSession` clamps each round's pending to what is left of the allowance and **clears the pending in full either way** — score above the cap is *discarded, not deferred to tomorrow*, so the on-screen number falls back in line with the remote one instead of retrying forever. The very first push of a day goes through the same path, so it is capped too. The published absolute `todayCount` is clamped to the cap, and on a capped flush `DailyGoalStore.clampTodayProgress` pulls the local day count down to match, keeping the self row, the badge and the daily leaderboard on one number.
+- The manual sheet's remaining allowance is `min(manual cap, push cap remaining)` (`manualRemainingNow`), and `submitManualSalawat` clamps to the push allowance **before** touching the manual ledger — so the ledger never records salawat that the flush would immediately discard.
+- UI: `MohamedLoversUiState.dailyCapDiscarded` is a one-shot toast (`mohamed_lovers_daily_cap_reached`, all four locales), cleared via `dismissDailyCapNotice()`.
+- Tests: `commonTest/domain/SalawatDailyCapTest.kt`, the cap cases in `commonTest/domain/MohamedLoversRepositoryFlushTest.kt` and `commonTest/data/session/MohamedLoversSessionStoreTest.kt`, `commonTest/presentation/MohamedLoversViewModelDailyCapTest.kt`.
+
+### Daily-badge score reconciliation
+
+The server-published daily badge is treated as evidence of a **minimum** day count: a badge only lands after the score that earned it reached the server (`publishDailyBadgeIfChanged` runs after the flush), so a local count below the badge's threshold means the device lost today's progress — a reinstall, cleared storage, or a mid-day device switch.
+
+- `MohamedLoversPlayer.dailyBadge` is parsed from the player node (`toPlayer()`), and `MohamedLoversViewModel.reconcileDailyBadge` runs on every self-player snapshot. When `DailyBadge.fromKey(player.dailyBadge).threshold > DailyGoalStore.todayProgress`, the local count is raised to the badge value (`raiseTodayProgress`) and a one-shot toast warns the user (`mohamed_lovers_badge_score_adjusted`, all four locales, cleared via `dismissBadgeAdjustment()`). Equal-or-lower badges are a no-op, so the reconcile is self-limiting and the toast fires once.
+- Safe across days because `generate-stats.js` **clears `dailyBadge` nightly at 23:45 Cairo** — a badge on the node always belongs to the current Cairo day, so it can never inflate tomorrow's count. Badge thresholds top out at 10,000, well under the 25k push cap, so the two never fight.
+- **Abnormal-user trail.** Every adjustment is recorded at RTDB `mohamed_lovers/users/{uid}/badgeAdjustments/{yyyy-MM-dd HH;mm}` (Cairo minute, same key format as `externalLog`) = `{case, at, serverAt, progress, badge, badgeValue}`. `progress` is the short count **as it was found, before the raise**; `badgeValue` is what it was raised to; `at` is the device clock and `serverAt` a `ServerValue.TIMESTAMP`, so a wide gap between them flags a manipulated device clock. `case` is `badge_above_progress` (the only case today — the field exists so future reconciliation reasons share the node). One adjustment is normal (reinstall, cleared storage, second device); a device producing them repeatedly is the signal.
+- Core files for the log: `domain/DailyBadgeAdjustmentLog.kt` (`DailyBadgeAdjustment`, `CASE_BADGE_ABOVE_PROGRESS`, `entryKey`), `domain/MohamedLoversRepository.kt` (`logDailyBadgeAdjustment`), `data/firebase/MohamedLoversFirebaseClient.kt` (`BADGE_ADJUSTMENTS_PATH`, `appendBadgeAdjustmentLog`). The write is fire-and-forget from `reconcileDailyBadge` and never gates the adjustment the user already saw.
+- RTDB rules: `users/{uid}/badgeAdjustments/$entryKey` validates `hasChildren(['case','at','progress','badge','badgeValue'])` with a per-field validator and `$other: false`, under the existing cascading `users/$uid` write grant (the node's own `$other: false` meant the key had to be whitelisted). The user node is `.read: false`, so the client writes but never reads it back; admin scripts bypass. No Firestore mirror — matching `scoreHistory`/`paceFlags`, the other per-user tracking nodes.
+- Tests: `commonTest/domain/MohamedLoversRepositoryBadgeAdjustmentTest.kt` (log contents + Cairo-minute key), `commonTest/presentation/MohamedLoversViewModelDailyCapTest.kt`.
+
 ### External-entry log & server-backed manual cap
 
 Audit trail for externally-recorded salawat plus the server-side mirror of the manual ("record external") daily allowance. **Every** external push — manual entry, Chrome-extension sync, and corrections — is stamped onto the player node as it happens, so each claim leaves a timestamped record next to the score it produced. The cap-consuming half of the same write makes the daily allowance survive a reinstall.
@@ -199,11 +225,11 @@ Settings screen that exports the device's identity as a copy-pasteable **backup 
 - **Restore is read-then-commit.** Every network read (`fetchAccountSnapshot` + one `fetchUserTotal` per challenge) happens *before* any local mutation, so an offline or unknown-code attempt leaves the device untouched. Only a confirmed account triggers `LocalAccountReset.wipeAccountData()` and the hydrate.
 - **Why a full wipe:** most of the key-value store is account-scoped, and several server writes are **absolute** — `players/{uid}/todayCount` and each challenge's `users/{uid}/totalCount`. A restore that kept this device's zeroes would publish them over the restored account's real values on the next tap/screen visit. `LocalAccountReset` therefore clears everything and re-applies an allowlist of *device* keys: language, notification toggles, salawat variant, already-seen promo/tooltip flags, and purchases (Play entitlements follow the Google account and are re-queried at startup anyway).
 - **FCM is deliberately not preserved** — the token keys are dropped so `MainActivity.ensureFcmTokenSynced()` registers a fresh token under the restored uid on the next start.
-- **What comes back from RTDB:** rank achievements (`users/{uid}/achievements` → `eng_rank_achievements`, dated from the round key), `installDate`, and from the round player node `todayCount` (→ `DailyGoalStore.restoreProgress`), `roundStreak` (→ `RoundStreakStore.restoreStreak`) and `nickname` (only when it differs from the uid suffix, i.e. a real nickname). Each challenge's lifetime total comes back via `fetchUserTotal` → `restoreLifetime` (max-wins, so a failed read can never lower a total). The competition score and medals need no hydration — they are server-owned and re-appear with the uid. The streak's last-active day is reconstructed as today when `todayCount > 0` and yesterday otherwise, so it neither double-counts nor stalls.
+- **What comes back from RTDB:** rank achievements (`users/{uid}/achievements` → `eng_rank_achievements`, dated from the round key), `installDate`, and from the round player node `todayCount` (→ `DailyGoalStore.setTodayProgress`), `roundStreak` (→ `RoundStreakStore.restoreStreak`) and `nickname` (only when it differs from the uid suffix, i.e. a real nickname). Each challenge's lifetime total comes back via `fetchUserTotal` → `restoreLifetime` (max-wins, so a failed read can never lower a total). The competition score and medals need no hydration — they are server-owned and re-appear with the uid. The streak's last-active day is reconstructed as today when `todayCount > 0` and yesterday otherwise, so it neither double-counts nor stalls.
 - **Not restored** (the server never held it): heart index, challenge badges/streaks, engagement streak, personal best rank, notification preferences (`users/{uid}` is `.read: false` apart from the paths below).
 - RTDB rules: `users/{uid}/installDate` gained `.read: true` — it is the existence probe (stamped on every app start, so any real account has one) and the only user-node field the restore needs. Everything else it reads was already client-readable (`achievements`, the round `players` node, each challenge's `users/{uid}/totalCount`). Deploy with `firebase deploy --only database` **before** shipping the build, or restore reports "no such account" for every code.
 - The restored identity is picked up by a **restart** — the success dialog says so — because the ViewModels and the leaderboard listener bind the uid at construction.
-- Tests: `commonTest/domain/AccountBackupCodeTest.kt`, `commonTest/domain/AccountRestoreManagerTest.kt`, `commonTest/data/session/LocalAccountResetTest.kt`, plus `restoreProgress`/`restoreLifetime` cases in `DailyGoalStoreTest` and `GharsChallengeStoreTest`.
+- Tests: `commonTest/domain/AccountBackupCodeTest.kt`, `commonTest/domain/AccountRestoreManagerTest.kt`, `commonTest/data/session/LocalAccountResetTest.kt`, plus `setTodayProgress`/`restoreLifetime` cases in `DailyGoalStoreTest` and `GharsChallengeStoreTest`.
 
 ### Required-field write gate (`schemaVersion`)
 
@@ -240,6 +266,7 @@ mohamed_lovers/
 │   ├── leaderboardNotifsEnabled         # client opt-in for populate-leaderboard.js push (Settings; absent = on)
 │   ├── scoreHistory/{dateKey}            # server-only daily per-user score snapshot (that day's total)
 │   ├── paceFlags/{dateKey}               # server-only: {totalCount,dayOfRound,threshold,countryCode} when round total > dayOfRound×11k
+│   ├── badgeAdjustments/{yyyy-MM-dd HH;mm} # client-written: {case,at,serverAt,progress,badge,badgeValue} per daily-badge reconciliation
 │   └── achievements/{roundKey}/          # rank, score, date
 └── {roundKey}/                           # e.g. "2026-05-16" (next Friday Cairo date)
     ├── roundTotal, roundPlayerCount      # server-computed aggregates
@@ -327,8 +354,27 @@ All workflows use secrets: `FIREBASE_SERVICE_ACCOUNT`, `FIREBASE_DATABASE_URL`.
 Python, not part of the KMP build. Full docs in `DhikrSpeech/README.md`.
 
 - **`notebooks/DhikrSpeech.ipynb` is the only notebook.** It runs the whole pipeline top to bottom in
-  five sections (`01 · Dataset` … `05 · Export`). The per-stage notebooks it was built from were
+  five sections (`01 · Dataset` … `05 · Export`), plus an optional `06 · Experiment` that is not part
+  of the pipeline and is skipped by a normal run. The per-stage notebooks it was built from were
   deleted deliberately — do not recreate them, and make every notebook change here.
+- **Section `06 · Experiment` answers "one model per dhikr?"** — the recurring proposal to replace the
+  multi-class model with N binary detectors. `src/experiments.py` trains one one-vs-rest model per
+  phrase and scores them against the multi-class model on the *same* clips, holding the manifest,
+  splits, architecture, augmentation, optimiser, seed and epoch budget fixed so the difference is the
+  approach. It reports three things separately because they can disagree: per-phrase detection
+  (threshold-free AUC/AP), naming the right phrase (both sides restricted to the phrase columns, so
+  `unknown` cannot absorb a mistake), and staying quiet on `unknown` clips (same accept rule for
+  both). It is built to be able to return a **tie** — Wilson intervals sit next to every accuracy and
+  a sub-`0.02` AUC difference is reported as noise, not a winner. The expected result is that
+  one-vs-rest loses on the nested-prefix phrases (`سبحان الله` ⊂ `سبحان الله وبحمده` ⊂
+  `سبحان الله العظيم وبحمده`, `اللهم صل على محمد` ⊂ `اللهم صل وسلم على نبينا محمد`), which softmax
+  learns as competing outputs and a binary detector never sees as a label. Runs land in
+  `checkpoints/ovr_{phrase}/`, separate from the shipped run, and are never exported.
+- **`DhikrSpeech/tests/` is pytest over the scoring logic only** (`python3 -m pytest DhikrSpeech/tests`,
+  needs numpy/scikit-learn/librosa but **not** TensorFlow — `experiments.py` imports `models`/`trainer`
+  lazily inside the training function to keep it that way). Training itself is not covered: it needs a
+  GPU and the dataset on Drive. What is covered is the arithmetic that could silently produce a wrong
+  verdict.
 - `configs/config.yaml` is the only place settings live; the notebooks read it and hold no
   thresholds or hyperparameters of their own. All logic lives in `DhikrSpeech/src/`.
 - **`DhikrSpeech/space/` is the Gradio app for testing an export** (classify a clip, scan a

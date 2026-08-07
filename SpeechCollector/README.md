@@ -59,6 +59,17 @@ Quran and Al-Baqara reading prompts are not included because they are recitation
 challenges rather than Dhikr counter phrases. Keep this list in step with
 `DhikrSpeech/phrases.json`, which the training pipeline reads.
 
+### One utterance per recording
+
+A clip is a single training example, so it must hold the phrase **once**. A
+volunteer who repeats the dhikr inside one take produces a clip the pipeline
+cannot label, and more samples come from recording again, not from saying the
+phrase twice. The rule is therefore stated in `ui.singleTakeRule` (its own
+highlighted box above the cards) and repeated in the wording of `listHint`,
+`microphoneHint`, `ready`, `recording`, `recordingReady`, `uploadSuccessBody`
+and `unknownPrompt.note`. `verify.mjs` asserts the box ships and that those
+strings still carry the rule, so a copy edit cannot quietly drop it.
+
 ### Recommended: use an existing Drive folder
 
 1. In Google Drive, create a folder named `Dhikr Speech Dataset`.
