@@ -159,9 +159,6 @@ class MohamedLoversViewModel(
             val bootstrap = repository.bootstrap()
             currentWindow = bootstrap.competitionWindow
 
-            // Score masking is scoped to a single round — clear it once a new round has started.
-            bootstrap.competitionWindow.roundKey?.let { premiumStore.clearScoreMaskOnNewRound(it) }
-
             _state.update {
                 it.copy(
                     isLoading = false,
@@ -733,14 +730,6 @@ class MohamedLoversViewModel(
         }
     }
 
-    fun setScoreMasked(masked: Boolean) {
-        val roundKey = state.value.roundKey ?: return
-        val uid = authUid ?: return
-        viewModelScope.launch {
-            repository.setScoreMasked(roundKey, uid, masked)
-        }
-    }
-
     fun fetchLiveLeaderboard() {
         val roundKey = state.value.roundKey ?: return
         if (!premiumStore.hasFeature(PremiumFeature.LIVE_LEADERBOARD)) return
@@ -1053,7 +1042,6 @@ class MohamedLoversViewModel(
                 isCurrentUser = isCurrentUser,
                 uid = entry.uid,
                 rankChange = entry.rankChange,
-                scoreMasked = entry.scoreMasked,
                 isSupporter = entry.isSupporter,
                 dailyBadge = if (isCurrentUser) state.value.currentDailyBadge else entry.dailyBadge,
                 roundStreak = if (isCurrentUser) state.value.roundStreak.takeIf { it > 0 } else entry.roundStreak,
