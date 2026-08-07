@@ -101,6 +101,13 @@ data class MohamedLoversUiState(
     val milestoneBadgeKey: String? = null,
     val currentDailyBadge: String? = null,
 
+    // Daily competition push cap: salawat dropped by the last flush because the day's cap was
+    // already spent. One-shot — the screen shows it as a toast and clears it.
+    val dailyCapDiscarded: Int? = null,
+    // Today's count was raised to the server-published daily badge value (local progress was
+    // behind the badge the server already recorded). One-shot, shown as a toast.
+    val badgeAdjustedTo: Int? = null,
+
     // Motivation: rank movement summary
     val rankMovementDelta: Int? = null,
     val rankMovementOldRank: Int = 0,

@@ -122,6 +122,24 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
         return Result.success(Unit)
     }
 
+    data class BadgeAdjustmentCall(
+        val uid: String,
+        val timeKey: String,
+        val adjustment: DailyBadgeAdjustment,
+    )
+
+    val badgeAdjustmentCalls = mutableListOf<BadgeAdjustmentCall>()
+    var badgeAdjustmentResult: Result<Unit> = Result.success(Unit)
+
+    override suspend fun appendBadgeAdjustmentLog(
+        uid: String,
+        timeKey: String,
+        adjustment: DailyBadgeAdjustment,
+    ): Result<Unit> {
+        badgeAdjustmentCalls.add(BadgeAdjustmentCall(uid, timeKey, adjustment))
+        return badgeAdjustmentResult
+    }
+
     /** Server-side manual allowance ledger, keyed by Cairo day. */
     val externalDailyUsed = mutableMapOf<String, Int>()
 

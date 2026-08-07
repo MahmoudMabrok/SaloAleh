@@ -158,30 +158,85 @@ class MohamedLoversRepository(
      * the server. Read at startup so a reinstall — which wipes the local ledger — cannot hand the
      * user a fresh daily cap.
      */
+    /**
+     * Records one daily-badge score reconciliation under the user node, so devices that keep losing
+     * their day count can be reviewed. [progress] is today's local count *before* the raise and
+     * [badge] the server-published badge that triggered it. Record-only and fire-and-forget — a
+     * failure here never affects the adjustment the user already saw.
+     */
+    suspend fun logDailyBadgeAdjustment(
+        case: String,
+        at: Instant,
+        progress: Int,
+        badge: DailyBadge,
+    ): Result<Unit> {
+        val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
+        return firebaseClient.appendBadgeAdjustmentLog(
+            uid = uid,
+            timeKey = DailyBadgeAdjustmentLog.entryKey(at),
+            adjustment = DailyBadgeAdjustment(
+                case = case,
+                atMs = at.toEpochMilliseconds(),
+                progress = progress,
+                badgeKey = badge.key,
+                badgeValue = badge.threshold,
+            ),
+        )
+    }
+
     suspend fun fetchExternalUsedToday(roundKey: String, at: Instant): Result<Int> {
         val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
         return firebaseClient.fetchExternalDailyUsed(roundKey, uid, ExternalSalawatLog.dayKey(at))
     }
 
-    suspend fun flushPendingSession(countryCode: String, todayCount: Int = 0): Result<Unit> {
+    /**
+     * Pushes every pending round's score to Firebase, clamped to [allowance] — what is left of the
+     * day's [MOHAMED_LOVERS_DAILY_PUSH_CAP]. Pending score above the allowance is **discarded, not
+     * deferred**: the pending counter is cleared in full whether or not all of it was pushed, so the
+     * locally-displayed score falls back in line with the remote one instead of retrying forever.
+     *
+     * [todayCount] is the absolute Cairo-day count published for the daily leaderboard; the caller
+     * clamps it to the same cap before passing it in.
+     */
+    suspend fun flushPendingSession(
+        countryCode: String,
+        todayCount: Int = 0,
+        allowance: Int = MOHAMED_LOVERS_DAILY_PUSH_CAP,
+    ): Result<MohamedLoversFlushResult> {
         val allPending = sessionStore.getAllPendingRounds()
-        if (allPending.isEmpty()) return Result.success(Unit)
+        if (allPending.isEmpty()) return Result.success(MohamedLoversFlushResult())
 
         val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
 
+        var remaining = allowance.coerceAtLeast(0)
+        var pushed = 0
+        var discarded = 0
         var lastError: Throwable? = null
         for ((roundKey, count) in allPending) {
+            val applied = SalawatDailyCap.allowedPush(requested = count, pushedToday = 0, cap = remaining)
+            if (applied <= 0) {
+                // The day's allowance is spent: this pending score can never be scored, so drop it
+                // rather than leave it queued to inflate tomorrow's first flush.
+                sessionStore.decrementPendingClick(roundKey, count)
+                discarded += count
+                continue
+            }
             val result = firebaseClient.incrementSession(
                 roundKey = roundKey,
                 uid = uid,
-                delta = count,
+                delta = applied,
                 countryCode = countryCode,
                 todayCount = todayCount,
             )
-            result.onSuccess { sessionStore.decrementPendingClick(roundKey, count) }
-                .onFailure { lastError = it }
+            result.onSuccess {
+                sessionStore.decrementPendingClick(roundKey, count)
+                remaining -= applied
+                pushed += applied
+                discarded += count - applied
+            }.onFailure { lastError = it }
         }
-        return if (lastError != null) Result.failure(lastError!!) else Result.success(Unit)
+        return if (lastError != null) Result.failure(lastError!!)
+        else Result.success(MohamedLoversFlushResult(pushed = pushed, discarded = discarded))
     }
 
     fun refreshNetworkTime() = networkTimeProvider.prime()
