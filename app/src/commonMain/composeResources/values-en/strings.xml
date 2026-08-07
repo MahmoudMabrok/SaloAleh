@@ -410,10 +410,14 @@
     <string name="paywall_continuous_reward_subtitle">Every salawat raised through the app earns you a share of its reward</string>
     <string name="paywall_small_perks_title">Small Perks</string>
     <string name="paywall_small_perks_subtitle">Hide score, supporter badge, and reveal Friday scores</string>
+    <string name="paywall_hide_score_title">Hide Score</string>
+    <string name="paywall_hide_score_subtitle">Hide your score from others on the leaderboard</string>
     <string name="paywall_supporter_badge_title">Supporter Badge</string>
     <string name="paywall_supporter_badge_subtitle">A special badge next to your name on the leaderboard</string>
     <string name="paywall_friday_scores_title">Reveal Friday Scores</string>
     <string name="paywall_friday_scores_subtitle">See other players\' scores during the competition</string>
+    <string name="paywall_score_hidden_description">Your score is hidden from other participants</string>
+    <string name="paywall_hide_score_plus_badge">Hide Score + Supporter Badge</string>
     <string name="paywall_support_now_price">Support Now — %1$s</string>
     <string name="paywall_support_now">Support Now</string>
     <string name="paywall_restore_purchases">Restore Purchases</string>

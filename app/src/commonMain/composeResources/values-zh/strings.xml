@@ -381,10 +381,14 @@
     <string name="paywall_continuous_reward_subtitle">通过此应用发出的每次赞颂，你都将获得一份回赐</string>
     <string name="paywall_small_perks_title">额外福利</string>
     <string name="paywall_small_perks_subtitle">隐藏分数、支持者徽章和查看周五分数</string>
+    <string name="paywall_hide_score_title">隐藏分数</string>
+    <string name="paywall_hide_score_subtitle">在排行榜上对他人隐藏你的分数</string>
     <string name="paywall_supporter_badge_title">支持者徽章</string>
     <string name="paywall_supporter_badge_subtitle">排行榜上你名字旁的特别徽章</string>
     <string name="paywall_friday_scores_title">查看周五分数</string>
     <string name="paywall_friday_scores_subtitle">在比赛期间查看其他玩家的分数</string>
+    <string name="paywall_score_hidden_description">你的分数已对其他参与者隐藏</string>
+    <string name="paywall_hide_score_plus_badge">隐藏分数 + 支持者徽章</string>
     <string name="paywall_support_now_price">立即支持 — %1$s</string>
     <string name="paywall_support_now">立即支持</string>
     <string name="paywall_restore_purchases">恢复购买</string>

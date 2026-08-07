@@ -72,6 +72,7 @@ class MohamedLoversViewModelHeartTest {
             networkTime,
             sessionStore,
             countryCode,
+            premiumStore,
         )
         return MohamedLoversViewModel(
             repository = repo,

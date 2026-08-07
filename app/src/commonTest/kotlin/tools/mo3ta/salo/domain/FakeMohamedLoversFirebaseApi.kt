@@ -104,6 +104,9 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
     override suspend fun resetPlayerScore(roundKey: String, uid: String): Result<Unit> =
         Result.success(Unit)
 
+    override suspend fun setScoreMasked(roundKey: String, uid: String, masked: Boolean): Result<Unit> =
+        Result.success(Unit)
+
     override suspend fun incrementExternalCount(roundKey: String, uid: String, count: Int): Result<Unit> =
         Result.success(Unit)
 

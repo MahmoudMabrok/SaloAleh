@@ -3,6 +3,7 @@ package tools.mo3ta.salo.domain
 import com.russhwolf.settings.MapSettings
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
+import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.country.CountryCodeProvider
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.data.time.NetworkTimeProvider
@@ -28,6 +29,7 @@ class MohamedLoversRepositoryUserActivityTest {
             networkTime,
             MohamedLoversSessionStore(settings),
             countryCode,
+            PremiumStore(MapSettings()),
         )
         return repo to firebaseApi
     }

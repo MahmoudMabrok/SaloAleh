@@ -62,7 +62,7 @@ class MohamedLoversViewModelManualCapTest {
         }
         val sessionStore = MohamedLoversSessionStore(MapSettings())
         val premiumStore = PremiumStore(MapSettings())
-        val repo = MohamedLoversRepository(fake, networkTime, sessionStore, countryCode)
+        val repo = MohamedLoversRepository(fake, networkTime, sessionStore, countryCode, premiumStore)
         return MohamedLoversViewModel(
             repository = repo,
             engagementStore = EngagementStore(MapSettings()),

@@ -381,10 +381,14 @@
     <string name="paywall_continuous_reward_subtitle">ایپ سے بھیجا گیا ہر درود آپ کے اجر میں شامل ہے</string>
     <string name="paywall_small_perks_title">اضافی سہولتیں</string>
     <string name="paywall_small_perks_subtitle">اسکور چھپائیں، سپورٹر بیج، اور جمعہ کے اسکور دیکھیں</string>
+    <string name="paywall_hide_score_title">اسکور چھپائیں</string>
+    <string name="paywall_hide_score_subtitle">لیڈربورڈ پر دوسروں سے اپنا اسکور چھپائیں</string>
     <string name="paywall_supporter_badge_title">سپورٹر بیج</string>
     <string name="paywall_supporter_badge_subtitle">لیڈربورڈ پر آپ کے نام کے ساتھ ایک خاص بیج</string>
     <string name="paywall_friday_scores_title">جمعہ کے اسکور دیکھیں</string>
     <string name="paywall_friday_scores_subtitle">مقابلے کے دوران دوسرے کھلاڑیوں کے اسکور دیکھیں</string>
+    <string name="paywall_score_hidden_description">آپ کا اسکور دوسرے شرکاء سے چھپا ہوا ہے</string>
+    <string name="paywall_hide_score_plus_badge">اسکور چھپائیں + سپورٹر بیج</string>
     <string name="paywall_support_now_price">ابھی مدد کریں — %1$s</string>
     <string name="paywall_support_now">ابھی مدد کریں</string>
     <string name="paywall_restore_purchases">خریداری بحال کریں</string>

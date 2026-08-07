@@ -565,6 +565,26 @@ class MohamedLoversFirebaseClient(
         }
     }
 
+    override suspend fun setScoreMasked(roundKey: String, uid: String, masked: Boolean): Result<Unit> {
+        log.d { "setScoreMasked[$roundKey/$uid] masked=$masked" }
+        return runCatching {
+            Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(
+                playerPatch(uid, SCORE_MASKED_KEY to masked)
+            )
+        }.also { result ->
+            result.fold(
+                onSuccess = {
+                    log.d { "setScoreMasked[$roundKey/$uid] ok" }
+                    mirror.mirrorPlayerField(roundKey, uid, SCORE_MASKED_KEY, masked)
+                },
+                onFailure = { error ->
+                    log.e(error) { "setScoreMasked[$roundKey/$uid] failed" }
+                    trackWriteFailure("set_score_masked", error)
+                },
+            )
+        }
+    }
+
     override suspend fun setSupporter(roundKey: String, uid: String, supporter: Boolean): Result<Unit> {
         log.d { "setSupporter[$roundKey/$uid] supporter=$supporter" }
         return runCatching {
@@ -713,6 +733,7 @@ class MohamedLoversFirebaseClient(
                 uid = player.uid,
                 score = player.totalCount,
                 countryCode = player.countryCode,
+                scoreMasked = false,
                 isSupporter = false,
                 nickname = player.nickname,
             )
@@ -855,6 +876,7 @@ class MohamedLoversFirebaseClient(
         val rank = (map[RANK_KEY] as? Number)?.toInt() ?: key?.toIntOrNull() ?: return null
         val countryCode = map[COUNTRY_CODE_KEY] as? String ?: ""
         val rankChange = map[RANK_CHANGE_KEY] as? String ?: ""
+        val scoreMasked = map[SCORE_MASKED_KEY] as? Boolean ?: false
         val isSupporter = map[IS_SUPPORTER_KEY] as? Boolean ?: false
         val dailyBadge = map[DAILY_BADGE_KEY] as? String
         val roundStreak = (map[ROUND_STREAK_KEY] as? Number)?.toInt()?.takeIf { it > 0 }
@@ -862,7 +884,7 @@ class MohamedLoversFirebaseClient(
         val silverMedals = (map[SILVER_MEDALS_KEY] as? Number)?.toInt()?.takeIf { it > 0 }
         val bronzeMedals = (map[BRONZE_MEDALS_KEY] as? Number)?.toInt()?.takeIf { it > 0 }
         val nickname = map[NICKNAME_KEY] as? String ?: ""
-        return FirebaseLeaderboardEntry(rank = rank, uid = uid, score = score, countryCode = countryCode, rankChange = rankChange, isSupporter = isSupporter, dailyBadge = dailyBadge, roundStreak = roundStreak, goldMedals = goldMedals, silverMedals = silverMedals, bronzeMedals = bronzeMedals, nickname = nickname)
+        return FirebaseLeaderboardEntry(rank = rank, uid = uid, score = score, countryCode = countryCode, rankChange = rankChange, scoreMasked = scoreMasked, isSupporter = isSupporter, dailyBadge = dailyBadge, roundStreak = roundStreak, goldMedals = goldMedals, silverMedals = silverMedals, bronzeMedals = bronzeMedals, nickname = nickname)
     }
 
     private fun dev.gitlive.firebase.database.DataSnapshot.toPlayer(): MohamedLoversPlayer? {
@@ -909,6 +931,7 @@ class MohamedLoversFirebaseClient(
         const val COUNTRY_CODE_KEY = "countryCode"
         const val RANK_CHANGE_KEY = "rankChange"
         const val UPDATED_AT_KEY = "updatedAt"
+        const val SCORE_MASKED_KEY = "scoreMasked"
         const val IS_SUPPORTER_KEY = "isSupporter"
         const val DAILY_BADGE_KEY = "dailyBadge"
         const val ROUND_STREAK_KEY = "roundStreak"

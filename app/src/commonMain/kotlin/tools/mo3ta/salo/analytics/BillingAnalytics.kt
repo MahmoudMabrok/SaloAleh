@@ -7,9 +7,11 @@ object BillingAnalytics {
     const val PURCHASE_FAILED = "purchase_failed"
     const val PURCHASE_RESTORED = "purchase_restored"
     const val SUBSCRIPTION_STARTED = "subscription_started"
+    const val SCORE_MASK_TOGGLED = "score_mask_toggled"
 
     const val PARAM_PRODUCT_ID = "product_id"
     const val PARAM_ERROR = "error"
+    const val PARAM_ENABLED = "enabled"
     const val PARAM_PERIOD = "period"
 
     const val MILESTONE_SUPPORT_SHOWN = "milestone_support_shown"

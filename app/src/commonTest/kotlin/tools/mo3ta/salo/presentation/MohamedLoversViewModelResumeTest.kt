@@ -68,6 +68,7 @@ class MohamedLoversViewModelResumeTest {
             provider,
             sessionStore,
             countryCode,
+            premiumStore,
         )
         return MohamedLoversViewModel(
             repository = repo,
