@@ -52,6 +52,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
 from inference import (  # noqa: E402
+    UNKNOWN_LABEL,
     DhikrModel,
     ScanResult,
     count_detections,
@@ -321,12 +322,24 @@ def classify_clip(model_path: str, audio, apply_trim: bool):
     )
 
     best = int(np.argmax(probabilities))
-    note = (
-        f"**{display_label(model.labels[best], model.phrases)}** · "
-        f"{probabilities[best]:.1%} confidence · "
-        f"{samples.size / model.frontend.sample_rate:.2f}s in, "
-        f"fitted to {model.frontend.clip_seconds:g}s"
-    )
+    best_label = model.labels[best]
+    confidence = float(probabilities[best])
+    duration = samples.size / model.frontend.sample_rate
+    if best_label.lower() == UNKNOWN_LABEL:
+        # The model's own open-set verdict: the top class is `unknown`, so the
+        # clip is none of the trained phrases and would not be counted on device.
+        # Only reachable when the model was trained with an `unknown` class.
+        note = (
+            f"🚫 **Rejected — not a dhikr** · the model's `unknown` class won at "
+            f"{confidence:.1%} · {duration:.2f}s in, fitted to {model.frontend.clip_seconds:g}s"
+        )
+    else:
+        note = (
+            f"**{display_label(best_label, model.phrases)}** · "
+            f"{confidence:.1%} confidence · "
+            f"{duration:.2f}s in, "
+            f"fitted to {model.frontend.clip_seconds:g}s"
+        )
     warning = model.shape_mismatch()
     if warning:
         note += f"\n\n⚠️ {warning}"
