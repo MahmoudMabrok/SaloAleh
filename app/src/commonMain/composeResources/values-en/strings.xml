@@ -939,6 +939,12 @@
   <string name="kalimat_rewards_close">Keep glorifying</string>
   <string name="kalimat_milestone_title">You completed the four words %1$d times!</string>
   <string name="kalimat_milestone_subtitle">Words that tip your scales 🤍</string>
+  <string name="kalimat_word_creation">As many as His creation</string>
+  <string name="kalimat_word_pleasure">As pleases Him</string>
+  <string name="kalimat_word_throne">The weight of His Throne</string>
+  <string name="kalimat_word_ink">The ink of His words</string>
+  <string name="kalimat_scale_day">All you said since morning</string>
+  <string name="kalimat_scale_outweigh">They outweigh them</string>
   <string name="manual_kalimat_title">📿 Log external tasbih</string>
   <string name="manual_kalimat_subtitle">Glorified Allah silently, on your fingers, or with prayer beads?\nLog what you counted — do not stop the dhikr just because you are away from the app</string>
   <string name="manual_kalimat_count">Count:</string>

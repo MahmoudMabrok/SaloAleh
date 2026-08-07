@@ -901,6 +901,12 @@
   <string name="kalimat_rewards_close">تسبیح جاری رکھیں</string>
   <string name="kalimat_milestone_title">آپ نے چار کلمات %1$d بار مکمل کیے!</string>
   <string name="kalimat_milestone_subtitle">وہ کلمات جو آپ کا ترازو جھکا دیتے ہیں 🤍</string>
+  <string name="kalimat_word_creation">اس کی مخلوق کی تعداد کے برابر</string>
+  <string name="kalimat_word_pleasure">اور اس کی رضا کے مطابق</string>
+  <string name="kalimat_word_throne">اور اس کے عرش کے وزن کے برابر</string>
+  <string name="kalimat_word_ink">اور اس کے کلمات کی سیاہی کے برابر</string>
+  <string name="kalimat_scale_day">جو کچھ آپ نے صبح سے کہا</string>
+  <string name="kalimat_scale_outweigh">وہ بھاری ہو جائیں گے</string>
   <string name="manual_kalimat_title">📿 بیرونی تسبیح درج کریں</string>
   <string name="manual_kalimat_subtitle">خاموشی سے، انگلیوں پر یا تسبیح سے ذکر کیا؟\nجو گنا اسے درج کریں — ایپ سے دور ہونے کی وجہ سے ذکر نہ روکیں</string>
   <string name="manual_kalimat_count">تعداد:</string>

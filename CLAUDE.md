@@ -140,6 +140,18 @@ The Baqiyat screen plays out the hadith it teaches: "…they circle around the T
 - Screen order: title, hadith transcript + sanad (no label above it), the four dhikr as one bi-coloured text line (divine name in the brighter gold, matched by token so it works in all four locales), the tap hint (the screen itself is the button — there is no "completed a cycle" CTA), the hive, the counter, the ayah, then the external-entry button.
 - Strings: `baqiyat_hadith`, `baqiyat_hadith_sanad` (all four locales); `baqiyat_tap_hint` no longer says "five".
 
+### Kalimat scale (hadith simulation)
+
+The Kalimat screen plays out the hadith of Juwayriya: "…four words; if they were weighed against all you have said since this morning, they would outweigh them."
+
+- Core files: `ui/kalimat/KalimatScaleCanvas.kt` (the balance), `ui/KalimatChallengeScreen.kt`, `presentation/KalimatChallengeViewModel.kt`.
+- The right pan fills on its own — one dim mote every ~1–2s up to 70, "everything said since morning". It **survives the round reset**, so each round is weighed against a heavier day than the last.
+- Every tasbiha launches the **four words** (`kalimat_word_creation|pleasure|throne|ink` — the qualifiers; the opening `سُبْحَانَ اللهِ وَبِحَمْدِهِ` is the dhikr itself, not one of the four) from the reciter at the foot of the canvas, staggered `0.16s` apart, into the left pan. A landed word is readable ~3.2s then melts into the heap as a lit coin. The beam is a damped spring: empty it leans toward the day pile (further as that pile grows), one word takes it over.
+- **Round reset:** reaching the daily goal flashes `kalimat_scale_outweigh` (لوَزَنَتْهُنَّ) over the flaring pan, holds `1.6s`, then empties the words pan and lets the beam swing back to the day side. A tasbiha during the hold cuts it short. Rounds are `count % KALIMAT_CHALLENGE_DAILY_GOAL`, the same cycle the progress ring shows.
+- **Nothing is driven by the count in composition.** The canvas runs its own `withFrameNanos` clock read *inside* the draw lambda; a tasbiha arrives as `KalimatChallengeViewModel.tasbihSerial` (`StateFlow<Int>`, bumped by tap + manual entry, **not** by the remote-baseline sync on screen enter) collected inside the canvas. `todayCount.value` is read only at that moment, to place the tasbiha in its round — so the pan and the ring can never disagree, including after a manual entry that jumps the count. Before the first tasbiha of a session the pan is *seated* from the count (no flight, no flash) so reopening mid-round looks right.
+- Screen order: header, external-entry button, hadith transcript + sanad, the scale (takes the space between transcript and counter), the counter (ring trimmed 220→176dp to make room), tap hint, then the rewards button.
+- Strings: `kalimat_word_{creation,pleasure,throne,ink}`, `kalimat_scale_day`, `kalimat_scale_outweigh` (all four locales).
+
 ### Daily today-count, score history & abnormal-user tracking
 
 Client-published per-Cairo-day salawat total that drives the daily leaderboard directly, plus a server-side daily audit trail, a fixed-threshold abnormal-usage flag, and a day-of-round pace flag.

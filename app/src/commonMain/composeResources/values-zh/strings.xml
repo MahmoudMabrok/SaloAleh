@@ -901,6 +901,12 @@
   <string name="kalimat_rewards_close">继续赞念</string>
   <string name="kalimat_milestone_title">你完成了四句话 %1$d 次！</string>
   <string name="kalimat_milestone_subtitle">使你的天秤倾斜的话语 🤍</string>
+  <string name="kalimat_word_creation">如同他造化之数</string>
+  <string name="kalimat_word_pleasure">如同他的喜悦</string>
+  <string name="kalimat_word_throne">如同他宝座之重</string>
+  <string name="kalimat_word_ink">如同他言辞之墨</string>
+  <string name="kalimat_scale_day">你从今晨所念的一切</string>
+  <string name="kalimat_scale_outweigh">它们更重</string>
   <string name="manual_kalimat_title">📿 记录外部赞念</string>
   <string name="manual_kalimat_subtitle">默念、掐指或用念珠赞念了吗？\n记录你所念的——不要因为离开应用而停止赞念</string>
   <string name="manual_kalimat_count">数量：</string>

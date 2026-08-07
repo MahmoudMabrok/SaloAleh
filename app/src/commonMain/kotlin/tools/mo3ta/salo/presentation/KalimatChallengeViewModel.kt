@@ -47,6 +47,15 @@ class KalimatChallengeViewModel(
     private val _todayCount = MutableStateFlow(0)
     val todayCount: StateFlow<Int> = _todayCount.asStateFlow()
 
+    /**
+     * Bumped once per *user* tasbiha — a tap or a manual entry — and never by the remote-baseline
+     * sync on screen enter. [tools.mo3ta.salo.ui.kalimat.KalimatScaleCanvas] collects this to launch
+     * the four words into the scale, so opening the screen with a synced count does not fire a
+     * launch per tasbiha already recorded. Mirrors `BaqiyatViewModel.cycleSerial`.
+     */
+    private val _tasbihSerial = MutableStateFlow(0)
+    val tasbihSerial: StateFlow<Int> = _tasbihSerial.asStateFlow()
+
     fun onLeaderboardOpened() {
         recalculateLocalLeaderboard()
         _state.update { it.copy(showLeaderboard = true) }
@@ -120,6 +129,7 @@ class KalimatChallengeViewModel(
         val before = _todayCount.value
         val updated = store.incrementToday(today)
         _todayCount.value = updated
+        _tasbihSerial.update { it + 1 }
         maybeRecordWin(today, updated)
         // Reward only on reaching the daily goal — no sub-goal milestones.
         if (before < KALIMAT_CHALLENGE_DAILY_GOAL && updated >= KALIMAT_CHALLENGE_DAILY_GOAL) {
@@ -148,6 +158,7 @@ class KalimatChallengeViewModel(
         val before = store.todayCount(today)
         val updated = store.addToday(today, count)
         _todayCount.value = updated
+        _tasbihSerial.update { it + 1 }
         maybeRecordWin(today, updated)
         // Reward only on reaching the daily goal — no sub-goal milestones.
         val crossedGoal = before < KALIMAT_CHALLENGE_DAILY_GOAL && updated >= KALIMAT_CHALLENGE_DAILY_GOAL
