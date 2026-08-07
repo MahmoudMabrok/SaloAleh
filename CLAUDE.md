@@ -359,7 +359,8 @@ Python, not part of the KMP build. Full docs in `DhikrSpeech/README.md`.
   needs numpy/scikit-learn/librosa but **not** TensorFlow — `experiments.py` imports `models`/`trainer`
   lazily inside the training function to keep it that way). Training itself is not covered: it needs a
   GPU and the dataset on Drive. What is covered is the arithmetic that could silently produce a wrong
-  verdict.
+  verdict — including `test_trainer_diagnostics.py` (the overfitting notes and the resume guard),
+  which stubs TensorFlow only when it is genuinely absent so it never shadows a real install.
 - `configs/config.yaml` is the only place settings live; the notebooks read it and hold no
   thresholds or hyperparameters of their own. All logic lives in `DhikrSpeech/src/`.
 - **`DhikrSpeech/space/` is the Gradio app for testing an export** (classify a clip, scan a
