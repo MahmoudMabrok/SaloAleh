@@ -7,7 +7,7 @@ import kotlinx.datetime.LocalDate
  *
  * Instead of hiding the manual-entry button from brand-new users, the button stays visible but the
  * amount that may be added manually each day ramps up: 1,000 on install day, 2,000 the next day, and
- * so on by [RAMP_STEP] each day, reaching [MAX_DAILY_CAP] on day 10. From then on the cap stays flat
+ * so on by [RAMP_STEP] each day, reaching [MAX_DAILY_CAP] on day 15. From then on the cap stays flat
  * at [MAX_DAILY_CAP] — the ceiling the ongoing "daily external records" cap builds on.
  *
  * A new user who has already proven daily commitment short-circuits the ramp: once their round
@@ -19,10 +19,10 @@ import kotlinx.datetime.LocalDate
 object SalawatManualCap {
 
     /** Days the ramp climbs before flattening (install day counts as day 1). */
-    const val RAMP_DAYS = 10
+    const val RAMP_DAYS = 15
 
-    /** Flat cap once the ramp is over (day 10 onward) — the permanent daily external-entry cap. */
-    const val MAX_DAILY_CAP = MOHAMED_LOVERS_MANUAL_DAILY_CAP // 10_000
+    /** Flat cap once the ramp is over (day 15 onward) — the permanent daily external-entry cap. */
+    const val MAX_DAILY_CAP = MOHAMED_LOVERS_MANUAL_DAILY_CAP // 15_000
 
     /** Extra allowance granted per additional day since install (MAX split evenly across the ramp). */
     const val RAMP_STEP = MAX_DAILY_CAP / RAMP_DAYS // 1_000
@@ -40,7 +40,7 @@ object SalawatManualCap {
      *   [STREAK_CAP_UNLOCK] the ramp is skipped and [MAX_DAILY_CAP] is returned regardless of age.
      * @return how many salawat may be recorded manually on [today]: [MAX_DAILY_CAP] once the streak
      *   unlocks it, otherwise 1,000 on install day climbing by [RAMP_STEP] each day up to
-     *   [MAX_DAILY_CAP] on day 10, then flat.
+     *   [MAX_DAILY_CAP] on day 15, then flat.
      */
     fun dailyCap(today: LocalDate, installDate: LocalDate, currentStreak: Int = 0): Int {
         if (currentStreak >= STREAK_CAP_UNLOCK) return MAX_DAILY_CAP

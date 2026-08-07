@@ -184,8 +184,8 @@ class MohamedLoversSessionStoreTest {
 
     @Test
     fun recordManualEntry_clampsToRemainingCap() {
-        store.recordManualEntry(d1, 9_000)
-        // Only 1_000 of the requested 5_000 fits under the 10_000 cap.
+        store.recordManualEntry(d1, MOHAMED_LOVERS_MANUAL_DAILY_CAP - 1_000)
+        // Only 1_000 of the requested 5_000 fits under the daily cap.
         val applied = store.recordManualEntry(d1, 5_000)
         assertEquals(1_000, applied)
         assertEquals(0, store.manualRemainingToday(d1))
@@ -265,7 +265,7 @@ class MohamedLoversSessionStoreTest {
 
     @Test
     fun recordManualEntry_lowerCapSharesLedgerWithPermanentCap() {
-        // Under a day-2 ramp cap of 2_000, 2_000 is used; the permanent cap then sees 8_000 left.
+        // Under a day-2 ramp cap of 2_000, 2_000 is used; the permanent cap then sees the rest left.
         store.recordManualEntry(d1, 5_000, dailyCap = 2_000)
         assertEquals(0, store.manualRemainingToday(d1, dailyCap = 2_000))
         assertEquals(MOHAMED_LOVERS_MANUAL_DAILY_CAP - 2_000, store.manualRemainingToday(d1))
