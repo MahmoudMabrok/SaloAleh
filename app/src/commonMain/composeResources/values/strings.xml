@@ -983,6 +983,12 @@
   <string name="kalimat_rewards_close">واصل التسبيح</string>
   <string name="kalimat_milestone_title">أتممت الكلمات الأربع %1$d مرات!</string>
   <string name="kalimat_milestone_subtitle">كلماتٌ يرجَحْنَ ميزانك 🤍</string>
+  <string name="kalimat_word_creation">عَدَدَ خَلْقِهِ</string>
+  <string name="kalimat_word_pleasure">وَرِضَا نَفْسِهِ</string>
+  <string name="kalimat_word_throne">وَزِنَةَ عَرْشِهِ</string>
+  <string name="kalimat_word_ink">وَمِدَادَ كَلِمَاتِهِ</string>
+  <string name="kalimat_scale_day">ما قلتِ منذ اليوم</string>
+  <string name="kalimat_scale_outweigh">لوَزَنَتْهُنَّ</string>
   <string name="manual_kalimat_title">📿 تسجيل تسبيحات خارجية</string>
   <string name="manual_kalimat_subtitle">سبّحت بصمت أو على أصابعك أو بالمسبحة؟\nسجّل ما سبّحت — لا تتوقف عن الذكر لأنك بعيد عن التطبيق</string>
   <string name="manual_kalimat_count">العدد:</string>

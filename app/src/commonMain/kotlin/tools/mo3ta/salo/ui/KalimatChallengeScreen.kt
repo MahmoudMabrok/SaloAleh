@@ -7,6 +7,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -75,15 +76,22 @@ import tools.mo3ta.salo.generated.resources.kalimat_reward_outweigh
 import tools.mo3ta.salo.generated.resources.kalimat_reward_pleasing
 import tools.mo3ta.salo.generated.resources.kalimat_rewards_close
 import tools.mo3ta.salo.generated.resources.kalimat_rewards_title
+import tools.mo3ta.salo.generated.resources.kalimat_scale_day
+import tools.mo3ta.salo.generated.resources.kalimat_scale_outweigh
 import tools.mo3ta.salo.generated.resources.kalimat_tap_hint
 import tools.mo3ta.salo.generated.resources.kalimat_times
 import tools.mo3ta.salo.generated.resources.kalimat_today
 import tools.mo3ta.salo.generated.resources.kalimat_view_rewards
+import tools.mo3ta.salo.generated.resources.kalimat_word_creation
+import tools.mo3ta.salo.generated.resources.kalimat_word_ink
+import tools.mo3ta.salo.generated.resources.kalimat_word_pleasure
+import tools.mo3ta.salo.generated.resources.kalimat_word_throne
 import tools.mo3ta.salo.presentation.KalimatChallengeViewModel
 import tools.mo3ta.salo.ui.kalimat.KalimatColors
 import tools.mo3ta.salo.ui.kalimat.KalimatHeroBackground
 import tools.mo3ta.salo.ui.kalimat.KalimatLeaderboardSheet
 import tools.mo3ta.salo.ui.kalimat.KalimatProgressRing
+import tools.mo3ta.salo.ui.kalimat.KalimatScaleCanvas
 import tools.mo3ta.salo.ui.kalimat.KalimatSpacing
 import tools.mo3ta.salo.ui.kalimat.ManualKalimatSheet
 
@@ -129,6 +137,9 @@ fun KalimatChallengeScreen(
     var showRewardsSheet by remember { mutableStateOf(false) }
     // Captured as a plain Int so the counter lambda never reads `state` from inside the hero zone.
     val dailyGoalForCounter = state.dailyGoal
+    val scaleWords = kalimatWords()
+    val scaleDayLabel = stringResource(Res.string.kalimat_scale_day)
+    val scaleOutweighLabel = stringResource(Res.string.kalimat_scale_outweigh)
 
     Box(
         modifier = Modifier
@@ -152,6 +163,21 @@ fun KalimatChallengeScreen(
             // composable that subscribes to the todayCount flow internally, so a tap recomposes only
             // that widget — the enclosing hero (and the rest of the screen) never re-renders on a tap.
             counter = { KalimatCounter(countFlow = viewModel.todayCount, target = dailyGoalForCounter) },
+            // Same contract for the scale: it collects its own signals inside the canvas, so a
+            // tasbiha invalidates the draw phase only.
+            scale = {
+                KalimatScaleCanvas(
+                    words = scaleWords,
+                    dayLabel = scaleDayLabel,
+                    outweighLabel = scaleOutweighLabel,
+                    tasbihSignal = viewModel.tasbihSerial,
+                    countSignal = viewModel.todayCount,
+                    goal = dailyGoalForCounter,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                )
+            },
         )
 
         KalimatMilestoneOverlay(
@@ -197,6 +223,7 @@ private fun KalimatHeroZone(
     onManualEntryClick: () -> Unit,
     onViewRewards: () -> Unit,
     counter: @Composable () -> Unit,
+    scale: @Composable ColumnScope.() -> Unit,
 ) {
     Box(
         modifier = Modifier
@@ -258,16 +285,13 @@ private fun KalimatHeroZone(
                 }
             }
 
-            if (manualEntryVisible) {
-                KalimatManualEntryButton(onClick = onManualEntryClick)
-            }
-
-            Spacer(Modifier.weight(1f))
-
-            // The full four-word dhikr the user actually recites is highlighted in place inside the
-            // hadith transcript, rather than repeated as a standalone (and incomplete) heading above
-            // it. The reward breakdown stays behind the "what you gain" button — matching the other
-            // challenge screens.
+            // The narration comes first and comes whole: it sits directly under the header, is
+            // measured before anything that can flex, and carries no maxLines — so the transcript is
+            // never the thing that gives way when the screen is short. Only the scale below it
+            // shrinks. The full four-word dhikr the user actually recites is highlighted in place
+            // inside the transcript, rather than repeated as a standalone (and incomplete) heading
+            // above it. The reward breakdown stays behind the "what you gain" button — matching the
+            // other challenge screens.
             Text(
                 text = kalimatHadithHighlighted(),
                 color = KalimatColors.LightGold.copy(alpha = 0.82f),
@@ -284,11 +308,19 @@ private fun KalimatHeroZone(
                 textAlign = TextAlign.Center,
             )
 
-            Spacer(Modifier.height(20.dp))
+            if (manualEntryVisible) {
+                Spacer(Modifier.height(14.dp))
+                KalimatManualEntryButton(onClick = onManualEntryClick)
+            }
+
+            // The hadith, played out: the day's pan fills on its own, every tasbiha sends the four
+            // words into the other one, and a completed round tips the beam and empties it again.
+            // Takes whatever height is left between the transcript and the counter.
+            scale()
 
             counter()
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(8.dp))
             Text(
                 text = stringResource(Res.string.kalimat_tap_hint),
                 color = Color.White.copy(alpha = 0.32f),
@@ -296,7 +328,7 @@ private fun KalimatHeroZone(
                 textAlign = TextAlign.Center,
             )
 
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(16.dp))
 
             ViewRewardsButton(onClick = onViewRewards)
 
@@ -323,7 +355,8 @@ private fun KalimatCounter(
             // milestone (the goal celebration still fires to mark the completed cycle). Mirrors the
             // istighfar/dhikr rings (#155).
             fractionProvider = { if (target > 0) (count % target).toFloat() / target.toFloat() else 0f },
-            modifier = Modifier.size(220.dp),
+            // Trimmed from 220.dp when the scale moved in above it — the ring gave up the space.
+            modifier = Modifier.size(176.dp),
             trackColor = Color.White.copy(alpha = 0.15f),
             fillColor = KalimatColors.LightGold,
         ) {
@@ -358,6 +391,19 @@ private fun KalimatCounter(
         )
     }
 }
+
+/**
+ * The four words of the hadith — the qualifiers that are weighed — in the order they are said. The
+ * opening tasbiha (سُبْحَانَ اللهِ وَبِحَمْدِهِ) is the dhikr itself, not one of the four, so it is not
+ * among them.
+ */
+@Composable
+private fun kalimatWords(): List<String> = listOf(
+    stringResource(Res.string.kalimat_word_creation),
+    stringResource(Res.string.kalimat_word_pleasure),
+    stringResource(Res.string.kalimat_word_throne),
+    stringResource(Res.string.kalimat_word_ink),
+)
 
 /**
  * The hadith transcript with the recited four-word dhikr ([kalimat_hadith_dhikr]) emphasised in
