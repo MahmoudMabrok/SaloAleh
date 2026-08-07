@@ -15,7 +15,7 @@ import random
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
@@ -45,16 +45,67 @@ OVERFIT_GAP = 0.15
 EARLY_PEAK_FRACTION = 0.4
 COARSE_VAL_SPLIT = 30
 
+# Config sections whose values change what a run produces, and which therefore make
+# a resumed run a different experiment from the one the config now describes.
+# `paths` only says where things live; `evaluation` and `export` run after training.
+RESUME_SENSITIVE_SECTIONS = (
+    "seed",
+    "classes",
+    "audio",
+    "features",
+    "augmentation",
+    "split",
+    "model",
+    "training",
+)
+
 __all__ = [
     "SparseCategoricalCrossentropyWithSmoothing",
     "Trainer",
     "TrainingArtifacts",
     "WarmupCosineDecay",
+    "config_differences",
     "configure_mixed_precision",
     "sanity_overfit",
     "sanity_overfit_report",
     "set_global_seed",
 ]
+
+
+def _flatten(data: Dict[str, object], prefix: str = "") -> Dict[str, object]:
+    """Nested config dict -> ``{"training.optimizer": "adamw", ...}``."""
+    flat: Dict[str, object] = {}
+    for key, value in data.items():
+        dotted = f"{prefix}{key}"
+        if isinstance(value, dict):
+            flat.update(_flatten(value, f"{dotted}."))
+        else:
+            flat[dotted] = value
+    return flat
+
+
+def config_differences(
+    before: Config,
+    after: Config,
+    sections: Sequence[str] = RESUME_SENSITIVE_SECTIONS,
+) -> List[Tuple[str, object, object]]:
+    """``(dotted key, old, new)`` for every setting that changed between two configs.
+
+    Restricted to ``sections`` - the parts of the config that decide what a run
+    produces - so a moved dataset path does not read as a changed experiment.
+    """
+    left = _flatten(before.to_dict())
+    right = _flatten(after.to_dict())
+    wanted = set(sections)
+    changes: List[Tuple[str, object, object]] = []
+    for key in sorted(set(left) | set(right)):
+        if wanted and key.split(".")[0] not in wanted:
+            continue
+        old = left.get(key, "<absent>")
+        new = right.get(key, "<absent>")
+        if old != new:
+            changes.append((key, old, new))
+    return changes
 
 
 def set_global_seed(seed: int) -> None:
@@ -555,7 +606,7 @@ class Trainer:
 
         resumed = self.is_resuming
         if resumed:
-            self._reject_incompatible_resume()
+            self._check_resume_compatibility()
             LOGGER.warning(
                 "resuming run '%s' from %s - weights, optimiser state and epoch "
                 "counter come from the previous run. Call reset_run() or pick a new "
@@ -601,12 +652,20 @@ class Trainer:
             val_size=int(val_size) if val_size else None,
         )
 
-    def _reject_incompatible_resume(self) -> None:
-        """Refuse to restore a backup trained on a different class vocabulary.
+    def _check_resume_compatibility(self) -> None:
+        """Guard a resume against the config having moved since the backup.
 
-        Changing ``classes.include_phrases`` changes the width of the model's
-        output, so restoring the old optimiser state fails deep inside Keras with
-        a shape error that says nothing about the cause.
+        Two failure modes, and only one of them is fatal:
+
+        * ``classes.include_phrases`` changes the width of the model's output, so
+          restoring the old optimiser state fails deep inside Keras with a shape
+          error that says nothing about the cause. That is raised.
+        * Every other setting - dropout, optimizer, learning rate, augmentation -
+          restores *successfully* and silently produces a run that is not the one
+          the config describes. The changed weights and optimiser slots come from
+          the old settings, the history splices both runs together, and the new
+          value never takes effect. That is warned about, loudly, because it is
+          the one that costs a full run before anyone notices.
         """
         if not self.snapshot_path.is_file():
             return
@@ -618,13 +677,27 @@ class Trainer:
 
         before = previous.classes.include_phrases
         now = self.config.classes.include_phrases
-        if before == now:
+        if before != now:
+            raise ValueError(
+                f"run '{self.run_name}' was trained on classes.include_phrases={before}, "
+                f"but the config now says {now}. The model's output width changed, so the "
+                f"backup cannot be restored. Set FRESH_START = True (or pick a new RUN_NAME) "
+                f"and re-run 02_preprocessing so the manifest matches."
+            )
+
+        changes = config_differences(previous, self.config)
+        if not changes:
             return
-        raise ValueError(
-            f"run '{self.run_name}' was trained on classes.include_phrases={before}, "
-            f"but the config now says {now}. The model's output width changed, so the "
-            f"backup cannot be restored. Set FRESH_START = True (or pick a new RUN_NAME) "
-            f"and re-run 02_preprocessing so the manifest matches."
+        detail = "\n".join(f"    {key}: {old!r} -> {new!r}" for key, old, new in changes)
+        LOGGER.warning(
+            "run '%s' is being RESUMED but %d setting(s) changed since its backup was "
+            "written:\n%s\n  The restored weights and optimiser state come from the old "
+            "settings, so these values will not take effect and the reported history "
+            "splices both runs together. Set FRESH_START = True (or pick a new RUN_NAME) "
+            "for the change to mean anything.",
+            self.run_name,
+            len(changes),
+            detail,
         )
 
     def _merge_history(self, history: Dict[str, List[float]]) -> Dict[str, List[float]]:
