@@ -12,6 +12,7 @@ data class MohamedLoversLeaderboardEntry(
     val isCurrentUser: Boolean,
     val uid: String = "",
     val rankChange: String = "",
+    val scoreMasked: Boolean = false,
     val isSupporter: Boolean = false,
     val dailyBadge: String? = null,
     val roundStreak: Int? = null,

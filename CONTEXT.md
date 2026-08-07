@@ -25,6 +25,7 @@ Read this file before exploring the codebase. It covers vocabulary, file map, da
 | **Grace Period** | 2-day absence allowance in streak tracking. Usable once per absence window. |
 | **Achievement** | Sealed union: `StreakBadge` (7-day or 30-day streak) or `RankAchievement` (top-3 round finish). |
 | **Personal Best Rank** | Lowest (best) rank ever achieved, tracked in `MohamedLoversSessionStore`. |
+| **Score Masking** | Premium feature hiding the user's score from others. Round-scoped; cleared on new round. |
 | **Supporter** | User who purchased a support tier; shows a badge on the leaderboard. |
 | **UID** | SHA-256 of a persisted random UUID. No Firebase Auth used. |
 | **Ten Days** | Seasonal (Dhul-Hijjah) competition across 9 days. Tracks dhikr types, takbeer, fasting, sadaqah. |
@@ -72,7 +73,7 @@ All paths relative to `app/src/commonMain/kotlin/tools/mo3ta/salo/`.
 | `data/tendays/TenDaysStore.kt` | Per-day dhikr counts, takbeer, fasting, sadaqah, auto-play settings |
 | `data/dhikr/DhikrChallengeStore.kt` | Today's dhikr count + previous day's unsync'd count |
 | `data/hadith/DailyHadithStore.kt` | 10 curated hadiths, startup display flag, current index |
-| `data/billing/PremiumStore.kt` | Purchase flags, subscription state |
+| `data/billing/PremiumStore.kt` | Purchase flags, subscription state, score masking round-scoped flag |
 | `data/notification/NotificationSettingsStore.kt` | Daily/Friday/server/leaderboard notif toggles, UI tooltip flags |
 | `data/salawat/SalawatVariantStore.kt` | Selected salawat variant (0–5) |
 | `data/language/LanguageStore.kt` | Selected language tag |
@@ -148,6 +149,13 @@ All paths relative to `app/src/commonMain/kotlin/tools/mo3ta/salo/`.
 1. Tap count crosses threshold → `DailyBadge.fromTapCount(count)` → badge stored in UI state
 2. `MilestoneTracker.onMilestoneReached()` checks if first time today → triggers `MilestoneCelebration`
 3. Background sync writes `players/{uid}.dailyBadge = badgeKey` to Firebase; other players see it on leaderboard
+
+### Score Masking (Premium)
+
+1. User enables masking → `PremiumStore.scoreMaskedRoundKey = currentRoundKey`
+2. Firebase write: `players/{uid}.scoreMasked = true`
+3. Other players' leaderboard queries see `scoreMasked=true` → display masked badge
+4. On new round, `bootstrap()` calls `premiumStore.clearScoreMaskOnNewRound(newRoundKey)` → clears both flags
 
 ### Engagement & Streak
 

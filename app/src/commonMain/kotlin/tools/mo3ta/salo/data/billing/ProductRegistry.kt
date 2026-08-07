@@ -40,6 +40,7 @@ object ProductRegistry {
 
     private val premiumFeatures: Set<PremiumFeature> = basicFeatures + setOf(
         PremiumFeature.LIVE_LEADERBOARD,
+        PremiumFeature.SCORE_MASK,
     )
 
     val oneTimeTiers: List<SupportTier> = listOf(

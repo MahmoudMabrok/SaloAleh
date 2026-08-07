@@ -79,7 +79,7 @@ class MohamedLoversViewModelDailyCapTest {
             override fun get() = "EG"
         }
         val premiumStore = PremiumStore(MapSettings())
-        val repo = MohamedLoversRepository(fake, networkTime, sessionStore, countryCode)
+        val repo = MohamedLoversRepository(fake, networkTime, sessionStore, countryCode, premiumStore)
         val vm = MohamedLoversViewModel(
             repository = repo,
             engagementStore = EngagementStore(MapSettings()),

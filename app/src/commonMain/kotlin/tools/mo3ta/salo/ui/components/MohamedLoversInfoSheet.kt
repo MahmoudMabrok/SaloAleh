@@ -48,6 +48,7 @@ import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Brush
@@ -73,6 +74,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.coroutines.delay
+import tools.mo3ta.salo.data.billing.FeatureFlags
 import tools.mo3ta.salo.ui.shareBitmap
 import org.jetbrains.compose.resources.stringResource
 import tools.mo3ta.salo.generated.resources.Res
@@ -620,10 +622,17 @@ private fun LeaderboardCard(
                         color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.65f),
                     )
                 } else {
+                    val isFriday = remember {
+                        Clock.System.now()
+                            .toLocalDateTime(TimeZone.of("Africa/Cairo"))
+                            .dayOfWeek == kotlinx.datetime.DayOfWeek.FRIDAY
+                    }
                     Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
                         topPlayers.forEach { entry ->
                             LeaderboardRow(
                                 entry = entry,
+                                isPremium = isPremium,
+                                isFriday = isFriday,
                                 onSupporterClick = onSupporterClick,
                                 onUserClick = onUserClick,
                                 onBadgeClick = onBadgeClick,
@@ -650,6 +659,8 @@ private fun LeaderboardCard(
                         }
                         LeaderboardRow(
                             entry = selfEntry,
+                            isPremium = isPremium,
+                            isFriday = isFriday,
                             onSupporterClick = onSupporterClick,
                             onUserClick = onUserClick,
                             onBadgeClick = onBadgeClick,
@@ -703,6 +714,8 @@ private fun LeaderboardCard(
 @Composable
 private fun LeaderboardRow(
     entry: MohamedLoversLeaderboardEntry,
+    isPremium: Boolean = false,
+    isFriday: Boolean = false,
     onSupporterClick: () -> Unit = {},
     onUserClick: (uid: String, displayTag: String) -> Unit = { _, _ -> },
     onBadgeClick: (String) -> Unit = {},
@@ -858,20 +871,28 @@ private fun LeaderboardRow(
             horizontalAlignment = Alignment.End,
             verticalArrangement = Arrangement.spacedBy(1.dp),
         ) {
-            Text(
-                text = entry.totalCount.toString(),
-                style = TextStyle(
-                    fontFamily = MohamedLoversFonts.display,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.W700,
-                ),
-                color = if (isMe) MohamedLoversPalette.GoldHighlight else MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
-            )
-            Text(
-                text = scoreLabel,
-                fontSize = 9.sp,
-                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.4f),
-            )
+            if (FeatureFlags.SCORE_MASKING_ENABLED && entry.scoreMasked && !isMe) {
+                MaskedScore(entry.totalCount)
+            } else {
+                if (isMe || !FeatureFlags.SCORE_MASKING_ENABLED || !isFriday || isPremium) {
+                    Text(
+                        text = entry.totalCount.toString(),
+                        style = TextStyle(
+                            fontFamily = MohamedLoversFonts.display,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.W700,
+                        ),
+                        color = if (isMe) MohamedLoversPalette.GoldHighlight else MohamedLoversPalette.GoldGlow.copy(alpha = 0.85f),
+                    )
+                    Text(
+                        text = scoreLabel,
+                        fontSize = 9.sp,
+                        color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.4f),
+                    )
+                } else {
+                    MaskedScore(entry.totalCount)
+                }
+            }
         }
     }
 }
@@ -889,6 +910,27 @@ private fun MedalPill(emoji: String, count: Int, color: Color, onClick: () -> Un
             .clickable { onClick() }
             .padding(horizontal = 5.dp, vertical = 2.dp),
     )
+}
+
+@Composable
+private fun MaskedScore(score: Int) {
+    val str = score.toString()
+    val keep = if (str.length >= 5) 2 else 1
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = str.take(keep),
+                style = bodyStyle(),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
+            )
+            Text(
+                text = str.drop(keep),
+                modifier = Modifier.blur(6.dp),
+                style = bodyStyle(),
+                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.5f),
+            )
+        }
+    }
 }
 
 @Composable

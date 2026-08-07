@@ -36,4 +36,38 @@ class PremiumStore(private val settings: Settings) {
 
     val hasActiveSubscription: Boolean
         get() = ProductRegistry.subscriptionProductIds.any { isSubscriptionActive(it) }
+
+    var isScoreMasked: Boolean
+        get() = settings.getBoolean("score_masked", false)
+        set(value) { settings.putBoolean("score_masked", value) }
+
+    /** Round key for which score masking is currently active, or null when masking is off. */
+    var scoreMaskedRoundKey: String?
+        get() = settings.getStringOrNull("score_masked_round")
+        set(value) {
+            if (value == null) settings.remove("score_masked_round")
+            else settings.putString("score_masked_round", value)
+        }
+
+    /**
+     * Score masking is scoped to a single round. When a new round starts (the active round key
+     * differs from the one masking was enabled for), the mask is cleared so the player must opt in
+     * again for the new round. Called on every bootstrap with the current round key.
+     */
+    fun clearScoreMaskOnNewRound(currentRoundKey: String) {
+        if (currentRoundKey.isBlank()) return
+        if (!isScoreMasked) {
+            scoreMaskedRoundKey = null
+            return
+        }
+        val maskedRound = scoreMaskedRoundKey
+        if (maskedRound == null) {
+            // Masking was enabled before round tracking existed (or in this round) — adopt the
+            // active round so it is cleared once the next round begins.
+            scoreMaskedRoundKey = currentRoundKey
+        } else if (maskedRound != currentRoundKey) {
+            isScoreMasked = false
+            scoreMaskedRoundKey = null
+        }
+    }
 }

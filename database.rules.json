@@ -821,6 +821,9 @@
             "winnerCode": {
               ".validate": "newData.val() === (data.exists() ? data.val() : '')"
             },
+            "scoreMasked": {
+              ".validate": "newData.isBoolean()"
+            },
             "totalExternal": {
               ".validate": "newData.isNumber() && newData.val() >= (data.exists() ? data.val() : 0)"
             },

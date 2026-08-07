@@ -415,10 +415,14 @@
     <string name="paywall_continuous_reward_subtitle">كل صلاة تُرفع من التطبيق لك نصيب من أجرها</string>
     <string name="paywall_small_perks_title">مزايا إضافية</string>
     <string name="paywall_small_perks_subtitle">إخفاء النتيجة وشارة الداعم وكشف نتائج الجمعة</string>
+    <string name="paywall_hide_score_title">إخفاء النتيجة</string>
+    <string name="paywall_hide_score_subtitle">اخفِ نتيجتك من الآخرين في المتصدرين</string>
     <string name="paywall_supporter_badge_title">شارة الداعم</string>
     <string name="paywall_supporter_badge_subtitle">شارة مميزة بجانب اسمك في المتصدرين</string>
     <string name="paywall_friday_scores_title">كشف النتائج يوم الجمعة</string>
     <string name="paywall_friday_scores_subtitle">شاهد نتائج المتسابقين الآخرين أثناء المنافسة</string>
+    <string name="paywall_score_hidden_description">نتيجتك مخفية عن المتسابقين الآخرين</string>
+    <string name="paywall_hide_score_plus_badge">إخفاء النتيجة + شارة الداعم</string>
     <string name="paywall_support_now_price">ادعم الآن — %1$s</string>
     <string name="paywall_support_now">ادعم الآن</string>
     <string name="paywall_restore_purchases">استعادة المشتريات</string>

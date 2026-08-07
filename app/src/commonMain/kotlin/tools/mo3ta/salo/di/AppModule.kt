@@ -107,7 +107,7 @@ val appModule = module {
     single { ReferralStore(get()) }
     single { MilestoneTracker(get()) }
     single { DailyHadithStore(get()) }
-    single { MohamedLoversRepository(get(), get(), get(), get()) }
+    single { MohamedLoversRepository(get(), get(), get(), get(), get()) }
     single { LocalAccountReset(get()) }
     // One link per challenge that keeps a lifetime "total over time" counter, so restoring an
     // account adopts the server's totals instead of republishing this device's zeroes over them.
