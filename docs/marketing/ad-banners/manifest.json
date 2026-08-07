@@ -1,0 +1,1042 @@
+[
+  {
+    "locale": "ar",
+    "concept": "01-compete",
+    "format": "feed-1200x628",
+    "size": "1200x628",
+    "use": "Meta / Google Display — landscape feed",
+    "files": [
+      {
+        "path": "ar/01-compete/feed-1200x628.jpg",
+        "bytes": 60653
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "01-compete",
+    "format": "square-1080x1080",
+    "size": "1080x1080",
+    "use": "Meta / Instagram feed — square",
+    "files": [
+      {
+        "path": "ar/01-compete/square-1080x1080.jpg",
+        "bytes": 94853
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "01-compete",
+    "format": "story-1080x1920",
+    "size": "1080x1920",
+    "use": "Stories / Reels — full portrait",
+    "files": [
+      {
+        "path": "ar/01-compete/story-1080x1920.jpg",
+        "bytes": 129186
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "01-compete",
+    "format": "mrec-300x250",
+    "size": "300x250",
+    "use": "AdMob / GDN — medium rectangle",
+    "files": [
+      {
+        "path": "ar/01-compete/mrec-300x250.png",
+        "bytes": 55194
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "01-compete",
+    "format": "lrec-336x280",
+    "size": "336x280",
+    "use": "GDN — large rectangle",
+    "files": [
+      {
+        "path": "ar/01-compete/lrec-336x280.png",
+        "bytes": 70291
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "01-compete",
+    "format": "leaderboard-728x90",
+    "size": "728x90",
+    "use": "GDN — desktop leaderboard",
+    "files": [
+      {
+        "path": "ar/01-compete/leaderboard-728x90.png",
+        "bytes": 47730
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "01-compete",
+    "format": "mobile-320x100",
+    "size": "320x100",
+    "use": "AdMob — large mobile banner",
+    "files": [
+      {
+        "path": "ar/01-compete/mobile-320x100.png",
+        "bytes": 27833
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "01-compete",
+    "format": "sky-160x600",
+    "size": "160x600",
+    "use": "GDN — wide skyscraper",
+    "files": [
+      {
+        "path": "ar/01-compete/sky-160x600.png",
+        "bytes": 70782
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "02-friday",
+    "format": "feed-1200x628",
+    "size": "1200x628",
+    "use": "Meta / Google Display — landscape feed",
+    "files": [
+      {
+        "path": "ar/02-friday/feed-1200x628.jpg",
+        "bytes": 51882
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "02-friday",
+    "format": "square-1080x1080",
+    "size": "1080x1080",
+    "use": "Meta / Instagram feed — square",
+    "files": [
+      {
+        "path": "ar/02-friday/square-1080x1080.jpg",
+        "bytes": 78688
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "02-friday",
+    "format": "story-1080x1920",
+    "size": "1080x1920",
+    "use": "Stories / Reels — full portrait",
+    "files": [
+      {
+        "path": "ar/02-friday/story-1080x1920.jpg",
+        "bytes": 109179
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "02-friday",
+    "format": "mrec-300x250",
+    "size": "300x250",
+    "use": "AdMob / GDN — medium rectangle",
+    "files": [
+      {
+        "path": "ar/02-friday/mrec-300x250.png",
+        "bytes": 53369
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "02-friday",
+    "format": "lrec-336x280",
+    "size": "336x280",
+    "use": "GDN — large rectangle",
+    "files": [
+      {
+        "path": "ar/02-friday/lrec-336x280.png",
+        "bytes": 67829
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "02-friday",
+    "format": "leaderboard-728x90",
+    "size": "728x90",
+    "use": "GDN — desktop leaderboard",
+    "files": [
+      {
+        "path": "ar/02-friday/leaderboard-728x90.png",
+        "bytes": 49668
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "02-friday",
+    "format": "mobile-320x100",
+    "size": "320x100",
+    "use": "AdMob — large mobile banner",
+    "files": [
+      {
+        "path": "ar/02-friday/mobile-320x100.png",
+        "bytes": 27430
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "02-friday",
+    "format": "sky-160x600",
+    "size": "160x600",
+    "use": "GDN — wide skyscraper",
+    "files": [
+      {
+        "path": "ar/02-friday/sky-160x600.png",
+        "bytes": 70277
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "03-streak",
+    "format": "feed-1200x628",
+    "size": "1200x628",
+    "use": "Meta / Google Display — landscape feed",
+    "files": [
+      {
+        "path": "ar/03-streak/feed-1200x628.jpg",
+        "bytes": 51219
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "03-streak",
+    "format": "square-1080x1080",
+    "size": "1080x1080",
+    "use": "Meta / Instagram feed — square",
+    "files": [
+      {
+        "path": "ar/03-streak/square-1080x1080.jpg",
+        "bytes": 77664
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "03-streak",
+    "format": "story-1080x1920",
+    "size": "1080x1920",
+    "use": "Stories / Reels — full portrait",
+    "files": [
+      {
+        "path": "ar/03-streak/story-1080x1920.jpg",
+        "bytes": 107590
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "03-streak",
+    "format": "mrec-300x250",
+    "size": "300x250",
+    "use": "AdMob / GDN — medium rectangle",
+    "files": [
+      {
+        "path": "ar/03-streak/mrec-300x250.png",
+        "bytes": 52849
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "03-streak",
+    "format": "lrec-336x280",
+    "size": "336x280",
+    "use": "GDN — large rectangle",
+    "files": [
+      {
+        "path": "ar/03-streak/lrec-336x280.png",
+        "bytes": 67526
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "03-streak",
+    "format": "leaderboard-728x90",
+    "size": "728x90",
+    "use": "GDN — desktop leaderboard",
+    "files": [
+      {
+        "path": "ar/03-streak/leaderboard-728x90.png",
+        "bytes": 46635
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "03-streak",
+    "format": "mobile-320x100",
+    "size": "320x100",
+    "use": "AdMob — large mobile banner",
+    "files": [
+      {
+        "path": "ar/03-streak/mobile-320x100.png",
+        "bytes": 26789
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "03-streak",
+    "format": "sky-160x600",
+    "size": "160x600",
+    "use": "GDN — wide skyscraper",
+    "files": [
+      {
+        "path": "ar/03-streak/sky-160x600.png",
+        "bytes": 68977
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "04-community",
+    "format": "feed-1200x628",
+    "size": "1200x628",
+    "use": "Meta / Google Display — landscape feed",
+    "files": [
+      {
+        "path": "ar/04-community/feed-1200x628.jpg",
+        "bytes": 53270
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "04-community",
+    "format": "square-1080x1080",
+    "size": "1080x1080",
+    "use": "Meta / Instagram feed — square",
+    "files": [
+      {
+        "path": "ar/04-community/square-1080x1080.jpg",
+        "bytes": 83277
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "04-community",
+    "format": "story-1080x1920",
+    "size": "1080x1920",
+    "use": "Stories / Reels — full portrait",
+    "files": [
+      {
+        "path": "ar/04-community/story-1080x1920.jpg",
+        "bytes": 115850
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "04-community",
+    "format": "mrec-300x250",
+    "size": "300x250",
+    "use": "AdMob / GDN — medium rectangle",
+    "files": [
+      {
+        "path": "ar/04-community/mrec-300x250.png",
+        "bytes": 55313
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "04-community",
+    "format": "lrec-336x280",
+    "size": "336x280",
+    "use": "GDN — large rectangle",
+    "files": [
+      {
+        "path": "ar/04-community/lrec-336x280.png",
+        "bytes": 70024
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "04-community",
+    "format": "leaderboard-728x90",
+    "size": "728x90",
+    "use": "GDN — desktop leaderboard",
+    "files": [
+      {
+        "path": "ar/04-community/leaderboard-728x90.png",
+        "bytes": 49039
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "04-community",
+    "format": "mobile-320x100",
+    "size": "320x100",
+    "use": "AdMob — large mobile banner",
+    "files": [
+      {
+        "path": "ar/04-community/mobile-320x100.png",
+        "bytes": 28482
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "04-community",
+    "format": "sky-160x600",
+    "size": "160x600",
+    "use": "GDN — wide skyscraper",
+    "files": [
+      {
+        "path": "ar/04-community/sky-160x600.png",
+        "bytes": 71849
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "05-onetap",
+    "format": "feed-1200x628",
+    "size": "1200x628",
+    "use": "Meta / Google Display — landscape feed",
+    "files": [
+      {
+        "path": "ar/05-onetap/feed-1200x628.jpg",
+        "bytes": 53024
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "05-onetap",
+    "format": "square-1080x1080",
+    "size": "1080x1080",
+    "use": "Meta / Instagram feed — square",
+    "files": [
+      {
+        "path": "ar/05-onetap/square-1080x1080.jpg",
+        "bytes": 81890
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "05-onetap",
+    "format": "story-1080x1920",
+    "size": "1080x1920",
+    "use": "Stories / Reels — full portrait",
+    "files": [
+      {
+        "path": "ar/05-onetap/story-1080x1920.jpg",
+        "bytes": 113840
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "05-onetap",
+    "format": "mrec-300x250",
+    "size": "300x250",
+    "use": "AdMob / GDN — medium rectangle",
+    "files": [
+      {
+        "path": "ar/05-onetap/mrec-300x250.png",
+        "bytes": 54876
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "05-onetap",
+    "format": "lrec-336x280",
+    "size": "336x280",
+    "use": "GDN — large rectangle",
+    "files": [
+      {
+        "path": "ar/05-onetap/lrec-336x280.png",
+        "bytes": 69012
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "05-onetap",
+    "format": "leaderboard-728x90",
+    "size": "728x90",
+    "use": "GDN — desktop leaderboard",
+    "files": [
+      {
+        "path": "ar/05-onetap/leaderboard-728x90.png",
+        "bytes": 45760
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "05-onetap",
+    "format": "mobile-320x100",
+    "size": "320x100",
+    "use": "AdMob — large mobile banner",
+    "files": [
+      {
+        "path": "ar/05-onetap/mobile-320x100.png",
+        "bytes": 26533
+      }
+    ]
+  },
+  {
+    "locale": "ar",
+    "concept": "05-onetap",
+    "format": "sky-160x600",
+    "size": "160x600",
+    "use": "GDN — wide skyscraper",
+    "files": [
+      {
+        "path": "ar/05-onetap/sky-160x600.png",
+        "bytes": 68845
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "01-compete",
+    "format": "feed-1200x628",
+    "size": "1200x628",
+    "use": "Meta / Google Display — landscape feed",
+    "files": [
+      {
+        "path": "en/01-compete/feed-1200x628.jpg",
+        "bytes": 76801
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "01-compete",
+    "format": "square-1080x1080",
+    "size": "1080x1080",
+    "use": "Meta / Instagram feed — square",
+    "files": [
+      {
+        "path": "en/01-compete/square-1080x1080.jpg",
+        "bytes": 117442
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "01-compete",
+    "format": "story-1080x1920",
+    "size": "1080x1920",
+    "use": "Stories / Reels — full portrait",
+    "files": [
+      {
+        "path": "en/01-compete/story-1080x1920.jpg",
+        "bytes": 158468
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "01-compete",
+    "format": "mrec-300x250",
+    "size": "300x250",
+    "use": "AdMob / GDN — medium rectangle",
+    "files": [
+      {
+        "path": "en/01-compete/mrec-300x250.png",
+        "bytes": 56031
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "01-compete",
+    "format": "lrec-336x280",
+    "size": "336x280",
+    "use": "GDN — large rectangle",
+    "files": [
+      {
+        "path": "en/01-compete/lrec-336x280.png",
+        "bytes": 71325
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "01-compete",
+    "format": "leaderboard-728x90",
+    "size": "728x90",
+    "use": "GDN — desktop leaderboard",
+    "files": [
+      {
+        "path": "en/01-compete/leaderboard-728x90.png",
+        "bytes": 51823
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "01-compete",
+    "format": "mobile-320x100",
+    "size": "320x100",
+    "use": "AdMob — large mobile banner",
+    "files": [
+      {
+        "path": "en/01-compete/mobile-320x100.png",
+        "bytes": 29513
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "01-compete",
+    "format": "sky-160x600",
+    "size": "160x600",
+    "use": "GDN — wide skyscraper",
+    "files": [
+      {
+        "path": "en/01-compete/sky-160x600.png",
+        "bytes": 72327
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "02-friday",
+    "format": "feed-1200x628",
+    "size": "1200x628",
+    "use": "Meta / Google Display — landscape feed",
+    "files": [
+      {
+        "path": "en/02-friday/feed-1200x628.jpg",
+        "bytes": 62456
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "02-friday",
+    "format": "square-1080x1080",
+    "size": "1080x1080",
+    "use": "Meta / Instagram feed — square",
+    "files": [
+      {
+        "path": "en/02-friday/square-1080x1080.jpg",
+        "bytes": 93896
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "02-friday",
+    "format": "story-1080x1920",
+    "size": "1080x1920",
+    "use": "Stories / Reels — full portrait",
+    "files": [
+      {
+        "path": "en/02-friday/story-1080x1920.jpg",
+        "bytes": 127735
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "02-friday",
+    "format": "mrec-300x250",
+    "size": "300x250",
+    "use": "AdMob / GDN — medium rectangle",
+    "files": [
+      {
+        "path": "en/02-friday/mrec-300x250.png",
+        "bytes": 55449
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "02-friday",
+    "format": "lrec-336x280",
+    "size": "336x280",
+    "use": "GDN — large rectangle",
+    "files": [
+      {
+        "path": "en/02-friday/lrec-336x280.png",
+        "bytes": 70141
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "02-friday",
+    "format": "leaderboard-728x90",
+    "size": "728x90",
+    "use": "GDN — desktop leaderboard",
+    "files": [
+      {
+        "path": "en/02-friday/leaderboard-728x90.png",
+        "bytes": 52512
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "02-friday",
+    "format": "mobile-320x100",
+    "size": "320x100",
+    "use": "AdMob — large mobile banner",
+    "files": [
+      {
+        "path": "en/02-friday/mobile-320x100.png",
+        "bytes": 29080
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "02-friday",
+    "format": "sky-160x600",
+    "size": "160x600",
+    "use": "GDN — wide skyscraper",
+    "files": [
+      {
+        "path": "en/02-friday/sky-160x600.png",
+        "bytes": 72540
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "03-streak",
+    "format": "feed-1200x628",
+    "size": "1200x628",
+    "use": "Meta / Google Display — landscape feed",
+    "files": [
+      {
+        "path": "en/03-streak/feed-1200x628.jpg",
+        "bytes": 61690
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "03-streak",
+    "format": "square-1080x1080",
+    "size": "1080x1080",
+    "use": "Meta / Instagram feed — square",
+    "files": [
+      {
+        "path": "en/03-streak/square-1080x1080.jpg",
+        "bytes": 94057
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "03-streak",
+    "format": "story-1080x1920",
+    "size": "1080x1920",
+    "use": "Stories / Reels — full portrait",
+    "files": [
+      {
+        "path": "en/03-streak/story-1080x1920.jpg",
+        "bytes": 127416
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "03-streak",
+    "format": "mrec-300x250",
+    "size": "300x250",
+    "use": "AdMob / GDN — medium rectangle",
+    "files": [
+      {
+        "path": "en/03-streak/mrec-300x250.png",
+        "bytes": 56480
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "03-streak",
+    "format": "lrec-336x280",
+    "size": "336x280",
+    "use": "GDN — large rectangle",
+    "files": [
+      {
+        "path": "en/03-streak/lrec-336x280.png",
+        "bytes": 70956
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "03-streak",
+    "format": "leaderboard-728x90",
+    "size": "728x90",
+    "use": "GDN — desktop leaderboard",
+    "files": [
+      {
+        "path": "en/03-streak/leaderboard-728x90.png",
+        "bytes": 52430
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "03-streak",
+    "format": "mobile-320x100",
+    "size": "320x100",
+    "use": "AdMob — large mobile banner",
+    "files": [
+      {
+        "path": "en/03-streak/mobile-320x100.png",
+        "bytes": 29990
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "03-streak",
+    "format": "sky-160x600",
+    "size": "160x600",
+    "use": "GDN — wide skyscraper",
+    "files": [
+      {
+        "path": "en/03-streak/sky-160x600.png",
+        "bytes": 72547
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "04-community",
+    "format": "feed-1200x628",
+    "size": "1200x628",
+    "use": "Meta / Google Display — landscape feed",
+    "files": [
+      {
+        "path": "en/04-community/feed-1200x628.jpg",
+        "bytes": 62288
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "04-community",
+    "format": "square-1080x1080",
+    "size": "1080x1080",
+    "use": "Meta / Instagram feed — square",
+    "files": [
+      {
+        "path": "en/04-community/square-1080x1080.jpg",
+        "bytes": 95970
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "04-community",
+    "format": "story-1080x1920",
+    "size": "1080x1920",
+    "use": "Stories / Reels — full portrait",
+    "files": [
+      {
+        "path": "en/04-community/story-1080x1920.jpg",
+        "bytes": 130579
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "04-community",
+    "format": "mrec-300x250",
+    "size": "300x250",
+    "use": "AdMob / GDN — medium rectangle",
+    "files": [
+      {
+        "path": "en/04-community/mrec-300x250.png",
+        "bytes": 56170
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "04-community",
+    "format": "lrec-336x280",
+    "size": "336x280",
+    "use": "GDN — large rectangle",
+    "files": [
+      {
+        "path": "en/04-community/lrec-336x280.png",
+        "bytes": 71045
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "04-community",
+    "format": "leaderboard-728x90",
+    "size": "728x90",
+    "use": "GDN — desktop leaderboard",
+    "files": [
+      {
+        "path": "en/04-community/leaderboard-728x90.png",
+        "bytes": 52318
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "04-community",
+    "format": "mobile-320x100",
+    "size": "320x100",
+    "use": "AdMob — large mobile banner",
+    "files": [
+      {
+        "path": "en/04-community/mobile-320x100.png",
+        "bytes": 29541
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "04-community",
+    "format": "sky-160x600",
+    "size": "160x600",
+    "use": "GDN — wide skyscraper",
+    "files": [
+      {
+        "path": "en/04-community/sky-160x600.png",
+        "bytes": 72533
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "05-onetap",
+    "format": "feed-1200x628",
+    "size": "1200x628",
+    "use": "Meta / Google Display — landscape feed",
+    "files": [
+      {
+        "path": "en/05-onetap/feed-1200x628.jpg",
+        "bytes": 58281
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "05-onetap",
+    "format": "square-1080x1080",
+    "size": "1080x1080",
+    "use": "Meta / Instagram feed — square",
+    "files": [
+      {
+        "path": "en/05-onetap/square-1080x1080.jpg",
+        "bytes": 88916
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "05-onetap",
+    "format": "story-1080x1920",
+    "size": "1080x1920",
+    "use": "Stories / Reels — full portrait",
+    "files": [
+      {
+        "path": "en/05-onetap/story-1080x1920.jpg",
+        "bytes": 122130
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "05-onetap",
+    "format": "mrec-300x250",
+    "size": "300x250",
+    "use": "AdMob / GDN — medium rectangle",
+    "files": [
+      {
+        "path": "en/05-onetap/mrec-300x250.png",
+        "bytes": 55788
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "05-onetap",
+    "format": "lrec-336x280",
+    "size": "336x280",
+    "use": "GDN — large rectangle",
+    "files": [
+      {
+        "path": "en/05-onetap/lrec-336x280.png",
+        "bytes": 70161
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "05-onetap",
+    "format": "leaderboard-728x90",
+    "size": "728x90",
+    "use": "GDN — desktop leaderboard",
+    "files": [
+      {
+        "path": "en/05-onetap/leaderboard-728x90.png",
+        "bytes": 47785
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "05-onetap",
+    "format": "mobile-320x100",
+    "size": "320x100",
+    "use": "AdMob — large mobile banner",
+    "files": [
+      {
+        "path": "en/05-onetap/mobile-320x100.png",
+        "bytes": 28153
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "concept": "05-onetap",
+    "format": "sky-160x600",
+    "size": "160x600",
+    "use": "GDN — wide skyscraper",
+    "files": [
+      {
+        "path": "en/05-onetap/sky-160x600.png",
+        "bytes": 69924
+      }
+    ]
+  }
+]
