@@ -177,6 +177,10 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
   // inherit the freed id and inherit those recordings with it.
   phrases: [
     // ---- Shown on the page, in this order. ----
+    // The bare Tasbeeh. It leads because 6 and 7 below are it plus a tail, and
+    // 11 opens with it: showing the three nested forms next to each other is
+    // what stops a volunteer skimming the page and reciting the wrong one.
+    { id: 1, text: "سبحان الله" },
     // Zabad challenge.
     { id: 6, text: "سبحان الله وبحمده" },
     // Original short Tasbeeh prompt.
@@ -195,9 +199,9 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     { id: 11, text: "سبحان الله، الحمد لله، الله أكبر، لا إله إلا الله" },
 
     // ---- Parked: no card, id and dataset folder preserved. ----
-    // The four Baqiyat as separate words. Superseded on the page by phrase 11,
-    // which is how they are said in the app.
-    { id: 1, text: "سبحان الله", hidden: true },
+    // The rest of the Baqiyat as separate words. Superseded on the page by
+    // phrase 11, which is how they are said in the app. (سبحان الله is the
+    // exception: it is a counted dhikr in its own right, so it keeps a card.)
     { id: 2, text: "الحمد لله", hidden: true },
     { id: 3, text: "الله أكبر", hidden: true },
     { id: 4, text: "لا إله إلا الله", hidden: true },
