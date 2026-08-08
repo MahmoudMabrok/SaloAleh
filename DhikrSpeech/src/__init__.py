@@ -1,10 +1,13 @@
 """DhikrSpeech - offline Arabic dhikr phrase spotting.
 
-Submodules are resolved lazily so that importing ``src`` stays cheap: notebooks
-01 and 02 never pay for the TensorFlow import, which only ``models``,
-``trainer`` and ``export`` actually need.
+Submodules are resolved lazily so that importing ``src`` stays cheap: stages 01
+and 02 never pay for the TensorFlow import, which only ``models``, ``trainer``
+and ``export`` actually need. ``streaming`` and ``streaming_eval`` are on the
+light side of that line too - the Hugging Face Space runs them on LiteRT with no
+TensorFlow installed at all.
 
     from src import load_config, scan_dataset      # light, no TensorFlow
+    from src.streaming import EventDetector        # light
     from src.trainer import Trainer                # pulls TensorFlow in
 """
 
@@ -17,24 +20,41 @@ __version__ = "1.0.0"
 
 _EXPORTS = {
     # module -> symbols re-exported at package level
-    "config": ("Config", "load_config", "default_config_path", "package_root"),
+    "config": (
+        "Config",
+        "available_presets",
+        "load_config",
+        "default_config_path",
+        "package_root",
+    ),
     "audio": ("load_audio", "prepare_clip", "probe_audio", "read_wav", "write_wav"),
     "features": ("FeatureStats", "LogMelExtractor", "compute_global_stats"),
-    "augmentation": ("NoiseBank", "WaveformAugmentor", "spec_augment"),
+    "augmentation": ("NoiseBank", "WaveformAugmentor", "reverberate", "spec_augment"),
+    "speakers": (
+        "SpeakerReport",
+        "SpeakerResolver",
+        "load_speaker_metadata",
+        "speaker_report",
+        "verify_speaker_disjoint",
+    ),
     "dataset": (
         "DatasetIndex",
         "ManifestRecord",
         "assign_splits",
+        "build_speaker_resolver",
         "class_names_from_manifest",
         "compute_class_weights",
         "filter_split",
         "load_manifest",
         "load_phrases",
         "make_tf_dataset",
+        "manifest_speaker_report",
+        "negative_type_counts",
         "preprocess_dataset",
         "save_manifest",
         "scan_dataset",
         "validate_dataset",
+        "verify_manifest_splits",
     ),
     "metrics": (
         "DetectorEvaluation",
@@ -49,13 +69,7 @@ _EXPORTS = {
         "sample_negatives",
         "scan_target_dataset",
     ),
-    "splitting": (
-        "SpeakerIsolationReport",
-        "assign_speaker_splits",
-        "resolve_speakers",
-        "speaker_stats",
-        "verify_speaker_isolation",
-    ),
+    "speakers": ("SpeakerReport", "SpeakerResolver", "speaker_report", "verify_speaker_disjoint"),
     "streaming": (
         "EventDetector",
         "ScoreTimeline",
@@ -76,8 +90,10 @@ _EXPORTS = {
     "parity": ("compare_parity", "write_parity_assets"),
     "target_export": ("build_target_metadata", "compare_variants"),
     "pipeline": ("TargetPreparation", "TargetRun", "prepare_target", "training_records"),
+    "quality": ("DatasetQualityReport", "dataset_quality"),
+    "speaker_backfill": ("BackfillPlan", "plan_backfill"),
     "experiments": ("ComparisonReport", "compare_one_vs_rest", "train_one_vs_rest"),
-    "models": ("build_model", "model_summary_text"),
+    "models": ("build_model", "capacity_report", "model_summary_text"),
     "trainer": ("Trainer", "set_global_seed"),
     "export": (
         "benchmark_tflite",
@@ -86,6 +102,7 @@ _EXPORTS = {
         "export_saved_model",
         "to_float32_model",
         "verify_tflite",
+        "write_android_metadata",
     ),
 }
 
@@ -97,6 +114,7 @@ __all__ = sorted(_SYMBOL_TO_MODULE) + sorted(_EXPORTS) + ["__version__"]
 
 if TYPE_CHECKING:  # pragma: no cover - import-time hints for editors only
     from . import (
+        android,
         audio,
         augmentation,
         config,
@@ -108,8 +126,10 @@ if TYPE_CHECKING:  # pragma: no cover - import-time hints for editors only
         models,
         parity,
         pipeline,
+        quality,
         readiness,
-        splitting,
+        speaker_backfill,
+        speakers,
         streaming,
         streaming_eval,
         target_export,

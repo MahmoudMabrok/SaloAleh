@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.config import ReadinessConfig
 from src.readiness import EXPERIMENTAL, NOT_READY, READY, assess_readiness
-from src.splitting import SpeakerIsolationReport
+from src.speakers import SpeakerLeak, SpeakerReport
 from src.streaming_eval import CalibrationResult, EventMetrics, NegativeClipReport, ThresholdRow
 from src.target_export import QuantizationReport, VariantComparison
 from src.targets import TargetDatasetReport
@@ -96,13 +96,28 @@ def quantization(accepted: bool = True) -> QuantizationReport:
     )
 
 
+def clean_speakers(leaks=()) -> SpeakerReport:
+    """A resolved, non-leaking speaker report over 24 voices."""
+    names = [f"spk{index:02d}" for index in range(24)]
+    return SpeakerReport(
+        source="filename",
+        total_recordings=350,
+        assigned=350,
+        speakers=names,
+        recordings_per_speaker={name: 14 for name in names},
+        speakers_per_class={"target": names},
+        speakers_per_split={"train": names[:18], "val": names[18:21], "test": names[21:]},
+        leaks=list(leaks),
+    )
+
+
 def full(**overrides):
     kwargs = dict(
         config=ReadinessConfig(),
         target_id=7,
         target_text="سبحان الله العظيم وبحمده",
         dataset=dataset(),
-        isolation=SpeakerIsolationReport(),
+        isolation=clean_speakers(),
         streaming=streaming(),
         hard_negatives=hard_negatives(),
         quantization=quantization(),
@@ -143,7 +158,7 @@ def test_low_event_recall_is_not_ready() -> None:
 
 
 def test_speaker_leakage_is_not_ready() -> None:
-    leaking = SpeakerIsolationReport(train_val=["spk01"], train_test=[])
+    leaking = clean_speakers(leaks=[SpeakerLeak(speaker="spk01", splits=["train", "val"], counts={"train": 6, "val": 3})])
     report = full(isolation=leaking)
     assert report.status == NOT_READY
     assert "speaker leakage" in {check.name for check in report.failures}

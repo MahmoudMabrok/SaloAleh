@@ -78,7 +78,9 @@ DhikrSpeech/
 │   ├── audio.py                  decode, trim, normalise, fit length, write WAV
 │   ├── dataset.py                scan, validate, preprocess, manifest, tf.data pipeline
 │   ├── targets.py                TARGET vs UNKNOWN mapping, negative categories, sampling
-│   ├── splitting.py              speaker ids, speaker-safe splits, leakage verification
+│   ├── speakers.py               speaker ids (csv / subfolder / filename), leak checks
+│   ├── speaker_backfill.py       give pre-token recordings a speaker id
+│   ├── quality.py                dataset quality report across all classes
 │   ├── augmentation.py           noise, pitch, speed, gain, time shift, SpecAugment
 │   ├── features.py               log mel front-end (+ its Android metadata)
 │   ├── models.py                 DS-CNN, DS-CNN Tiny, TC-ResNet8
@@ -140,18 +142,15 @@ MyDrive/Dhikr Speech Dataset/
 ├── dataset/
 │   ├── 001/ 002/ ... 010/    one folder per dhikr; the target's folder is its positives,
 │   │                         every other folder is a negative for that target
-│   ├── unknown/              filler: speech and noise that is not a dhikr
-│   └── negatives/            the categorised negative pool, shared by every target
-│       ├── shared/           reusable material — see below
-│       │   ├── general_speech/   ordinary Arabic conversation
-│       │   ├── background_audio/ TV, radio, Quran recitation
-│       │   ├── noise/            street, room tone, kitchen, traffic
-│       │   └── silence/
-│       ├── partial_phrase/   incomplete utterances of any dhikr
-│       └── hard/             target-specific near-misses
-│           ├── 006/          designed to fool 006
-│           └── 007/          designed to fool 007
+│   └── unknown/              negatives, shared by every target
+│       ├── *.wav             flat filler, reported as `unknown`
+│       ├── normal_speech/    ordinary Arabic conversation
+│       ├── hard_negative/    near-misses - the ones that decide the model
+│       ├── partial_phrase/   incomplete utterances
+│       ├── other_dhikr/      recorded specifically as negatives
+│       └── noise/            room, street, TV, kitchen
 ├── phrases.json
+├── speakers.csv              optional: file,speaker - the most reliable speaker source
 ├── streaming_test/           long-form recordings + annotations.json  (section 05)
 │   ├── audio/
 │   └── annotations.json
@@ -179,18 +178,17 @@ visible instead of averaged away.
 
 | category | folder | what it is |
 |---|---|---|
-| `hard_negative` | `negatives/hard/<target>/` | near-misses of **this** phrase |
-| `partial_phrase` | `negatives/partial_phrase/` | incomplete utterances |
-| `other_dhikr` | the other `001..010` folders | free, already collected |
-| `general_speech` | `negatives/shared/general_speech/` | ordinary Arabic |
-| `background_audio` | `negatives/shared/background_audio/` | TV, radio, recitation |
-| `noise` | `negatives/shared/noise/` | street, room, kitchen |
-| `silence` | `negatives/shared/silence/` | |
-| `unknown` | `dataset/unknown/` | the legacy filler folder |
+| `hard_negative` | `unknown/hard_negative/` | near-misses of a target phrase |
+| `partial_phrase` | `unknown/partial_phrase/` | incomplete utterances |
+| `other_dhikr` | the other `001..010` folders, or `unknown/other_dhikr/` | free, already collected |
+| `normal_speech` | `unknown/normal_speech/` | ordinary Arabic |
+| `noise` | `unknown/noise/` | street, room, kitchen, TV |
+| `unknown` | `unknown/*.wav` | flat, uncategorised filler |
 
-Folder names are matched case-insensitively against those categories, at any depth, so
-`negatives/shared/noise/street/` is `noise`. An unrecognised folder falls back to `unknown`
-rather than being dropped.
+The category is the **first subfolder under `unknown/`**, derived once in
+`src/dataset.py` and carried through the manifest. Everything under `unknown/` trains as one
+`UNKNOWN` class — the subfolder never becomes an output — but evaluation reports the
+false-positive rate per category, which is what says *what kind* of audio breaks the detector.
 
 **Hard negatives are the ones that decide the model.** For target 007
 (`سبحان الله العظيم وبحمده`), record real people saying:
@@ -206,10 +204,11 @@ plus mispronounced and trailed-off attempts. Without them the model learns to fi
 opening words, which is the single most common cause of false counts — and because those clips
 *are* dhikr, no amount of TV or room tone substitutes for them.
 
-Note that `negatives/hard/006/` is **excluded** when training 007 by default: a hard negative
-built to fool 006 is quite likely a recording of 007's complete phrase, and labelling it
-negative for 007 would teach the model to reject its own target. Set
-`target.include_other_hard_negatives: true` only if you know that cannot happen in your data.
+`unknown/hard_negative/` is **shared across every target**, and that carries a real risk the
+layout cannot express: a near-miss recorded to fool 006 (`سبحان الله وبحمده`) may be a complete
+recording of **007's** phrase, and used as a negative for 007 it would teach the model to reject
+its own target. Nothing in the pipeline can detect that. Keep a clip that contains another
+target's complete phrase out of the folder.
 
 **Do not manufacture hard negatives by cropping positives.** A crop has the same voice, room,
 microphone and level as the positive it came from, so the model can separate the two on cues
@@ -218,32 +217,35 @@ that will not exist on a phone. Real recordings of the shorter phrase are what i
 ### The shared pool
 
 General negatives — conversation, TV, Quran recitation, street, room tone — are the same for
-every target, so they live under `negatives/shared/` and are collected once. Conditioned clips
-are cached by *source folder and audio geometry*
-(`processed/audio/16000hz_2s/negatives/shared/noise/…`), so training a second target reuses them
-instead of re-writing the whole pool.
+every target, so they live under `dataset/unknown/` once. Conditioned clips are cached by
+*source folder and audio geometry* (`processed/audio/16000hz_2s/unknown/noise/…`), so training a
+second target reuses them instead of re-writing the whole pool.
 
 ### Speaker identity
 
-The single most valuable piece of metadata, and the one nobody records. A model that heard the
-same voice in training and in validation reports a number that says nothing about a stranger's
-phone.
+The single most valuable piece of metadata. A model that heard the same voice in training and in
+validation reports a number that says nothing about a stranger's phone.
 
-Name files so the speaker is recoverable — `spk03_007_012.wav` — and set:
+Three sources, in order of preference (`split.speaker.source: auto` tries them in turn):
 
-```yaml
-split:
-  speaker_regex: '^(?P<speaker>[^_]+)_'
-```
+1. **`speakers.csv`** next to `phrases.json` — two columns, `file,speaker`. Nothing to infer.
+2. **A per-speaker subfolder** — `dataset/006/ali/*.wav`.
+3. **The filename** — matched against `split.speaker.filename_patterns`.
 
-or provide `split.speaker_metadata`, a JSON mapping of file name (or any path suffix) to speaker
-id. Nothing is guessed: when neither resolves, the pipeline prints **EVALUATION IS NOT
-SPEAKER-INDEPENDENT** and the readiness verdict caps at `EXPERIMENTAL`.
+SpeechCollector names its uploads `<class>_sp<8 hex>_<timestamp>_<suffix>`, so the device token
+is the first pattern tried. **That order matters more than it looks**: a pattern that simply took
+the leading token would extract the *class id* from `006_sp8d358495_…`, making every recording of
+a phrase one "speaker" — putting whole classes in one split, and looking entirely correct while
+doing it. Recordings uploaded before the token shipped can be given one from the collector's
+metadata sheet with `src/speaker_backfill.py`.
 
 Splitting is by speaker and **globally** — a voice's target recordings and the negatives they
 also recorded land in the same split, so a speaker cannot enter training through the negative
 pool and be evaluated on through the positive one. The result is verified rather than assumed:
-`split.fail_on_leakage` (default) makes a leak an error, not a warning.
+`split.speaker.require_disjoint` (default) makes a leak fail preprocessing.
+
+When no source resolves, the pipeline prints **EVALUATION IS NOT SPEAKER-INDEPENDENT** and the
+readiness verdict caps at `EXPERIMENTAL`.
 
 ### What makes a good recording
 
@@ -963,8 +965,9 @@ The ones worth knowing:
 | `target.include_other_hard_negatives` | use `hard/<other id>/` too — off, and for good reason |
 | `target.phrase_overrides` | per-target `clip_seconds` |
 | `negative_sampling.ratio` / `weights` | how much of the negative pool one run trains on |
-| `split.speaker_regex` / `speaker_metadata` | how speaker identity is resolved |
-| `split.fail_on_leakage` | refuse to write a manifest where a speaker crosses a split |
+| `split.speaker.source` | `auto` / `metadata` / `filename` / `parent` / `none` |
+| `split.speaker.filename_patterns` | tried in order; the device token first, for a reason |
+| `split.speaker.require_disjoint` | fail preprocessing when a speaker crosses a split |
 | `audio.clip_seconds` | the window; changing it changes the input shape and the cache |
 | `features.n_mels`, `window_ms`, `hop_ms` | the front-end — must match Android exactly |
 | `augmentation.*` | per-transform probability and range |
@@ -1043,7 +1046,7 @@ app does: Android loads exactly one model and reads one score against a calibrat
 
 The pipeline is built to be re-run as recordings accumulate:
 
-1. Drop new files into `dataset/<target>/`, `dataset/negatives/hard/<target>/` or the shared pool.
+1. Drop new files into `dataset/<target>/` or `dataset/unknown/<category>/`.
 2. Re-run stage `01` to validate them (it flags duplicates across the whole dataset).
 3. Re-run `02` — already-conditioned clips are skipped, so this costs only the new files.
 4. Train with a **new** `RUN_NAME`, then re-run the streaming stage and re-calibrate.
@@ -1053,7 +1056,7 @@ false-activation rate; a model trained on more data has a different score distri
 old threshold is a number from a different measurement.
 
 **Adding a new dhikr** is a new target, not a new class: create `dataset/<id>/`, add it to
-`phrases.json`, collect hard negatives for it under `negatives/hard/<id>/`, and run
+`phrases.json`, collect hard negatives for it under `unknown/hard_negative/`, and run
 `python train.py --target <id>`. Nothing that already shipped is invalidated — which is the one
 unambiguous operational win of this architecture.
 
@@ -1074,7 +1077,7 @@ What to collect, and in what order, is in [`docs/DATA_COLLECTION.md`](docs/DATA_
 | `target phrase 009 has no folder` | `target.phrase_id` points at a folder that does not exist under `dataset/`. |
 | `manifest not found` | Run stage `02 · Preprocessing` for this target first. |
 | `speaker leakage after splitting` | A speaker is in two splits. Fix the naming or the metadata; do **not** set `split.fail_on_leakage: false` to silence it — that hides the problem, it does not solve it. |
-| `EVALUATION IS NOT SPEAKER-INDEPENDENT` in the logs | No `split.speaker_regex` / `speaker_metadata` matched. Training still runs; every number it prints is optimistic. |
+| `EVALUATION IS NOT SPEAKER-INDEPENDENT` in the logs | No speaker source resolved - add `speakers.csv`, or backfill tokens with `src/speaker_backfill.py`. Training still runs; every number it prints is optimistic. |
 | Accuracy looks high, the counter fires constantly | Clip accuracy cannot see this. Run stage 05 — that is what it is for. |
 | Detector never fires | Check the *majority-class* baseline, not accuracy: with negatives at 2× positives, "never fire" scores 67%. Look at recall and AUC in the clip report. |
 | `CALIBRATION FAILED` | No threshold meets the FA/hour budget. A data result, not a tuning one — the streaming report names the audio category producing the false activations; collect hard negatives of that kind. |
@@ -1185,8 +1188,8 @@ answer, and the rest buy a point or two while hiding the real limit:
    twice is close to one recording, so 200 clips from 3 people generalise worse than 100 from 20.
    The [Voice dhikr screen](../CLAUDE.md) in the app recruits volunteers for exactly this.
 2. **Check the speaker split actually resolved.** Single-target preprocessing splits by speaker
-   and verifies it, but only when speaker ids exist: with no `split.speaker_regex` and no
-   `split.speaker_metadata`, every clip becomes its own group and the same voice lands in train
+   and verifies it, but only when speaker ids exist: with no speaker source resolving,
+   every clip becomes its own group and the same voice lands in train
    *and* val. That makes validation accuracy **optimistic** and the real gap larger than the one
    printed. Files uploaded by `SpeechCollector` are named `<class>_<timestamp>_<suffix>`, with no
    speaker token, so there is nothing to resolve automatically — record batches with a speaker

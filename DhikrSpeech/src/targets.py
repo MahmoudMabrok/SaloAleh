@@ -18,50 +18,54 @@ Layout, all optional except the target folder itself::
 
     dataset/007/**                     the target                -> TARGET
     dataset/006/**  dataset/001/**     other dhikr               -> other_dhikr
-    dataset/unknown/**                 filler                    -> unknown
-    dataset/negatives/general_speech/  ordinary Arabic speech    -> general_speech
-    dataset/negatives/partial_phrase/  incomplete utterances     -> partial_phrase
-    dataset/negatives/noise/           room tone, street, TV     -> noise
-    dataset/negatives/silence/                                   -> silence
-    dataset/negatives/shared/**        the shared pool           -> by subfolder
-    dataset/negatives/hard/007/**      designed to fool 007      -> hard_negative
-    dataset/negatives/hard/006/**      designed to fool 006      -> excluded
+    dataset/unknown/**                 flat filler               -> unknown
+    dataset/unknown/normal_speech/     ordinary Arabic speech    -> normal_speech
+    dataset/unknown/hard_negative/     near-misses of a phrase   -> hard_negative
+    dataset/unknown/partial_phrase/    incomplete utterances     -> partial_phrase
+    dataset/unknown/other_dhikr/       recorded as negatives     -> other_dhikr
+    dataset/unknown/noise/             room, street, TV          -> noise
 
-The last line is deliberate: a hard negative built to fool target 006
-(``سبحان الله وبحمده``) is quite likely a recording of 007's complete phrase, and
-labelling that as a negative for 007 would teach the model to reject its own
-target. ``target.include_other_hard_negatives`` overrides it for datasets where
-that cannot happen.
+The category is the first subfolder under ``unknown/``. It is derived once by
+:func:`src.dataset.scan_dataset`, which this module calls rather than walking the
+tree a second time - so a target scan sees exactly the folders, the categories
+and the speaker ids that a multi-class scan does.
+
+One caveat the layout cannot express, stated plainly because it is a real way to
+poison a model: ``unknown/hard_negative/`` is **shared across targets**. A
+near-miss recorded to fool 006 (``سبحان الله وبحمده``) may be a complete
+recording of 007's phrase, and used as a negative for 007 it would teach the
+model to reject its own target. Nothing here can detect that. Keep a clip that
+contains another target's complete phrase out of the folder, or give each target
+its own subfolder (``unknown/hard_negative/007/``) and set
+``target.hard_negative_subfolders``.
 """
 
 from __future__ import annotations
 
 import logging
 from collections import Counter, defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
 from .config import Config, NegativeSamplingConfig, TargetConfig
-from .dataset import DatasetIndex, ManifestRecord, Phrase, Sample
+from .dataset import DatasetIndex, ManifestRecord, Phrase, Sample, scan_dataset
 
 LOGGER = logging.getLogger(__name__)
 
 PathLike = Union[str, Path]
 
 __all__ = [
-    "HARD_DIRNAME",
     "NEGATIVE_TYPES",
-    "SHARED_DIRNAME",
+    "OTHER_DHIKR",
     "TARGET_INDEX",
     "TARGET_LABEL",
     "TargetDatasetReport",
     "UNKNOWN_INDEX",
     "UNKNOWN_LABEL",
     "build_target_report",
-    "classify_negative_path",
     "negative_breakdown",
     "recommend_clip_seconds",
     "sample_negatives",
@@ -77,16 +81,15 @@ TARGET_INDEX = 1
 TARGET_LABEL = "target"
 UNKNOWN_LABEL = "unknown"
 
-HARD_DIRNAME = "hard"
-SHARED_DIRNAME = "shared"
-
-# Every category trains as UNKNOWN; they exist so that evaluation can say *what*
-# produced a false detection. Ordered most- to least-dangerous, which is the
-# order the dataset report prints them in.
+# Categories a negative can carry. They all train as UNKNOWN; they exist so that
+# evaluation can say *what* produced a false detection. `src.dataset` derives the
+# value from the subfolder name, so this list is what the reports iterate over
+# and order by - most-dangerous first.
 NEGATIVE_TYPES: Tuple[str, ...] = (
     "hard_negative",
     "partial_phrase",
     "other_dhikr",
+    "normal_speech",
     "general_speech",
     "background_audio",
     "noise",
@@ -94,83 +97,15 @@ NEGATIVE_TYPES: Tuple[str, ...] = (
     "unknown",
 )
 
-# Folder names accepted for each category, so a dataset can spell them the
-# obvious way without a config entry per synonym.
-_CATEGORY_ALIASES: Dict[str, str] = {
-    "hard": "hard_negative",
-    "hard_negative": "hard_negative",
-    "hard_negatives": "hard_negative",
-    "partial": "partial_phrase",
-    "partial_phrase": "partial_phrase",
-    "partial_phrases": "partial_phrase",
-    "incomplete": "partial_phrase",
-    "other_dhikr": "other_dhikr",
-    "other_dhkr": "other_dhikr",
-    "speech": "general_speech",
-    "general_speech": "general_speech",
-    "conversation": "general_speech",
-    "quran": "background_audio",
-    "recitation": "background_audio",
-    "tv": "background_audio",
-    "background": "background_audio",
-    "background_audio": "background_audio",
-    "noise": "noise",
-    "street": "noise",
-    "room": "noise",
-    "silence": "silence",
-    "unknown": "unknown",
-}
+
+# What a clip from another phrase folder is called once it becomes a negative.
+OTHER_DHIKR = "other_dhikr"
+HARD_NEGATIVE = "hard_negative"
 
 
 def target_class_names() -> List[str]:
     """Class list in class-index order: ``["unknown", "target"]``."""
     return [UNKNOWN_LABEL, TARGET_LABEL]
-
-
-def classify_negative_path(
-    relative: PathLike, default: str = "unknown"
-) -> Tuple[str, Optional[str]]:
-    """Category of a negative from its path under ``dataset/negatives``.
-
-    Returns ``(negative_type, hard_target)`` where ``hard_target`` is the
-    zero-padded id a ``hard/<id>/`` folder belongs to, and ``None`` for every
-    other category. The first recognised path segment wins, so
-    ``negatives/shared/noise/street/x.wav`` is ``noise`` and an unrecognised
-    folder falls back to ``default`` rather than being dropped.
-    """
-    parts = [part for part in Path(relative).parts if part not in (".", "/")]
-    for position, part in enumerate(parts):
-        name = part.strip().lower()
-        if name == SHARED_DIRNAME:
-            continue
-        if name in (HARD_DIRNAME, "hard_negative", "hard_negatives"):
-            following = parts[position + 1] if position + 1 < len(parts) else ""
-            token = following.strip()
-            hard_target = f"{int(token):03d}" if token.isdigit() else None
-            return "hard_negative", hard_target
-        category = _CATEGORY_ALIASES.get(name)
-        if category:
-            return category, None
-    return default, None
-
-
-def _audio_files(directory: Path, suffixes: set) -> List[Path]:
-    return sorted(
-        path
-        for path in directory.rglob("*")
-        if path.is_file() and path.suffix.lower() in suffixes
-    )
-
-
-def _phrase_folders(root: Path) -> List[Path]:
-    return sorted(
-        (
-            entry
-            for entry in root.iterdir()
-            if entry.is_dir() and entry.name.isdigit()
-        ),
-        key=lambda entry: int(entry.name),
-    )
 
 
 def scan_target_dataset(
@@ -179,121 +114,96 @@ def scan_target_dataset(
     target: TargetConfig,
     unknown_class: str = "unknown",
     extensions: Sequence[str] = (".wav",),
+    speaker_resolver=None,
 ) -> DatasetIndex:
     """Index the dataset as TARGET vs UNKNOWN for ``target.phrase_id``.
 
-    Every sample keeps the folder it came from in ``rel_dir`` (so conditioned
-    clips are cached per source folder and shared between targets) and its
-    :data:`NEGATIVE_TYPES` category in ``negative_type`` (``None`` for the
-    target's own clips).
+    The walk itself is :func:`src.dataset.scan_dataset` - one implementation of
+    "what is in this dataset", so a target scan and a multi-class scan agree
+    about folders, negative categories and speaker ids by construction. This
+    function only *relabels* the result:
+
+    * the target's own folder becomes ``TARGET``;
+    * every other phrase folder becomes ``UNKNOWN`` / ``other_dhikr``;
+    * everything under ``unknown/`` keeps the category the scan derived.
+
+    ``rel_dir`` is left as the source folder, so conditioned clips stay cached
+    per folder and the shared negative pool is written once for every target.
     """
     if not target.enabled:
         raise ValueError("scan_target_dataset needs target.phrase_id to be set")
 
-    root = Path(dataset_dir)
-    if not root.is_dir():
-        raise FileNotFoundError(f"dataset directory not found: {root}")
-
     folder = target.folder or ""
-    target_dir = root / folder
-    if not target_dir.is_dir():
-        available = ", ".join(sorted(entry.name for entry in root.iterdir() if entry.is_dir()))
+    index = scan_dataset(
+        dataset_dir,
+        phrases,
+        unknown_class=unknown_class,
+        extensions=extensions,
+        classes=None,
+        speaker_resolver=speaker_resolver,
+    )
+    if folder not in index.class_names:
+        available = ", ".join(index.class_names)
         raise FileNotFoundError(
-            f"target phrase {folder} has no folder at {target_dir} "
+            f"target phrase {folder} has no folder under {dataset_dir} "
             f"(dataset holds: {available or 'nothing'})"
         )
 
-    suffixes = {ext.lower() for ext in extensions}
     phrase_text = {phrase.id: phrase.text for phrase in phrases}
     target_text = phrase_text.get(int(target.phrase_id or 0), folder)
 
     samples: List[Sample] = []
-
-    for path in _audio_files(target_dir, suffixes):
-        samples.append(
-            Sample(
-                path=path,
-                label=TARGET_LABEL,
-                class_index=TARGET_INDEX,
-                phrase_id=int(target.phrase_id) if target.phrase_id else None,
-                text=target_text,
-                rel_dir=folder,
-                negative_type=None,
-            )
-        )
-    if not samples:
-        raise FileNotFoundError(f"target folder {target_dir} contains no audio files")
-
-    def add_negatives(files: Sequence[Path], negative_type: str, rel_dir: str) -> None:
-        for path in files:
+    for sample in index.samples:
+        if sample.label == folder:
             samples.append(
-                Sample(
-                    path=path,
-                    label=UNKNOWN_LABEL,
-                    class_index=UNKNOWN_INDEX,
-                    phrase_id=None,
-                    text=UNKNOWN_LABEL,
-                    rel_dir=rel_dir,
-                    negative_type=negative_type,
+                replace(
+                    sample,
+                    label=TARGET_LABEL,
+                    class_index=TARGET_INDEX,
+                    phrase_id=int(target.phrase_id) if target.phrase_id else None,
+                    text=target_text,
+                    negative_type=None,
                 )
             )
+            continue
 
-    # Other phrase folders. These are the negatives that matter most and cost
-    # nothing to collect, because they are already in the dataset.
-    if target.auto_other_dhikr_negatives:
-        for directory in _phrase_folders(root):
-            if directory.name == folder:
+        if sample.label != unknown_class:
+            # Another phrase folder. These are the negatives that matter most and
+            # cost nothing - they are already in the dataset.
+            if not target.auto_other_dhikr_negatives:
                 continue
-            add_negatives(_audio_files(directory, suffixes), "other_dhikr", directory.name)
+            negative_type = OTHER_DHIKR
+        else:
+            negative_type = sample.negative_type or unknown_class
 
-    # The legacy `unknown` folder.
-    unknown_dir = root / unknown_class
-    if unknown_dir.is_dir():
-        add_negatives(_audio_files(unknown_dir, suffixes), "unknown", unknown_class)
-
-    # The categorised negative tree, shared across every target.
-    negatives_root = root / target.negatives_dir
-    skipped_hard: Counter = Counter()
-    if negatives_root.is_dir():
-        for path in _audio_files(negatives_root, suffixes):
-            relative = path.parent.relative_to(negatives_root)
-            negative_type, hard_target = classify_negative_path(relative)
-            if negative_type == "hard_negative" and hard_target is not None:
-                if hard_target != folder and not target.include_other_hard_negatives:
-                    skipped_hard[hard_target] += 1
-                    continue
-            add_negatives(
-                [path],
-                negative_type,
-                str(Path(target.negatives_dir) / relative),
+        samples.append(
+            replace(
+                sample,
+                label=UNKNOWN_LABEL,
+                class_index=UNKNOWN_INDEX,
+                phrase_id=None,
+                text=UNKNOWN_LABEL,
+                negative_type=negative_type,
             )
-
-    if skipped_hard:
-        LOGGER.info(
-            "skipped %d hard negative(s) belonging to other targets (%s); they may "
-            "contain this target's phrase. Set target.include_other_hard_negatives "
-            "to use them anyway.",
-            sum(skipped_hard.values()),
-            ", ".join(f"{name}x{count}" for name, count in sorted(skipped_hard.items())),
         )
 
     positives = sum(1 for sample in samples if sample.class_index == TARGET_INDEX)
+    if not positives:
+        raise FileNotFoundError(f"target folder {folder} contains no audio files")
+
     LOGGER.info(
         "target %s: %d positive / %d negative clips (%s)",
         folder,
         positives,
         len(samples) - positives,
-        ", ".join(
-            f"{name} {count}"
-            for name, count in sorted(negative_breakdown(samples).items())
-        )
+        ", ".join(f"{name} {count}" for name, count in sorted(negative_breakdown(samples).items()))
         or "no negatives",
     )
     if len(samples) == positives:
         LOGGER.warning(
             "target %s has no negatives at all. A detector trained only on its own "
-            "phrase will fire on everything - add other phrase folders, an `unknown` "
-            "folder or a `negatives/` tree before training.",
+            "phrase will fire on everything - add other phrase folders or an "
+            "`unknown/` tree before training.",
             folder,
         )
 
@@ -301,9 +211,10 @@ def scan_target_dataset(
         samples=samples,
         class_names=target_class_names(),
         phrases=phrase_text,
-        root=root,
+        root=index.root,
         target_id=int(target.phrase_id) if target.phrase_id else None,
         target_text=target_text,
+        speaker_source=index.speaker_source,
     )
 
 
@@ -578,17 +489,15 @@ class TargetDatasetReport:
 def build_target_report(
     index: DatasetIndex,
     durations: Optional[Dict[str, float]] = None,
-    speakers: Optional[Dict[str, Optional[str]]] = None,
     config: Optional[Config] = None,
 ) -> TargetDatasetReport:
     """Assemble :class:`TargetDatasetReport` from an index.
 
-    ``durations`` and ``speakers`` are keyed by ``str(sample.path)``; both are
-    optional, so this works straight after a scan and gets sharper once the
-    validation pass has measured the files.
+    ``durations`` is keyed by ``str(sample.path)`` and is optional, so this works
+    straight after a scan and gets sharper once the validation pass has measured
+    the files. Speaker ids come off the samples, which the scan resolved.
     """
     durations = durations or {}
-    speakers = speakers or {}
     readiness = config.readiness if config else None
 
     positive_seconds = negative_seconds = 0.0
@@ -604,7 +513,7 @@ def build_target_report(
     for sample in index.samples:
         key = str(sample.path)
         duration = float(durations.get(key, 0.0))
-        speaker = speakers.get(key)
+        speaker = sample.speaker
         if speaker:
             resolved_any = True
         if sample.class_index == TARGET_INDEX:

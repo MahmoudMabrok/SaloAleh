@@ -47,8 +47,15 @@ __all__ = [
     "build_ds_cnn",
     "build_model",
     "build_tc_resnet8",
+    "capacity_report",
     "model_summary_text",
 ]
+
+# Parameters per training clip above which the network can memorise the dataset
+# instead of learning the phrase. Not a law - a threshold that matches what this
+# project keeps running into at a few hundred clips.
+PARAMETERS_PER_CLIP_WARN = 1000.0
+PARAMETERS_PER_CLIP_HIGH = 5000.0
 
 
 def _scaled(filters: int, multiplier: float) -> int:
@@ -298,3 +305,65 @@ def estimate_flops(model: keras.Model) -> int:
 
 def gpu_available() -> bool:
     return bool(tf.config.list_physical_devices("GPU"))
+
+
+def capacity_report(
+    model: keras.Model, train_clips: int, config: ModelConfig, num_classes: int
+) -> str:
+    """Model size measured against the dataset, with a recommendation.
+
+    Reporting only - nothing is changed automatically, because a width multiplier
+    that moves on its own would make two runs of the same config incomparable and
+    every checkpoint's provenance a guess. The recommendation is a config edit for
+    a person to make, and a deliberate one: it changes the model.
+    """
+    parameters = int(model.count_params())
+    flops = estimate_flops(model)
+    per_clip = parameters / float(max(train_clips, 1))
+
+    lines = [
+        f"parameters       : {parameters:,}",
+        f"training clips   : {train_clips:,}",
+        f"parameters/clip  : {per_clip:,.0f}",
+        f"approx MFLOPs    : {flops / 1e6:.1f} per inference",
+        f"width_multiplier : {config.width_multiplier:g}",
+    ]
+
+    if per_clip >= PARAMETERS_PER_CLIP_HIGH:
+        suggestion = 0.5 if config.width_multiplier > 0.5 else config.width_multiplier
+        lines.append(
+            f"\n!! {per_clip:,.0f} parameters per training clip. A network this size "
+            f"can memorise {train_clips:,} recordings outright, which shows up as "
+            f"training accuracy at 1.0 with validation stuck far below it. "
+            + (
+                f"Recommended for a dataset this size: model.width_multiplier "
+                f"{suggestion:g} (quarters the parameter count) and "
+                f"model.dropout 0.4. Change it in config.yaml and run with "
+                f"FRESH_START = True - it is not applied automatically, because a "
+                f"model that silently resizes itself makes two runs of the same "
+                f"config incomparable."
+                if config.width_multiplier > 0.5
+                else "The width is already at 0.5; the remaining fix is more "
+                "recordings from more speakers, not less model."
+            )
+        )
+    elif per_clip >= PARAMETERS_PER_CLIP_WARN:
+        lines.append(
+            f"\n!! {per_clip:,.0f} parameters per training clip is on the high side. "
+            f"Watch the train/val gap; if it opens, model.width_multiplier "
+            f"{max(config.width_multiplier / 2.0, 0.5):g} is the first knob."
+        )
+    else:
+        lines.append(
+            f"\ncapacity looks proportionate to the dataset "
+            f"({per_clip:,.0f} parameters per clip). If validation plateaus here it "
+            f"is unlikely to be model size - look at speaker variety first."
+        )
+
+    per_class = train_clips / float(max(num_classes, 1))
+    if per_class < 50:
+        lines.append(
+            f"   ({per_class:.0f} training clips per class - at this scale the model "
+            f"size is rarely the binding constraint; recordings and speakers are.)"
+        )
+    return "\n".join(lines)

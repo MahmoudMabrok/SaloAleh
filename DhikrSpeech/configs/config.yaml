@@ -22,9 +22,15 @@ paths:
   exports_dir: exports
   logs_dir: logs                # TensorBoard + CSV training logs
   reports_dir: reports          # validation reports, metrics, charts
+  # Long-form recordings for streaming evaluation:
+  #   streaming_test/audio/*.wav + streaming_test/annotations.json
+  streaming_dir: streaming_test
 
   phrases_file: phrases.json    # [{"id": 1, "text": "..."}, ...]
   unknown_class: unknown        # folder holding out-of-vocabulary / filler audio
+  # Optional CSV mapping recordings to speakers: file,speaker (see README).
+  # Explicit metadata beats guessing an id out of the filename.
+  speakers_file: speakers.csv
 
 # ---------------------------------------------------------------------------
 # Classes - which phrases the model learns to tell apart
@@ -42,10 +48,27 @@ classes:
   # Phrase ids from phrases.json. null (or []) trains on every folder found.
   # [1, 2, 3, 4] = the four short, distinct phrases:
   #   1 سبحان الله | 2 الحمد لله | 3 الله أكبر | 4 لا إله إلا الله
-  include_phrases: [6,7]
+  include_phrases: []
   # Keep the `unknown` filler folder when one exists. It is not a phrase id, so
   # the selection above never covers it.
   include_unknown: true
+
+  # Negatives may be organised into subfolders under `unknown/`:
+  #
+  #   dataset/unknown/normal_speech/*.wav
+  #   dataset/unknown/hard_negative/*.wav      <- the ones that decide the model
+  #   dataset/unknown/partial_phrase/*.wav
+  #   dataset/unknown/other_dhikr/*.wav
+  #   dataset/unknown/noise/*.wav
+  #
+  # Everything below `unknown/` trains as the single `unknown` output class. The
+  # subfolder is kept in the manifest as `negative_type`, so evaluation can report
+  # false positives per category and say *what kind* of audio breaks the detector.
+  # A flat `unknown/*.wav` folder still works and is reported as `unknown`.
+  negative_types: [normal_speech, hard_negative, partial_phrase, other_dhikr, noise, unknown]
+  # true would give each category its own output class. That needs far more data
+  # per category than a first dataset has - leave it off unless you have it.
+  split_negative_classes: false
 
 # ---------------------------------------------------------------------------
 # Target - the production architecture: one model per dhikr
@@ -71,12 +94,12 @@ target:
   # Every other phrase folder (dataset/001, dataset/006, ...) becomes a negative.
   # These are the hard negatives that cost nothing - they are already collected.
   auto_other_dhikr_negatives: true
-  # negatives/hard/<other id>/ holds clips designed to fool a *different* target.
-  # Off by default: a hard negative for 006 ("سبحان الله وبحمده") may well be a
-  # recording of 007's complete phrase, and using it as a negative for 007 would
-  # teach the model to reject its own target.
-  include_other_hard_negatives: false
-  negatives_dir: negatives
+  # Negatives live under dataset/unknown/<category>/ and are shared by every
+  # target; the category is the subfolder name. Note that hard_negative/ is
+  # shared too: a near-miss recorded to fool 006 may be a complete recording of
+  # 007's phrase, and as a negative for 007 it would teach the model to reject
+  # its own target. That is a collection rule, not a setting - see
+  # docs/DATA_COLLECTION.md.
   # Per-target window length. A two-word dhikr and a seven-word one do not belong
   # in the same window; the dataset report prints a recommendation from the
   # measured utterance durations, and applying it stays a human decision because
@@ -189,6 +212,19 @@ augmentation:
     probability: 0.5
     max_shift_ms: 150.0
 
+  # Mild synthetic room reverberation (generated impulse response - no extra
+  # dependency, no impulse-response corpus). A phone at arm's length in a tiled
+  # room sounds nothing like a close-mic recording, and this is the part of that
+  # gap augmentation can imitate honestly. Keep the decay short: a long tail
+  # smears the consonants that separate 006 from 007.
+  reverb:
+    enabled: false
+    probability: 0.25
+    min_decay_ms: 80.0
+    max_decay_ms: 300.0
+    min_wet: 0.10               # wet/dry mix; above ~0.5 it stops sounding like a phone
+    max_wet: 0.35
+
   spec_augment:
     enabled: true
     probability: 0.5
@@ -204,32 +240,60 @@ split:
   val_ratio: 0.15
   test_ratio: 0.10              # 0.0 disables the test split
   stratified: true
-  # Legacy fallback for recordings with no speaker id: whole filename groups move
-  # together. `speaker_regex` below supersedes it.
+  # Legacy: a bare regex matched against the file name. Still honoured (read as
+  # speaker.regex with speaker.source: filename), kept so old configs run
+  # unchanged. New configs should use the speaker section below.
   group_regex: null
 
-  # Speaker identity. A model that heard the same voice in training and in
-  # validation reports a number that says nothing about a stranger's phone, and
-  # with a few dozen volunteers that is the whole gap between the printed
-  # accuracy and the device.
-  #
-  # `speaker_regex` is matched against the file name, then the whole path; a
-  # named group `speaker` wins, else group 1, else the whole match. For files
-  # named spk03_007_012.wav that is '^(?P<speaker>[^_]+)_'.
-  speaker_regex: null
-  # JSON mapping of file name (or any path suffix) -> speaker id. Wins over the
-  # regex when both resolve. Relative paths hang off the project root.
-  speaker_metadata: null
-  # Keep every recording of one speaker - positives *and* the negatives they
-  # recorded - inside one split.
-  speaker_safe: true
-  # Refuse to build a manifest that leaks. Turning this off does not make the
-  # numbers valid, it just stops the pipeline saying so.
-  fail_on_leakage: true
-  # Fail when a speaker id cannot be resolved at all. Off by default so a
-  # prototype dataset with no naming convention still runs - it prints
-  # "EVALUATION IS NOT SPEAKER-INDEPENDENT" instead.
-  require_speaker_ids: false
+  # Speaker-safe splitting. The same voice must never appear in two splits: if it
+  # does, the test accuracy answers "can the model recognise this speaker again",
+  # not "does it work for a new user" - and that is the only question that matters
+  # for an app installed by strangers.
+  speaker:
+    # auto     - speakers.csv if present, else the regex if it matches most files,
+    #            else a per-speaker subfolder, else none (with a loud warning)
+    # metadata - speakers.csv only
+    # filename - regex against the file name
+    # parent   - the recording's folder inside the class folder (dataset/006/ali/*.wav)
+    # none     - no speaker information; evaluation is NOT speaker-independent
+    source: auto
+    # A single pattern that overrides the list below. null = use the list.
+    regex: null
+    # Tried in order; the first token that is not the class folder's own name
+    # wins. The collector's device token comes first deliberately: its uploads are
+    # named <class>_sp<8 hex>_<timestamp>_<suffix>, so a pattern that simply took
+    # the leading token would extract the CLASS ID and make every recording of a
+    # phrase one "speaker" - putting whole classes in one split with nothing
+    # looking wrong. A named (?P<speaker>...) group wins, else group 1, else the
+    # whole match.
+    filename_patterns:
+      - '(?P<speaker>sp[0-9a-f]{8})'        # SpeechCollector device token
+      - '^(?P<speaker>[A-Za-z0-9\-]+?)[_\-]' # hand-named: ali_001.wav
+    metadata_file: null         # null = paths.speakers_file
+    # When speakers are known, a speaker in two splits fails preprocessing rather
+    # than warning. A silent leak invalidates every number downstream.
+    require_disjoint: true
+    min_speakers: 10            # below this the split is safe but not diverse
+    # Coverage below which `auto` warns that most files have no speaker id. It
+    # never rejects the source: grouping the files that do carry one is strictly
+    # better than splitting all of them at random.
+    auto_match_ratio: 0.6
+
+# ---------------------------------------------------------------------------
+# Dataset quality - recommendations, never blocking
+# ---------------------------------------------------------------------------
+# The pipeline runs on a prototype dataset (tens of clips) on purpose, so the
+# plumbing can be verified before the recordings exist. These numbers are what
+# the dataset report measures against so a prototype is never mistaken for a
+# production dataset.
+quality:
+  prototype_recordings_per_class: 100
+  prototype_speakers: 10
+  recommended_recordings_per_class: 200   # first model worth shipping: 200-500
+  recommended_speakers: 20
+  min_unknown_ratio: 0.5        # unknown clips as a share of target clips
+  max_class_imbalance: 3.0      # largest class / smallest class
+  min_negative_category: 20     # clips before a category's FP rate is a number
 
 # ---------------------------------------------------------------------------
 # Model - DS-CNN (depthwise separable CNN, the standard KWS topology)
@@ -322,6 +386,12 @@ training:
   min_learning_rate: 1.0e-5
   plateau_factor: 0.5
   plateau_patience: 4
+
+  # Also track macro F1. val_accuracy alone flatters a model that answers
+  # `unknown` to everything on an unbalanced split; macro F1 weighs every class
+  # equally and drops when a class is being ignored. Reported by default - set
+  # checkpoint.monitor / early_stopping.monitor to `val_macro_f1` to select on it.
+  macro_f1: true
 
   early_stopping:
     enabled: true

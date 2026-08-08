@@ -34,23 +34,19 @@ import numpy as np
 from .config import Config
 from .dataset import (
     ManifestRecord,
+    assign_splits,
+    build_speaker_resolver,
     filter_split,
     load_phrases,
     preprocess_dataset,
     save_manifest,
     split_counts,
+    verify_manifest_splits,
 )
 from .features import FeatureStats, LogMelExtractor
 from .metrics import DetectorEvaluation, evaluate_detector
 from .readiness import ReadinessReport, assess_readiness
-from .splitting import (
-    SpeakerIsolationReport,
-    SpeakerStats,
-    assign_speaker_splits,
-    resolve_speakers,
-    speaker_stats,
-    verify_speaker_isolation,
-)
+from .speakers import SpeakerReport
 from .streaming import StreamingDetector, detector_with_threshold
 from .streaming_eval import (
     CalibrationResult,
@@ -126,17 +122,14 @@ class TargetPreparation:
     target_text: str
     records: List[ManifestRecord]
     report: TargetDatasetReport
-    isolation: SpeakerIsolationReport
-    speakers: SpeakerStats
+    speakers: SpeakerReport
     manifest_path: Path
 
     def split(self, name: str) -> List[ManifestRecord]:
         return filter_split(self.records, name)
 
     def summary(self) -> str:
-        return "\n\n".join(
-            [self.report.summary(), self.speakers.summary(), self.isolation.summary()]
-        )
+        return "\n\n".join([self.report.summary(), self.speakers.summary()])
 
 
 def prepare_target(
@@ -166,22 +159,24 @@ def prepare_target(
         bound.target,
         unknown_class=bound.paths.unknown_class,
         extensions=bound.audio.file_extensions,
+        speaker_resolver=build_speaker_resolver(bound),
     )
 
-    speakers = resolve_speakers(index.samples, bound.split, metadata_root=bound.paths.root)
     records, summary = preprocess_dataset(
         index,
         bound,
         exclude=exclude,
         overwrite=overwrite,
         progress=progress,
-        speakers=speakers,
         destination_root=bound.clip_cache_path(),
     )
     LOGGER.info("conditioning: %s", summary.summary())
 
-    records = assign_speaker_splits(records, bound.split, bound.seed)
-    isolation = verify_speaker_isolation(records)
+    # Speaker-grouped whenever the recordings carry a speaker, and verified
+    # afterwards rather than assumed: `verify_manifest_splits` raises on a leak
+    # when `split.speaker.require_disjoint` is set.
+    records = assign_splits(records, bound.split, bound.seed)
+    speakers = verify_manifest_splits(records, bound.split, source=f"target {identifier:03d}")
 
     manifest_path = bound.target_manifest_path(identifier)
     save_manifest(records, manifest_path)
@@ -189,7 +184,7 @@ def prepare_target(
     durations = {str(sample.path): 0.0 for sample in index.samples}
     for record in records:
         durations[record.source_path] = record.duration
-    report = build_target_report(index, durations=durations, speakers=speakers, config=bound)
+    report = build_target_report(index, durations=durations, config=bound)
 
     LOGGER.info("splits: %s", split_counts(records))
     return TargetPreparation(
@@ -198,8 +193,7 @@ def prepare_target(
         target_text=index.target_text or "",
         records=records,
         report=report,
-        isolation=isolation,
-        speakers=speaker_stats(records),
+        speakers=speakers,
         manifest_path=manifest_path,
     )
 
@@ -660,7 +654,7 @@ def export_target(
             "positive_speakers": preparation.report.positive_speakers,
             "negative_clips": preparation.report.negative_clips,
             "speakers_known": preparation.report.speakers_known,
-            "speaker_leakage": len(preparation.isolation.leaked),
+            "speaker_leakage": len(preparation.speakers.leaks),
         },
         streaming=streaming.evaluation.metrics if streaming and streaming.evaluation else None,
         evaluation=clip_evaluation.to_dict() if clip_evaluation else None,
@@ -760,7 +754,7 @@ def readiness_for(
         target_id=run.target_id,
         target_text=run.target_text,
         dataset=run.preparation.report,
-        isolation=run.preparation.isolation,
+        isolation=run.preparation.speakers,
         streaming=streaming.evaluation.metrics if streaming and streaming.evaluation else None,
         hard_negatives=hard_negatives,
         quantization=quantization,

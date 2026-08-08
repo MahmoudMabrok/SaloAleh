@@ -42,8 +42,15 @@ function validateConfiguration(config) {
     if (typeof phrase.text !== 'string' || !phrase.text.trim()) throw new Error(`Phrase ${phrase.id} has no text.`);
     ids.add(phrase.id);
   }
+  // A page with nothing to record is a deployment nobody would notice was
+  // broken: every phrase can be parked, but not all of them at once.
+  if (visiblePhrases(config).length === 0) {
+    throw new Error('Every phrase is hidden; the page would show no phrase cards.');
+  }
 
   validateUnknownPrompt(config, ids);
+  validateNoisePrompt(config, ids);
+  validateStreamingRecording(config);
 
   if (config.recording.minimumDurationMs < 1 ||
       config.recording.maximumDurationMs < config.recording.minimumDurationMs) {
@@ -87,6 +94,76 @@ function validateUnknownPrompt(config, phraseIds) {
   }
 }
 
+/**
+ * The noise card. Its folder sits beside the dataset rather than inside it, so
+ * the checks here are about keeping those two levels apart: a noise folder that
+ * shadowed the dataset folder, or a class folder inside it, would feed the
+ * trainer background hiss as if it were someone reciting.
+ */
+function validateNoisePrompt(config, phraseIds) {
+  const prompt = config.noisePrompt;
+  if (prompt === null || prompt === undefined) return;
+
+  if (typeof prompt !== 'object') throw new Error('noisePrompt must be an object or null.');
+  if (!Number.isInteger(prompt.id)) throw new Error(`noisePrompt.id must be an integer: ${prompt.id}`);
+  if (phraseIds.has(prompt.id)) throw new Error(`noisePrompt.id ${prompt.id} collides with a phrase id.`);
+  if (config.unknownPrompt && config.unknownPrompt.id === prompt.id) {
+    throw new Error(`noisePrompt.id ${prompt.id} collides with unknownPrompt.id.`);
+  }
+  if (typeof prompt.text !== 'string' || !prompt.text.trim()) throw new Error('noisePrompt has no text.');
+
+  const folder = String(config.storage.noiseFolderName || '').trim();
+  if (!folder) {
+    throw new Error('storage.noiseFolderName is required when noisePrompt is set (e.g. "noise").');
+  }
+  if (folder === String(config.storage.datasetSubfolder).trim()) {
+    throw new Error('storage.noiseFolderName must differ from datasetSubfolder; noise is not a dataset class.');
+  }
+}
+
+/**
+ * The repetition take: one long clip holding the same dhikr N times, filed
+ * outside `dataset/`. It is optional (`recording.streaming: null` drops the
+ * second button), but a half-configured one is the dangerous state — a
+ * streaming folder equal to the dataset folder would put N-utterance clips
+ * where the trainer scans for single ones, and a maximum that does not exceed
+ * the clip maximum would mean the second button records exactly what the first
+ * one does while claiming otherwise.
+ */
+function validateStreamingRecording(config) {
+  const streaming = config.recording.streaming;
+  if (streaming === null || streaming === undefined) return;
+
+  if (typeof streaming !== 'object') throw new Error('recording.streaming must be an object or null.');
+  if (!Number.isInteger(streaming.repetitions) || streaming.repetitions < 2) {
+    throw new Error(`recording.streaming.repetitions must be an integer of at least 2: ${streaming.repetitions}`);
+  }
+  for (const key of ['minimumDurationMs', 'maximumDurationMs', 'maximumUploadBytes']) {
+    if (!Number.isFinite(streaming[key]) || streaming[key] <= 0) {
+      throw new Error(`recording.streaming.${key} must be a positive number.`);
+    }
+  }
+  if (streaming.maximumDurationMs < streaming.minimumDurationMs) {
+    throw new Error('recording.streaming duration limits are invalid.');
+  }
+  // A repetition take that fits inside a clip's five seconds is not a different
+  // recording, and its own limits would be doing nothing.
+  if (streaming.maximumDurationMs <= config.recording.maximumDurationMs) {
+    throw new Error('recording.streaming.maximumDurationMs must exceed recording.maximumDurationMs; it holds several utterances.');
+  }
+
+  const folder = String(config.storage.streamingSubfolder || '').trim();
+  if (!folder) {
+    throw new Error('storage.streamingSubfolder is required when recording.streaming is set (e.g. "streaming").');
+  }
+  if (folder === String(config.storage.datasetSubfolder).trim()) {
+    throw new Error('storage.streamingSubfolder must differ from datasetSubfolder; a repetition take is not a training clip.');
+  }
+  if (folder === String(config.storage.noiseFolderName || '').trim()) {
+    throw new Error('storage.streamingSubfolder must differ from noiseFolderName.');
+  }
+}
+
 function write(filename, contents) {
   fs.writeFileSync(path.join(outputDirectory, filename), contents, 'utf8');
 }
@@ -123,6 +200,15 @@ write('appsscript.json', `${JSON.stringify(manifest, null, 2)}\n`);
 
 console.log(`Built Apps Script project in ${outputDirectory}`);
 
+/**
+ * The phrases that get a card. A hidden phrase keeps its id, its folder and its
+ * phrases.json entry; it just never reaches the page, so the page never has to
+ * know the concept exists. Mirrors visiblePhrases_() in Code.gs.
+ */
+function visiblePhrases(source) {
+  return source.phrases.filter((phrase) => !phrase.hidden);
+}
+
 /** Mirrors the payload doGet() builds in Code.gs. */
 function bootstrapData(source) {
   return {
@@ -135,12 +221,14 @@ function bootstrapData(source) {
       maximumUploadBytes: source.recording.maximumUploadBytes,
       preferredSampleRate: source.recording.preferredSampleRate,
       preferredChannelCount: source.recording.preferredChannelCount,
-      acceptedMimeTypes: source.recording.acceptedMimeTypes
+      acceptedMimeTypes: source.recording.acceptedMimeTypes,
+      streaming: source.recording.streaming || null
     },
     theme: source.theme,
     ui: source.ui,
-    phrases: source.phrases,
-    unknownPrompt: source.unknownPrompt || null
+    phrases: visiblePhrases(source),
+    unknownPrompt: source.unknownPrompt || null,
+    noisePrompt: source.noisePrompt || null
   };
 }
 

@@ -56,10 +56,9 @@ def project(tmp_path: Path) -> Config:
     populate(dataset, "007", 300.0)
     populate(dataset, "006", 420.0)
     populate(dataset, "unknown", 700.0, per_speaker=1)
-    populate(dataset, "negatives/general_speech", 900.0, per_speaker=1)
-    populate(dataset, "negatives/hard/007", 330.0, per_speaker=1)
-    populate(dataset, "negatives/hard/006", 430.0, per_speaker=1)
-    populate(dataset, "negatives/shared/noise", 120.0, per_speaker=1)
+    populate(dataset, "unknown/normal_speech", 900.0, per_speaker=1)
+    populate(dataset, "unknown/hard_negative", 330.0, per_speaker=1)
+    populate(dataset, "unknown/noise", 120.0, per_speaker=1)
 
     (root / "phrases.json").write_text(
         json.dumps(
@@ -77,7 +76,8 @@ def project(tmp_path: Path) -> Config:
             "paths.drive_root": str(tmp_path),
             "paths.project_dir": "project",
             "target.phrase_id": 7,
-            "split.speaker_regex": r"^(?P<speaker>spk\d+)",
+            "split.speaker.source": "filename",
+            "split.speaker.regex": r"^(?P<speaker>spk\d+)",
             "audio.clip_seconds": 2.0,
             "training.batch_size": 8,
         }
@@ -99,10 +99,10 @@ def test_prepare_target_builds_a_binary_manifest(project: Config) -> None:
 def test_other_dhikr_and_hard_negatives_are_negatives(project: Config) -> None:
     preparation = prepare_target(project, 7)
     types = {r.negative_type for r in preparation.records if r.class_index != TARGET_INDEX}
-    assert {"other_dhikr", "hard_negative", "general_speech", "noise", "unknown"} <= types
+    assert {"other_dhikr", "hard_negative", "normal_speech", "noise", "unknown"} <= types
     hard = [r for r in preparation.records if r.negative_type == "hard_negative"]
-    assert len(hard) == 12  # hard/007 only; hard/006 is excluded by default
-    assert all("hard/007" in r.source_path.replace("\\", "/") for r in hard)
+    assert len(hard) == 12
+    assert all("unknown/hard_negative" in r.source_path.replace("\\", "/") for r in hard)
 
 
 def test_the_manifest_round_trips_with_the_new_columns(project: Config) -> None:
@@ -115,7 +115,7 @@ def test_the_manifest_round_trips_with_the_new_columns(project: Config) -> None:
 
 def test_no_speaker_crosses_a_split(project: Config) -> None:
     preparation = prepare_target(project, 7)
-    assert preparation.isolation.is_clean
+    assert preparation.speakers.is_disjoint
     placement = {}
     for record in preparation.records:
         placement.setdefault(record.speaker, set()).add(record.split)
@@ -139,7 +139,7 @@ def test_conditioned_clips_are_cached_by_geometry_and_source_folder(project: Con
     assert cache.name == "16000hz_2s"
     assert (cache / "007").is_dir()
     assert (cache / "006").is_dir()
-    assert (cache / "negatives" / "hard" / "007").is_dir()
+    assert (cache / "unknown" / "hard_negative").is_dir()
     clip, _ = _read(next((cache / "007").glob("*.wav")))
     assert clip.size == project.audio.clip_samples
 
@@ -154,7 +154,7 @@ def test_two_targets_share_the_conditioned_negative_pool(project: Config) -> Non
     """The shared pool must be conditioned once, not once per target."""
     prepare_target(project, 7)
     cache = project.for_target(7).clip_cache_path()
-    speech = sorted((cache / "negatives" / "general_speech").glob("*.wav"))
+    speech = sorted((cache / "unknown" / "normal_speech").glob("*.wav"))
     stamps = {path: path.stat().st_mtime_ns for path in speech}
 
     prepare_target(project, 6)

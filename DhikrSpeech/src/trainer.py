@@ -61,7 +61,9 @@ RESUME_SENSITIVE_SECTIONS = (
 
 __all__ = [
     "SparseCategoricalCrossentropyWithSmoothing",
+    "SparseMacroF1",
     "Trainer",
+    "build_metrics",
     "TrainingArtifacts",
     "WarmupCosineDecay",
     "build_loss",
@@ -215,6 +217,40 @@ class SparseCategoricalCrossentropyWithSmoothing(keras.losses.Loss):
         return config
 
 
+_F1_BASE = getattr(getattr(keras, "metrics", None), "F1Score", None)
+
+if _F1_BASE is not None:
+
+    @keras.saving.register_keras_serializable(package="dhikrspeech")
+    class SparseMacroF1(_F1_BASE):  # type: ignore[misc, valid-type]
+        """Macro F1 on integer labels.
+
+        Keras' ``F1Score`` expects one-hot targets, but ``class_weight`` in
+        ``fit`` needs integer labels - the same mismatch
+        :class:`SparseCategoricalCrossentropyWithSmoothing` solves for the loss.
+        One-hotting inside ``update_state`` gives both.
+        """
+
+        def __init__(self, num_classes: int, name: str = "macro_f1", **kwargs) -> None:
+            kwargs.setdefault("average", "macro")
+            super().__init__(**kwargs)
+            self.num_classes = int(num_classes)
+
+        def update_state(self, y_true, y_pred, sample_weight=None):
+            labels = tf.cast(tf.reshape(y_true, [-1]), tf.int32)
+            one_hot = tf.one_hot(labels, depth=self.num_classes, dtype=y_pred.dtype)
+            return super().update_state(one_hot, y_pred, sample_weight)
+
+        def get_config(self) -> Dict[str, object]:
+            config = super().get_config()
+            config["num_classes"] = self.num_classes
+            return config
+
+else:  # pragma: no cover - Keras builds older than 2.13
+
+    SparseMacroF1 = None  # type: ignore[assignment]
+
+
 def build_loss(num_classes: int, config: TrainingConfig) -> keras.losses.Loss:
     """Loss for ``num_classes`` model outputs.
 
@@ -230,13 +266,22 @@ def build_loss(num_classes: int, config: TrainingConfig) -> keras.losses.Loss:
     return keras.losses.SparseCategoricalCrossentropy()
 
 
-def build_metrics(num_classes: int) -> List[keras.metrics.Metric]:
+def build_metrics(num_classes: int, config: TrainingConfig) -> List:
     """Metrics that mean something for the width of the output.
 
-    A detector is judged on precision and recall, not on accuracy: with a 1:3
-    positive/negative split a model that never fires is 75% accurate. ``top3`` is
-    reserved for the legacy multi-class model, where it is informative; on two
-    classes it is identically 1.0.
+    A **detector** (one sigmoid output) is judged on precision and recall, never
+    on accuracy: with negatives at twice the positives, a model that never fires
+    is already 67% accurate. `top3` is meaningless below four classes and macro
+    F1 is redundant on two, so neither is added there.
+
+    For the legacy multi-class model, `val_accuracy` alone is just as poor a
+    guide - a model answering `unknown` to everything scores whatever share
+    `unknown` has. Macro F1 weighs every class equally and drops when a class is
+    being ignored, which is the failure that dataset produces most often. It is a
+    *metric*, not a callback: `keras.metrics.F1Score` accumulates per-class
+    true/false positives on device, so there is nothing fragile to schedule, and
+    Keras builds without it simply do not get the metric rather than failing at
+    compile time.
     """
     if num_classes == 1:
         return [
@@ -245,11 +290,25 @@ def build_metrics(num_classes: int) -> List[keras.metrics.Metric]:
             keras.metrics.Recall(name="recall"),
             keras.metrics.AUC(name="auc"),
         ]
-    metrics: List[keras.metrics.Metric] = [
-        keras.metrics.SparseCategoricalAccuracy(name="accuracy")
-    ]
+
+    metrics: List = [keras.metrics.SparseCategoricalAccuracy(name="accuracy")]
     if num_classes > 3:
         metrics.append(keras.metrics.SparseTopKCategoricalAccuracy(k=3, name="top3_accuracy"))
+    # Two classes are the target/unknown detector: macro F1 over two columns adds
+    # nothing that precision and recall do not already say.
+    if num_classes <= 2:
+        return metrics
+
+    if not config.macro_f1 or SparseMacroF1 is None:
+        if config.macro_f1 and SparseMacroF1 is None:
+            LOGGER.info(
+                "this Keras build has no F1Score metric - training with accuracy only"
+            )
+        return metrics
+    try:
+        metrics.append(SparseMacroF1(num_classes=num_classes, name="macro_f1"))
+    except Exception as exc:  # noqa: BLE001 - a metric must never fail a run
+        LOGGER.warning("could not add the macro F1 metric: %s", exc)
     return metrics
 
 
@@ -563,7 +622,7 @@ class Trainer:
         self.model.compile(
             optimizer=build_optimizer(training, self.steps_per_epoch),
             loss=build_loss(self.num_classes, training),
-            metrics=build_metrics(self.num_classes),
+            metrics=build_metrics(self.num_classes, training),
         )
         self._compiled = True
         return self.model
@@ -883,13 +942,12 @@ def sanity_overfit_report(result: Dict[str, float], num_classes: int) -> str:
 
 def load_trained_model(path: PathLike) -> keras.Model:
     """Load a ``.keras`` checkpoint, including this module's custom objects."""
-    return keras.models.load_model(
-        str(path),
-        custom_objects={
-            "WarmupCosineDecay": WarmupCosineDecay,
-            "SparseCategoricalCrossentropyWithSmoothing": (
-                SparseCategoricalCrossentropyWithSmoothing
-            ),
-        },
-        compile=False,
-    )
+    custom_objects = {
+        "WarmupCosineDecay": WarmupCosineDecay,
+        "SparseCategoricalCrossentropyWithSmoothing": (
+            SparseCategoricalCrossentropyWithSmoothing
+        ),
+    }
+    if SparseMacroF1 is not None:
+        custom_objects["SparseMacroF1"] = SparseMacroF1
+    return keras.models.load_model(str(path), custom_objects=custom_objects, compile=False)

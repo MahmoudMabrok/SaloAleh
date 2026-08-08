@@ -140,6 +140,26 @@ h1 {
   line-height: 1.7;
 }
 
+/* The repetition take is the one recording the single-utterance rule does NOT
+   govern, so it is explained in its own box directly under that rule rather
+   than in the hint text — a volunteer who reads only the boxes must still come
+   away knowing the two buttons want opposite things. */
+.streaming-hint {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 11px 13px;
+  border: 1px solid #cddfea;
+  border-inline-start: 4px solid #3f7fa8;
+  border-radius: 14px;
+  background: #f5fafd;
+  color: #22536e;
+  font-size: 0.86rem;
+  line-height: 1.7;
+}
+
+.streaming-hint[hidden] { display: none; }
+
 /* ---- one recorder per phrase -------------------------------------------- */
 
 .phrase-list {
@@ -185,8 +205,15 @@ h1 {
   font-size: 0.7rem;
 }
 
-.card-tally {
+/* Both pills as one end-aligned group, so an empty clip tally cannot pull the
+   repetition tally away from the edge of the card. */
+.card-tallies {
+  display: flex;
+  gap: 6px;
   margin-inline-start: auto;
+}
+
+.card-tally {
   padding: 2px 9px;
   border-radius: 99px;
   background: var(--primary-soft);
@@ -196,6 +223,13 @@ h1 {
 }
 
 .card-tally:empty { display: none; }
+
+/* Toned to the repetition button's blue: the two tallies count different things
+   and should not read as one number split in half. */
+.card-tally-streaming {
+  background: #e7f1f7;
+  color: #22536e;
+}
 
 .card-badge {
   padding: 2px 9px;
@@ -240,6 +274,20 @@ h1 {
 }
 
 .phrase-card-unknown .phrase-text { font-size: clamp(1.15rem, 4.6vw, 1.4rem); }
+
+/* The background-noise card: nothing is read aloud here at all, so it is toned
+   further away again — cool grey rather than the unknown card's warm sand. */
+.phrase-card-noise .phrase-panel {
+  border-color: #d3dade;
+  background: linear-gradient(155deg, #fbfcfd, #eaeff2);
+}
+
+.phrase-card-noise .phrase-text { font-size: clamp(1.15rem, 4.6vw, 1.4rem); }
+
+.phrase-card-noise .card-badge {
+  background: #e6ecf0;
+  color: #3f545f;
+}
 
 .recorder-panel {
   margin-top: 11px;
@@ -332,6 +380,10 @@ h1 {
 .button-danger { color: white; background: var(--danger); }
 .button-secondary { color: var(--primary-dark); border: 2px solid #b9d8c7; background: white; }
 .button-accent { color: #302000; background: #f1c45f; }
+/* The repetition recorder. Deliberately not the primary green: it is a second,
+   different kind of take, and two identical record buttons on one card would be
+   read as a duplicate rather than a choice. */
+.button-repeat { color: #22536e; border: 2px solid #a9cbe0; background: #f5fafd; }
 .button-wide { grid-column: 1 / -1; }
 
 /* ---- upload-all bar ----------------------------------------------------- */

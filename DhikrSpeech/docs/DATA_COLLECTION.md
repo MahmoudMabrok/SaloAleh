@@ -80,18 +80,18 @@ M4A are decoded too. Any sample rate — preprocessing resamples to 16 kHz mono.
 
 The single most valuable piece of metadata:
 
-```
-dataset/007/spk03_007_012.wav
-```
+SpeechCollector already does this: it names uploads `<class>_sp<8 hex>_<timestamp>_<suffix>`,
+and `sp<8 hex>` is the first pattern `split.speaker.filename_patterns` tries. Recordings made
+before that token shipped can be given one from the collector's metadata sheet with
+`src/speaker_backfill.py`.
 
-with
+For hand-recorded batches, either name them `ali_001.wav` (matched by the second pattern) or -
+better - list them in `speakers.csv` next to `phrases.json`:
 
-```yaml
-split:
-  speaker_regex: '^(?P<speaker>[^_]+)_'
+```csv
+file,speaker
+007_20260803_183015_ab12cd.webm,ali
 ```
-
-or a `speakers.json` mapping file names to speaker ids (`split.speaker_metadata`).
 
 Without it the pipeline cannot keep one voice inside one split, and prints **EVALUATION IS NOT
 SPEAKER-INDEPENDENT** — which means the accuracy it reports is measured partly on voices it
@@ -101,7 +101,7 @@ trained on. Speaker ids cost nothing at recording time and cannot be recovered a
 
 ## Hard negatives: the highest-value recordings in the project
 
-Per target, under `dataset/negatives/hard/<target id>/`.
+Under `dataset/unknown/hard_negative/`, which is **shared by every target**.
 
 For each target, write down its prefixes, its suffixes, and the other dhikr that share most of
 its words — then record real people saying those. Examples:
@@ -119,25 +119,27 @@ Aim for **50–100 hard negatives per target from 10+ speakers** before treating
 finished. They are weighted highest in `negative_sampling.weights` for a reason — one hard
 negative teaches more than ten clips of room tone.
 
-Note that `negatives/hard/006/` is *excluded* when training 007 by default: a near-miss recorded
-to fool 006 may well be 007's complete phrase, and using it as a negative would teach 007 to
-reject itself.
+Because the folder is shared, one rule matters more than the rest: **a hard negative must not
+contain another target's complete phrase**. A near-miss recorded to fool 006 that happens to be a
+clean recording of `سبحان الله العظيم وبحمده` is, for target 007, a positive filed as a negative -
+and it teaches 007 to reject itself. Nothing in the pipeline can detect that; it is a rule for
+whoever files the recordings.
 
-Also useful, and shared across targets: `dataset/negatives/partial_phrase/` for incomplete
+Also useful, and shared across targets: `dataset/unknown/partial_phrase/` for incomplete
 utterances of any dhikr.
 
 ---
 
 ## The shared negative pool
 
-Collected **once**, reused by every target, under `dataset/negatives/shared/`:
+Collected **once**, reused by every target, under `dataset/unknown/`:
 
 | folder | what to record | target |
 |---|---|---|
-| `general_speech/` | ordinary Arabic conversation, phone calls, reading aloud | 1–2 hours |
-| `background_audio/` | television, radio, Quran recitation | 1–2 hours |
-| `noise/` | street, traffic, kitchen, fan, room tone, footsteps | 1 hour |
-| `silence/` | genuinely quiet rooms | 15 minutes |
+| `normal_speech/` | ordinary Arabic conversation, phone calls, reading aloud | 1–2 hours |
+| `noise/` | street, traffic, kitchen, fan, room tone, television, radio | 1–2 hours |
+| `other_dhikr/` | dhikr recorded specifically as negatives | as available |
+| `partial_phrase/` | incomplete utterances of any dhikr | as available |
 
 Also drop the other dhikr in as themselves — `dataset/001/`, `dataset/006/` and so on are used
 automatically as `other_dhikr` negatives for every target that is not them, at no extra cost.

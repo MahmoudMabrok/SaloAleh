@@ -381,17 +381,26 @@ in `DhikrSpeech/docs/DATA_COLLECTION.md`.
   and treats an **unmeasured** criterion as unmeasured rather than as a pass: a target with no
   streaming evaluation can never read READY however high its clip accuracy is. Do not add a code
   path that lets clip metrics alone produce READY.
-- **Negatives carry a category through the manifest** (`src/targets.py`, `NEGATIVE_TYPES`):
-  `hard_negative`, `partial_phrase`, `other_dhikr`, `general_speech`, `background_audio`, `noise`,
-  `silence`, `unknown`. They all train as `unknown` but are **evaluated separately**, because "99%
-  accurate" and "cannot tell a complete phrase from its first three words" are both true of the same
-  run. `negatives/hard/<other target>/` is excluded by default — a near-miss recorded to fool 006 may
-  be 007's complete phrase, and using it as a negative for 007 would teach it to reject itself.
-- **Splitting is by speaker and is verified, not assumed** (`src/splitting.py`). Isolation is global:
-  a voice's positives and the negatives they also recorded land in the same split, so a speaker
-  cannot enter training through the negative pool. `split.fail_on_leakage` (default) makes a leak an
-  error. With no `speaker_regex`/`speaker_metadata` the pipeline prints **EVALUATION IS NOT
-  SPEAKER-INDEPENDENT** and readiness caps at EXPERIMENTAL — keep that behaviour.
+- **Negatives live under `dataset/unknown/<category>/` and carry that category through the
+  manifest** (derived in `src/dataset.py`, ordered in `src/targets.py` `NEGATIVE_TYPES`):
+  `hard_negative`, `partial_phrase`, `other_dhikr`, `normal_speech`, `noise`, `unknown`. They all
+  train as `unknown` but are **evaluated separately**, because "99% accurate" and "cannot tell a
+  complete phrase from its first three words" are both true of the same run. `hard_negative/` is
+  **shared across targets**, so a near-miss recorded to fool 006 that is a complete recording of
+  007's phrase would teach 007 to reject itself — nothing can detect that, it is a collection rule
+  (`docs/DATA_COLLECTION.md`). `scan_target_dataset` delegates to `scan_dataset` rather than
+  walking the tree again, so a target scan and a multi-class scan agree by construction.
+- **Splitting is by speaker and is verified, not assumed** (`src/speakers.py` resolves,
+  `dataset.assign_splits` groups, `dataset.verify_manifest_splits` checks). Isolation is global: a
+  voice's positives and the negatives they also recorded land in the same split, so a speaker
+  cannot enter training through the negative pool. `split.speaker.require_disjoint` (default) makes
+  a leak an error. Sources are tried `speakers.csv` → per-speaker subfolder → filename patterns;
+  the SpeechCollector device token `sp<8 hex>` is matched **first**, because a pattern taking the
+  leading token would extract the CLASS ID from `006_sp8d358495_…` and make every recording of a
+  phrase one "speaker" — whole classes in one split, nothing looking wrong.
+  `src/speaker_backfill.py` derives a token for pre-token uploads. With no source resolving the
+  pipeline prints **EVALUATION IS NOT SPEAKER-INDEPENDENT** and readiness caps at EXPERIMENTAL —
+  keep that behaviour.
 - **Counting is a hysteresis state machine, not a threshold** (`src/streaming.py`): IDLE → CANDIDATE
   → CONFIRMED → COOLDOWN, counted on confirmation, **re-armed by the release** so rapid repetitions
   stay separate. `cooldown_ms` is a safety net; making it the separator merges repetitions. Window
@@ -425,10 +434,11 @@ in `DhikrSpeech/docs/DATA_COLLECTION.md`.
   `target.output_mode`; read `P(target)` through `src.streaming.target_score`, which refuses a
   multi-class output rather than guessing a column.
 - **Conditioned clips are cached per source folder and audio geometry**
-  (`processed/audio/16000hz_2s/<source folder>/`), so the shared negative pool is written once and
-  reused by every target with the same window; a target overriding `clip_seconds`
-  (`target.phrase_overrides`) gets its own cache. Do not key the cache on the label — in
-  single-target mode every negative is labelled `unknown` and they would collide.
+  (`processed/audio/16000hz_2s/<source folder>/`, from `Sample.rel_dir`), so the shared negative
+  pool is written once and reused by every target with the same window; a target overriding
+  `clip_seconds` (`target.phrase_overrides`) gets its own cache. Do not key the cache on the label
+  — in single-target mode every negative is labelled `unknown`, and `unknown/noise/a.wav` would
+  collide with `unknown/hard_negative/a.wav`.
 - **Section `08 · Experiment` is historical**, kept because the question keeps being asked. It
   compares N one-vs-rest detectors against a multi-class model on the same clips, holding manifest,
   splits, architecture, augmentation, optimiser, seed and epoch budget fixed. It reports Wilson
@@ -439,7 +449,7 @@ in `DhikrSpeech/docs/DATA_COLLECTION.md`.
   (`python3 -m pytest DhikrSpeech/tests`; needs numpy/scikit-learn/librosa/soundfile). Training
   itself is not covered — it needs a GPU and the dataset. What is covered is everything that could
   silently produce a wrong verdict: single-target dataset mapping and negative categories
-  (`test_targets.py`), speaker resolution and leakage detection (`test_splitting.py`), the event
+  (`test_targets.py`), speaker resolution and leakage detection (`test_speakers.py`), the event
   detector including rapid repetitions and duplicate suppression (`test_streaming.py`), event
   metrics, FA/hour and threshold calibration (`test_streaming_eval.py`), the Android metadata
   contract, front-end parity and INT8 verification (`test_export_contract.py`), the readiness

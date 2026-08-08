@@ -10,6 +10,17 @@ const RUNTIME_KEYS = Object.freeze({
   PHRASES_SIGNATURE: 'SPEECH_COLLECTOR_PHRASES_SIGNATURE'
 });
 
+/**
+ * The two kinds of recording a card can produce. A clip is one utterance and is
+ * a training example; a streaming take is the same dhikr repeated N times in one
+ * long clip, and is evaluation material. They differ in allowed duration, size
+ * and destination folder, so the mode is validated rather than trusted: a client
+ * cannot file a 90-second take as a training clip, nor a one-second one as a
+ * repetition take.
+ */
+const MODE_CLIP = 'clip';
+const MODE_STREAMING = 'streaming';
+
 /** Serves the mobile web application. */
 function doGet() {
   const template = HtmlService.createTemplateFromFile('Index');
@@ -25,12 +36,14 @@ function doGet() {
       maximumUploadBytes: CONFIG.recording.maximumUploadBytes,
       preferredSampleRate: CONFIG.recording.preferredSampleRate,
       preferredChannelCount: CONFIG.recording.preferredChannelCount,
-      acceptedMimeTypes: CONFIG.recording.acceptedMimeTypes
+      acceptedMimeTypes: CONFIG.recording.acceptedMimeTypes,
+      streaming: CONFIG.recording.streaming || null
     },
     theme: CONFIG.theme,
     ui: CONFIG.ui,
-    phrases: CONFIG.phrases,
-    unknownPrompt: CONFIG.unknownPrompt || null
+    phrases: visiblePhrases_(),
+    unknownPrompt: CONFIG.unknownPrompt || null,
+    noisePrompt: CONFIG.noisePrompt || null
   });
 
   return template.evaluate()
@@ -47,8 +60,10 @@ function doPost(event) {
     }
 
     // Base64 is roughly 4/3 of the binary size. Reject oversized bodies before
-    // parsing to avoid unnecessary memory use.
-    const maximumBodyLength = Math.ceil(CONFIG.recording.maximumUploadBytes * 1.38) + 20000;
+    // parsing to avoid unnecessary memory use. The ceiling is the larger of the
+    // two modes' limits; which one this body is actually held to is decided by
+    // validateRequest_, once the mode inside it can be read.
+    const maximumBodyLength = Math.ceil(largestUploadBytes_() * 1.38) + 20000;
     if (event.postData.contents.length > maximumBodyLength) {
       throw publicError_('FILE_TOO_LARGE', 'The uploaded audio exceeds the size limit.');
     }
@@ -70,7 +85,7 @@ function saveAudio(request) {
   const validated = validateRequest_(request);
   const audioBytes = Utilities.base64Decode(validated.audioBase64);
 
-  if (audioBytes.length > CONFIG.recording.maximumUploadBytes) {
+  if (audioBytes.length > validated.limits.maximumUploadBytes) {
     throw publicError_('FILE_TOO_LARGE', 'The uploaded audio exceeds the size limit.');
   }
   if (audioBytes.length < 64) {
@@ -98,10 +113,17 @@ function saveAudio(request) {
 
     const rootFolder = getOrCreateRootFolder_();
     ensurePhrasesFile_(rootFolder);
-    const datasetFolder = createFolderIfMissing(rootFolder, CONFIG.storage.datasetSubfolder);
     const classFolderName = classFolderName_(validated.phrase);
-    const classFolder = createFolderIfMissing(datasetFolder, classFolderName);
-    const filename = createFilename_(classFolderName, validated.mimeType);
+    const classFolder = createFolderIfMissing(
+      classParentFolder_(rootFolder, validated.phrase, validated.mode),
+      classFolderName
+    );
+    const filename = createFilename_(
+      classFolderName,
+      validated.speakerToken,
+      validated.mimeType,
+      repetitionTag_(validated.mode)
+    );
     const blob = Utilities.newBlob(audioBytes, validated.mimeType, filename);
     const file = classFolder.createFile(blob);
 
@@ -141,24 +163,114 @@ function saveAudio(request) {
 }
 
 /**
- * Every prompt the page offers: the phrases plus the out-of-vocabulary card,
- * which is a class of its own rather than a phrase.
+ * The phrases that get a card. A hidden phrase stays a valid, labelled id with
+ * its recordings intact; it is only off the page. Mirrors visiblePhrases() in
+ * build.mjs, which builds the same payload for the standalone copy.
+ */
+function visiblePhrases_() {
+  return CONFIG.phrases.filter(function(phrase) { return !phrase.hidden; });
+}
+
+/**
+ * Every prompt an upload may name: the phrases plus the two non-phrase cards
+ * (out-of-vocabulary speech, and background noise).
+ *
+ * Hidden phrases are still accepted. A volunteer who kept a tab open across a
+ * redeploy would otherwise lose the take waiting on a card that has since been
+ * parked, and the id still has a folder and a label either way.
  */
 function allPrompts_() {
-  return CONFIG.unknownPrompt ? CONFIG.phrases.concat([CONFIG.unknownPrompt]) : CONFIG.phrases;
+  var prompts = CONFIG.phrases.slice();
+  if (CONFIG.unknownPrompt) prompts.push(CONFIG.unknownPrompt);
+  if (CONFIG.noisePrompt) prompts.push(CONFIG.noisePrompt);
+  return prompts;
 }
 
 function isUnknownPrompt_(prompt) {
   return Boolean(CONFIG.unknownPrompt) && prompt.id === CONFIG.unknownPrompt.id;
 }
 
+function isNoisePrompt_(prompt) {
+  return Boolean(CONFIG.noisePrompt) && prompt.id === CONFIG.noisePrompt.id;
+}
+
 /**
- * The dataset class folder a prompt writes into: the configured `unknown`
- * folder for the negative class, a zero-padded phrase id for everything else.
- * These are the folder names the DhikrSpeech pipeline scans as its classes.
+ * The folder a prompt writes into: the configured `unknown` folder for the
+ * negative class, the `noise` folder for background noise, a zero-padded phrase
+ * id for everything else. The first two are names the pipeline knows
+ * (`classes.unknown_class`, `paths.noise_dir`); the rest are its class folders.
  */
 function classFolderName_(prompt) {
-  return isUnknownPrompt_(prompt) ? CONFIG.storage.unknownFolderName : padPhraseId_(prompt.id);
+  if (isNoisePrompt_(prompt)) return CONFIG.storage.noiseFolderName;
+  if (isUnknownPrompt_(prompt)) return CONFIG.storage.unknownFolderName;
+  return padPhraseId_(prompt.id);
+}
+
+/**
+ * Where that folder hangs. Everything the model learns lives under
+ * `dataset/`, which is the tree the trainer scans as its classes. Noise is not
+ * learned — it is mixed underneath training clips — so it hangs off the root
+ * beside `dataset/`, exactly where `paths.noise_dir` resolves. Putting it
+ * inside would turn background hiss into a class of its own.
+ *
+ * A repetition take is filed the same way and for the same reason: it holds the
+ * dhikr N times, so it is not a training example at all, and a trainer scanning
+ * `dataset/{id}/` must never find one there. It gets `streaming/{id}/` beside
+ * the dataset instead — same class folder name, different tree.
+ */
+function classParentFolder_(rootFolder, prompt, mode) {
+  if (isNoisePrompt_(prompt)) return rootFolder;
+  if (mode === MODE_STREAMING) {
+    return createFolderIfMissing(rootFolder, CONFIG.storage.streamingSubfolder);
+  }
+  return createFolderIfMissing(rootFolder, CONFIG.storage.datasetSubfolder);
+}
+
+/** The configured repetition take, or null when the second button is dropped. */
+function streamingSettings_() {
+  return CONFIG.recording.streaming || null;
+}
+
+/**
+ * The duration and size bounds this mode is held to. A repetition take needs
+ * limits a training clip must never be allowed (90 seconds would be a whole
+ * conversation filed as one utterance), so they are separate rather than the
+ * clip's bounds widened for everyone.
+ */
+function recordingLimits_(mode) {
+  const streaming = streamingSettings_();
+  if (mode === MODE_STREAMING && streaming) {
+    return {
+      minimumDurationMs: streaming.minimumDurationMs,
+      maximumDurationMs: streaming.maximumDurationMs,
+      maximumUploadBytes: streaming.maximumUploadBytes
+    };
+  }
+  return {
+    minimumDurationMs: CONFIG.recording.minimumDurationMs,
+    maximumDurationMs: CONFIG.recording.maximumDurationMs,
+    maximumUploadBytes: CONFIG.recording.maximumUploadBytes
+  };
+}
+
+/** The body-size ceiling doPost applies before it knows which mode it is reading. */
+function largestUploadBytes_() {
+  const streaming = streamingSettings_();
+  return streaming
+    ? Math.max(CONFIG.recording.maximumUploadBytes, streaming.maximumUploadBytes)
+    : CONFIG.recording.maximumUploadBytes;
+}
+
+/**
+ * The `x10` token a repetition take carries in its filename. The collector
+ * cannot produce the event timings a streaming annotation needs, so the count it
+ * asked for is written where it cannot be separated from the audio: whoever
+ * builds `annotations.json` later reads how many events the clip should hold off
+ * the file itself rather than off a spreadsheet row.
+ */
+function repetitionTag_(mode) {
+  const streaming = streamingSettings_();
+  return mode === MODE_STREAMING && streaming ? 'x' + streaming.repetitions : '';
 }
 
 /** Returns the existing child folder or creates it when missing. */
@@ -171,8 +283,12 @@ function createFolderIfMissing(parentFolder, folderName) {
  * The phrases.json body the DhikrSpeech pipeline reads: a plain [{id, text}]
  * list, sorted by id. CONFIG.phrases is ordered for the page, so sorting here
  * keeps the label file (and its change signature) stable when the cards are
- * reordered. The unknown prompt is intentionally absent — it is a class folder,
- * not a phrase id, and the pipeline labels it from the folder name.
+ * reordered. The unknown and noise prompts are intentionally absent — they are
+ * folders, not phrase ids, and the pipeline knows them by name.
+ *
+ * Hidden phrases ARE listed. Their `dataset/{id}/` folders still hold
+ * recordings, and a label file that dropped them would leave the trainer
+ * scanning folders it has no text for.
  */
 function phrasesJsonContent_() {
   const phrases = CONFIG.phrases.map(function(phrase) {
@@ -236,6 +352,22 @@ function validateRequest_(request) {
     throw publicError_('INVALID_PHRASE', 'phrase_id is not valid.');
   }
 
+  // The mode decides the destination folder and the limits below, so it is
+  // checked against the prompt before either is read. Only a phrase can be
+  // repeated: "say it ten times" is meaningless for the unknown card (whose
+  // point is that every take is a different word) and for noise (no speech at
+  // all), and allowing it would put non-class audio in a class folder.
+  const mode = normalizeMode_(request.mode);
+  if (mode === MODE_STREAMING) {
+    if (!streamingSettings_()) {
+      throw publicError_('INVALID_MODE', 'Repetition takes are not enabled.');
+    }
+    if (nonPhraseFolderName_(phrase)) {
+      throw publicError_('INVALID_MODE', 'Only a phrase can be recorded as a repetition take.');
+    }
+  }
+  const limits = recordingLimits_(mode);
+
   const sampleId = String(request.sample_id || '');
   if (!/^[A-Za-z0-9_-]{16,80}$/.test(sampleId)) {
     throw publicError_('INVALID_SAMPLE_ID', 'sample_id is not valid.');
@@ -243,8 +375,8 @@ function validateRequest_(request) {
 
   const durationMs = Math.round(Number(request.duration_ms));
   if (!Number.isFinite(durationMs) ||
-      durationMs < CONFIG.recording.minimumDurationMs ||
-      durationMs > CONFIG.recording.maximumDurationMs + 300) {
+      durationMs < limits.minimumDurationMs ||
+      durationMs > limits.maximumDurationMs + 300) {
     throw publicError_('INVALID_DURATION', 'Recording duration is outside the allowed range.');
   }
 
@@ -259,7 +391,7 @@ function validateRequest_(request) {
   }
 
   const estimatedBytes = Math.floor(audioBase64.length * 0.75);
-  if (estimatedBytes > CONFIG.recording.maximumUploadBytes + 2) {
+  if (estimatedBytes > limits.maximumUploadBytes + 2) {
     throw publicError_('FILE_TOO_LARGE', 'The uploaded audio exceeds the size limit.');
   }
 
@@ -270,10 +402,14 @@ function validateRequest_(request) {
 
   return {
     phrase: phrase,
-    // What the volunteer actually said. The unknown card's own text is an
-    // instruction, not a spoken phrase, so the sheet records the class name.
-    phraseText: isUnknownPrompt_(phrase) ? CONFIG.storage.unknownFolderName : phrase.text,
+    // What the volunteer actually said. The unknown and noise cards' own texts
+    // are instructions, not spoken phrases, so the sheet records the folder they
+    // were filed under instead.
+    phraseText: nonPhraseFolderName_(phrase) || phrase.text,
+    mode: mode,
+    limits: limits,
     sampleId: sampleId,
+    speakerToken: speakerToken_(request.speaker_id),
     durationMs: durationMs,
     mimeType: mimeType,
     audioBase64: audioBase64,
@@ -383,10 +519,56 @@ function findExistingSample_(sheet, sampleId) {
   };
 }
 
-function createFilename_(classFolderName, mimeType) {
+/** The class-folder name for a non-phrase prompt, or '' for a real phrase. */
+function nonPhraseFolderName_(prompt) {
+  if (isNoisePrompt_(prompt)) return CONFIG.storage.noiseFolderName;
+  if (isUnknownPrompt_(prompt)) return CONFIG.storage.unknownFolderName;
+  return '';
+}
+
+/**
+ * The device token stamped into every filename this browser uploads: `sp` plus
+ * the first 8 hex characters of a UUID the page generates once and keeps.
+ *
+ * It exists so the trainer can keep one voice on one side of the train/val
+ * split (`split.group_regex`, e.g. `sp[0-9a-f]{8}`). Without it the same
+ * speaker sits on both sides and the reported validation accuracy is optimistic.
+ * It identifies a browser profile, never a person: it is generated locally,
+ * never leaves the filename, and is not linked to anything else we store.
+ *
+ * A client that cannot produce one (storage blocked, older build) simply gets
+ * the old filename shape — a naming detail must never cost us a recording.
+ */
+function speakerToken_(speakerId) {
+  const hex = String(speakerId || '').replace(/-/g, '').toLowerCase().replace(/[^0-9a-f]/g, '');
+  return hex.length >= 8 ? 'sp' + hex.slice(0, 8) : '';
+}
+
+/**
+ * `{class}_[x10_][sp…_]{timestamp}_{suffix}.{ext}`.
+ *
+ * The repetition tag sits before the speaker token so the class and the number
+ * of events the clip should hold read as one prefix, and so `split.group_regex`
+ * still finds `sp[0-9a-f]{8}` wherever it lands. An omitted field is left out
+ * rather than written empty — a naming detail must never cost us a recording.
+ */
+function createFilename_(classFolderName, speakerToken, mimeType, repetitionTag) {
   const timestamp = Utilities.formatDate(new Date(), CONFIG.app.timezone, 'yyyyMMdd_HHmmss');
   const suffix = Utilities.getUuid().replace(/-/g, '').slice(0, 6).toLowerCase();
-  return classFolderName + '_' + timestamp + '_' + suffix + extensionForMime_(mimeType);
+  const repetitions = repetitionTag ? repetitionTag + '_' : '';
+  const speaker = speakerToken ? speakerToken + '_' : '';
+  return classFolderName + '_' + repetitions + speaker + timestamp + '_' + suffix +
+    extensionForMime_(mimeType);
+}
+
+/**
+ * An absent or unrecognised mode is a clip. Older clients send no mode at all,
+ * and the safe reading of "unknown" is the stricter of the two: a clip is
+ * bounded to five seconds and lands in the dataset, which is where every
+ * recording went before repetition takes existed.
+ */
+function normalizeMode_(mode) {
+  return String(mode || '').trim().toLowerCase() === MODE_STREAMING ? MODE_STREAMING : MODE_CLIP;
 }
 
 function padPhraseId_(phraseId) {

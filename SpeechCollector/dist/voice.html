@@ -146,6 +146,26 @@ h1 {
   line-height: 1.7;
 }
 
+/* The repetition take is the one recording the single-utterance rule does NOT
+   govern, so it is explained in its own box directly under that rule rather
+   than in the hint text — a volunteer who reads only the boxes must still come
+   away knowing the two buttons want opposite things. */
+.streaming-hint {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 11px 13px;
+  border: 1px solid #cddfea;
+  border-inline-start: 4px solid #3f7fa8;
+  border-radius: 14px;
+  background: #f5fafd;
+  color: #22536e;
+  font-size: 0.86rem;
+  line-height: 1.7;
+}
+
+.streaming-hint[hidden] { display: none; }
+
 /* ---- one recorder per phrase -------------------------------------------- */
 
 .phrase-list {
@@ -191,8 +211,15 @@ h1 {
   font-size: 0.7rem;
 }
 
-.card-tally {
+/* Both pills as one end-aligned group, so an empty clip tally cannot pull the
+   repetition tally away from the edge of the card. */
+.card-tallies {
+  display: flex;
+  gap: 6px;
   margin-inline-start: auto;
+}
+
+.card-tally {
   padding: 2px 9px;
   border-radius: 99px;
   background: var(--primary-soft);
@@ -202,6 +229,13 @@ h1 {
 }
 
 .card-tally:empty { display: none; }
+
+/* Toned to the repetition button's blue: the two tallies count different things
+   and should not read as one number split in half. */
+.card-tally-streaming {
+  background: #e7f1f7;
+  color: #22536e;
+}
 
 .card-badge {
   padding: 2px 9px;
@@ -246,6 +280,20 @@ h1 {
 }
 
 .phrase-card-unknown .phrase-text { font-size: clamp(1.15rem, 4.6vw, 1.4rem); }
+
+/* The background-noise card: nothing is read aloud here at all, so it is toned
+   further away again — cool grey rather than the unknown card's warm sand. */
+.phrase-card-noise .phrase-panel {
+  border-color: #d3dade;
+  background: linear-gradient(155deg, #fbfcfd, #eaeff2);
+}
+
+.phrase-card-noise .phrase-text { font-size: clamp(1.15rem, 4.6vw, 1.4rem); }
+
+.phrase-card-noise .card-badge {
+  background: #e6ecf0;
+  color: #3f545f;
+}
 
 .recorder-panel {
   margin-top: 11px;
@@ -338,6 +386,10 @@ h1 {
 .button-danger { color: white; background: var(--danger); }
 .button-secondary { color: var(--primary-dark); border: 2px solid #b9d8c7; background: white; }
 .button-accent { color: #302000; background: #f1c45f; }
+/* The repetition recorder. Deliberately not the primary green: it is a second,
+   different kind of take, and two identical record buttons on one card would be
+   read as a duplicate rather than a choice. */
+.button-repeat { color: #22536e; border: 2px solid #a9cbe0; background: #f5fafd; }
 .button-wide { grid-column: 1 / -1; }
 
 /* ---- upload-all bar ----------------------------------------------------- */
@@ -399,6 +451,7 @@ h1 {
 
       <p class="single-take-rule"><span aria-hidden="true">🎙</span> <span data-i18n="singleTakeRule"></span></p>
       <p class="list-hint" data-i18n="listHint"></p>
+      <p id="streaming-hint" class="streaming-hint"><span aria-hidden="true">🔁</span> <span data-i18n="streamingHint"></span></p>
       <p class="microphone-hint" data-i18n="microphoneHint"></p>
 
       <div id="page-status" class="status status-info" role="status" aria-live="polite"></div>
@@ -422,7 +475,7 @@ h1 {
   </div>
 
   <audio id="audio-player" preload="metadata"></audio>
-  <script id="bootstrap-data" type="application/json">{"endpoint":"https://script.google.com/macros/s/AKfycbyf_55s33KUlWU8UWF4pjaO_7NY5tYjmt2ssGphxvXJSyM6hTUsMPtz5_Mv6ojvKm4G7A/exec","standaloneUrl":"https://mahmoudmabrok.github.io/SaloAleh/voice.html","app":{"title":"Dhikr Speech Dataset","htmlTitle":"Arabic Speech Dataset Collector","language":"ar","direction":"rtl","timezone":"Africa/Cairo"},"recording":{"minimumDurationMs":1000,"maximumDurationMs":5000,"maximumUploadBytes":5242880,"preferredSampleRate":16000,"preferredChannelCount":1,"acceptedMimeTypes":["audio/wav","audio/x-wav","audio/webm","audio/ogg","audio/mp4","audio/mpeg"]},"theme":{"primary":"#176b45","primaryDark":"#0d4f32","primarySoft":"#e9f6ef","accent":"#d6a53a","pageBackground":"#f4f8f5","cardBackground":"#ffffff","text":"#17362a","mutedText":"#61746b","danger":"#b3261e"},"ui":{"hero":"❤️ ساعدنا في بناء ميزة الذكر بالصوت","singleTakeRule":"قاعدة واحدة مهمة: كل تسجيل يحتوي على ذكر واحد يُقال مرة واحدة فقط. لا تكرّر العبارة داخل التسجيل نفسه.","listHint":"لكل عبارة مسجّلها الخاص. سجّل وارفع كل عبارة على حدة، ويمكنك رفع عدة عينات لنفس العبارة — كل عينة إضافية تفيدنا، بشرط أن يكون في كل تسجيل نطق واحد فقط.","summaryPhrases":"{recorded} من {total} عبارات لها تسجيل","summarySamples":"{count} عينة مرفوعة","recordedCount":"✓ {count} عينة مرفوعة","record":"تسجيل","reRecord":"إعادة التسجيل","stop":"إيقاف","play":"استماع","pause":"إيقاف الاستماع","upload":"رفع التسجيل","uploading":"جارٍ الرفع…","uploadQueued":"في الانتظار…","uploadAll":"رفع كل التسجيلات الجاهزة ({count})","timerReady":"00:00.0","microphoneHint":"اقرأ العبارة مرة واحدة بصوت واضح في مكان هادئ، ثم اضغط «إيقاف».","privacy":"لا نجمع الاسم أو البريد أو الهاتف أو الموقع. يُحفظ التسجيل والبيانات التقنية الأساسية فقط.","ready":"اضغط «تسجيل» عند أي عبارة واسمح باستخدام الميكروفون، ثم قل العبارة مرة واحدة.","recording":"جارٍ التسجيل… قل العبارة مرة واحدة فقط ثم اضغط «إيقاف».","recordingReady":"التسجيل جاهز. استمع إليه للتأكد أنه يحتوي على العبارة مرة واحدة فقط، ثم ارفعه.","microphoneDenied":"تم رفض إذن الميكروفون. افتح إعدادات الموقع في المتصفح، فعّل الميكروفون، ثم أعد تحميل الصفحة.","microphoneBlocked":"المتصفح لا يعرض طلب الإذن لأن الصفحة معروضة داخل إطار لا يسمح بالميكروفون. افتح صفحة التسجيل في نافذة مستقلة ثم اضغط «تسجيل».","microphoneMissing":"لم يُعثر على ميكروفون متاح. وصّل ميكروفونًا أو تحقق من إعدادات الصوت ثم حاول مجددًا.","microphoneBusy":"الميكروفون مشغول بتطبيق آخر. أغلق التطبيقات التي تستخدمه ثم حاول مجددًا.","insecureContext":"التسجيل يتطلب فتح الصفحة عبر رابط https. افتح الرابط الرسمي للصفحة ثم حاول مجددًا.","openStandalone":"فتح صفحة التسجيل","unsupported":"هذا المتصفح لا يدعم تسجيل الصوت. جرّب إصدارًا حديثًا من Chrome أو Safari.","tooShort":"التسجيل قصير جدًا. سجّل لمدة ثانية واحدة على الأقل.","tooLarge":"حجم التسجيل كبير جدًا. سجّل مقطعًا أقصر ثم حاول مجددًا.","uploadSuccessTitle":"✅ شكرًا لك!","uploadSuccessBody":"تم رفع العينة. يمكنك تسجيل عينة جديدة لنفس العبارة — نطق واحد في كل تسجيل.","uploadFailedTitle":"فشل رفع التسجيل","uploadFailedBody":"احتفظنا بالتسجيل. تحقق من الإنترنت ثم حاول مجددًا.","retry":"إعادة المحاولة","unknownBadge":"ليست ذكرًا"},"phrases":[{"id":7,"text":"سبحان الله العظيم وبحمده"},{"id":6,"text":"سبحان الله وبحمده"},{"id":1,"text":"سبحان الله"},{"id":2,"text":"الحمد لله"},{"id":3,"text":"الله أكبر"},{"id":4,"text":"لا إله إلا الله"},{"id":5,"text":"أستغفر الله"},{"id":8,"text":"لا حول ولا قوة إلا بالله"},{"id":9,"text":"اللهم صل على محمد"},{"id":10,"text":"اللهم صل وسلم على نبينا محمد"}],"unknownPrompt":{"id":0,"text":"قل أي كلمة عادية ليست ذكرًا","note":"مثل «صباح الخير» أو «كيف حالك» أو أي كلمة تخطر ببالك. قلها مرة واحدة فقط في التسجيل بلا تكرار، وغيّر الكلمة في كل تسجيل جديد — هذه العينات تعلّم النموذج ما ليس ذكرًا حتى لا يَعُدّ كلامك العادي."}}</script>
+  <script id="bootstrap-data" type="application/json">{"endpoint":"https://script.google.com/macros/s/AKfycbzjzlCBYMoLqRlKgoHNYUc7Txoq1fOHlC5nOSktMNDoFnWp8HhQ0GaZ8rHsXfSsU8QCkQ/exec","standaloneUrl":"https://mahmoudmabrok.github.io/SaloAleh/voice.html","app":{"title":"Dhikr Speech Dataset","htmlTitle":"Arabic Speech Dataset Collector","language":"ar","direction":"rtl","timezone":"Africa/Cairo"},"recording":{"minimumDurationMs":1000,"maximumDurationMs":5000,"maximumUploadBytes":5242880,"preferredSampleRate":16000,"preferredChannelCount":1,"acceptedMimeTypes":["audio/wav","audio/x-wav","audio/webm","audio/ogg","audio/mp4","audio/mpeg"],"streaming":{"repetitions":10,"minimumDurationMs":8000,"maximumDurationMs":90000,"maximumUploadBytes":8388608}},"theme":{"primary":"#176b45","primaryDark":"#0d4f32","primarySoft":"#e9f6ef","accent":"#d6a53a","pageBackground":"#f4f8f5","cardBackground":"#ffffff","text":"#17362a","mutedText":"#61746b","danger":"#b3261e"},"ui":{"hero":"❤️ ساعدنا في بناء ميزة الذكر بالصوت","singleTakeRule":"قاعدة واحدة مهمة: في زر «تسجيل» العادي كل تسجيل يحتوي على ذكر واحد يُقال مرة واحدة فقط. لا تكرّر العبارة داخل التسجيل نفسه — التكرار له زره الخاص وحده.","listHint":"لكل عبارة مسجّلها الخاص. سجّل وارفع كل عبارة على حدة، ويمكنك رفع عدة عينات لنفس العبارة — كل عينة إضافية تفيدنا، بشرط أن يكون في كل تسجيل نطق واحد فقط.","summaryPhrases":"{recorded} من {total} عبارات لها تسجيل","summarySamples":"{count} عينة مرفوعة","recordedCount":"✓ {count} عينة مرفوعة","record":"تسجيل","reRecord":"إعادة التسجيل","stop":"إيقاف","play":"استماع","pause":"إيقاف الاستماع","upload":"رفع التسجيل","uploading":"جارٍ الرفع…","uploadQueued":"في الانتظار…","uploadAll":"رفع كل التسجيلات الجاهزة ({count})","timerReady":"00:00.0","microphoneHint":"اقرأ العبارة مرة واحدة بصوت واضح في مكان هادئ، ثم اضغط «إيقاف».","privacy":"لا نجمع الاسم أو البريد أو الهاتف أو الموقع. يُحفظ التسجيل والبيانات التقنية الأساسية فقط، مع رمز عشوائي يُنشأ في متصفحك ليُعرف أن تسجيلاتك من جهاز واحد — وهو غير مرتبط بك بأي شكل.","ready":"اضغط «تسجيل» عند أي عبارة واسمح باستخدام الميكروفون، ثم قل العبارة مرة واحدة.","recording":"جارٍ التسجيل… قل العبارة مرة واحدة فقط ثم اضغط «إيقاف».","recordingReady":"التسجيل جاهز. استمع إليه للتأكد أنه يحتوي على العبارة مرة واحدة فقط، ثم ارفعه.","microphoneDenied":"تم رفض إذن الميكروفون. افتح إعدادات الموقع في المتصفح، فعّل الميكروفون، ثم أعد تحميل الصفحة.","microphoneBlocked":"المتصفح لا يعرض طلب الإذن لأن الصفحة معروضة داخل إطار لا يسمح بالميكروفون. افتح صفحة التسجيل في نافذة مستقلة ثم اضغط «تسجيل».","microphoneMissing":"لم يُعثر على ميكروفون متاح. وصّل ميكروفونًا أو تحقق من إعدادات الصوت ثم حاول مجددًا.","microphoneBusy":"الميكروفون مشغول بتطبيق آخر. أغلق التطبيقات التي تستخدمه ثم حاول مجددًا.","insecureContext":"التسجيل يتطلب فتح الصفحة عبر رابط https. افتح الرابط الرسمي للصفحة ثم حاول مجددًا.","openStandalone":"فتح صفحة التسجيل","unsupported":"هذا المتصفح لا يدعم تسجيل الصوت. جرّب إصدارًا حديثًا من Chrome أو Safari.","tooShort":"التسجيل قصير جدًا. سجّل لمدة ثانية واحدة على الأقل.","tooLarge":"حجم التسجيل كبير جدًا. سجّل مقطعًا أقصر ثم حاول مجددًا.","uploadSuccessTitle":"✅ شكرًا لك!","uploadSuccessBody":"تم رفع العينة. يمكنك تسجيل عينة جديدة لنفس العبارة — نطق واحد في كل تسجيل.","uploadFailedTitle":"فشل رفع التسجيل","uploadFailedBody":"احتفظنا بالتسجيل. تحقق من الإنترنت ثم حاول مجددًا.","retry":"إعادة المحاولة","unknownBadge":"ليست ذكرًا","noiseBadge":"ضجيج فقط","noiseRecording":"جارٍ التسجيل… لا تتكلم، اترك أصوات المكان تُسجَّل وحدها.","noiseRecordingReady":"التسجيل جاهز. استمع إليه للتأكد أنه لا يحتوي على كلام، ثم ارفعه.","noiseUploadSuccessBody":"تم رفع العينة. سجّل ضجيجًا من مكان آخر أو وقت آخر — التنوّع هنا هو المفيد.","streamingRecord":"تسجيل {reps} مرات","streamingReRecord":"إعادة تسجيل الـ{reps} مرات","streamingHint":"زر «تسجيل {reps} مرات» مختلف تمامًا: مقطع واحد طويل تقول فيه العبارة {reps} مرات، مع وقفة قصيرة بين كل مرة والتي تليها. هذه التسجيلات وحدها تقيس هل يَعُدّ التطبيق كل ذكر مرة واحدة أثناء الاستماع المتواصل.","streamingRecording":"جارٍ التسجيل… قل العبارة {reps} مرات مع وقفة قصيرة بين كل مرة، ثم اضغط «إيقاف».","streamingRecordingReady":"التسجيل الطويل جاهز. استمع إليه للتأكد أنه يحتوي على العبارة {reps} مرات، ثم ارفعه.","streamingUploadSuccessBody":"تم رفع التسجيل الطويل. يمكنك تسجيل مقطع آخر لنفس العبارة — {reps} مرات في كل مقطع.","streamingTooShort":"التسجيل أقصر من أن يحتوي على {reps} مرات. أعد التسجيل وقل العبارة {reps} مرات كاملة.","streamingCount":"🔁 {count} تسجيل متكرر"},"phrases":[{"id":1,"text":"سبحان الله"},{"id":6,"text":"سبحان الله وبحمده"},{"id":7,"text":"سبحان الله العظيم وبحمده"},{"id":8,"text":"لا حول ولا قوة إلا بالله"},{"id":5,"text":"أستغفر الله"},{"id":9,"text":"اللهم صل على محمد"},{"id":11,"text":"سبحان الله، الحمد لله، الله أكبر، لا إله إلا الله"}],"unknownPrompt":{"id":0,"text":"قل أي كلمة عادية ليست ذكرًا","note":"مثل «صباح الخير» أو «كيف حالك» أو أي كلمة تخطر ببالك. قلها مرة واحدة فقط في التسجيل بلا تكرار، وغيّر الكلمة في كل تسجيل جديد — هذه العينات تعلّم النموذج ما ليس ذكرًا حتى لا يَعُدّ كلامك العادي."},"noisePrompt":{"id":-1,"text":"سجّل صوت المكان من حولك بدون أي كلام","note":"اترك الميكروفون يلتقط ما حولك: ضجيج الشارع، أصوات البيت، مروحة، سيارة، أو حتى غرفة هادئة. لا تتكلم ولا تقل ذكرًا في هذا التسجيل — هذه الأصوات تُخلط تحت تسجيلات الذكر أثناء التدريب حتى يعمل العدّاد في الأماكن الصاخبة."}}</script>
   <script>
 'use strict';
 
@@ -434,6 +487,19 @@ h1 {
   // can see at a glance which phrases they have already covered.
   const UPLOAD_COUNTS_KEY = 'speech_collector_upload_counts';
 
+  // The repetition takes are tallied apart from the clips. They are a different
+  // contribution — one long clip holding the dhikr ten times, for measuring the
+  // counter rather than training it — and a volunteer who has recorded plenty of
+  // one may have recorded none of the other.
+  const STREAMING_COUNTS_KEY = 'speech_collector_streaming_counts';
+
+  // A random UUID minted once per browser and kept. It is sent with every
+  // upload so the backend can stamp a short token of it into the filename,
+  // which lets the trainer keep one voice on one side of the train/val split.
+  // It is not an account and not a person: nothing else is stored against it,
+  // and it never leaves this browser except as those 8 characters.
+  const SPEAKER_ID_KEY = 'speech_collector_speaker_id';
+
   // The microphone is held between takes so recording a run of cards prompts
   // once instead of once per card, and released again when the volunteer stops.
   const MICROPHONE_IDLE_RELEASE_MS = 30000;
@@ -441,6 +507,13 @@ h1 {
   // Below this the bar would only duplicate a card's own upload button, which
   // is already on screen. It earns its place once several takes are waiting.
   const UPLOAD_ALL_MINIMUM = 2;
+
+  // What a take is. A clip holds the dhikr once and trains the model; a
+  // streaming take holds it `repetitions` times in one long recording and
+  // measures the counter. A card records one take at a time either way — the two
+  // buttons choose what kind, and the take carries its own kind from there.
+  const CLIP = 'clip';
+  const STREAMING = 'streaming';
 
   const IDLE = 'idle';
   const RECORDING = 'recording';
@@ -459,6 +532,7 @@ h1 {
     player: $('audio-player'),
     standalone: $('standalone-banner'),
     standaloneLink: $('standalone-link'),
+    streamingHint: $('streaming-hint'),
     uploadAllBar: $('upload-all-bar'),
     uploadAll: $('upload-all-button'),
     uploadAllLabel: $('upload-all-label')
@@ -474,6 +548,9 @@ h1 {
     // The card that owns the microphone. Only one take can run at a time, so
     // this is what locks every other card's record button.
     activeIndex: -1,
+    // Which of the two buttons started the live take. It decides the auto-stop,
+    // the timer's ceiling and the wording, so it has to outlive the click.
+    activeMode: CLIP,
     playingIndex: -1,
     recorder: null,
     stream: null,
@@ -492,6 +569,8 @@ h1 {
     // sample, and a batch firing at once would race on it.
     uploadChain: Promise.resolve(),
     uploadCounts: {},
+    streamingCounts: {},
+    speakerId: '',
     microphoneUnavailable: false
   };
 
@@ -503,7 +582,9 @@ h1 {
     document.title = config.app.htmlTitle;
     applyTheme();
     applyTranslations();
-    state.uploadCounts = loadUploadCounts();
+    state.uploadCounts = loadCounts(UPLOAD_COUNTS_KEY);
+    state.streamingCounts = loadCounts(STREAMING_COUNTS_KEY);
+    state.speakerId = loadSpeakerId();
     buildCards();
     bindEvents();
     render();
@@ -591,8 +672,40 @@ h1 {
 
   function applyTranslations() {
     document.querySelectorAll('[data-i18n]').forEach((element) => {
-      element.textContent = config.ui[element.dataset.i18n] || element.dataset.i18n;
+      element.textContent = uiText(element.dataset.i18n) || element.dataset.i18n;
     });
+    // The hint explains the second button; with no second button it would be
+    // describing something that is not on the page.
+    if (elements.streamingHint) elements.streamingHint.hidden = !streamingSettings();
+  }
+
+  /**
+   * A UI string with the repetition count filled in. The number appears in the
+   * button, the hint and four status lines, so it is written once in the config
+   * and substituted here rather than spelled out in six Arabic strings that
+   * would then have to be edited together.
+   */
+  function uiText(key) {
+    const value = config.ui[key];
+    if (typeof value !== 'string') return value;
+    const streaming = streamingSettings();
+    return streaming ? value.replaceAll('{reps}', String(streaming.repetitions)) : value;
+  }
+
+  /** The repetition-take settings, or null when the second button is dropped. */
+  function streamingSettings() {
+    return config.recording.streaming || null;
+  }
+
+  /**
+   * The duration and size a take of this kind is held to. The server enforces
+   * the same split, so a mismatch here costs a rejected upload rather than a
+   * mis-filed recording.
+   */
+  function limitsFor(mode) {
+    const streaming = streamingSettings();
+    if (mode === STREAMING && streaming) return streaming;
+    return config.recording;
   }
 
   function bindEvents() {
@@ -611,12 +724,46 @@ h1 {
   // ---------------------------------------------------------------------------
 
   /**
-   * The unknown card is appended last: the phrases are what a volunteer came
-   * for, and it reads as the odd one out at the end rather than mixed in.
+   * The two non-phrase cards come last: the phrases are what a volunteer came
+   * for, and these read as the odd ones out at the end rather than mixed in.
+   * Noise sits after unknown because it is the one card with nothing to say.
+   *
+   * `kind` is what the rest of the page reads — it picks the card's styling, its
+   * badge, and the wording of its status lines. The backend decides where the
+   * audio is filed from the prompt's id alone.
    */
   function collectPrompts() {
-    const phrases = config.phrases.map((phrase) => ({ ...phrase, unknown: false }));
-    return config.unknownPrompt ? [...phrases, { ...config.unknownPrompt, unknown: true }] : phrases;
+    const prompts = config.phrases.map((phrase) => ({ ...phrase, kind: 'phrase' }));
+    if (config.unknownPrompt) prompts.push({ ...config.unknownPrompt, kind: 'unknown' });
+    if (config.noisePrompt) prompts.push({ ...config.noisePrompt, kind: 'noise' });
+    return prompts;
+  }
+
+  /**
+   * The noise card is told to stay silent, so every string that would tell it to
+   * "say the phrase once" is swapped for its noise wording. Falls back to the
+   * shared string, so a missing override reads as the old copy rather than blank.
+   */
+  function promptText(card, key, mode) {
+    // A repetition take is the one place the single-utterance wording is wrong,
+    // so it overrides first: its status lines say to repeat the phrase, which is
+    // the opposite of what every other string on the card says. Only phrases can
+    // be repeated, so this never collides with the noise overrides below.
+    if (mode === STREAMING) return uiText(`streaming${capitalize(key)}`) || uiText(key);
+    if (card.prompt.kind !== 'noise') return uiText(key);
+    return uiText(`noise${capitalize(key)}`) || uiText(key);
+  }
+
+  function capitalize(key) {
+    return `${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+  }
+
+  /** True for a card that offers the second, repetition recorder. */
+  function allowsStreaming(prompt) {
+    // "Say it ten times" needs something to say ten times: the unknown card asks
+    // for a different word every time, and the noise card asks for no words at
+    // all. The backend refuses the mode for both, so the button is not offered.
+    return Boolean(streamingSettings()) && prompt.kind === 'phrase';
   }
 
   /**
@@ -639,19 +786,27 @@ h1 {
 
     const head = make('div', 'card-head');
     head.appendChild(make('span', 'card-number', { text: String(index + 1) }));
-    if (prompt.unknown && config.ui.unknownBadge) {
-      head.appendChild(make('span', 'card-badge', { id: `badge-${index}`, text: config.ui.unknownBadge }));
-    }
+    const badge = badgeText(prompt);
+    if (badge) head.appendChild(make('span', 'card-badge', { id: `badge-${index}`, text: badge }));
+    // Both pills sit in one end-aligned group, so an empty clip tally does not
+    // drag the repetition tally away from the edge of the card.
+    const tallies = make('span', 'card-tallies');
     const tally = make('span', 'card-tally', { id: `tally-${index}` });
-    head.appendChild(tally);
+    tallies.appendChild(tally);
+    // Its own pill, beside the clip tally: the two are different contributions
+    // and a single merged number would hide that one of them is still at zero.
+    const streamingTally = allowsStreaming(prompt)
+      ? tallies.appendChild(make('span', 'card-tally card-tally-streaming', { id: `streaming-tally-${index}` }))
+      : null;
+    head.appendChild(tallies);
     root.appendChild(head);
 
     const panel = make('div', 'phrase-panel');
     const text = make('p', 'phrase-text', { id: `phrase-${index}`, text: prompt.text });
     text.lang = 'ar';
     panel.appendChild(text);
-    // Only the unknown card carries a note: "any word" needs an example to act
-    // on, while a dhikr is its own instruction.
+    // Only the two non-phrase cards carry a note: "any word" and "no words at
+    // all" each need an example to act on, while a dhikr is its own instruction.
     if (prompt.note) {
       const note = make('p', 'phrase-note', { id: `note-${index}`, text: prompt.note });
       note.lang = 'ar';
@@ -676,11 +831,25 @@ h1 {
     root.appendChild(status);
 
     const buttons = make('div', 'button-grid');
-    const record = makeButton(`record-${index}`, 'button-primary', '●', `record-label-${index}`, config.ui.record);
-    const stop = makeButton(`stop-${index}`, 'button-danger', '■', `stop-label-${index}`, config.ui.stop);
-    const play = makeButton(`play-${index}`, 'button-secondary', '▶', `play-label-${index}`, config.ui.play);
-    const upload = makeButton(`upload-${index}`, 'button-accent', '⬆', `upload-label-${index}`, config.ui.upload);
+    const record = makeButton(`record-${index}`, 'button-primary', '●', `record-label-${index}`, uiText('record'));
+    const stop = makeButton(`stop-${index}`, 'button-danger', '■', `stop-label-${index}`, uiText('stop'));
+    const play = makeButton(`play-${index}`, 'button-secondary', '▶', `play-label-${index}`, uiText('play'));
+    const upload = makeButton(`upload-${index}`, 'button-accent', '⬆', `upload-label-${index}`, uiText('upload'));
     [record, stop, play, upload].forEach((button) => buttons.appendChild(button.root));
+    // The second recorder, on its own full-width row below the four. It is the
+    // less common ask, so it sits under the ordinary controls rather than
+    // competing with them, but it stays visible: a volunteer who never scrolls
+    // past the first row would never learn the feature exists.
+    const streamingRecord = allowsStreaming(prompt)
+      ? makeButton(
+          `streaming-record-${index}`,
+          'button-repeat button-wide',
+          '🔁',
+          `streaming-record-label-${index}`,
+          uiText('streamingRecord')
+        )
+      : null;
+    if (streamingRecord) buttons.appendChild(streamingRecord.root);
     root.appendChild(buttons);
 
     const card = {
@@ -694,11 +863,14 @@ h1 {
       dom: {
         root,
         tally,
+        streamingTally,
         wave,
         timer,
         status,
         record: record.root,
         recordLabel: record.label,
+        streamingRecord: streamingRecord ? streamingRecord.root : null,
+        streamingRecordLabel: streamingRecord ? streamingRecord.label : null,
         stop: stop.root,
         play: play.root,
         playLabel: play.label,
@@ -707,7 +879,10 @@ h1 {
       }
     };
 
-    record.root.addEventListener('click', () => startRecording(card));
+    record.root.addEventListener('click', () => startRecording(card, CLIP));
+    if (streamingRecord) {
+      streamingRecord.root.addEventListener('click', () => startRecording(card, STREAMING));
+    }
     stop.root.addEventListener('click', () => stopRecording(card, false));
     play.root.addEventListener('click', () => togglePlayback(card));
     upload.root.addEventListener('click', () => requestUpload(card));
@@ -737,8 +912,9 @@ h1 {
   // Recording
   // ---------------------------------------------------------------------------
 
-  async function startRecording(card) {
+  async function startRecording(card, mode) {
     if (state.microphoneUnavailable) return;
+    if (mode === STREAMING && !allowsStreaming(card.prompt)) return;
     // One microphone means one take at a time; every other card is locked while
     // this one runs, and a card waiting on its upload cannot be recorded over.
     if (state.activeIndex !== -1) return;
@@ -764,14 +940,15 @@ h1 {
       state.recorder.addEventListener('error', (error) => handleRecorderError(card, error), { once: true });
 
       state.activeIndex = card.index;
+      state.activeMode = mode;
       state.startedAt = performance.now();
       state.recorder.start(200);
-      setCardState(card, RECORDING, config.ui.recording, 'info');
+      setCardState(card, RECORDING, promptText(card, 'recording', mode), 'info');
       startTimer(card);
       startWaveform(card, stream);
       state.automaticStopId = window.setTimeout(
         () => stopRecording(card, true),
-        config.recording.maximumDurationMs
+        limitsFor(mode).maximumDurationMs
       );
     } catch (error) {
       console.error(error);
@@ -847,7 +1024,10 @@ h1 {
     if (state.activeIndex !== card.index) return;
     if (!state.recorder || state.recorder.state !== 'recording') return;
     window.clearTimeout(state.automaticStopId);
-    const elapsed = Math.min(performance.now() - state.startedAt, config.recording.maximumDurationMs);
+    const elapsed = Math.min(
+      performance.now() - state.startedAt,
+      limitsFor(state.activeMode).maximumDurationMs
+    );
     state.pendingDurationMs = Math.round(elapsed);
     state.stoppedAutomatically = automatic;
     state.recorder.stop();
@@ -858,6 +1038,8 @@ h1 {
     stopTimer(card);
     stopWaveform();
 
+    const mode = state.activeMode;
+    const limits = limitsFor(mode);
     const mimeType = normalizeMimeType(state.recorder.mimeType || state.chunks[0]?.type);
     const blob = new Blob(state.chunks, { type: mimeType });
     const trackSettings = state.stream?.getAudioTracks()[0]?.getSettings?.() || {};
@@ -866,33 +1048,37 @@ h1 {
     state.activeIndex = -1;
     scheduleMicrophoneRelease();
 
-    if (state.pendingDurationMs < config.recording.minimumDurationMs) {
+    if (state.pendingDurationMs < limits.minimumDurationMs) {
       resetRecorderPanel(card);
-      setCardState(card, IDLE, config.ui.tooShort, 'error');
+      // A repetition take that is too short is a different mistake from a clip
+      // that is: it means the phrase was not said the full ten times, so saying
+      // "record for at least one second" would be the wrong correction.
+      setCardState(card, IDLE, promptText(card, 'tooShort', mode), 'error');
       return;
     }
 
     if (!config.recording.acceptedMimeTypes.includes(mimeType)) {
       resetRecorderPanel(card);
-      setCardState(card, IDLE, config.ui.unsupported, 'error');
+      setCardState(card, IDLE, uiText('unsupported'), 'error');
       return;
     }
 
-    if (blob.size > config.recording.maximumUploadBytes) {
+    if (blob.size > limits.maximumUploadBytes) {
       resetRecorderPanel(card);
-      setCardState(card, IDLE, config.ui.tooLarge, 'error');
+      setCardState(card, IDLE, uiText('tooLarge'), 'error');
       return;
     }
 
     card.recording = {
       blob,
       mimeType,
+      mode,
       durationMs: state.pendingDurationMs,
       sampleRate: Number(trackSettings.sampleRate) || 0,
       sampleId: createSampleId(),
       url: URL.createObjectURL(blob)
     };
-    setCardState(card, READY, config.ui.recordingReady, 'success');
+    setCardState(card, READY, promptText(card, 'recordingReady', mode), 'success');
   }
 
   function handleRecorderError(card, error) {
@@ -966,12 +1152,18 @@ h1 {
     if (!card.recording) return;
 
     if (state.playingIndex === card.index) elements.player.pause();
-    setCardState(card, UPLOADING, config.ui.uploading, 'info');
+    const mode = card.recording.mode;
+    setCardState(card, UPLOADING, uiText('uploading'), 'info');
 
     try {
       const payload = {
         sample_id: card.recording.sampleId,
+        speaker_id: state.speakerId,
         phrase_id: card.prompt.id,
+        // The server files the audio and picks its limits from this, so a
+        // repetition take never reaches dataset/ and a clip never reaches
+        // streaming/. An older client sends none and is read as a clip.
+        mode: mode,
         duration_ms: card.recording.durationMs,
         sample_rate: card.recording.sampleRate,
         mime_type: card.recording.mimeType,
@@ -983,9 +1175,9 @@ h1 {
       };
 
       const result = await postPayload(payload);
-      if (!result.ok) throw new Error(result.error?.message || config.ui.uploadFailedTitle);
+      if (!result.ok) throw new Error(result.error?.message || uiText('uploadFailedTitle'));
 
-      recordUploadedPhrase(card);
+      recordUploadedPhrase(card, mode);
       clearTake(card);
       resetRecorderPanel(card);
       // Back to an empty card on the same phrase: another sample of it is worth
@@ -993,7 +1185,7 @@ h1 {
       setCardState(
         card,
         IDLE,
-        `<strong>${escapeHtml(config.ui.uploadSuccessTitle)}</strong><br>${escapeHtml(config.ui.uploadSuccessBody)}`,
+        `<strong>${escapeHtml(uiText('uploadSuccessTitle'))}</strong><br>${escapeHtml(promptText(card, 'uploadSuccessBody', mode))}`,
         'success',
         true
       );
@@ -1002,7 +1194,7 @@ h1 {
       setCardState(
         card,
         FAILED,
-        `<strong>${escapeHtml(config.ui.uploadFailedTitle)}</strong><br>${escapeHtml(config.ui.uploadFailedBody)}`,
+        `<strong>${escapeHtml(uiText('uploadFailedTitle'))}</strong><br>${escapeHtml(uiText('uploadFailedBody'))}`,
         'error',
         true
       );
@@ -1034,54 +1226,76 @@ h1 {
     const hasTake = Boolean(card.recording);
     const busyElsewhere = state.activeIndex !== -1 && state.activeIndex !== card.index;
 
+    // Only the button that would replace the waiting take offers to re-record;
+    // the other one still offers its own, different kind of recording.
+    const waitingMode = card.recording?.mode;
+    const locked = state.microphoneUnavailable || busyElsewhere || recording || processing || inFlight;
+
     card.dom.root.className = cardClassName(card.prompt, card.status);
     card.dom.tally.textContent = tallyLabel(card);
+    if (card.dom.streamingTally) card.dom.streamingTally.textContent = streamingTallyLabel(card);
 
     card.dom.status.className = card.message ? `status status-${card.messageType}` : 'status status-empty';
     if (card.messageHtml) card.dom.status.innerHTML = card.message;
     else card.dom.status.textContent = card.message;
 
-    card.dom.record.disabled =
-      state.microphoneUnavailable || busyElsewhere || recording || processing || inFlight;
-    card.dom.recordLabel.textContent = hasTake ? config.ui.reRecord : config.ui.record;
+    card.dom.record.disabled = locked;
+    card.dom.recordLabel.textContent = uiText(waitingMode === CLIP ? 'reRecord' : 'record');
+    if (card.dom.streamingRecord) {
+      card.dom.streamingRecord.disabled = locked;
+      card.dom.streamingRecordLabel.textContent =
+        uiText(waitingMode === STREAMING ? 'streamingReRecord' : 'streamingRecord');
+    }
     card.dom.stop.disabled = !recording;
     card.dom.play.disabled = !hasTake || inFlight;
-    card.dom.playLabel.textContent = isPlaying(card) ? config.ui.pause : config.ui.play;
+    card.dom.playLabel.textContent = uiText(isPlaying(card) ? 'pause' : 'play');
     card.dom.upload.disabled = !hasTake || inFlight;
     card.dom.uploadLabel.textContent = uploadLabel(card);
   }
 
   function uploadLabel(card) {
-    if (card.status === UPLOADING) return config.ui.uploading;
-    if (card.status === QUEUED) return config.ui.uploadQueued;
-    if (card.status === FAILED) return config.ui.retry;
-    return config.ui.upload;
+    if (card.status === UPLOADING) return uiText('uploading');
+    if (card.status === QUEUED) return uiText('uploadQueued');
+    if (card.status === FAILED) return uiText('retry');
+    return uiText('upload');
   }
 
   function cardClassName(prompt, status) {
-    return `phrase-card${prompt.unknown ? ' phrase-card-unknown' : ''} card-${status}`;
+    const kind = prompt.kind === 'phrase' ? '' : ` phrase-card-${prompt.kind}`;
+    return `phrase-card${kind} card-${status}`;
+  }
+
+  function badgeText(prompt) {
+    if (prompt.kind === 'unknown') return config.ui.unknownBadge || '';
+    if (prompt.kind === 'noise') return config.ui.noiseBadge || '';
+    return '';
   }
 
   function tallyLabel(card) {
     const count = uploadCount(card.prompt.id);
-    return count ? config.ui.recordedCount.replace('{count}', String(count)) : '';
+    return count ? uiText('recordedCount').replace('{count}', String(count)) : '';
   }
 
-  /** The unknown card counts towards coverage: the dataset needs it as much as a phrase. */
+  function streamingTallyLabel(card) {
+    const count = streamingCount(card.prompt.id);
+    return count ? uiText('streamingCount').replace('{count}', String(count)) : '';
+  }
+
+  /** The unknown and noise cards count towards coverage: the dataset needs them as much as a phrase. */
   function renderSummary() {
-    const covered = prompts.filter((prompt) => uploadCount(prompt.id) > 0).length;
-    const samples = prompts.reduce((total, prompt) => total + uploadCount(prompt.id), 0);
-    elements.summaryPhrases.textContent = config.ui.summaryPhrases
+    const covered = prompts.filter((prompt) => promptSampleCount(prompt.id) > 0).length;
+    const samples = prompts.reduce((total, prompt) => total + promptSampleCount(prompt.id), 0);
+    elements.summaryPhrases.textContent = uiText('summaryPhrases')
       .replace('{recorded}', String(covered))
       .replace('{total}', String(prompts.length));
-    elements.summarySamples.textContent = config.ui.summarySamples.replace('{count}', String(samples));
+    elements.summarySamples.textContent = uiText('summarySamples').replace('{count}', String(samples));
     elements.progressFill.style.width = `${(covered / prompts.length) * 100}%`;
   }
 
   function renderUploadAllBar() {
     const waiting = waitingCards().length;
     elements.uploadAllBar.hidden = waiting < UPLOAD_ALL_MINIMUM;
-    elements.uploadAllLabel.textContent = config.ui.uploadAll.replace('{count}', String(waiting));
+    elements.uploadAllLabel.textContent = uiText('uploadAll').replace('{count}', String(waiting));
   }
 
   function setPageStatus(message, type) {
@@ -1097,27 +1311,73 @@ h1 {
     return Number(state.uploadCounts[phraseId]) || 0;
   }
 
-  function recordUploadedPhrase(card) {
-    state.uploadCounts[card.prompt.id] = uploadCount(card.prompt.id) + 1;
-    saveUploadCounts();
+  function streamingCount(phraseId) {
+    return Number(state.streamingCounts[phraseId]) || 0;
+  }
+
+  /** Everything this prompt has contributed, of either kind, for the summary. */
+  function promptSampleCount(phraseId) {
+    return uploadCount(phraseId) + streamingCount(phraseId);
+  }
+
+  function recordUploadedPhrase(card, mode) {
+    const counts = mode === STREAMING ? state.streamingCounts : state.uploadCounts;
+    const key = mode === STREAMING ? STREAMING_COUNTS_KEY : UPLOAD_COUNTS_KEY;
+    counts[card.prompt.id] = (Number(counts[card.prompt.id]) || 0) + 1;
+    saveCounts(key, counts);
   }
 
   /** Storage can be unavailable (private mode, sandboxed frame); the tally is optional. */
-  function loadUploadCounts() {
+  function loadCounts(key) {
     try {
-      const stored = JSON.parse(window.localStorage.getItem(UPLOAD_COUNTS_KEY) || '{}');
+      const stored = JSON.parse(window.localStorage.getItem(key) || '{}');
       return stored && typeof stored === 'object' ? stored : {};
     } catch (error) {
       return {};
     }
   }
 
-  function saveUploadCounts() {
+  function saveCounts(key, counts) {
     try {
-      window.localStorage.setItem(UPLOAD_COUNTS_KEY, JSON.stringify(state.uploadCounts));
+      window.localStorage.setItem(key, JSON.stringify(counts));
     } catch (error) {
       /* Ignored: the tally is a convenience, never a requirement. */
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Speaker id
+  // ---------------------------------------------------------------------------
+
+  /**
+   * The browser's own random UUID, minted on first visit and reused after that
+   * so every clip one volunteer records carries the same token.
+   *
+   * When storage is unavailable (private mode, sandboxed frame) a fresh id is
+   * still generated and used for this session: grouping the clips of one sitting
+   * is worth having, and a session is the most the page can honestly promise.
+   */
+  function loadSpeakerId() {
+    try {
+      const stored = String(window.localStorage.getItem(SPEAKER_ID_KEY) || '');
+      if (/^[0-9a-f-]{16,}$/i.test(stored)) return stored;
+    } catch (error) {
+      return createSpeakerId();
+    }
+
+    const created = createSpeakerId();
+    try {
+      window.localStorage.setItem(SPEAKER_ID_KEY, created);
+    } catch (error) {
+      /* Ignored: an id that lasts one session still groups that session. */
+    }
+    return created;
+  }
+
+  function createSpeakerId() {
+    if (crypto.randomUUID) return crypto.randomUUID();
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
   }
 
   // ---------------------------------------------------------------------------
@@ -1130,11 +1390,20 @@ h1 {
     state.timerId = window.setInterval(() => updateTimer(card), 100);
   }
 
+  /**
+   * mm:ss.t. A repetition take runs well past a minute, so the minutes field is
+   * counted rather than printed as a literal "00".
+   */
   function updateTimer(card) {
-    const elapsed = Math.min(performance.now() - state.startedAt, config.recording.maximumDurationMs);
-    const seconds = Math.floor(elapsed / 1000);
+    const elapsed = Math.min(
+      performance.now() - state.startedAt,
+      limitsFor(state.activeMode).maximumDurationMs
+    );
+    const minutes = Math.floor(elapsed / 60000);
+    const seconds = Math.floor((elapsed % 60000) / 1000);
     const tenths = Math.floor((elapsed % 1000) / 100);
-    card.dom.timer.textContent = `00:${String(seconds).padStart(2, '0')}.${tenths}`;
+    card.dom.timer.textContent =
+      `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${tenths}`;
   }
 
   function stopTimer(card) {
@@ -1144,7 +1413,7 @@ h1 {
   }
 
   function resetRecorderPanel(card) {
-    card.dom.timer.textContent = config.ui.timerReady;
+    card.dom.timer.textContent = uiText('timerReady');
     drawIdleWaveform(card);
   }
 

@@ -18,7 +18,7 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     // The Apps Script /exec URL of this project. The standalone page is not
     // served by Apps Script, so it cannot call ScriptApp.getService().getUrl()
     // and needs the deployment URL as its upload endpoint.
-    webAppUrl: "https://script.google.com/macros/s/AKfycbyf_55s33KUlWU8UWF4pjaO_7NY5tYjmt2ssGphxvXJSyM6hTUsMPtz5_Mv6ojvKm4G7A/exec",
+    webAppUrl: "https://script.google.com/macros/s/AKfycbwidP0GUJ3VnqSnPa4fS7YZv0QZdjI5uIfvC3UVRXb4IXzak7vW3idqdL3JVyiv_PgZtw/exec",
 
     // Public URL of dist/voice.html. Apps Script renders every web app inside a
     // googleusercontent.com sandbox iframe that does not delegate the
@@ -45,6 +45,27 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     // instead of a numeric phrase folder. Must match the pipeline's
     // `classes.unknown_class`, and must not look like a padded phrase id.
     unknownFolderName: "unknown",
+
+    // Folder for the background-noise pool (see `noisePrompt` below). Unlike
+    // `unknown`, noise is NOT a class the model learns — it is the audio the
+    // training augmentation mixes underneath real clips — so it is written at
+    // `{root}/noise/`, a SIBLING of datasetSubfolder rather than a folder
+    // inside it. That is the path the pipeline resolves for `paths.noise_dir`;
+    // filing it under `dataset/` would make the trainer scan it as a class.
+    noiseFolderName: "noise",
+
+    // Folder for the repetition takes (see `recording.streaming` below): one
+    // long clip holding the same dhikr N times in a row. Like `noise`, this is a
+    // SIBLING of datasetSubfolder — these clips are not single training
+    // examples, so a trainer scanning `dataset/` must never see them. They are
+    // the raw material for DhikrSpeech's streaming evaluation (stage 06), whose
+    // `paths.streaming_dir` wants `streaming_test/audio/*.wav` plus a hand
+    // `annotations.json`; the collector cannot produce timings, so it files the
+    // takes per phrase here and the conversion to that layout stays a manual
+    // step. The expected repetition count travels in the filename (`_x10_`), so
+    // a clip is never separated from the number of events it is meant to hold.
+    // Layout: `{root}/streaming/{paddedPhraseId}/`.
+    streamingSubfolder: "streaming",
 
     // The collector writes this file at the ROOT of the dataset folder (a
     // sibling of datasetSubfolder), regenerated from `phrases` below whenever
@@ -73,7 +94,33 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
       "audio/ogg",
       "audio/mp4",
       "audio/mpeg"
-    ]
+    ],
+
+    // The second recorder on every phrase card: ONE long clip holding the same
+    // dhikr `repetitions` times, with a short pause between each. It answers a
+    // question the clip dataset cannot — a clip is already cut to one utterance,
+    // so it can never show whether the counter fires once per dhikr while
+    // listening continuously, which is the number that decides the feature.
+    //
+    // It is therefore a different recording in every respect that matters: its
+    // own duration bounds (a five-second cap could not hold ten repetitions),
+    // its own size ceiling, and its own destination folder. The limits below are
+    // enforced on the server per mode, so a long take can never be filed as a
+    // training clip and a clip can never claim the repetition folder.
+    //
+    // The maximum is sized for the longest phrase on the page (the four Baqiyat
+    // as one utterance) said ten times with pauses; the minimum only rejects a
+    // take that is obviously too short to hold them. Set to null to drop the
+    // second button from every card.
+    streaming: {
+      repetitions: 10,
+      minimumDurationMs: 8000,
+      maximumDurationMs: 90000,
+      // Opus at the configured bitrate needs ~1.5 MB for a 90 s take, so this is
+      // headroom rather than a limit anyone reaches. It exists because the body
+      // Apps Script has to base64-decode is ~1.38x this number.
+      maximumUploadBytes: 8 * 1024 * 1024
+    }
   },
 
   theme: {
@@ -94,7 +141,7 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     // the model learns one utterance per clip, so a clip holding the phrase twice
     // is unusable. Stated on its own line, before the cards, and repeated at the
     // moments it matters (while recording, and after a take is ready).
-    singleTakeRule: "قاعدة واحدة مهمة: كل تسجيل يحتوي على ذكر واحد يُقال مرة واحدة فقط. لا تكرّر العبارة داخل التسجيل نفسه.",
+    singleTakeRule: "قاعدة واحدة مهمة: في زر «تسجيل» العادي كل تسجيل يحتوي على ذكر واحد يُقال مرة واحدة فقط. لا تكرّر العبارة داخل التسجيل نفسه — التكرار له زره الخاص وحده.",
     listHint: "لكل عبارة مسجّلها الخاص. سجّل وارفع كل عبارة على حدة، ويمكنك رفع عدة عينات لنفس العبارة — كل عينة إضافية تفيدنا، بشرط أن يكون في كل تسجيل نطق واحد فقط.",
     summaryPhrases: "{recorded} من {total} عبارات لها تسجيل",
     summarySamples: "{count} عينة مرفوعة",
@@ -110,7 +157,7 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     uploadAll: "رفع كل التسجيلات الجاهزة ({count})",
     timerReady: "00:00.0",
     microphoneHint: "اقرأ العبارة مرة واحدة بصوت واضح في مكان هادئ، ثم اضغط «إيقاف».",
-    privacy: "لا نجمع الاسم أو البريد أو الهاتف أو الموقع. يُحفظ التسجيل والبيانات التقنية الأساسية فقط.",
+    privacy: "لا نجمع الاسم أو البريد أو الهاتف أو الموقع. يُحفظ التسجيل والبيانات التقنية الأساسية فقط، مع رمز عشوائي يُنشأ في متصفحك ليُعرف أن تسجيلاتك من جهاز واحد — وهو غير مرتبط بك بأي شكل.",
     ready: "اضغط «تسجيل» عند أي عبارة واسمح باستخدام الميكروفون، ثم قل العبارة مرة واحدة.",
     recording: "جارٍ التسجيل… قل العبارة مرة واحدة فقط ثم اضغط «إيقاف».",
     recordingReady: "التسجيل جاهز. استمع إليه للتأكد أنه يحتوي على العبارة مرة واحدة فقط، ثم ارفعه.",
@@ -128,7 +175,27 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     uploadFailedTitle: "فشل رفع التسجيل",
     uploadFailedBody: "احتفظنا بالتسجيل. تحقق من الإنترنت ثم حاول مجددًا.",
     retry: "إعادة المحاولة",
-    unknownBadge: "ليست ذكرًا"
+    unknownBadge: "ليست ذكرًا",
+    // The noise card's own wording. Every other card tells the volunteer to say
+    // the phrase once; on this one that instruction is wrong, so the three
+    // strings that carry it are overridden rather than reworded for everyone.
+    noiseBadge: "ضجيج فقط",
+    noiseRecording: "جارٍ التسجيل… لا تتكلم، اترك أصوات المكان تُسجَّل وحدها.",
+    noiseRecordingReady: "التسجيل جاهز. استمع إليه للتأكد أنه لا يحتوي على كلام، ثم ارفعه.",
+    noiseUploadSuccessBody: "تم رفع العينة. سجّل ضجيجًا من مكان آخر أو وقت آخر — التنوّع هنا هو المفيد.",
+    // The repetition take. Its whole point is that the single-utterance rule
+    // does NOT apply to it, so every string it shows says the opposite of the
+    // card's other strings and none of them may be reworded to match.
+    // `{reps}` is replaced with recording.streaming.repetitions, so changing the
+    // number in one place does not leave the wording behind.
+    streamingRecord: "تسجيل {reps} مرات",
+    streamingReRecord: "إعادة تسجيل الـ{reps} مرات",
+    streamingHint: "زر «تسجيل {reps} مرات» مختلف تمامًا: مقطع واحد طويل تقول فيه العبارة {reps} مرات، مع وقفة قصيرة بين كل مرة والتي تليها. هذه التسجيلات وحدها تقيس هل يَعُدّ التطبيق كل ذكر مرة واحدة أثناء الاستماع المتواصل.",
+    streamingRecording: "جارٍ التسجيل… قل العبارة {reps} مرات مع وقفة قصيرة بين كل مرة، ثم اضغط «إيقاف».",
+    streamingRecordingReady: "التسجيل الطويل جاهز. استمع إليه للتأكد أنه يحتوي على العبارة {reps} مرات، ثم ارفعه.",
+    streamingUploadSuccessBody: "تم رفع التسجيل الطويل. يمكنك تسجيل مقطع آخر لنفس العبارة — {reps} مرات في كل مقطع.",
+    streamingTooShort: "التسجيل أقصر من أن يحتوي على {reps} مرات. أعد التسجيل وقل العبارة {reps} مرات كاملة.",
+    streamingCount: "🔁 {count} تسجيل متكرر"
   },
 
   spreadsheetColumns: [
@@ -153,23 +220,45 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
   // an id, or already-collected recordings would land in the wrong class.
   // phrases.json is written sorted by id, so this order does not reach the
   // training pipeline.
+  //
+  // `hidden: true` takes a phrase off the page without deleting it. The id stays
+  // reserved, the phrase keeps its entry in phrases.json, and the recordings
+  // already sitting in its Drive folder keep their label — only the card is
+  // gone. That is the difference between parking a phrase and removing it:
+  // removing it would orphan `dataset/{id}/`, and the next phrase added would
+  // inherit the freed id and inherit those recordings with it.
   phrases: [
-    // Original short Tasbeeh prompt — most needed, so it leads the page.
-    { id: 7, text: "سبحان الله العظيم وبحمده" },
+    // ---- Shown on the page, in this order. ----
+    // The bare Tasbeeh. It leads because 6 and 7 below are it plus a tail, and
+    // 11 opens with it: showing the three nested forms next to each other is
+    // what stops a volunteer skimming the page and reciting the wrong one.
+    { id: 1, text: "سبحان الله" },
     // Zabad challenge.
     { id: 6, text: "سبحان الله وبحمده" },
-    // Baqiyat challenge (also reused by the Ten Days challenge).
-    { id: 1, text: "سبحان الله" },
-    { id: 2, text: "الحمد لله" },
-    { id: 3, text: "الله أكبر" },
-    { id: 4, text: "لا إله إلا الله" },
-    // Original short Istighfar prompt.
-    { id: 5, text: "أستغفر الله" },
+    // Original short Tasbeeh prompt.
+    { id: 7, text: "سبحان الله العظيم وبحمده" },
     // Baqiyat challenge.
     { id: 8, text: "لا حول ولا قوة إلا بالله" },
-    // Original Salawat prompts.
+    // Original short Istighfar prompt.
+    { id: 5, text: "أستغفر الله" },
+    // Original Salawat prompt.
     { id: 9, text: "اللهم صل على محمد" },
-    { id: 10, text: "اللهم صل وسلم على نبينا محمد" },
+    // The four Baqiyat spoken as one utterance, the way the Baqiyat and Ten
+    // Days challenges are actually recited — one tap per full cycle, not per
+    // word. Its four parts are also phrases 1-4 on their own, so the model sees
+    // each of them as a prefix of this one; that is exactly the nested-prefix
+    // case softmax handles and a per-phrase binary detector does not.
+    { id: 11, text: "سبحان الله، الحمد لله، الله أكبر، لا إله إلا الله" },
+
+    // ---- Parked: no card, id and dataset folder preserved. ----
+    // The rest of the Baqiyat as separate words. Superseded on the page by
+    // phrase 11, which is how they are said in the app. (سبحان الله is the
+    // exception: it is a counted dhikr in its own right, so it keeps a card.)
+    { id: 2, text: "الحمد لله", hidden: true },
+    { id: 3, text: "الله أكبر", hidden: true },
+    { id: 4, text: "لا إله إلا الله", hidden: true },
+    // The long Salawat. Phrase 9 is the one the counter needs.
+    { id: 10, text: "اللهم صل وسلم على نبينا محمد", hidden: true },
   ],
 
   // The negative class. A model trained on phrases alone has nowhere to put
@@ -183,5 +272,19 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     id: 0,
     text: "قل أي كلمة عادية ليست ذكرًا",
     note: "مثل «صباح الخير» أو «كيف حالك» أو أي كلمة تخطر ببالك. قلها مرة واحدة فقط في التسجيل بلا تكرار، وغيّر الكلمة في كل تسجيل جديد — هذه العينات تعلّم النموذج ما ليس ذكرًا حتى لا يَعُدّ كلامك العادي."
+  },
+
+  // Background noise. Not a class and not speech: these clips are mixed
+  // *underneath* real recordings during training, so a model learned in a quiet
+  // room still hears the dhikr in a street, a car or a mosque. It is the one
+  // card where the volunteer is asked to say nothing at all, and the one whose
+  // audio lands outside `dataset/` — in `{root}/noiseFolderName/`, which is
+  // where the pipeline's `paths.noise_dir` looks.
+  // Set to null to drop the card. Non-phrase prompt ids are <= 0 by convention
+  // (phrase ids count up from 1), so they can never collide with one.
+  noisePrompt: {
+    id: -1,
+    text: "سجّل صوت المكان من حولك بدون أي كلام",
+    note: "اترك الميكروفون يلتقط ما حولك: ضجيج الشارع، أصوات البيت، مروحة، سيارة، أو حتى غرفة هادئة. لا تتكلم ولا تقل ذكرًا في هذا التسجيل — هذه الأصوات تُخلط تحت تسجيلات الذكر أثناء التدريب حتى يعمل العدّاد في الأماكن الصاخبة."
   }
 });

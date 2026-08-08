@@ -30,9 +30,11 @@ __all__ = [
     "plot_detector_scores",
     "plot_duration_histogram",
     "plot_log_mel",
+    "plot_negative_type_false_positives",
     "plot_per_class_metrics",
     "plot_roc_curves",
     "plot_score_timeline",
+    "plot_speaker_distribution",
     "plot_threshold_sweep",
     "plot_training_history",
     "plot_waveform",
@@ -423,6 +425,40 @@ def plot_score_timeline(
     axis.set_title(title)
     axis.grid(**_GRID)
     axis.legend(fontsize=8, ncol=3, loc="upper right")
+
+def plot_speaker_distribution(
+    recordings_per_speaker: Mapping[str, int],
+    title: str = "recordings per speaker",
+    max_speakers: int = 40,
+) -> Figure:
+    """How lopsided the dataset is across voices.
+
+    One speaker towering over the rest is the shape of a dataset that will score
+    well on its own test split and disappoint on a stranger's phone.
+    """
+    items = sorted(recordings_per_speaker.items(), key=lambda item: item[1], reverse=True)
+    shown = items[:max_speakers]
+    labels = [name for name, _ in shown]
+    values = [count for _, count in shown]
+
+    figure, axis = plt.subplots(figsize=(max(6.0, len(labels) * 0.35), 4.0))
+    axis.bar(labels, values, color="#457b9d")
+    if values:
+        mean = float(np.mean(list(recordings_per_speaker.values())))
+        axis.axhline(mean, color="#264653", linewidth=1.0, label=f"mean {mean:.0f}")
+        axis.legend(fontsize=8)
+    axis.set_title(
+        title
+        + (f" (top {max_speakers} of {len(items)})" if len(items) > max_speakers else "")
+    )
+    axis.set_xlabel("speaker")
+    axis.set_ylabel("recordings")
+    axis.tick_params(axis="x", rotation=90, labelsize=7)
+    axis.grid(axis="y", **_GRID)
+    figure.tight_layout()
+    return figure
+
+
     figure.tight_layout()
     return figure
 
@@ -541,6 +577,41 @@ def plot_architecture_comparison(rows: Sequence[Mapping], title: str = "architec
         axis.tick_params(axis="x", rotation=20, labelsize=8)
         axis.grid(axis="y", **_GRID)
     figure.suptitle(title)
+def plot_negative_type_false_positives(
+    rows: Sequence,
+    title: str = "false positives by negative audio type",
+    limit: Optional[float] = None,
+) -> Figure:
+    """Which kind of audio the model fires on.
+
+    A flat bar chart here is a model with a general problem; one tall bar is a
+    data-collection instruction.
+    """
+    labels = [item.negative_type for item in rows]
+    values = [item.false_positive_rate for item in rows]
+    counts = [item.clips for item in rows]
+
+    figure, axis = plt.subplots(figsize=(max(6.0, len(labels) * 1.1), 4.0))
+    bars = axis.bar(labels, values, color="#e76f51")
+    for bar, count in zip(bars, counts):
+        axis.text(
+            bar.get_x() + bar.get_width() / 2.0,
+            bar.get_height(),
+            f"n={count}",
+            ha="center",
+            va="bottom",
+            fontsize=7,
+            color="#264653",
+        )
+    if limit is not None:
+        axis.axhline(
+            limit, color="#264653", linestyle="--", linewidth=1.0, label=f"limit {limit:g}"
+        )
+        axis.legend(fontsize=8)
+    axis.set_ylabel("accepted as a dhikr")
+    axis.set_title(title)
+    axis.tick_params(axis="x", rotation=20)
+    axis.grid(axis="y", **_GRID)
     figure.tight_layout()
     return figure
 

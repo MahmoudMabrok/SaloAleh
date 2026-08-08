@@ -30,7 +30,7 @@ from typing import Dict, List, Optional
 import numpy as np
 
 from .config import ReadinessConfig
-from .splitting import SpeakerIsolationReport
+from .speakers import SpeakerReport
 from .streaming_eval import CalibrationResult, EventMetrics, NegativeClipReport
 from .targets import TargetDatasetReport
 from .target_export import QuantizationReport
@@ -171,7 +171,7 @@ def assess_readiness(
     target_id: Optional[int] = None,
     target_text: str = "",
     dataset: Optional[TargetDatasetReport] = None,
-    isolation: Optional[SpeakerIsolationReport] = None,
+    isolation: Optional[SpeakerReport] = None,
     streaming: Optional[EventMetrics] = None,
     hard_negatives: Optional[NegativeClipReport] = None,
     quantization: Optional[QuantizationReport] = None,
@@ -244,20 +244,34 @@ def assess_readiness(
     if isolation is None:
         checks.append(_check("speaker leakage", "Dataset", None, None, None, "not verified"))
     else:
-        leaked = len(isolation.leaked)
-        checks.append(
-            _check(
-                "speaker leakage",
-                "Dataset",
-                float(leaked),
-                float(config.max_speaker_leakage),
-                leaked <= config.max_speaker_leakage,
-                "no speaker crosses a split"
-                if not leaked
-                else f"{leaked} speaker(s) in more than one split: "
-                f"{', '.join(isolation.leaked[:5])}",
+        leaked = [leak.speaker for leak in isolation.leaks]
+        if not isolation.known:
+            checks.append(
+                ReadinessCheck(
+                    name="speaker leakage",
+                    status=UNKNOWN,
+                    detail=(
+                        "no recording could be traced to a speaker, so the split cannot "
+                        "be shown to be speaker-safe - EVALUATION IS NOT "
+                        "SPEAKER-INDEPENDENT"
+                    ),
+                    group="Dataset",
+                )
             )
-        )
+        else:
+            checks.append(
+                _check(
+                    "speaker leakage",
+                    "Dataset",
+                    float(len(leaked)),
+                    float(config.max_speaker_leakage),
+                    len(leaked) <= config.max_speaker_leakage,
+                    "no speaker crosses a split"
+                    if not leaked
+                    else f"{len(leaked)} speaker(s) in more than one split: "
+                    f"{', '.join(leaked[:5])}",
+                )
+            )
 
     # -- streaming ----------------------------------------------------------
     if streaming is None or streaming.duration_seconds <= 0:

@@ -24,7 +24,6 @@ from src.targets import (
     UNKNOWN_INDEX,
     UNKNOWN_LABEL,
     build_target_report,
-    classify_negative_path,
     negative_breakdown,
     recommend_clip_seconds,
     sample_negatives,
@@ -51,12 +50,11 @@ def dataset(tmp_path: Path) -> Path:
     touch(root, "007", 4, "spk01")
     touch(root, "006", 3, "spk02")
     touch(root, "001", 2, "spk03")
-    touch(root, "unknown", 2, "spk04")
-    touch(root, "negatives/general_speech", 3, "spk05")
-    touch(root, "negatives/shared/noise", 2, "spk06")
-    touch(root, "negatives/partial_phrase", 2, "spk07")
-    touch(root, "negatives/hard/007", 5, "spk08")
-    touch(root, "negatives/hard/006", 4, "spk09")
+    touch(root, "unknown", 2, "spk04")                    # flat filler
+    touch(root, "unknown/normal_speech", 3, "spk05")
+    touch(root, "unknown/noise", 2, "spk06")
+    touch(root, "unknown/partial_phrase", 2, "spk07")
+    touch(root, "unknown/hard_negative", 5, "spk08")
     return root
 
 
@@ -98,35 +96,29 @@ def test_negative_categories_are_preserved(dataset: Path) -> None:
     assert breakdown == {
         "other_dhikr": 5,
         "unknown": 2,
-        "general_speech": 3,
+        "normal_speech": 3,
         "noise": 2,
         "partial_phrase": 2,
         "hard_negative": 5,
     }
 
 
-def test_hard_negatives_of_other_targets_are_excluded(dataset: Path) -> None:
-    """negatives/hard/006 may *be* 007's phrase - training on it as a negative
-    would teach the model to reject its own target."""
-    index = scan(dataset)
-    hard = [s for s in index.samples if s.negative_type == "hard_negative"]
-    assert len(hard) == 5
-    assert all("hard/007" in str(s.path).replace("\\", "/") for s in hard)
-
-
-def test_other_hard_negatives_can_be_opted_into(dataset: Path) -> None:
-    index = scan(dataset, include_other_hard_negatives=True)
-    assert negative_breakdown(index.samples)["hard_negative"] == 9
+def test_hard_negatives_are_shared_across_targets(dataset: Path) -> None:
+    """`unknown/hard_negative/` is one folder for every target - which is why a
+    clip containing another target's complete phrase must not go in it."""
+    for phrase_id in (6, 7):
+        index = scan_target_dataset(dataset, PHRASES, TargetConfig(phrase_id=phrase_id))
+        assert negative_breakdown(index.samples)["hard_negative"] == 5
 
 
 def test_cache_dir_follows_the_source_folder_not_the_label(dataset: Path) -> None:
     """Shared negatives must land in the same cache slot for every target,
-    otherwise each target re-conditions the whole pool (requirement 32)."""
+    otherwise each target re-conditions the whole pool."""
     index = scan(dataset)
-    by_dir = {s.rel_dir for s in index.samples}
+    by_dir = {s.rel_dir.replace("\\", "/") for s in index.samples}
     assert "007" in by_dir and "006" in by_dir
-    assert "negatives/general_speech" in {d.replace("\\", "/") for d in by_dir}
-    speech = next(s for s in index.samples if s.negative_type == "general_speech")
+    assert "unknown/normal_speech" in by_dir
+    speech = next(s for s in index.samples if s.negative_type == "normal_speech")
     assert speech.label == UNKNOWN_LABEL and speech.cache_dir != UNKNOWN_LABEL
 
 
@@ -157,30 +149,6 @@ def test_index_carries_the_target_text(dataset: Path) -> None:
     assert index.target_id == 7
     assert index.target_text == "سبحان الله العظيم وبحمده"
     assert index.class_names == [UNKNOWN_LABEL, TARGET_LABEL]
-
-
-# ---------------------------------------------------------------------------
-# Path classification
-# ---------------------------------------------------------------------------
-@pytest.mark.parametrize(
-    "relative,expected,hard_target",
-    [
-        ("general_speech", "general_speech", None),
-        ("shared/noise", "noise", None),
-        ("shared/noise/street", "noise", None),
-        ("silence", "silence", None),
-        ("partial_phrase/prefix", "partial_phrase", None),
-        ("hard/007", "hard_negative", "007"),
-        ("hard/7", "hard_negative", "007"),
-        ("hard", "hard_negative", None),
-        ("tv", "background_audio", None),
-        ("quran", "background_audio", None),
-        ("something_nobody_named", "unknown", None),
-        ("shared", "unknown", None),
-    ],
-)
-def test_classify_negative_path(relative: str, expected: str, hard_target) -> None:
-    assert classify_negative_path(relative) == (expected, hard_target)
 
 
 # ---------------------------------------------------------------------------
@@ -303,10 +271,18 @@ def test_report_flags_a_missing_hard_negative_set(tmp_path: Path) -> None:
 
 
 def test_report_counts_speakers_when_known(dataset: Path) -> None:
-    index = scan(dataset)
-    speakers = {str(s.path): Path(s.path).name.split("_")[0] for s in index.samples}
+    """Speaker ids come off the samples, which `scan_dataset` resolved."""
+    from src.speakers import SpeakerResolver
+    from src.config import SpeakerConfig
+
+    resolver = SpeakerResolver(
+        config=SpeakerConfig(source="filename", regex=r"^(?P<speaker>spk\d+)"),
+        metadata={},
+        dataset_root=dataset,
+    )
+    index = scan_target_dataset(dataset, PHRASES, TargetConfig(phrase_id=7), speaker_resolver=resolver)
     durations = {str(s.path): 2.0 for s in index.samples}
-    report = build_target_report(index, durations=durations, speakers=speakers, config=Config())
+    report = build_target_report(index, durations=durations, config=Config())
     assert report.speakers_known
     assert report.positive_speakers == 1
     assert report.negative_speakers == 7

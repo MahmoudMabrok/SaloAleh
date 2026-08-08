@@ -54,17 +54,30 @@ def _install_tensorflow_stubs() -> None:
         keras.utils = types.SimpleNamespace(set_random_seed=lambda seed: None)
         keras.mixed_precision = types.SimpleNamespace(set_global_policy=lambda policy: None)
         keras.Model = type("Model", (), {})
+
+        class _Metric:
+            def __init__(self, name=None, **kwargs):
+                self.name = name
+
+        # Deliberately without F1Score: this stands in for a Keras build that
+        # predates it, which is the path `build_metrics` has to degrade over.
+        keras.metrics = types.SimpleNamespace(
+            SparseCategoricalAccuracy=_Metric,
+            SparseTopKCategoricalAccuracy=_Metric,
+        )
         sys.modules["keras"] = keras
 
 
 _install_tensorflow_stubs()
 
-from src.config import Config  # noqa: E402
+from src.config import Config, TrainingConfig  # noqa: E402
 from src.trainer import (  # noqa: E402
     COARSE_VAL_SPLIT,
     OVERFIT_GAP,
+    SparseMacroF1,
     Trainer,
     TrainingArtifacts,
+    build_metrics,
     config_differences,
 )
 
@@ -366,3 +379,26 @@ def test_an_unreadable_snapshot_warns_but_does_not_block(tmp_path, config, caplo
 
     assert len(caplog.records) == 1
     assert "unreadable config snapshot" in caplog.records[0].getMessage()
+
+
+# ---------------------------------------------------------------------------
+# metrics
+# ---------------------------------------------------------------------------
+def test_macro_f1_degrades_gracefully_on_a_keras_build_without_it(caplog):
+    """A missing metric must cost the metric, never the run.
+
+    The stub above deliberately has no ``F1Score``, standing in for Keras builds
+    older than 2.13; the training run still has to compile.
+    """
+    assert SparseMacroF1 is None  # the stub has no F1Score to subclass
+    with caplog.at_level(logging.INFO, logger="src.trainer"):
+        metrics = build_metrics(5, TrainingConfig(macro_f1=True))
+    assert [metric.name for metric in metrics] == ["accuracy", "top3_accuracy"]
+    assert "no F1Score metric" in caplog.text
+
+
+def test_macro_f1_can_be_switched_off_without_a_message(caplog):
+    with caplog.at_level(logging.INFO, logger="src.trainer"):
+        metrics = build_metrics(5, TrainingConfig(macro_f1=False))
+    assert len(metrics) == 2
+    assert "F1Score" not in caplog.text
