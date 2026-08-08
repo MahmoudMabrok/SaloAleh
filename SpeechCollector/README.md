@@ -59,7 +59,7 @@ Al-Baqara reading prompts are not included because they are recitation challenge
 rather than Dhikr counter phrases. Keep this list in step with
 `DhikrSpeech/phrases.json`, which the training pipeline reads.
 
-Eleven phrases are defined; six get a card. The rest are parked with
+Eleven phrases are defined; seven get a card. The rest are parked with
 `hidden: true` — see "Park a phrase" below.
 
 ### One utterance per recording
