@@ -48,6 +48,65 @@ classes:
   include_unknown: true
 
 # ---------------------------------------------------------------------------
+# Target - the production architecture: one model per dhikr
+# ---------------------------------------------------------------------------
+# Android does not classify. The user picks one dhikr before a listening session
+# and the app loads that dhikr's own model, whose only job is:
+#
+#     TARGET    the selected phrase, spoken completely
+#     UNKNOWN   anything else - other dhikr, incomplete versions of this one,
+#               ordinary speech, Quran, TV, noise, silence
+#
+# So training is binary phrase spotting, one independent model per phrase, and a
+# false count is far more damaging than an occasional miss.
+#
+# `phrase_id: null` puts the pipeline back in the legacy multi-class mode, which
+# only the 06 comparison experiment and old manifests still use.
+target:
+  phrase_id: 7                       # 007 سبحان الله العظيم وبحمده
+  # softmax = 2 outputs (unknown, target); sigmoid = 1 output P(target).
+  # Both are supported so they can be compared rather than assumed. softmax is
+  # the default because it is the smaller change from the existing pipeline.
+  output_mode: softmax
+  # Every other phrase folder (dataset/001, dataset/006, ...) becomes a negative.
+  # These are the hard negatives that cost nothing - they are already collected.
+  auto_other_dhikr_negatives: true
+  # negatives/hard/<other id>/ holds clips designed to fool a *different* target.
+  # Off by default: a hard negative for 006 ("سبحان الله وبحمده") may well be a
+  # recording of 007's complete phrase, and using it as a negative for 007 would
+  # teach the model to reject its own target.
+  include_other_hard_negatives: false
+  negatives_dir: negatives
+  # Per-target window length. A two-word dhikr and a seven-word one do not belong
+  # in the same window; the dataset report prints a recommendation from the
+  # measured utterance durations, and applying it stays a human decision because
+  # it invalidates every cached clip and checkpoint.
+  phrase_overrides: {}
+  #  "007":
+  #    clip_seconds: 2.5
+
+# ---------------------------------------------------------------------------
+# Negative sampling
+# ---------------------------------------------------------------------------
+# The shared negative pool grows without bound while positives stay in the
+# hundreds, so training on all of it every run drowns the phrase. `ratio` caps
+# negatives at ratio x positives; `weights` decides which negatives survive that
+# cut. Sampling is without replacement and deterministic in `seed`, and the run
+# logs how many clips were dropped - a silent cut would read as full coverage.
+negative_sampling:
+  enabled: true
+  ratio: 2.0
+  weights:
+    hard_negative: 4.0      # near-misses of this target - worth the most per clip
+    partial_phrase: 3.0     # incomplete utterances
+    other_dhikr: 2.0
+    general_speech: 1.0
+    background_audio: 1.0
+    unknown: 1.0
+    noise: 0.5
+    silence: 0.5
+
+# ---------------------------------------------------------------------------
 # Audio
 # ---------------------------------------------------------------------------
 audio:
@@ -145,14 +204,41 @@ split:
   val_ratio: 0.15
   test_ratio: 0.10              # 0.0 disables the test split
   stratified: true
-  # Recordings whose filename starts with the same speaker/session token can be
-  # kept together to avoid leakage. Set to null to disable grouping.
+  # Legacy fallback for recordings with no speaker id: whole filename groups move
+  # together. `speaker_regex` below supersedes it.
   group_regex: null
+
+  # Speaker identity. A model that heard the same voice in training and in
+  # validation reports a number that says nothing about a stranger's phone, and
+  # with a few dozen volunteers that is the whole gap between the printed
+  # accuracy and the device.
+  #
+  # `speaker_regex` is matched against the file name, then the whole path; a
+  # named group `speaker` wins, else group 1, else the whole match. For files
+  # named spk03_007_012.wav that is '^(?P<speaker>[^_]+)_'.
+  speaker_regex: null
+  # JSON mapping of file name (or any path suffix) -> speaker id. Wins over the
+  # regex when both resolve. Relative paths hang off the project root.
+  speaker_metadata: null
+  # Keep every recording of one speaker - positives *and* the negatives they
+  # recorded - inside one split.
+  speaker_safe: true
+  # Refuse to build a manifest that leaks. Turning this off does not make the
+  # numbers valid, it just stops the pipeline saying so.
+  fail_on_leakage: true
+  # Fail when a speaker id cannot be resolved at all. Off by default so a
+  # prototype dataset with no naming convention still runs - it prints
+  # "EVALUATION IS NOT SPEAKER-INDEPENDENT" instead.
+  require_speaker_ids: false
 
 # ---------------------------------------------------------------------------
 # Model - DS-CNN (depthwise separable CNN, the standard KWS topology)
 # ---------------------------------------------------------------------------
 model:
+  # ds_cnn | ds_cnn_tiny | tc_resnet8. The values below are the shared baseline;
+  # `model_presets` under this block overrides only what makes each architecture
+  # what it is, so an architecture comparison changes the architecture and
+  # nothing else.
   name: ds_cnn
   stem_filters: 64
   stem_kernel: [10, 4]          # (time, freq)
@@ -179,6 +265,27 @@ model:
   # the model at inference time while training accuracy still looks fine.
   # 0.9 converges in ~50 steps. Raise it toward 0.99 only for large datasets.
   bn_momentum: 0.9
+  # TC-ResNet8 only: [stem, block1, block2, block3] channels, and the time-axis
+  # kernels. The mel axis becomes the channel axis, so these convolve over time
+  # alone - which is what makes it a fraction of the multiply-accumulates.
+  tc_channels: [16, 24, 32, 48]
+  tc_kernel: 9
+  tc_stem_kernel: 3
+
+# Architecture presets, applied on top of `model` by Config.resolved_model().
+# Single-target detection is a far easier problem than 10-way classification, so
+# a much smaller network is worth measuring before assuming the big one is
+# needed - and the smallest model that meets the release criteria is the one to
+# ship, not the most accurate one.
+model_presets:
+  ds_cnn: {}
+  ds_cnn_tiny:
+    stem_filters: 32
+    block_filters: 32
+    blocks: 3
+    width_multiplier: 0.5
+  tc_resnet8:
+    dropout: 0.2
 
 # ---------------------------------------------------------------------------
 # Training
@@ -251,6 +358,89 @@ evaluation:
   top_k_confusions: 15
   error_examples: 12            # false positives / negatives listed per class
   confidence_threshold: 0.5     # a prediction below this counts as "no keyword"
+
+# ---------------------------------------------------------------------------
+# Streaming - continuous microphone inference and event counting
+# ---------------------------------------------------------------------------
+# This is what actually ships. A phrase passes through many overlapping windows,
+# so counting windows above a threshold counts one dhikr four or five times; a
+# plain refractory timer is no better, because any timer long enough to swallow a
+# 2 s phrase also swallows the next repetition.
+streaming:
+  window_seconds: null          # null = audio.clip_seconds (what the model saw)
+  hop_seconds: 0.20             # 200-250 ms is the usual range
+  test_dir: streaming_test      # long-form recordings + annotations.json
+  annotations_file: annotations.json
+  audio_dirname: audio
+  # A detection counts for an annotated repetition when it lands inside
+  # [start - tolerance, end + tolerance].
+  match_tolerance_seconds: 0.75
+
+  # Optional smoothing of the score timeline. Deliberately off: smoothing wide
+  # enough to bridge the dip between two repetitions merges them into one count.
+  smoothing:
+    mode: none                  # none | ema | moving_average
+    ema_alpha: 0.6              # weight of the newest window (1.0 = no smoothing)
+    window: 3                   # moving_average only, in windows
+
+  # The event state machine. activation > release is what stops a score hovering
+  # near one threshold from producing a stream of counts, and re-arming is driven
+  # by the release so that rapid repetitions stay separate. Keep cooldown_ms
+  # short - it is a safety net, not the separator.
+  #
+  # These are starting values. The ones that ship come from the calibration
+  # sweep below and are written into each target's model_metadata.json.
+  detector:
+    activation_threshold: 0.70
+    release_threshold: 0.40
+    min_consecutive_hits: 2
+    min_event_seconds: 0.0
+    release_windows: 2
+    cooldown_ms: 200.0
+
+# ---------------------------------------------------------------------------
+# Threshold calibration
+# ---------------------------------------------------------------------------
+# 0.5 is a default, not a threshold. The activation threshold that ships is the
+# lowest one whose measured false activations per hour stay inside the budget -
+# lower thresholds detect more, so the lowest admissible one is also the
+# highest-recall admissible one. When nothing qualifies, calibration reports a
+# FAILURE rather than reaching for 0.99 and calling it tuned: at that point the
+# negatives are the problem, not the threshold.
+calibration:
+  enabled: true
+  min_threshold: 0.40
+  max_threshold: 0.99
+  step: 0.01
+  target_false_activations_per_hour: 0.5
+  min_event_recall: 0.0         # optional second constraint
+  # release_threshold = activation x release_ratio unless one is pinned below.
+  # Scaling it keeps the hysteresis gap meaningful at high activation values.
+  release_ratio: 0.6
+  release_threshold: null
+
+# ---------------------------------------------------------------------------
+# Release criteria
+# ---------------------------------------------------------------------------
+# Project policy, not scientific constants - they live here so that moving one
+# is a visible decision. A target can never reach "READY FOR DEVICE TEST" on
+# clip accuracy alone: an unmeasured criterion counts as unmeasured, which caps
+# the status at EXPERIMENTAL.
+readiness:
+  max_speaker_leakage: 0
+  min_positive_speakers: 10
+  min_positive_clips: 100
+  recommended_positive_clips: 200     # 200-500 is a real-world starting point
+  recommended_positive_speakers: 20
+  min_event_precision: 0.95
+  min_event_recall: 0.90
+  max_false_activations_per_hour: 0.5
+  max_hard_negative_fp_rate: 0.05
+  max_duplicate_rate: 0.05
+  # INT8 is rejected as the production variant when quantisation costs more than
+  # this many extra false activations per hour, or drifts further than this.
+  max_int8_fa_per_hour_increase: 0.10
+  max_int8_probability_drift: 0.05
 
 # ---------------------------------------------------------------------------
 # Export
