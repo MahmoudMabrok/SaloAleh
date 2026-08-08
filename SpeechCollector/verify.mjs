@@ -67,6 +67,48 @@ if (bootstrap.noisePrompt) {
   }
 }
 
+// The repetition take: one long clip holding the same dhikr N times, for
+// measuring the counter rather than training it. Everything it needs to be a
+// *different* recording from a clip has to reach the page, because the page is
+// what stops a volunteer producing a five-second take under a ten-times prompt.
+if (bootstrap.recording.streaming) {
+  const streaming = bootstrap.recording.streaming;
+  assert.ok(
+    Number.isInteger(streaming.repetitions) && streaming.repetitions >= 2,
+    'recording.streaming.repetitions must be an integer of at least 2.'
+  );
+  assert.ok(
+    streaming.maximumDurationMs > bootstrap.recording.maximumDurationMs,
+    'A repetition take must be allowed to run longer than a clip; otherwise it holds one utterance too.'
+  );
+  assert.ok(
+    streaming.minimumDurationMs > bootstrap.recording.minimumDurationMs,
+    'A repetition take must demand more than a clip\'s minimum, or a one-second take passes as ten dhikr.'
+  );
+  for (const key of [
+    'streamingRecord', 'streamingReRecord', 'streamingHint', 'streamingRecording',
+    'streamingRecordingReady', 'streamingUploadSuccessBody', 'streamingTooShort', 'streamingCount'
+  ]) {
+    assert.ok(bootstrap.ui[key], `The "${key}" UI string is missing from the bootstrap payload.`);
+  }
+  // The count lives in config, not in six Arabic sentences: a string that spells
+  // the number out would keep saying "ten" after the config said eleven.
+  for (const key of [
+    'streamingRecord', 'streamingReRecord', 'streamingHint', 'streamingRecording',
+    'streamingRecordingReady', 'streamingUploadSuccessBody', 'streamingTooShort'
+  ]) {
+    assert.ok(
+      bootstrap.ui[key].includes('{reps}'),
+      `The "${key}" string must carry the {reps} placeholder rather than a written-out number.`
+    );
+  }
+  assert.ok(bootstrap.ui.streamingCount.includes('{count}'), 'streamingCount must contain the {count} placeholder.');
+  assert.ok(
+    standalone.includes('id="streaming-hint"'),
+    'dist/voice.html does not explain the repetition button, whose instruction contradicts the single-take rule.'
+  );
+}
+
 // A hidden phrase is parked, not deleted: no card, but its id and label live on
 // so the recordings already in its folder stay readable to the trainer.
 assert.ok(
@@ -283,6 +325,102 @@ function fakeFolder(folderName) {
   };
 }
 
+// The repetition take, server side. The mode decides both the folder and the
+// limits, so it is the one field a client must not be trusted on: a long take
+// filed as a training clip would put ten utterances where the trainer expects
+// one, and a clip filed as a repetition take would claim to hold ten.
+if (bootstrap.recording.streaming) {
+  const streaming = bootstrap.recording.streaming;
+  const streamingPayload = {
+    ...validPayload,
+    mode: 'streaming',
+    duration_ms: streaming.minimumDurationMs + 1000
+  };
+
+  backendContext.payload = streamingPayload;
+  const streamingRequest = vm.runInContext('validateRequest_(payload)', backendContext);
+  assert.equal(streamingRequest.mode, 'streaming');
+  assert.equal(
+    streamingRequest.limits.maximumDurationMs,
+    streaming.maximumDurationMs,
+    'A repetition take must be held to the streaming duration limit, not the clip one.'
+  );
+
+  // The same audio, without the mode, is a clip — and far too long to be one.
+  backendContext.payload = { ...streamingPayload, mode: undefined };
+  assert.throws(
+    () => vm.runInContext('validateRequest_(payload)', backendContext),
+    (error) => error.publicCode === 'INVALID_DURATION',
+    'A long take with no mode must be rejected as an over-long clip, never quietly accepted.'
+  );
+
+  // ...and a clip-length take cannot claim to hold ten repetitions.
+  backendContext.payload = { ...validPayload, mode: 'streaming' };
+  assert.throws(
+    () => vm.runInContext('validateRequest_(payload)', backendContext),
+    (error) => error.publicCode === 'INVALID_DURATION',
+    'A clip-length take must not be accepted as a repetition take.'
+  );
+
+  // "Say it ten times" needs something to say: the unknown card asks for a
+  // different word every time and the noise card asks for none at all, so
+  // neither may put audio in a class folder under the repetition mode.
+  for (const nonPhrase of [bootstrap.unknownPrompt, bootstrap.noisePrompt]) {
+    if (!nonPhrase) continue;
+    backendContext.payload = { ...streamingPayload, phrase_id: nonPhrase.id };
+    assert.throws(
+      () => vm.runInContext('validateRequest_(payload)', backendContext),
+      (error) => error.publicCode === 'INVALID_MODE',
+      `Prompt ${nonPhrase.id} is not a phrase and must not accept a repetition take.`
+    );
+  }
+
+  // The two trees, from the same class-folder name. A repetition take carries
+  // the phrase's own folder, one level over from where the trainer scans.
+  backendContext.fakeFolder = fakeFolder;
+  const streamingParents = vm.runInContext(
+    '[classParentFolder_(fakeFolder("root"), CONFIG.phrases[0], "streaming").folderName,' +
+    ' classParentFolder_(fakeFolder("root"), CONFIG.phrases[0], "clip").folderName]',
+    backendContext
+  );
+  assert.equal(streamingParents[0], 'streaming', 'A repetition take must hang off streaming/, beside dataset/.');
+  assert.equal(streamingParents[1], 'dataset', 'A clip must still hang off dataset/.');
+  assert.equal(
+    vm.runInContext('classFolderName_(CONFIG.phrases[0])', backendContext),
+    String(bootstrap.phrases[0].id).padStart(3, '0'),
+    'A repetition take keeps the phrase\'s own class folder name; only its parent differs.'
+  );
+
+  // The count the clip is meant to hold, written where it cannot be separated
+  // from the audio — annotations.json is built from these files by hand later.
+  assert.equal(
+    vm.runInContext('repetitionTag_("streaming")', backendContext),
+    `x${streaming.repetitions}`,
+    'A repetition take must carry its expected event count.'
+  );
+  assert.equal(vm.runInContext('repetitionTag_("clip")', backendContext), '', 'A clip carries no repetition tag.');
+  assert.match(
+    vm.runInContext(
+      'createFilename_("001", speakerToken_("3f9a2c41-1111-2222-3333-444455556666"), "audio/webm", repetitionTag_("streaming"))',
+      backendContext
+    ),
+    new RegExp(`^001_x${streaming.repetitions}_sp3f9a2c41_\\d{8}_\\d{6}_[0-9a-f]{6}\\.webm$`),
+    'A repetition filename must read class, then count, then speaker token.'
+  );
+  assert.match(
+    vm.runInContext('createFilename_("001", "", "audio/webm", "")', backendContext),
+    /^001_\d{8}_\d{6}_[0-9a-f]{6}\.webm$/,
+    'A clip filename must be unchanged by the repetition feature.'
+  );
+
+  // An unrecognised mode is read as a clip, the stricter of the two: that is
+  // where every recording went before repetition takes existed.
+  for (const [input, expected] of [['streaming', 'streaming'], ['STREAMING', 'streaming'], ['clip', 'clip'], ['', 'clip'], ['nonsense', 'clip']]) {
+    backendContext.mode = input;
+    assert.equal(vm.runInContext('normalizeMode_(mode)', backendContext), expected, `normalizeMode_(${JSON.stringify(input)})`);
+  }
+}
+
 backendContext.payload = { ...validPayload, phrase_id: 999 };
 assert.throws(
   () => vm.runInContext('validateRequest_(payload)', backendContext),
@@ -304,7 +442,8 @@ assert.throws(
 const requiredFunctions = [
   'doGet', 'doPost', 'saveAudio', 'createFolderIfMissing', 'appendSpreadsheetRow', 'jsonResponse',
   'phrasesJsonContent_', 'ensurePhrasesFile_', 'allPrompts_', 'classFolderName_',
-  'visiblePhrases_', 'classParentFolder_', 'speakerToken_'
+  'visiblePhrases_', 'classParentFolder_', 'speakerToken_',
+  'normalizeMode_', 'recordingLimits_', 'repetitionTag_', 'largestUploadBytes_'
 ];
 for (const functionName of requiredFunctions) {
   assert.equal(

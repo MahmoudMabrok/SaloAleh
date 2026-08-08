@@ -10,6 +10,17 @@ const RUNTIME_KEYS = Object.freeze({
   PHRASES_SIGNATURE: 'SPEECH_COLLECTOR_PHRASES_SIGNATURE'
 });
 
+/**
+ * The two kinds of recording a card can produce. A clip is one utterance and is
+ * a training example; a streaming take is the same dhikr repeated N times in one
+ * long clip, and is evaluation material. They differ in allowed duration, size
+ * and destination folder, so the mode is validated rather than trusted: a client
+ * cannot file a 90-second take as a training clip, nor a one-second one as a
+ * repetition take.
+ */
+const MODE_CLIP = 'clip';
+const MODE_STREAMING = 'streaming';
+
 /** Serves the mobile web application. */
 function doGet() {
   const template = HtmlService.createTemplateFromFile('Index');
@@ -25,7 +36,8 @@ function doGet() {
       maximumUploadBytes: CONFIG.recording.maximumUploadBytes,
       preferredSampleRate: CONFIG.recording.preferredSampleRate,
       preferredChannelCount: CONFIG.recording.preferredChannelCount,
-      acceptedMimeTypes: CONFIG.recording.acceptedMimeTypes
+      acceptedMimeTypes: CONFIG.recording.acceptedMimeTypes,
+      streaming: CONFIG.recording.streaming || null
     },
     theme: CONFIG.theme,
     ui: CONFIG.ui,
@@ -48,8 +60,10 @@ function doPost(event) {
     }
 
     // Base64 is roughly 4/3 of the binary size. Reject oversized bodies before
-    // parsing to avoid unnecessary memory use.
-    const maximumBodyLength = Math.ceil(CONFIG.recording.maximumUploadBytes * 1.38) + 20000;
+    // parsing to avoid unnecessary memory use. The ceiling is the larger of the
+    // two modes' limits; which one this body is actually held to is decided by
+    // validateRequest_, once the mode inside it can be read.
+    const maximumBodyLength = Math.ceil(largestUploadBytes_() * 1.38) + 20000;
     if (event.postData.contents.length > maximumBodyLength) {
       throw publicError_('FILE_TOO_LARGE', 'The uploaded audio exceeds the size limit.');
     }
@@ -71,7 +85,7 @@ function saveAudio(request) {
   const validated = validateRequest_(request);
   const audioBytes = Utilities.base64Decode(validated.audioBase64);
 
-  if (audioBytes.length > CONFIG.recording.maximumUploadBytes) {
+  if (audioBytes.length > validated.limits.maximumUploadBytes) {
     throw publicError_('FILE_TOO_LARGE', 'The uploaded audio exceeds the size limit.');
   }
   if (audioBytes.length < 64) {
@@ -101,10 +115,15 @@ function saveAudio(request) {
     ensurePhrasesFile_(rootFolder);
     const classFolderName = classFolderName_(validated.phrase);
     const classFolder = createFolderIfMissing(
-      classParentFolder_(rootFolder, validated.phrase),
+      classParentFolder_(rootFolder, validated.phrase, validated.mode),
       classFolderName
     );
-    const filename = createFilename_(classFolderName, validated.speakerToken, validated.mimeType);
+    const filename = createFilename_(
+      classFolderName,
+      validated.speakerToken,
+      validated.mimeType,
+      repetitionTag_(validated.mode)
+    );
     const blob = Utilities.newBlob(audioBytes, validated.mimeType, filename);
     const file = classFolder.createFile(blob);
 
@@ -193,11 +212,65 @@ function classFolderName_(prompt) {
  * learned — it is mixed underneath training clips — so it hangs off the root
  * beside `dataset/`, exactly where `paths.noise_dir` resolves. Putting it
  * inside would turn background hiss into a class of its own.
+ *
+ * A repetition take is filed the same way and for the same reason: it holds the
+ * dhikr N times, so it is not a training example at all, and a trainer scanning
+ * `dataset/{id}/` must never find one there. It gets `streaming/{id}/` beside
+ * the dataset instead — same class folder name, different tree.
  */
-function classParentFolder_(rootFolder, prompt) {
-  return isNoisePrompt_(prompt)
-    ? rootFolder
-    : createFolderIfMissing(rootFolder, CONFIG.storage.datasetSubfolder);
+function classParentFolder_(rootFolder, prompt, mode) {
+  if (isNoisePrompt_(prompt)) return rootFolder;
+  if (mode === MODE_STREAMING) {
+    return createFolderIfMissing(rootFolder, CONFIG.storage.streamingSubfolder);
+  }
+  return createFolderIfMissing(rootFolder, CONFIG.storage.datasetSubfolder);
+}
+
+/** The configured repetition take, or null when the second button is dropped. */
+function streamingSettings_() {
+  return CONFIG.recording.streaming || null;
+}
+
+/**
+ * The duration and size bounds this mode is held to. A repetition take needs
+ * limits a training clip must never be allowed (90 seconds would be a whole
+ * conversation filed as one utterance), so they are separate rather than the
+ * clip's bounds widened for everyone.
+ */
+function recordingLimits_(mode) {
+  const streaming = streamingSettings_();
+  if (mode === MODE_STREAMING && streaming) {
+    return {
+      minimumDurationMs: streaming.minimumDurationMs,
+      maximumDurationMs: streaming.maximumDurationMs,
+      maximumUploadBytes: streaming.maximumUploadBytes
+    };
+  }
+  return {
+    minimumDurationMs: CONFIG.recording.minimumDurationMs,
+    maximumDurationMs: CONFIG.recording.maximumDurationMs,
+    maximumUploadBytes: CONFIG.recording.maximumUploadBytes
+  };
+}
+
+/** The body-size ceiling doPost applies before it knows which mode it is reading. */
+function largestUploadBytes_() {
+  const streaming = streamingSettings_();
+  return streaming
+    ? Math.max(CONFIG.recording.maximumUploadBytes, streaming.maximumUploadBytes)
+    : CONFIG.recording.maximumUploadBytes;
+}
+
+/**
+ * The `x10` token a repetition take carries in its filename. The collector
+ * cannot produce the event timings a streaming annotation needs, so the count it
+ * asked for is written where it cannot be separated from the audio: whoever
+ * builds `annotations.json` later reads how many events the clip should hold off
+ * the file itself rather than off a spreadsheet row.
+ */
+function repetitionTag_(mode) {
+  const streaming = streamingSettings_();
+  return mode === MODE_STREAMING && streaming ? 'x' + streaming.repetitions : '';
 }
 
 /** Returns the existing child folder or creates it when missing. */
@@ -279,6 +352,22 @@ function validateRequest_(request) {
     throw publicError_('INVALID_PHRASE', 'phrase_id is not valid.');
   }
 
+  // The mode decides the destination folder and the limits below, so it is
+  // checked against the prompt before either is read. Only a phrase can be
+  // repeated: "say it ten times" is meaningless for the unknown card (whose
+  // point is that every take is a different word) and for noise (no speech at
+  // all), and allowing it would put non-class audio in a class folder.
+  const mode = normalizeMode_(request.mode);
+  if (mode === MODE_STREAMING) {
+    if (!streamingSettings_()) {
+      throw publicError_('INVALID_MODE', 'Repetition takes are not enabled.');
+    }
+    if (nonPhraseFolderName_(phrase)) {
+      throw publicError_('INVALID_MODE', 'Only a phrase can be recorded as a repetition take.');
+    }
+  }
+  const limits = recordingLimits_(mode);
+
   const sampleId = String(request.sample_id || '');
   if (!/^[A-Za-z0-9_-]{16,80}$/.test(sampleId)) {
     throw publicError_('INVALID_SAMPLE_ID', 'sample_id is not valid.');
@@ -286,8 +375,8 @@ function validateRequest_(request) {
 
   const durationMs = Math.round(Number(request.duration_ms));
   if (!Number.isFinite(durationMs) ||
-      durationMs < CONFIG.recording.minimumDurationMs ||
-      durationMs > CONFIG.recording.maximumDurationMs + 300) {
+      durationMs < limits.minimumDurationMs ||
+      durationMs > limits.maximumDurationMs + 300) {
     throw publicError_('INVALID_DURATION', 'Recording duration is outside the allowed range.');
   }
 
@@ -302,7 +391,7 @@ function validateRequest_(request) {
   }
 
   const estimatedBytes = Math.floor(audioBase64.length * 0.75);
-  if (estimatedBytes > CONFIG.recording.maximumUploadBytes + 2) {
+  if (estimatedBytes > limits.maximumUploadBytes + 2) {
     throw publicError_('FILE_TOO_LARGE', 'The uploaded audio exceeds the size limit.');
   }
 
@@ -317,6 +406,8 @@ function validateRequest_(request) {
     // are instructions, not spoken phrases, so the sheet records the folder they
     // were filed under instead.
     phraseText: nonPhraseFolderName_(phrase) || phrase.text,
+    mode: mode,
+    limits: limits,
     sampleId: sampleId,
     speakerToken: speakerToken_(request.speaker_id),
     durationMs: durationMs,
@@ -453,11 +544,31 @@ function speakerToken_(speakerId) {
   return hex.length >= 8 ? 'sp' + hex.slice(0, 8) : '';
 }
 
-function createFilename_(classFolderName, speakerToken, mimeType) {
+/**
+ * `{class}_[x10_][sp…_]{timestamp}_{suffix}.{ext}`.
+ *
+ * The repetition tag sits before the speaker token so the class and the number
+ * of events the clip should hold read as one prefix, and so `split.group_regex`
+ * still finds `sp[0-9a-f]{8}` wherever it lands. An omitted field is left out
+ * rather than written empty — a naming detail must never cost us a recording.
+ */
+function createFilename_(classFolderName, speakerToken, mimeType, repetitionTag) {
   const timestamp = Utilities.formatDate(new Date(), CONFIG.app.timezone, 'yyyyMMdd_HHmmss');
   const suffix = Utilities.getUuid().replace(/-/g, '').slice(0, 6).toLowerCase();
+  const repetitions = repetitionTag ? repetitionTag + '_' : '';
   const speaker = speakerToken ? speakerToken + '_' : '';
-  return classFolderName + '_' + speaker + timestamp + '_' + suffix + extensionForMime_(mimeType);
+  return classFolderName + '_' + repetitions + speaker + timestamp + '_' + suffix +
+    extensionForMime_(mimeType);
+}
+
+/**
+ * An absent or unrecognised mode is a clip. Older clients send no mode at all,
+ * and the safe reading of "unknown" is the stricter of the two: a clip is
+ * bounded to five seconds and lands in the dataset, which is where every
+ * recording went before repetition takes existed.
+ */
+function normalizeMode_(mode) {
+  return String(mode || '').trim().toLowerCase() === MODE_STREAMING ? MODE_STREAMING : MODE_CLIP;
 }
 
 function padPhraseId_(phraseId) {

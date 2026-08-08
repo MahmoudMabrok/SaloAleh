@@ -54,6 +54,19 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     // filing it under `dataset/` would make the trainer scan it as a class.
     noiseFolderName: "noise",
 
+    // Folder for the repetition takes (see `recording.streaming` below): one
+    // long clip holding the same dhikr N times in a row. Like `noise`, this is a
+    // SIBLING of datasetSubfolder — these clips are not single training
+    // examples, so a trainer scanning `dataset/` must never see them. They are
+    // the raw material for DhikrSpeech's streaming evaluation (stage 06), whose
+    // `paths.streaming_dir` wants `streaming_test/audio/*.wav` plus a hand
+    // `annotations.json`; the collector cannot produce timings, so it files the
+    // takes per phrase here and the conversion to that layout stays a manual
+    // step. The expected repetition count travels in the filename (`_x10_`), so
+    // a clip is never separated from the number of events it is meant to hold.
+    // Layout: `{root}/streaming/{paddedPhraseId}/`.
+    streamingSubfolder: "streaming",
+
     // The collector writes this file at the ROOT of the dataset folder (a
     // sibling of datasetSubfolder), regenerated from `phrases` below whenever
     // that list changes, so the DhikrSpeech pipeline finds its id->text labels
@@ -81,7 +94,33 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
       "audio/ogg",
       "audio/mp4",
       "audio/mpeg"
-    ]
+    ],
+
+    // The second recorder on every phrase card: ONE long clip holding the same
+    // dhikr `repetitions` times, with a short pause between each. It answers a
+    // question the clip dataset cannot — a clip is already cut to one utterance,
+    // so it can never show whether the counter fires once per dhikr while
+    // listening continuously, which is the number that decides the feature.
+    //
+    // It is therefore a different recording in every respect that matters: its
+    // own duration bounds (a five-second cap could not hold ten repetitions),
+    // its own size ceiling, and its own destination folder. The limits below are
+    // enforced on the server per mode, so a long take can never be filed as a
+    // training clip and a clip can never claim the repetition folder.
+    //
+    // The maximum is sized for the longest phrase on the page (the four Baqiyat
+    // as one utterance) said ten times with pauses; the minimum only rejects a
+    // take that is obviously too short to hold them. Set to null to drop the
+    // second button from every card.
+    streaming: {
+      repetitions: 10,
+      minimumDurationMs: 8000,
+      maximumDurationMs: 90000,
+      // Opus at the configured bitrate needs ~1.5 MB for a 90 s take, so this is
+      // headroom rather than a limit anyone reaches. It exists because the body
+      // Apps Script has to base64-decode is ~1.38x this number.
+      maximumUploadBytes: 8 * 1024 * 1024
+    }
   },
 
   theme: {
@@ -102,7 +141,7 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     // the model learns one utterance per clip, so a clip holding the phrase twice
     // is unusable. Stated on its own line, before the cards, and repeated at the
     // moments it matters (while recording, and after a take is ready).
-    singleTakeRule: "قاعدة واحدة مهمة: كل تسجيل يحتوي على ذكر واحد يُقال مرة واحدة فقط. لا تكرّر العبارة داخل التسجيل نفسه.",
+    singleTakeRule: "قاعدة واحدة مهمة: في زر «تسجيل» العادي كل تسجيل يحتوي على ذكر واحد يُقال مرة واحدة فقط. لا تكرّر العبارة داخل التسجيل نفسه — التكرار له زره الخاص وحده.",
     listHint: "لكل عبارة مسجّلها الخاص. سجّل وارفع كل عبارة على حدة، ويمكنك رفع عدة عينات لنفس العبارة — كل عينة إضافية تفيدنا، بشرط أن يكون في كل تسجيل نطق واحد فقط.",
     summaryPhrases: "{recorded} من {total} عبارات لها تسجيل",
     summarySamples: "{count} عينة مرفوعة",
@@ -143,7 +182,20 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     noiseBadge: "ضجيج فقط",
     noiseRecording: "جارٍ التسجيل… لا تتكلم، اترك أصوات المكان تُسجَّل وحدها.",
     noiseRecordingReady: "التسجيل جاهز. استمع إليه للتأكد أنه لا يحتوي على كلام، ثم ارفعه.",
-    noiseUploadSuccessBody: "تم رفع العينة. سجّل ضجيجًا من مكان آخر أو وقت آخر — التنوّع هنا هو المفيد."
+    noiseUploadSuccessBody: "تم رفع العينة. سجّل ضجيجًا من مكان آخر أو وقت آخر — التنوّع هنا هو المفيد.",
+    // The repetition take. Its whole point is that the single-utterance rule
+    // does NOT apply to it, so every string it shows says the opposite of the
+    // card's other strings and none of them may be reworded to match.
+    // `{reps}` is replaced with recording.streaming.repetitions, so changing the
+    // number in one place does not leave the wording behind.
+    streamingRecord: "تسجيل {reps} مرات",
+    streamingReRecord: "إعادة تسجيل الـ{reps} مرات",
+    streamingHint: "زر «تسجيل {reps} مرات» مختلف تمامًا: مقطع واحد طويل تقول فيه العبارة {reps} مرات، مع وقفة قصيرة بين كل مرة والتي تليها. هذه التسجيلات وحدها تقيس هل يَعُدّ التطبيق كل ذكر مرة واحدة أثناء الاستماع المتواصل.",
+    streamingRecording: "جارٍ التسجيل… قل العبارة {reps} مرات مع وقفة قصيرة بين كل مرة، ثم اضغط «إيقاف».",
+    streamingRecordingReady: "التسجيل الطويل جاهز. استمع إليه للتأكد أنه يحتوي على العبارة {reps} مرات، ثم ارفعه.",
+    streamingUploadSuccessBody: "تم رفع التسجيل الطويل. يمكنك تسجيل مقطع آخر لنفس العبارة — {reps} مرات في كل مقطع.",
+    streamingTooShort: "التسجيل أقصر من أن يحتوي على {reps} مرات. أعد التسجيل وقل العبارة {reps} مرات كاملة.",
+    streamingCount: "🔁 {count} تسجيل متكرر"
   },
 
   spreadsheetColumns: [

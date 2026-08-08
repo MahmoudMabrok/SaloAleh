@@ -146,6 +146,26 @@ h1 {
   line-height: 1.7;
 }
 
+/* The repetition take is the one recording the single-utterance rule does NOT
+   govern, so it is explained in its own box directly under that rule rather
+   than in the hint text — a volunteer who reads only the boxes must still come
+   away knowing the two buttons want opposite things. */
+.streaming-hint {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 11px 13px;
+  border: 1px solid #cddfea;
+  border-inline-start: 4px solid #3f7fa8;
+  border-radius: 14px;
+  background: #f5fafd;
+  color: #22536e;
+  font-size: 0.86rem;
+  line-height: 1.7;
+}
+
+.streaming-hint[hidden] { display: none; }
+
 /* ---- one recorder per phrase -------------------------------------------- */
 
 .phrase-list {
@@ -191,8 +211,15 @@ h1 {
   font-size: 0.7rem;
 }
 
-.card-tally {
+/* Both pills as one end-aligned group, so an empty clip tally cannot pull the
+   repetition tally away from the edge of the card. */
+.card-tallies {
+  display: flex;
+  gap: 6px;
   margin-inline-start: auto;
+}
+
+.card-tally {
   padding: 2px 9px;
   border-radius: 99px;
   background: var(--primary-soft);
@@ -202,6 +229,13 @@ h1 {
 }
 
 .card-tally:empty { display: none; }
+
+/* Toned to the repetition button's blue: the two tallies count different things
+   and should not read as one number split in half. */
+.card-tally-streaming {
+  background: #e7f1f7;
+  color: #22536e;
+}
 
 .card-badge {
   padding: 2px 9px;
@@ -352,6 +386,10 @@ h1 {
 .button-danger { color: white; background: var(--danger); }
 .button-secondary { color: var(--primary-dark); border: 2px solid #b9d8c7; background: white; }
 .button-accent { color: #302000; background: #f1c45f; }
+/* The repetition recorder. Deliberately not the primary green: it is a second,
+   different kind of take, and two identical record buttons on one card would be
+   read as a duplicate rather than a choice. */
+.button-repeat { color: #22536e; border: 2px solid #a9cbe0; background: #f5fafd; }
 .button-wide { grid-column: 1 / -1; }
 
 /* ---- upload-all bar ----------------------------------------------------- */
@@ -413,6 +451,7 @@ h1 {
 
       <p class="single-take-rule"><span aria-hidden="true">🎙</span> <span data-i18n="singleTakeRule"></span></p>
       <p class="list-hint" data-i18n="listHint"></p>
+      <p id="streaming-hint" class="streaming-hint"><span aria-hidden="true">🔁</span> <span data-i18n="streamingHint"></span></p>
       <p class="microphone-hint" data-i18n="microphoneHint"></p>
 
       <div id="page-status" class="status status-info" role="status" aria-live="polite"></div>
@@ -448,6 +487,12 @@ h1 {
   // can see at a glance which phrases they have already covered.
   const UPLOAD_COUNTS_KEY = 'speech_collector_upload_counts';
 
+  // The repetition takes are tallied apart from the clips. They are a different
+  // contribution — one long clip holding the dhikr ten times, for measuring the
+  // counter rather than training it — and a volunteer who has recorded plenty of
+  // one may have recorded none of the other.
+  const STREAMING_COUNTS_KEY = 'speech_collector_streaming_counts';
+
   // A random UUID minted once per browser and kept. It is sent with every
   // upload so the backend can stamp a short token of it into the filename,
   // which lets the trainer keep one voice on one side of the train/val split.
@@ -462,6 +507,13 @@ h1 {
   // Below this the bar would only duplicate a card's own upload button, which
   // is already on screen. It earns its place once several takes are waiting.
   const UPLOAD_ALL_MINIMUM = 2;
+
+  // What a take is. A clip holds the dhikr once and trains the model; a
+  // streaming take holds it `repetitions` times in one long recording and
+  // measures the counter. A card records one take at a time either way — the two
+  // buttons choose what kind, and the take carries its own kind from there.
+  const CLIP = 'clip';
+  const STREAMING = 'streaming';
 
   const IDLE = 'idle';
   const RECORDING = 'recording';
@@ -480,6 +532,7 @@ h1 {
     player: $('audio-player'),
     standalone: $('standalone-banner'),
     standaloneLink: $('standalone-link'),
+    streamingHint: $('streaming-hint'),
     uploadAllBar: $('upload-all-bar'),
     uploadAll: $('upload-all-button'),
     uploadAllLabel: $('upload-all-label')
@@ -495,6 +548,9 @@ h1 {
     // The card that owns the microphone. Only one take can run at a time, so
     // this is what locks every other card's record button.
     activeIndex: -1,
+    // Which of the two buttons started the live take. It decides the auto-stop,
+    // the timer's ceiling and the wording, so it has to outlive the click.
+    activeMode: CLIP,
     playingIndex: -1,
     recorder: null,
     stream: null,
@@ -513,6 +569,7 @@ h1 {
     // sample, and a batch firing at once would race on it.
     uploadChain: Promise.resolve(),
     uploadCounts: {},
+    streamingCounts: {},
     speakerId: '',
     microphoneUnavailable: false
   };
@@ -525,7 +582,8 @@ h1 {
     document.title = config.app.htmlTitle;
     applyTheme();
     applyTranslations();
-    state.uploadCounts = loadUploadCounts();
+    state.uploadCounts = loadCounts(UPLOAD_COUNTS_KEY);
+    state.streamingCounts = loadCounts(STREAMING_COUNTS_KEY);
     state.speakerId = loadSpeakerId();
     buildCards();
     bindEvents();
@@ -614,8 +672,40 @@ h1 {
 
   function applyTranslations() {
     document.querySelectorAll('[data-i18n]').forEach((element) => {
-      element.textContent = config.ui[element.dataset.i18n] || element.dataset.i18n;
+      element.textContent = uiText(element.dataset.i18n) || element.dataset.i18n;
     });
+    // The hint explains the second button; with no second button it would be
+    // describing something that is not on the page.
+    if (elements.streamingHint) elements.streamingHint.hidden = !streamingSettings();
+  }
+
+  /**
+   * A UI string with the repetition count filled in. The number appears in the
+   * button, the hint and four status lines, so it is written once in the config
+   * and substituted here rather than spelled out in six Arabic strings that
+   * would then have to be edited together.
+   */
+  function uiText(key) {
+    const value = config.ui[key];
+    if (typeof value !== 'string') return value;
+    const streaming = streamingSettings();
+    return streaming ? value.replaceAll('{reps}', String(streaming.repetitions)) : value;
+  }
+
+  /** The repetition-take settings, or null when the second button is dropped. */
+  function streamingSettings() {
+    return config.recording.streaming || null;
+  }
+
+  /**
+   * The duration and size a take of this kind is held to. The server enforces
+   * the same split, so a mismatch here costs a rejected upload rather than a
+   * mis-filed recording.
+   */
+  function limitsFor(mode) {
+    const streaming = streamingSettings();
+    if (mode === STREAMING && streaming) return streaming;
+    return config.recording;
   }
 
   function bindEvents() {
@@ -654,10 +744,26 @@ h1 {
    * "say the phrase once" is swapped for its noise wording. Falls back to the
    * shared string, so a missing override reads as the old copy rather than blank.
    */
-  function promptText(card, key) {
-    if (card.prompt.kind !== 'noise') return config.ui[key];
-    const override = `noise${key.charAt(0).toUpperCase()}${key.slice(1)}`;
-    return config.ui[override] || config.ui[key];
+  function promptText(card, key, mode) {
+    // A repetition take is the one place the single-utterance wording is wrong,
+    // so it overrides first: its status lines say to repeat the phrase, which is
+    // the opposite of what every other string on the card says. Only phrases can
+    // be repeated, so this never collides with the noise overrides below.
+    if (mode === STREAMING) return uiText(`streaming${capitalize(key)}`) || uiText(key);
+    if (card.prompt.kind !== 'noise') return uiText(key);
+    return uiText(`noise${capitalize(key)}`) || uiText(key);
+  }
+
+  function capitalize(key) {
+    return `${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+  }
+
+  /** True for a card that offers the second, repetition recorder. */
+  function allowsStreaming(prompt) {
+    // "Say it ten times" needs something to say ten times: the unknown card asks
+    // for a different word every time, and the noise card asks for no words at
+    // all. The backend refuses the mode for both, so the button is not offered.
+    return Boolean(streamingSettings()) && prompt.kind === 'phrase';
   }
 
   /**
@@ -682,8 +788,17 @@ h1 {
     head.appendChild(make('span', 'card-number', { text: String(index + 1) }));
     const badge = badgeText(prompt);
     if (badge) head.appendChild(make('span', 'card-badge', { id: `badge-${index}`, text: badge }));
+    // Both pills sit in one end-aligned group, so an empty clip tally does not
+    // drag the repetition tally away from the edge of the card.
+    const tallies = make('span', 'card-tallies');
     const tally = make('span', 'card-tally', { id: `tally-${index}` });
-    head.appendChild(tally);
+    tallies.appendChild(tally);
+    // Its own pill, beside the clip tally: the two are different contributions
+    // and a single merged number would hide that one of them is still at zero.
+    const streamingTally = allowsStreaming(prompt)
+      ? tallies.appendChild(make('span', 'card-tally card-tally-streaming', { id: `streaming-tally-${index}` }))
+      : null;
+    head.appendChild(tallies);
     root.appendChild(head);
 
     const panel = make('div', 'phrase-panel');
@@ -716,11 +831,25 @@ h1 {
     root.appendChild(status);
 
     const buttons = make('div', 'button-grid');
-    const record = makeButton(`record-${index}`, 'button-primary', '●', `record-label-${index}`, config.ui.record);
-    const stop = makeButton(`stop-${index}`, 'button-danger', '■', `stop-label-${index}`, config.ui.stop);
-    const play = makeButton(`play-${index}`, 'button-secondary', '▶', `play-label-${index}`, config.ui.play);
-    const upload = makeButton(`upload-${index}`, 'button-accent', '⬆', `upload-label-${index}`, config.ui.upload);
+    const record = makeButton(`record-${index}`, 'button-primary', '●', `record-label-${index}`, uiText('record'));
+    const stop = makeButton(`stop-${index}`, 'button-danger', '■', `stop-label-${index}`, uiText('stop'));
+    const play = makeButton(`play-${index}`, 'button-secondary', '▶', `play-label-${index}`, uiText('play'));
+    const upload = makeButton(`upload-${index}`, 'button-accent', '⬆', `upload-label-${index}`, uiText('upload'));
     [record, stop, play, upload].forEach((button) => buttons.appendChild(button.root));
+    // The second recorder, on its own full-width row below the four. It is the
+    // less common ask, so it sits under the ordinary controls rather than
+    // competing with them, but it stays visible: a volunteer who never scrolls
+    // past the first row would never learn the feature exists.
+    const streamingRecord = allowsStreaming(prompt)
+      ? makeButton(
+          `streaming-record-${index}`,
+          'button-repeat button-wide',
+          '🔁',
+          `streaming-record-label-${index}`,
+          uiText('streamingRecord')
+        )
+      : null;
+    if (streamingRecord) buttons.appendChild(streamingRecord.root);
     root.appendChild(buttons);
 
     const card = {
@@ -734,11 +863,14 @@ h1 {
       dom: {
         root,
         tally,
+        streamingTally,
         wave,
         timer,
         status,
         record: record.root,
         recordLabel: record.label,
+        streamingRecord: streamingRecord ? streamingRecord.root : null,
+        streamingRecordLabel: streamingRecord ? streamingRecord.label : null,
         stop: stop.root,
         play: play.root,
         playLabel: play.label,
@@ -747,7 +879,10 @@ h1 {
       }
     };
 
-    record.root.addEventListener('click', () => startRecording(card));
+    record.root.addEventListener('click', () => startRecording(card, CLIP));
+    if (streamingRecord) {
+      streamingRecord.root.addEventListener('click', () => startRecording(card, STREAMING));
+    }
     stop.root.addEventListener('click', () => stopRecording(card, false));
     play.root.addEventListener('click', () => togglePlayback(card));
     upload.root.addEventListener('click', () => requestUpload(card));
@@ -777,8 +912,9 @@ h1 {
   // Recording
   // ---------------------------------------------------------------------------
 
-  async function startRecording(card) {
+  async function startRecording(card, mode) {
     if (state.microphoneUnavailable) return;
+    if (mode === STREAMING && !allowsStreaming(card.prompt)) return;
     // One microphone means one take at a time; every other card is locked while
     // this one runs, and a card waiting on its upload cannot be recorded over.
     if (state.activeIndex !== -1) return;
@@ -804,14 +940,15 @@ h1 {
       state.recorder.addEventListener('error', (error) => handleRecorderError(card, error), { once: true });
 
       state.activeIndex = card.index;
+      state.activeMode = mode;
       state.startedAt = performance.now();
       state.recorder.start(200);
-      setCardState(card, RECORDING, promptText(card, 'recording'), 'info');
+      setCardState(card, RECORDING, promptText(card, 'recording', mode), 'info');
       startTimer(card);
       startWaveform(card, stream);
       state.automaticStopId = window.setTimeout(
         () => stopRecording(card, true),
-        config.recording.maximumDurationMs
+        limitsFor(mode).maximumDurationMs
       );
     } catch (error) {
       console.error(error);
@@ -887,7 +1024,10 @@ h1 {
     if (state.activeIndex !== card.index) return;
     if (!state.recorder || state.recorder.state !== 'recording') return;
     window.clearTimeout(state.automaticStopId);
-    const elapsed = Math.min(performance.now() - state.startedAt, config.recording.maximumDurationMs);
+    const elapsed = Math.min(
+      performance.now() - state.startedAt,
+      limitsFor(state.activeMode).maximumDurationMs
+    );
     state.pendingDurationMs = Math.round(elapsed);
     state.stoppedAutomatically = automatic;
     state.recorder.stop();
@@ -898,6 +1038,8 @@ h1 {
     stopTimer(card);
     stopWaveform();
 
+    const mode = state.activeMode;
+    const limits = limitsFor(mode);
     const mimeType = normalizeMimeType(state.recorder.mimeType || state.chunks[0]?.type);
     const blob = new Blob(state.chunks, { type: mimeType });
     const trackSettings = state.stream?.getAudioTracks()[0]?.getSettings?.() || {};
@@ -906,33 +1048,37 @@ h1 {
     state.activeIndex = -1;
     scheduleMicrophoneRelease();
 
-    if (state.pendingDurationMs < config.recording.minimumDurationMs) {
+    if (state.pendingDurationMs < limits.minimumDurationMs) {
       resetRecorderPanel(card);
-      setCardState(card, IDLE, config.ui.tooShort, 'error');
+      // A repetition take that is too short is a different mistake from a clip
+      // that is: it means the phrase was not said the full ten times, so saying
+      // "record for at least one second" would be the wrong correction.
+      setCardState(card, IDLE, promptText(card, 'tooShort', mode), 'error');
       return;
     }
 
     if (!config.recording.acceptedMimeTypes.includes(mimeType)) {
       resetRecorderPanel(card);
-      setCardState(card, IDLE, config.ui.unsupported, 'error');
+      setCardState(card, IDLE, uiText('unsupported'), 'error');
       return;
     }
 
-    if (blob.size > config.recording.maximumUploadBytes) {
+    if (blob.size > limits.maximumUploadBytes) {
       resetRecorderPanel(card);
-      setCardState(card, IDLE, config.ui.tooLarge, 'error');
+      setCardState(card, IDLE, uiText('tooLarge'), 'error');
       return;
     }
 
     card.recording = {
       blob,
       mimeType,
+      mode,
       durationMs: state.pendingDurationMs,
       sampleRate: Number(trackSettings.sampleRate) || 0,
       sampleId: createSampleId(),
       url: URL.createObjectURL(blob)
     };
-    setCardState(card, READY, promptText(card, 'recordingReady'), 'success');
+    setCardState(card, READY, promptText(card, 'recordingReady', mode), 'success');
   }
 
   function handleRecorderError(card, error) {
@@ -1006,13 +1152,18 @@ h1 {
     if (!card.recording) return;
 
     if (state.playingIndex === card.index) elements.player.pause();
-    setCardState(card, UPLOADING, config.ui.uploading, 'info');
+    const mode = card.recording.mode;
+    setCardState(card, UPLOADING, uiText('uploading'), 'info');
 
     try {
       const payload = {
         sample_id: card.recording.sampleId,
         speaker_id: state.speakerId,
         phrase_id: card.prompt.id,
+        // The server files the audio and picks its limits from this, so a
+        // repetition take never reaches dataset/ and a clip never reaches
+        // streaming/. An older client sends none and is read as a clip.
+        mode: mode,
         duration_ms: card.recording.durationMs,
         sample_rate: card.recording.sampleRate,
         mime_type: card.recording.mimeType,
@@ -1024,9 +1175,9 @@ h1 {
       };
 
       const result = await postPayload(payload);
-      if (!result.ok) throw new Error(result.error?.message || config.ui.uploadFailedTitle);
+      if (!result.ok) throw new Error(result.error?.message || uiText('uploadFailedTitle'));
 
-      recordUploadedPhrase(card);
+      recordUploadedPhrase(card, mode);
       clearTake(card);
       resetRecorderPanel(card);
       // Back to an empty card on the same phrase: another sample of it is worth
@@ -1034,7 +1185,7 @@ h1 {
       setCardState(
         card,
         IDLE,
-        `<strong>${escapeHtml(config.ui.uploadSuccessTitle)}</strong><br>${escapeHtml(promptText(card, 'uploadSuccessBody'))}`,
+        `<strong>${escapeHtml(uiText('uploadSuccessTitle'))}</strong><br>${escapeHtml(promptText(card, 'uploadSuccessBody', mode))}`,
         'success',
         true
       );
@@ -1043,7 +1194,7 @@ h1 {
       setCardState(
         card,
         FAILED,
-        `<strong>${escapeHtml(config.ui.uploadFailedTitle)}</strong><br>${escapeHtml(config.ui.uploadFailedBody)}`,
+        `<strong>${escapeHtml(uiText('uploadFailedTitle'))}</strong><br>${escapeHtml(uiText('uploadFailedBody'))}`,
         'error',
         true
       );
@@ -1075,28 +1226,38 @@ h1 {
     const hasTake = Boolean(card.recording);
     const busyElsewhere = state.activeIndex !== -1 && state.activeIndex !== card.index;
 
+    // Only the button that would replace the waiting take offers to re-record;
+    // the other one still offers its own, different kind of recording.
+    const waitingMode = card.recording?.mode;
+    const locked = state.microphoneUnavailable || busyElsewhere || recording || processing || inFlight;
+
     card.dom.root.className = cardClassName(card.prompt, card.status);
     card.dom.tally.textContent = tallyLabel(card);
+    if (card.dom.streamingTally) card.dom.streamingTally.textContent = streamingTallyLabel(card);
 
     card.dom.status.className = card.message ? `status status-${card.messageType}` : 'status status-empty';
     if (card.messageHtml) card.dom.status.innerHTML = card.message;
     else card.dom.status.textContent = card.message;
 
-    card.dom.record.disabled =
-      state.microphoneUnavailable || busyElsewhere || recording || processing || inFlight;
-    card.dom.recordLabel.textContent = hasTake ? config.ui.reRecord : config.ui.record;
+    card.dom.record.disabled = locked;
+    card.dom.recordLabel.textContent = uiText(waitingMode === CLIP ? 'reRecord' : 'record');
+    if (card.dom.streamingRecord) {
+      card.dom.streamingRecord.disabled = locked;
+      card.dom.streamingRecordLabel.textContent =
+        uiText(waitingMode === STREAMING ? 'streamingReRecord' : 'streamingRecord');
+    }
     card.dom.stop.disabled = !recording;
     card.dom.play.disabled = !hasTake || inFlight;
-    card.dom.playLabel.textContent = isPlaying(card) ? config.ui.pause : config.ui.play;
+    card.dom.playLabel.textContent = uiText(isPlaying(card) ? 'pause' : 'play');
     card.dom.upload.disabled = !hasTake || inFlight;
     card.dom.uploadLabel.textContent = uploadLabel(card);
   }
 
   function uploadLabel(card) {
-    if (card.status === UPLOADING) return config.ui.uploading;
-    if (card.status === QUEUED) return config.ui.uploadQueued;
-    if (card.status === FAILED) return config.ui.retry;
-    return config.ui.upload;
+    if (card.status === UPLOADING) return uiText('uploading');
+    if (card.status === QUEUED) return uiText('uploadQueued');
+    if (card.status === FAILED) return uiText('retry');
+    return uiText('upload');
   }
 
   function cardClassName(prompt, status) {
@@ -1112,24 +1273,29 @@ h1 {
 
   function tallyLabel(card) {
     const count = uploadCount(card.prompt.id);
-    return count ? config.ui.recordedCount.replace('{count}', String(count)) : '';
+    return count ? uiText('recordedCount').replace('{count}', String(count)) : '';
+  }
+
+  function streamingTallyLabel(card) {
+    const count = streamingCount(card.prompt.id);
+    return count ? uiText('streamingCount').replace('{count}', String(count)) : '';
   }
 
   /** The unknown and noise cards count towards coverage: the dataset needs them as much as a phrase. */
   function renderSummary() {
-    const covered = prompts.filter((prompt) => uploadCount(prompt.id) > 0).length;
-    const samples = prompts.reduce((total, prompt) => total + uploadCount(prompt.id), 0);
-    elements.summaryPhrases.textContent = config.ui.summaryPhrases
+    const covered = prompts.filter((prompt) => promptSampleCount(prompt.id) > 0).length;
+    const samples = prompts.reduce((total, prompt) => total + promptSampleCount(prompt.id), 0);
+    elements.summaryPhrases.textContent = uiText('summaryPhrases')
       .replace('{recorded}', String(covered))
       .replace('{total}', String(prompts.length));
-    elements.summarySamples.textContent = config.ui.summarySamples.replace('{count}', String(samples));
+    elements.summarySamples.textContent = uiText('summarySamples').replace('{count}', String(samples));
     elements.progressFill.style.width = `${(covered / prompts.length) * 100}%`;
   }
 
   function renderUploadAllBar() {
     const waiting = waitingCards().length;
     elements.uploadAllBar.hidden = waiting < UPLOAD_ALL_MINIMUM;
-    elements.uploadAllLabel.textContent = config.ui.uploadAll.replace('{count}', String(waiting));
+    elements.uploadAllLabel.textContent = uiText('uploadAll').replace('{count}', String(waiting));
   }
 
   function setPageStatus(message, type) {
@@ -1145,24 +1311,35 @@ h1 {
     return Number(state.uploadCounts[phraseId]) || 0;
   }
 
-  function recordUploadedPhrase(card) {
-    state.uploadCounts[card.prompt.id] = uploadCount(card.prompt.id) + 1;
-    saveUploadCounts();
+  function streamingCount(phraseId) {
+    return Number(state.streamingCounts[phraseId]) || 0;
+  }
+
+  /** Everything this prompt has contributed, of either kind, for the summary. */
+  function promptSampleCount(phraseId) {
+    return uploadCount(phraseId) + streamingCount(phraseId);
+  }
+
+  function recordUploadedPhrase(card, mode) {
+    const counts = mode === STREAMING ? state.streamingCounts : state.uploadCounts;
+    const key = mode === STREAMING ? STREAMING_COUNTS_KEY : UPLOAD_COUNTS_KEY;
+    counts[card.prompt.id] = (Number(counts[card.prompt.id]) || 0) + 1;
+    saveCounts(key, counts);
   }
 
   /** Storage can be unavailable (private mode, sandboxed frame); the tally is optional. */
-  function loadUploadCounts() {
+  function loadCounts(key) {
     try {
-      const stored = JSON.parse(window.localStorage.getItem(UPLOAD_COUNTS_KEY) || '{}');
+      const stored = JSON.parse(window.localStorage.getItem(key) || '{}');
       return stored && typeof stored === 'object' ? stored : {};
     } catch (error) {
       return {};
     }
   }
 
-  function saveUploadCounts() {
+  function saveCounts(key, counts) {
     try {
-      window.localStorage.setItem(UPLOAD_COUNTS_KEY, JSON.stringify(state.uploadCounts));
+      window.localStorage.setItem(key, JSON.stringify(counts));
     } catch (error) {
       /* Ignored: the tally is a convenience, never a requirement. */
     }
@@ -1213,11 +1390,20 @@ h1 {
     state.timerId = window.setInterval(() => updateTimer(card), 100);
   }
 
+  /**
+   * mm:ss.t. A repetition take runs well past a minute, so the minutes field is
+   * counted rather than printed as a literal "00".
+   */
   function updateTimer(card) {
-    const elapsed = Math.min(performance.now() - state.startedAt, config.recording.maximumDurationMs);
-    const seconds = Math.floor(elapsed / 1000);
+    const elapsed = Math.min(
+      performance.now() - state.startedAt,
+      limitsFor(state.activeMode).maximumDurationMs
+    );
+    const minutes = Math.floor(elapsed / 60000);
+    const seconds = Math.floor((elapsed % 60000) / 1000);
     const tenths = Math.floor((elapsed % 1000) / 100);
-    card.dom.timer.textContent = `00:${String(seconds).padStart(2, '0')}.${tenths}`;
+    card.dom.timer.textContent =
+      `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${tenths}`;
   }
 
   function stopTimer(card) {
@@ -1227,7 +1413,7 @@ h1 {
   }
 
   function resetRecorderPanel(card) {
-    card.dom.timer.textContent = config.ui.timerReady;
+    card.dom.timer.textContent = uiText('timerReady');
     drawIdleWaveform(card);
   }
 

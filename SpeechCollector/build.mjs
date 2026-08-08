@@ -50,6 +50,7 @@ function validateConfiguration(config) {
 
   validateUnknownPrompt(config, ids);
   validateNoisePrompt(config, ids);
+  validateStreamingRecording(config);
 
   if (config.recording.minimumDurationMs < 1 ||
       config.recording.maximumDurationMs < config.recording.minimumDurationMs) {
@@ -120,6 +121,49 @@ function validateNoisePrompt(config, phraseIds) {
   }
 }
 
+/**
+ * The repetition take: one long clip holding the same dhikr N times, filed
+ * outside `dataset/`. It is optional (`recording.streaming: null` drops the
+ * second button), but a half-configured one is the dangerous state — a
+ * streaming folder equal to the dataset folder would put N-utterance clips
+ * where the trainer scans for single ones, and a maximum that does not exceed
+ * the clip maximum would mean the second button records exactly what the first
+ * one does while claiming otherwise.
+ */
+function validateStreamingRecording(config) {
+  const streaming = config.recording.streaming;
+  if (streaming === null || streaming === undefined) return;
+
+  if (typeof streaming !== 'object') throw new Error('recording.streaming must be an object or null.');
+  if (!Number.isInteger(streaming.repetitions) || streaming.repetitions < 2) {
+    throw new Error(`recording.streaming.repetitions must be an integer of at least 2: ${streaming.repetitions}`);
+  }
+  for (const key of ['minimumDurationMs', 'maximumDurationMs', 'maximumUploadBytes']) {
+    if (!Number.isFinite(streaming[key]) || streaming[key] <= 0) {
+      throw new Error(`recording.streaming.${key} must be a positive number.`);
+    }
+  }
+  if (streaming.maximumDurationMs < streaming.minimumDurationMs) {
+    throw new Error('recording.streaming duration limits are invalid.');
+  }
+  // A repetition take that fits inside a clip's five seconds is not a different
+  // recording, and its own limits would be doing nothing.
+  if (streaming.maximumDurationMs <= config.recording.maximumDurationMs) {
+    throw new Error('recording.streaming.maximumDurationMs must exceed recording.maximumDurationMs; it holds several utterances.');
+  }
+
+  const folder = String(config.storage.streamingSubfolder || '').trim();
+  if (!folder) {
+    throw new Error('storage.streamingSubfolder is required when recording.streaming is set (e.g. "streaming").');
+  }
+  if (folder === String(config.storage.datasetSubfolder).trim()) {
+    throw new Error('storage.streamingSubfolder must differ from datasetSubfolder; a repetition take is not a training clip.');
+  }
+  if (folder === String(config.storage.noiseFolderName || '').trim()) {
+    throw new Error('storage.streamingSubfolder must differ from noiseFolderName.');
+  }
+}
+
 function write(filename, contents) {
   fs.writeFileSync(path.join(outputDirectory, filename), contents, 'utf8');
 }
@@ -177,7 +221,8 @@ function bootstrapData(source) {
       maximumUploadBytes: source.recording.maximumUploadBytes,
       preferredSampleRate: source.recording.preferredSampleRate,
       preferredChannelCount: source.recording.preferredChannelCount,
-      acceptedMimeTypes: source.recording.acceptedMimeTypes
+      acceptedMimeTypes: source.recording.acceptedMimeTypes,
+      streaming: source.recording.streaming || null
     },
     theme: source.theme,
     ui: source.ui,

@@ -48,6 +48,7 @@ Open `config.ts` in a text editor. This is the single source for:
 - Spreadsheet name or spreadsheet ID
 - Sheet name and column order
 - Minimum/maximum recording duration and upload-size limit
+- The repetition take: how many times, and its own duration and size limits
 - Accepted audio MIME types and preferred sample rate
 - Arabic UI text
 - Theme colors, page language, direction, and timezone
@@ -72,6 +73,67 @@ highlighted box above the cards) and repeated in the wording of `listHint`,
 `microphoneHint`, `ready`, `recording`, `recordingReady`, `uploadSuccessBody`
 and `unknownPrompt.note`. `verify.mjs` asserts the box ships and that those
 strings still carry the rule, so a copy edit cannot quietly drop it.
+
+### The repetition button (say it ten times)
+
+Every **phrase** card carries a second recorder below its four buttons:
+**تسجيل ١٠ مرات**. It records **one long clip holding that dhikr ten times**,
+with a short pause between each, and files it in a different tree.
+
+It exists because the clip dataset cannot answer the question that decides the
+feature. A clip is already cut to one utterance, so it can show whether the
+model *recognises* a dhikr but never whether the counter fires **once per
+dhikr** while listening continuously — which is what the app will actually do.
+That is `DhikrSpeech`'s stage 06, and it needs long-form audio the collector had
+no way to produce.
+
+```js
+recording: {
+  streaming: {
+    repetitions: 10,
+    minimumDurationMs: 8000,
+    maximumDurationMs: 90000,
+    maximumUploadBytes: 8 * 1024 * 1024
+  }
+}
+```
+
+- **It is a different recording, not a longer one.** Duration bounds, size
+  ceiling and destination folder are all its own, and all of them are enforced
+  **on the server per mode** — the upload carries `mode: "streaming"`, and a
+  request cannot file a 90-second take as a training clip or a two-second one as
+  ten repetitions. An upload with no mode at all (an older tab across a
+  redeploy) is read as a clip, which is the stricter of the two.
+- **Its audio goes to `{root}/streaming/{id}/`** (`storage.streamingSubfolder`),
+  a **sibling** of `dataset/` for the same reason `noise/` is one: a clip holding
+  the dhikr ten times is not a training example, and a trainer scanning
+  `dataset/{id}/` must never find one. The class folder name is unchanged — only
+  its parent differs.
+- **The filename carries the expected count**:
+  `001_x10_sp3f9a2c41_20260803_183015_ab12cd.webm`. The page cannot produce the
+  event *timings* a streaming annotation needs, so the one thing it does know —
+  how many events the clip should hold — is written where it can never be
+  separated from the audio.
+- **Only phrases get the button.** "Say it ten times" needs something to say ten
+  times, which the unknown card (a different word every take) and the noise card
+  (no words at all) do not have. The backend rejects the mode for both.
+- Its uploads are tallied on their **own pill** (`🔁`), not merged into the clip
+  tally: a volunteer with plenty of one may have none of the other, and one
+  number would hide that.
+- The **single-utterance rule does not apply to it**, which is the one thing a
+  volunteer can misread expensively. `ui.singleTakeRule` is therefore scoped to
+  the ordinary button, the second button gets its own explanation box
+  (`ui.streamingHint`), and all six of its strings say to repeat the phrase.
+  `verify.mjs` asserts they ship.
+- Every string carries `{reps}` rather than a written-out number, so changing
+  `repetitions` does not leave the Arabic behind.
+- Set `recording.streaming: null` to drop the second button from every card.
+
+**These recordings are not yet in the pipeline's layout.** Stage 06 reads
+`streaming_test/audio/*.wav` plus a hand-written `annotations.json` with event
+timings; the collector produces per-phrase folders of counted takes. Converting
+one to the other — and annotating the timings — stays a manual step. What the
+collector removes is the recording itself.
 
 ### Recommended: use an existing Drive folder
 
@@ -237,7 +299,7 @@ Successful output looks like:
 ```text
 Built Apps Script project in .../SpeechCollector/dist
 Verification passed: build output, manifest, syntax, and request validation are valid.
-UI behaviour tests passed: per-prompt recorders, the unknown card, single-take locking, uploads, and tallies.
+UI behaviour tests passed: per-prompt recorders, the unknown and noise cards, the repetition recorder, single-take locking, uploads, tallies, and the speaker id.
 ```
 
 Re-run these commands after every change to `config.ts`, `Code.gs`, `Index.html`, `app.js`, `styles.css`, or `appsscript.json`. `ui.test.mjs` runs `app.js` against a minimal DOM stub and drives the buttons on the generated cards, so it catches a broken recorder, a card that fails to lock while another records, or a mis-queued upload before the page reaches a volunteer. The Pages workflow runs all three before publishing `voice.html`.
@@ -297,6 +359,7 @@ Both hosts use HTTPS, which is required for microphone access. Test the standalo
 5. Tap **استماع** (Play), then **رفع التسجيل** (Upload).
 6. Confirm that the success message appears on that card, its `✓` tally reads 1, and the card is empty and ready for another sample.
 7. Record two more cards without uploading, confirm the bottom bar appears with a count of 2, and tap it. Both cards should upload one after the other, and the bar should disappear.
+8. Tap **تسجيل ١٠ مرات** on a phrase card, say the dhikr ten times with a pause between each, and upload. Confirm the timer passed one minute correctly (`01:05.0`, not `00:65.0`), that the card's second `🔁` tally reads 1, and that its `✓` tally is untouched.
 
 ### iPhone or iPad
 
@@ -315,9 +378,10 @@ After a successful upload:
 2. Confirm that a phrase subfolder such as `dataset/006` exists — and, after a take on the unknown card, `dataset/unknown`.
 3. Confirm that it contains a file like `006_sp3f9a2c41_20260803_183015_ab12cd.webm` (or `unknown_sp3f9a2c41_…`) or `.m4a`/`.wav`.
 4. Go back up to the root folder and confirm that a take on the noise card produced `noise/noise_sp3f9a2c41_…` — **beside** `dataset/`, not inside it.
-5. Confirm that the `sp…` token is the same across every file you just uploaded.
-6. Open the spreadsheet.
-7. Confirm that exactly one metadata row was appended and its Drive URL opens the file for the owner.
+5. Confirm that a take on **تسجيل ١٠ مرات** produced `streaming/006/006_x10_sp3f9a2c41_…` — also beside `dataset/`, never inside it, and carrying the `x10` count.
+6. Confirm that the `sp…` token is the same across every file you just uploaded.
+7. Open the spreadsheet.
+8. Confirm that exactly one metadata row was appended and its Drive URL opens the file for the owner. Its `filename` column is what tells a repetition take apart from a clip; there is no extra column, so the existing sheet header is unchanged.
 
 Drive files remain private unless the owner separately changes their sharing settings. The public collector does not expose a file listing or make uploaded recordings public.
 
@@ -334,17 +398,18 @@ Drive files remain private unless the owner separately changes their sharing set
 
 ### One recorder per prompt
 
-There is no navigation. Every visible phrase is a card on the same page — plus the unknown and noise cards at the end — each carrying its own waveform, timer, status line, and four buttons (**تسجيل**, **إيقاف**, **استماع**, **رفع التسجيل**). A volunteer records and uploads whichever cards they like, in any order, as many times as they like.
+There is no navigation. Every visible phrase is a card on the same page — plus the unknown and noise cards at the end — each carrying its own waveform, timer, status line, and four buttons (**تسجيل**, **إيقاف**, **استماع**, **رفع التسجيل**), with a fifth on the phrase cards for the repetition take (**تسجيل ١٠ مرات**). A volunteer records and uploads whichever cards they like, in any order, as many times as they like.
 
 - **Record any card.** Tapping **تسجيل** starts that card and locks every other card's record button — there is one microphone, so there is one take at a time. The 1s minimum and 5s auto-stop are unchanged.
-- **Re-record.** Once a take is waiting, that card's record button becomes **إعادة التسجيل**: pressing it drops the take and starts a new one. No confirmation — pressing it already says so.
+- **Two buttons, one recorder.** **تسجيل ١٠ مرات** starts the same card in the repetition mode, with its own limits and destination. A card still holds **one** take at a time; the take carries which kind it is from the moment it is made, so play, stop and upload are unchanged.
+- **Re-record.** Once a take is waiting, the button that made it becomes **إعادة التسجيل** (or **إعادة تسجيل الـ١٠ مرات**): pressing it drops the take and starts a new one. No confirmation — pressing it already says so. The *other* button still offers its own kind of recording, and pressing that drops the waiting take too.
 - **Upload one card.** **رفع التسجيل** sends that card's take on its own. On success the card's `✓` tally ticks up and the card empties, ready for another sample of the same phrase; several samples of one phrase are worth more to the dataset than one sample each.
 - **Upload several.** Once two or more takes are waiting, a bar pins itself to the bottom of the screen: **رفع كل التسجيلات الجاهزة ({count})**. Below two it stays hidden, because the card's own upload button is already on screen. It never appears for a card that is mid-upload.
 - **Uploads are serialized.** The backend appends one spreadsheet row per sample, so takes are sent one after another. A queued card shows **في الانتظار…** and cannot be recorded over until its turn passes.
 - **A failure is local to its card.** The take is kept, the button becomes **إعادة المحاولة**, and the rest of the batch still goes through. The `sample_id` is stable, so a retry cannot create a duplicate row.
 - **The microphone is held between takes** and released after 30 seconds of not recording, so a run of cards costs one permission prompt rather than one per card.
 - **A card says nothing when it has nothing to report.** Status lines appear only while recording, when a take is ready, during upload, and on success or failure — ten identical idle hints would be noise.
-- The per-phrase upload tally is stored in this browser's `localStorage` (`speech_collector_upload_counts`). It is a convenience only — it never reaches the server, and recording works normally when storage is unavailable (private mode, sandboxed frame).
+- The per-phrase upload tally is stored in this browser's `localStorage` (`speech_collector_upload_counts`), and the repetition tally beside it in `speech_collector_streaming_counts`. They are a convenience only — they never reach the server, and recording works normally when storage is unavailable (private mode, sandboxed frame).
 - The speaker id lives in the same storage (`speech_collector_speaker_id`) and, unlike the tally, is sent with every upload — see "The speaker id in every filename".
 
 ## Backend validation and security
@@ -352,7 +417,8 @@ There is no navigation. Every visible phrase is a card on the same page — plus
 The Apps Script backend:
 
 - Accepts only phrase IDs present in `config.ts` (including parked ones), plus the `unknownPrompt` and `noisePrompt` ids when they are configured.
-- Replaces client-supplied phrase text with the trusted configured phrase text, and decides the destination folder **and its parent** from the id — a client cannot choose where its audio is filed, nor push a phrase recording into the noise pool.
+- Replaces client-supplied phrase text with the trusted configured phrase text, and decides the destination folder **and its parent** from the id and the mode — a client cannot choose where its audio is filed, nor push a phrase recording into the noise pool.
+- Validates the recording mode against the prompt and applies that mode's own duration and size limits, so a long repetition take cannot be filed as a training clip, a clip-length take cannot claim to hold ten repetitions, and the unknown and noise prompts cannot use the repetition mode at all.
 - Reduces the client-supplied speaker id to 8 hex characters before it reaches a filename, and drops it entirely when it is not hex.
 - Enforces duration, MIME type, base64 syntax, sample-rate range, and maximum upload size.
 - Generates the filename and Drive folder name on the server.

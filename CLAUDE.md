@@ -465,6 +465,16 @@ other engineers) are in `DhikrSpeech/docs/LEARNING_GUIDE.md`.
   mixes them underneath training clips. Filing them under `dataset/` would make `scan_dataset` learn
   hiss as a class, which is why `classParentFolder_` in the collector's `Code.gs` picks the parent
   from the prompt and the build refuses a `noiseFolderName` equal to `datasetSubfolder`.
+- **The collector also records long "say it ten times" takes**, from a second button on every phrase
+  card (`recording.streaming` in `SpeechCollector/config.ts`). One take holds the dhikr
+  `repetitions` times and lands in `{root}/streaming/{paddedId}/` — a **sibling** of `dataset/`, for
+  the same reason `noise/` is one: it is not a single training example and `scan_dataset` must never
+  see it. Duration/size limits and the destination are enforced **per mode on the server**, so a
+  90-second take cannot be filed as a clip and the unknown/noise prompts cannot use the mode at all.
+  The filename carries the expected event count (`006_x10_sp3f9a2c41_…`) because the page can supply
+  the count but not the timings. Nothing in the pipeline reads `streaming/` — it is the recruitment
+  half of stage 06, and converting a folder of takes into `streaming_test/audio/*.wav` +
+  `annotations.json` is still manual.
 - **Collector filenames carry a speaker token**: `<class>_sp<8 hex>_<timestamp>_<suffix>`, from a
   random UUID the volunteer's browser mints once and keeps (`speech_collector_speaker_id`). It exists
   so `split.group_regex: "sp[0-9a-f]{8}"` can keep one voice out of both train and val; it is still

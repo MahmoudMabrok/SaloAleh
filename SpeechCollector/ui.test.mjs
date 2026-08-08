@@ -45,13 +45,23 @@ const unknownIndex = bootstrap.unknownPrompt ? phrases.length : -1;
 const noiseIndex = bootstrap.noisePrompt ? prompts.length - 1 : -1;
 const lastIndex = prompts.length - 1;
 const UPLOAD_COUNTS_KEY = 'speech_collector_upload_counts';
+const STREAMING_COUNTS_KEY = 'speech_collector_streaming_counts';
 const SPEAKER_ID_KEY = 'speech_collector_speaker_id';
+
+// The repetition take: one long clip holding the same dhikr N times. Only
+// phrases offer it, so its indices are the phrase indices and nothing else.
+const streaming = bootstrap.recording.streaming;
+const streamingDurationMs = streaming ? streaming.minimumDurationMs + 2000 : 0;
+
+/** A UI string as the page renders it, with the repetition count filled in. */
+const ui = (key) =>
+  streaming ? bootstrap.ui[key].replaceAll('{reps}', String(streaming.repetitions)) : bootstrap.ui[key];
 
 // The static shell from Index.html. Everything else is created by the app.
 const SHELL_IDS = [
   'phrase-list', 'summary-phrases', 'summary-samples', 'progress-fill', 'page-status',
   'upload-all-bar', 'upload-all-button', 'upload-all-label', 'audio-player',
-  'standalone-banner', 'standalone-link'
+  'standalone-banner', 'standalone-link', 'streaming-hint'
 ];
 
 class FakeElement {
@@ -296,6 +306,15 @@ const settle = async () => {
 /** Drives a complete take on one card through the real record/stop path. */
 async function recordTake(environment, index, durationMs = 1500) {
   environment.dom.get(`record-${index}`).dispatch('click');
+  await settle();
+  environment.clock.now += durationMs;
+  environment.dom.get(`stop-${index}`).dispatch('click');
+  await settle();
+}
+
+/** The same, driven from the card's second button: one take, ten utterances. */
+async function recordStreamingTake(environment, index, durationMs = streamingDurationMs) {
+  environment.dom.get(`streaming-record-${index}`).dispatch('click');
   await settle();
   environment.clock.now += durationMs;
   environment.dom.get(`stop-${index}`).dispatch('click');
@@ -676,4 +695,126 @@ if (bootstrap.noisePrompt) {
   assert.equal(environment.storage.get(SPEAKER_ID_KEY), existing, 'A stored speaker id must not be overwritten.');
 }
 
-console.log('UI behaviour tests passed: per-prompt recorders, the unknown and noise cards, single-take locking, uploads, tallies, and the speaker id.');
+// 23. Every phrase card offers the second recorder — and only the phrase cards.
+//     "Say it ten times" needs something to say ten times, which the unknown
+//     card (a different word each take) and the noise card (no words) do not
+//     have; the backend refuses the mode for both, so the button is not offered.
+if (streaming) {
+  const environment = createEnvironment();
+  phrases.forEach((phrase, index) => {
+    assert.ok(
+      environment.dom.find(`streaming-record-${index}`),
+      `Phrase card ${index} must offer the repetition recorder.`
+    );
+  });
+  assert.equal(environment.dom.get('streaming-hint').hidden, false, 'The page must explain the second button.');
+  for (const index of [unknownIndex, noiseIndex]) {
+    if (index < 0) continue;
+    assert.equal(
+      environment.dom.find(`streaming-record-${index}`),
+      null,
+      `Card ${index} is not a phrase and must not offer a repetition take.`
+    );
+  }
+}
+
+// 24. A repetition take says the opposite of the single-utterance rule, because
+//     for this one button repeating the phrase is the whole point.
+if (streaming) {
+  const environment = createEnvironment();
+  environment.dom.get('streaming-record-0').dispatch('click');
+  await settle();
+  assert.equal(text(environment, 'status-0'), ui('streamingRecording'));
+
+  environment.clock.now += streamingDurationMs;
+  environment.dom.get('stop-0').dispatch('click');
+  await settle();
+  assert.equal(text(environment, 'status-0'), ui('streamingRecordingReady'));
+
+  // The ordinary button on the same card keeps the single-utterance wording.
+  await recordTake(environment, 0);
+  assert.equal(text(environment, 'status-0'), bootstrap.ui.recordingReady);
+}
+
+// 25. A clip-length take under the repetition prompt is rejected, and the
+//     correction names the real mistake: not "record for longer" but "say it
+//     the full ten times".
+if (streaming) {
+  const environment = createEnvironment();
+  await recordStreamingTake(environment, 0, bootstrap.recording.minimumDurationMs + 200);
+  assert.equal(text(environment, 'status-0'), ui('streamingTooShort'));
+  assert.equal(disabled(environment, 'upload-0'), true, 'A take too short to hold the repetitions must not upload.');
+
+  // The same length is a perfectly good clip on the ordinary button.
+  await recordTake(environment, 0, bootstrap.recording.minimumDurationMs + 200);
+  assert.equal(disabled(environment, 'upload-0'), false, 'The clip recorder must keep its own, shorter minimum.');
+}
+
+// 26. A repetition take runs past a clip's ceiling, and the timer keeps up:
+//     "00:65.0" would be a bug a volunteer sees before anyone else does.
+if (streaming && streaming.maximumDurationMs > 65000) {
+  const environment = createEnvironment();
+  await recordStreamingTake(environment, 0, 65000);
+  assert.equal(text(environment, 'timer-0'), '01:05.0', 'The timer must count minutes once a take passes 60 s.');
+  assert.equal(disabled(environment, 'upload-0'), false, 'A take longer than a clip\'s maximum must still be kept.');
+}
+
+// 27. A repetition take uploads under its own mode — which is what files it in
+//     streaming/ rather than dataset/ — and is tallied apart from the clips.
+if (streaming) {
+  const environment = createEnvironment();
+  await recordStreamingTake(environment, 0);
+  await uploadTake(environment, 0);
+
+  assert.equal(environment.uploads[0].mode, 'streaming', 'The payload must name the repetition mode.');
+  assert.equal(environment.uploads[0].phrase_id, phrases[0].id, 'It is still that card\'s phrase.');
+  assert.deepEqual(
+    JSON.parse(environment.storage.get(STREAMING_COUNTS_KEY)),
+    { [phrases[0].id]: 1 },
+    'A repetition take must be tallied against the repetition counts.'
+  );
+  assert.equal(environment.storage.has(UPLOAD_COUNTS_KEY), false, 'It must not be counted as a training clip.');
+  assert.equal(text(environment, 'streaming-tally-0'), ui('streamingCount').replace('{count}', '1'));
+  assert.equal(text(environment, 'tally-0'), '', 'The clip tally must stay at zero.');
+  assert.equal(text(environment, 'summary-samples'), bootstrap.ui.summarySamples.replace('{count}', '1'));
+
+  // A clip on the same card afterwards is counted on its own pill.
+  await recordTake(environment, 0);
+  await uploadTake(environment, 0);
+  assert.equal(environment.uploads[1].mode, 'clip', 'An ordinary take must name the clip mode.');
+  assert.equal(text(environment, 'tally-0'), bootstrap.ui.recordedCount.replace('{count}', '1'));
+  assert.equal(text(environment, 'streaming-tally-0'), ui('streamingCount').replace('{count}', '1'));
+  assert.equal(
+    text(environment, 'summary-phrases'),
+    bootstrap.ui.summaryPhrases.replace('{recorded}', '1').replace('{total}', String(prompts.length)),
+    'Both kinds cover the same phrase once.'
+  );
+}
+
+// 28. Only the button that would replace the waiting take offers to re-record;
+//     the other still offers its own, different kind of recording.
+if (streaming) {
+  const environment = createEnvironment();
+  await recordStreamingTake(environment, 0);
+  assert.equal(text(environment, 'streaming-record-label-0'), ui('streamingReRecord'));
+  assert.equal(text(environment, 'record-label-0'), bootstrap.ui.record, 'The clip button is not a re-record here.');
+
+  await recordTake(environment, 0);
+  assert.equal(text(environment, 'record-label-0'), bootstrap.ui.reRecord);
+  assert.equal(text(environment, 'streaming-record-label-0'), ui('streamingRecord'));
+}
+
+// 29. One microphone still means one take at a time: a live repetition take
+//     locks every record button on the page, its own included.
+if (streaming) {
+  const environment = createEnvironment();
+  environment.dom.get('streaming-record-1').dispatch('click');
+  await settle();
+  assert.equal(disabled(environment, 'streaming-record-1'), true, 'The live card cannot restart itself mid-take.');
+  assert.equal(disabled(environment, 'record-1'), true);
+  assert.equal(disabled(environment, 'record-0'), true, 'Every other card must be locked.');
+  assert.equal(disabled(environment, 'streaming-record-0'), true);
+  assert.equal(disabled(environment, 'stop-1'), false, 'The live card must be stoppable.');
+}
+
+console.log('UI behaviour tests passed: per-prompt recorders, the unknown and noise cards, the repetition recorder, single-take locking, uploads, tallies, and the speaker id.');
