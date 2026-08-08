@@ -689,6 +689,7 @@ def scan_signal(
     streaming: StreamingConfig,
     labels: Sequence[str],
     source: str = "",
+    batch_windows: int = 256,
 ) -> WindowScan:
     """Slide the window over a recording and score every window.
 
@@ -697,19 +698,36 @@ def scan_signal(
     calibration - reads the returned :class:`WindowScan`, so a recording is
     scored once and every threshold in a sweep reuses those probabilities instead
     of re-running inference.
+
+    Features are built and scored in chunks of ``batch_windows``. A minute of
+    audio at a 0.25 s hop is 240 windows of ``(frames, mels)`` floats; an hour is
+    14,400, which is gigabytes if they are all materialised at once. Only the
+    probabilities - three floats per window - are kept.
     """
     audio = np.asarray(samples, dtype=np.float32)
     window_seconds = streaming.window_for(frontend.audio)
-    times, features = frontend.windows(
-        audio, streaming.hop_seconds, window_seconds=window_seconds
-    )
+    window = int(round(window_seconds * frontend.sample_rate))
+    hop = max(int(round(streaming.hop_seconds * frontend.sample_rate)), 1)
+    starts = window_starts(audio.size, window, hop)
     runner = _as_runner(model)
-    raw = np.asarray(runner(features), dtype=np.float32)
-    if raw.ndim != 2 or raw.shape[0] != features.shape[0]:
-        raise ValueError(
-            f"model returned {raw.shape} for {features.shape[0]} windows - expected "
-            f"(windows, classes)"
-        )
+
+    chunks: List[np.ndarray] = []
+    size = max(int(batch_windows), 1)
+    for offset in range(0, len(starts), size):
+        block = starts[offset : offset + size]
+        features = np.stack(
+            [frontend.features(audio[start : start + window], trim=False) for start in block]
+        ).astype(np.float32)
+        scored = np.asarray(runner(features), dtype=np.float32)
+        if scored.ndim != 2 or scored.shape[0] != features.shape[0]:
+            raise ValueError(
+                f"model returned {scored.shape} for {features.shape[0]} windows - "
+                f"expected (windows, classes)"
+            )
+        chunks.append(scored)
+
+    times = np.asarray(starts, dtype=np.float32) / float(frontend.sample_rate)
+    raw = np.concatenate(chunks, axis=0) if chunks else np.zeros((0, len(labels)), np.float32)
     if raw.shape[1] != len(labels):
         raise ValueError(
             f"model has {raw.shape[1]} outputs but {len(labels)} labels were given - "
