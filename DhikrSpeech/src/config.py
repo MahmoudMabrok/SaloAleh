@@ -636,6 +636,10 @@ class TrainingConfig:
     min_learning_rate: float = 1e-5
     plateau_factor: float = 0.5
     plateau_patience: int = 4
+    # Also log macro F1 (and val_macro_f1), which unlike accuracy drops when a
+    # class is being ignored - the usual failure on an unbalanced split. Reported
+    # by default; set checkpoint.monitor to `val_macro_f1` to select on it.
+    macro_f1: bool = True
     early_stopping: EarlyStoppingConfig = field(default_factory=EarlyStoppingConfig)
     checkpoint: CheckpointConfig = field(default_factory=CheckpointConfig)
     tensorboard: TensorBoardConfig = field(default_factory=TensorBoardConfig)

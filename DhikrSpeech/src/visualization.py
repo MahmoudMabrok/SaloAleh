@@ -28,8 +28,12 @@ __all__ = [
     "plot_confusion_matrix",
     "plot_duration_histogram",
     "plot_log_mel",
+    "plot_negative_type_false_positives",
     "plot_per_class_metrics",
     "plot_roc_curves",
+    "plot_speaker_distribution",
+    "plot_streaming_timeline",
+    "plot_threshold_sweep",
     "plot_training_history",
     "plot_waveform",
     "save_figure",
@@ -368,6 +372,205 @@ def plot_confidence_distribution(
     axis.set_title(title)
     axis.grid(axis="y", **_GRID)
     axis.legend(fontsize=8)
+    figure.tight_layout()
+    return figure
+
+
+def plot_speaker_distribution(
+    recordings_per_speaker: Mapping[str, int],
+    title: str = "recordings per speaker",
+    max_speakers: int = 40,
+) -> Figure:
+    """How lopsided the dataset is across voices.
+
+    One speaker towering over the rest is the shape of a dataset that will score
+    well on its own test split and disappoint on a stranger's phone.
+    """
+    items = sorted(recordings_per_speaker.items(), key=lambda item: item[1], reverse=True)
+    shown = items[:max_speakers]
+    labels = [name for name, _ in shown]
+    values = [count for _, count in shown]
+
+    figure, axis = plt.subplots(figsize=(max(6.0, len(labels) * 0.35), 4.0))
+    axis.bar(labels, values, color="#457b9d")
+    if values:
+        mean = float(np.mean(list(recordings_per_speaker.values())))
+        axis.axhline(mean, color="#264653", linewidth=1.0, label=f"mean {mean:.0f}")
+        axis.legend(fontsize=8)
+    axis.set_title(
+        title
+        + (f" (top {max_speakers} of {len(items)})" if len(items) > max_speakers else "")
+    )
+    axis.set_xlabel("speaker")
+    axis.set_ylabel("recordings")
+    axis.tick_params(axis="x", rotation=90, labelsize=7)
+    axis.grid(axis="y", **_GRID)
+    figure.tight_layout()
+    return figure
+
+
+def plot_streaming_timeline(
+    scan,
+    events: Sequence = (),
+    truth: Sequence = (),
+    detector=None,
+    title: str = "streaming predictions",
+    ignore: Sequence[str] = ("unknown",),
+) -> Figure:
+    """The whole streaming story for one recording, on one time axis.
+
+    Top: every class's probability over time, with the activation and release
+    thresholds drawn in - this is where you see whether the hysteresis band is in
+    the right place. Bottom: what was annotated against what was detected, so a
+    miss, a false activation and a duplicate are visually distinct rather than
+    three numbers in a table.
+    """
+    figure, (top, bottom) = plt.subplots(
+        2, 1, figsize=(11.0, 5.4), gridspec_kw={"height_ratios": [3, 1]}, sharex=True
+    )
+    ignored = {name.lower() for name in ignore}
+    palette = plt.get_cmap("tab10")
+    for index, label in enumerate(scan.labels):
+        dimmed = label.lower() in ignored
+        top.plot(
+            scan.times,
+            scan.probabilities[:, index],
+            label=label,
+            color="#adb5bd" if dimmed else palette(index % 10),
+            linewidth=0.9 if not dimmed else 0.7,
+            alpha=0.5 if dimmed else 1.0,
+        )
+    if detector is not None:
+        top.axhline(
+            detector.confidence_threshold,
+            color="#e63946",
+            linestyle="--",
+            linewidth=1.0,
+            label=f"activation {detector.confidence_threshold:g}",
+        )
+        top.axhline(
+            detector.release_threshold,
+            color="#f4a261",
+            linestyle=":",
+            linewidth=1.0,
+            label=f"release {detector.release_threshold:g}",
+        )
+    for event in events:
+        top.axvspan(event.start, max(event.end, event.start + 0.05), color="#2a9d8f", alpha=0.18)
+        top.axvline(event.trigger_time, color="#2a9d8f", linewidth=1.2)
+    top.set_ylim(0.0, 1.02)
+    top.set_ylabel("probability")
+    top.set_title(title)
+    top.grid(**_GRID)
+    top.legend(fontsize=7, ncol=3, loc="upper right")
+
+    for annotation in truth:
+        bottom.axvspan(annotation.start, annotation.end, ymin=0.55, ymax=0.95,
+                       color="#264653", alpha=0.6)
+    for event in events:
+        bottom.axvspan(event.start, max(event.end, event.start + 0.05), ymin=0.05,
+                       ymax=0.45, color="#2a9d8f", alpha=0.7)
+    bottom.set_yticks([0.25, 0.75])
+    bottom.set_yticklabels(["detected", "annotated"], fontsize=8)
+    bottom.set_ylim(0.0, 1.0)
+    bottom.set_xlabel("seconds")
+    bottom.set_xlim(0.0, max(float(scan.times[-1]) + scan.window_seconds, 1.0))
+    bottom.grid(axis="x", **_GRID)
+
+    figure.tight_layout()
+    return figure
+
+
+def plot_threshold_sweep(
+    points: Sequence,
+    target_false_activations_per_hour: Optional[float] = None,
+    chosen: Optional[float] = None,
+    title: str = "threshold sweep",
+) -> Figure:
+    """Recall and false activations per hour against the threshold.
+
+    The two curves are the whole trade-off, and the budget line is what decides
+    it: the operating point is the leftmost threshold whose FA/hour curve is under
+    that line, not the peak of anything.
+    """
+    thresholds = [point.threshold for point in points]
+    recalls = [point.recall for point in points]
+    false_rates = [point.false_activations_per_hour for point in points]
+
+    figure, (left, right) = plt.subplots(1, 2, figsize=(11.0, 4.0))
+    left.plot(thresholds, recalls, marker="o", color="#2a9d8f", label="event recall")
+    left.plot(
+        thresholds,
+        [point.precision for point in points],
+        marker="s",
+        color="#457b9d",
+        label="event precision",
+    )
+    left.set_xlabel("threshold")
+    left.set_ylabel("rate")
+    left.set_ylim(0.0, 1.05)
+    left.grid(**_GRID)
+    left.legend(fontsize=8)
+
+    right.plot(thresholds, false_rates, marker="o", color="#e76f51")
+    right.set_xlabel("threshold")
+    right.set_ylabel("false activations / hour")
+    right.set_yscale("symlog", linthresh=0.1)
+    if target_false_activations_per_hour is not None:
+        right.axhline(
+            target_false_activations_per_hour,
+            color="#264653",
+            linestyle="--",
+            linewidth=1.0,
+            label=f"budget {target_false_activations_per_hour:g}/h",
+        )
+        right.legend(fontsize=8)
+    right.grid(**_GRID)
+
+    for axis in (left, right):
+        if chosen is not None:
+            axis.axvline(chosen, color="#8d99ae", linestyle=":", linewidth=1.2)
+
+    figure.suptitle(title)
+    figure.tight_layout()
+    return figure
+
+
+def plot_negative_type_false_positives(
+    rows: Sequence,
+    title: str = "false positives by negative audio type",
+    limit: Optional[float] = None,
+) -> Figure:
+    """Which kind of audio the model fires on.
+
+    A flat bar chart here is a model with a general problem; one tall bar is a
+    data-collection instruction.
+    """
+    labels = [item.negative_type for item in rows]
+    values = [item.false_positive_rate for item in rows]
+    counts = [item.clips for item in rows]
+
+    figure, axis = plt.subplots(figsize=(max(6.0, len(labels) * 1.1), 4.0))
+    bars = axis.bar(labels, values, color="#e76f51")
+    for bar, count in zip(bars, counts):
+        axis.text(
+            bar.get_x() + bar.get_width() / 2.0,
+            bar.get_height(),
+            f"n={count}",
+            ha="center",
+            va="bottom",
+            fontsize=7,
+            color="#264653",
+        )
+    if limit is not None:
+        axis.axhline(
+            limit, color="#264653", linestyle="--", linewidth=1.0, label=f"limit {limit:g}"
+        )
+        axis.legend(fontsize=8)
+    axis.set_ylabel("accepted as a dhikr")
+    axis.set_title(title)
+    axis.tick_params(axis="x", rotation=20)
+    axis.grid(axis="y", **_GRID)
     figure.tight_layout()
     return figure
 

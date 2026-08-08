@@ -291,6 +291,12 @@ training:
   plateau_factor: 0.5
   plateau_patience: 4
 
+  # Also track macro F1. val_accuracy alone flatters a model that answers
+  # `unknown` to everything on an unbalanced split; macro F1 weighs every class
+  # equally and drops when a class is being ignored. Reported by default - set
+  # checkpoint.monitor / early_stopping.monitor to `val_macro_f1` to select on it.
+  macro_f1: true
+
   early_stopping:
     enabled: true
     monitor: val_accuracy
