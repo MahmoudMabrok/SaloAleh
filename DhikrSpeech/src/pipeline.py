@@ -438,7 +438,7 @@ def stream_target(
 def _clip_score_sets(
     preparation: TargetPreparation,
     scorer,
-    split: str = "test",
+    split: Optional[str] = None,
     per_type_limit: int = 200,
 ) -> Dict[str, Tuple[List[str], np.ndarray]]:
     """Score the evaluation split once per variant, grouped by clip set.
@@ -450,6 +450,7 @@ def _clip_score_sets(
     from .audio import read_wav
 
     config = preparation.config
+    split = split or config.evaluation.split
     root = config.clip_cache_path()
     groups: Dict[str, List[ManifestRecord]] = {"positives": [], "negatives": [], "hard_negatives": []}
     counts: Dict[str, int] = {}
@@ -486,6 +487,7 @@ def export_target(
     streaming: Optional[StreamingOutcome] = None,
     architecture: Optional[str] = None,
     model_version: str = "1",
+    output_dir: Optional[PathLike] = None,
 ) -> Dict[str, object]:
     """Convert, verify and describe one target's model for Android.
 
@@ -519,7 +521,7 @@ def export_target(
     )
 
     config = preparation.config
-    destination = config.target_export_path(preparation.target_id)
+    destination = Path(output_dir or config.target_export_path(preparation.target_id))
     destination.mkdir(parents=True, exist_ok=True)
 
     reference = to_float32_model(model)
