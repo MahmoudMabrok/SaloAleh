@@ -444,12 +444,14 @@ other engineers) are in `DhikrSpeech/docs/LEARNING_GUIDE.md`.
   manifest's class indices, the model's output width and `labels.txt`. Changing it requires re-running
   preprocessing and a fresh training run; `Trainer` refuses an incompatible backup.
 - **The collector's phrase list is not the model's.** `SpeechCollector/config.ts` defines 11 phrase
-  ids and shows six cards; the others carry `hidden: true`, which takes the card off the page while
+  ids and shows seven cards; the others carry `hidden: true`, which takes the card off the page while
   keeping the id, its `dataset/{id}/` folder and its `phrases.json` label. Never delete a phrase
   entry to retire it — the label goes with it and the freed id is inherited by the next phrase added,
   along with the old recordings. Id 11 is the four Baqiyat spoken as one utterance (the way the
-  Baqiyat/Ten Days challenges are recited); ids 1–4 are those same words on their own and are parked,
-  so 11 has each of them as a prefix — the nested-prefix case section `06 · Experiment` exists to test.
+  Baqiyat/Ten Days challenges are recited); ids 1–4 are those same words on their own, so 11 has each
+  of them as a prefix — the nested-prefix case section `06 · Experiment` exists to test. Of those
+  four only id 1 (سبحان الله) still has a card, and the page leads with 1, 6, 7 adjacent because
+  those three are nested prefixes a skimming volunteer would otherwise mix up.
 - Convergence follows **optimiser steps** (`ceil(train_clips / batch_size) × epochs`), not epochs.
   The dataset is small, so the defaults are tuned small-batch/many-epochs and the training cell warns
   under 2000 steps.
