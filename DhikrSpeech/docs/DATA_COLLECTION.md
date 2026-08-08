@@ -157,11 +157,11 @@ caps how much of it any one run trains on and weights which parts survive the cu
 
 This is the set most projects skip, and the only one that measures what the user experiences.
 
-The folder is `paths.streaming_dir` (default `streaming_test`); `streaming/` and a couple of
+The folder is `paths.streaming_dir` (default `streaming`); `streaming_test/` and a couple of
 other names are found automatically. The `audio/` subfolder is optional.
 
 ```text
-streaming_test/
+streaming/
 ├── audio/
 │   ├── session_001.wav      someone repeating the dhikr, minutes at a time
 │   ├── session_002.wav

@@ -23,8 +23,11 @@ paths:
   logs_dir: logs                # TensorBoard + CSV training logs
   reports_dir: reports          # validation reports, metrics, charts
   # Long-form recordings for streaming evaluation:
-  #   streaming_test/audio/*.wav + streaming_test/annotations.json
-  streaming_dir: streaming_test
+  #   streaming/audio/*.wav + streaming/annotations.json
+  # (`audio/` is optional - the recordings may sit next to annotations.json.)
+  # If this folder does not exist, the usual other names are tried and the
+  # fallback is logged, so renaming it does not silently lose the set.
+  streaming_dir: streaming
 
   phrases_file: phrases.json    # [{"id": 1, "text": "..."}, ...]
   unknown_class: unknown        # folder holding out-of-vocabulary / filler audio

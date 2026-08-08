@@ -172,7 +172,7 @@ class PathsConfig:
     exports_dir: str = "exports"
     logs_dir: str = "logs"
     reports_dir: str = "reports"
-    streaming_dir: str = "streaming_test"
+    streaming_dir: str = "streaming"
     phrases_file: str = "phrases.json"
     unknown_class: str = "unknown"
     speakers_file: str = "speakers.csv"
@@ -226,7 +226,7 @@ class PathsConfig:
     # Names a streaming set is plausibly filed under. `streaming_dir` is tried
     # first; these are only consulted when it does not exist, so a project that
     # named the folder something reasonable is not told its data is missing.
-    STREAMING_ALIASES = ("streaming_test", "streaming", "streaming_tests", "streaming_eval")
+    STREAMING_ALIASES = ("streaming", "streaming_test", "streaming_tests", "streaming_eval")
 
     @property
     def streaming_path(self) -> Path:
