@@ -368,10 +368,37 @@ pipeline (for someone with no ML/audio background, and the reference when explai
 other engineers) are in `DhikrSpeech/docs/LEARNING_GUIDE.md`.
 
 - **`notebooks/DhikrSpeech.ipynb` is the only notebook.** It runs the whole pipeline top to bottom in
-  five sections (`01 · Dataset` … `05 · Export`), plus an optional `06 · Experiment` that is not part
+  six stages (`01 · Dataset` … `06 · Streaming`), plus an optional `07 · Experiment` that is not part
   of the pipeline and is skipped by a normal run. The per-stage notebooks it was built from were
   deleted deliberately — do not recreate them, and make every notebook change here.
-- **Section `06 · Experiment` answers "one model per dhikr?"** — the recurring proposal to replace the
+- **The deliverable is a counter, not a classifier.** The app listens continuously and must increment
+  once per utterance while staying silent through conversation, TV and other dhikr, so clip accuracy
+  (stage 04) does not describe it. `src/streaming.py` slides the training front-end over continuous
+  audio and runs an event state machine (`idle → candidate → confirmed → cooldown`, activation above
+  release for hysteresis, cooldown **per class**); `src/streaming_eval.py` scores it against hand
+  annotations in `streaming_test/` and produces the release-critical number, **false activations per
+  hour**. Threshold calibration takes `streaming.target_false_activations_per_hour` as a hard
+  constraint and maximises recall inside it — and reports "no viable threshold" rather than settling
+  on 0.95 when nothing meets the budget. `src/readiness.py` turns all of it into a verdict where an
+  **unmeasured check never passes** (`NOT READY` / `EXPERIMENTAL` / `READY FOR DEVICE TEST`).
+- **Speaker leakage fails preprocessing, it does not warn.** Speaker ids come from `speakers.csv`, a
+  per-speaker subfolder, or a filename pattern (`split.speaker.*`, `src/speakers.py`);
+  `assign_splits` groups whole speakers, and `verify_manifest_splits` raises when one spans two
+  splits. The collector's `sp<8 hex>` device token is matched out of the box, and a token equal to
+  the class folder's name is rejected — without that guard `006_sp…_….webm` would resolve to the
+  class id and put a whole class in one split. With no speaker information at all the reports say
+  prominently that the evaluation is *not* speaker-independent rather than implying it is.
+- **Negatives are structured but stay one class.** Anything under `dataset/unknown/**` trains as the
+  single `unknown` output; the subfolder (`hard_negative`, `partial_phrase`, `other_dhikr`,
+  `normal_speech`, `noise`) is kept in the manifest as `negative_type` so evaluation can report the
+  false-positive rate per category. `hard_negative` — the near-miss phrases — is the folder that
+  decides the model, and it must be real recordings, not target audio cut into fragments.
+- **`exports/model_metadata.json` is the Android contract** (`src/android.py`): tensor quantisation
+  scale/zero-point, window and hop, the *calibrated* thresholds, every detector parameter and the
+  model SHA256, plus a `calibrated` flag so a default is never read as a measurement. Alongside it,
+  `write_frontend_parity` exports a fixed WAV and the exact feature tensor the pipeline produces from
+  it, so an Android front-end mismatch is caught by a number rather than costing silent accuracy.
+- **Stage `07 · Experiment` answers "one model per dhikr?"** — the recurring proposal to replace the
   multi-class model with N binary detectors. `src/experiments.py` trains one one-vs-rest model per
   phrase and scores them against the multi-class model on the *same* clips, holding the manifest,
   splits, architecture, augmentation, optimiser, seed and epoch budget fixed so the difference is the
@@ -389,12 +416,16 @@ other engineers) are in `DhikrSpeech/docs/LEARNING_GUIDE.md`.
   lazily inside the training function to keep it that way). Training itself is not covered: it needs a
   GPU and the dataset on Drive. What is covered is the arithmetic that could silently produce a wrong
   verdict — including `test_trainer_diagnostics.py` (the overfitting notes and the resume guard),
-  which stubs TensorFlow only when it is genuinely absent so it never shadows a real install.
+  which stubs TensorFlow only when it is genuinely absent so it never shadows a real install. The
+  streaming half is covered the same way — the event state machine, event matching, FA/hour and the
+  calibration policy are fed hand-built probabilities whose right answer is known by construction.
 - `configs/config.yaml` is the only place settings live; the notebooks read it and hold no
   thresholds or hyperparameters of their own. All logic lives in `DhikrSpeech/src/`.
 - **`DhikrSpeech/space/` is the Gradio app for testing an export** (classify a clip, scan a
   recording and count the dhikr in it, read the export metadata). It imports the front-end from
-  `src/` rather than reimplementing it, and it derives that front-end from the export's
+  `src/` rather than reimplementing it (`StreamingFrontend`, the TFLite runtime helpers and the event
+  detector are all shared, so the Space counts by the rules the pipeline calibrates), and it derives
+  that front-end from the export's
   `model_meta.json` — not `config.yaml` — so a retuned config cannot silently feed the model
   features it was never trained on. Runs on LiteRT, so it does **not** install TensorFlow; a
   `.keras`/SavedModel export needs `tensorflow` added to `space/requirements.txt`. Counting is

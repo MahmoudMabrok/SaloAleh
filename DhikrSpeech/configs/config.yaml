@@ -22,9 +22,15 @@ paths:
   exports_dir: exports
   logs_dir: logs                # TensorBoard + CSV training logs
   reports_dir: reports          # validation reports, metrics, charts
+  # Long-form recordings for streaming evaluation:
+  #   streaming_test/audio/*.wav + streaming_test/annotations.json
+  streaming_dir: streaming_test
 
   phrases_file: phrases.json    # [{"id": 1, "text": "..."}, ...]
   unknown_class: unknown        # folder holding out-of-vocabulary / filler audio
+  # Optional CSV mapping recordings to speakers: file,speaker (see README).
+  # Explicit metadata beats guessing an id out of the filename.
+  speakers_file: speakers.csv
 
 # ---------------------------------------------------------------------------
 # Classes - which phrases the model learns to tell apart
@@ -46,6 +52,23 @@ classes:
   # Keep the `unknown` filler folder when one exists. It is not a phrase id, so
   # the selection above never covers it.
   include_unknown: true
+
+  # Negatives may be organised into subfolders under `unknown/`:
+  #
+  #   dataset/unknown/normal_speech/*.wav
+  #   dataset/unknown/hard_negative/*.wav      <- the ones that decide the model
+  #   dataset/unknown/partial_phrase/*.wav
+  #   dataset/unknown/other_dhikr/*.wav
+  #   dataset/unknown/noise/*.wav
+  #
+  # Everything below `unknown/` trains as the single `unknown` output class. The
+  # subfolder is kept in the manifest as `negative_type`, so evaluation can report
+  # false positives per category and say *what kind* of audio breaks the detector.
+  # A flat `unknown/*.wav` folder still works and is reported as `unknown`.
+  negative_types: [normal_speech, hard_negative, partial_phrase, other_dhikr, noise, unknown]
+  # true would give each category its own output class. That needs far more data
+  # per category than a first dataset has - leave it off unless you have it.
+  split_negative_classes: false
 
 # ---------------------------------------------------------------------------
 # Audio
@@ -130,6 +153,19 @@ augmentation:
     probability: 0.5
     max_shift_ms: 150.0
 
+  # Mild synthetic room reverberation (generated impulse response - no extra
+  # dependency, no impulse-response corpus). A phone at arm's length in a tiled
+  # room sounds nothing like a close-mic recording, and this is the part of that
+  # gap augmentation can imitate honestly. Keep the decay short: a long tail
+  # smears the consonants that separate 006 from 007.
+  reverb:
+    enabled: false
+    probability: 0.25
+    min_decay_ms: 80.0
+    max_decay_ms: 300.0
+    min_wet: 0.10               # wet/dry mix; above ~0.5 it stops sounding like a phone
+    max_wet: 0.35
+
   spec_augment:
     enabled: true
     probability: 0.5
@@ -145,9 +181,60 @@ split:
   val_ratio: 0.15
   test_ratio: 0.10              # 0.0 disables the test split
   stratified: true
-  # Recordings whose filename starts with the same speaker/session token can be
-  # kept together to avoid leakage. Set to null to disable grouping.
+  # Legacy: a bare regex matched against the file name. Still honoured (it is read
+  # as speaker.regex with speaker.source: filename), kept so old configs run
+  # unchanged. New configs should use the speaker section below.
   group_regex: null
+
+  # Speaker-safe splitting. The same voice must never appear in two splits: if it
+  # does, the test accuracy answers "can the model recognise this speaker again",
+  # not "does it work for a new user" - and that is the only question that matters
+  # for an app installed by strangers.
+  speaker:
+    # auto     - speakers.csv if present, else the regex if it matches most files,
+    #            else a per-speaker subfolder, else none (with a loud warning)
+    # metadata - speakers.csv only
+    # filename - regex against the file name
+    # parent   - the recording's folder inside the class folder (dataset/006/ali/*.wav)
+    # none     - no speaker information; evaluation is NOT speaker-independent
+    source: auto
+    # A single pattern that overrides the list below. null = use the list.
+    regex: null
+    # Tried in order; the first token that is not the class folder's own name
+    # wins. The collector's device token comes first deliberately: its uploads are
+    # named <class>_sp<8 hex>_<timestamp>_<suffix>, so a pattern that simply took
+    # the leading token would extract the CLASS ID and make every recording of a
+    # phrase one "speaker" - putting whole classes in one split with nothing
+    # looking wrong. A named (?P<speaker>...) group wins, else group 1, else the
+    # whole match.
+    filename_patterns:
+      - '(?P<speaker>sp[0-9a-f]{8})'        # SpeechCollector device token
+      - '^(?P<speaker>[A-Za-z0-9\-]+?)[_\-]' # hand-named: ali_001.wav
+    metadata_file: null         # null = paths.speakers_file
+    # When speakers are known, a speaker in two splits fails preprocessing rather
+    # than warning. A silent leak invalidates every number downstream.
+    require_disjoint: true
+    min_speakers: 10            # below this the split is safe but not diverse
+    # Coverage below which `auto` warns that most files have no speaker id. It
+    # never rejects the source: grouping the files that do carry one is strictly
+    # better than splitting all of them at random.
+    auto_match_ratio: 0.6
+
+# ---------------------------------------------------------------------------
+# Dataset quality - recommendations, never blocking
+# ---------------------------------------------------------------------------
+# The pipeline runs on a prototype dataset (tens of clips) on purpose, so the
+# plumbing can be verified before the recordings exist. These numbers are what
+# the dataset report measures against so a prototype is never mistaken for a
+# production dataset.
+quality:
+  prototype_recordings_per_class: 100
+  prototype_speakers: 10
+  recommended_recordings_per_class: 200   # first model worth shipping: 200-500
+  recommended_speakers: 20
+  min_unknown_ratio: 0.5        # unknown clips as a share of target clips
+  max_class_imbalance: 3.0      # largest class / smallest class
+  min_negative_category: 20     # clips before a category's FP rate is a number
 
 # ---------------------------------------------------------------------------
 # Model - DS-CNN (depthwise separable CNN, the standard KWS topology)
@@ -216,6 +303,12 @@ training:
   plateau_factor: 0.5
   plateau_patience: 4
 
+  # Also track macro F1. val_accuracy alone flatters a model that answers
+  # `unknown` to everything on an unbalanced split; macro F1 weighs every class
+  # equally and drops when a class is being ignored. Reported by default - set
+  # checkpoint.monitor / early_stopping.monitor to `val_macro_f1` to select on it.
+  macro_f1: true
+
   early_stopping:
     enabled: true
     monitor: val_accuracy
@@ -251,6 +344,82 @@ evaluation:
   top_k_confusions: 15
   error_examples: 12            # false positives / negatives listed per class
   confidence_threshold: 0.5     # a prediction below this counts as "no keyword"
+
+# ---------------------------------------------------------------------------
+# Streaming - the deployed shape: listen continuously, count each utterance once
+# ---------------------------------------------------------------------------
+# Isolated-clip accuracy does not describe this system. On the phone the model
+# sees a sliding window over an open microphone, so one spoken dhikr produces
+# several confident windows, and every second of unrelated speech is a chance to
+# fire. What matters here is events, not windows: one count per utterance, and as
+# few false counts per hour as possible.
+streaming:
+  window_seconds: null          # null = audio.clip_seconds (what the model was trained on)
+  hop_seconds: 0.25             # 0.20-0.25 is the usual trade of latency against CPU
+
+  # THE release-critical number. Calibration will not choose a threshold that
+  # breaks this budget, and the readiness report fails on it.
+  target_false_activations_per_hour: 0.5
+
+  audio_subdir: audio           # streaming_test/audio/*.wav
+  annotations_file: annotations.json
+
+  # Optional smoothing of the per-window probabilities. Mild by design: strong
+  # smoothing merges two quickly repeated dhikr into one event.
+  smoothing:
+    enabled: true
+    method: moving_average      # moving_average | ema
+    window: 3                   # moving_average: windows averaged
+    alpha: 0.5                  # ema: weight of the newest window
+
+  # The event detector: IDLE -> CANDIDATE -> CONFIRMED -> COOLDOWN -> IDLE.
+  # These are starting points, NOT tuned values - calibrate them against real
+  # streaming recordings (notebook section 06) before shipping.
+  detector:
+    confidence_threshold: 0.80  # activation
+    release_threshold: 0.40     # hysteresis: activation > release
+    min_consecutive_hits: 2     # windows above activation before an event counts
+    min_event_duration: 0.0     # seconds; 0 disables
+    release_windows: 2          # windows below release before the event closes
+    cooldown_ms: 700.0          # dead time after an event of the same class
+    ignore_labels: [unknown]    # never counted
+    # Per-class activation thresholds, e.g. {"006": 0.82, "007": 0.90}. Written by
+    # calibration; a class with no entry uses confidence_threshold.
+    per_class_thresholds: {}
+
+  # Matching detected events against hand annotations. Annotating a long
+  # recording is not millisecond-accurate, so matching is tolerant on purpose.
+  matching:
+    tolerance_seconds: 1.0
+    min_overlap_seconds: 0.0
+    require_label_match: true
+
+  calibration:
+    min_threshold: 0.40
+    max_threshold: 0.95
+    step: 0.05
+    # min_threshold_within_budget = lowest threshold that stays inside the FA/hour
+    # budget, maximising recall. max_f1 ignores the budget - use it to explore only.
+    policy: min_threshold_within_budget
+    per_class: true             # also calibrate one threshold per target class
+
+# ---------------------------------------------------------------------------
+# Production readiness - what "ready" means, spelled out
+# ---------------------------------------------------------------------------
+# The readiness report checks these and prints the threshold next to every
+# measurement. Clip accuracy alone never earns a READY.
+readiness:
+  enabled: true
+  max_speaker_leaks: 0
+  min_speakers: 10
+  min_clips_per_target: 100
+  min_event_recall: 0.90
+  min_event_precision: 0.95
+  max_false_activations_per_hour: 0.5
+  max_hard_negative_fp_rate: 0.02
+  max_tflite_accuracy_drop: 0.02
+  max_tflite_extra_false_activations_per_hour: 0.1
+  min_streaming_minutes: 20.0   # below this the streaming numbers are anecdotes
 
 # ---------------------------------------------------------------------------
 # Export

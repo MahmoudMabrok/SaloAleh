@@ -1,0 +1,32 @@
+# Preset: standard
+#
+# The first dataset worth shipping a model from: roughly 200-500 recordings per
+# target phrase from 20+ speakers, with real negatives (hard negatives included)
+# and real background noise.
+#
+# This preset is close to the repository defaults on purpose - it exists so a run
+# can state which regime it was configured for, and so `standard` and
+# `tiny_dataset` differ by explicit values rather than by memory.
+#
+# Apply with: load_config(preset="standard")
+name: standard
+description: 200-500 clips per phrase, 20+ speakers, real negatives and noise
+
+model:
+  width_multiplier: 0.75
+  dropout: 0.3
+
+training:
+  epochs: 200
+  batch_size: 32
+
+augmentation:
+  enabled: true
+  reverb:
+    enabled: true
+
+streaming:
+  detector:
+    confidence_threshold: 0.80
+    release_threshold: 0.40
+    min_consecutive_hits: 2
