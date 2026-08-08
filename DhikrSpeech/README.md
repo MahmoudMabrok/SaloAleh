@@ -458,6 +458,11 @@ the user is still speaking, not when the phrase ends.
 
 ### What it needs
 
+The folder is `paths.streaming_dir` (default `streaming_test`). If that name does not exist, the
+usual alternatives — `streaming/`, `streaming_tests/`, `streaming_eval/` — are tried and the
+fallback is logged once, so a set filed under a different name is used rather than reported
+missing. `audio/` is optional: a flat folder of recordings next to `annotations.json` works too.
+
 ```text
 streaming_test/
 ├── audio/

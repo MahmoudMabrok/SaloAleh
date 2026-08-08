@@ -18,6 +18,10 @@ import yaml
 
 LOGGER = logging.getLogger(__name__)
 
+# Streaming folders already reported as a fallback, so the warning is said once
+# per path rather than on every resolution.
+_STREAMING_FALLBACKS_REPORTED: set = set()
+
 __all__ = [
     "AudioConfig",
     "AugmentationConfig",
@@ -219,10 +223,51 @@ class PathsConfig:
         """Optional ``speakers.csv`` mapping recordings to speaker ids."""
         return self.resolve(self.speakers_file)
 
+    # Names a streaming set is plausibly filed under. `streaming_dir` is tried
+    # first; these are only consulted when it does not exist, so a project that
+    # named the folder something reasonable is not told its data is missing.
+    STREAMING_ALIASES = ("streaming_test", "streaming", "streaming_tests", "streaming_eval")
+
     @property
     def streaming_path(self) -> Path:
-        """Long-form recordings + ``annotations.json`` for streaming evaluation."""
+        """The configured location of the long-form recordings.
+
+        This is where the pipeline *writes* (an annotation skeleton, say). To
+        read an existing set use :meth:`resolve_streaming_path`, which also finds
+        the folder when it was filed under one of the usual other names.
+        """
         return self.resolve(self.streaming_dir)
+
+    def resolve_streaming_path(self) -> Path:
+        """The streaming set as it exists on disk, or the configured path.
+
+        Looks for the configured folder first and falls back to the handful of
+        names a streaming set is plausibly filed under. The fallback is logged,
+        never silent: reading `streaming/` while the config says `streaming_test`
+        is something the next person needs to know, and the alternative -
+        reporting "missing" at a folder the user is looking straight at - is
+        worse than either.
+        """
+        configured = self.streaming_path
+        if configured.is_dir():
+            return configured
+        for name in self.STREAMING_ALIASES:
+            candidate = self.resolve(name)
+            if candidate == configured or not candidate.is_dir():
+                continue
+            # Loud, but once: this is resolved on nearly every streaming call and
+            # four copies of the same line reads as four different problems.
+            if candidate not in _STREAMING_FALLBACKS_REPORTED:
+                _STREAMING_FALLBACKS_REPORTED.add(candidate)
+                LOGGER.warning(
+                    "paths.streaming_dir is '%s', which does not exist; using '%s' "
+                    "instead. Set paths.streaming_dir to '%s' to make this explicit.",
+                    self.streaming_dir,
+                    candidate.name,
+                    candidate.name,
+                )
+            return candidate
+        return configured
 
     @property
     def manifest_path(self) -> Path:
@@ -877,8 +922,9 @@ class StreamingConfig:
     hop_seconds: float = 0.20
     smoothing: SmoothingConfig = field(default_factory=SmoothingConfig)
     detector: DetectorConfig = field(default_factory=DetectorConfig)
-    # Long-form recordings + annotations.json, relative to the project root.
-    test_dir: str = "streaming_test"
+    # Where the recordings live is `paths.streaming_dir` - one setting, because
+    # two knobs for one path is how a project ends up reporting "missing" at a
+    # folder that is right there.
     annotations_file: str = "annotations.json"
     audio_dirname: str = "audio"
     # A detection counts for a ground-truth event when it falls inside
@@ -1107,7 +1153,7 @@ class Config:
 
     @property
     def streaming_path(self) -> Path:
-        return self.paths.resolve(self.streaming.test_dir)
+        return self.paths.streaming_path
 
     def resolved_model(self) -> ModelConfig:
         """``model`` with ``model_presets[model.name]`` applied on top.

@@ -439,7 +439,11 @@ evaluation:
 streaming:
   window_seconds: null          # null = audio.clip_seconds (what the model saw)
   hop_seconds: 0.20             # 200-250 ms is the usual range
-  test_dir: streaming_test      # long-form recordings + annotations.json
+  # Where the recordings live is `paths.streaming_dir` - one setting, because two
+  # knobs for one path is how a project ends up being told its data is missing at
+  # a folder it is looking straight at. If that folder does not exist, the usual
+  # other names (`streaming/`, `streaming_tests/`) are tried and the fallback is
+  # logged.
   annotations_file: annotations.json
   audio_dirname: audio
   # A detection counts for an annotated repetition when it lands inside

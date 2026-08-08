@@ -77,6 +77,7 @@ __all__ = [
     "match_events",
     "score_clips",
     "streaming_audio_root",
+    "streaming_status",
     "write_annotation_template",
 ]
 
@@ -922,22 +923,77 @@ def calibrate_threshold(
 
 
 def load_streaming_set(config: Config) -> List[StreamingClip]:
-    """Read the project's ``streaming_test/annotations.json``, or an empty list."""
-    root = config.streaming_path
-    annotations = root / config.streaming.annotations_file
-    if not annotations.is_file():
+    """Read the project's streaming annotations, or an empty list.
+
+    Distinguishes the three ways this comes up empty, because they need
+    different answers and "missing" for all of them is what sends somebody
+    looking for a folder that is already there.
+    """
+    root = config.paths.resolve_streaming_path()
+    if not root.is_dir():
         LOGGER.warning(
-            "no streaming annotations at %s - event metrics, FA/hour and threshold "
-            "calibration cannot run, and clip accuracy alone cannot decide whether this "
-            "model is shippable.",
-            annotations,
+            "no streaming recordings: %s does not exist (looked for %s under %s). "
+            "Event metrics, FA/hour and threshold calibration cannot run, and clip "
+            "accuracy alone cannot decide whether this model is shippable.",
+            root,
+            ", ".join(config.paths.STREAMING_ALIASES),
+            config.paths.root,
         )
         return []
-    return load_annotations(annotations)
+
+    annotations = root / config.streaming.annotations_file
+    if not annotations.is_file():
+        audio = streaming_audio_root(config)
+        recordings = (
+            sum(1 for path in audio.iterdir() if path.is_file()) if audio.is_dir() else 0
+        )
+        LOGGER.warning(
+            "%s exists but has no %s%s. Scaffold one with "
+            "write_annotation_template(path, audio_dir, target=...): every entry starts "
+            "with an empty `events` list, which is already correct for a negative-only "
+            "stress recording.",
+            root,
+            config.streaming.annotations_file,
+            f" (the folder holds {recordings} recording(s))" if recordings else "",
+        )
+        return []
+
+    clips = load_annotations(annotations)
+    if not clips:
+        LOGGER.warning("%s parsed to zero recordings", annotations)
+    return clips
 
 
 def streaming_audio_root(config: Config) -> Path:
-    """Directory the annotation ``file`` fields are relative to."""
-    root = config.streaming_path
+    """Directory the annotation ``file`` fields are relative to.
+
+    ``<streaming>/audio/`` when it exists, the streaming folder itself otherwise -
+    so both the documented layout and a flat folder of recordings work.
+    """
+    root = config.paths.resolve_streaming_path()
     nested = root / config.streaming.audio_dirname
     return nested if nested.is_dir() else root
+
+
+def streaming_status(config: Config) -> str:
+    """One line for the notebook: what was found, and where."""
+    configured = config.streaming_path
+    root = config.paths.resolve_streaming_path()
+    if not root.is_dir():
+        return f"MISSING  {configured}"
+
+    annotations = root / config.streaming.annotations_file
+    audio = streaming_audio_root(config)
+    recordings = (
+        sum(1 for path in audio.iterdir() if path.is_file()) if audio.is_dir() else 0
+    )
+    note = "" if root == configured else f"  (paths.streaming_dir says '{configured.name}')"
+    if not annotations.is_file():
+        return f"no {config.streaming.annotations_file}  {root}  [{recordings} recording(s)]{note}"
+    clips = load_annotations(annotations)
+    events = sum(len(clip.events) for clip in clips)
+    negatives = sum(1 for clip in clips if clip.is_negative_only)
+    return (
+        f"ok  {root}  [{len(clips)} annotated, {events} repetition(s), "
+        f"{negatives} negative-only]{note}"
+    )

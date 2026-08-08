@@ -391,3 +391,108 @@ def test_an_empty_folder_gives_an_empty_template(tmp_path: Path) -> None:
     from src.streaming_eval import annotation_template
 
     assert annotation_template(tmp_path / "missing") == []
+
+
+# ---------------------------------------------------------------------------
+# Finding the streaming set
+# ---------------------------------------------------------------------------
+def streaming_project(tmp_path: Path, folder: str, annotations: bool = True):
+    """A project whose streaming set lives in `folder`."""
+    from src.config import Config
+
+    audio = tmp_path / "p" / folder / "audio"
+    audio.mkdir(parents=True)
+    (audio / "session.wav").write_bytes(b"")
+    (audio / "tv.wav").write_bytes(b"")
+    if annotations:
+        (tmp_path / "p" / folder / "annotations.json").write_text(
+            json.dumps(
+                [
+                    {"file": "session.wav", "target": "007",
+                     "events": [{"start": 1.0, "end": 2.0}]},
+                    {"file": "tv.wav", "target": "007", "events": []},
+                ]
+            ),
+            encoding="utf-8",
+        )
+    return Config().with_overrides(
+        {"paths.drive_root": str(tmp_path), "paths.project_dir": "p", "target.phrase_id": 7}
+    )
+
+
+def test_the_streaming_set_is_found_under_its_configured_name(tmp_path: Path) -> None:
+    from src.streaming_eval import load_streaming_set
+
+    config = streaming_project(tmp_path, "streaming_test")
+    assert config.paths.resolve_streaming_path().name == "streaming_test"
+    assert len(load_streaming_set(config)) == 2
+
+
+def test_a_streaming_folder_under_another_name_is_still_found(tmp_path: Path, caplog) -> None:
+    """Reporting "missing" at a folder the user is looking straight at is worse
+    than reading `streaming/` while the config says `streaming_test`."""
+    from src.streaming_eval import load_streaming_set, streaming_audio_root
+
+    config = streaming_project(tmp_path, "streaming")
+    assert config.paths.resolve_streaming_path().name == "streaming"
+    assert len(load_streaming_set(config)) == 2
+    assert streaming_audio_root(config).name == "audio"
+
+
+def test_the_fallback_is_reported_not_silent(tmp_path: Path, caplog) -> None:
+    import logging
+
+    from src import config as config_module
+
+    config_module._STREAMING_FALLBACKS_REPORTED.clear()
+    config = streaming_project(tmp_path, "streaming")
+    with caplog.at_level(logging.WARNING, logger="src.config"):
+        config.paths.resolve_streaming_path()
+    assert "paths.streaming_dir" in caplog.text
+
+
+def test_a_flat_streaming_folder_works(tmp_path: Path) -> None:
+    """No `audio/` subfolder: the recordings sit next to annotations.json."""
+    from src.config import Config
+    from src.streaming_eval import streaming_audio_root
+
+    root = tmp_path / "p" / "streaming_test"
+    root.mkdir(parents=True)
+    (root / "tv.wav").write_bytes(b"")
+    (root / "annotations.json").write_text('[{"file": "tv.wav", "events": []}]', encoding="utf-8")
+    config = Config().with_overrides(
+        {"paths.drive_root": str(tmp_path), "paths.project_dir": "p"}
+    )
+    assert streaming_audio_root(config) == root
+
+
+def test_a_folder_without_annotations_says_so(tmp_path: Path, caplog) -> None:
+    """A different problem from a missing folder, and a different fix."""
+    import logging
+
+    from src.streaming_eval import load_streaming_set, streaming_status
+
+    config = streaming_project(tmp_path, "streaming", annotations=False)
+    with caplog.at_level(logging.WARNING, logger="src.streaming_eval"):
+        assert load_streaming_set(config) == []
+    assert "no annotations.json" in streaming_status(config)
+    assert "2 recording(s)" in caplog.text
+
+
+def test_a_genuinely_absent_set_reports_missing(tmp_path: Path) -> None:
+    from src.config import Config
+    from src.streaming_eval import load_streaming_set, streaming_status
+
+    config = Config().with_overrides(
+        {"paths.drive_root": str(tmp_path), "paths.project_dir": "p"}
+    )
+    assert load_streaming_set(config) == []
+    assert streaming_status(config).startswith("MISSING")
+
+
+def test_status_summarises_an_annotated_set(tmp_path: Path) -> None:
+    from src.streaming_eval import streaming_status
+
+    status = streaming_status(streaming_project(tmp_path, "streaming_test"))
+    assert status.startswith("ok")
+    assert "2 annotated" in status and "1 repetition(s)" in status and "1 negative-only" in status
