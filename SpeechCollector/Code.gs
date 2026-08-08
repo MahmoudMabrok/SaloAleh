@@ -29,8 +29,9 @@ function doGet() {
     },
     theme: CONFIG.theme,
     ui: CONFIG.ui,
-    phrases: CONFIG.phrases,
-    unknownPrompt: CONFIG.unknownPrompt || null
+    phrases: visiblePhrases_(),
+    unknownPrompt: CONFIG.unknownPrompt || null,
+    noisePrompt: CONFIG.noisePrompt || null
   });
 
   return template.evaluate()
@@ -98,10 +99,12 @@ function saveAudio(request) {
 
     const rootFolder = getOrCreateRootFolder_();
     ensurePhrasesFile_(rootFolder);
-    const datasetFolder = createFolderIfMissing(rootFolder, CONFIG.storage.datasetSubfolder);
     const classFolderName = classFolderName_(validated.phrase);
-    const classFolder = createFolderIfMissing(datasetFolder, classFolderName);
-    const filename = createFilename_(classFolderName, validated.mimeType);
+    const classFolder = createFolderIfMissing(
+      classParentFolder_(rootFolder, validated.phrase),
+      classFolderName
+    );
+    const filename = createFilename_(classFolderName, validated.speakerToken, validated.mimeType);
     const blob = Utilities.newBlob(audioBytes, validated.mimeType, filename);
     const file = classFolder.createFile(blob);
 
@@ -141,24 +144,60 @@ function saveAudio(request) {
 }
 
 /**
- * Every prompt the page offers: the phrases plus the out-of-vocabulary card,
- * which is a class of its own rather than a phrase.
+ * The phrases that get a card. A hidden phrase stays a valid, labelled id with
+ * its recordings intact; it is only off the page. Mirrors visiblePhrases() in
+ * build.mjs, which builds the same payload for the standalone copy.
+ */
+function visiblePhrases_() {
+  return CONFIG.phrases.filter(function(phrase) { return !phrase.hidden; });
+}
+
+/**
+ * Every prompt an upload may name: the phrases plus the two non-phrase cards
+ * (out-of-vocabulary speech, and background noise).
+ *
+ * Hidden phrases are still accepted. A volunteer who kept a tab open across a
+ * redeploy would otherwise lose the take waiting on a card that has since been
+ * parked, and the id still has a folder and a label either way.
  */
 function allPrompts_() {
-  return CONFIG.unknownPrompt ? CONFIG.phrases.concat([CONFIG.unknownPrompt]) : CONFIG.phrases;
+  var prompts = CONFIG.phrases.slice();
+  if (CONFIG.unknownPrompt) prompts.push(CONFIG.unknownPrompt);
+  if (CONFIG.noisePrompt) prompts.push(CONFIG.noisePrompt);
+  return prompts;
 }
 
 function isUnknownPrompt_(prompt) {
   return Boolean(CONFIG.unknownPrompt) && prompt.id === CONFIG.unknownPrompt.id;
 }
 
+function isNoisePrompt_(prompt) {
+  return Boolean(CONFIG.noisePrompt) && prompt.id === CONFIG.noisePrompt.id;
+}
+
 /**
- * The dataset class folder a prompt writes into: the configured `unknown`
- * folder for the negative class, a zero-padded phrase id for everything else.
- * These are the folder names the DhikrSpeech pipeline scans as its classes.
+ * The folder a prompt writes into: the configured `unknown` folder for the
+ * negative class, the `noise` folder for background noise, a zero-padded phrase
+ * id for everything else. The first two are names the pipeline knows
+ * (`classes.unknown_class`, `paths.noise_dir`); the rest are its class folders.
  */
 function classFolderName_(prompt) {
-  return isUnknownPrompt_(prompt) ? CONFIG.storage.unknownFolderName : padPhraseId_(prompt.id);
+  if (isNoisePrompt_(prompt)) return CONFIG.storage.noiseFolderName;
+  if (isUnknownPrompt_(prompt)) return CONFIG.storage.unknownFolderName;
+  return padPhraseId_(prompt.id);
+}
+
+/**
+ * Where that folder hangs. Everything the model learns lives under
+ * `dataset/`, which is the tree the trainer scans as its classes. Noise is not
+ * learned — it is mixed underneath training clips — so it hangs off the root
+ * beside `dataset/`, exactly where `paths.noise_dir` resolves. Putting it
+ * inside would turn background hiss into a class of its own.
+ */
+function classParentFolder_(rootFolder, prompt) {
+  return isNoisePrompt_(prompt)
+    ? rootFolder
+    : createFolderIfMissing(rootFolder, CONFIG.storage.datasetSubfolder);
 }
 
 /** Returns the existing child folder or creates it when missing. */
@@ -171,8 +210,12 @@ function createFolderIfMissing(parentFolder, folderName) {
  * The phrases.json body the DhikrSpeech pipeline reads: a plain [{id, text}]
  * list, sorted by id. CONFIG.phrases is ordered for the page, so sorting here
  * keeps the label file (and its change signature) stable when the cards are
- * reordered. The unknown prompt is intentionally absent — it is a class folder,
- * not a phrase id, and the pipeline labels it from the folder name.
+ * reordered. The unknown and noise prompts are intentionally absent — they are
+ * folders, not phrase ids, and the pipeline knows them by name.
+ *
+ * Hidden phrases ARE listed. Their `dataset/{id}/` folders still hold
+ * recordings, and a label file that dropped them would leave the trainer
+ * scanning folders it has no text for.
  */
 function phrasesJsonContent_() {
   const phrases = CONFIG.phrases.map(function(phrase) {
@@ -270,10 +313,12 @@ function validateRequest_(request) {
 
   return {
     phrase: phrase,
-    // What the volunteer actually said. The unknown card's own text is an
-    // instruction, not a spoken phrase, so the sheet records the class name.
-    phraseText: isUnknownPrompt_(phrase) ? CONFIG.storage.unknownFolderName : phrase.text,
+    // What the volunteer actually said. The unknown and noise cards' own texts
+    // are instructions, not spoken phrases, so the sheet records the folder they
+    // were filed under instead.
+    phraseText: nonPhraseFolderName_(phrase) || phrase.text,
     sampleId: sampleId,
+    speakerToken: speakerToken_(request.speaker_id),
     durationMs: durationMs,
     mimeType: mimeType,
     audioBase64: audioBase64,
@@ -383,10 +428,36 @@ function findExistingSample_(sheet, sampleId) {
   };
 }
 
-function createFilename_(classFolderName, mimeType) {
+/** The class-folder name for a non-phrase prompt, or '' for a real phrase. */
+function nonPhraseFolderName_(prompt) {
+  if (isNoisePrompt_(prompt)) return CONFIG.storage.noiseFolderName;
+  if (isUnknownPrompt_(prompt)) return CONFIG.storage.unknownFolderName;
+  return '';
+}
+
+/**
+ * The device token stamped into every filename this browser uploads: `sp` plus
+ * the first 8 hex characters of a UUID the page generates once and keeps.
+ *
+ * It exists so the trainer can keep one voice on one side of the train/val
+ * split (`split.group_regex`, e.g. `sp[0-9a-f]{8}`). Without it the same
+ * speaker sits on both sides and the reported validation accuracy is optimistic.
+ * It identifies a browser profile, never a person: it is generated locally,
+ * never leaves the filename, and is not linked to anything else we store.
+ *
+ * A client that cannot produce one (storage blocked, older build) simply gets
+ * the old filename shape — a naming detail must never cost us a recording.
+ */
+function speakerToken_(speakerId) {
+  const hex = String(speakerId || '').replace(/-/g, '').toLowerCase().replace(/[^0-9a-f]/g, '');
+  return hex.length >= 8 ? 'sp' + hex.slice(0, 8) : '';
+}
+
+function createFilename_(classFolderName, speakerToken, mimeType) {
   const timestamp = Utilities.formatDate(new Date(), CONFIG.app.timezone, 'yyyyMMdd_HHmmss');
   const suffix = Utilities.getUuid().replace(/-/g, '').slice(0, 6).toLowerCase();
-  return classFolderName + '_' + timestamp + '_' + suffix + extensionForMime_(mimeType);
+  const speaker = speakerToken ? speakerToken + '_' : '';
+  return classFolderName + '_' + speaker + timestamp + '_' + suffix + extensionForMime_(mimeType);
 }
 
 function padPhraseId_(phraseId) {

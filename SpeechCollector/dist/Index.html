@@ -247,6 +247,20 @@ h1 {
 
 .phrase-card-unknown .phrase-text { font-size: clamp(1.15rem, 4.6vw, 1.4rem); }
 
+/* The background-noise card: nothing is read aloud here at all, so it is toned
+   further away again — cool grey rather than the unknown card's warm sand. */
+.phrase-card-noise .phrase-panel {
+  border-color: #d3dade;
+  background: linear-gradient(155deg, #fbfcfd, #eaeff2);
+}
+
+.phrase-card-noise .phrase-text { font-size: clamp(1.15rem, 4.6vw, 1.4rem); }
+
+.phrase-card-noise .card-badge {
+  background: #e6ecf0;
+  color: #3f545f;
+}
+
 .recorder-panel {
   margin-top: 11px;
   text-align: center;
@@ -434,6 +448,13 @@ h1 {
   // can see at a glance which phrases they have already covered.
   const UPLOAD_COUNTS_KEY = 'speech_collector_upload_counts';
 
+  // A random UUID minted once per browser and kept. It is sent with every
+  // upload so the backend can stamp a short token of it into the filename,
+  // which lets the trainer keep one voice on one side of the train/val split.
+  // It is not an account and not a person: nothing else is stored against it,
+  // and it never leaves this browser except as those 8 characters.
+  const SPEAKER_ID_KEY = 'speech_collector_speaker_id';
+
   // The microphone is held between takes so recording a run of cards prompts
   // once instead of once per card, and released again when the volunteer stops.
   const MICROPHONE_IDLE_RELEASE_MS = 30000;
@@ -492,6 +513,7 @@ h1 {
     // sample, and a batch firing at once would race on it.
     uploadChain: Promise.resolve(),
     uploadCounts: {},
+    speakerId: '',
     microphoneUnavailable: false
   };
 
@@ -504,6 +526,7 @@ h1 {
     applyTheme();
     applyTranslations();
     state.uploadCounts = loadUploadCounts();
+    state.speakerId = loadSpeakerId();
     buildCards();
     bindEvents();
     render();
@@ -611,12 +634,30 @@ h1 {
   // ---------------------------------------------------------------------------
 
   /**
-   * The unknown card is appended last: the phrases are what a volunteer came
-   * for, and it reads as the odd one out at the end rather than mixed in.
+   * The two non-phrase cards come last: the phrases are what a volunteer came
+   * for, and these read as the odd ones out at the end rather than mixed in.
+   * Noise sits after unknown because it is the one card with nothing to say.
+   *
+   * `kind` is what the rest of the page reads — it picks the card's styling, its
+   * badge, and the wording of its status lines. The backend decides where the
+   * audio is filed from the prompt's id alone.
    */
   function collectPrompts() {
-    const phrases = config.phrases.map((phrase) => ({ ...phrase, unknown: false }));
-    return config.unknownPrompt ? [...phrases, { ...config.unknownPrompt, unknown: true }] : phrases;
+    const prompts = config.phrases.map((phrase) => ({ ...phrase, kind: 'phrase' }));
+    if (config.unknownPrompt) prompts.push({ ...config.unknownPrompt, kind: 'unknown' });
+    if (config.noisePrompt) prompts.push({ ...config.noisePrompt, kind: 'noise' });
+    return prompts;
+  }
+
+  /**
+   * The noise card is told to stay silent, so every string that would tell it to
+   * "say the phrase once" is swapped for its noise wording. Falls back to the
+   * shared string, so a missing override reads as the old copy rather than blank.
+   */
+  function promptText(card, key) {
+    if (card.prompt.kind !== 'noise') return config.ui[key];
+    const override = `noise${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+    return config.ui[override] || config.ui[key];
   }
 
   /**
@@ -639,9 +680,8 @@ h1 {
 
     const head = make('div', 'card-head');
     head.appendChild(make('span', 'card-number', { text: String(index + 1) }));
-    if (prompt.unknown && config.ui.unknownBadge) {
-      head.appendChild(make('span', 'card-badge', { id: `badge-${index}`, text: config.ui.unknownBadge }));
-    }
+    const badge = badgeText(prompt);
+    if (badge) head.appendChild(make('span', 'card-badge', { id: `badge-${index}`, text: badge }));
     const tally = make('span', 'card-tally', { id: `tally-${index}` });
     head.appendChild(tally);
     root.appendChild(head);
@@ -650,8 +690,8 @@ h1 {
     const text = make('p', 'phrase-text', { id: `phrase-${index}`, text: prompt.text });
     text.lang = 'ar';
     panel.appendChild(text);
-    // Only the unknown card carries a note: "any word" needs an example to act
-    // on, while a dhikr is its own instruction.
+    // Only the two non-phrase cards carry a note: "any word" and "no words at
+    // all" each need an example to act on, while a dhikr is its own instruction.
     if (prompt.note) {
       const note = make('p', 'phrase-note', { id: `note-${index}`, text: prompt.note });
       note.lang = 'ar';
@@ -766,7 +806,7 @@ h1 {
       state.activeIndex = card.index;
       state.startedAt = performance.now();
       state.recorder.start(200);
-      setCardState(card, RECORDING, config.ui.recording, 'info');
+      setCardState(card, RECORDING, promptText(card, 'recording'), 'info');
       startTimer(card);
       startWaveform(card, stream);
       state.automaticStopId = window.setTimeout(
@@ -892,7 +932,7 @@ h1 {
       sampleId: createSampleId(),
       url: URL.createObjectURL(blob)
     };
-    setCardState(card, READY, config.ui.recordingReady, 'success');
+    setCardState(card, READY, promptText(card, 'recordingReady'), 'success');
   }
 
   function handleRecorderError(card, error) {
@@ -971,6 +1011,7 @@ h1 {
     try {
       const payload = {
         sample_id: card.recording.sampleId,
+        speaker_id: state.speakerId,
         phrase_id: card.prompt.id,
         duration_ms: card.recording.durationMs,
         sample_rate: card.recording.sampleRate,
@@ -993,7 +1034,7 @@ h1 {
       setCardState(
         card,
         IDLE,
-        `<strong>${escapeHtml(config.ui.uploadSuccessTitle)}</strong><br>${escapeHtml(config.ui.uploadSuccessBody)}`,
+        `<strong>${escapeHtml(config.ui.uploadSuccessTitle)}</strong><br>${escapeHtml(promptText(card, 'uploadSuccessBody'))}`,
         'success',
         true
       );
@@ -1059,7 +1100,14 @@ h1 {
   }
 
   function cardClassName(prompt, status) {
-    return `phrase-card${prompt.unknown ? ' phrase-card-unknown' : ''} card-${status}`;
+    const kind = prompt.kind === 'phrase' ? '' : ` phrase-card-${prompt.kind}`;
+    return `phrase-card${kind} card-${status}`;
+  }
+
+  function badgeText(prompt) {
+    if (prompt.kind === 'unknown') return config.ui.unknownBadge || '';
+    if (prompt.kind === 'noise') return config.ui.noiseBadge || '';
+    return '';
   }
 
   function tallyLabel(card) {
@@ -1067,7 +1115,7 @@ h1 {
     return count ? config.ui.recordedCount.replace('{count}', String(count)) : '';
   }
 
-  /** The unknown card counts towards coverage: the dataset needs it as much as a phrase. */
+  /** The unknown and noise cards count towards coverage: the dataset needs them as much as a phrase. */
   function renderSummary() {
     const covered = prompts.filter((prompt) => uploadCount(prompt.id) > 0).length;
     const samples = prompts.reduce((total, prompt) => total + uploadCount(prompt.id), 0);
@@ -1118,6 +1166,41 @@ h1 {
     } catch (error) {
       /* Ignored: the tally is a convenience, never a requirement. */
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Speaker id
+  // ---------------------------------------------------------------------------
+
+  /**
+   * The browser's own random UUID, minted on first visit and reused after that
+   * so every clip one volunteer records carries the same token.
+   *
+   * When storage is unavailable (private mode, sandboxed frame) a fresh id is
+   * still generated and used for this session: grouping the clips of one sitting
+   * is worth having, and a session is the most the page can honestly promise.
+   */
+  function loadSpeakerId() {
+    try {
+      const stored = String(window.localStorage.getItem(SPEAKER_ID_KEY) || '');
+      if (/^[0-9a-f-]{16,}$/i.test(stored)) return stored;
+    } catch (error) {
+      return createSpeakerId();
+    }
+
+    const created = createSpeakerId();
+    try {
+      window.localStorage.setItem(SPEAKER_ID_KEY, created);
+    } catch (error) {
+      /* Ignored: an id that lasts one session still groups that session. */
+    }
+    return created;
+  }
+
+  function createSpeakerId() {
+    if (crypto.randomUUID) return crypto.randomUUID();
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
   }
 
   // ---------------------------------------------------------------------------
