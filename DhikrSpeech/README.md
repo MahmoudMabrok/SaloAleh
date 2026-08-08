@@ -314,6 +314,23 @@ streaming_test/
 * Aim for at least 20 minutes total. Below that a single false activation is worth several per hour
   and the number cannot be compared against a budget of 0.5.
 
+**Where the recordings come from.** `SpeechCollector`'s **تسجيل ١٠ مرات** button on every phrase card
+records one long take holding that dhikr ten times and uploads it to a *separate* tree on Drive:
+
+```text
+streaming/                      a SIBLING of dataset/, never scanned as a class
+└── 006/
+    └── 006_x10_sp3f9a2c41_20260803_183015_ab12cd.webm
+```
+
+The `x10` in the filename is the number of events the clip is meant to hold — the collector cannot
+produce *timings*, so it writes the one thing it knows where it cannot be separated from the audio.
+Turning a folder of these into the layout above is still manual: convert to WAV into
+`streaming_test/audio/`, then annotate each utterance's start/end. The count is the check that the
+annotation is complete, and a take whose events do not number ten is a take to look at rather than
+annotate. `streaming/` is the recruitment side of this section; it is not a drop-in replacement for
+it, and nothing in the pipeline reads that folder.
+
 ---
 
 ## 2 · Mount Drive and open a notebook
