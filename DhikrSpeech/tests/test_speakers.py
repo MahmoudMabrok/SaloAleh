@@ -23,7 +23,6 @@ from src.speakers import (
     SOURCE_FILENAME,
     SOURCE_METADATA,
     SOURCE_NONE,
-    SOURCE_PARENT,
     SpeakerResolver,
     load_speaker_metadata,
     speaker_leaks,

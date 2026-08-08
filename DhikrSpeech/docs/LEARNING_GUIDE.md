@@ -811,12 +811,41 @@ wrong. Any phrase longer than the refractory period gets split into two counts, 
 
 So the unit of counting is a **run**: a maximal sequence of consecutive above-threshold windows that
 agree on the same class is **one** dhikr, however long it lasts. The refractory period is demoted to a
-much narrower job — merging two runs separated by a brief dip (a breath, a stumble) that should not
-have split the phrase. Gaps are measured in *window index*, not timestamp, so a single rejected window
-in the middle of a run leaves no hole.
+much narrower job — a cooldown *after* an event closes, so the tail of an utterance cannot start
+another one.
+
+That still leaves one hole, and it is the one that bites in practice. Confidence is not flat across a
+phrase: it dips in the middle, at a breath, wherever the speaker hesitates. With a single threshold,
+one dip below it ends the run and the next window starts a new one — **one dhikr, two counts**. The
+fix is borrowed from thermostats and Schmitt triggers: **hysteresis**, two thresholds instead of one.
+
+* An event *starts* only above the **activation** threshold (0.80, say).
+* An event *continues* while the class stays above a lower **release** threshold (0.40).
+* It ends only after several consecutive windows below the release threshold.
+
+Between the two thresholds nothing happens — an event neither starts nor ends. A wobble of 0.15
+around 0.75 cannot toggle anything, because there is no single point to toggle around.
+
+Written out, the counter is a four-state machine:
+
+```
+IDLE ──(conf ≥ activation)──▶ CANDIDATE ──(N hits in a row)──▶ CONFIRMED  → count once, here
+  ▲                               │                                 │
+  │                       (falls back below)              (drops below release
+  │                                                        for N windows)
+  └───────────────────────────────┴───────────────────────── COOLDOWN (per class)
+```
+
+`CANDIDATE` is what stops a single glitch window from counting: one confident window is noise, two or
+three in a row is a phrase. `COOLDOWN` is **per class**, so two *different* phrases said back to back
+still count as two — only a repeat of the same one is suppressed.
 
 Once you see it, this design is obviously right; it is also the kind of thing you only discover by
-watching a real recording get counted wrong.
+watching a real recording get counted wrong. Which is the real lesson: **none of this is visible in
+clip accuracy**. A model that scores 97% on isolated clips can still count a conversation as dhikr,
+and the only way to know is to run it over continuous audio and count events — which is what stage 06
+of the notebook does, and why the number it reports first is **false activations per hour** rather
+than accuracy.
 
 ---
 

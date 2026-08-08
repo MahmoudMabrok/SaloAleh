@@ -38,6 +38,24 @@ __all__ = [
 ]
 
 
+def _jsonable(value):
+    """Replace non-finite floats with null so the report is valid JSON.
+
+    A rate is genuinely undefined when its denominator is empty - a class with no
+    negatives has no false-positive rate - and ``json.dumps`` would write a bare
+    ``NaN``, which Python reads back and every other JSON parser rejects.
+    """
+    if isinstance(value, dict):
+        return {key: _jsonable(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_jsonable(item) for item in value]
+    if isinstance(value, (np.floating, np.integer)):
+        return _jsonable(value.item())
+    if isinstance(value, float) and not np.isfinite(value):
+        return None
+    return value
+
+
 def wilson_interval(proportion: float, count: int, z: float = 1.96) -> Tuple[float, float]:
     """Wilson score interval for ``proportion`` measured on ``count`` samples.
 
@@ -518,7 +536,8 @@ class EvaluationResult:
 
         json_path = target / f"{name}.json"
         json_path.write_text(
-            json.dumps(self.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8"
+            json.dumps(_jsonable(self.to_dict()), indent=2, ensure_ascii=False),
+            encoding="utf-8",
         )
 
         csv_path = target / f"{name}_per_class.csv"
