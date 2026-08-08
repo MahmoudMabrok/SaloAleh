@@ -22,7 +22,6 @@ import logging
 import shutil
 import statistics
 import time
-import warnings
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -35,6 +34,16 @@ try:  # Keras 3 ships standalone and is what TensorFlow >= 2.16 uses
     import keras
 except ImportError:  # pragma: no cover - TensorFlow 2.15 and older
     from tensorflow import keras
+
+# The TFLite runtime helpers live in `streaming` so that the notebook, this
+# module and the Hugging Face Space all quantise and dequantise identically -
+# and so the Space can use them without importing TensorFlow at all.
+from .streaming import (
+    dequantize_output,
+    make_interpreter,
+    quantize_input,
+    tflite_predict,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -56,6 +65,7 @@ __all__ = [
     "representative_dataset_from_arrays",
     "to_float32_model",
     "verify_tflite",
+    "write_android_metadata",
     "write_labels",
     "write_metadata",
 ]
@@ -256,69 +266,6 @@ def write_tflite(flatbuffer: bytes, path: PathLike) -> Path:
 
 
 # ---------------------------------------------------------------------------
-# Interpreter helpers
-# ---------------------------------------------------------------------------
-def make_interpreter(model_path: PathLike, num_threads: int = 1):
-    """Build a TFLite interpreter.
-
-    LiteRT is preferred because ``tf.lite.Interpreter`` is deprecated and warns on
-    every construction from TF 2.20; ``tf.lite`` remains the fallback so the code
-    keeps working on TF builds that predate the split.
-    """
-    try:
-        from ai_edge_litert.interpreter import Interpreter  # type: ignore
-
-        return Interpreter(model_path=str(model_path), num_threads=num_threads)
-    except ImportError:
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            return tf.lite.Interpreter(model_path=str(model_path), num_threads=num_threads)
-
-
-def _quantize_input(array: np.ndarray, detail: Dict) -> np.ndarray:
-    """Cast float features into the interpreter's input dtype."""
-    dtype = detail["dtype"]
-    if dtype == np.float32:
-        return array.astype(np.float32)
-    scale, zero_point = detail["quantization"]
-    if not scale:
-        return array.astype(dtype)
-    quantized = np.round(array / scale) + zero_point
-    info = np.iinfo(dtype)
-    return np.clip(quantized, info.min, info.max).astype(dtype)
-
-
-def _dequantize_output(array: np.ndarray, detail: Dict) -> np.ndarray:
-    dtype = detail["dtype"]
-    if dtype == np.float32:
-        return array.astype(np.float32)
-    scale, zero_point = detail["quantization"]
-    if not scale:
-        return array.astype(np.float32)
-    return (array.astype(np.float32) - zero_point) * scale
-
-
-def tflite_predict(interpreter, features: np.ndarray) -> np.ndarray:
-    """Run one clip (or a batch, one clip at a time) through an interpreter."""
-    input_detail = interpreter.get_input_details()[0]
-    output_detail = interpreter.get_output_details()[0]
-
-    batch = np.asarray(features, dtype=np.float32)
-    if batch.ndim == 3:
-        batch = batch[np.newaxis, ...]
-
-    outputs: List[np.ndarray] = []
-    for sample in batch:
-        interpreter.set_tensor(
-            input_detail["index"], _quantize_input(sample[np.newaxis, ...], input_detail)
-        )
-        interpreter.invoke()
-        raw = interpreter.get_tensor(output_detail["index"])
-        outputs.append(_dequantize_output(raw, output_detail)[0])
-    return np.stack(outputs)
-
-
-# ---------------------------------------------------------------------------
 # Benchmarking
 # ---------------------------------------------------------------------------
 @dataclass
@@ -388,7 +335,7 @@ def benchmark_tflite(
     shape = [int(dim) for dim in input_detail["shape"]]
 
     sample = np.random.default_rng(0).standard_normal(shape).astype(np.float32)
-    payload = _quantize_input(sample, input_detail)
+    payload = quantize_input(sample, input_detail)
 
     for _ in range(max(warmup, 0)):
         interpreter.set_tensor(input_detail["index"], payload)
@@ -427,7 +374,14 @@ def benchmark_tflite(
 # ---------------------------------------------------------------------------
 @dataclass
 class VerificationResult:
-    """Agreement between the Keras model and an exported TFLite model."""
+    """Agreement between the Keras model and an exported TFLite model.
+
+    ``subset`` names what the features were - ``test clips``, ``hard negatives``,
+    ``streaming windows``. Quantisation damage is not uniform: a model can agree
+    on 99% of clean test clips and disagree exactly on the near-miss audio that
+    decides the false-activation rate, so the three are verified separately and
+    reported separately.
+    """
 
     name: str
     samples: int
@@ -435,6 +389,8 @@ class VerificationResult:
     max_probability_delta: float
     mean_probability_delta: float
     tolerance: float
+    subset: str = "test clips"
+    disagreements: int = 0
 
     @property
     def passed(self) -> bool:
@@ -443,9 +399,10 @@ class VerificationResult:
     def summary(self) -> str:
         verdict = "ok" if self.passed else "CHECK"
         return (
-            f"{self.name:<14} agreement {self.agreement:6.2%} | "
+            f"{self.name:<14} {self.subset:<18} agreement {self.agreement:6.2%} | "
             f"max delta {self.max_probability_delta:.4f} | "
-            f"mean delta {self.mean_probability_delta:.4f} | {verdict}"
+            f"mean delta {self.mean_probability_delta:.4f} | "
+            f"{self.disagreements} disagreement(s) | {verdict}"
         )
 
 
@@ -455,6 +412,7 @@ def verify_tflite(
     features: np.ndarray,
     name: str,
     tolerance: float = 0.05,
+    subset: str = "test clips",
 ) -> VerificationResult:
     """Compare TFLite predictions against the Keras model on real features."""
     batch = np.asarray(features, dtype=np.float32)
@@ -468,6 +426,9 @@ def verify_tflite(
     predicted = tflite_predict(interpreter, batch)
 
     deltas = np.abs(reference - predicted)
+    disagreements = int(
+        (reference.argmax(axis=1) != predicted.argmax(axis=1)).sum()
+    )
     agreement = float(
         (reference.argmax(axis=1) == predicted.argmax(axis=1)).mean()
     )
@@ -478,6 +439,8 @@ def verify_tflite(
         max_probability_delta=float(deltas.max()),
         mean_probability_delta=float(deltas.mean()),
         tolerance=float(tolerance),
+        subset=subset,
+        disagreements=disagreements,
     )
 
 
@@ -563,6 +526,21 @@ class ExportedModel:
     path: Path
     benchmark: Optional[BenchmarkResult] = None
     verification: Optional[VerificationResult] = None
+    # Agreement on the subsets that decide shippability rather than headline
+    # accuracy: hard negatives, streaming windows.
+    extra_verifications: List[VerificationResult] = field(default_factory=list)
+
+    @property
+    def all_verifications(self) -> List[VerificationResult]:
+        return ([self.verification] if self.verification else []) + list(
+            self.extra_verifications
+        )
+
+    @property
+    def verified(self) -> bool:
+        """True when every subset that was checked agrees with Keras."""
+        checks = self.all_verifications
+        return all(item.passed for item in checks) if checks else True
 
 
 @dataclass
@@ -575,21 +553,48 @@ class ExportBundle:
     metadata_path: Optional[Path] = None
     filterbank_path: Optional[Path] = None
 
+    android_metadata_path: Optional[Path] = None
+    parity_paths: Dict[str, Path] = field(default_factory=dict)
+
     def table(self) -> str:
         lines = [item.benchmark.summary() for item in self.models if item.benchmark]
-        checks = [item.verification.summary() for item in self.models if item.verification]
+        checks = [
+            verification.summary()
+            for item in self.models
+            for verification in item.all_verifications
+        ]
         return "\n".join(lines + [""] + checks) if checks else "\n".join(lines)
 
     def recommended(self) -> Optional[ExportedModel]:
-        """Smallest model that still agrees with the Keras reference."""
-        passing = [
-            item
-            for item in self.models
-            if item.benchmark and (item.verification is None or item.verification.passed)
-        ]
+        """Smallest model that still agrees with Keras on *every* checked subset.
+
+        A variant that agrees on clean test clips but disagrees on hard negatives
+        or on streaming windows is not recommended, however small it is: those are
+        the subsets that decide the false-activation rate, which is the number the
+        feature lives or dies by.
+        """
+        passing = [item for item in self.models if item.benchmark and item.verified]
         if not passing:
             return None
         return min(passing, key=lambda item: item.benchmark.size_kb)
+
+    def rejected(self) -> List[Tuple[str, str]]:
+        """``(variant, why)`` for every variant that failed a verification."""
+        reasons: List[Tuple[str, str]] = []
+        for item in self.models:
+            for verification in item.all_verifications:
+                if not verification.passed:
+                    reasons.append(
+                        (
+                            item.name,
+                            f"{verification.subset}: {verification.agreement:.2%} "
+                            f"agreement, {verification.disagreements} disagreement(s), "
+                            f"max probability drift "
+                            f"{verification.max_probability_delta:.4f} (tolerance "
+                            f"{verification.tolerance:g})",
+                        )
+                    )
+        return reasons
 
 
 def export_all(
@@ -602,6 +607,7 @@ def export_all(
     phrases: Optional[Dict] = None,
     metrics: Optional[Dict] = None,
     output_dir: Optional[PathLike] = None,
+    extra_verification: Optional[Dict[str, np.ndarray]] = None,
 ) -> ExportBundle:
     """Export every enabled variant, benchmark it and verify it against Keras.
 
@@ -609,6 +615,11 @@ def export_all(
     :func:`to_float32_model`); that float32 model is also the reference the
     verification step compares against, since it is the same weights without the
     float16 compute casts.
+
+    ``extra_verification`` is ``{subset name: features}`` - typically hard
+    negatives and streaming windows. Agreement on clean test clips is the easy
+    case; what decides whether a quantised model is shippable is whether it still
+    agrees on the near-miss audio and on the windows a stream is actually made of.
     """
     export_config = config.export
     destination = Path(output_dir or config.paths.exports_path)
@@ -662,6 +673,19 @@ def export_all(
                 name=mode,
                 tolerance=export_config.verify_tolerance,
             )
+        for subset, features in (extra_verification or {}).items():
+            if features is None or not len(features):
+                continue
+            exported.extra_verifications.append(
+                verify_tflite(
+                    model_path,
+                    model,
+                    features,
+                    name=mode,
+                    tolerance=export_config.verify_tolerance,
+                    subset=subset,
+                )
+            )
         bundle.models.append(exported)
 
     if not bundle.models:
@@ -684,10 +708,66 @@ def export_all(
         class_names,
         frontend,
         benchmarks=[item.benchmark for item in bundle.models if item.benchmark],
-        verifications=[item.verification for item in bundle.models if item.verification],
+        verifications=[
+            verification
+            for item in bundle.models
+            for verification in item.all_verifications
+        ],
         metrics=metrics,
     )
+    bundle.android_metadata_path = write_android_metadata(
+        bundle, config, class_names, frontend, destination, metrics=metrics
+    )
     return bundle
+
+
+def write_android_metadata(
+    bundle: ExportBundle,
+    config,
+    class_names: Sequence[str],
+    frontend: Dict,
+    destination: PathLike,
+    thresholds: Optional[Dict[str, float]] = None,
+    global_threshold: Optional[float] = None,
+    calibration: Optional[Dict] = None,
+    metrics: Optional[Dict] = None,
+    model: Optional[ExportedModel] = None,
+) -> Path:
+    """Write ``exports/model_metadata.json`` for the recommended variant.
+
+    Separate from ``model_meta.json`` on purpose: that file describes the export
+    run (benchmarks, verification, provenance), this one is the *contract* the app
+    implements - tensor quantisation, window and hop, thresholds, detector
+    parameters, the model's hash. Re-run it after calibration to stamp the
+    measured thresholds into the file rather than the configured defaults.
+    """
+    from .android import build_model_metadata, interpreter_specs, write_model_metadata
+
+    target = Path(destination)
+    chosen = model or bundle.recommended() or (bundle.models[0] if bundle.models else None)
+    tensors: Dict[str, Dict[str, object]] = {}
+    if chosen is not None:
+        try:
+            interpreter = make_interpreter(chosen.path)
+            interpreter.allocate_tensors()
+            tensors = interpreter_specs(interpreter)
+        except Exception as exc:  # noqa: BLE001 - metadata must not fail an export
+            LOGGER.warning("could not read tensor details from %s: %s", chosen.path, exc)
+
+    payload = build_model_metadata(
+        config,
+        class_names,
+        frontend,
+        model_path=chosen.path if chosen else None,
+        tensors=tensors,
+        thresholds=thresholds,
+        global_threshold=global_threshold,
+        calibration=calibration,
+        metrics=metrics,
+    )
+    if chosen is not None:
+        payload["model"]["variant"] = chosen.name
+    return write_model_metadata(target / "model_metadata.json", payload)
 
 
 # ---------------------------------------------------------------------------

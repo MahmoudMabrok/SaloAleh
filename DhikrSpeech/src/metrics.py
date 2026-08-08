@@ -31,6 +31,7 @@ __all__ = [
     "ClassMetrics",
     "ErrorCase",
     "EvaluationResult",
+    "NegativeTypeMetrics",
     "evaluate_model",
     "predict_dataset",
     "wilson_interval",
@@ -79,6 +80,29 @@ class ErrorCase:
 
 
 @dataclass
+class NegativeTypeMetrics:
+    """False positives from one kind of negative audio.
+
+    ``hard_negative`` is the row that matters: those are the near-miss phrases
+    (``سبحان الله`` against ``سبحان الله وبحمده``) the counter must not fire on,
+    and a model can look excellent overall while failing exactly here.
+    """
+
+    negative_type: str
+    clips: int
+    accepted: int
+    predicted_as: Dict[str, int] = field(default_factory=dict)
+    highest_confidence: float = 0.0
+
+    @property
+    def false_positive_rate(self) -> float:
+        return self.accepted / self.clips if self.clips else float("nan")
+
+    def interval(self) -> Tuple[float, float]:
+        return wilson_interval(self.false_positive_rate, self.clips)
+
+
+@dataclass
 class EvaluationResult:
     """Predictions plus every metric derived from them."""
 
@@ -88,6 +112,11 @@ class EvaluationResult:
     y_prob: np.ndarray
     paths: List[str] = field(default_factory=list)
     confidence_threshold: float = 0.5
+    # Per-clip negative category (``hard_negative``, ``noise``, ...) for unknown
+    # clips, empty for target phrases. Carried from the manifest so the error
+    # analysis can say *what kind* of audio the model fires on.
+    negative_types: List[str] = field(default_factory=list)
+    unknown_class: str = "unknown"
 
     # -- headline numbers ---------------------------------------------------
     @property
@@ -222,6 +251,134 @@ class EvaluationResult:
         pairs.sort(key=lambda item: item[2], reverse=True)
         return pairs[:top_k]
 
+    # -- the confusions that decide this product ---------------------------
+    @property
+    def target_indices(self) -> List[int]:
+        return [
+            index
+            for index, name in enumerate(self.class_names)
+            if name != self.unknown_class
+        ]
+
+    @property
+    def unknown_index(self) -> Optional[int]:
+        if self.unknown_class not in self.class_names:
+            return None
+        return self.class_names.index(self.unknown_class)
+
+    def false_positive_rate(self, label: str) -> float:
+        """Share of clips that are *not* ``label`` which were predicted as it.
+
+        Per-class precision hides this when the classes are unbalanced; the
+        false-positive rate is what turns into activations on the phone.
+        """
+        index = self.class_names.index(label)
+        negatives = self.y_true != index
+        if not negatives.any():
+            return float("nan")
+        return float(((self.y_pred == index) & negatives).sum() / negatives.sum())
+
+    def directional_confusions(self) -> Dict[str, object]:
+        """The three confusions that matter here, named rather than ranked.
+
+        * **unknown -> target**: firing at audio that is not a dhikr. Every one of
+          these is a false count in the app - the expensive direction.
+        * **target -> unknown**: staying quiet on a real dhikr. A miss; the user
+          sees it and says it again.
+        * **target A -> target B**: counting the wrong phrase. The nested phrases
+          (``006`` ⊂ ``007``) live here, and a top-line accuracy can look fine
+          while this is most of the error.
+        """
+        matrix = self.confusion_matrix
+        targets = self.target_indices
+        unknown = self.unknown_index
+
+        unknown_to_target = 0
+        target_to_unknown = 0
+        if unknown is not None:
+            unknown_to_target = int(sum(matrix[unknown, index] for index in targets))
+            target_to_unknown = int(sum(matrix[index, unknown] for index in targets))
+
+        cross: List[Dict[str, object]] = []
+        for true_index in targets:
+            for predicted_index in targets:
+                if true_index == predicted_index:
+                    continue
+                count = int(matrix[true_index, predicted_index])
+                if count:
+                    cross.append(
+                        {
+                            "true": self.class_names[true_index],
+                            "predicted": self.class_names[predicted_index],
+                            "count": count,
+                        }
+                    )
+        cross.sort(key=lambda item: item["count"], reverse=True)
+
+        unknown_support = (
+            int((self.y_true == unknown).sum()) if unknown is not None else 0
+        )
+        target_support = int(np.isin(self.y_true, targets).sum())
+        return {
+            "unknown_to_target": unknown_to_target,
+            "unknown_to_target_rate": (
+                unknown_to_target / unknown_support if unknown_support else float("nan")
+            ),
+            "target_to_unknown": target_to_unknown,
+            "target_to_unknown_rate": (
+                target_to_unknown / target_support if target_support else float("nan")
+            ),
+            "target_to_target": cross,
+            "target_to_target_total": int(sum(item["count"] for item in cross)),
+        }
+
+    def by_negative_type(
+        self, threshold: Optional[float] = None
+    ) -> List[NegativeTypeMetrics]:
+        """False positives grouped by the kind of negative audio.
+
+        This is what turns "the model has some false positives" into "the model
+        fires on partial phrases and on nothing else", which is a data-collection
+        instruction rather than a mystery.
+        """
+        if not self.negative_types or len(self.negative_types) != self.num_samples:
+            return []
+        limit = self.confidence_threshold if threshold is None else threshold
+        targets = self.target_indices
+        if not targets:
+            return []
+
+        scores = self.y_prob[:, targets]
+        best = scores.max(axis=1)
+        chosen = np.array([targets[index] for index in scores.argmax(axis=1)])
+        accepted = best >= limit
+
+        grouped: Dict[str, List[int]] = {}
+        for position, category in enumerate(self.negative_types):
+            if not category:
+                continue
+            grouped.setdefault(category, []).append(position)
+
+        results: List[NegativeTypeMetrics] = []
+        for category, positions in sorted(grouped.items()):
+            indices = np.asarray(positions)
+            fired = indices[accepted[indices]]
+            predicted: Dict[str, int] = {}
+            for position in fired:
+                name = self.class_names[int(chosen[position])]
+                predicted[name] = predicted.get(name, 0) + 1
+            results.append(
+                NegativeTypeMetrics(
+                    negative_type=category,
+                    clips=int(indices.size),
+                    accepted=int(fired.size),
+                    predicted_as=dict(sorted(predicted.items())),
+                    highest_confidence=float(best[indices].max()) if indices.size else 0.0,
+                )
+            )
+        results.sort(key=lambda item: (-item.false_positive_rate, item.negative_type))
+        return results
+
     def rejection_stats(self, threshold: Optional[float] = None) -> Dict[str, float]:
         """How the model behaves when low-confidence predictions are rejected.
 
@@ -278,6 +435,17 @@ class EvaluationResult:
                 {"true": true, "predicted": predicted, "count": count}
                 for true, predicted, count in self.top_confusions()
             ],
+            "directional_confusions": self.directional_confusions(),
+            "false_positive_rate": {
+                label: self.false_positive_rate(label) for label in self.class_names
+            },
+            "by_negative_type": [
+                {
+                    **asdict(item),
+                    "false_positive_rate": item.false_positive_rate,
+                }
+                for item in self.by_negative_type()
+            ],
             "class_names": list(self.class_names),
         }
 
@@ -302,6 +470,34 @@ class EvaluationResult:
                 f"the range - this split cannot tell a good model from a bad one. Collect "
                 f"more recordings before reading anything into it."
             )
+        directional = self.directional_confusions()
+        if self.unknown_index is not None:
+            lines.append(
+                f"\nunknown -> target : {directional['unknown_to_target']} clips "
+                f"({directional['unknown_to_target_rate']:.1%} of unknown) - these "
+                f"become false counts in the app"
+            )
+            lines.append(
+                f"target -> unknown : {directional['target_to_unknown']} clips "
+                f"({directional['target_to_unknown_rate']:.1%} of dhikr) - these are "
+                f"misses"
+            )
+        if directional["target_to_target"]:
+            worst = directional["target_to_target"][0]
+            lines.append(
+                f"phrase confusion  : {directional['target_to_target_total']} clip(s) "
+                f"named as the wrong phrase, worst {worst['true']} -> "
+                f"{worst['predicted']} ({worst['count']})"
+            )
+
+        for item in self.by_negative_type():
+            low, high = item.interval()
+            lines.append(
+                f"  {item.negative_type:<16}{item.accepted:>4}/{item.clips:<4} "
+                f"accepted as a dhikr ({item.false_positive_rate:.1%}, "
+                f"95% CI {low:.1%}-{high:.1%})"
+            )
+
         collapsed = self.collapsed_to
         if collapsed is not None:
             lines.append(
@@ -381,11 +577,15 @@ def evaluate_model(
     class_names: Sequence[str],
     paths: Optional[Sequence[str]] = None,
     confidence_threshold: float = 0.5,
+    negative_types: Optional[Sequence[str]] = None,
+    unknown_class: str = "unknown",
 ) -> EvaluationResult:
     """Predict and wrap the result.
 
-    ``paths`` must line up with the dataset order, so build the evaluation
-    dataset with ``shuffle=False`` (the default for non-training splits).
+    ``paths`` and ``negative_types`` must line up with the dataset order, so
+    build the evaluation dataset with ``shuffle=False`` (the default for
+    non-training splits). ``negative_types`` comes straight from the manifest and
+    is what lets the report attribute false positives to a kind of audio.
     """
     y_true, y_prob = predict_dataset(model, dataset)
     y_pred = y_prob.argmax(axis=1).astype(np.int32)
@@ -397,6 +597,15 @@ def evaluate_model(
             y_true.size,
         )
         ordered_paths = []
+    categories = list(negative_types or [])
+    if categories and len(categories) != y_true.size:
+        LOGGER.warning(
+            "%d negative types supplied for %d predictions - dropping the "
+            "per-category breakdown",
+            len(categories),
+            y_true.size,
+        )
+        categories = []
     return EvaluationResult(
         class_names=list(class_names),
         y_true=y_true,
@@ -404,4 +613,6 @@ def evaluate_model(
         y_prob=y_prob,
         paths=ordered_paths,
         confidence_threshold=confidence_threshold,
+        negative_types=categories,
+        unknown_class=unknown_class,
     )
