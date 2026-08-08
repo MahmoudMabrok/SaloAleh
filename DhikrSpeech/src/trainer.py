@@ -64,6 +64,8 @@ __all__ = [
     "Trainer",
     "TrainingArtifacts",
     "WarmupCosineDecay",
+    "build_loss",
+    "build_metrics",
     "config_differences",
     "configure_mixed_precision",
     "sanity_overfit",
@@ -214,11 +216,41 @@ class SparseCategoricalCrossentropyWithSmoothing(keras.losses.Loss):
 
 
 def build_loss(num_classes: int, config: TrainingConfig) -> keras.losses.Loss:
+    """Loss for ``num_classes`` model outputs.
+
+    One output is the sigmoid detector: integer 0/1 labels go straight into
+    binary crossentropy, which applies ``label_smoothing`` itself.
+    """
+    if num_classes == 1:
+        return keras.losses.BinaryCrossentropy(label_smoothing=config.label_smoothing)
     if config.label_smoothing > 0.0:
         return SparseCategoricalCrossentropyWithSmoothing(
             num_classes=num_classes, label_smoothing=config.label_smoothing
         )
     return keras.losses.SparseCategoricalCrossentropy()
+
+
+def build_metrics(num_classes: int) -> List[keras.metrics.Metric]:
+    """Metrics that mean something for the width of the output.
+
+    A detector is judged on precision and recall, not on accuracy: with a 1:3
+    positive/negative split a model that never fires is 75% accurate. ``top3`` is
+    reserved for the legacy multi-class model, where it is informative; on two
+    classes it is identically 1.0.
+    """
+    if num_classes == 1:
+        return [
+            keras.metrics.BinaryAccuracy(name="accuracy"),
+            keras.metrics.Precision(name="precision"),
+            keras.metrics.Recall(name="recall"),
+            keras.metrics.AUC(name="auc"),
+        ]
+    metrics: List[keras.metrics.Metric] = [
+        keras.metrics.SparseCategoricalAccuracy(name="accuracy")
+    ]
+    if num_classes > 3:
+        metrics.append(keras.metrics.SparseTopKCategoricalAccuracy(k=3, name="top3_accuracy"))
+    return metrics
 
 
 def build_learning_rate(config: TrainingConfig, steps_per_epoch: int):
@@ -274,6 +306,10 @@ class TrainingArtifacts:
     num_classes: Optional[int] = None
     resumed: bool = False
     val_size: Optional[int] = None
+    # Share of positives in the validation split. For a single-target detector
+    # "chance" is the majority class, not 1/num_classes: on a 1:3 split a model
+    # that never fires already scores 0.75.
+    positive_rate: Optional[float] = None
 
     def best_epoch(self, monitor: str = "val_accuracy", mode: str = "max") -> Optional[int]:
         values = self.history.get(monitor)
@@ -296,7 +332,14 @@ class TrainingArtifacts:
 
     @property
     def chance_level(self) -> Optional[float]:
-        """Accuracy a constant prediction reaches on a balanced split."""
+        """Accuracy a constant prediction reaches on this split.
+
+        Balanced multi-class: ``1 / num_classes``. A detector: the majority
+        class, which is the number a model that never fires actually scores - and
+        is far above 0.5 whenever negatives outnumber positives.
+        """
+        if self.positive_rate is not None and 0.0 <= self.positive_rate <= 1.0:
+            return float(max(self.positive_rate, 1.0 - self.positive_rate))
         if not self.num_classes or self.num_classes < 2:
             return None
         return 1.0 / float(self.num_classes)
@@ -520,10 +563,7 @@ class Trainer:
         self.model.compile(
             optimizer=build_optimizer(training, self.steps_per_epoch),
             loss=build_loss(self.num_classes, training),
-            metrics=[
-                keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
-                keras.metrics.SparseTopKCategoricalAccuracy(k=3, name="top3_accuracy"),
-            ],
+            metrics=build_metrics(self.num_classes),
         )
         self._compiled = True
         return self.model
@@ -593,6 +633,7 @@ class Trainer:
         initial_epoch: int = 0,
         verbose: int = 1,
         val_size: Optional[int] = None,
+        positive_rate: Optional[float] = None,
     ) -> TrainingArtifacts:
         """Run ``fit`` and return the artefacts.
 
@@ -650,6 +691,7 @@ class Trainer:
             num_classes=int(self.num_classes),
             resumed=resumed,
             val_size=int(val_size) if val_size else None,
+            positive_rate=float(positive_rate) if positive_rate is not None else None,
         )
 
     def _check_resume_compatibility(self) -> None:
@@ -743,10 +785,22 @@ def sanity_overfit(
     ``steps`` batches. ``model`` is cloned, so the caller's weights are untouched.
     """
     clone = keras.models.clone_model(model)
+    num_outputs = int(clone.output_shape[-1])
     clone.compile(
         optimizer=keras.optimizers.Adam(learning_rate=learning_rate),
-        loss=keras.losses.SparseCategoricalCrossentropy(),
-        metrics=[keras.metrics.SparseCategoricalAccuracy(name="accuracy")],
+        # No label smoothing here: this test wants the model to memorise, and
+        # smoothing would stop it reaching the near-1.0 that makes the verdict
+        # readable.
+        loss=(
+            keras.losses.BinaryCrossentropy()
+            if num_outputs == 1
+            else keras.losses.SparseCategoricalCrossentropy()
+        ),
+        metrics=[
+            keras.metrics.BinaryAccuracy(name="accuracy")
+            if num_outputs == 1
+            else keras.metrics.SparseCategoricalAccuracy(name="accuracy")
+        ],
     )
     history = clone.fit(
         dataset.repeat(),
@@ -769,7 +823,11 @@ def sanity_overfit(
     # normal; a collapse to chance in *inference* while this stays high is not.
     correct = total = 0
     for features, labels in dataset:
-        predicted = tf.argmax(clone(features, training=True), axis=-1, output_type=tf.int32)
+        outputs = clone(features, training=True)
+        if num_outputs == 1:
+            predicted = tf.cast(tf.reshape(outputs, [-1]) >= 0.5, tf.int32)
+        else:
+            predicted = tf.argmax(outputs, axis=-1, output_type=tf.int32)
         labels = tf.cast(tf.reshape(labels, [-1]), tf.int32)
         correct += int(tf.reduce_sum(tf.cast(tf.equal(predicted, labels), tf.int32)))
         total += int(tf.size(labels))

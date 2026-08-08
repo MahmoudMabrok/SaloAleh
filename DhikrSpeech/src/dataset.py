@@ -74,6 +74,12 @@ MANIFEST_FIELDS = [
     "text",
     "split",
     "duration",
+    # Single-target mode. `negative_type` is empty for the target's own clips and
+    # for legacy multi-class manifests; `speaker` is empty when speaker identity
+    # could not be resolved. Both are optional on read, so a manifest written
+    # before this change still loads.
+    "negative_type",
+    "speaker",
 ]
 
 ISSUE_KINDS = (
@@ -122,13 +128,29 @@ def load_phrases(path: PathLike) -> List[Phrase]:
 
 @dataclass(frozen=True)
 class Sample:
-    """A single recording on disk."""
+    """A single recording on disk.
+
+    ``rel_dir`` is the sample's folder *as it exists in the dataset* (``007``,
+    ``negatives/hard/007``, ...), which is not the same as ``label`` in
+    single-target mode where every negative is labelled ``unknown``. Conditioned
+    clips are cached under ``rel_dir``, so the shared negative pool is
+    preprocessed once and reused by every target rather than re-written per run.
+
+    ``negative_type`` is the :data:`src.targets.NEGATIVE_TYPES` category of a
+    negative and ``None`` for the target's own clips.
+    """
 
     path: Path
     label: str
     class_index: int
     phrase_id: Optional[int]
     text: str
+    rel_dir: str = ""
+    negative_type: Optional[str] = None
+
+    @property
+    def cache_dir(self) -> str:
+        return self.rel_dir or self.label
 
 
 @dataclass
@@ -139,6 +161,9 @@ class DatasetIndex:
     class_names: List[str]
     phrases: Dict[int, str] = field(default_factory=dict)
     root: Optional[Path] = None
+    # Set in single-target mode; None for a multi-class index.
+    target_id: Optional[int] = None
+    target_text: str = ""
 
     @property
     def num_classes(self) -> int:
@@ -247,6 +272,7 @@ def scan_dataset(
                     class_index=class_to_index[label],
                     phrase_id=phrase_id,
                     text=text,
+                    rel_dir=label,
                 )
             )
 
@@ -520,6 +546,8 @@ class ManifestRecord:
     text: str
     split: str
     duration: float
+    negative_type: Optional[str] = None
+    speaker: Optional[str] = None
 
     def resolve(self, root: PathLike) -> Path:
         candidate = Path(self.path)
@@ -535,16 +563,19 @@ def save_manifest(records: Sequence[ManifestRecord], path: PathLike) -> Path:
         for record in records:
             row = asdict(record)
             row["phrase_id"] = "" if record.phrase_id is None else record.phrase_id
+            row["negative_type"] = record.negative_type or ""
+            row["speaker"] = record.speaker or ""
             writer.writerow(row)
     LOGGER.info("manifest with %d rows written to %s", len(records), destination)
     return destination
 
 
 def load_manifest(path: PathLike) -> List[ManifestRecord]:
+    """Read a manifest, tolerating ones written before a column existed."""
     source = Path(path)
     if not source.is_file():
         raise FileNotFoundError(
-            f"manifest not found at {source} - run notebook 02_preprocessing first"
+            f"manifest not found at {source} - run the preprocessing stage first"
         )
     records: List[ManifestRecord] = []
     with open(source, "r", encoding="utf-8") as handle:
@@ -559,6 +590,8 @@ def load_manifest(path: PathLike) -> List[ManifestRecord]:
                     text=row["text"],
                     split=row["split"],
                     duration=float(row["duration"]),
+                    negative_type=(row.get("negative_type") or "").strip() or None,
+                    speaker=(row.get("speaker") or "").strip() or None,
                 )
             )
     return records
@@ -612,15 +645,25 @@ def preprocess_dataset(
     exclude: Optional[Iterable[str]] = None,
     overwrite: bool = False,
     progress: ProgressFn = None,
+    speakers: Optional[Dict[str, Optional[str]]] = None,
+    destination_root: Optional[PathLike] = None,
 ) -> Tuple[List[ManifestRecord], PreprocessSummary]:
     """Write conditioned copies of every recording and build manifest records.
 
     Output is 16 kHz mono PCM16, silence trimmed, loudness normalised and fitted
     to ``audio.clip_seconds`` - the exact tensor the model sees at inference.
+
+    In single-target mode ``destination_root`` should be
+    ``config.clip_cache_path()``: clips are then keyed by the *source* folder and
+    by the audio geometry, so the shared negative pool is conditioned once and
+    every target that uses the same window reuses those files instead of writing
+    its own copy (requirement 32). ``speakers`` maps ``str(sample.path)`` to a
+    speaker id and is carried into the manifest.
     """
     audio_config = config.audio
-    destination_root = config.paths.processed_path
+    destination_root = Path(destination_root or config.paths.processed_path)
     destination_root.mkdir(parents=True, exist_ok=True)
+    speaker_map = speakers or {}
 
     blocked = set(exclude or ())
     records: List[ManifestRecord] = []
@@ -636,7 +679,7 @@ def preprocess_dataset(
                 progress(position, total)
             continue
 
-        relative = Path(sample.label) / f"{sample.path.stem}.wav"
+        relative = Path(sample.cache_dir) / f"{sample.path.stem}.wav"
         target = destination_root / relative
         try:
             if target.exists() and not overwrite:
@@ -656,6 +699,8 @@ def preprocess_dataset(
                     text=sample.text,
                     split="",
                     duration=audio_config.clip_seconds,
+                    negative_type=sample.negative_type,
+                    speaker=speaker_map.get(source_text),
                 )
             )
         except Exception as exc:  # noqa: BLE001

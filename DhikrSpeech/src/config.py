@@ -21,14 +21,21 @@ LOGGER = logging.getLogger(__name__)
 __all__ = [
     "AudioConfig",
     "AugmentationConfig",
+    "CalibrationConfig",
     "ClassesConfig",
     "Config",
+    "DetectorConfig",
     "EvaluationConfig",
     "ExportConfig",
     "FeatureConfig",
     "ModelConfig",
+    "NegativeSamplingConfig",
     "PathsConfig",
+    "ReadinessConfig",
+    "SmoothingConfig",
     "SplitConfig",
+    "StreamingConfig",
+    "TargetConfig",
     "TrainingConfig",
     "load_config",
 ]
@@ -384,11 +391,115 @@ class ClassesConfig:
 
 
 @dataclass
+class TargetConfig:
+    """Single-target (binary phrase spotting) mode - the production architecture.
+
+    Android loads one model per dhikr: the user picks a phrase, the app loads that
+    phrase's ``.tflite``, and the model answers one question - *was this exact
+    phrase just spoken, completely?* Everything else, including the other dhikr and
+    incomplete versions of this one, is a negative.
+
+    ``phrase_id: null`` leaves the pipeline in the legacy multi-class mode, which
+    is kept for the ``06 - Experiment`` comparison and for old manifests.
+    """
+
+    phrase_id: Optional[int] = None
+    # softmax = 2 outputs (target, unknown), sigmoid = 1 output P(target).
+    # Both are supported so the two can be compared rather than assumed.
+    output_mode: str = "softmax"
+    # Other phrase folders (dataset/001, dataset/002, ...) become negatives.
+    auto_other_dhikr_negatives: bool = True
+    # negatives/hard/<other id>/ folders hold negatives designed to fool *another*
+    # target. They are excluded by default: a hard negative for 006
+    # ("سبحان الله وبحمده") may well be a recording of 007's full phrase, which
+    # would be labelled negative for 007 and poison the model.
+    include_other_hard_negatives: bool = False
+    negatives_dir: str = "negatives"
+    # Per-target overrides, keyed by the zero-padded folder name:
+    #   phrase_overrides: {"007": {clip_seconds: 2.5}}
+    # Applied by Config.for_target(). Only `clip_seconds` is honoured today.
+    phrase_overrides: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if self.output_mode not in ("softmax", "sigmoid"):
+            raise ValueError("target.output_mode must be 'softmax' or 'sigmoid'")
+        if self.phrase_id is not None and int(self.phrase_id) < 1:
+            raise ValueError("target.phrase_id must be 1 or greater")
+
+    @property
+    def enabled(self) -> bool:
+        return self.phrase_id is not None
+
+    @property
+    def folder(self) -> Optional[str]:
+        """The target's zero-padded dataset folder, e.g. 7 -> ``007``."""
+        return None if self.phrase_id is None else f"{int(self.phrase_id):03d}"
+
+    @property
+    def num_outputs(self) -> int:
+        return 1 if self.output_mode == "sigmoid" else 2
+
+    def overrides_for(self, phrase_id: int) -> Dict[str, Any]:
+        """Overrides for one target, accepting ``7``, ``"7"`` or ``"007"`` as the key."""
+        keys = (f"{int(phrase_id):03d}", str(int(phrase_id)), int(phrase_id))
+        for key in keys:
+            value = self.phrase_overrides.get(key)  # type: ignore[arg-type]
+            if isinstance(value, dict):
+                return dict(value)
+        return {}
+
+
+@dataclass
+class NegativeSamplingConfig:
+    """How much of the negative pool one run trains on, and which parts of it.
+
+    The shared negative pool grows without bound while positives stay in the
+    hundreds, so training on every negative every run would drown the phrase.
+    ``ratio`` caps negatives at ``ratio x positives``; ``weights`` decides which
+    negatives survive that cut - hard negatives and partial phrases are worth far
+    more per clip than another minute of room tone.
+    """
+
+    enabled: bool = True
+    ratio: float = 2.0
+    weights: Dict[str, float] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if self.ratio <= 0.0:
+            raise ValueError("negative_sampling.ratio must be positive")
+        cleaned: Dict[str, float] = {}
+        for key, value in (self.weights or {}).items():
+            weight = float(value)
+            if weight < 0.0:
+                raise ValueError(f"negative_sampling.weights['{key}'] must be >= 0")
+            cleaned[str(key)] = weight
+        self.weights = cleaned
+
+    def weight_for(self, negative_type: Optional[str], default: float = 1.0) -> float:
+        if not negative_type:
+            return default
+        return float(self.weights.get(negative_type, default))
+
+
+@dataclass
 class SplitConfig:
     val_ratio: float = 0.15
     test_ratio: float = 0.10
     stratified: bool = True
     group_regex: Optional[str] = None
+    # Speaker identity. `speaker_regex` is matched against the recording's file
+    # name (falling back to its path); a named group `speaker` wins, otherwise
+    # group 1, otherwise the whole match. `speaker_metadata` is a JSON mapping of
+    # file name (or relative path) -> speaker id and takes precedence over it.
+    speaker_regex: Optional[str] = None
+    speaker_metadata: Optional[str] = None
+    # Keep every recording of one speaker inside one split. Off means the printed
+    # numbers are NOT speaker-independent, and the pipeline says so out loud.
+    speaker_safe: bool = True
+    # Refuse to build a manifest when a speaker straddles two splits, or (with
+    # `speaker_safe`) when speaker ids could not be resolved at all.
+    fail_on_leakage: bool = True
+    require_speaker_ids: bool = False
 
     def __post_init__(self) -> None:
         if not 0.0 < self.val_ratio < 1.0:
@@ -414,6 +525,12 @@ class ModelConfig:
     activation: str = "relu"
     pool: str = "gap"
     bn_momentum: float = 0.9
+    # TC-ResNet8 only. The mel axis becomes the channel axis and convolution runs
+    # along time alone, which is why it is so much cheaper than DS-CNN at the same
+    # accuracy on short keywords.
+    tc_channels: List[int] = field(default_factory=lambda: [16, 24, 32, 48])
+    tc_kernel: int = 9
+    tc_stem_kernel: int = 3
 
     def __post_init__(self) -> None:
         for name in ("stem_kernel", "stem_stride", "block_kernel"):
@@ -422,6 +539,8 @@ class ModelConfig:
                 raise ValueError(f"model.{name} must hold exactly two values (time, freq)")
         if self.pool not in ("gap", "flatten"):
             raise ValueError("model.pool must be 'gap' or 'flatten'")
+        if len(self.tc_channels) < 2:
+            raise ValueError("model.tc_channels needs a stem channel plus at least one block")
 
 
 @dataclass
@@ -497,6 +616,152 @@ class EvaluationConfig:
 
 
 @dataclass
+class SmoothingConfig:
+    """Optional smoothing of the per-window score before the detector sees it.
+
+    Deliberately weak by default. Smoothing wide enough to bridge the dip between
+    two repetitions merges them into one event, which costs a count - the failure
+    mode this project cares about least is a missed *dip*, not a missed peak.
+    """
+
+    mode: str = "none"          # none | ema | moving_average
+    ema_alpha: float = 0.6      # weight of the newest window (1.0 = no smoothing)
+    window: int = 3             # moving_average only, in windows
+
+    def __post_init__(self) -> None:
+        if self.mode not in ("none", "ema", "moving_average"):
+            raise ValueError("streaming.smoothing.mode must be none|ema|moving_average")
+        if not 0.0 < self.ema_alpha <= 1.0:
+            raise ValueError("streaming.smoothing.ema_alpha must be in (0, 1]")
+        if self.window < 1:
+            raise ValueError("streaming.smoothing.window must be >= 1")
+
+
+@dataclass
+class DetectorConfig:
+    """Hysteresis event detector - one complete utterance must make one event.
+
+    ``activation_threshold`` must sit above ``release_threshold``: the gap is what
+    stops a score hovering near one threshold from flickering into a stream of
+    events. Re-arming is release-driven (see :mod:`src.streaming`), so a user
+    repeating the dhikr quickly is separated by the dip between repetitions rather
+    than by waiting out a cooldown.
+    """
+
+    activation_threshold: float = 0.70
+    release_threshold: float = 0.40
+    min_consecutive_hits: int = 2
+    min_event_seconds: float = 0.0
+    release_windows: int = 2
+    cooldown_ms: float = 200.0
+
+    def __post_init__(self) -> None:
+        if not 0.0 < self.activation_threshold <= 1.0:
+            raise ValueError("detector.activation_threshold must be in (0, 1]")
+        if not 0.0 <= self.release_threshold <= 1.0:
+            raise ValueError("detector.release_threshold must be in [0, 1]")
+        if self.release_threshold > self.activation_threshold:
+            raise ValueError(
+                "detector.release_threshold must not exceed activation_threshold - "
+                "hysteresis needs activation > release"
+            )
+        if self.min_consecutive_hits < 1:
+            raise ValueError("detector.min_consecutive_hits must be >= 1")
+        if self.release_windows < 1:
+            raise ValueError("detector.release_windows must be >= 1")
+        if self.cooldown_ms < 0.0:
+            raise ValueError("detector.cooldown_ms must be >= 0")
+
+
+@dataclass
+class StreamingConfig:
+    """Continuous-microphone inference: window geometry, smoothing, detector."""
+
+    # null = audio.clip_seconds, i.e. the window the model was trained on. Only
+    # set this if the model really was trained on a different length.
+    window_seconds: Optional[float] = None
+    hop_seconds: float = 0.20
+    smoothing: SmoothingConfig = field(default_factory=SmoothingConfig)
+    detector: DetectorConfig = field(default_factory=DetectorConfig)
+    # Long-form recordings + annotations.json, relative to the project root.
+    test_dir: str = "streaming_test"
+    annotations_file: str = "annotations.json"
+    audio_dirname: str = "audio"
+    # A detection counts for a ground-truth event when it falls inside
+    # [start - tolerance, end + tolerance].
+    match_tolerance_seconds: float = 0.75
+
+    def __post_init__(self) -> None:
+        if self.hop_seconds <= 0.0:
+            raise ValueError("streaming.hop_seconds must be positive")
+        if self.window_seconds is not None and self.window_seconds <= 0.0:
+            raise ValueError("streaming.window_seconds must be positive when set")
+        if self.match_tolerance_seconds < 0.0:
+            raise ValueError("streaming.match_tolerance_seconds must be >= 0")
+
+    def window_for(self, clip_seconds: float) -> float:
+        return float(self.window_seconds if self.window_seconds else clip_seconds)
+
+
+@dataclass
+class CalibrationConfig:
+    """Threshold sweep driven by a false-activation budget, not by accuracy.
+
+    0.5 is not a threshold, it is a default. The activation threshold that ships
+    is the lowest one whose measured false activations per hour stay inside
+    ``target_false_activations_per_hour`` - and when no threshold manages that,
+    calibration reports a failure instead of picking the most extreme value and
+    calling it tuned.
+    """
+
+    enabled: bool = True
+    min_threshold: float = 0.40
+    max_threshold: float = 0.99
+    step: float = 0.01
+    target_false_activations_per_hour: float = 0.5
+    min_event_recall: float = 0.0
+    # release_threshold = activation x this, unless release_threshold is set.
+    release_ratio: float = 0.6
+    release_threshold: Optional[float] = None
+
+    def __post_init__(self) -> None:
+        if not 0.0 < self.min_threshold <= self.max_threshold <= 1.0:
+            raise ValueError("calibration thresholds must satisfy 0 < min <= max <= 1")
+        if self.step <= 0.0:
+            raise ValueError("calibration.step must be positive")
+        if not 0.0 < self.release_ratio <= 1.0:
+            raise ValueError("calibration.release_ratio must be in (0, 1]")
+        if self.target_false_activations_per_hour < 0.0:
+            raise ValueError("calibration.target_false_activations_per_hour must be >= 0")
+
+
+@dataclass
+class ReadinessConfig:
+    """Release criteria for one target. Project policy, not scientific constants.
+
+    Every one of these is a threshold somebody chose; they are here so the choice
+    is explicit and reviewable, and so "READY" can never mean "validation accuracy
+    looked high".
+    """
+
+    max_speaker_leakage: int = 0
+    min_positive_speakers: int = 10
+    min_positive_clips: int = 100
+    # The dataset size at which the numbers stop being provisional.
+    recommended_positive_clips: int = 200
+    recommended_positive_speakers: int = 20
+    min_event_precision: float = 0.95
+    min_event_recall: float = 0.90
+    max_false_activations_per_hour: float = 0.5
+    max_hard_negative_fp_rate: float = 0.05
+    max_duplicate_rate: float = 0.05
+    # INT8 is rejected as the production model when quantisation costs more than
+    # this many extra false activations per hour, or drifts more than this.
+    max_int8_fa_per_hour_increase: float = 0.10
+    max_int8_probability_drift: float = 0.05
+
+
+@dataclass
 class ExportConfig:
     saved_model: bool = True
     float32: bool = True
@@ -514,13 +779,19 @@ class Config:
     seed: int = 1337
     paths: PathsConfig = field(default_factory=PathsConfig)
     classes: ClassesConfig = field(default_factory=ClassesConfig)
+    target: TargetConfig = field(default_factory=TargetConfig)
     audio: AudioConfig = field(default_factory=AudioConfig)
     features: FeatureConfig = field(default_factory=FeatureConfig)
     augmentation: AugmentationConfig = field(default_factory=AugmentationConfig)
+    negative_sampling: NegativeSamplingConfig = field(default_factory=NegativeSamplingConfig)
     split: SplitConfig = field(default_factory=SplitConfig)
     model: ModelConfig = field(default_factory=ModelConfig)
+    model_presets: Dict[str, Dict[str, Any]] = field(default_factory=dict)
     training: TrainingConfig = field(default_factory=TrainingConfig)
     evaluation: EvaluationConfig = field(default_factory=EvaluationConfig)
+    streaming: StreamingConfig = field(default_factory=StreamingConfig)
+    calibration: CalibrationConfig = field(default_factory=CalibrationConfig)
+    readiness: ReadinessConfig = field(default_factory=ReadinessConfig)
     export: ExportConfig = field(default_factory=ExportConfig)
 
     source_path: Optional[str] = None
@@ -551,6 +822,92 @@ class Config:
                 "increase audio.clip_seconds or reduce features.n_fft/window_ms"
             )
         return (frames, self.features.n_mels, 1)
+
+    # -- single-target mode -------------------------------------------------
+    def for_target(self, phrase_id: Optional[int]) -> "Config":
+        """Copy of this config bound to one target phrase.
+
+        Applies ``target.phrase_overrides[<id>]`` on top - today that is
+        ``clip_seconds``, because a two-word dhikr and a seven-word one do not
+        belong in the same window (see ``README`` / requirement 15). Passing
+        ``None`` returns a copy in legacy multi-class mode.
+        """
+        if phrase_id is None:
+            return self.with_overrides({"target.phrase_id": None})
+
+        identifier = int(phrase_id)
+        overrides: Dict[str, Any] = {"target.phrase_id": identifier}
+        target_overrides = self.target.overrides_for(identifier)
+        unknown = set(target_overrides) - {"clip_seconds"}
+        if unknown:
+            raise KeyError(
+                f"target.phrase_overrides['{identifier:03d}'] has unsupported key(s): "
+                f"{', '.join(sorted(unknown))} (only 'clip_seconds' is honoured)"
+            )
+        if "clip_seconds" in target_overrides:
+            overrides["audio.clip_seconds"] = float(target_overrides["clip_seconds"])
+        return self.with_overrides(overrides)
+
+    @property
+    def target_folder(self) -> Optional[str]:
+        return self.target.folder
+
+    @property
+    def clip_tag(self) -> str:
+        """Identifies the *audio geometry* a processed clip was written with.
+
+        Conditioned clips are fitted to ``clip_seconds`` at ``sample_rate``, so two
+        targets with the same geometry can share the same cached files and two with
+        different geometry must not. Used as the cache directory name, which is
+        what makes the shared negative pool preprocessed once rather than once per
+        target (requirement 32).
+        """
+        return f"{self.audio.sample_rate}hz_{self.audio.clip_seconds:g}s"
+
+    def clip_cache_path(self) -> Path:
+        """Where conditioned clips for this geometry live."""
+        return self.paths.processed_path / "audio" / self.clip_tag
+
+    def target_manifest_path(self, phrase_id: Optional[int] = None) -> Path:
+        """Manifest for one target. Split and labels are target-specific."""
+        identifier = self.target.phrase_id if phrase_id is None else int(phrase_id)
+        if identifier is None:
+            return self.paths.manifest_path
+        return self.paths.processed_path / "manifests" / f"target_{int(identifier):03d}.csv"
+
+    def target_export_path(self, phrase_id: Optional[int] = None) -> Path:
+        """``exports/<target id>/`` - one independent model per dhikr."""
+        identifier = self.target.phrase_id if phrase_id is None else int(phrase_id)
+        if identifier is None:
+            return self.paths.exports_path
+        return self.paths.exports_path / f"{int(identifier):03d}"
+
+    @property
+    def streaming_path(self) -> Path:
+        return self.paths.resolve(self.streaming.test_dir)
+
+    def resolved_model(self) -> ModelConfig:
+        """``model`` with ``model_presets[model.name]`` applied on top.
+
+        Presets keep the architecture comparison honest: every architecture reads
+        the same ``model`` block and only overrides the handful of values that make
+        it that architecture, so a comparison run cannot accidentally also change
+        dropout or BatchNorm momentum.
+        """
+        preset = self.model_presets.get(self.model.name)
+        if not preset:
+            return self.model
+        known = {f.name for f in dataclasses.fields(ModelConfig)}
+        unknown = set(preset) - known
+        if unknown:
+            raise KeyError(
+                f"model_presets['{self.model.name}'] has unknown key(s): "
+                f"{', '.join(sorted(unknown))}"
+            )
+        data = {f.name: getattr(self.model, f.name) for f in dataclasses.fields(ModelConfig)}
+        data.update(preset)
+        data["name"] = self.model.name
+        return ModelConfig(**data)
 
     # -- helpers ------------------------------------------------------------
     def to_dict(self) -> Dict[str, Any]:
@@ -590,15 +947,20 @@ class Config:
 
     def summary(self) -> str:
         frames, mels, _ = self.input_shape
+        if self.target.enabled:
+            vocabulary = (
+                f"single target {self.target.folder} vs everything else "
+                f"({self.target.output_mode}, {self.target.num_outputs} output"
+                f"{'s' if self.target.num_outputs > 1 else ''})"
+            )
+        elif self.classes.enabled:
+            vocabulary = f"multi-class: phrases {self.classes.include_phrases} only"
+        else:
+            vocabulary = "multi-class: every folder in the dataset"
         return "\n".join(
             [
                 f"project root      : {self.paths.root}",
-                f"classes           : "
-                + (
-                    f"phrases {self.classes.include_phrases} only"
-                    if self.classes.enabled
-                    else "every folder in the dataset"
-                ),
+                f"classes           : {vocabulary}",
                 f"sample rate       : {self.audio.sample_rate} Hz, mono, PCM{self.audio.bit_depth}",
                 f"clip length       : {self.audio.clip_seconds:g} s "
                 f"({self.audio.clip_samples} samples)",
