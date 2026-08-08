@@ -159,9 +159,20 @@ same above-threshold label are one event however long they last. A plain "ignore
 seconds after counting it" timer looks equivalent and is not — it splits any phrase that stays
 confident for longer than N into two counts, which is exactly what the longer dhikr do.
 
-The **refractory period** then only closes gaps *between* runs: two runs of the same phrase closer
-together than it are one dhikr flickering, not two. It is applied per label, so two different
-phrases said back to back stay two counts even with no silence between them.
+The counting itself is `src.streaming.EventDetector` — the same state machine the notebook calibrates
+in stage 06 and the Android app is specified against, so what this Space shows is what the pipeline
+measured. A run is held together by **hysteresis**: an event needs the confidence threshold to start
+but only a lower release threshold to continue, so a wobble mid-phrase cannot end one event and start
+another.
+
+The **refractory period** is the detector's cooldown: it closes gaps *between* runs, so two runs of
+the same phrase closer together than it are one dhikr flickering, not two. It is applied per label,
+so two different phrases said back to back stay two counts even with no silence between them.
+
+One difference from production: this tab confirms an event from a **single** confident window, where
+the shipped default asks for two in a row. This is a diagnostic for "does the model hear the phrase
+at all", and swallowing single-window hits would hide exactly the weak recognition it is here to
+show.
 
 Three controls, and what to reach for when:
 
