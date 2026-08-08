@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
@@ -193,103 +192,6 @@ assert.match(
   'Without a speaker token the filename must keep its original shape, not gain an empty field.'
 );
 
-// ---------------------------------------------------------------------------
-// The speaker-token backfill: recordings collected before the page minted a
-// speaker id, grouped after the fact by the browser/platform pair the sheet
-// kept. Only the pure naming and hashing rules are exercised here; the Drive
-// and Sheets walk needs a live deployment.
-// ---------------------------------------------------------------------------
-
-// Apps Script returns SIGNED bytes from computeDigest, so a stub that hands
-// back unsigned ones would hide a missing mask and produce tokens that are not
-// 8 hex characters. Sign-extend to reproduce the real service.
-backendContext.Utilities.DigestAlgorithm = { SHA_256: 'SHA_256' };
-backendContext.Utilities.Charset = { UTF_8: 'UTF_8' };
-backendContext.Utilities.computeDigest = (_algorithm, value) =>
-  Array.from(createHash('sha256').update(value, 'utf8').digest()).map((byte) => (byte > 127 ? byte - 256 : byte));
-
-const derivedToken = (browser, platform) => {
-  backendContext.probe = { browser, platform };
-  return vm.runInContext('derivedSpeakerToken_(probe.browser, probe.platform)', backendContext);
-};
-
-// The pipeline's `split.group_regex` is "sp[0-9a-f]{8}", so a derived token is
-// only useful if it is the same shape as a real one — no pipeline change, and
-// no half-tagged dataset where only some files group.
-assert.match(
-  derivedToken('Chrome 120', 'Android'),
-  /^sp[0-9a-f]{8}$/,
-  'A derived speaker token must have the same sp+8-hex shape the trainer matches.'
-);
-assert.equal(
-  derivedToken('Chrome 120', 'Android'),
-  derivedToken('  chrome 120 ', 'ANDROID'),
-  'Case and stray whitespace must not split one device into two groups.'
-);
-assert.notEqual(
-  derivedToken('Chrome 120', 'Android'),
-  derivedToken('Safari 17', 'iPhone'),
-  'Different browser/platform pairs must derive different groups.'
-);
-// Joined with a separator so a shift of characters across the two fields is not
-// the same fingerprint; without it ("ab"+"c") and ("a"+"bc") would collide.
-assert.notEqual(
-  derivedToken('ab', 'c'),
-  derivedToken('a', 'bc'),
-  'The two fields must be joined with a separator, not concatenated blindly.'
-);
-// Nothing to derive from means no token: the trainer then treats the file as
-// its own group, which is today's behaviour. Inventing a shared token here
-// would merge every unknown device into one bucket.
-assert.equal(derivedToken('', ''), '', 'A row with neither browser nor platform must derive no token.');
-assert.equal(derivedToken(null, undefined), '', 'Blank sheet cells must derive no token.');
-assert.match(derivedToken('', 'Android'), /^sp[0-9a-f]{8}$/, 'One known field is still a usable group.');
-
-const insertToken = (filename, token) => {
-  backendContext.probe = { filename, token };
-  return vm.runInContext('filenameWithSpeakerToken_(probe.filename, probe.token)', backendContext);
-};
-
-// The renamed file must be indistinguishable from one uploaded today, class
-// prefix first: that prefix is how the pipeline labels the clip.
-assert.equal(
-  insertToken('001_20260101_000000_abcdef.webm', 'sp3f9a2c41'),
-  '001_sp3f9a2c41_20260101_000000_abcdef.webm',
-  'The token must be inserted between the class prefix and the timestamp.'
-);
-assert.equal(
-  insertToken('unknown_20260101_000000_abcdef.webm', 'sp3f9a2c41'),
-  'unknown_sp3f9a2c41_20260101_000000_abcdef.webm',
-  'Non-numeric class folders (unknown, noise) must rename the same way.'
-);
-// A name that is not the shape createFilename_ produces is left alone rather
-// than guessed at: a mangled class prefix relabels the recording.
-assert.equal(
-  insertToken('001_sp3f9a2c41_20260101_000000_abcdef.webm', 'spdeadbeef'.slice(0, 10)),
-  '',
-  'An already-tagged filename must not gain a second token.'
-);
-assert.equal(insertToken('holiday-photo.jpg', 'sp3f9a2c41'), '', 'An unrelated filename must be left untouched.');
-assert.equal(insertToken('001_20260101_000000_abcdef.webm', 'nope'), '', 'A malformed token must never be written into a name.');
-assert.equal(insertToken('', 'sp3f9a2c41'), '', 'An empty filename must produce no rename.');
-
-const alreadyTagged = (filename) => {
-  backendContext.probe = { filename };
-  return vm.runInContext('hasSpeakerToken_(probe.filename)', backendContext);
-};
-assert.equal(alreadyTagged('001_sp3f9a2c41_20260101_000000_abcdef.webm'), true, 'A tagged filename must be recognised so the backfill skips it.');
-assert.equal(alreadyTagged('001_20260101_000000_abcdef.webm'), false, 'An untagged filename must be recognised as work to do.');
-// The suffix is hex too, so the check has to be anchored to the token slot or
-// every file would look tagged and the backfill would do nothing.
-assert.equal(alreadyTagged('001_20260101_000000_5ba1e5.webm'), false, 'The hex suffix must not be mistaken for a speaker token.');
-
-// The row cursor makes the walk resumable across the 6-minute execution limit,
-// so it must be a real Script Property rather than an in-memory counter.
-assert.ok(
-  vm.runInContext('RUNTIME_KEYS.BACKFILL_ROW', backendContext),
-  'The backfill needs a Script Property key to resume from.'
-);
-
 // The negative class is a folder, not a phrase: the pipeline labels it from the
 // folder name, so listing it in phrases.json would invent a phrase id for it.
 if (bootstrap.unknownPrompt) {
@@ -402,10 +304,7 @@ assert.throws(
 const requiredFunctions = [
   'doGet', 'doPost', 'saveAudio', 'createFolderIfMissing', 'appendSpreadsheetRow', 'jsonResponse',
   'phrasesJsonContent_', 'ensurePhrasesFile_', 'allPrompts_', 'classFolderName_',
-  'visiblePhrases_', 'classParentFolder_', 'speakerToken_',
-  'backfillSpeakerTokens', 'previewSpeakerTokenBackfill', 'resetSpeakerTokenBackfill',
-  'backfillRow_', 'columnIndexes_', 'derivedSpeakerToken_', 'deviceFingerprint_',
-  'shortHex_', 'hasSpeakerToken_', 'filenameWithSpeakerToken_'
+  'visiblePhrases_', 'classParentFolder_', 'speakerToken_'
 ];
 for (const functionName of requiredFunctions) {
   assert.equal(

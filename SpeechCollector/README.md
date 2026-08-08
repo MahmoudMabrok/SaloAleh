@@ -210,10 +210,18 @@ split:
 ```
 
 Files without a token fall back to being their own group, which is exactly the
-current behaviour, so turning it on is safe on a mixed dataset. Recordings
-collected before the token shipped can be given one after the fact from the
-`browser`/`platform` columns the sheet already keeps — see
-[Backfill speaker tokens](#backfill-speaker-tokens-for-older-recordings).
+current behaviour, so turning it on is safe on a mixed dataset.
+
+Recordings collected before the token shipped can be given one after the fact.
+The sheet still records the `browser` and `platform` of every upload, and that
+pair — normalised and hashed — is a usable stand-in for a device. Section **4b**
+of `DhikrSpeech/notebooks/DhikrSpeech.ipynb` reads the sheet and renames those
+files on the mounted Drive; it lives in the notebook rather than here because
+Drive is mounted as a filesystem there, so the rename is not a per-file Drive API
+call bounded by Apps Script's 6-minute execution limit. It never writes back to
+this spreadsheet, so the `filename` column keeps the pre-rename name — which is
+harmless, because the matching tolerates it. See "Backfill speaker ids" in
+`DhikrSpeech/README.md`.
 
 It identifies a browser profile, not a person: it is generated locally, is never
 stored against anything else, and reaches the server only as those 8 characters.
@@ -365,81 +373,6 @@ The Apps Script backend:
 - Returns generic internal errors rather than exposing private exception details.
 
 Because the app intentionally allows anonymous uploads, anyone with the Web App URL can submit valid audio. Keep the URL limited to the intended volunteer group, monitor Drive storage, and reduce `maximumUploadBytes` if appropriate. Apps Script and Google Drive account quotas still apply.
-
-## Backfill speaker tokens for older recordings
-
-Recordings uploaded before the `sp…` token shipped have no speaker marker, so
-the trainer treats each of them as its own speaker and the same voice can end up
-in both train and validation. The metadata sheet still knows where each of those
-uploads came from — the `browser` and `platform` columns — and that pair, hashed,
-is a usable stand-in for a device.
-
-Three functions in `Code.gs` do this. They are run **from the Apps Script
-editor**, never from the web app:
-
-| Function | What it does |
-|----------|--------------|
-| `previewSpeakerTokenBackfill()` | Reads the sheet only. Reports how many rows would be renamed and lists the largest derived groups. Touches nothing. |
-| `backfillSpeakerTokens()` | Renames the untagged Drive files and writes the new names back to the sheet. |
-| `resetSpeakerTokenBackfill()` | Forgets the resume position so the next run starts from the first row. |
-
-### Running it
-
-1. Open the Apps Script project → **Editor**.
-2. Pick `previewSpeakerTokenBackfill` in the function dropdown, **Run**, and read
-   the output in **Execution log**:
-
-   ```text
-   Speaker-token backfill preview: 812 rows, 145 already tagged, 660 to rename
-   into 23 derived groups, 0 without browser/platform, 7 with an unrecognised filename.
-     sp8d358495  214 clips  chrome 120|android
-     spca33a624   96 clips  safari 17|iphone
-   ```
-
-   **This listing is the decision.** If one group holds most of the dataset,
-   grouping by it buys almost nothing and the split is barely more
-   speaker-independent than before. Twenty-odd comparable groups is a real gain.
-3. Pick `backfillSpeakerTokens`, **Run**. A renamed file looks exactly like a
-   fresh upload:
-
-   ```text
-   006_20260803_183015_ab12cd.webm   →   006_sp8d358495_20260803_183015_ab12cd.webm
-   ```
-4. Apps Script stops an execution at 6 minutes, so the walk stops at 4 and says
-   where it got to. Run it again — as many times as it asks — until the log ends
-   with `Finished`.
-
-Volunteers can keep uploading throughout: the backfill takes no script lock, and
-it only ever rewrites the `filename` cell of rows it has already read while a new
-upload appends at the bottom.
-
-### What it does and does not do
-
-- It **over-groups**, which is the safe direction. Two volunteers on the same
-  Chrome/Android build become one group and therefore land in the same split; one
-  volunteer is never spread across two. Leakage can only go down. The cost is
-  granularity, which is what the preview's group sizes show you.
-- A derived token is deliberately the same `sp<8 hex>` shape as a real one, so
-  `split.group_regex: "sp[0-9a-f]{8}"` picks it up with no pipeline change. To
-  tell the two apart afterwards, recompute the hash from the row: the derivation
-  is deterministic, so a token that reproduces from `browser`/`platform` is a
-  derived (coarse) one, and a token that does not is a real per-browser id.
-- It never invents an identity. A row naming neither a browser nor a platform is
-  left untouched, keeping the one-group-per-file fallback instead of merging every
-  unknown device into a single bucket.
-- It never guesses at a filename it does not recognise. Only the exact shape
-  `{class}_{timestamp}_{suffix}.{ext}` is rewritten; anything else is counted and
-  skipped, because a mangled class prefix would relabel the recording.
-- It is safe to re-run. A file that already carries a token is skipped, and one
-  renamed by an interrupted run has its sheet row repaired from the name Drive
-  reports rather than being renamed a second time.
-- It is **not** retroactive validation accuracy. Numbers measured before the
-  backfill were measured on ungrouped splits; re-run preprocessing and training
-  after it to get a figure that means something.
-
-Files that could not be handled are counted in the summary line and named
-individually in the execution log: `file missing` (the Drive file was deleted),
-`unrecognised name`, and `rename failed`.
 
 ## Troubleshooting
 

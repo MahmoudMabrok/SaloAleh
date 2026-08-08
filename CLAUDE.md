@@ -466,18 +466,26 @@ other engineers) are in `DhikrSpeech/docs/LEARNING_GUIDE.md`.
   hiss as a class, which is why `classParentFolder_` in the collector's `Code.gs` picks the parent
   from the prompt and the build refuses a `noiseFolderName` equal to `datasetSubfolder`.
 - **Collector filenames carry a speaker token**: `<class>_sp<8 hex>_<timestamp>_<suffix>`, from a
-  random UUID the volunteer's browser mints once and keeps (`speech_collector_speaker_id`). It exists
-  so `split.group_regex: "sp[0-9a-f]{8}"` can keep one voice out of both train and val; it is still
-  `null`, so today's validation accuracy is optimistic. A file with no token falls back to being its
-  own group, so enabling the regex is safe on a mixed dataset. Recordings that predate the token can be
-  given one after the fact by `backfillSpeakerTokens()` in `SpeechCollector/Code.gs` (preview first with
-  `previewSpeakerTokenBackfill()`, reset with `resetSpeakerTokenBackfill()`): it derives `sp<8 hex>` from
-  the metadata sheet's `browser`/`platform` pair, renames the Drive file into the normal shape and writes
-  the name back to the sheet. It **over-groups** — one bucket per browser/platform, so distinct volunteers
-  merge — which is the safe direction (leakage only ever goes down), and the derivation is deterministic,
-  so a derived token is identifiable afterwards by recomputing it from its row. Rows naming neither field,
-  and filenames outside the canonical shape, are counted and left untouched; the walk is resumable across
-  the 6-minute Apps Script limit, idempotent, and takes no script lock so uploads keep working.
+  random UUID the volunteer's browser mints once and keeps (`speech_collector_speaker_id`). It is
+  already the id in force — `split.speaker.source: auto` resolves through
+  `filename_patterns`, whose first entry is `(?P<speaker>sp[0-9a-f]{8})`. (The legacy
+  `split.group_regex` is `null` and superseded; setting it would only override the `speaker` section,
+  not enable it.) A file with **no** token resolves to no speaker and becomes its own group, so a
+  dataset part-way through the rollout is grouped only where the token exists — `auto_match_ratio`
+  (0.6) decides whether stage 01 warns about that, and coverage below it means the validation
+  accuracy is still optimistic for the untagged remainder.
+- **Pre-token recordings can be given a token after the fact** by notebook section `4b`
+  (`DhikrSpeech/src/speaker_backfill.py`): it reads the collector's metadata sheet, derives
+  `sp<8 hex>` from `sha256(browser|platform)`, and renames the untagged files on the mounted Drive.
+  It lives in the notebook, not in Apps Script, because Colab mounts Drive as a filesystem — the
+  rename is local rather than a per-file Drive API call under a 6-minute execution limit. It
+  **over-groups** (one bucket per browser/platform, so distinct volunteers merge), which is the safe
+  direction since leakage only ever goes down, and `BackfillPlan.summary()` prints the group sizes so
+  a single dominant bucket is visible *before* anything is renamed. Rows with neither field, filenames
+  outside the collector's shape, and existing targets are counted and skipped rather than guessed at.
+  Nothing writes back to the spreadsheet — rows are matched with any token stripped, so the walk is
+  idempotent against the stale sheet, and `reports/speaker_backfill.csv` is the old→new record.
+  `write_speakers_csv` is the non-destructive alternative (same grouping, nothing renamed).
 - `classes.include_phrases` picks which phrase ids the model learns (currently `[6, 7]`). Applied in
   `scan_dataset`, so it decides the class vocabulary, the
   manifest's class indices, the model's output width and `labels.txt`. Changing it requires re-running
