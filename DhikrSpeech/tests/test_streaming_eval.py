@@ -350,3 +350,44 @@ def test_calibration_sweep_serialises() -> None:
     payload = json.loads(json.dumps(result.to_dict()))
     assert len(payload["sweep"]) == 5
     assert payload["sweep"][0]["activation_threshold"] == pytest.approx(0.5)
+
+
+# ---------------------------------------------------------------------------
+# Annotation scaffolding
+# ---------------------------------------------------------------------------
+def test_annotation_template_lists_every_recording(tmp_path: Path) -> None:
+    from src.streaming_eval import annotation_template
+
+    for name in ("session_001.wav", "tv.flac", "notes.txt"):
+        (tmp_path / name).write_bytes(b"")
+    entries = annotation_template(tmp_path, target="007")
+    assert [entry["file"] for entry in entries] == ["session_001.wav", "tv.flac"]
+    assert all(entry["target"] == "007" for entry in entries)
+
+
+def test_the_template_defaults_to_negative_only(tmp_path: Path) -> None:
+    """An empty `events` list is a valid negative-only stress recording, so a
+    folder of TV and street audio needs no editing at all."""
+    from src.streaming_eval import load_annotations, write_annotation_template
+
+    (tmp_path / "tv.wav").write_bytes(b"")
+    path = write_annotation_template(tmp_path / "annotations.json", tmp_path, target="007")
+    clips = load_annotations(path)
+    assert len(clips) == 1 and clips[0].is_negative_only
+
+
+def test_the_template_refuses_to_overwrite_hand_made_annotations(tmp_path: Path) -> None:
+    from src.streaming_eval import write_annotation_template
+
+    (tmp_path / "a.wav").write_bytes(b"")
+    path = tmp_path / "annotations.json"
+    path.write_text('[{"file": "a.wav", "events": [{"start": 1.0, "end": 2.0}]}]', encoding="utf-8")
+    with pytest.raises(FileExistsError, match="hand-made"):
+        write_annotation_template(path, tmp_path)
+    assert "1.0" in path.read_text(encoding="utf-8")
+
+
+def test_an_empty_folder_gives_an_empty_template(tmp_path: Path) -> None:
+    from src.streaming_eval import annotation_template
+
+    assert annotation_template(tmp_path / "missing") == []

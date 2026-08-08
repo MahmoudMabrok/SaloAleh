@@ -176,6 +176,10 @@ streaming_test/
 ]
 ```
 
+Scaffold the file rather than typing it: `write_annotation_template` lists every recording in
+the folder with an empty `events` list, which is already the right answer for every
+negative-only recording.
+
 **Sessions** — someone actually using the app: repeating the dhikr at their own pace, sometimes
 quickly, with pauses, in a normal room. Mark the start and end of every repetition. These give
 event recall and the duplicate rate.

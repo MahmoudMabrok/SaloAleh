@@ -68,6 +68,7 @@ __all__ = [
     "StreamingClip",
     "StreamingEvaluation",
     "ThresholdRow",
+    "annotation_template",
     "calibrate_threshold",
     "evaluate_negative_clips",
     "evaluate_timelines",
@@ -76,6 +77,7 @@ __all__ = [
     "match_events",
     "score_clips",
     "streaming_audio_root",
+    "write_annotation_template",
 ]
 
 SECONDS_PER_HOUR = 3600.0
@@ -118,6 +120,62 @@ class StreamingClip:
             return f"{int(text):03d}" == target_folder
         except ValueError:
             return text == target_folder
+
+
+def annotation_template(
+    audio_dir: PathLike,
+    target: Optional[str] = None,
+    extensions: Sequence[str] = (".wav", ".flac", ".ogg", ".mp3", ".m4a", ".webm"),
+) -> List[Dict[str, object]]:
+    """A skeleton ``annotations.json`` for a folder of long-form recordings.
+
+    Annotating is the most tedious step in the project and the one most likely to
+    be skipped, so this writes the scaffold: every recording in the folder, with
+    an empty ``events`` list. That default is deliberate - an empty list is a
+    valid **negative-only stress recording**, so a folder of television and
+    street audio needs no further editing at all, and only the session
+    recordings need timestamps filled in.
+    """
+    root = Path(audio_dir)
+    suffixes = {ext.lower() for ext in extensions}
+    files = sorted(
+        path.name
+        for path in root.iterdir()
+        if path.is_file() and path.suffix.lower() in suffixes
+    ) if root.is_dir() else []
+
+    return [
+        {
+            "file": name,
+            "target": target,
+            "category": "uncategorised",
+            "events": [],
+        }
+        for name in files
+    ]
+
+
+def write_annotation_template(
+    path: PathLike,
+    audio_dir: PathLike,
+    target: Optional[str] = None,
+    overwrite: bool = False,
+) -> Path:
+    """Write :func:`annotation_template` to ``path``, refusing to clobber."""
+    destination = Path(path)
+    if destination.exists() and not overwrite:
+        raise FileExistsError(
+            f"{destination} already exists - annotations are hand-made, so this "
+            f"refuses to overwrite them. Pass overwrite=True if that is really what "
+            f"you want."
+        )
+    entries = annotation_template(audio_dir, target=target)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(
+        json.dumps(entries, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+    LOGGER.info("annotation skeleton for %d recording(s) written to %s", len(entries), destination)
+    return destination
 
 
 def load_annotations(path: PathLike) -> List[StreamingClip]:
