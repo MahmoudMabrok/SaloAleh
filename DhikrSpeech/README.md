@@ -64,6 +64,7 @@ DhikrSpeech/
 │   ├── audio.py                  decode, trim, normalise, fit length, write WAV
 │   ├── dataset.py                scan, validate, preprocess, split, tf.data pipeline
 │   ├── speakers.py               who spoke what, and proving the splits never share one
+│   ├── speaker_backfill.py       give pre-token recordings a speaker, from the collector's sheet
 │   ├── quality.py                is there enough data, and enough variety, to train
 │   ├── augmentation.py           noise, pitch, speed, gain, time shift, reverb, SpecAugment
 │   ├── features.py               log mel front-end (+ its Android metadata)
@@ -195,6 +196,62 @@ unseen user. Use a **speaker id that is stable across sessions** — the same pe
 must get the same id, or the "unseen speaker" guarantee is only as good as the id.
 
 Speaker ids never need to be real names. `sp01`, `sp02` … is enough, and better for privacy.
+
+### Backfill speaker ids for pre-token recordings
+
+Recordings collected before `SpeechCollector` started stamping its `sp<8 hex>` token carry no speaker
+at all, so each of them is its own group and the same voice can sit on both sides of a split. They are
+not a lost cause: the collector's metadata spreadsheet still records, per upload, the `browser` and
+`platform` it came from, and that pair — normalised and hashed — is a usable stand-in for a device.
+
+Notebook section **4b · Backfill speaker ids from the collector's sheet** (`src/speaker_backfill.py`)
+reads the sheet, works out which files on the mounted Drive are untagged, and renames them into the
+shape a fresh upload would have had:
+
+```text
+006_20260803_183015_ab12cd.webm  →  006_sp8d358495_20260803_183015_ab12cd.webm
+```
+
+It runs here rather than in Apps Script because Drive is mounted as a filesystem in Colab: the rename
+is a local operation, not a per-file Drive API call bounded by a 6-minute execution limit.
+
+Point `METADATA_SHEET` at the sheet — a Google Sheets id/URL (via `gspread`, after
+`google.colab.auth.authenticate_user()`), a CSV export, or a published CSV link — and run it. It plans
+first and renames nothing until `APPLY = True`.
+
+**Read the plan before applying it.** The summary prints how many clips each derived speaker takes,
+and that is the decision:
+
+```text
+to rename             : 660
+derived speakers      : 23
+
+Largest derived speakers:
+  sp8d358495    214 clips  32.4%  chrome 120|android
+  spca33a624     96 clips  14.5%  safari 17|iphone
+```
+
+- It **over-groups**, which is the safe direction: two volunteers on the same Chrome/Android build
+  become one speaker and land in the same split, while one volunteer is never spread across two.
+  Leakage can only go down.
+- But if one group holds most of the dataset, browser and platform are too coarse to separate these
+  volunteers and grouping by them buys little. The summary says so outright when that happens.
+- A derived token deliberately reuses the real `sp<8 hex>` shape, so it needs no config change. The
+  derivation is deterministic, so a derived token stays identifiable afterwards by recomputing
+  `derive_speaker_token(browser, platform)` from its row.
+- A row naming neither a browser nor a platform is left alone — the one-group-per-file fallback is
+  more honest than merging every unknown device into one bucket. Filenames outside the collector's
+  shape are counted and skipped rather than guessed at, and an existing target is never overwritten.
+
+Nothing writes back to the spreadsheet, so it keeps the pre-rename names. That is deliberate and
+harmless: rows are matched to files with any token stripped, so the backfill is idempotent and safe to
+re-run. The old→new mapping is saved to `reports/speaker_backfill.csv` as the record. Re-run notebook
+sections 3 and 4 afterwards so the index picks up the new names.
+
+`WRITE_SPEAKERS_CSV = True` is the non-destructive alternative: the identical grouping written to
+`speakers.csv`, which the resolver prefers over filenames anyway, with nothing on Drive renamed. The
+trade-off is that a token in the filename travels with the file — copy the dataset or re-download it
+and the grouping survives — while the CSV goes stale as recordings are added.
 
 ### Negatives, and why `hard_negative` is the important folder
 
@@ -1189,7 +1246,9 @@ answer, and the rest buy a point or two while hiding the real limit:
    random id the volunteer's browser mints once and reuses, and that token is matched out of the box
    (`split.speaker.filename_patterns`). Older uploads that predate it carry no token and become one
    group each — which is honest but not protective, so the stage 01 speaker report prints how many
-   recordings have an id. If most of them do not, the validation numbers are still **optimistic**.
+   recordings have an id. If most of them do not, the validation numbers are still **optimistic** —
+   notebook section 4b can give those older uploads a coarse id derived from the collector sheet's
+   `browser`/`platform` pair (see "Backfill speaker ids for pre-token recordings").
    If you record a batch yourself, name the files `<speaker>_<n>.wav` or list them in `speakers.csv`.
 3. **Less capacity.** `model.width_multiplier: 0.5` quarters the parameter count; `model.dropout`
    already defaults to `0.3`. Raise the multiplier back toward `1.0` as the dataset grows.

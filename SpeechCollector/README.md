@@ -274,6 +274,17 @@ split:
 Files without a token fall back to being their own group, which is exactly the
 current behaviour, so turning it on is safe on a mixed dataset.
 
+Recordings collected before the token shipped can be given one after the fact.
+The sheet still records the `browser` and `platform` of every upload, and that
+pair — normalised and hashed — is a usable stand-in for a device. Section **4b**
+of `DhikrSpeech/notebooks/DhikrSpeech.ipynb` reads the sheet and renames those
+files on the mounted Drive; it lives in the notebook rather than here because
+Drive is mounted as a filesystem there, so the rename is not a per-file Drive API
+call bounded by Apps Script's 6-minute execution limit. It never writes back to
+this spreadsheet, so the `filename` column keeps the pre-rename name — which is
+harmless, because the matching tolerates it. See "Backfill speaker ids" in
+`DhikrSpeech/README.md`.
+
 It identifies a browser profile, not a person: it is generated locally, is never
 stored against anything else, and reaches the server only as those 8 characters.
 It is deliberately **not** a spreadsheet column — adding one would break the
