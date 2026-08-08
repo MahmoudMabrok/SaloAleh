@@ -10,6 +10,7 @@ audio, no TensorFlow.
 
 from __future__ import annotations
 
+import logging
 import sys
 from pathlib import Path
 
@@ -73,6 +74,36 @@ def test_named_group_wins_over_group_one():
     assert resolver.resolve("006/12_ali.wav").speaker == "ali"
 
 
+def test_the_collector_device_token_is_the_speaker_not_the_class_id():
+    """SpeechCollector names uploads `<class>_sp<8 hex>_<timestamp>_<suffix>`.
+
+    A pattern that simply took the leading token would return the *class id*, so
+    every recording of a phrase would be one "speaker" and the split would move
+    whole classes into one split with nothing looking wrong. This is the case
+    that has to keep working.
+    """
+    resolver = SpeakerResolver(SpeakerConfig(source="filename"))
+    assignment = resolver.resolve(
+        "dataset/006/006_spa1b2c3d4_20260808T120000_ab12.webm", blocked=("006", "")
+    )
+    assert assignment.speaker == "spa1b2c3d4"
+
+
+def test_a_collector_file_without_a_token_has_no_speaker():
+    """Uploads that predate the device token fall back to being their own group,
+    which is honest - not to the class id, which would be a lie."""
+    resolver = SpeakerResolver(SpeakerConfig(source="filename"))
+    assignment = resolver.resolve(
+        "dataset/007/007_20260101T090000_old1.webm", blocked=("007", "")
+    )
+    assert assignment.speaker is None
+
+
+def test_a_hand_named_file_still_resolves_by_its_leading_token():
+    resolver = SpeakerResolver(SpeakerConfig(source="filename"))
+    assert resolver.resolve("006/ali_001.wav", blocked=("006", "")).speaker == "ali"
+
+
 def test_parent_folder_source_ignores_class_and_category_folders():
     resolver = SpeakerResolver(SpeakerConfig(source="parent"))
     assert resolver.resolve("dataset/006/ali/x.wav", blocked=("006", "")).speaker == "ali"
@@ -121,13 +152,30 @@ def test_auto_picks_one_source_for_the_whole_dataset(tmp_path):
     assert assignments[-1].speaker is None
 
 
-def test_auto_falls_back_to_none_when_nothing_matches_enough_files():
+def test_auto_falls_back_to_none_when_nothing_matches_at_all():
     resolver = SpeakerResolver(SpeakerConfig(source="auto"))
     assignments = resolver.resolve_all(
         [(f"006/rec{index}.wav", ("006", "")) for index in range(5)]
     )
     assert resolver.resolved_source == SOURCE_NONE
     assert all(item.speaker is None for item in assignments)
+
+
+def test_auto_uses_partial_coverage_rather_than_discarding_it(caplog):
+    """A dataset part-way through a collector rollout: newer files carry the
+    device token, older ones do not. Grouping what can be grouped is strictly
+    better than splitting all of it at random - but it is worth a warning."""
+    items = [
+        (f"006/006_spa1b2c3d4_{index}_x.webm", ("006", "")) for index in range(2)
+    ]
+    items += [(f"006/006_{index}_old.webm", ("006", "")) for index in range(5)]
+    resolver = SpeakerResolver(SpeakerConfig(source="auto"))
+    with caplog.at_level(logging.WARNING, logger="src.speakers"):
+        assignments = resolver.resolve_all(items)
+    assert resolver.resolved_source == SOURCE_FILENAME
+    assert [item.speaker for item in assignments[:2]] == ["spa1b2c3d4"] * 2
+    assert all(item.speaker is None for item in assignments[2:])
+    assert "cover only" in caplog.text
 
 
 def test_auto_prefers_metadata_over_the_filename_convention():

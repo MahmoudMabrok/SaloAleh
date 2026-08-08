@@ -11,9 +11,10 @@
  * record button on the fourth card, exactly as in the real page.
  *
  * Covered: one card per prompt (the phrases plus the negative-class card that
- * asks for a word which is not a dhikr), one take at a time across the whole
- * list, re-recording, per-card upload, the serialized upload-all bar, failure
- * handling, and the per-prompt tally.
+ * asks for a word which is not a dhikr, and the noise card that asks for no
+ * words at all), one take at a time across the whole list, re-recording,
+ * per-card upload, the serialized upload-all bar, failure handling, the
+ * per-prompt tally, and the persisted speaker id every upload carries.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -34,10 +35,17 @@ const bootstrap = JSON.parse(
 );
 
 const phrases = bootstrap.phrases;
-// The page offers one card per prompt: every phrase, then the unknown card.
-const prompts = bootstrap.unknownPrompt ? [...phrases, bootstrap.unknownPrompt] : [...phrases];
-const unknownIndex = prompts.length - 1;
+// The page offers one card per prompt: every visible phrase, then the unknown
+// card, then the noise card. Indices are derived rather than written down, so
+// parking a phrase in config.ts moves the tests with it.
+const prompts = [...phrases];
+if (bootstrap.unknownPrompt) prompts.push(bootstrap.unknownPrompt);
+if (bootstrap.noisePrompt) prompts.push(bootstrap.noisePrompt);
+const unknownIndex = bootstrap.unknownPrompt ? phrases.length : -1;
+const noiseIndex = bootstrap.noisePrompt ? prompts.length - 1 : -1;
+const lastIndex = prompts.length - 1;
 const UPLOAD_COUNTS_KEY = 'speech_collector_upload_counts';
+const SPEAKER_ID_KEY = 'speech_collector_speaker_id';
 
 // The static shell from Index.html. Everything else is created by the app.
 const SHELL_IDS = [
@@ -104,7 +112,7 @@ class FakeElement {
 // Every canvas call is a no-op; only the app's control flow is under test.
 const drawingContext = new Proxy({}, { get: () => () => {} });
 
-function createEnvironment({ secureContext = true, storageSeed = null, uploadOk = true } = {}) {
+function createEnvironment({ secureContext = true, storageSeed = null, speakerSeed = null, uploadOk = true } = {}) {
   const shell = new Map(SHELL_IDS.map((id) => [id, new FakeElement('div', id)]));
   const bootstrapNode = new FakeElement('script', 'bootstrap-data');
   bootstrapNode.textContent = JSON.stringify(bootstrap);
@@ -115,7 +123,9 @@ function createEnvironment({ secureContext = true, storageSeed = null, uploadOk 
   const created = [];
   const timers = [];
   const clock = { now: 0 };
-  const storage = new Map(storageSeed ? [[UPLOAD_COUNTS_KEY, JSON.stringify(storageSeed)]] : []);
+  const storage = new Map();
+  if (storageSeed) storage.set(UPLOAD_COUNTS_KEY, JSON.stringify(storageSeed));
+  if (speakerSeed) storage.set(SPEAKER_ID_KEY, speakerSeed);
   const recorders = [];
   const uploads = [];
   let uploadGate = null;
@@ -335,7 +345,7 @@ const disabled = (environment, id) => environment.dom.get(id).disabled;
   assert.equal(disabled(environment, 'stop-2'), false, 'The live card must be stoppable.');
   assert.equal(disabled(environment, 'record-2'), true, 'The live card cannot restart itself mid-take.');
   assert.equal(disabled(environment, 'record-0'), true, 'Every other card must be locked.');
-  assert.equal(disabled(environment, 'record-9'), true, 'Every other card must be locked.');
+  assert.equal(disabled(environment, `record-${lastIndex}`), true, 'Every other card must be locked.');
   assert.equal(text(environment, 'status-2'), bootstrap.ui.recording);
 
   environment.clock.now += 1500;
@@ -343,7 +353,7 @@ const disabled = (environment, id) => environment.dom.get(id).disabled;
   await settle();
 
   assert.equal(disabled(environment, 'record-0'), false, 'Stopping must free the other cards.');
-  assert.equal(disabled(environment, 'record-9'), false);
+  assert.equal(disabled(environment, `record-${lastIndex}`), false);
 }
 
 // 4. A finished take arms play and upload on its own card, and only there.
@@ -420,12 +430,12 @@ const disabled = (environment, id) => environment.dom.get(id).disabled;
 // 9. A failed upload keeps its take, offers a retry, and never tallies.
 {
   const environment = createEnvironment({ uploadOk: false });
-  await recordTake(environment, 5);
-  await uploadTake(environment, 5);
+  await recordTake(environment, lastIndex);
+  await uploadTake(environment, lastIndex);
   assert.equal(environment.storage.has(UPLOAD_COUNTS_KEY), false, 'A failed upload must not be tallied.');
-  assert.equal(disabled(environment, 'upload-5'), false, 'The take must be kept for a retry.');
-  assert.equal(text(environment, 'upload-label-5'), bootstrap.ui.retry, 'The button must offer a retry.');
-  assert.equal(text(environment, 'tally-5'), '', 'Nothing was uploaded, so nothing is tallied.');
+  assert.equal(disabled(environment, `upload-${lastIndex}`), false, 'The take must be kept for a retry.');
+  assert.equal(text(environment, `upload-label-${lastIndex}`), bootstrap.ui.retry, 'The button must offer a retry.');
+  assert.equal(text(environment, `tally-${lastIndex}`), '', 'Nothing was uploaded, so nothing is tallied.');
 }
 
 // 10. The upload-all bar counts waiting takes and appears only once it beats
@@ -565,4 +575,105 @@ if (bootstrap.unknownPrompt) {
   );
 }
 
-console.log('UI behaviour tests passed: per-prompt recorders, the unknown card, single-take locking, uploads, and tallies.');
+// 17. Only the phrases that are meant to be collected get a card. A parked
+//     phrase keeps its id and its folder, but must never reach a volunteer.
+{
+  const environment = createEnvironment();
+  assert.ok(phrases.length > 0, 'The page must offer at least one phrase.');
+  assert.equal(
+    environment.dom.find(`card-${prompts.length}`),
+    null,
+    'The page built more cards than there are prompts; a parked phrase reached the volunteer.'
+  );
+  const shown = phrases.map((phrase, index) => text(environment, `phrase-${index}`));
+  assert.deepEqual(shown, phrases.map((phrase) => phrase.text), 'The cards must follow the configured order.');
+}
+
+// 18. The noise card comes last, asks for silence rather than a phrase, and
+//     marks itself apart so it is not mistaken for one.
+if (bootstrap.noisePrompt) {
+  const environment = createEnvironment();
+  assert.equal(
+    text(environment, `phrase-${noiseIndex}`),
+    bootstrap.noisePrompt.text,
+    'The last card must ask for background noise.'
+  );
+  assert.equal(text(environment, `note-${noiseIndex}`), bootstrap.noisePrompt.note);
+  assert.equal(text(environment, `badge-${noiseIndex}`), bootstrap.ui.noiseBadge);
+  assert.match(
+    environment.dom.get(`card-${noiseIndex}`).className,
+    /phrase-card-noise/,
+    'The noise card must be styled apart from the phrases and from the unknown card.'
+  );
+}
+
+// 19. The noise card never tells the volunteer to say the phrase once — on this
+//     one card, saying anything at all is what ruins the sample.
+if (bootstrap.noisePrompt) {
+  const environment = createEnvironment();
+  environment.dom.get(`record-${noiseIndex}`).dispatch('click');
+  await settle();
+  assert.equal(text(environment, `status-${noiseIndex}`), bootstrap.ui.noiseRecording);
+
+  environment.clock.now += 1500;
+  environment.dom.get(`stop-${noiseIndex}`).dispatch('click');
+  await settle();
+  assert.equal(text(environment, `status-${noiseIndex}`), bootstrap.ui.noiseRecordingReady);
+
+  // A phrase card keeps the shared wording, so the override is scoped to noise.
+  await recordTake(environment, 0);
+  assert.equal(text(environment, 'status-0'), bootstrap.ui.recordingReady);
+}
+
+// 20. A noise take uploads under the noise id, which is what sends it to the
+//     noise folder beside the dataset, and tallies against itself alone.
+if (bootstrap.noisePrompt) {
+  const environment = createEnvironment();
+  await recordTake(environment, noiseIndex);
+  await uploadTake(environment, noiseIndex);
+
+  assert.equal(
+    environment.uploads[0].phrase_id,
+    bootstrap.noisePrompt.id,
+    'The payload must carry the noise prompt\'s id, not a phrase id.'
+  );
+  assert.deepEqual(
+    JSON.parse(environment.storage.get(UPLOAD_COUNTS_KEY)),
+    { [bootstrap.noisePrompt.id]: 1 },
+    'A noise sample must be tallied against the noise card only.'
+  );
+  assert.equal(text(environment, 'tally-0'), '', 'No phrase may be credited with the noise sample.');
+}
+
+// 21. Every upload carries the browser's speaker id, and the id is minted once
+//     and kept: it is what lets the trainer keep one voice out of both splits.
+{
+  const environment = createEnvironment();
+  await recordTake(environment, 0);
+  await uploadTake(environment, 0);
+
+  const stored = environment.storage.get(SPEAKER_ID_KEY);
+  assert.ok(stored, 'The page must persist a speaker id on first visit.');
+  assert.equal(environment.uploads[0].speaker_id, stored, 'The upload must carry the stored speaker id.');
+
+  await recordTake(environment, 1);
+  await uploadTake(environment, 1);
+  assert.equal(
+    environment.uploads[1].speaker_id,
+    stored,
+    'A second sample from the same browser must reuse the same id, not mint a new one.'
+  );
+}
+
+// 22. A returning volunteer keeps the id they already have; a new one would
+//     split their recordings across two apparent speakers.
+{
+  const existing = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+  const environment = createEnvironment({ speakerSeed: existing });
+  await recordTake(environment, 0);
+  await uploadTake(environment, 0);
+  assert.equal(environment.uploads[0].speaker_id, existing, 'A stored speaker id must be reused as-is.');
+  assert.equal(environment.storage.get(SPEAKER_ID_KEY), existing, 'A stored speaker id must not be overwritten.');
+}
+
+console.log('UI behaviour tests passed: per-prompt recorders, the unknown and noise cards, single-take locking, uploads, tallies, and the speaker id.');

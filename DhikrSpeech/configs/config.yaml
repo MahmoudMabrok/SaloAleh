@@ -198,15 +198,27 @@ split:
     # parent   - the recording's folder inside the class folder (dataset/006/ali/*.wav)
     # none     - no speaker information; evaluation is NOT speaker-independent
     source: auto
-    # Matches speaker01_001.wav, ali-03.wav, s7_x.wav ... A named (?P<speaker>...)
-    # group wins, otherwise group 1, otherwise the whole match.
-    regex: '^(?P<speaker>[A-Za-z0-9\-]+?)[_\-]'
+    # A single pattern that overrides the list below. null = use the list.
+    regex: null
+    # Tried in order; the first token that is not the class folder's own name
+    # wins. The collector's device token comes first deliberately: its uploads are
+    # named <class>_sp<8 hex>_<timestamp>_<suffix>, so a pattern that simply took
+    # the leading token would extract the CLASS ID and make every recording of a
+    # phrase one "speaker" - putting whole classes in one split with nothing
+    # looking wrong. A named (?P<speaker>...) group wins, else group 1, else the
+    # whole match.
+    filename_patterns:
+      - '(?P<speaker>sp[0-9a-f]{8})'        # SpeechCollector device token
+      - '^(?P<speaker>[A-Za-z0-9\-]+?)[_\-]' # hand-named: ali_001.wav
     metadata_file: null         # null = paths.speakers_file
     # When speakers are known, a speaker in two splits fails preprocessing rather
     # than warning. A silent leak invalidates every number downstream.
     require_disjoint: true
     min_speakers: 10            # below this the split is safe but not diverse
-    auto_match_ratio: 0.6       # regex must match this share of files for `auto`
+    # Coverage below which `auto` warns that most files have no speaker id. It
+    # never rejects the source: grouping the files that do carry one is strictly
+    # better than splitting all of them at random.
+    auto_match_ratio: 0.6
 
 # ---------------------------------------------------------------------------
 # Dataset quality - recommendations, never blocking

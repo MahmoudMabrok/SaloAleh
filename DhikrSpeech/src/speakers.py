@@ -133,18 +133,28 @@ class SpeakerResolver:
     config: SpeakerConfig
     metadata: Dict[str, str] = field(default_factory=dict)
     dataset_root: Optional[Path] = None
-    _pattern: Optional[re.Pattern] = field(default=None, init=False, repr=False)
-    # Decided by `describe`/`resolve_all` under `source: auto`; until then `auto`
-    # tries every source in order for each file.
+    _patterns: List[re.Pattern] = field(default_factory=list, init=False, repr=False)
+    # Decided by `resolve_all` under `source: auto`; until then `auto` tries every
+    # source in order for each file.
     resolved_source: Optional[str] = field(default=None, init=False)
 
     def __post_init__(self) -> None:
-        if self.config.regex:
+        # `regex` is a single override; without one the configured patterns are
+        # tried in order.
+        sources = (
+            [self.config.regex]
+            if self.config.regex
+            else list(self.config.filename_patterns)
+        )
+        for expression in sources:
+            if not expression:
+                continue
             try:
-                self._pattern = re.compile(self.config.regex)
+                self._patterns.append(re.compile(expression))
             except re.error as exc:
                 raise ValueError(
-                    f"split.speaker.regex is not a valid regular expression: {exc}"
+                    f"'{expression}' is not a valid regular expression "
+                    f"(split.speaker.regex / filename_patterns): {exc}"
                 ) from exc
 
     # -- individual sources -------------------------------------------------
@@ -167,20 +177,34 @@ class SpeakerResolver:
                 return speaker
         return None
 
-    def _from_filename(self, path: PathLike) -> Optional[str]:
-        if self._pattern is None:
-            return None
-        match = self._pattern.search(Path(path).name)
-        if not match:
-            return None
-        if "speaker" in (match.groupdict() or {}):
-            value = match.group("speaker")
-        elif match.groups():
-            value = match.group(1)
-        else:
-            value = match.group(0)
-        value = (value or "").strip()
-        return value or None
+    def _from_filename(
+        self, path: PathLike, blocked: Sequence[str] = ()
+    ) -> Optional[str]:
+        """The speaker token in a file name, per the configured patterns.
+
+        ``blocked`` holds names that are structure rather than people - the class
+        folder and the negative category. This matters more than it looks:
+        ``SpeechCollector`` names its uploads ``<class>_sp<8 hex>_<timestamp>_…``,
+        so a pattern that takes the leading token extracts the **class id**. Left
+        unguarded that would make every recording of a phrase one "speaker", and
+        the split would move whole classes into one split with nothing looking
+        wrong. A token that is the class's own name is therefore rejected, and
+        the next pattern is tried.
+        """
+        name = Path(path).name
+        forbidden = {item for item in blocked if item}
+        for pattern in self._patterns:
+            match = pattern.search(name)
+            if not match:
+                continue
+            groups = match.groupdict() or {}
+            value = groups.get("speaker")
+            if value is None:
+                value = match.group(1) if match.groups() else match.group(0)
+            value = (value or "").strip()
+            if value and value not in forbidden:
+                return value
+        return None
 
     def _from_parent(
         self, path: PathLike, blocked: Sequence[str] = ()
@@ -212,14 +236,16 @@ class SpeakerResolver:
         if source == SOURCE_METADATA:
             return SpeakerAssignment(text, self._from_metadata(path), SOURCE_METADATA)
         if source == SOURCE_FILENAME:
-            return SpeakerAssignment(text, self._from_filename(path), SOURCE_FILENAME)
+            return SpeakerAssignment(
+                text, self._from_filename(path, blocked), SOURCE_FILENAME
+            )
         if source == SOURCE_PARENT:
             return SpeakerAssignment(text, self._from_parent(path, blocked), SOURCE_PARENT)
 
         # auto: metadata, then filename, then folder.
         for name, getter in (
             (SOURCE_METADATA, lambda: self._from_metadata(path)),
-            (SOURCE_FILENAME, lambda: self._from_filename(path)),
+            (SOURCE_FILENAME, lambda: self._from_filename(path, blocked)),
             (SOURCE_PARENT, lambda: self._from_parent(path, blocked)),
         ):
             speaker = getter()
@@ -234,8 +260,16 @@ class SpeakerResolver:
 
         Deciding per file would let a dataset end up with ids from three different
         conventions, where ``ali`` from a folder and ``ali`` from a filename may or
-        may not be the same person. So under ``auto`` the source that covers
-        enough of the dataset is chosen once and applied to every file.
+        may not be the same person. So under ``auto`` **one** source is chosen for
+        the whole dataset - the one that covers the most files, with ties going to
+        the more explicit source (metadata, then filename, then folder).
+
+        Partial coverage is used rather than discarded. A dataset part-way through
+        a collector rollout has the device token on its newer files and nothing on
+        the older ones; grouping the files that do carry an id, and leaving the
+        rest as one group each, is exactly right and strictly better than
+        splitting all of them at random. ``auto_match_ratio`` only decides whether
+        that partial coverage is worth a warning.
 
         ``items`` is ``(path, blocked_folder_names)``.
         """
@@ -250,38 +284,50 @@ class SpeakerResolver:
 
         candidates = (
             (SOURCE_METADATA, lambda path, blocked: self._from_metadata(path)),
-            (SOURCE_FILENAME, lambda path, blocked: self._from_filename(path)),
+            (SOURCE_FILENAME, self._from_filename),
             (SOURCE_PARENT, self._from_parent),
         )
+        best_name = SOURCE_NONE
+        best_resolved: List[Optional[str]] = [None] * total
+        best_matched = 0
         for name, getter in candidates:
             resolved = [getter(path, blocked) for path, blocked in items]
             matched = sum(1 for value in resolved if value)
-            ratio = matched / float(total)
-            if ratio >= self.config.auto_match_ratio:
-                self.resolved_source = name
-                LOGGER.info(
-                    "speaker ids taken from %s (%d/%d files, %.0f%%)",
-                    name,
-                    matched,
-                    total,
-                    ratio * 100.0,
-                )
-                return [
-                    SpeakerAssignment(str(path), value, name if value else SOURCE_NONE)
-                    for (path, _), value in zip(items, resolved)
-                ]
-            if matched:
-                LOGGER.info(
-                    "speaker source '%s' matched only %d/%d files (%.0f%%, need %.0f%%)",
-                    name,
-                    matched,
-                    total,
-                    ratio * 100.0,
-                    self.config.auto_match_ratio * 100.0,
-                )
+            LOGGER.info(
+                "speaker source '%s' matched %d/%d files (%.0f%%)",
+                name,
+                matched,
+                total,
+                matched * 100.0 / total,
+            )
+            if matched > best_matched:
+                best_name, best_resolved, best_matched = name, resolved, matched
 
-        self.resolved_source = SOURCE_NONE
-        return [SpeakerAssignment(str(path), None, SOURCE_NONE) for path, _ in items]
+        if not best_matched:
+            self.resolved_source = SOURCE_NONE
+            return [SpeakerAssignment(str(path), None, SOURCE_NONE) for path, _ in items]
+
+        ratio = best_matched / float(total)
+        self.resolved_source = best_name
+        if ratio < self.config.auto_match_ratio:
+            LOGGER.warning(
+                "speaker ids come from %s but cover only %d of %d recordings "
+                "(%.0f%%). The rest are split individually, so they can still land "
+                "either side - name them consistently or add them to speakers.csv "
+                "before reading the validation numbers as speaker-independent.",
+                best_name,
+                best_matched,
+                total,
+                ratio * 100.0,
+            )
+        else:
+            LOGGER.info(
+                "speaker ids taken from %s (%d/%d files)", best_name, best_matched, total
+            )
+        return [
+            SpeakerAssignment(str(path), value, best_name if value else SOURCE_NONE)
+            for (path, _), value in zip(items, best_resolved)
+        ]
 
 
 # ---------------------------------------------------------------------------

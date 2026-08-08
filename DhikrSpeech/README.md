@@ -121,15 +121,16 @@ MyDrive/Dhikr Speech Dataset/
 │   ├── 006/                    every recording of phrase id 6
 │   ├── 007/
 │   ├── ...
-│   └── unknown/                everything that is NOT a target dhikr
+│   └── unknown/                speech that is NOT a target dhikr
 │       ├── hard_negative/      near-miss phrases  ← the ones that decide the model
 │       ├── partial_phrase/     incomplete utterances
 │       ├── other_dhikr/        dhikr that are not the targets
 │       ├── normal_speech/      ordinary Arabic speech
-│       └── noise/              rooms, traffic, TV
+│       └── noise/              recorded room tone kept as a *class* example
 ├── phrases.json
 ├── speakers.csv                optional: file,speaker — the best way to know who spoke what
-├── noise/                      optional: room / background recordings for augmentation
+├── noise/                      room / background recordings mixed under training clips.
+│                               A sibling of dataset/, never a class inside it.
 └── streaming_test/             long-form recordings for stage 06
     ├── audio/*.wav
     └── annotations.json
@@ -172,12 +173,21 @@ Three ways to tell the pipeline who spoke what, in order of preference:
 
 2. **A per-speaker subfolder**: `dataset/006/ali/*.wav`.
 
-3. **A filename convention**: `ali_001.wav`, `speaker01_003.wav`, `s7-12.wav` — matched by
-   `split.speaker.regex` (default `^(?P<speaker>[A-Za-z0-9\-]+?)[_\-]`).
+3. **A filename convention** — `split.speaker.filename_patterns`, tried in order:
 
-`split.speaker.source: auto` tries them in that order and picks the one that covers most of the
-dataset — once, for the whole dataset, so `ali` from a folder and `ali` from a filename can never
-be silently treated as two people.
+   * `sp<8 hex>` anywhere in the name. This is what `SpeechCollector` stamps into every upload
+     (`<class>_sp<8 hex>_<timestamp>_<suffix>`), from a random id the volunteer's browser mints once
+     and reuses, so it works with no configuration at all.
+   * otherwise the leading token: `ali_001.wav`, `speaker01_003.wav`, `s7-12.wav`.
+
+   A token that is the class folder's own name is **rejected** rather than used — without that guard
+   a collector filename would resolve to its class id and every recording of a phrase would become
+   one "speaker". Set `split.speaker.regex` to override the list with a single pattern of your own.
+
+`split.speaker.source: auto` picks whichever covers the most files — once, for the whole dataset, so
+`ali` from a folder and `ali` from a filename can never be silently treated as two people. Partial
+coverage is used rather than discarded (a dataset part-way through a collector rollout groups its
+newer files and leaves the older ones one group each), and stage 01 warns when it is partial.
 
 **With none of them, the pipeline says so loudly and repeatedly**, and the readiness report will not
 pass: the split is then random, the same voice can span it, and no number downstream describes an
@@ -196,7 +206,22 @@ Aim for at least as many `unknown` clips as an average phrase class.
 Volunteer speech for this folder arrives on its own: the last card in `SpeechCollector` asks for any
 ordinary word that is *not* a dhikr and uploads it directly to `dataset/unknown/`. It is not listed
 in `phrases.json` — `scan_dataset` labels the folder by name — so nothing here needs configuring
-beyond `classes.include_unknown`. Silence, room tone and noise still have to be added by hand.
+beyond `classes.include_unknown`. Silence and room tone still have to be added by hand.
+
+**The `noise/` folder fills itself too**, from the collector's last card, which asks volunteers for
+background noise with no speech in it. Note where it lands: `noise/` is a **sibling** of `dataset/`,
+not a class inside it, because these clips are never labelled — `augmentation.background_noise` mixes
+them *underneath* real recordings so a model learned in a quiet room still works in a noisy one.
+Uploads arrive as `.webm` (Chrome) or `.m4a` (Safari), which `NoiseBank.load` accepts along with
+WAV/FLAC/OGG/MP3.
+
+**Two different things are called noise, and they go to different places.** `noise/` — a sibling of
+`dataset/`, where the collector's noise card uploads — is never labelled: `augmentation.background_noise`
+mixes those clips *underneath* real recordings so a model learned in a quiet room still works in a
+noisy one. `dataset/unknown/noise/` is a **class** example: room tone the model must actively
+recognise as *not a dhikr* at inference. The same recording can reasonably sit in both, but it does
+two different jobs, and filing augmentation noise inside `dataset/` instead of alongside it is a
+mistake worth avoiding.
 
 **Organise it into subfolders.** Everything under `unknown/` still trains as the single `unknown`
 class — the subfolder does not become an output — but it is kept in the manifest as `negative_type`,
@@ -1140,12 +1165,15 @@ answer, and the rest buy a point or two while hiding the real limit:
 1. **More recordings, and more speakers.** Variety matters more than count: the same voice recorded
    twice is close to one recording, so 200 clips from 3 people generalise worse than 100 from 20.
    The [Voice dhikr screen](../CLAUDE.md) in the app recruits volunteers for exactly this.
-2. **Watch for speaker leakage.** `assign_splits` is stratified per class but has no idea who is
-   speaking, so with `split.group_regex: null` the same voice lands in train *and* val — which makes
-   validation accuracy **optimistic**, and the real gap larger than the one printed. Files uploaded
-   by `SpeechCollector` are named `<class>_<timestamp>_<suffix>`, with no speaker token, so there is
-   nothing to group on automatically. If you record a batch yourself, name the files with a speaker
-   prefix and set `split.group_regex` to match it.
+2. **Speaker leakage is already handled — check that it applied.** `assign_splits` groups by
+   speaker, and stage 02 fails outright if one turns up in two splits, so a leak cannot pass
+   silently any more. What can still happen is having *no* speaker to group on: files uploaded by
+   `SpeechCollector` are named `<class>_sp<8 hex>_<timestamp>_<suffix>`, where the `sp…` token is a
+   random id the volunteer's browser mints once and reuses, and that token is matched out of the box
+   (`split.speaker.filename_patterns`). Older uploads that predate it carry no token and become one
+   group each — which is honest but not protective, so the stage 01 speaker report prints how many
+   recordings have an id. If most of them do not, the validation numbers are still **optimistic**.
+   If you record a batch yourself, name the files `<speaker>_<n>.wav` or list them in `speakers.csv`.
 3. **Less capacity.** `model.width_multiplier: 0.5` quarters the parameter count; `model.dropout`
    already defaults to `0.3`. Raise the multiplier back toward `1.0` as the dataset grows.
 4. **Stronger augmentation.** Widen the ranges under `augmentation.*`, and drop real room recordings

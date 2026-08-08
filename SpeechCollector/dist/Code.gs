@@ -3,7 +3,7 @@
  * Configuration is injected from config.ts by build.mjs.
  */
 
-const CONFIG = Object.freeze(JSON.parse('{"app":{"title":"Dhikr Speech Dataset","htmlTitle":"Arabic Speech Dataset Collector","language":"ar","direction":"rtl","timezone":"Africa/Cairo"},"deployment":{"webAppUrl":"https://script.google.com/macros/s/AKfycbyf_55s33KUlWU8UWF4pjaO_7NY5tYjmt2ssGphxvXJSyM6hTUsMPtz5_Mv6ojvKm4G7A/exec","standaloneUrl":"https://mahmoudmabrok.github.io/SaloAleh/voice.html"},"storage":{"rootFolderId":"1v8qS5-8NBiQOstqHSBapEpGb0O5eQyRy","rootFolderName":"Dhikr Speech Dataset","datasetSubfolder":"dataset","unknownFolderName":"unknown","phrasesFile":"phrases.json","spreadsheetId":"17nkSzNoyBB4PvCkaelLdyW82wFgcRPYoPAVDoEE5NoI","spreadsheetName":"Dhikr Speech Dataset Metadata","sheetName":"samples","phraseFolderDigits":3},"recording":{"minimumDurationMs":1000,"maximumDurationMs":5000,"maximumUploadBytes":5242880,"preferredSampleRate":16000,"preferredChannelCount":1,"acceptedMimeTypes":["audio/wav","audio/x-wav","audio/webm","audio/ogg","audio/mp4","audio/mpeg"]},"theme":{"primary":"#176b45","primaryDark":"#0d4f32","primarySoft":"#e9f6ef","accent":"#d6a53a","pageBackground":"#f4f8f5","cardBackground":"#ffffff","text":"#17362a","mutedText":"#61746b","danger":"#b3261e"},"ui":{"hero":"❤️ ساعدنا في بناء ميزة الذكر بالصوت","singleTakeRule":"قاعدة واحدة مهمة: كل تسجيل يحتوي على ذكر واحد يُقال مرة واحدة فقط. لا تكرّر العبارة داخل التسجيل نفسه.","listHint":"لكل عبارة مسجّلها الخاص. سجّل وارفع كل عبارة على حدة، ويمكنك رفع عدة عينات لنفس العبارة — كل عينة إضافية تفيدنا، بشرط أن يكون في كل تسجيل نطق واحد فقط.","summaryPhrases":"{recorded} من {total} عبارات لها تسجيل","summarySamples":"{count} عينة مرفوعة","recordedCount":"✓ {count} عينة مرفوعة","record":"تسجيل","reRecord":"إعادة التسجيل","stop":"إيقاف","play":"استماع","pause":"إيقاف الاستماع","upload":"رفع التسجيل","uploading":"جارٍ الرفع…","uploadQueued":"في الانتظار…","uploadAll":"رفع كل التسجيلات الجاهزة ({count})","timerReady":"00:00.0","microphoneHint":"اقرأ العبارة مرة واحدة بصوت واضح في مكان هادئ، ثم اضغط «إيقاف».","privacy":"لا نجمع الاسم أو البريد أو الهاتف أو الموقع. يُحفظ التسجيل والبيانات التقنية الأساسية فقط.","ready":"اضغط «تسجيل» عند أي عبارة واسمح باستخدام الميكروفون، ثم قل العبارة مرة واحدة.","recording":"جارٍ التسجيل… قل العبارة مرة واحدة فقط ثم اضغط «إيقاف».","recordingReady":"التسجيل جاهز. استمع إليه للتأكد أنه يحتوي على العبارة مرة واحدة فقط، ثم ارفعه.","microphoneDenied":"تم رفض إذن الميكروفون. افتح إعدادات الموقع في المتصفح، فعّل الميكروفون، ثم أعد تحميل الصفحة.","microphoneBlocked":"المتصفح لا يعرض طلب الإذن لأن الصفحة معروضة داخل إطار لا يسمح بالميكروفون. افتح صفحة التسجيل في نافذة مستقلة ثم اضغط «تسجيل».","microphoneMissing":"لم يُعثر على ميكروفون متاح. وصّل ميكروفونًا أو تحقق من إعدادات الصوت ثم حاول مجددًا.","microphoneBusy":"الميكروفون مشغول بتطبيق آخر. أغلق التطبيقات التي تستخدمه ثم حاول مجددًا.","insecureContext":"التسجيل يتطلب فتح الصفحة عبر رابط https. افتح الرابط الرسمي للصفحة ثم حاول مجددًا.","openStandalone":"فتح صفحة التسجيل","unsupported":"هذا المتصفح لا يدعم تسجيل الصوت. جرّب إصدارًا حديثًا من Chrome أو Safari.","tooShort":"التسجيل قصير جدًا. سجّل لمدة ثانية واحدة على الأقل.","tooLarge":"حجم التسجيل كبير جدًا. سجّل مقطعًا أقصر ثم حاول مجددًا.","uploadSuccessTitle":"✅ شكرًا لك!","uploadSuccessBody":"تم رفع العينة. يمكنك تسجيل عينة جديدة لنفس العبارة — نطق واحد في كل تسجيل.","uploadFailedTitle":"فشل رفع التسجيل","uploadFailedBody":"احتفظنا بالتسجيل. تحقق من الإنترنت ثم حاول مجددًا.","retry":"إعادة المحاولة","unknownBadge":"ليست ذكرًا"},"spreadsheetColumns":["sample_id","phrase_id","phrase_text","filename","duration_ms","sample_rate","browser","platform","language","created_at","drive_file_id","drive_url"],"phrases":[{"id":7,"text":"سبحان الله العظيم وبحمده"},{"id":6,"text":"سبحان الله وبحمده"},{"id":1,"text":"سبحان الله"},{"id":2,"text":"الحمد لله"},{"id":3,"text":"الله أكبر"},{"id":4,"text":"لا إله إلا الله"},{"id":5,"text":"أستغفر الله"},{"id":8,"text":"لا حول ولا قوة إلا بالله"},{"id":9,"text":"اللهم صل على محمد"},{"id":10,"text":"اللهم صل وسلم على نبينا محمد"}],"unknownPrompt":{"id":0,"text":"قل أي كلمة عادية ليست ذكرًا","note":"مثل «صباح الخير» أو «كيف حالك» أو أي كلمة تخطر ببالك. قلها مرة واحدة فقط في التسجيل بلا تكرار، وغيّر الكلمة في كل تسجيل جديد — هذه العينات تعلّم النموذج ما ليس ذكرًا حتى لا يَعُدّ كلامك العادي."}}'));
+const CONFIG = Object.freeze(JSON.parse('{"app":{"title":"Dhikr Speech Dataset","htmlTitle":"Arabic Speech Dataset Collector","language":"ar","direction":"rtl","timezone":"Africa/Cairo"},"deployment":{"webAppUrl":"https://script.google.com/macros/s/AKfycbyf_55s33KUlWU8UWF4pjaO_7NY5tYjmt2ssGphxvXJSyM6hTUsMPtz5_Mv6ojvKm4G7A/exec","standaloneUrl":"https://mahmoudmabrok.github.io/SaloAleh/voice.html"},"storage":{"rootFolderId":"1v8qS5-8NBiQOstqHSBapEpGb0O5eQyRy","rootFolderName":"Dhikr Speech Dataset","datasetSubfolder":"dataset","unknownFolderName":"unknown","noiseFolderName":"noise","phrasesFile":"phrases.json","spreadsheetId":"17nkSzNoyBB4PvCkaelLdyW82wFgcRPYoPAVDoEE5NoI","spreadsheetName":"Dhikr Speech Dataset Metadata","sheetName":"samples","phraseFolderDigits":3},"recording":{"minimumDurationMs":1000,"maximumDurationMs":5000,"maximumUploadBytes":5242880,"preferredSampleRate":16000,"preferredChannelCount":1,"acceptedMimeTypes":["audio/wav","audio/x-wav","audio/webm","audio/ogg","audio/mp4","audio/mpeg"]},"theme":{"primary":"#176b45","primaryDark":"#0d4f32","primarySoft":"#e9f6ef","accent":"#d6a53a","pageBackground":"#f4f8f5","cardBackground":"#ffffff","text":"#17362a","mutedText":"#61746b","danger":"#b3261e"},"ui":{"hero":"❤️ ساعدنا في بناء ميزة الذكر بالصوت","singleTakeRule":"قاعدة واحدة مهمة: كل تسجيل يحتوي على ذكر واحد يُقال مرة واحدة فقط. لا تكرّر العبارة داخل التسجيل نفسه.","listHint":"لكل عبارة مسجّلها الخاص. سجّل وارفع كل عبارة على حدة، ويمكنك رفع عدة عينات لنفس العبارة — كل عينة إضافية تفيدنا، بشرط أن يكون في كل تسجيل نطق واحد فقط.","summaryPhrases":"{recorded} من {total} عبارات لها تسجيل","summarySamples":"{count} عينة مرفوعة","recordedCount":"✓ {count} عينة مرفوعة","record":"تسجيل","reRecord":"إعادة التسجيل","stop":"إيقاف","play":"استماع","pause":"إيقاف الاستماع","upload":"رفع التسجيل","uploading":"جارٍ الرفع…","uploadQueued":"في الانتظار…","uploadAll":"رفع كل التسجيلات الجاهزة ({count})","timerReady":"00:00.0","microphoneHint":"اقرأ العبارة مرة واحدة بصوت واضح في مكان هادئ، ثم اضغط «إيقاف».","privacy":"لا نجمع الاسم أو البريد أو الهاتف أو الموقع. يُحفظ التسجيل والبيانات التقنية الأساسية فقط، مع رمز عشوائي يُنشأ في متصفحك ليُعرف أن تسجيلاتك من جهاز واحد — وهو غير مرتبط بك بأي شكل.","ready":"اضغط «تسجيل» عند أي عبارة واسمح باستخدام الميكروفون، ثم قل العبارة مرة واحدة.","recording":"جارٍ التسجيل… قل العبارة مرة واحدة فقط ثم اضغط «إيقاف».","recordingReady":"التسجيل جاهز. استمع إليه للتأكد أنه يحتوي على العبارة مرة واحدة فقط، ثم ارفعه.","microphoneDenied":"تم رفض إذن الميكروفون. افتح إعدادات الموقع في المتصفح، فعّل الميكروفون، ثم أعد تحميل الصفحة.","microphoneBlocked":"المتصفح لا يعرض طلب الإذن لأن الصفحة معروضة داخل إطار لا يسمح بالميكروفون. افتح صفحة التسجيل في نافذة مستقلة ثم اضغط «تسجيل».","microphoneMissing":"لم يُعثر على ميكروفون متاح. وصّل ميكروفونًا أو تحقق من إعدادات الصوت ثم حاول مجددًا.","microphoneBusy":"الميكروفون مشغول بتطبيق آخر. أغلق التطبيقات التي تستخدمه ثم حاول مجددًا.","insecureContext":"التسجيل يتطلب فتح الصفحة عبر رابط https. افتح الرابط الرسمي للصفحة ثم حاول مجددًا.","openStandalone":"فتح صفحة التسجيل","unsupported":"هذا المتصفح لا يدعم تسجيل الصوت. جرّب إصدارًا حديثًا من Chrome أو Safari.","tooShort":"التسجيل قصير جدًا. سجّل لمدة ثانية واحدة على الأقل.","tooLarge":"حجم التسجيل كبير جدًا. سجّل مقطعًا أقصر ثم حاول مجددًا.","uploadSuccessTitle":"✅ شكرًا لك!","uploadSuccessBody":"تم رفع العينة. يمكنك تسجيل عينة جديدة لنفس العبارة — نطق واحد في كل تسجيل.","uploadFailedTitle":"فشل رفع التسجيل","uploadFailedBody":"احتفظنا بالتسجيل. تحقق من الإنترنت ثم حاول مجددًا.","retry":"إعادة المحاولة","unknownBadge":"ليست ذكرًا","noiseBadge":"ضجيج فقط","noiseRecording":"جارٍ التسجيل… لا تتكلم، اترك أصوات المكان تُسجَّل وحدها.","noiseRecordingReady":"التسجيل جاهز. استمع إليه للتأكد أنه لا يحتوي على كلام، ثم ارفعه.","noiseUploadSuccessBody":"تم رفع العينة. سجّل ضجيجًا من مكان آخر أو وقت آخر — التنوّع هنا هو المفيد."},"spreadsheetColumns":["sample_id","phrase_id","phrase_text","filename","duration_ms","sample_rate","browser","platform","language","created_at","drive_file_id","drive_url"],"phrases":[{"id":6,"text":"سبحان الله وبحمده"},{"id":7,"text":"سبحان الله العظيم وبحمده"},{"id":8,"text":"لا حول ولا قوة إلا بالله"},{"id":5,"text":"أستغفر الله"},{"id":9,"text":"اللهم صل على محمد"},{"id":11,"text":"سبحان الله، الحمد لله، الله أكبر، لا إله إلا الله"},{"id":1,"text":"سبحان الله","hidden":true},{"id":2,"text":"الحمد لله","hidden":true},{"id":3,"text":"الله أكبر","hidden":true},{"id":4,"text":"لا إله إلا الله","hidden":true},{"id":10,"text":"اللهم صل وسلم على نبينا محمد","hidden":true}],"unknownPrompt":{"id":0,"text":"قل أي كلمة عادية ليست ذكرًا","note":"مثل «صباح الخير» أو «كيف حالك» أو أي كلمة تخطر ببالك. قلها مرة واحدة فقط في التسجيل بلا تكرار، وغيّر الكلمة في كل تسجيل جديد — هذه العينات تعلّم النموذج ما ليس ذكرًا حتى لا يَعُدّ كلامك العادي."},"noisePrompt":{"id":-1,"text":"سجّل صوت المكان من حولك بدون أي كلام","note":"اترك الميكروفون يلتقط ما حولك: ضجيج الشارع، أصوات البيت، مروحة، سيارة، أو حتى غرفة هادئة. لا تتكلم ولا تقل ذكرًا في هذا التسجيل — هذه الأصوات تُخلط تحت تسجيلات الذكر أثناء التدريب حتى يعمل العدّاد في الأماكن الصاخبة."}}'));
 const RUNTIME_KEYS = Object.freeze({
   ROOT_FOLDER_ID: 'SPEECH_COLLECTOR_ROOT_FOLDER_ID',
   SPREADSHEET_ID: 'SPEECH_COLLECTOR_SPREADSHEET_ID',
@@ -29,8 +29,9 @@ function doGet() {
     },
     theme: CONFIG.theme,
     ui: CONFIG.ui,
-    phrases: CONFIG.phrases,
-    unknownPrompt: CONFIG.unknownPrompt || null
+    phrases: visiblePhrases_(),
+    unknownPrompt: CONFIG.unknownPrompt || null,
+    noisePrompt: CONFIG.noisePrompt || null
   });
 
   return template.evaluate()
@@ -98,10 +99,12 @@ function saveAudio(request) {
 
     const rootFolder = getOrCreateRootFolder_();
     ensurePhrasesFile_(rootFolder);
-    const datasetFolder = createFolderIfMissing(rootFolder, CONFIG.storage.datasetSubfolder);
     const classFolderName = classFolderName_(validated.phrase);
-    const classFolder = createFolderIfMissing(datasetFolder, classFolderName);
-    const filename = createFilename_(classFolderName, validated.mimeType);
+    const classFolder = createFolderIfMissing(
+      classParentFolder_(rootFolder, validated.phrase),
+      classFolderName
+    );
+    const filename = createFilename_(classFolderName, validated.speakerToken, validated.mimeType);
     const blob = Utilities.newBlob(audioBytes, validated.mimeType, filename);
     const file = classFolder.createFile(blob);
 
@@ -141,24 +144,60 @@ function saveAudio(request) {
 }
 
 /**
- * Every prompt the page offers: the phrases plus the out-of-vocabulary card,
- * which is a class of its own rather than a phrase.
+ * The phrases that get a card. A hidden phrase stays a valid, labelled id with
+ * its recordings intact; it is only off the page. Mirrors visiblePhrases() in
+ * build.mjs, which builds the same payload for the standalone copy.
+ */
+function visiblePhrases_() {
+  return CONFIG.phrases.filter(function(phrase) { return !phrase.hidden; });
+}
+
+/**
+ * Every prompt an upload may name: the phrases plus the two non-phrase cards
+ * (out-of-vocabulary speech, and background noise).
+ *
+ * Hidden phrases are still accepted. A volunteer who kept a tab open across a
+ * redeploy would otherwise lose the take waiting on a card that has since been
+ * parked, and the id still has a folder and a label either way.
  */
 function allPrompts_() {
-  return CONFIG.unknownPrompt ? CONFIG.phrases.concat([CONFIG.unknownPrompt]) : CONFIG.phrases;
+  var prompts = CONFIG.phrases.slice();
+  if (CONFIG.unknownPrompt) prompts.push(CONFIG.unknownPrompt);
+  if (CONFIG.noisePrompt) prompts.push(CONFIG.noisePrompt);
+  return prompts;
 }
 
 function isUnknownPrompt_(prompt) {
   return Boolean(CONFIG.unknownPrompt) && prompt.id === CONFIG.unknownPrompt.id;
 }
 
+function isNoisePrompt_(prompt) {
+  return Boolean(CONFIG.noisePrompt) && prompt.id === CONFIG.noisePrompt.id;
+}
+
 /**
- * The dataset class folder a prompt writes into: the configured `unknown`
- * folder for the negative class, a zero-padded phrase id for everything else.
- * These are the folder names the DhikrSpeech pipeline scans as its classes.
+ * The folder a prompt writes into: the configured `unknown` folder for the
+ * negative class, the `noise` folder for background noise, a zero-padded phrase
+ * id for everything else. The first two are names the pipeline knows
+ * (`classes.unknown_class`, `paths.noise_dir`); the rest are its class folders.
  */
 function classFolderName_(prompt) {
-  return isUnknownPrompt_(prompt) ? CONFIG.storage.unknownFolderName : padPhraseId_(prompt.id);
+  if (isNoisePrompt_(prompt)) return CONFIG.storage.noiseFolderName;
+  if (isUnknownPrompt_(prompt)) return CONFIG.storage.unknownFolderName;
+  return padPhraseId_(prompt.id);
+}
+
+/**
+ * Where that folder hangs. Everything the model learns lives under
+ * `dataset/`, which is the tree the trainer scans as its classes. Noise is not
+ * learned — it is mixed underneath training clips — so it hangs off the root
+ * beside `dataset/`, exactly where `paths.noise_dir` resolves. Putting it
+ * inside would turn background hiss into a class of its own.
+ */
+function classParentFolder_(rootFolder, prompt) {
+  return isNoisePrompt_(prompt)
+    ? rootFolder
+    : createFolderIfMissing(rootFolder, CONFIG.storage.datasetSubfolder);
 }
 
 /** Returns the existing child folder or creates it when missing. */
@@ -171,8 +210,12 @@ function createFolderIfMissing(parentFolder, folderName) {
  * The phrases.json body the DhikrSpeech pipeline reads: a plain [{id, text}]
  * list, sorted by id. CONFIG.phrases is ordered for the page, so sorting here
  * keeps the label file (and its change signature) stable when the cards are
- * reordered. The unknown prompt is intentionally absent — it is a class folder,
- * not a phrase id, and the pipeline labels it from the folder name.
+ * reordered. The unknown and noise prompts are intentionally absent — they are
+ * folders, not phrase ids, and the pipeline knows them by name.
+ *
+ * Hidden phrases ARE listed. Their `dataset/{id}/` folders still hold
+ * recordings, and a label file that dropped them would leave the trainer
+ * scanning folders it has no text for.
  */
 function phrasesJsonContent_() {
   const phrases = CONFIG.phrases.map(function(phrase) {
@@ -270,10 +313,12 @@ function validateRequest_(request) {
 
   return {
     phrase: phrase,
-    // What the volunteer actually said. The unknown card's own text is an
-    // instruction, not a spoken phrase, so the sheet records the class name.
-    phraseText: isUnknownPrompt_(phrase) ? CONFIG.storage.unknownFolderName : phrase.text,
+    // What the volunteer actually said. The unknown and noise cards' own texts
+    // are instructions, not spoken phrases, so the sheet records the folder they
+    // were filed under instead.
+    phraseText: nonPhraseFolderName_(phrase) || phrase.text,
     sampleId: sampleId,
+    speakerToken: speakerToken_(request.speaker_id),
     durationMs: durationMs,
     mimeType: mimeType,
     audioBase64: audioBase64,
@@ -383,10 +428,36 @@ function findExistingSample_(sheet, sampleId) {
   };
 }
 
-function createFilename_(classFolderName, mimeType) {
+/** The class-folder name for a non-phrase prompt, or '' for a real phrase. */
+function nonPhraseFolderName_(prompt) {
+  if (isNoisePrompt_(prompt)) return CONFIG.storage.noiseFolderName;
+  if (isUnknownPrompt_(prompt)) return CONFIG.storage.unknownFolderName;
+  return '';
+}
+
+/**
+ * The device token stamped into every filename this browser uploads: `sp` plus
+ * the first 8 hex characters of a UUID the page generates once and keeps.
+ *
+ * It exists so the trainer can keep one voice on one side of the train/val
+ * split (`split.group_regex`, e.g. `sp[0-9a-f]{8}`). Without it the same
+ * speaker sits on both sides and the reported validation accuracy is optimistic.
+ * It identifies a browser profile, never a person: it is generated locally,
+ * never leaves the filename, and is not linked to anything else we store.
+ *
+ * A client that cannot produce one (storage blocked, older build) simply gets
+ * the old filename shape — a naming detail must never cost us a recording.
+ */
+function speakerToken_(speakerId) {
+  const hex = String(speakerId || '').replace(/-/g, '').toLowerCase().replace(/[^0-9a-f]/g, '');
+  return hex.length >= 8 ? 'sp' + hex.slice(0, 8) : '';
+}
+
+function createFilename_(classFolderName, speakerToken, mimeType) {
   const timestamp = Utilities.formatDate(new Date(), CONFIG.app.timezone, 'yyyyMMdd_HHmmss');
   const suffix = Utilities.getUuid().replace(/-/g, '').slice(0, 6).toLowerCase();
-  return classFolderName + '_' + timestamp + '_' + suffix + extensionForMime_(mimeType);
+  const speaker = speakerToken ? speakerToken + '_' : '';
+  return classFolderName + '_' + speaker + timestamp + '_' + suffix + extensionForMime_(mimeType);
 }
 
 function padPhraseId_(phraseId) {

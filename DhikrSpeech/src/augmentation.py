@@ -69,7 +69,11 @@ class NoiseBank:
         cls,
         directory: Union[str, Path, None],
         sample_rate: int,
-        extensions: Sequence[str] = (".wav", ".flac", ".ogg", ".mp3"),
+        # The collector's noise card uploads whatever the browser recorded, which
+        # is .webm on Chrome and .m4a on Safari far more often than .wav. Leaving
+        # those out made a full noise folder look empty and silently fell back to
+        # synthetic noise.
+        extensions: Sequence[str] = (".wav", ".flac", ".ogg", ".mp3", ".m4a", ".webm"),
         max_files: int = 64,
         allow_synthetic: bool = True,
     ) -> "NoiseBank":

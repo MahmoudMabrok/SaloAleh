@@ -486,9 +486,21 @@ class SpeakerConfig:
     # parent   - the recording's parent folder inside the class folder
     # none     - no speaker information at all (evaluation is NOT speaker-independent)
     source: str = "auto"
-    # Must contain a group; a named ``(?P<speaker>...)`` group wins, otherwise
-    # group 1, otherwise the whole match.
-    regex: str = r"^(?P<speaker>[A-Za-z0-9\-]+?)[_\-]"
+    # A single override. When set it is the *only* filename pattern tried, which
+    # is what ``split.group_regex`` maps onto. None means use `filename_patterns`.
+    regex: Optional[str] = None
+    # Tried in order; the first one that yields a token which is not the class
+    # folder's own name wins. The collector's token comes first deliberately: its
+    # files are named `<class>_sp<8 hex>_<timestamp>_<suffix>`, so a pattern that
+    # simply takes the leading token would extract the *class id* and group every
+    # recording of a phrase as one "speaker" - which would put whole classes in
+    # one split without anything looking wrong.
+    filename_patterns: List[str] = field(
+        default_factory=lambda: [
+            r"(?P<speaker>sp[0-9a-f]{8})",           # SpeechCollector device token
+            r"^(?P<speaker>[A-Za-z0-9\-]+?)[_\-]",   # hand-named: ali_001.wav
+        ]
+    )
     metadata_file: Optional[str] = None  # defaults to paths.speakers_file
     # When speakers are known, a speaker appearing in two splits is a hard error
     # rather than a warning: the numbers it produces are not the numbers anyone
@@ -497,7 +509,10 @@ class SpeakerConfig:
     # Below this the split is speaker-safe but still not speaker-*diverse*; the
     # dataset report says so instead of pretending the test set generalises.
     min_speakers: int = 10
-    # Fraction of files the regex must match before `source: auto` trusts it.
+    # Coverage below which `source: auto` warns that most files have no speaker
+    # id. It does not reject the source: partial speaker information still
+    # constrains the split correctly (grouped where known, one group per file
+    # where not), and throwing it away would be strictly worse.
     auto_match_ratio: float = 0.6
 
     def __post_init__(self) -> None:
@@ -533,9 +548,14 @@ class SplitConfig:
         return 1.0 - self.val_ratio - self.test_ratio
 
     def resolved_speaker(self) -> SpeakerConfig:
-        """The speaker settings actually in force, folding in ``group_regex``."""
+        """The speaker settings actually in force, folding in ``group_regex``.
+
+        ``split.group_regex`` predates the speaker section and is still honoured:
+        it means "match this against the file name", which is exactly
+        ``speaker.source: filename`` with that one pattern.
+        """
         speaker = self.speaker
-        if self.group_regex and speaker.source == "auto":
+        if self.group_regex and speaker.source == "auto" and speaker.regex is None:
             return dataclasses.replace(
                 speaker, source="filename", regex=self.group_regex
             )
