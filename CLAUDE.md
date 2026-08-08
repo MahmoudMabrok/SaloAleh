@@ -469,7 +469,15 @@ other engineers) are in `DhikrSpeech/docs/LEARNING_GUIDE.md`.
   random UUID the volunteer's browser mints once and keeps (`speech_collector_speaker_id`). It exists
   so `split.group_regex: "sp[0-9a-f]{8}"` can keep one voice out of both train and val; it is still
   `null`, so today's validation accuracy is optimistic. A file with no token falls back to being its
-  own group, so enabling the regex is safe on a mixed dataset.
+  own group, so enabling the regex is safe on a mixed dataset. Recordings that predate the token can be
+  given one after the fact by `backfillSpeakerTokens()` in `SpeechCollector/Code.gs` (preview first with
+  `previewSpeakerTokenBackfill()`, reset with `resetSpeakerTokenBackfill()`): it derives `sp<8 hex>` from
+  the metadata sheet's `browser`/`platform` pair, renames the Drive file into the normal shape and writes
+  the name back to the sheet. It **over-groups** — one bucket per browser/platform, so distinct volunteers
+  merge — which is the safe direction (leakage only ever goes down), and the derivation is deterministic,
+  so a derived token is identifiable afterwards by recomputing it from its row. Rows naming neither field,
+  and filenames outside the canonical shape, are counted and left untouched; the walk is resumable across
+  the 6-minute Apps Script limit, idempotent, and takes no script lock so uploads keep working.
 - `classes.include_phrases` picks which phrase ids the model learns (currently `[6, 7]`). Applied in
   `scan_dataset`, so it decides the class vocabulary, the
   manifest's class indices, the model's output width and `labels.txt`. Changing it requires re-running

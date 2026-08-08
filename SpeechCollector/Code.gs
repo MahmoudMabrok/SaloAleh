@@ -7,7 +7,9 @@ const CONFIG = Object.freeze(JSON.parse('__CONFIG_JSON__'));
 const RUNTIME_KEYS = Object.freeze({
   ROOT_FOLDER_ID: 'SPEECH_COLLECTOR_ROOT_FOLDER_ID',
   SPREADSHEET_ID: 'SPEECH_COLLECTOR_SPREADSHEET_ID',
-  PHRASES_SIGNATURE: 'SPEECH_COLLECTOR_PHRASES_SIGNATURE'
+  PHRASES_SIGNATURE: 'SPEECH_COLLECTOR_PHRASES_SIGNATURE',
+  // Row the speaker-token backfill should resume from. See backfillSpeakerTokens().
+  BACKFILL_ROW: 'SPEECH_COLLECTOR_BACKFILL_ROW'
 });
 
 /** Serves the mobile web application. */
@@ -426,6 +428,311 @@ function findExistingSample_(sheet, sampleId) {
     driveFileId: valueFor('drive_file_id'),
     driveUrl: valueFor('drive_url')
   };
+}
+
+/* ===========================================================================
+ * Maintenance: speaker tokens for recordings collected before the token existed
+ *
+ * Every filename written today carries a `sp<8 hex>` device token so the
+ * trainer can keep one voice out of both sides of the train/val split
+ * (`split.group_regex: "sp[0-9a-f]{8}"`). Recordings uploaded before that token
+ * shipped have no such marker, so each of them is its own group and the same
+ * voice can sit in train and validation — which is exactly what makes a
+ * reported validation accuracy optimistic.
+ *
+ * Those recordings are not lost causes: the metadata sheet still holds the
+ * `browser` and `platform` the upload came from, and that pair, hashed, is a
+ * usable stand-in for a device. `backfillSpeakerTokens()` walks the sheet,
+ * renames each untagged Drive file to the shape a fresh upload would have had,
+ * and writes the new name back to the sheet.
+ *
+ * What this buys, and what it does not:
+ *
+ *  - It **over-groups**, and that is the safe direction. Two volunteers on the
+ *    same Chrome/Android build collapse into one group, so they land in the
+ *    same split; a single volunteer is never split across two. Leakage can only
+ *    go down, never up. The cost is granularity — a large bucket lands wholly
+ *    in one split — which is why previewSpeakerTokenBackfill() prints the group
+ *    sizes before anything is renamed.
+ *  - A derived token is deliberately the same `sp<8 hex>` shape as a real one,
+ *    so the pipeline needs no change to honour it. To tell them apart later,
+ *    recompute `derivedSpeakerToken_(browser, platform)` from the row: the
+ *    derivation is deterministic, so a token that reproduces is a derived
+ *    (coarse) one and a token that does not is a real per-browser id.
+ *  - It never invents an identity out of nothing. A row with neither a browser
+ *    nor a platform is left alone, keeping the current one-group-per-file
+ *    behaviour rather than merging every unknown device into one bucket.
+ * ======================================================================== */
+
+const BACKFILL = Object.freeze({
+  // Rows read, renamed and written back per chunk. The sheet write and the
+  // cursor advance happen once per chunk, so a run that dies mid-way loses at
+  // most this many sheet updates — and those are recovered on the next run by
+  // the repair path below, which reads the name Drive already has.
+  CHUNK_ROWS: 100,
+  // Apps Script kills an execution at 6 minutes. Stop well before that and ask
+  // to be run again, rather than being cut off at an arbitrary point.
+  TIME_BUDGET_MS: 240000,
+  // How many of the largest groups previewSpeakerTokenBackfill() lists.
+  PREVIEW_GROUPS: 15
+});
+
+/** A filename that already names a speaker, whether real or derived. */
+const SPEAKER_TOKEN_IN_FILENAME = /(?:^|_)sp[0-9a-f]{8}_/;
+
+/**
+ * The shape createFilename_() produces without a token:
+ * `{class}_{yyyyMMdd}_{HHmmss}_{6 hex}{extension}`. Anything else is left
+ * untouched rather than guessed at — a mangled name is worse than an untagged
+ * one, because the class prefix is how the pipeline labels the clip.
+ */
+const UNTAGGED_FILENAME = /^([^_]+)_(\d{8}_\d{6}_[0-9a-f]{6}\.[A-Za-z0-9]+)$/;
+
+/**
+ * Reports what backfillSpeakerTokens() would do, without touching Drive or the
+ * sheet. Reads only the spreadsheet, so it is cheap enough to run over the
+ * whole history, and its group listing is the number to look at first: if one
+ * bucket holds most of the dataset, grouping by it buys little.
+ */
+function previewSpeakerTokenBackfill() {
+  const sheet = getOrCreateSheet_();
+  const columns = CONFIG.spreadsheetColumns;
+  const index = columnIndexes_(columns);
+  const lastRow = sheet.getLastRow();
+  const summary = {
+    rows: 0, alreadyTagged: 0, toRename: 0, noMetadata: 0, unrecognised: 0, groups: []
+  };
+  const groups = {};
+
+  if (lastRow >= 2) {
+    const values = sheet.getRange(2, 1, lastRow - 1, columns.length).getValues();
+    values.forEach(function(row) {
+      summary.rows++;
+      const filename = String(row[index.filename] || '');
+      if (!filename) { summary.unrecognised++; return; }
+      if (hasSpeakerToken_(filename)) { summary.alreadyTagged++; return; }
+
+      const token = derivedSpeakerToken_(row[index.browser], row[index.platform]);
+      if (!token) { summary.noMetadata++; return; }
+      if (!filenameWithSpeakerToken_(filename, token)) { summary.unrecognised++; return; }
+
+      summary.toRename++;
+      if (!groups[token]) {
+        groups[token] = { token: token, count: 0, device: deviceFingerprint_(row[index.browser], row[index.platform]) };
+      }
+      groups[token].count++;
+    });
+  }
+
+  summary.groups = Object.keys(groups)
+    .map(function(token) { return groups[token]; })
+    .sort(function(a, b) { return b.count - a.count; });
+
+  console.log(
+    'Speaker-token backfill preview: ' + summary.rows + ' rows, ' +
+    summary.alreadyTagged + ' already tagged, ' + summary.toRename + ' to rename into ' +
+    summary.groups.length + ' derived groups, ' + summary.noMetadata + ' without browser/platform, ' +
+    summary.unrecognised + ' with an unrecognised filename.'
+  );
+  summary.groups.slice(0, BACKFILL.PREVIEW_GROUPS).forEach(function(group) {
+    console.log('  ' + group.token + '  ' + group.count + ' clips  ' + group.device);
+  });
+  return summary;
+}
+
+/**
+ * Renames untagged recordings in Drive and updates the sheet to match.
+ *
+ * Resumable: the row to continue from lives in Script Properties, so a run that
+ * hits the time budget just needs running again (resetSpeakerTokenBackfill()
+ * starts over). Idempotent: a file that already carries a token is skipped, and
+ * one renamed by an interrupted run has its sheet row repaired from the name
+ * Drive reports rather than being renamed twice.
+ *
+ * Deliberately takes no script lock. It only ever writes the `filename` cell of
+ * rows it has already read, and a concurrent upload appends at the bottom, so
+ * the two cannot collide — and holding the lock for minutes would fail live
+ * uploads with SERVER_BUSY for no gain.
+ */
+function backfillSpeakerTokens() {
+  const properties = PropertiesService.getScriptProperties();
+  const sheet = getOrCreateSheet_();
+  const columns = CONFIG.spreadsheetColumns;
+  const index = columnIndexes_(columns);
+  const filenameColumn = index.filename + 1;
+  const startedAt = Date.now();
+  const totals = {
+    scanned: 0, renamed: 0, repaired: 0, alreadyTagged: 0,
+    noMetadata: 0, unrecognised: 0, missing: 0, failed: 0
+  };
+
+  let cursor = Math.max(2, Math.floor(Number(properties.getProperty(RUNTIME_KEYS.BACKFILL_ROW))) || 2);
+  let lastRow = sheet.getLastRow();
+  let complete = true;
+
+  while (cursor <= lastRow) {
+    if (Date.now() - startedAt > BACKFILL.TIME_BUDGET_MS) { complete = false; break; }
+
+    const rowCount = Math.min(BACKFILL.CHUNK_ROWS, lastRow - cursor + 1);
+    const values = sheet.getRange(cursor, 1, rowCount, columns.length).getValues();
+    const names = [];
+    let changed = false;
+
+    for (let offset = 0; offset < rowCount; offset++) {
+      const before = String(values[offset][index.filename] || '');
+      const after = backfillRow_(values[offset], index, totals);
+      if (after !== before) changed = true;
+      names.push([after]);
+    }
+
+    // The sheet write comes before the cursor advance: a crash in between
+    // re-reads this chunk next run, where the repair path makes it a no-op.
+    if (changed) sheet.getRange(cursor, filenameColumn, rowCount, 1).setValues(names);
+    cursor += rowCount;
+    properties.setProperty(RUNTIME_KEYS.BACKFILL_ROW, String(cursor));
+    // Uploads may have landed while this chunk ran; pick them up in this pass.
+    lastRow = sheet.getLastRow();
+  }
+
+  const result = {
+    complete: complete,
+    nextRow: cursor,
+    scanned: totals.scanned,
+    renamed: totals.renamed,
+    repaired: totals.repaired,
+    alreadyTagged: totals.alreadyTagged,
+    noMetadata: totals.noMetadata,
+    unrecognised: totals.unrecognised,
+    missing: totals.missing,
+    failed: totals.failed
+  };
+  console.log(
+    'Speaker-token backfill: scanned ' + result.scanned + ', renamed ' + result.renamed +
+    ', repaired ' + result.repaired + ', already tagged ' + result.alreadyTagged +
+    ', no browser/platform ' + result.noMetadata + ', unrecognised name ' + result.unrecognised +
+    ', file missing ' + result.missing + ', rename failed ' + result.failed + '. ' +
+    (complete
+      ? 'Finished; run resetSpeakerTokenBackfill() before running it again.'
+      : 'Time budget reached — run backfillSpeakerTokens() again to continue from row ' + result.nextRow + '.')
+  );
+  return result;
+}
+
+/** Forgets the resume position so the next backfill run starts from the top. */
+function resetSpeakerTokenBackfill() {
+  PropertiesService.getScriptProperties().deleteProperty(RUNTIME_KEYS.BACKFILL_ROW);
+  console.log('Speaker-token backfill cursor cleared; the next run starts at the first row.');
+}
+
+/**
+ * Brings one sheet row and its Drive file in line, returning the filename the
+ * row should now hold. Every failure is counted and returns the existing name:
+ * one unreadable file must not stop the pass.
+ */
+function backfillRow_(row, index, totals) {
+  const recordedName = String(row[index.filename] || '');
+  const fileId = String(row[index.drive_file_id] || '');
+  totals.scanned++;
+
+  if (!fileId) { totals.missing++; return recordedName; }
+
+  let file;
+  try {
+    file = DriveApp.getFileById(fileId);
+  } catch (error) {
+    totals.missing++;
+    console.warn('Backfill: no Drive file for ' + fileId + ' (' + recordedName + '): ' + error);
+    return recordedName;
+  }
+
+  // Drive, not the sheet, is the authority on what a file is called: an
+  // interrupted run leaves a renamed file next to a stale row, and that row is
+  // repaired here rather than the file being renamed a second time.
+  const currentName = file.getName();
+  if (hasSpeakerToken_(currentName)) {
+    if (currentName !== recordedName) { totals.repaired++; return currentName; }
+    totals.alreadyTagged++;
+    return recordedName;
+  }
+
+  const token = derivedSpeakerToken_(row[index.browser], row[index.platform]);
+  if (!token) { totals.noMetadata++; return currentName; }
+
+  const renamed = filenameWithSpeakerToken_(currentName, token);
+  if (!renamed) {
+    totals.unrecognised++;
+    console.warn('Backfill: unrecognised filename shape, left as is: ' + currentName);
+    return currentName;
+  }
+
+  try {
+    file.setName(renamed);
+  } catch (error) {
+    totals.failed++;
+    console.warn('Backfill: could not rename ' + currentName + ': ' + error);
+    return currentName;
+  }
+  totals.renamed++;
+  return renamed;
+}
+
+/** Column name -> zero-based position, so row arrays are read by name. */
+function columnIndexes_(columns) {
+  const indexes = {};
+  columns.forEach(function(column, position) { indexes[column] = position; });
+  return indexes;
+}
+
+/**
+ * The stand-in device token for a recording that predates the real one: `sp`
+ * plus the first 8 hex characters of the SHA-256 of the browser/platform pair.
+ * Returns '' when the row names neither, so a row with no signal keeps the
+ * pipeline's one-group-per-file fallback instead of joining a catch-all bucket.
+ */
+function derivedSpeakerToken_(browser, platform) {
+  const fingerprint = deviceFingerprint_(browser, platform);
+  return fingerprint ? 'sp' + shortHex_(fingerprint) : '';
+}
+
+/**
+ * The string the token is derived from. Case and whitespace are normalised so
+ * the same device reported two ways still hashes to one group, and the two
+ * fields are joined with a separator so ('ab','c') and ('a','bc') stay apart.
+ */
+function deviceFingerprint_(browser, platform) {
+  const parts = [browser, platform].map(function(value) {
+    return String(value === null || value === undefined ? '' : value)
+      .trim().toLowerCase().replace(/\s+/g, ' ');
+  });
+  return parts.join('') ? parts.join('|') : '';
+}
+
+/** First 4 bytes of the SHA-256 of `text`, as 8 lowercase hex characters. */
+function shortHex_(text) {
+  const digest = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256, text, Utilities.Charset.UTF_8
+  );
+  let hex = '';
+  for (let position = 0; position < 4; position++) {
+    // Apps Script hands back signed bytes; mask before formatting.
+    hex += ('0' + (digest[position] & 0xff).toString(16)).slice(-2);
+  }
+  return hex;
+}
+
+/** Whether a filename already names a speaker. */
+function hasSpeakerToken_(filename) {
+  return SPEAKER_TOKEN_IN_FILENAME.test(String(filename || ''));
+}
+
+/**
+ * The same filename with `token` in the slot createFilename_() puts it in, or
+ * '' when the name is not the untagged shape or the token is malformed.
+ */
+function filenameWithSpeakerToken_(filename, token) {
+  const match = UNTAGGED_FILENAME.exec(String(filename || ''));
+  if (!match || !/^sp[0-9a-f]{8}$/.test(String(token || ''))) return '';
+  return match[1] + '_' + token + '_' + match[2];
 }
 
 /** The class-folder name for a non-phrase prompt, or '' for a real phrase. */
