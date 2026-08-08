@@ -21,18 +21,48 @@ from .config import AudioConfig, AugmentationConfig
 
 LOGGER = logging.getLogger(__name__)
 
-__all__ = ["NoiseBank", "WaveformAugmentor", "spec_augment"]
+__all__ = [
+    "NOISE_COLLECTION_GUIDE",
+    "NoiseBank",
+    "WaveformAugmentor",
+    "reverberate",
+    "spec_augment",
+]
 
 _EPS = 1e-12
+
+# What to record when the noise folder is empty. Ordered by how much each one
+# buys: the first few cover most of where the app is actually used.
+NOISE_COLLECTION_GUIDE = (
+    "quiet room (the baseline - it is not silence)",
+    "fan / air conditioning",
+    "street traffic",
+    "inside a car",
+    "TV or radio in the background",
+    "people talking nearby",
+    "children",
+    "mosque or background Quran recitation",
+    "microphone handling: the phone being picked up, put down, rubbed",
+    "the same room at different phone distances (10 cm, arm's length, on a table)",
+)
 
 
 @dataclass
 class NoiseBank:
-    """Background noise pool: real recordings when available, synthetic otherwise."""
+    """Background noise pool: real recordings when available, synthetic otherwise.
+
+    Synthetic white/pink noise keeps augmentation working with an empty folder,
+    but it is not a stand-in for a room. Real noise has structure - speech
+    babble, a TV, traffic - and structure is exactly what a false activation
+    comes from; flat noise mostly teaches the model to ignore a hiss.
+    """
 
     clips: List[np.ndarray] = field(default_factory=list)
     sample_rate: int = 16000
     allow_synthetic: bool = True
+    directory: Optional[str] = None
+    files: List[str] = field(default_factory=list)
+    skipped: int = 0
 
     @classmethod
     def load(
@@ -44,6 +74,8 @@ class NoiseBank:
         allow_synthetic: bool = True,
     ) -> "NoiseBank":
         clips: List[np.ndarray] = []
+        loaded: List[str] = []
+        skipped = 0
         if directory is not None:
             root = Path(directory)
             if root.is_dir():
@@ -53,17 +85,32 @@ class NoiseBank:
                     for path in root.rglob("*")
                     if path.is_file() and path.suffix.lower() in suffixes
                 )
+                if len(files) > max_files:
+                    LOGGER.info(
+                        "%d noise files found, loading the first %d",
+                        len(files),
+                        max_files,
+                    )
                 for path in files[:max_files]:
                     try:
                         clips.append(load_audio(path, sample_rate))
+                        loaded.append(str(path))
                     except Exception as exc:  # noqa: BLE001
+                        skipped += 1
                         LOGGER.warning("skipping unreadable noise file %s: %s", path, exc)
         if not clips:
             LOGGER.info(
                 "no background-noise files found; using synthetic noise (%s)",
                 "enabled" if allow_synthetic else "disabled",
             )
-        return cls(clips=clips, sample_rate=sample_rate, allow_synthetic=allow_synthetic)
+        return cls(
+            clips=clips,
+            sample_rate=sample_rate,
+            allow_synthetic=allow_synthetic,
+            directory=str(directory) if directory is not None else None,
+            files=loaded,
+            skipped=skipped,
+        )
 
     def __len__(self) -> int:
         return len(self.clips)
@@ -71,6 +118,42 @@ class NoiseBank:
     @property
     def available(self) -> bool:
         return bool(self.clips) or self.allow_synthetic
+
+    @property
+    def synthetic_active(self) -> bool:
+        """True when every noise sample drawn will be generated, not recorded."""
+        return not self.clips and self.allow_synthetic
+
+    @property
+    def total_seconds(self) -> float:
+        return sum(clip.size for clip in self.clips) / float(max(self.sample_rate, 1))
+
+    def report(self) -> str:
+        """What the augmenter will actually mix in, and what to collect."""
+        lines = [
+            f"noise directory  : {self.directory or '(none configured)'}",
+            f"real noise files : {len(self.clips)}"
+            + (f" ({self.skipped} unreadable, skipped)" if self.skipped else ""),
+            f"real noise audio : {self.total_seconds / 60.0:.1f} minutes",
+            f"synthetic fallback: {'ACTIVE' if self.synthetic_active else 'not used'}",
+        ]
+        if self.synthetic_active:
+            lines.append(
+                "\n!! every background-noise augmentation will be generated white or "
+                "pink noise. That is not a realistic acoustic environment: it has no "
+                "speech babble, no TV, no room, and those are what a false activation "
+                "is made of. Record a few minutes each (phone, same as the dhikr "
+                "recordings) of:"
+            )
+            lines.extend(f"     - {item}" for item in NOISE_COLLECTION_GUIDE)
+            lines.append(f"   and drop the files in {self.directory or 'paths.noise_dir'}.")
+        elif self.total_seconds < 60.0:
+            lines.append(
+                f"\n!! only {self.total_seconds:.0f} s of real noise, so the same few "
+                f"seconds are mixed into many clips and the model can learn the noise "
+                f"itself. A few minutes of each environment is the target."
+            )
+        return "\n".join(lines)
 
     def sample(self, rng: np.random.Generator, length: int) -> np.ndarray:
         """A noise segment of exactly ``length`` samples."""
@@ -96,6 +179,42 @@ def _synthetic_noise(rng: np.random.Generator, length: int) -> np.ndarray:
     return pink / (float(np.max(np.abs(pink))) + _EPS)
 
 
+def reverberate(
+    samples: np.ndarray,
+    sample_rate: int,
+    decay_ms: float,
+    wet: float,
+    rng: np.random.Generator,
+) -> np.ndarray:
+    """Convolve with a generated room impulse response.
+
+    The impulse response is exponentially decaying noise - the standard cheap
+    stand-in for a small room, and enough to teach the model that a phrase spoken
+    across a room is the same phrase. No corpus of measured impulse responses and
+    no extra dependency: ``numpy.convolve`` at these lengths costs microseconds.
+
+    ``wet`` is the mix; the dry signal is always kept, because a fully wet clip is
+    not something a phone microphone ever records.
+    """
+    length = int(round(max(decay_ms, 1.0) * sample_rate / 1000.0))
+    if length < 2 or samples.size == 0:
+        return np.asarray(samples, dtype=np.float32)
+
+    time_axis = np.arange(length, dtype=np.float32)
+    # -60 dB over the decay length, i.e. the usual RT60 convention.
+    envelope = np.exp(-6.9078 * time_axis / float(length)).astype(np.float32)
+    impulse = rng.standard_normal(length).astype(np.float32) * envelope
+    impulse[0] = 1.0  # direct sound
+    energy = float(np.sqrt(np.sum(np.square(impulse))))
+    if energy <= _EPS:
+        return np.asarray(samples, dtype=np.float32)
+    impulse /= energy
+
+    wet_signal = np.convolve(samples, impulse)[: samples.size].astype(np.float32)
+    mix = float(np.clip(wet, 0.0, 1.0))
+    return ((1.0 - mix) * samples + mix * wet_signal).astype(np.float32)
+
+
 @dataclass
 class WaveformAugmentor:
     """Applies the configured waveform transforms, each with its own probability."""
@@ -112,6 +231,9 @@ class WaveformAugmentor:
         result = self._speed_perturb(result, rng)
         result = self._pitch_shift(result, rng)
         result = self._time_shift(result, rng)
+        # Reverb before the noise: in a real room the microphone hears the
+        # reverberated voice *and* the background, not a reverberated mixture.
+        result = self._reverb(result, rng)
         result = self._add_noise(result, rng)
         result = self._gain(result, rng)
         result = fit_length(result, self.audio.clip_samples, self.audio.fit_mode)
@@ -187,6 +309,18 @@ class WaveformAugmentor:
         snr_db = float(rng.uniform(cfg.min_snr_db, cfg.max_snr_db))
         gain = db_to_amplitude(signal_db - snr_db - noise_db)
         return (samples + noise * gain).astype(np.float32)
+
+    def _reverb(self, samples: np.ndarray, rng: np.random.Generator) -> np.ndarray:
+        cfg = self.config.reverb
+        if not cfg.enabled or rng.random() >= cfg.probability:
+            return samples
+        decay = float(rng.uniform(cfg.min_decay_ms, cfg.max_decay_ms))
+        wet = float(rng.uniform(cfg.min_wet, cfg.max_wet))
+        try:
+            return reverberate(samples, self.audio.sample_rate, decay, wet, rng)
+        except Exception as exc:  # noqa: BLE001
+            LOGGER.debug("reverb failed, using the original clip: %s", exc)
+            return samples
 
     def _gain(self, samples: np.ndarray, rng: np.random.Generator) -> np.ndarray:
         cfg = self.config.gain

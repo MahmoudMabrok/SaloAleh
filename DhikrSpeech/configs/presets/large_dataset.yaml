@@ -1,0 +1,36 @@
+# Preset: large_dataset
+#
+# Thousands of clips per target phrase from many speakers. Here the constraints
+# invert: capacity is no longer the limit, the regularisation tuned for a few
+# hundred clips starts costing accuracy, and epochs get expensive.
+#
+# What it changes and why:
+#   * full width, lower dropout - there is enough data to fit it;
+#   * larger batches and fewer epochs (convergence follows optimiser steps, and a
+#     large dataset gives plenty per epoch);
+#   * bn_momentum back towards the Keras default, which needs thousands of steps
+#     to converge and now gets them;
+#   * a lower activation threshold is *allowed* but not set here - calibrate it
+#     from streaming data instead of guessing.
+#
+# Apply with: load_config(preset="large_dataset")
+name: large_dataset
+description: thousands of clips per phrase, many speakers
+
+model:
+  width_multiplier: 1.0
+  dropout: 0.2
+  bn_momentum: 0.99
+
+training:
+  epochs: 80
+  batch_size: 128
+  warmup_epochs: 2
+
+augmentation:
+  enabled: true
+  reverb:
+    enabled: true
+
+quality:
+  min_negative_category: 100

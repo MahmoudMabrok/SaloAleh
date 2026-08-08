@@ -1,0 +1,39 @@
+# Preset: tiny_dataset
+#
+# For a prototype dataset - roughly under 100 recordings per target phrase, and
+# usually a handful of speakers. This is the regime where the model has more
+# parameters than it has recordings to fit, so it drives training accuracy to 1.0
+# while validation plateaus and the printed numbers stop meaning anything.
+#
+# What it changes and why:
+#   * half the width and more dropout - capacity tracks the dataset, not the other
+#     way round;
+#   * small batches so a few dozen clips still give enough optimiser steps;
+#   * a conservative detector (higher activation, more consecutive hits) because a
+#     model trained on this little data is confidently wrong more often;
+#   * readiness thresholds are NOT relaxed. A tiny dataset should read
+#     EXPERIMENTAL, and it does.
+#
+# Apply with: load_config(preset="tiny_dataset")  (or DHIKR_PRESET=tiny_dataset)
+name: tiny_dataset
+description: prototype-scale dataset (<100 clips/phrase, few speakers)
+
+model:
+  width_multiplier: 0.5
+  dropout: 0.4
+
+training:
+  epochs: 300
+  batch_size: 16
+  warmup_epochs: 5
+
+augmentation:
+  enabled: true
+  reverb:
+    enabled: true
+
+streaming:
+  detector:
+    confidence_threshold: 0.90
+    release_threshold: 0.50
+    min_consecutive_hits: 3

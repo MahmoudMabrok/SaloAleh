@@ -14,6 +14,7 @@ manifest, so training, evaluation and export always see the same splits.
 from __future__ import annotations
 
 import csv
+import dataclasses
 import json
 import logging
 import re
@@ -36,6 +37,14 @@ from .audio import (
     write_wav,
 )
 from .config import AudioConfig, ClassesConfig, Config, SplitConfig
+from .speakers import (
+    SOURCE_NONE,
+    SpeakerReport,
+    SpeakerResolver,
+    load_speaker_metadata,
+    speaker_report,
+    verify_speaker_disjoint,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -52,17 +61,21 @@ __all__ = [
     "Sample",
     "ValidationReport",
     "assign_splits",
+    "build_speaker_resolver",
     "class_names_from_manifest",
     "compute_class_weights",
     "filter_split",
     "load_manifest",
     "load_phrases",
     "make_tf_dataset",
+    "manifest_speaker_report",
+    "negative_type_counts",
     "preprocess_dataset",
     "save_manifest",
     "scan_dataset",
     "split_counts",
     "validate_dataset",
+    "verify_manifest_splits",
 ]
 
 MANIFEST_FIELDS = [
@@ -74,6 +87,11 @@ MANIFEST_FIELDS = [
     "text",
     "split",
     "duration",
+    # Appended after the original eight, so a manifest written by this version
+    # still opens in anything that reads the first columns positionally, and a
+    # manifest written before it still loads here (the reader defaults them).
+    "speaker",
+    "negative_type",
 ]
 
 ISSUE_KINDS = (
@@ -129,6 +147,18 @@ class Sample:
     class_index: int
     phrase_id: Optional[int]
     text: str
+    # Who spoke it, when that can be established (see src/speakers.py). None means
+    # unknown, which is reported rather than assumed away.
+    speaker: Optional[str] = None
+    # Which kind of negative this is, for clips under `unknown/`: the subfolder
+    # name (`hard_negative`, `noise`, ...) or the unknown class name for a flat
+    # folder. Empty for a target phrase. It never changes the training label - it
+    # exists so evaluation can say *what kind* of audio produced a false positive.
+    negative_type: str = ""
+    # Path relative to the class folder, e.g. `hard_negative/ali_003.wav`. Keeps
+    # two same-named files in different subfolders apart when they are written to
+    # `processed/`.
+    relative_path: str = ""
 
 
 @dataclass
@@ -139,6 +169,7 @@ class DatasetIndex:
     class_names: List[str]
     phrases: Dict[int, str] = field(default_factory=dict)
     root: Optional[Path] = None
+    speaker_source: str = SOURCE_NONE
 
     @property
     def num_classes(self) -> int:
@@ -147,6 +178,24 @@ class DatasetIndex:
     def counts(self) -> Dict[str, int]:
         counter = Counter(sample.label for sample in self.samples)
         return {name: counter.get(name, 0) for name in self.class_names}
+
+    def negative_counts(self) -> Dict[str, int]:
+        """Recordings per negative category, most numerous first."""
+        counter = Counter(
+            sample.negative_type for sample in self.samples if sample.negative_type
+        )
+        return dict(counter.most_common())
+
+    def speakers(self) -> List[str]:
+        return sorted({sample.speaker for sample in self.samples if sample.speaker})
+
+    def speaker_report(self) -> SpeakerReport:
+        """Who is in the dataset. Splits are not assigned yet, so leaks are not
+        checked here - :func:`verify_manifest_splits` does that after the split."""
+        return speaker_report(
+            [(sample.speaker, sample.label, "") for sample in self.samples],
+            self.speaker_source,
+        )
 
     def label_text(self, label: str) -> str:
         for sample in self.samples:
@@ -169,12 +218,52 @@ def _sort_key(label: str) -> Tuple[int, object]:
     return (0, int(label)) if label.isdigit() else (1, label)
 
 
+def _negative_type(relative: Path, is_negative: bool, unknown_class: str) -> str:
+    """The negative category of a file, from its position under the class folder.
+
+    ``unknown/hard_negative/ali_01.wav`` -> ``hard_negative``;
+    ``unknown/ali_01.wav`` -> the unknown class name. Target phrases have none.
+    """
+    if not is_negative:
+        return ""
+    parts = relative.parts
+    return parts[0] if len(parts) > 1 else unknown_class
+
+
+def build_speaker_resolver(
+    config: Config, dataset_root: Optional[PathLike] = None
+) -> SpeakerResolver:
+    """A :class:`SpeakerResolver` wired from the config and ``speakers.csv``."""
+    speaker_config = config.split.resolved_speaker()
+    metadata_file = speaker_config.metadata_file
+    metadata_path = (
+        config.paths.resolve(metadata_file) if metadata_file else config.paths.speakers_path
+    )
+    metadata = (
+        load_speaker_metadata(metadata_path)
+        if speaker_config.source in ("auto", "metadata")
+        else {}
+    )
+    if speaker_config.source == "metadata" and not metadata:
+        LOGGER.warning(
+            "split.speaker.source is 'metadata' but %s holds no usable rows - "
+            "no recording will have a speaker id",
+            metadata_path,
+        )
+    return SpeakerResolver(
+        config=speaker_config,
+        metadata=metadata,
+        dataset_root=Path(dataset_root or config.paths.dataset_path),
+    )
+
+
 def scan_dataset(
     dataset_dir: PathLike,
     phrases: Sequence[Phrase],
     unknown_class: str = "unknown",
     extensions: Sequence[str] = (".wav",),
     classes: Optional[ClassesConfig] = None,
+    speaker_resolver: Optional[SpeakerResolver] = None,
 ) -> DatasetIndex:
     """Index every recording under ``dataset_dir``, one folder per class.
 
@@ -182,6 +271,16 @@ def scan_dataset(
     the single point where the class list is decided, so the selection flows into
     the manifest, the class indices, the model's output width and ``labels.txt``
     without anything downstream needing to know about it.
+
+    Class folders are scanned recursively, so negatives may be organised into
+    subfolders (``unknown/hard_negative/*.wav``) without becoming separate
+    classes: every file under ``unknown/`` trains as ``unknown``, and the
+    subfolder is kept on the sample as ``negative_type`` for the evaluation to
+    report against.
+
+    ``speaker_resolver`` attaches a speaker id to every recording; without one
+    the index has no speaker information and says so (see
+    :func:`build_speaker_resolver`).
     """
     root = Path(dataset_dir)
     if not root.is_dir():
@@ -232,6 +331,7 @@ def scan_dataset(
         if phrase_id is not None and phrase_id not in phrase_text:
             LOGGER.warning("folder '%s' has no matching id in phrases.json", label)
         text = phrase_text.get(phrase_id, unknown_class if label == unknown_class else label)
+        is_negative = label == unknown_class
         files = sorted(
             path
             for path in directory.rglob("*")
@@ -240,6 +340,7 @@ def scan_dataset(
         if not files:
             LOGGER.warning("class folder '%s' contains no audio files", label)
         for path in files:
+            relative = path.relative_to(directory)
             samples.append(
                 Sample(
                     path=path,
@@ -247,8 +348,55 @@ def scan_dataset(
                     class_index=class_to_index[label],
                     phrase_id=phrase_id,
                     text=text,
+                    negative_type=_negative_type(relative, is_negative, unknown_class),
+                    relative_path=relative.as_posix(),
                 )
             )
+
+    speaker_source = SOURCE_NONE
+    if speaker_resolver is not None and samples:
+        assignments = speaker_resolver.resolve_all(
+            [
+                (sample.path, (sample.label, sample.negative_type))
+                for sample in samples
+            ]
+        )
+        samples = [
+            dataclasses.replace(sample, speaker=assignment.speaker)
+            for sample, assignment in zip(samples, assignments)
+        ]
+        speaker_source = speaker_resolver.resolved_source or SOURCE_NONE
+        assigned = sum(1 for sample in samples if sample.speaker)
+        if assigned:
+            LOGGER.info(
+                "speaker ids: %d/%d recordings, %d speaker(s), source '%s'",
+                assigned,
+                len(samples),
+                len({sample.speaker for sample in samples if sample.speaker}),
+                speaker_source,
+            )
+        else:
+            LOGGER.warning(
+                "no recording could be traced to a speaker - the split cannot be "
+                "made speaker-safe and the evaluation will NOT be "
+                "speaker-independent (see split.speaker in config.yaml)"
+            )
+
+    negatives = Counter(sample.negative_type for sample in samples if sample.negative_type)
+    if negatives:
+        LOGGER.info(
+            "negative categories: %s",
+            ", ".join(f"{name}={count}" for name, count in negatives.most_common()),
+        )
+        if classes is not None:
+            unexpected = sorted(set(negatives) - set(classes.negative_types))
+            if unexpected:
+                LOGGER.info(
+                    "negative categories outside classes.negative_types (still "
+                    "trained as '%s', still reported): %s",
+                    unknown_class,
+                    ", ".join(unexpected),
+                )
 
     wanted = set(phrase.folder for phrase in phrases)
     if classes is not None and classes.enabled:
@@ -260,7 +408,13 @@ def scan_dataset(
         LOGGER.warning("phrases without a dataset folder: %s", ", ".join(missing))
 
     LOGGER.info("indexed %d recordings across %d classes", len(samples), len(class_names))
-    return DatasetIndex(samples=samples, class_names=class_names, phrases=phrase_text, root=root)
+    return DatasetIndex(
+        samples=samples,
+        class_names=class_names,
+        phrases=phrase_text,
+        root=root,
+        speaker_source=speaker_source,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -520,6 +674,8 @@ class ManifestRecord:
     text: str
     split: str
     duration: float
+    speaker: str = ""
+    negative_type: str = ""
 
     def resolve(self, root: PathLike) -> Path:
         candidate = Path(self.path)
@@ -541,6 +697,13 @@ def save_manifest(records: Sequence[ManifestRecord], path: PathLike) -> Path:
 
 
 def load_manifest(path: PathLike) -> List[ManifestRecord]:
+    """Read a manifest.
+
+    ``speaker`` and ``negative_type`` are read with a default, so a manifest
+    written before those columns existed still loads - it simply has no speaker
+    information, which the speaker report then reports as such rather than
+    crashing halfway through a notebook.
+    """
     source = Path(path)
     if not source.is_file():
         raise FileNotFoundError(
@@ -548,7 +711,9 @@ def load_manifest(path: PathLike) -> List[ManifestRecord]:
         )
     records: List[ManifestRecord] = []
     with open(source, "r", encoding="utf-8") as handle:
-        for row in csv.DictReader(handle):
+        reader = csv.DictReader(handle)
+        legacy = reader.fieldnames is not None and "speaker" not in reader.fieldnames
+        for row in reader:
             records.append(
                 ManifestRecord(
                     path=row["path"],
@@ -559,8 +724,17 @@ def load_manifest(path: PathLike) -> List[ManifestRecord]:
                     text=row["text"],
                     split=row["split"],
                     duration=float(row["duration"]),
+                    speaker=(row.get("speaker") or "").strip(),
+                    negative_type=(row.get("negative_type") or "").strip(),
                 )
             )
+    if legacy and records:
+        LOGGER.warning(
+            "%s predates the speaker/negative_type columns, so it carries no "
+            "speaker information and the split cannot be shown to be "
+            "speaker-safe. Re-run preprocessing to regenerate it.",
+            source,
+        )
     return records
 
 
@@ -586,6 +760,46 @@ def filter_split(records: Sequence[ManifestRecord], split: str) -> List[Manifest
 def split_counts(records: Sequence[ManifestRecord]) -> Dict[str, int]:
     counter = Counter(record.split for record in records)
     return {split: counter[split] for split in sorted(counter)}
+
+
+def negative_type_counts(
+    records: Sequence[ManifestRecord], split: Optional[str] = None
+) -> Dict[str, int]:
+    """Clips per negative category, optionally within one split."""
+    counter = Counter(
+        record.negative_type
+        for record in records
+        if record.negative_type and (split is None or record.split == split)
+    )
+    return dict(counter.most_common())
+
+
+def manifest_speaker_report(
+    records: Sequence[ManifestRecord], source: str = "manifest"
+) -> SpeakerReport:
+    """Speaker coverage and cross-split leakage of a manifest."""
+    known = any(record.speaker for record in records)
+    return speaker_report(
+        [(record.speaker or None, record.label, record.split) for record in records],
+        source if known else SOURCE_NONE,
+    )
+
+
+def verify_manifest_splits(
+    records: Sequence[ManifestRecord],
+    config: SplitConfig,
+    source: str = "manifest",
+) -> SpeakerReport:
+    """Report the speaker split and fail on leakage when speakers are known.
+
+    Called at the end of preprocessing and again before training: the manifest is
+    what every later stage reads, so this is the last honest place to check that
+    the numbers it will produce mean what they claim.
+    """
+    report = manifest_speaker_report(records, source)
+    if report.known:
+        verify_speaker_disjoint(report, config.resolved_speaker().require_disjoint)
+    return report
 
 
 # ---------------------------------------------------------------------------
@@ -636,7 +850,11 @@ def preprocess_dataset(
                 progress(position, total)
             continue
 
-        relative = Path(sample.label) / f"{sample.path.stem}.wav"
+        # The subfolder structure inside a class folder is preserved, so
+        # `unknown/noise/a.wav` and `unknown/tv/a.wav` stay two files rather than
+        # silently overwriting each other in `processed/unknown/a.wav`.
+        inside = Path(sample.relative_path) if sample.relative_path else Path(sample.path.name)
+        relative = Path(sample.label) / inside.with_suffix(".wav")
         target = destination_root / relative
         try:
             if target.exists() and not overwrite:
@@ -648,7 +866,7 @@ def preprocess_dataset(
                 written += 1
             records.append(
                 ManifestRecord(
-                    path=str(relative),
+                    path=relative.as_posix(),
                     source_path=source_text,
                     label=sample.label,
                     class_index=sample.class_index,
@@ -656,6 +874,8 @@ def preprocess_dataset(
                     text=sample.text,
                     split="",
                     duration=audio_config.clip_seconds,
+                    speaker=sample.speaker or "",
+                    negative_type=sample.negative_type,
                 )
             )
         except Exception as exc:  # noqa: BLE001
@@ -678,41 +898,162 @@ def _group_of(record: ManifestRecord, pattern: re.Pattern) -> str:
     return match.group(0) if match else Path(record.path).stem
 
 
+def _grouping(
+    records: Sequence[ManifestRecord], config: SplitConfig
+) -> Optional[Dict[str, List[int]]]:
+    """Groups that must not be broken across splits, or None for a plain split.
+
+    Speaker ids on the records win: they are what the split has to respect. A
+    record without one becomes its own group - it cannot be tied to anything, and
+    pretending otherwise is how a leak gets in. ``split.group_regex`` is the
+    legacy path and still works for a manifest that carries no speakers.
+    """
+    if any(record.speaker for record in records):
+        groups: Dict[str, List[int]] = defaultdict(list)
+        for position, record in enumerate(records):
+            key = f"speaker:{record.speaker}" if record.speaker else f"file:{record.path}"
+            groups[key].append(position)
+        return dict(groups)
+
+    if config.group_regex:
+        pattern = re.compile(config.group_regex)
+        groups = defaultdict(list)
+        for position, record in enumerate(records):
+            groups[_group_of(record, pattern)].append(position)
+        return dict(groups)
+    return None
+
+
+def _assign_groups(
+    updated: List[ManifestRecord],
+    groups: Dict[str, List[int]],
+    config: SplitConfig,
+    rng: np.random.Generator,
+) -> List[ManifestRecord]:
+    """Place whole groups into splits, keeping the sizes as close to target as possible.
+
+    Greedy, largest group first, into whichever split is furthest from its target
+    share. Exact ratios are impossible once whole speakers have to move together -
+    a speaker with a third of the recordings cannot be split 70/15/15 - so the
+    ratios are targets and the guarantee is the grouping, not the arithmetic.
+    """
+    total = len(updated)
+    targets = {
+        "train": total * config.train_ratio,
+        "val": total * config.val_ratio,
+        "test": total * config.test_ratio,
+    }
+    order = [name for name in ("train", "val", "test") if targets[name] > 0.0]
+
+    names = list(groups)
+    rng.shuffle(names)  # breaks size ties reproducibly
+    names.sort(key=lambda name: len(groups[name]), reverse=True)
+
+    assigned = {name: 0 for name in order}
+    placement: Dict[str, str] = {}
+    for name in names:
+        size = len(groups[name])
+        # Relative deficit, so the split that is proportionally emptiest wins.
+        # Ties fall to the earlier split in `order` (train first), which is what
+        # keeps the biggest speaker out of the test set.
+        target_split = max(
+            order,
+            key=lambda split: (
+                (targets[split] - assigned[split]) / max(targets[split], 1.0),
+                targets[split],
+            ),
+        )
+        placement[name] = target_split
+        assigned[target_split] += size
+
+    _repair_placement(updated, groups, placement, order)
+
+    for name, split in placement.items():
+        for position in groups[name]:
+            updated[position].split = split
+    return updated
+
+
+def _repair_placement(
+    updated: List[ManifestRecord],
+    groups: Dict[str, List[int]],
+    placement: Dict[str, str],
+    order: Sequence[str],
+) -> None:
+    """Fix the two ways a greedy group split can produce an unusable manifest.
+
+    1. A class with no clips in ``train`` - the model would never see it.
+    2. An empty ``val`` (or ``test``) split when there is more than one group.
+
+    Both are only possible with very few groups, which is exactly the prototype
+    case this project runs in, so they are repaired rather than left to fail
+    later with a confusing message.
+    """
+    def clips(split: str) -> int:
+        return sum(len(groups[name]) for name, value in placement.items() if value == split)
+
+    # 1. every class must be represented in train
+    for class_index in sorted({record.class_index for record in updated}):
+        in_train = any(
+            placement[name] == "train"
+            for name, positions in groups.items()
+            if any(updated[position].class_index == class_index for position in positions)
+        )
+        if in_train:
+            continue
+        candidates = [
+            name
+            for name, positions in groups.items()
+            if placement[name] != "train"
+            and any(updated[position].class_index == class_index for position in positions)
+        ]
+        if candidates:
+            chosen = min(candidates, key=lambda name: len(groups[name]))
+            LOGGER.info(
+                "moving group '%s' to train: class index %d had no training clips",
+                chosen,
+                class_index,
+            )
+            placement[chosen] = "train"
+
+    # 2. no empty val / test split while groups remain in train
+    for split in [name for name in order if name != "train"]:
+        if clips(split) > 0:
+            continue
+        donors = [name for name, value in placement.items() if value == "train"]
+        if len(donors) < 2:
+            LOGGER.warning(
+                "the '%s' split is empty: there are not enough independent groups "
+                "(speakers) to fill it without emptying train",
+                split,
+            )
+            continue
+        chosen = min(donors, key=lambda name: len(groups[name]))
+        LOGGER.info("moving group '%s' to the empty '%s' split", chosen, split)
+        placement[chosen] = split
+
+
 def assign_splits(
     records: Sequence[ManifestRecord], config: SplitConfig, seed: int
 ) -> List[ManifestRecord]:
     """Label every record ``train`` / ``val`` / ``test`` in place-safe fashion.
 
-    Stratified per class by default. When ``split.group_regex`` is set, whole
-    groups (for example one speaker or one recording session) move together,
-    which prevents leakage at the cost of exact per-class ratios.
+    **Speaker-grouped whenever the records carry a speaker**: every recording of
+    one voice lands in exactly one split, so the validation and test numbers
+    describe a speaker the model has never heard - the only question the app
+    cares about. ``split.group_regex`` is the legacy equivalent for a manifest
+    without speakers.
+
+    With no grouping information at all it falls back to a per-class stratified
+    split, which keeps the class ratios exact and guarantees nothing about
+    speakers. That is the case the dataset report warns about loudly.
     """
     rng = np.random.default_rng(seed)
     updated = [ManifestRecord(**asdict(record)) for record in records]
 
-    if config.group_regex:
-        pattern = re.compile(config.group_regex)
-        groups: Dict[str, List[int]] = defaultdict(list)
-        for position, record in enumerate(updated):
-            groups[_group_of(record, pattern)].append(position)
-        names = sorted(groups)
-        rng.shuffle(names)
-        total = len(updated)
-        test_target = int(round(total * config.test_ratio))
-        val_target = int(round(total * config.val_ratio))
-        assigned = 0
-        for name in names:
-            positions = groups[name]
-            if assigned < test_target:
-                split = "test"
-            elif assigned < test_target + val_target:
-                split = "val"
-            else:
-                split = "train"
-            for position in positions:
-                updated[position].split = split
-            assigned += len(positions)
-        return updated
+    groups = _grouping(updated, config)
+    if groups is not None:
+        return _assign_groups(updated, groups, config, rng)
 
     by_class: Dict[int, List[int]] = defaultdict(list)
     for position, record in enumerate(updated):
