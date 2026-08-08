@@ -247,6 +247,20 @@ h1 {
 
 .phrase-card-unknown .phrase-text { font-size: clamp(1.15rem, 4.6vw, 1.4rem); }
 
+/* The background-noise card: nothing is read aloud here at all, so it is toned
+   further away again — cool grey rather than the unknown card's warm sand. */
+.phrase-card-noise .phrase-panel {
+  border-color: #d3dade;
+  background: linear-gradient(155deg, #fbfcfd, #eaeff2);
+}
+
+.phrase-card-noise .phrase-text { font-size: clamp(1.15rem, 4.6vw, 1.4rem); }
+
+.phrase-card-noise .card-badge {
+  background: #e6ecf0;
+  color: #3f545f;
+}
+
 .recorder-panel {
   margin-top: 11px;
   text-align: center;
@@ -422,7 +436,7 @@ h1 {
   </div>
 
   <audio id="audio-player" preload="metadata"></audio>
-  <script id="bootstrap-data" type="application/json">{"endpoint":"https://script.google.com/macros/s/AKfycbyf_55s33KUlWU8UWF4pjaO_7NY5tYjmt2ssGphxvXJSyM6hTUsMPtz5_Mv6ojvKm4G7A/exec","standaloneUrl":"https://mahmoudmabrok.github.io/SaloAleh/voice.html","app":{"title":"Dhikr Speech Dataset","htmlTitle":"Arabic Speech Dataset Collector","language":"ar","direction":"rtl","timezone":"Africa/Cairo"},"recording":{"minimumDurationMs":1000,"maximumDurationMs":5000,"maximumUploadBytes":5242880,"preferredSampleRate":16000,"preferredChannelCount":1,"acceptedMimeTypes":["audio/wav","audio/x-wav","audio/webm","audio/ogg","audio/mp4","audio/mpeg"]},"theme":{"primary":"#176b45","primaryDark":"#0d4f32","primarySoft":"#e9f6ef","accent":"#d6a53a","pageBackground":"#f4f8f5","cardBackground":"#ffffff","text":"#17362a","mutedText":"#61746b","danger":"#b3261e"},"ui":{"hero":"❤️ ساعدنا في بناء ميزة الذكر بالصوت","singleTakeRule":"قاعدة واحدة مهمة: كل تسجيل يحتوي على ذكر واحد يُقال مرة واحدة فقط. لا تكرّر العبارة داخل التسجيل نفسه.","listHint":"لكل عبارة مسجّلها الخاص. سجّل وارفع كل عبارة على حدة، ويمكنك رفع عدة عينات لنفس العبارة — كل عينة إضافية تفيدنا، بشرط أن يكون في كل تسجيل نطق واحد فقط.","summaryPhrases":"{recorded} من {total} عبارات لها تسجيل","summarySamples":"{count} عينة مرفوعة","recordedCount":"✓ {count} عينة مرفوعة","record":"تسجيل","reRecord":"إعادة التسجيل","stop":"إيقاف","play":"استماع","pause":"إيقاف الاستماع","upload":"رفع التسجيل","uploading":"جارٍ الرفع…","uploadQueued":"في الانتظار…","uploadAll":"رفع كل التسجيلات الجاهزة ({count})","timerReady":"00:00.0","microphoneHint":"اقرأ العبارة مرة واحدة بصوت واضح في مكان هادئ، ثم اضغط «إيقاف».","privacy":"لا نجمع الاسم أو البريد أو الهاتف أو الموقع. يُحفظ التسجيل والبيانات التقنية الأساسية فقط.","ready":"اضغط «تسجيل» عند أي عبارة واسمح باستخدام الميكروفون، ثم قل العبارة مرة واحدة.","recording":"جارٍ التسجيل… قل العبارة مرة واحدة فقط ثم اضغط «إيقاف».","recordingReady":"التسجيل جاهز. استمع إليه للتأكد أنه يحتوي على العبارة مرة واحدة فقط، ثم ارفعه.","microphoneDenied":"تم رفض إذن الميكروفون. افتح إعدادات الموقع في المتصفح، فعّل الميكروفون، ثم أعد تحميل الصفحة.","microphoneBlocked":"المتصفح لا يعرض طلب الإذن لأن الصفحة معروضة داخل إطار لا يسمح بالميكروفون. افتح صفحة التسجيل في نافذة مستقلة ثم اضغط «تسجيل».","microphoneMissing":"لم يُعثر على ميكروفون متاح. وصّل ميكروفونًا أو تحقق من إعدادات الصوت ثم حاول مجددًا.","microphoneBusy":"الميكروفون مشغول بتطبيق آخر. أغلق التطبيقات التي تستخدمه ثم حاول مجددًا.","insecureContext":"التسجيل يتطلب فتح الصفحة عبر رابط https. افتح الرابط الرسمي للصفحة ثم حاول مجددًا.","openStandalone":"فتح صفحة التسجيل","unsupported":"هذا المتصفح لا يدعم تسجيل الصوت. جرّب إصدارًا حديثًا من Chrome أو Safari.","tooShort":"التسجيل قصير جدًا. سجّل لمدة ثانية واحدة على الأقل.","tooLarge":"حجم التسجيل كبير جدًا. سجّل مقطعًا أقصر ثم حاول مجددًا.","uploadSuccessTitle":"✅ شكرًا لك!","uploadSuccessBody":"تم رفع العينة. يمكنك تسجيل عينة جديدة لنفس العبارة — نطق واحد في كل تسجيل.","uploadFailedTitle":"فشل رفع التسجيل","uploadFailedBody":"احتفظنا بالتسجيل. تحقق من الإنترنت ثم حاول مجددًا.","retry":"إعادة المحاولة","unknownBadge":"ليست ذكرًا"},"phrases":[{"id":7,"text":"سبحان الله العظيم وبحمده"},{"id":6,"text":"سبحان الله وبحمده"},{"id":1,"text":"سبحان الله"},{"id":2,"text":"الحمد لله"},{"id":3,"text":"الله أكبر"},{"id":4,"text":"لا إله إلا الله"},{"id":5,"text":"أستغفر الله"},{"id":8,"text":"لا حول ولا قوة إلا بالله"},{"id":9,"text":"اللهم صل على محمد"},{"id":10,"text":"اللهم صل وسلم على نبينا محمد"}],"unknownPrompt":{"id":0,"text":"قل أي كلمة عادية ليست ذكرًا","note":"مثل «صباح الخير» أو «كيف حالك» أو أي كلمة تخطر ببالك. قلها مرة واحدة فقط في التسجيل بلا تكرار، وغيّر الكلمة في كل تسجيل جديد — هذه العينات تعلّم النموذج ما ليس ذكرًا حتى لا يَعُدّ كلامك العادي."}}</script>
+  <script id="bootstrap-data" type="application/json">{"endpoint":"https://script.google.com/macros/s/AKfycbyf_55s33KUlWU8UWF4pjaO_7NY5tYjmt2ssGphxvXJSyM6hTUsMPtz5_Mv6ojvKm4G7A/exec","standaloneUrl":"https://mahmoudmabrok.github.io/SaloAleh/voice.html","app":{"title":"Dhikr Speech Dataset","htmlTitle":"Arabic Speech Dataset Collector","language":"ar","direction":"rtl","timezone":"Africa/Cairo"},"recording":{"minimumDurationMs":1000,"maximumDurationMs":5000,"maximumUploadBytes":5242880,"preferredSampleRate":16000,"preferredChannelCount":1,"acceptedMimeTypes":["audio/wav","audio/x-wav","audio/webm","audio/ogg","audio/mp4","audio/mpeg"]},"theme":{"primary":"#176b45","primaryDark":"#0d4f32","primarySoft":"#e9f6ef","accent":"#d6a53a","pageBackground":"#f4f8f5","cardBackground":"#ffffff","text":"#17362a","mutedText":"#61746b","danger":"#b3261e"},"ui":{"hero":"❤️ ساعدنا في بناء ميزة الذكر بالصوت","singleTakeRule":"قاعدة واحدة مهمة: كل تسجيل يحتوي على ذكر واحد يُقال مرة واحدة فقط. لا تكرّر العبارة داخل التسجيل نفسه.","listHint":"لكل عبارة مسجّلها الخاص. سجّل وارفع كل عبارة على حدة، ويمكنك رفع عدة عينات لنفس العبارة — كل عينة إضافية تفيدنا، بشرط أن يكون في كل تسجيل نطق واحد فقط.","summaryPhrases":"{recorded} من {total} عبارات لها تسجيل","summarySamples":"{count} عينة مرفوعة","recordedCount":"✓ {count} عينة مرفوعة","record":"تسجيل","reRecord":"إعادة التسجيل","stop":"إيقاف","play":"استماع","pause":"إيقاف الاستماع","upload":"رفع التسجيل","uploading":"جارٍ الرفع…","uploadQueued":"في الانتظار…","uploadAll":"رفع كل التسجيلات الجاهزة ({count})","timerReady":"00:00.0","microphoneHint":"اقرأ العبارة مرة واحدة بصوت واضح في مكان هادئ، ثم اضغط «إيقاف».","privacy":"لا نجمع الاسم أو البريد أو الهاتف أو الموقع. يُحفظ التسجيل والبيانات التقنية الأساسية فقط، مع رمز عشوائي يُنشأ في متصفحك ليُعرف أن تسجيلاتك من جهاز واحد — وهو غير مرتبط بك بأي شكل.","ready":"اضغط «تسجيل» عند أي عبارة واسمح باستخدام الميكروفون، ثم قل العبارة مرة واحدة.","recording":"جارٍ التسجيل… قل العبارة مرة واحدة فقط ثم اضغط «إيقاف».","recordingReady":"التسجيل جاهز. استمع إليه للتأكد أنه يحتوي على العبارة مرة واحدة فقط، ثم ارفعه.","microphoneDenied":"تم رفض إذن الميكروفون. افتح إعدادات الموقع في المتصفح، فعّل الميكروفون، ثم أعد تحميل الصفحة.","microphoneBlocked":"المتصفح لا يعرض طلب الإذن لأن الصفحة معروضة داخل إطار لا يسمح بالميكروفون. افتح صفحة التسجيل في نافذة مستقلة ثم اضغط «تسجيل».","microphoneMissing":"لم يُعثر على ميكروفون متاح. وصّل ميكروفونًا أو تحقق من إعدادات الصوت ثم حاول مجددًا.","microphoneBusy":"الميكروفون مشغول بتطبيق آخر. أغلق التطبيقات التي تستخدمه ثم حاول مجددًا.","insecureContext":"التسجيل يتطلب فتح الصفحة عبر رابط https. افتح الرابط الرسمي للصفحة ثم حاول مجددًا.","openStandalone":"فتح صفحة التسجيل","unsupported":"هذا المتصفح لا يدعم تسجيل الصوت. جرّب إصدارًا حديثًا من Chrome أو Safari.","tooShort":"التسجيل قصير جدًا. سجّل لمدة ثانية واحدة على الأقل.","tooLarge":"حجم التسجيل كبير جدًا. سجّل مقطعًا أقصر ثم حاول مجددًا.","uploadSuccessTitle":"✅ شكرًا لك!","uploadSuccessBody":"تم رفع العينة. يمكنك تسجيل عينة جديدة لنفس العبارة — نطق واحد في كل تسجيل.","uploadFailedTitle":"فشل رفع التسجيل","uploadFailedBody":"احتفظنا بالتسجيل. تحقق من الإنترنت ثم حاول مجددًا.","retry":"إعادة المحاولة","unknownBadge":"ليست ذكرًا","noiseBadge":"ضجيج فقط","noiseRecording":"جارٍ التسجيل… لا تتكلم، اترك أصوات المكان تُسجَّل وحدها.","noiseRecordingReady":"التسجيل جاهز. استمع إليه للتأكد أنه لا يحتوي على كلام، ثم ارفعه.","noiseUploadSuccessBody":"تم رفع العينة. سجّل ضجيجًا من مكان آخر أو وقت آخر — التنوّع هنا هو المفيد."},"phrases":[{"id":6,"text":"سبحان الله وبحمده"},{"id":7,"text":"سبحان الله العظيم وبحمده"},{"id":8,"text":"لا حول ولا قوة إلا بالله"},{"id":5,"text":"أستغفر الله"},{"id":9,"text":"اللهم صل على محمد"},{"id":11,"text":"سبحان الله، الحمد لله، الله أكبر، لا إله إلا الله"}],"unknownPrompt":{"id":0,"text":"قل أي كلمة عادية ليست ذكرًا","note":"مثل «صباح الخير» أو «كيف حالك» أو أي كلمة تخطر ببالك. قلها مرة واحدة فقط في التسجيل بلا تكرار، وغيّر الكلمة في كل تسجيل جديد — هذه العينات تعلّم النموذج ما ليس ذكرًا حتى لا يَعُدّ كلامك العادي."},"noisePrompt":{"id":-1,"text":"سجّل صوت المكان من حولك بدون أي كلام","note":"اترك الميكروفون يلتقط ما حولك: ضجيج الشارع، أصوات البيت، مروحة، سيارة، أو حتى غرفة هادئة. لا تتكلم ولا تقل ذكرًا في هذا التسجيل — هذه الأصوات تُخلط تحت تسجيلات الذكر أثناء التدريب حتى يعمل العدّاد في الأماكن الصاخبة."}}</script>
   <script>
 'use strict';
 
@@ -433,6 +447,13 @@ h1 {
   // Per-device tally of successful uploads, shown on every card so a volunteer
   // can see at a glance which phrases they have already covered.
   const UPLOAD_COUNTS_KEY = 'speech_collector_upload_counts';
+
+  // A random UUID minted once per browser and kept. It is sent with every
+  // upload so the backend can stamp a short token of it into the filename,
+  // which lets the trainer keep one voice on one side of the train/val split.
+  // It is not an account and not a person: nothing else is stored against it,
+  // and it never leaves this browser except as those 8 characters.
+  const SPEAKER_ID_KEY = 'speech_collector_speaker_id';
 
   // The microphone is held between takes so recording a run of cards prompts
   // once instead of once per card, and released again when the volunteer stops.
@@ -492,6 +513,7 @@ h1 {
     // sample, and a batch firing at once would race on it.
     uploadChain: Promise.resolve(),
     uploadCounts: {},
+    speakerId: '',
     microphoneUnavailable: false
   };
 
@@ -504,6 +526,7 @@ h1 {
     applyTheme();
     applyTranslations();
     state.uploadCounts = loadUploadCounts();
+    state.speakerId = loadSpeakerId();
     buildCards();
     bindEvents();
     render();
@@ -611,12 +634,30 @@ h1 {
   // ---------------------------------------------------------------------------
 
   /**
-   * The unknown card is appended last: the phrases are what a volunteer came
-   * for, and it reads as the odd one out at the end rather than mixed in.
+   * The two non-phrase cards come last: the phrases are what a volunteer came
+   * for, and these read as the odd ones out at the end rather than mixed in.
+   * Noise sits after unknown because it is the one card with nothing to say.
+   *
+   * `kind` is what the rest of the page reads — it picks the card's styling, its
+   * badge, and the wording of its status lines. The backend decides where the
+   * audio is filed from the prompt's id alone.
    */
   function collectPrompts() {
-    const phrases = config.phrases.map((phrase) => ({ ...phrase, unknown: false }));
-    return config.unknownPrompt ? [...phrases, { ...config.unknownPrompt, unknown: true }] : phrases;
+    const prompts = config.phrases.map((phrase) => ({ ...phrase, kind: 'phrase' }));
+    if (config.unknownPrompt) prompts.push({ ...config.unknownPrompt, kind: 'unknown' });
+    if (config.noisePrompt) prompts.push({ ...config.noisePrompt, kind: 'noise' });
+    return prompts;
+  }
+
+  /**
+   * The noise card is told to stay silent, so every string that would tell it to
+   * "say the phrase once" is swapped for its noise wording. Falls back to the
+   * shared string, so a missing override reads as the old copy rather than blank.
+   */
+  function promptText(card, key) {
+    if (card.prompt.kind !== 'noise') return config.ui[key];
+    const override = `noise${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+    return config.ui[override] || config.ui[key];
   }
 
   /**
@@ -639,9 +680,8 @@ h1 {
 
     const head = make('div', 'card-head');
     head.appendChild(make('span', 'card-number', { text: String(index + 1) }));
-    if (prompt.unknown && config.ui.unknownBadge) {
-      head.appendChild(make('span', 'card-badge', { id: `badge-${index}`, text: config.ui.unknownBadge }));
-    }
+    const badge = badgeText(prompt);
+    if (badge) head.appendChild(make('span', 'card-badge', { id: `badge-${index}`, text: badge }));
     const tally = make('span', 'card-tally', { id: `tally-${index}` });
     head.appendChild(tally);
     root.appendChild(head);
@@ -650,8 +690,8 @@ h1 {
     const text = make('p', 'phrase-text', { id: `phrase-${index}`, text: prompt.text });
     text.lang = 'ar';
     panel.appendChild(text);
-    // Only the unknown card carries a note: "any word" needs an example to act
-    // on, while a dhikr is its own instruction.
+    // Only the two non-phrase cards carry a note: "any word" and "no words at
+    // all" each need an example to act on, while a dhikr is its own instruction.
     if (prompt.note) {
       const note = make('p', 'phrase-note', { id: `note-${index}`, text: prompt.note });
       note.lang = 'ar';
@@ -766,7 +806,7 @@ h1 {
       state.activeIndex = card.index;
       state.startedAt = performance.now();
       state.recorder.start(200);
-      setCardState(card, RECORDING, config.ui.recording, 'info');
+      setCardState(card, RECORDING, promptText(card, 'recording'), 'info');
       startTimer(card);
       startWaveform(card, stream);
       state.automaticStopId = window.setTimeout(
@@ -892,7 +932,7 @@ h1 {
       sampleId: createSampleId(),
       url: URL.createObjectURL(blob)
     };
-    setCardState(card, READY, config.ui.recordingReady, 'success');
+    setCardState(card, READY, promptText(card, 'recordingReady'), 'success');
   }
 
   function handleRecorderError(card, error) {
@@ -971,6 +1011,7 @@ h1 {
     try {
       const payload = {
         sample_id: card.recording.sampleId,
+        speaker_id: state.speakerId,
         phrase_id: card.prompt.id,
         duration_ms: card.recording.durationMs,
         sample_rate: card.recording.sampleRate,
@@ -993,7 +1034,7 @@ h1 {
       setCardState(
         card,
         IDLE,
-        `<strong>${escapeHtml(config.ui.uploadSuccessTitle)}</strong><br>${escapeHtml(config.ui.uploadSuccessBody)}`,
+        `<strong>${escapeHtml(config.ui.uploadSuccessTitle)}</strong><br>${escapeHtml(promptText(card, 'uploadSuccessBody'))}`,
         'success',
         true
       );
@@ -1059,7 +1100,14 @@ h1 {
   }
 
   function cardClassName(prompt, status) {
-    return `phrase-card${prompt.unknown ? ' phrase-card-unknown' : ''} card-${status}`;
+    const kind = prompt.kind === 'phrase' ? '' : ` phrase-card-${prompt.kind}`;
+    return `phrase-card${kind} card-${status}`;
+  }
+
+  function badgeText(prompt) {
+    if (prompt.kind === 'unknown') return config.ui.unknownBadge || '';
+    if (prompt.kind === 'noise') return config.ui.noiseBadge || '';
+    return '';
   }
 
   function tallyLabel(card) {
@@ -1067,7 +1115,7 @@ h1 {
     return count ? config.ui.recordedCount.replace('{count}', String(count)) : '';
   }
 
-  /** The unknown card counts towards coverage: the dataset needs it as much as a phrase. */
+  /** The unknown and noise cards count towards coverage: the dataset needs them as much as a phrase. */
   function renderSummary() {
     const covered = prompts.filter((prompt) => uploadCount(prompt.id) > 0).length;
     const samples = prompts.reduce((total, prompt) => total + uploadCount(prompt.id), 0);
@@ -1118,6 +1166,41 @@ h1 {
     } catch (error) {
       /* Ignored: the tally is a convenience, never a requirement. */
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Speaker id
+  // ---------------------------------------------------------------------------
+
+  /**
+   * The browser's own random UUID, minted on first visit and reused after that
+   * so every clip one volunteer records carries the same token.
+   *
+   * When storage is unavailable (private mode, sandboxed frame) a fresh id is
+   * still generated and used for this session: grouping the clips of one sitting
+   * is worth having, and a session is the most the page can honestly promise.
+   */
+  function loadSpeakerId() {
+    try {
+      const stored = String(window.localStorage.getItem(SPEAKER_ID_KEY) || '');
+      if (/^[0-9a-f-]{16,}$/i.test(stored)) return stored;
+    } catch (error) {
+      return createSpeakerId();
+    }
+
+    const created = createSpeakerId();
+    try {
+      window.localStorage.setItem(SPEAKER_ID_KEY, created);
+    } catch (error) {
+      /* Ignored: an id that lasts one session still groups that session. */
+    }
+    return created;
+  }
+
+  function createSpeakerId() {
+    if (crypto.randomUUID) return crypto.randomUUID();
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
   }
 
   // ---------------------------------------------------------------------------

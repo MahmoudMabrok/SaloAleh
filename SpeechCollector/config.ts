@@ -46,6 +46,14 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     // `classes.unknown_class`, and must not look like a padded phrase id.
     unknownFolderName: "unknown",
 
+    // Folder for the background-noise pool (see `noisePrompt` below). Unlike
+    // `unknown`, noise is NOT a class the model learns — it is the audio the
+    // training augmentation mixes underneath real clips — so it is written at
+    // `{root}/noise/`, a SIBLING of datasetSubfolder rather than a folder
+    // inside it. That is the path the pipeline resolves for `paths.noise_dir`;
+    // filing it under `dataset/` would make the trainer scan it as a class.
+    noiseFolderName: "noise",
+
     // The collector writes this file at the ROOT of the dataset folder (a
     // sibling of datasetSubfolder), regenerated from `phrases` below whenever
     // that list changes, so the DhikrSpeech pipeline finds its id->text labels
@@ -110,7 +118,7 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     uploadAll: "رفع كل التسجيلات الجاهزة ({count})",
     timerReady: "00:00.0",
     microphoneHint: "اقرأ العبارة مرة واحدة بصوت واضح في مكان هادئ، ثم اضغط «إيقاف».",
-    privacy: "لا نجمع الاسم أو البريد أو الهاتف أو الموقع. يُحفظ التسجيل والبيانات التقنية الأساسية فقط.",
+    privacy: "لا نجمع الاسم أو البريد أو الهاتف أو الموقع. يُحفظ التسجيل والبيانات التقنية الأساسية فقط، مع رمز عشوائي يُنشأ في متصفحك ليُعرف أن تسجيلاتك من جهاز واحد — وهو غير مرتبط بك بأي شكل.",
     ready: "اضغط «تسجيل» عند أي عبارة واسمح باستخدام الميكروفون، ثم قل العبارة مرة واحدة.",
     recording: "جارٍ التسجيل… قل العبارة مرة واحدة فقط ثم اضغط «إيقاف».",
     recordingReady: "التسجيل جاهز. استمع إليه للتأكد أنه يحتوي على العبارة مرة واحدة فقط، ثم ارفعه.",
@@ -128,7 +136,14 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     uploadFailedTitle: "فشل رفع التسجيل",
     uploadFailedBody: "احتفظنا بالتسجيل. تحقق من الإنترنت ثم حاول مجددًا.",
     retry: "إعادة المحاولة",
-    unknownBadge: "ليست ذكرًا"
+    unknownBadge: "ليست ذكرًا",
+    // The noise card's own wording. Every other card tells the volunteer to say
+    // the phrase once; on this one that instruction is wrong, so the three
+    // strings that carry it are overridden rather than reworded for everyone.
+    noiseBadge: "ضجيج فقط",
+    noiseRecording: "جارٍ التسجيل… لا تتكلم، اترك أصوات المكان تُسجَّل وحدها.",
+    noiseRecordingReady: "التسجيل جاهز. استمع إليه للتأكد أنه لا يحتوي على كلام، ثم ارفعه.",
+    noiseUploadSuccessBody: "تم رفع العينة. سجّل ضجيجًا من مكان آخر أو وقت آخر — التنوّع هنا هو المفيد."
   },
 
   spreadsheetColumns: [
@@ -153,23 +168,41 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
   // an id, or already-collected recordings would land in the wrong class.
   // phrases.json is written sorted by id, so this order does not reach the
   // training pipeline.
+  //
+  // `hidden: true` takes a phrase off the page without deleting it. The id stays
+  // reserved, the phrase keeps its entry in phrases.json, and the recordings
+  // already sitting in its Drive folder keep their label — only the card is
+  // gone. That is the difference between parking a phrase and removing it:
+  // removing it would orphan `dataset/{id}/`, and the next phrase added would
+  // inherit the freed id and inherit those recordings with it.
   phrases: [
-    // Original short Tasbeeh prompt — most needed, so it leads the page.
-    { id: 7, text: "سبحان الله العظيم وبحمده" },
+    // ---- Shown on the page, in this order. ----
     // Zabad challenge.
     { id: 6, text: "سبحان الله وبحمده" },
-    // Baqiyat challenge (also reused by the Ten Days challenge).
-    { id: 1, text: "سبحان الله" },
-    { id: 2, text: "الحمد لله" },
-    { id: 3, text: "الله أكبر" },
-    { id: 4, text: "لا إله إلا الله" },
-    // Original short Istighfar prompt.
-    { id: 5, text: "أستغفر الله" },
+    // Original short Tasbeeh prompt.
+    { id: 7, text: "سبحان الله العظيم وبحمده" },
     // Baqiyat challenge.
     { id: 8, text: "لا حول ولا قوة إلا بالله" },
-    // Original Salawat prompts.
+    // Original short Istighfar prompt.
+    { id: 5, text: "أستغفر الله" },
+    // Original Salawat prompt.
     { id: 9, text: "اللهم صل على محمد" },
-    { id: 10, text: "اللهم صل وسلم على نبينا محمد" },
+    // The four Baqiyat spoken as one utterance, the way the Baqiyat and Ten
+    // Days challenges are actually recited — one tap per full cycle, not per
+    // word. Its four parts are also phrases 1-4 on their own, so the model sees
+    // each of them as a prefix of this one; that is exactly the nested-prefix
+    // case softmax handles and a per-phrase binary detector does not.
+    { id: 11, text: "سبحان الله، الحمد لله، الله أكبر، لا إله إلا الله" },
+
+    // ---- Parked: no card, id and dataset folder preserved. ----
+    // The four Baqiyat as separate words. Superseded on the page by phrase 11,
+    // which is how they are said in the app.
+    { id: 1, text: "سبحان الله", hidden: true },
+    { id: 2, text: "الحمد لله", hidden: true },
+    { id: 3, text: "الله أكبر", hidden: true },
+    { id: 4, text: "لا إله إلا الله", hidden: true },
+    // The long Salawat. Phrase 9 is the one the counter needs.
+    { id: 10, text: "اللهم صل وسلم على نبينا محمد", hidden: true },
   ],
 
   // The negative class. A model trained on phrases alone has nowhere to put
@@ -183,5 +216,19 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     id: 0,
     text: "قل أي كلمة عادية ليست ذكرًا",
     note: "مثل «صباح الخير» أو «كيف حالك» أو أي كلمة تخطر ببالك. قلها مرة واحدة فقط في التسجيل بلا تكرار، وغيّر الكلمة في كل تسجيل جديد — هذه العينات تعلّم النموذج ما ليس ذكرًا حتى لا يَعُدّ كلامك العادي."
+  },
+
+  // Background noise. Not a class and not speech: these clips are mixed
+  // *underneath* real recordings during training, so a model learned in a quiet
+  // room still hears the dhikr in a street, a car or a mosque. It is the one
+  // card where the volunteer is asked to say nothing at all, and the one whose
+  // audio lands outside `dataset/` — in `{root}/noiseFolderName/`, which is
+  // where the pipeline's `paths.noise_dir` looks.
+  // Set to null to drop the card. Non-phrase prompt ids are <= 0 by convention
+  // (phrase ids count up from 1), so they can never collide with one.
+  noisePrompt: {
+    id: -1,
+    text: "سجّل صوت المكان من حولك بدون أي كلام",
+    note: "اترك الميكروفون يلتقط ما حولك: ضجيج الشارع، أصوات البيت، مروحة، سيارة، أو حتى غرفة هادئة. لا تتكلم ولا تقل ذكرًا في هذا التسجيل — هذه الأصوات تُخلط تحت تسجيلات الذكر أثناء التدريب حتى يعمل العدّاد في الأماكن الصاخبة."
   }
 });

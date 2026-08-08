@@ -40,6 +40,41 @@ if (bootstrap.unknownPrompt) {
   assert.ok(bootstrap.ui.unknownBadge, 'The unknownBadge UI string is missing from the bootstrap payload.');
 }
 
+// The background-noise card. Same contract as the unknown card, plus the
+// wording that replaces "say the phrase once" — the one card where saying
+// anything at all ruins the sample.
+if (bootstrap.noisePrompt) {
+  assert.ok(bootstrap.noisePrompt.text, 'noisePrompt has no text for the card to show.');
+  assert.ok(bootstrap.noisePrompt.note, 'noisePrompt has no note; "record noise" is not actionable on its own.');
+  assert.ok(
+    !bootstrap.phrases.some((phrase) => phrase.id === bootstrap.noisePrompt.id),
+    'noisePrompt.id collides with a phrase id, so its uploads would be filed as that phrase.'
+  );
+  assert.notEqual(
+    bootstrap.noisePrompt.id,
+    bootstrap.unknownPrompt?.id,
+    'noisePrompt.id collides with unknownPrompt.id.'
+  );
+  for (const key of ['noiseBadge', 'noiseRecording', 'noiseRecordingReady', 'noiseUploadSuccessBody']) {
+    assert.ok(bootstrap.ui[key], `The "${key}" UI string is missing from the bootstrap payload.`);
+  }
+  for (const key of ['noiseRecording', 'noiseRecordingReady']) {
+    assert.match(
+      bootstrap.ui[key],
+      /لا تتكلم|لا يحتوي على كلام/,
+      `The "${key}" string must tell the volunteer not to speak.`
+    );
+  }
+}
+
+// A hidden phrase is parked, not deleted: no card, but its id and label live on
+// so the recordings already in its folder stay readable to the trainer.
+assert.ok(
+  !bootstrap.phrases.some((phrase) => phrase.hidden),
+  'A hidden phrase reached the page; hidden phrases must not get a card.'
+);
+assert.ok(bootstrap.phrases.length > 0, 'Every phrase is hidden, so the page has no phrase cards.');
+
 // The shell app.js builds the per-phrase recorders into. The cards themselves
 // are created at runtime, so these containers are the only markup contract:
 // app.js reads them by id and asserts nothing, and a renamed element would
@@ -115,6 +150,48 @@ assert.ok(
   'phrasesJsonContent_ entries must each be {id: integer, text: non-empty string}.'
 );
 
+// A parked phrase keeps its label. Dropping it from phrases.json would leave
+// the trainer scanning a dataset/{id}/ folder it has no text for.
+const hiddenIds = vm.runInContext('CONFIG.phrases.filter(function(p) { return p.hidden; }).map(function(p) { return p.id; })', backendContext);
+for (const hiddenId of hiddenIds) {
+  assert.ok(
+    generatedPhrases.some((phrase) => phrase.id === hiddenId),
+    `phrases.json dropped hidden phrase ${hiddenId}; its recordings would lose their label.`
+  );
+  backendContext.payload = { ...validPayload, phrase_id: hiddenId };
+  assert.doesNotThrow(
+    () => vm.runInContext('validateRequest_(payload)', backendContext),
+    `A hidden phrase must still be an accepted phrase_id, so a take waiting across a redeploy is not lost.`
+  );
+}
+
+// Apps Script services are unavailable here, so stub only what the filename
+// helper touches; the naming rules are checkable without a deployment.
+backendContext.Utilities = {
+  formatDate: () => '20260101_000000',
+  getUuid: () => 'abcdef00-0000-0000-0000-000000000000'
+};
+
+// The device token that lets the trainer keep one voice on one side of the
+// train/val split. A client that cannot supply one still gets a valid filename.
+assert.equal(
+  vm.runInContext('speakerToken_("3f9a2c41-1111-2222-3333-444455556666")', backendContext),
+  'sp3f9a2c41',
+  'The speaker token must be "sp" plus the first 8 hex characters of the uuid.'
+);
+assert.equal(vm.runInContext('speakerToken_("")', backendContext), '', 'A missing speaker id must produce no token.');
+assert.equal(vm.runInContext('speakerToken_("zzz")', backendContext), '', 'A short or non-hex speaker id must produce no token.');
+assert.match(
+  vm.runInContext('createFilename_("001", speakerToken_("3f9a2c41-1111-2222-3333-444455556666"), "audio/webm")', backendContext),
+  /^001_sp3f9a2c41_\d{8}_\d{6}_[0-9a-f]{6}\.webm$/,
+  'A filename must carry its class, then its speaker token, then the timestamp.'
+);
+assert.match(
+  vm.runInContext('createFilename_("001", "", "audio/webm")', backendContext),
+  /^001_\d{8}_\d{6}_[0-9a-f]{6}\.webm$/,
+  'Without a speaker token the filename must keep its original shape, not gain an empty field.'
+);
+
 // The negative class is a folder, not a phrase: the pipeline labels it from the
 // folder name, so listing it in phrases.json would invent a phrase id for it.
 if (bootstrap.unknownPrompt) {
@@ -139,14 +216,8 @@ if (bootstrap.unknownPrompt) {
     'unknown',
     'The sheet must record the class for an unknown sample, not the card\'s instruction text.'
   );
-  // Apps Script services are unavailable here, so stub only what the filename
-  // helper touches; the naming rule is checkable without a deployment.
-  backendContext.Utilities = {
-    formatDate: () => '20260101_000000',
-    getUuid: () => 'abcdef00-0000-0000-0000-000000000000'
-  };
   assert.match(
-    vm.runInContext('createFilename_(classFolderName_(CONFIG.unknownPrompt), "audio/webm")', backendContext),
+    vm.runInContext('createFilename_(classFolderName_(CONFIG.unknownPrompt), "", "audio/webm")', backendContext),
     /^unknown_/,
     'An unknown recording\'s filename must carry its class, like a phrase folder\'s does.'
   );
@@ -157,6 +228,59 @@ if (bootstrap.unknownPrompt) {
     String(bootstrap.phrases[0].id).padStart(3, '0'),
     'A phrase must still be filed under its zero-padded id.'
   );
+}
+
+// Noise is the one prompt whose audio lives OUTSIDE dataset/. The trainer scans
+// dataset/ for its classes and reads noise from a sibling folder, so getting
+// this parent wrong would teach the model that background hiss is a dhikr.
+if (bootstrap.noisePrompt) {
+  const noiseId = bootstrap.noisePrompt.id;
+  backendContext.payload = { ...validPayload, phrase_id: noiseId };
+  const noiseRequest = vm.runInContext('validateRequest_(payload)', backendContext);
+  assert.equal(noiseRequest.phrase.id, noiseId, 'The noise prompt must be an accepted phrase_id.');
+  assert.equal(
+    noiseRequest.phraseText,
+    'noise',
+    'The sheet must record the class for a noise sample, not the card\'s instruction text.'
+  );
+  assert.equal(
+    vm.runInContext('classFolderName_(CONFIG.noisePrompt)', backendContext),
+    'noise',
+    'Noise recordings must be filed under the noise folder.'
+  );
+  assert.match(
+    vm.runInContext('createFilename_(classFolderName_(CONFIG.noisePrompt), "", "audio/webm")', backendContext),
+    /^noise_/,
+    'A noise recording\'s filename must name its folder, like every other class does.'
+  );
+  assert.ok(
+    !generatedPhrases.some((phrase) => phrase.id === noiseId),
+    'phrases.json must not list the noise prompt; it is a folder, not a phrase.'
+  );
+
+  // Drive is unavailable here, so the folder tree is a stub that records only
+  // what was created where — which is the whole claim under test.
+  backendContext.fakeFolder = fakeFolder;
+  const parents = vm.runInContext(
+    '[classParentFolder_(fakeFolder("root"), CONFIG.noisePrompt).folderName,' +
+    ' classParentFolder_(fakeFolder("root"), CONFIG.phrases[0]).folderName]',
+    backendContext
+  );
+  assert.equal(parents[0], 'root', 'Noise must hang off the collector root, beside dataset/.');
+  assert.equal(parents[1], 'dataset', 'A phrase must still hang off the dataset folder.');
+}
+
+function fakeFolder(folderName) {
+  const children = new Map();
+  return {
+    folderName,
+    getFoldersByName: (name) => ({ hasNext: () => children.has(name), next: () => children.get(name) }),
+    createFolder: (name) => {
+      const child = fakeFolder(name);
+      children.set(name, child);
+      return child;
+    }
+  };
 }
 
 backendContext.payload = { ...validPayload, phrase_id: 999 };
@@ -179,7 +303,8 @@ assert.throws(
 
 const requiredFunctions = [
   'doGet', 'doPost', 'saveAudio', 'createFolderIfMissing', 'appendSpreadsheetRow', 'jsonResponse',
-  'phrasesJsonContent_', 'ensurePhrasesFile_', 'allPrompts_', 'classFolderName_'
+  'phrasesJsonContent_', 'ensurePhrasesFile_', 'allPrompts_', 'classFolderName_',
+  'visiblePhrases_', 'classParentFolder_', 'speakerToken_'
 ];
 for (const functionName of requiredFunctions) {
   assert.equal(

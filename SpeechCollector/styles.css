@@ -241,6 +241,20 @@ h1 {
 
 .phrase-card-unknown .phrase-text { font-size: clamp(1.15rem, 4.6vw, 1.4rem); }
 
+/* The background-noise card: nothing is read aloud here at all, so it is toned
+   further away again — cool grey rather than the unknown card's warm sand. */
+.phrase-card-noise .phrase-panel {
+  border-color: #d3dade;
+  background: linear-gradient(155deg, #fbfcfd, #eaeff2);
+}
+
+.phrase-card-noise .phrase-text { font-size: clamp(1.15rem, 4.6vw, 1.4rem); }
+
+.phrase-card-noise .card-badge {
+  background: #e6ecf0;
+  color: #3f545f;
+}
+
 .recorder-panel {
   margin-top: 11px;
   text-align: center;

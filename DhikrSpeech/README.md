@@ -102,9 +102,10 @@ MyDrive/Dhikr Speech Dataset/
 │   ├── 002/
 │   ├── 003/
 │   ├── ...
-│   └── unknown/      speech and noise that is NOT a dhikr phrase
+│   └── unknown/      speech that is NOT a dhikr phrase
 ├── phrases.json
-└── noise/            optional: room / background recordings for augmentation
+└── noise/            room / background recordings mixed under training clips.
+                      A sibling of dataset/, never a class inside it.
 ```
 
 `checkpoints/`, `exports/`, `logs/`, `processed/` and `reports/` are created automatically.
@@ -130,7 +131,14 @@ Aim for at least as many `unknown` clips as an average phrase class.
 Volunteer speech for this folder arrives on its own: the last card in `SpeechCollector` asks for any
 ordinary word that is *not* a dhikr and uploads it directly to `dataset/unknown/`. It is not listed
 in `phrases.json` — `scan_dataset` labels the folder by name — so nothing here needs configuring
-beyond `classes.include_unknown`. Silence, room tone and noise still have to be added by hand.
+beyond `classes.include_unknown`. Silence and room tone still have to be added by hand.
+
+**The `noise/` folder fills itself too**, from the collector's last card, which asks volunteers for
+background noise with no speech in it. Note where it lands: `noise/` is a **sibling** of `dataset/`,
+not a class inside it, because these clips are never labelled — `augmentation.background_noise` mixes
+them *underneath* real recordings so a model learned in a quiet room still works in a noisy one.
+Uploads arrive as `.webm` (Chrome) or `.m4a` (Safari), which `NoiseBank.load` accepts along with
+WAV/FLAC/OGG/MP3.
 
 ### What makes a good recording
 
@@ -776,9 +784,12 @@ answer, and the rest buy a point or two while hiding the real limit:
 2. **Watch for speaker leakage.** `assign_splits` is stratified per class but has no idea who is
    speaking, so with `split.group_regex: null` the same voice lands in train *and* val — which makes
    validation accuracy **optimistic**, and the real gap larger than the one printed. Files uploaded
-   by `SpeechCollector` are named `<class>_<timestamp>_<suffix>`, with no speaker token, so there is
-   nothing to group on automatically. If you record a batch yourself, name the files with a speaker
-   prefix and set `split.group_regex` to match it.
+   by `SpeechCollector` are named `<class>_sp<8 hex>_<timestamp>_<suffix>`, where the `sp…` token is
+   a random id the volunteer's browser mints once and reuses, so every clip from one device shares
+   it. Once enough of the dataset carries the token, set `split.group_regex: "sp[0-9a-f]{8}"` — an
+   older file without one falls back to being its own group, which is exactly today's behaviour, so
+   turning it on is safe on a mixed dataset. If you record a batch yourself, name the files with a
+   matching prefix.
 3. **Less capacity.** `model.width_multiplier: 0.5` quarters the parameter count; `model.dropout`
    already defaults to `0.3`. Raise the multiplier back toward `1.0` as the dataset grows.
 4. **Stronger augmentation.** Widen the ranges under `augmentation.*`, and drop real room recordings

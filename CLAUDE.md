@@ -424,14 +424,32 @@ other engineers) are in `DhikrSpeech/docs/LEARNING_GUIDE.md`.
 - The app **warns when a model has no `unknown` class** — softmax gives silence and noise to a
   phrase, so such a model reports high confidence on non-dhikr audio and the scan count cannot be
   trusted without a high threshold. The real fix is `classes.include_unknown` plus an `unknown`
-  folder in the dataset. That folder is filled by the collector: `SpeechCollector`'s last card
-  (`unknownPrompt` in its `config.ts`) asks volunteers for any ordinary word that is *not* a dhikr
+  folder in the dataset. That folder is filled by the collector: `SpeechCollector`'s `unknownPrompt`
+  card (in its `config.ts`) asks volunteers for any ordinary word that is *not* a dhikr
   and uploads it straight to `dataset/unknown/`. It is intentionally absent from `phrases.json` —
   `unknown` is a class folder, and `scan_dataset` labels it from the folder name.
-- `classes.include_phrases` picks which phrase ids the model learns (currently `[1, 2, 3, 4]` — the
-  four short, distinct phrases). Applied in `scan_dataset`, so it decides the class vocabulary, the
+- **`noise/` is filled the same way but is not a class.** The collector's last card (`noisePrompt`)
+  asks for background noise with no speech, and its audio lands in `{root}/noise/` — a **sibling** of
+  `dataset/`, matching `paths.noise_dir`. These clips are never labelled; `augmentation.background_noise`
+  mixes them underneath training clips. Filing them under `dataset/` would make `scan_dataset` learn
+  hiss as a class, which is why `classParentFolder_` in the collector's `Code.gs` picks the parent
+  from the prompt and the build refuses a `noiseFolderName` equal to `datasetSubfolder`.
+- **Collector filenames carry a speaker token**: `<class>_sp<8 hex>_<timestamp>_<suffix>`, from a
+  random UUID the volunteer's browser mints once and keeps (`speech_collector_speaker_id`). It exists
+  so `split.group_regex: "sp[0-9a-f]{8}"` can keep one voice out of both train and val; it is still
+  `null`, so today's validation accuracy is optimistic. A file with no token falls back to being its
+  own group, so enabling the regex is safe on a mixed dataset.
+- `classes.include_phrases` picks which phrase ids the model learns (currently `[6, 7]`). Applied in
+  `scan_dataset`, so it decides the class vocabulary, the
   manifest's class indices, the model's output width and `labels.txt`. Changing it requires re-running
   preprocessing and a fresh training run; `Trainer` refuses an incompatible backup.
+- **The collector's phrase list is not the model's.** `SpeechCollector/config.ts` defines 11 phrase
+  ids and shows six cards; the others carry `hidden: true`, which takes the card off the page while
+  keeping the id, its `dataset/{id}/` folder and its `phrases.json` label. Never delete a phrase
+  entry to retire it — the label goes with it and the freed id is inherited by the next phrase added,
+  along with the old recordings. Id 11 is the four Baqiyat spoken as one utterance (the way the
+  Baqiyat/Ten Days challenges are recited); ids 1–4 are those same words on their own and are parked,
+  so 11 has each of them as a prefix — the nested-prefix case section `06 · Experiment` exists to test.
 - Convergence follows **optimiser steps** (`ceil(train_clips / batch_size) × epochs`), not epochs.
   The dataset is small, so the defaults are tuned small-batch/many-epochs and the training cell warns
   under 2000 steps.
