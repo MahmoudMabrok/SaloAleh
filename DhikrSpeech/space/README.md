@@ -54,7 +54,7 @@ https://example.com/dhikr_int8.tflite           # a direct file URL
 `DHIKR_MODEL_SOURCE` overrides the file, so a hosted Space can be repointed from its **Settings →
 Variables** without a commit. The **Load a model** tab also takes a link at runtime.
 
-Only the export is fetched (`*.tflite`, `labels.txt`, `model_meta.json`, …) — a `saved_model/`
+Only the export is fetched (`*.tflite`, `labels.txt`, `model_metadata.json`, …) — a `saved_model/`
 directory is skipped unless `DHIKR_FETCH_SAVEDMODEL=1`, since the Space runs LiteRT and could not
 load one anyway. Files are fetched individually and a refusal on one does not lose the rest: Drive
 throttles per file once a link has seen traffic, and an all-or-nothing folder download would cost
@@ -71,15 +71,16 @@ Put the export in `model/`:
 
 ```
 model/
-├── dhikr_int8.tflite        # or dhikr_float32 / dhikr_dynamic_range
-├── labels.txt               # one class label per line, in class-index order
-└── model_meta.json          # front-end parameters, benchmarks, verification
+├── dhikr_007_int8.tflite    # a per-target export; or dhikr_float32 from the legacy one
+├── labels.txt               # one label per model output
+└── model_metadata.json      # front-end parameters, detector settings, measurements
 ```
 
 All three matter:
 
-- **`labels.txt`** names the classes. Without it every class shows as `class_0`, `class_1`, …
-- **`model_meta.json`** records the front-end the weights were trained with, and the Space trusts it
+- **`labels.txt`** names the outputs. Without it every one shows as `class_0`, `class_1`, …
+- **`model_metadata.json`** (or `model_meta.json` from a legacy multi-class export) records the
+  front-end the weights were trained with, and the Space trusts it
   over `configs/config.yaml`. This is not a detail: a config that was retuned after the export would
   otherwise feed the model features it has never seen, and the predictions would be quietly wrong
   rather than visibly broken. When the two disagree about the input shape, the Space says so on
@@ -94,6 +95,20 @@ The **Load a model** tab takes the files directly. They go to a temp folder and 
 use one of the first two routes to make a model stick.
 
 ---
+
+### What the Space's counter is, and is not
+
+The **scan** tab counts with a simple run-based rule: a run of agreeing above-threshold windows is
+one dhikr, and the refractory period only merges runs split by a brief dip. It works for any
+export, including the older multi-class ones, and it is good for eyeballing a model on a real
+recording.
+
+It is **not** what ships. Production counting is the hysteresis state machine in
+`src/streaming.py` — activation and release thresholds, minimum consecutive hits, release windows
+and a cooldown — calibrated per target against a measured false-activation budget and written
+into that target's `model_metadata.json`. For numbers to make a shipping decision on, use
+`05 · Streaming` in the notebook: it reports events, duplicates and false activations per hour
+against annotated recordings.
 
 ## A model with no `unknown` class
 

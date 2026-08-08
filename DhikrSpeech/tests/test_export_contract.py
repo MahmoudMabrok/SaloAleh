@@ -164,6 +164,33 @@ def test_labels_are_written_in_output_order(tmp_path: Path) -> None:
     assert sidecar["target_phrase_id"] == "007"
 
 
+def test_a_sigmoid_model_gets_one_label(tmp_path: Path) -> None:
+    """One label per output: two labels on a one-output model make every consumer
+    that checks `len(labels) == num_outputs` fall back to positional names."""
+    path = write_target_labels(tmp_path / "labels.txt", 7, TARGET_TEXT, output_mode="sigmoid")
+    assert path.read_text(encoding="utf-8").split() == ["target"]
+    sidecar = json.loads(path.with_name("labels_target.json").read_text(encoding="utf-8"))
+    assert sidecar["target_index"] == 0
+
+
+def test_metadata_labels_follow_the_output_mode(config: Config) -> None:
+    softmax = metadata(config)
+    assert softmax["labels"] == ["unknown", "target"] and softmax["target_index"] == 1
+    sigmoid = metadata(config.with_overrides({"target.output_mode": "sigmoid"}))
+    assert sigmoid["labels"] == ["target"] and sigmoid["target_index"] == 0
+    assert [entry["label"] for entry in sigmoid["classes"]] == ["target"]
+
+
+def test_metadata_carries_the_legacy_frontend_blocks(config: Config) -> None:
+    """space/ builds its front-end from `frontend`/`audio` and silently falls back
+    to config.yaml without them - which is the mismatch the metadata prevents."""
+    payload = metadata(config, frontend={"win_length": 480, "hop_length": 160, "mel_norm": "slaney"})
+    assert payload["frontend"]["win_length"] == 480
+    assert payload["audio"]["sample_rate"] == config.audio.sample_rate
+    assert payload["audio"]["clip_seconds"] == pytest.approx(config.audio.clip_seconds)
+    assert payload["audio"]["normalize"]["target_dbfs"] == pytest.approx(-20.0)
+
+
 def test_model_filename_is_zero_padded() -> None:
     assert model_filename(7, "int8") == "dhikr_007_int8.tflite"
     assert model_filename(10, "float32") == "dhikr_010_float32.tflite"

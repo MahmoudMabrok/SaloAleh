@@ -44,7 +44,7 @@ from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
 import numpy as np
 
 from .audio import fit_length, normalize_loudness
-from .config import AudioConfig, Config, DetectorConfig, SmoothingConfig, StreamingConfig
+from .config import AudioConfig, Config, DetectorConfig, SmoothingConfig
 from .features import FeatureStats, LogMelExtractor
 
 LOGGER = logging.getLogger(__name__)

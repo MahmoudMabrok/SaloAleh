@@ -10,11 +10,9 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import pytest
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.config import CalibrationConfig, ReadinessConfig
+from src.config import ReadinessConfig
 from src.readiness import EXPERIMENTAL, NOT_READY, READY, assess_readiness
 from src.splitting import SpeakerIsolationReport
 from src.streaming_eval import CalibrationResult, EventMetrics, NegativeClipReport, ThresholdRow

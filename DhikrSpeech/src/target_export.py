@@ -51,7 +51,9 @@ __all__ = [
     "compare_variants",
     "interpreter_specs",
     "model_filename",
+    "output_labels",
     "sha256_file",
+    "target_column",
     "tensor_spec",
     "write_target_labels",
     "write_target_metadata",
@@ -71,18 +73,38 @@ def sha256_file(path: PathLike) -> str:
     return digest.hexdigest()
 
 
-def write_target_labels(path: PathLike, target_id: int, target_text: str) -> Path:
+def output_labels(output_mode: str = "softmax") -> List[str]:
+    """``labels.txt`` contents, one per model output.
+
+    A softmax detector has two outputs and reads ``unknown`` / ``target``; a
+    sigmoid detector has one, which *is* ``P(target)``. Writing two labels for a
+    one-output model would make every consumer that checks
+    ``len(labels) == num_outputs`` fall back to positional names.
+    """
+    return ["target"] if output_mode == "sigmoid" else ["unknown", "target"]
+
+
+def target_column(output_mode: str = "softmax") -> int:
+    """Which output column holds ``P(target)``."""
+    return 0 if output_mode == "sigmoid" else 1
+
+
+def write_target_labels(
+    path: PathLike, target_id: int, target_text: str, output_mode: str = "softmax"
+) -> Path:
     """``labels.txt`` in output order, plus the target's text alongside it."""
     destination = Path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text("unknown\ntarget\n", encoding="utf-8")
+    labels = output_labels(output_mode)
+    destination.write_text("\n".join(labels) + "\n", encoding="utf-8")
     destination.with_name("labels_target.json").write_text(
         json.dumps(
             {
                 "target_phrase_id": f"{int(target_id):03d}",
                 "target_phrase_text": target_text,
-                "labels": ["unknown", "target"],
-                "target_index": 1,
+                "output_mode": output_mode,
+                "labels": labels,
+                "target_index": target_column(output_mode),
             },
             indent=2,
             ensure_ascii=False,
@@ -177,8 +199,8 @@ def build_target_metadata(
         "clip_samples": int(config.audio.clip_samples),
         "window_seconds": float(window_seconds),
         "hop_seconds": float(config.streaming.hop_seconds),
-        "labels": ["unknown", "target"],
-        "target_index": 1,
+        "labels": output_labels(config.target.output_mode),
+        "target_index": target_column(config.target.output_mode),
         "feature": {
             "n_mels": int(config.features.n_mels),
             "window_ms": float(config.features.window_ms),
@@ -206,6 +228,35 @@ def build_target_metadata(
                 "trimming a window slides its content in time."
             ),
         },
+        # `frontend`, `audio` and `classes` repeat information already present
+        # above, in the shape the pre-single-target tooling reads (space/ builds
+        # its front-end from `frontend` and falls back to config.yaml without it,
+        # which would silently feed the model features it was never trained on).
+        # Cheap duplication, and it keeps the Gradio test app working against a
+        # per-target export.
+        "frontend": dict(frontend),
+        "audio": {
+            "sample_rate": int(config.audio.sample_rate),
+            "channels": int(config.audio.channels),
+            "bit_depth": int(config.audio.bit_depth),
+            "clip_seconds": float(config.audio.clip_seconds),
+            "clip_samples": int(config.audio.clip_samples),
+            "fit_mode": config.audio.fit_mode,
+            "trim": {
+                "enabled": bool(config.audio.trim.enabled),
+                "top_db": float(config.audio.trim.top_db),
+                "pad_ms": float(config.audio.trim.pad_ms),
+            },
+            "normalize": {
+                "enabled": bool(config.audio.normalize.enabled),
+                "target_dbfs": float(config.audio.normalize.target_dbfs),
+                "peak_ceiling": float(config.audio.normalize.peak_ceiling),
+            },
+        },
+        "classes": [
+            {"index": index, "label": label}
+            for index, label in enumerate(output_labels(config.target.output_mode))
+        ],
         "tensors": tensors or {},
         "detection": {
             "activation_threshold": float(detector.activation_threshold),

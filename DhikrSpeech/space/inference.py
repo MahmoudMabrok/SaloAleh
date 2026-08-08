@@ -8,12 +8,19 @@ What this module adds on top is the part the pipeline does not have:
 
 * loading an exported ``.tflite`` (or Keras) model **without** importing
   TensorFlow when a LiteRT runtime is available, so the Space stays light;
-* rebuilding the front-end from ``model_meta.json`` rather than from
-  ``configs/config.yaml``, because the exported model is the authority - a
-  config that has moved on since the export would silently produce features the
-  model was never trained on;
-* a sliding-window scanner and a refractory-period counter, which is what the
-  Android side will ultimately do with the model.
+* rebuilding the front-end from the export's metadata (``model_metadata.json``
+  for a per-target export, ``model_meta.json`` for the older multi-class one)
+  rather than from ``configs/config.yaml``, because the exported model is the
+  authority - a config that has moved on since the export would silently produce
+  features the model was never trained on;
+* a sliding-window scanner and a run-based counter, for eyeballing an export on
+  a real recording.
+
+Note that the counter here is **not** the production event detector. What ships
+is the hysteresis state machine in ``src/streaming.py``, calibrated per target
+and described in that target's ``model_metadata.json``; this one is a simpler
+run-based count that works for any export, including the older multi-class ones.
+Use ``05 - Streaming`` in the notebook for numbers to make a decision on.
 """
 
 from __future__ import annotations
@@ -85,7 +92,7 @@ def display_label(label: str, phrases: Dict[int, str]) -> str:
 # Front-end
 # ---------------------------------------------------------------------------
 def resolve_config(meta: Optional[Dict] = None, config_path: Optional[Path] = None) -> Config:
-    """Config for a model, with ``model_meta.json`` overriding ``config.yaml``.
+    """Config for a model, with the export's metadata overriding ``config.yaml``.
 
     The exported metadata records the front-end the weights were actually
     trained with. ``configs/config.yaml`` is a moving target - it may have been
@@ -121,7 +128,7 @@ def resolve_config(meta: Optional[Dict] = None, config_path: Optional[Path] = No
     try:
         return base.with_overrides(overrides)
     except (KeyError, ValueError, TypeError) as exc:
-        LOGGER.warning("model_meta.json front-end could not be applied (%s); using config.yaml", exc)
+        LOGGER.warning("the export front-end could not be applied (%s); using config.yaml", exc)
         return base
 
 
@@ -320,6 +327,13 @@ class DhikrModel:
     ) -> "DhikrModel":
         model_path = Path(model_path)
         folder = model_path.parent
+        # A per-target export (exports/007/) writes `model_metadata.json`, the
+        # multi-class export writes `model_meta.json`. Both carry the same
+        # `frontend`/`audio` blocks, so either is enough to rebuild the front-end
+        # the weights were trained with - and missing it entirely means silently
+        # falling back to config.yaml, which is the mismatch this lookup exists
+        # to avoid.
+        meta_path = meta_path or _first_existing(folder, "model_metadata.json")
         meta_path = meta_path or _first_existing(folder, "model_meta.json")
         labels_path = labels_path or _first_existing(folder, "labels.txt")
 
@@ -429,7 +443,7 @@ class DhikrModel:
         return (
             f"front-end produces {tuple(expected)} but the model expects "
             f"{tuple(actual[1:]) if len(actual) == 4 else tuple(actual)}. "
-            "Predictions will be wrong - export labels.txt/model_meta.json together "
+            "Predictions will be wrong - export labels.txt and the model metadata together "
             "with the .tflite file."
         )
 

@@ -68,7 +68,6 @@ from .targets import (
     build_target_report,
     sample_negatives,
     scan_target_dataset,
-    target_class_names,
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -619,7 +618,12 @@ def export_target(
     )
 
     # -- sidecars -----------------------------------------------------------
-    write_target_labels(destination / "labels.txt", preparation.target_id, preparation.target_text)
+    write_target_labels(
+        destination / "labels.txt",
+        preparation.target_id,
+        preparation.target_text,
+        output_mode=config.target.output_mode,
+    )
     extractor = build_extractor(config)
     parity = write_parity_assets(destination, extractor, config.audio)
     extractor.save_filterbank(destination / "mel_filterbank.json")

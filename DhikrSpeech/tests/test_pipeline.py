@@ -134,7 +134,7 @@ def test_every_split_holds_target_clips(project: Config) -> None:
 
 
 def test_conditioned_clips_are_cached_by_geometry_and_source_folder(project: Config) -> None:
-    preparation = prepare_target(project, 7)
+    prepare_target(project, 7)
     cache = project.for_target(7).clip_cache_path()
     assert cache.name == "16000hz_2s"
     assert (cache / "007").is_dir()
