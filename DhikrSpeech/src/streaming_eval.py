@@ -61,6 +61,7 @@ PathLike = Union[str, Path]
 __all__ = [
     "CalibrationResult",
     "ClipEventResult",
+    "CountAccuracy",
     "EventMetrics",
     "MatchResult",
     "NegativeClipReport",
@@ -69,6 +70,7 @@ __all__ = [
     "StreamingEvaluation",
     "ThresholdRow",
     "annotation_template",
+    "propose_events",
     "calibrate_threshold",
     "evaluate_negative_clips",
     "evaluate_timelines",
@@ -87,26 +89,78 @@ SECONDS_PER_HOUR = 3600.0
 # ---------------------------------------------------------------------------
 # Annotations
 # ---------------------------------------------------------------------------
+# How a recording can be annotated, in decreasing order of what it can measure.
+MODE_TIMESTAMPS = "timestamps"   # every repetition marked: precision, recall, FA/hour
+MODE_COUNT = "count"             # "I said it 50 times": count error only
+MODE_NEGATIVE = "negative"       # contains no target at all: FA/hour
+MODE_UNANNOTATED = "unannotated"  # nothing stated - measures nothing
+
+
 @dataclass
 class StreamingClip:
-    """One long-form recording and the repetitions it contains."""
+    """One long-form recording and what is known about the target in it.
+
+    Three useful states, and one that is not:
+
+    ``events`` given
+        Every repetition marked with a start and end. The only state that can
+        measure event precision, recall *and* false activations per hour.
+    ``expected_count`` given, no ``events``
+        "I said it 50 times, I did not write down where." Enough to measure
+        whether the counter reaches 50 - which is what the user actually sees -
+        without anyone timestamping an hour of audio. Cannot measure FA/hour: a
+        miscount could be two misses and one false fire, and nothing here can
+        tell those apart.
+    ``expected_count: 0``
+        A negative-only stress recording. Every detection is a false activation.
+
+    Neither given is :data:`MODE_UNANNOTATED`, and it is **excluded** rather than
+    assumed. Treating it as negative-only - which an empty ``events`` list used
+    to mean - scores a recording of somebody reciting the target as pure false
+    activations, which is both the worst possible number and a completely wrong
+    one.
+    """
 
     file: str
     events: List[Tuple[float, float]] = field(default_factory=list)
+    # Repetitions in the recording when they were counted but not timestamped.
+    # 0 states "no target in here"; None states nothing.
+    expected_count: Optional[int] = None
     target: Optional[str] = None
-    # For recordings that hold no target at all: what kind of audio this is, so a
-    # false activation can be attributed ("TV", "other_dhikr", "street").
+    # For recordings that hold no target: what kind of audio this is, so a false
+    # activation can be attributed ("TV", "other_dhikr", "street").
     category: Optional[str] = None
     duration: Optional[float] = None
     notes: str = ""
 
     @property
+    def mode(self) -> str:
+        if self.events:
+            return MODE_TIMESTAMPS
+        if self.expected_count is None:
+            return MODE_UNANNOTATED
+        return MODE_NEGATIVE if self.expected_count == 0 else MODE_COUNT
+
+    @property
     def expected(self) -> int:
-        return len(self.events)
+        """Repetitions this recording is known to contain."""
+        if self.events:
+            return len(self.events)
+        return int(self.expected_count or 0)
 
     @property
     def is_negative_only(self) -> bool:
-        return not self.events
+        return self.mode == MODE_NEGATIVE
+
+    @property
+    def measures_false_activations(self) -> bool:
+        """Whether a detection in this recording can be called false.
+
+        Only when every repetition is accounted for: timestamps say where they
+        are, and ``expected_count: 0`` says there are none. A count-only
+        recording cannot attribute a detection either way.
+        """
+        return self.mode in (MODE_TIMESTAMPS, MODE_NEGATIVE)
 
     def matches_target(self, target_folder: Optional[str]) -> bool:
         """Whether this recording belongs to a given target's evaluation set.
@@ -123,37 +177,141 @@ class StreamingClip:
             return text == target_folder
 
 
+def propose_events(
+    samples: np.ndarray,
+    sample_rate: int,
+    min_event_seconds: float = 0.4,
+    max_event_seconds: float = 6.0,
+    min_gap_seconds: float = 0.25,
+    threshold_db: float = -35.0,
+    frame_ms: float = 20.0,
+) -> List[Tuple[float, float]]:
+    """Propose repetition boundaries from loudness alone - a draft to review.
+
+    For a session of somebody reciting one phrase with pauses between
+    repetitions, the pauses are visible in the energy envelope, so a plain
+    frame-energy segmentation gets the boundaries approximately right and turns
+    "timestamp an hour of audio" into "check and nudge a list".
+
+    Deliberately **model-free**. Proposing events with the detector being
+    evaluated would be circular - the model would be scored against its own
+    output and recall would come out 100% no matter how bad it was. Loudness
+    knows nothing about the model, so a missed repetition stays missed.
+
+    It is a draft in the honest sense: it cannot tell a repetition from a cough,
+    it merges two repetitions run together, and it splits one that pauses in the
+    middle. Read it before trusting it.
+    """
+    audio = np.asarray(samples, dtype=np.float32)
+    if audio.size == 0:
+        return []
+
+    frame = max(int(round(frame_ms * sample_rate / 1000.0)), 1)
+    usable = (audio.size // frame) * frame
+    if usable < frame:
+        return []
+    frames = audio[:usable].reshape(-1, frame)
+    rms = np.sqrt(np.mean(np.square(frames, dtype=np.float64), axis=1))
+    with np.errstate(divide="ignore"):
+        decibels = 20.0 * np.log10(np.maximum(rms, 1e-12))
+
+    loud = decibels >= threshold_db
+    if not loud.any():
+        return []
+
+    # Bridge gaps shorter than min_gap_seconds so a breath inside one repetition
+    # does not split it in two.
+    bridge = int(round(min_gap_seconds * sample_rate / frame))
+    padded = loud.copy()
+    silent_run = 0
+    for index, value in enumerate(loud):
+        if value:
+            if 0 < silent_run <= bridge:
+                padded[index - silent_run : index] = True
+            silent_run = 0
+        else:
+            silent_run += 1
+
+    events: List[Tuple[float, float]] = []
+    start: Optional[int] = None
+    for index, value in enumerate(padded):
+        if value and start is None:
+            start = index
+        elif not value and start is not None:
+            events.append((start, index))
+            start = None
+    if start is not None:
+        events.append((start, padded.size))
+
+    seconds = frame / float(sample_rate)
+    proposed = [
+        (round(begin * seconds, 3), round(end * seconds, 3))
+        for begin, end in events
+        if min_event_seconds <= (end - begin) * seconds <= max_event_seconds
+    ]
+    LOGGER.info(
+        "proposed %d event(s) from %d loud region(s) - review before using",
+        len(proposed),
+        len(events),
+    )
+    return proposed
+
+
 def annotation_template(
     audio_dir: PathLike,
     target: Optional[str] = None,
     extensions: Sequence[str] = (".wav", ".flac", ".ogg", ".mp3", ".m4a", ".webm"),
+    propose: bool = False,
+    sample_rate: int = 16000,
+    expected_count: Optional[int] = 0,
 ) -> List[Dict[str, object]]:
     """A skeleton ``annotations.json`` for a folder of long-form recordings.
 
-    Annotating is the most tedious step in the project and the one most likely to
-    be skipped, so this writes the scaffold: every recording in the folder, with
-    an empty ``events`` list. That default is deliberate - an empty list is a
-    valid **negative-only stress recording**, so a folder of television and
-    street audio needs no further editing at all, and only the session
-    recordings need timestamps filled in.
+    ``expected_count`` is what every entry starts as, and the default of ``0``
+    says "no target in this recording" - correct for a folder of television and
+    street audio, which then needs no editing at all. Pass ``None`` for a folder
+    of sessions, so each entry is obviously unfinished rather than quietly
+    claiming to be a negative.
+
+    ``propose=True`` decodes each recording and fills ``events`` from
+    :func:`propose_events`, turning the job from timestamping into reviewing.
+    The proposal is loudness-based and knows nothing about the model, so it can
+    be wrong in ways only a listen will catch - which is the point of it being a
+    draft.
     """
     root = Path(audio_dir)
     suffixes = {ext.lower() for ext in extensions}
     files = sorted(
-        path.name
+        path
         for path in root.iterdir()
         if path.is_file() and path.suffix.lower() in suffixes
     ) if root.is_dir() else []
 
-    return [
-        {
-            "file": name,
-            "target": target,
-            "category": "uncategorised",
-            "events": [],
-        }
-        for name in files
-    ]
+    entries: List[Dict[str, object]] = []
+    for path in files:
+        events: List[Dict[str, float]] = []
+        if propose:
+            from .audio import load_audio
+
+            try:
+                samples = load_audio(path, sample_rate)
+                events = [
+                    {"start": start, "end": end}
+                    for start, end in propose_events(samples, sample_rate)
+                ]
+            except Exception as exc:  # noqa: BLE001 - one bad file must not stop the rest
+                LOGGER.warning("could not propose events for %s: %s", path.name, exc)
+
+        entry: Dict[str, object] = {"file": path.name, "target": target}
+        if events:
+            entry["events"] = events
+            entry["reviewed"] = False
+        else:
+            entry["events"] = []
+            entry["expected_count"] = expected_count
+        entry["category"] = "uncategorised"
+        entries.append(entry)
+    return entries
 
 
 def write_annotation_template(
@@ -161,6 +319,9 @@ def write_annotation_template(
     audio_dir: PathLike,
     target: Optional[str] = None,
     overwrite: bool = False,
+    propose: bool = False,
+    sample_rate: int = 16000,
+    expected_count: Optional[int] = 0,
 ) -> Path:
     """Write :func:`annotation_template` to ``path``, refusing to clobber."""
     destination = Path(path)
@@ -170,12 +331,24 @@ def write_annotation_template(
             f"refuses to overwrite them. Pass overwrite=True if that is really what "
             f"you want."
         )
-    entries = annotation_template(audio_dir, target=target)
+    entries = annotation_template(
+        audio_dir,
+        target=target,
+        propose=propose,
+        sample_rate=sample_rate,
+        expected_count=expected_count,
+    )
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
         json.dumps(entries, indent=2, ensure_ascii=False), encoding="utf-8"
     )
-    LOGGER.info("annotation skeleton for %d recording(s) written to %s", len(entries), destination)
+    proposed = sum(len(entry.get("events") or []) for entry in entries)
+    LOGGER.info(
+        "annotation skeleton for %d recording(s) written to %s%s",
+        len(entries),
+        destination,
+        f" with {proposed} proposed event(s) to review" if proposed else "",
+    )
     return destination
 
 
@@ -197,10 +370,12 @@ def load_annotations(path: PathLike) -> List[StreamingClip]:
                 raise ValueError(f"{entry.get('file')}: event ends before it starts ({start}, {end})")
             events.append((start, end))
         events.sort()
+        expected = entry.get("expected_count", entry.get("count"))
         clips.append(
             StreamingClip(
                 file=str(entry["file"]),
                 events=events,
+                expected_count=int(expected) if expected is not None else None,
                 target=str(entry["target"]) if entry.get("target") is not None else None,
                 category=entry.get("category"),
                 duration=float(entry["duration"]) if entry.get("duration") else None,
@@ -454,6 +629,77 @@ def _load(path: Path, sample_rate: int) -> np.ndarray:
 
 
 @dataclass
+class CountAccuracy:
+    """How close the counter got, on sessions counted but not timestamped.
+
+    This is the number a user would notice: they said it fifty times and the app
+    says forty-seven. It cannot separate three misses from four misses and one
+    false fire - only timestamps can - but it needs no annotation beyond a number
+    somebody already knew, which is why it is worth having.
+    """
+
+    per_file: Dict[str, Dict[str, int]] = field(default_factory=dict)
+
+    def add(self, file: str, expected: int, detected: int) -> None:
+        self.per_file[file] = {
+            "expected": int(expected),
+            "detected": int(detected),
+            "error": int(detected) - int(expected),
+        }
+
+    @property
+    def recordings(self) -> int:
+        return len(self.per_file)
+
+    @property
+    def expected(self) -> int:
+        return sum(entry["expected"] for entry in self.per_file.values())
+
+    @property
+    def detected(self) -> int:
+        return sum(entry["detected"] for entry in self.per_file.values())
+
+    @property
+    def absolute_error(self) -> int:
+        """Total miscount, ignoring direction - overs do not cancel unders."""
+        return sum(abs(entry["error"]) for entry in self.per_file.values())
+
+    @property
+    def count_accuracy(self) -> float:
+        """1 - (total miscount / total expected). Negative when wildly over."""
+        return 1.0 - self.absolute_error / self.expected if self.expected else float("nan")
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "recordings": self.recordings,
+            "expected": self.expected,
+            "detected": self.detected,
+            "absolute_error": self.absolute_error,
+            "count_accuracy": _round(self.count_accuracy),
+            "per_file": dict(sorted(self.per_file.items())),
+        }
+
+    def summary(self) -> str:
+        if not self.recordings:
+            return ""
+        lines = [
+            f"count-only sessions  : {self.recordings}",
+            f"expected / detected  : {self.expected} / {self.detected} "
+            f"({self.detected - self.expected:+d})",
+            f"count accuracy       : {_percent(self.count_accuracy)} "
+            f"(total miscount {self.absolute_error})",
+        ]
+        worst = sorted(self.per_file.items(), key=lambda kv: -abs(kv[1]["error"]))[:5]
+        for name, entry in worst:
+            if entry["error"]:
+                lines.append(
+                    f"  {name:<32} said {entry['expected']}, counted {entry['detected']} "
+                    f"({entry['error']:+d})"
+                )
+        return "\n".join(lines)
+
+
+@dataclass
 class StreamingEvaluation:
     """Aggregate event metrics plus the per-recording breakdown."""
 
@@ -461,6 +707,19 @@ class StreamingEvaluation:
     per_clip: List[ClipEventResult] = field(default_factory=list)
     detector: Optional[DetectorConfig] = None
     tolerance: float = 0.75
+    counts: CountAccuracy = field(default_factory=CountAccuracy)
+    # Recordings that stated nothing, so measured nothing.
+    skipped: List[str] = field(default_factory=list)
+
+    @property
+    def measures_false_activations(self) -> bool:
+        """Whether any recording could show a false activation.
+
+        A set of positive-only sessions cannot: every detection in them lands on
+        a repetition that is really there, so FA/hour comes out 0.00 and means
+        nothing. That is worth saying out loud rather than reporting as a pass.
+        """
+        return any(item.metrics.duration_seconds > 0 for item in self.per_clip)
 
     @property
     def negative_only(self) -> "EventMetrics":
@@ -485,6 +744,8 @@ class StreamingEvaluation:
             "match_tolerance_seconds": self.tolerance,
             "overall": self.metrics.to_dict(),
             "negative_only": self.negative_only.to_dict(),
+            "count_only": self.counts.to_dict(),
+            "unannotated": list(self.skipped),
             "per_clip": [item.to_dict() for item in self.per_clip],
         }
 
@@ -498,7 +759,18 @@ class StreamingEvaluation:
         return destination
 
     def summary(self) -> str:
-        lines = [self.metrics.summary()]
+        lines = []
+        if self.metrics.expected or self.metrics.duration_seconds:
+            lines.append(self.metrics.summary())
+        if self.counts.recordings:
+            if lines:
+                lines.append("")
+            lines.append(self.counts.summary())
+            lines.append(
+                "  (count-only sessions cannot measure false activations per hour - a\n"
+                "   miscount could be two misses and one false fire, and nothing here can\n"
+                "   tell those apart. Timestamps or negative-only audio can.)"
+            )
         negative = self.negative_only
         if negative.duration_seconds > 0:
             lines.append("")
@@ -507,6 +779,15 @@ class StreamingEvaluation:
                 f"with no target, {negative.false_events} false event(s), "
                 f"{negative.false_activations_per_hour:.2f} FA/h, peak confidence "
                 f"{negative.max_negative_score:.3f}"
+            )
+        if not self.measures_false_activations:
+            lines.append("")
+            lines.append(
+                "!! FALSE ACTIVATIONS PER HOUR IS UNMEASURED. Every annotated recording\n"
+                "   here contains the target, so there is no audio in which a detection is\n"
+                "   known to be wrong. Recall says the counter fires often enough; nothing\n"
+                "   yet says it stays quiet. An hour of television or conversation, marked\n"
+                "   expected_count: 0, is the cheapest fix and needs no timestamps."
             )
         worst = [item for item in self.worst_clips() if item.metrics.false_events]
         if worst:
@@ -526,19 +807,45 @@ def evaluate_timelines(
     detector: DetectorConfig,
     tolerance: float = 0.75,
 ) -> StreamingEvaluation:
-    """Replay the event state machine over cached timelines at one operating point."""
+    """Replay the event state machine over cached timelines at one operating point.
+
+    Each recording is scored by what its annotation can actually support:
+    timestamped ones give precision, recall and FA/hour; count-only ones give a
+    count error and are kept out of FA/hour entirely; unannotated ones are
+    excluded and reported, never guessed at.
+    """
     total = EventMetrics()
     per_clip: List[ClipEventResult] = []
+    counts = CountAccuracy()
+    skipped: List[str] = []
 
     for item in scored:
         events = detect_events(item.timeline, detector)
-        match = match_events(events, item.clip.events, tolerance)
-        duration = item.clip.duration or item.timeline.duration_seconds
-        category = item.clip.category or ("target_session" if item.clip.events else "uncategorised")
+        clip = item.clip
+        duration = clip.duration or item.timeline.duration_seconds
+
+        if clip.mode == MODE_UNANNOTATED:
+            skipped.append(clip.file)
+            continue
+
+        if clip.mode == MODE_COUNT:
+            counts.add(clip.file, expected=clip.expected, detected=len(events))
+            per_clip.append(
+                ClipEventResult(
+                    file=clip.file,
+                    category=clip.category or "count_only",
+                    metrics=EventMetrics(duration_seconds=0.0),
+                    events=events,
+                )
+            )
+            continue
+
+        match = match_events(events, clip.events, tolerance)
+        category = clip.category or ("target_session" if clip.events else "uncategorised")
         false_times = [events[index].time for index in match.false_detections]
 
         metrics = EventMetrics(
-            expected=len(item.clip.events),
+            expected=len(clip.events),
             detected=len(events),
             correct=len(match.matched),
             missed=len(match.missed),
@@ -548,22 +855,37 @@ def evaluate_timelines(
             false_by_category=({category: len(match.false_detections)}
                                if match.false_detections else {}),
             max_negative_score=(
-                item.timeline.max_score if item.clip.is_negative_only else 0.0
+                item.timeline.max_score if clip.is_negative_only else 0.0
             ),
         )
         total = total + metrics
         per_clip.append(
             ClipEventResult(
-                file=item.clip.file,
-                category=item.clip.category,
+                file=clip.file,
+                category=clip.category,
                 metrics=metrics,
                 events=events,
                 false_times=false_times,
             )
         )
 
+    if skipped:
+        LOGGER.warning(
+            "%d recording(s) have neither timestamps nor an expected_count and were "
+            "excluded: %s. An empty annotation is not the same as 'no target in here' - "
+            "set expected_count: 0 to state that, or expected_count: <n> for a session "
+            "you counted but did not timestamp.",
+            len(skipped),
+            ", ".join(skipped[:5]),
+        )
+
     return StreamingEvaluation(
-        metrics=total, per_clip=per_clip, detector=detector, tolerance=tolerance
+        metrics=total,
+        per_clip=per_clip,
+        detector=detector,
+        tolerance=tolerance,
+        counts=counts,
+        skipped=skipped,
     )
 
 

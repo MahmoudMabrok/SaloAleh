@@ -179,9 +179,51 @@ streaming/
 ]
 ```
 
-Scaffold the file rather than typing it: `write_annotation_template` lists every recording in
-the folder with an empty `events` list, which is already the right answer for every
-negative-only recording.
+### Who writes the annotations
+
+A person does — but far less of one than it sounds, and there are three levels of
+effort, each measuring more than the last.
+
+| you write | effort | measures |
+|---|---|---|
+| `expected_count: 0` | nothing | **FA/hour**, event precision |
+| `expected_count: 50` | a number you already knew | count accuracy |
+| `events: [{start, end}, …]` | minutes per recording | everything: precision, recall, duplicates, FA/hour |
+
+**Negative-only recordings need no annotation at all.** An hour of television
+marked `expected_count: 0` is a complete, valid entry — and it carries the
+release-critical number. This is the cheapest useful data in the project.
+
+**Sessions you counted but did not timestamp** need one number: how many times
+you said it. `expected_count: 50` measures whether the counter reaches 50, which
+is exactly what a user notices. It cannot measure false activations — a count of
+47 could be three misses, or four misses and one false fire, and nothing can tell
+those apart without knowing *where* the repetitions were.
+
+**Timestamps** are the only thing that measures everything, and
+`write_annotation_template(..., propose=True)` drafts them for you: it segments
+each recording on loudness and writes the boundaries it finds. Review that draft
+— it cannot tell a repetition from a cough, it merges two run together and it
+splits one that pauses in the middle. It is deliberately **model-free**: proposing
+events with the detector you are evaluating would score the model against its own
+output, and recall would come out 100% however bad it was.
+
+```python
+from src.streaming_eval import write_annotation_template
+
+write_annotation_template(
+    root / "streaming/annotations.json",
+    root / "streaming/audio",
+    target="007",
+    propose=True,          # draft timestamps from loudness
+    expected_count=None,   # sessions, not negatives
+)
+```
+
+> **Never leave an entry with no `events` and no `expected_count`.** It states
+> nothing, so it is excluded and reported rather than guessed at. It used to be
+> read as "no target in here", which scored a recording of somebody reciting the
+> target as pure false activations.
 
 **Sessions** — someone actually using the app: repeating the dhikr at their own pace, sometimes
 quickly, with pauses, in a normal room. Mark the start and end of every repetition. These give

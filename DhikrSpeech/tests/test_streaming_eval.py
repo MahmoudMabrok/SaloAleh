@@ -167,7 +167,7 @@ def test_a_session_of_three_repetitions_scores_three() -> None:
 
 def test_a_negative_only_recording_reports_fa_per_hour_and_its_category() -> None:
     scores = utterance_at(10, total=int(600 / HOP))  # 10 minutes of audio, one burst
-    clip = StreamingClip(file="tv.wav", events=[], target="007", category="background_audio")
+    clip = StreamingClip(file="tv.wav", expected_count=0, target="007", category="background_audio")
     evaluation = evaluate_timelines([ScoredClip(clip, timeline(scores))], detector())
     metrics = evaluation.metrics
     assert metrics.expected == 0
@@ -178,7 +178,7 @@ def test_a_negative_only_recording_reports_fa_per_hour_and_its_category() -> Non
 
 
 def test_silence_produces_no_events() -> None:
-    clip = StreamingClip(file="room.wav", events=[], category="noise")
+    clip = StreamingClip(file="room.wav", expected_count=0, category="noise")
     scores = np.full(500, 0.05, dtype=np.float32)
     evaluation = evaluate_timelines([ScoredClip(clip, timeline(scores))], detector())
     assert evaluation.metrics.false_events == 0
@@ -187,14 +187,14 @@ def test_silence_produces_no_events() -> None:
 
 def test_worst_clips_are_ranked_by_false_activations() -> None:
     quiet = ScoredClip(
-        StreamingClip(file="quiet.wav", events=[], category="noise"),
+        StreamingClip(file="quiet.wav", expected_count=0, category="noise"),
         timeline(np.full(100, 0.05, dtype=np.float32)),
     )
     noisy_scores = np.full(100, 0.05, dtype=np.float32)
     noisy_scores[10:14] = 0.95
     noisy_scores[40:44] = 0.95
     noisy = ScoredClip(
-        StreamingClip(file="noisy.wav", events=[], category="other_dhikr"),
+        StreamingClip(file="noisy.wav", expected_count=0, category="other_dhikr"),
         timeline(noisy_scores),
     )
     evaluation = evaluate_timelines([quiet, noisy], detector())
@@ -225,7 +225,8 @@ def test_annotations_load_from_the_documented_shape(tmp_path: Path) -> None:
                     "target": "007",
                     "events": [{"start": 12.3, "end": 14.1}],
                 },
-                {"file": "tv.wav", "target": "007", "category": "background_audio", "events": []},
+                {"file": "tv.wav", "target": "007", "category": "background_audio",
+                 "events": [], "expected_count": 0},
             ]
         ),
         encoding="utf-8",
@@ -272,7 +273,7 @@ def calibration_set():
     return [
         ScoredClip(StreamingClip("session.wav", truth, target="007"), timeline(positive)),
         ScoredClip(
-            StreamingClip("hard.wav", [], target="007", category="hard_negative"),
+            StreamingClip("hard.wav", expected_count=0, target="007", category="hard_negative"),
             timeline(negative),
         ),
     ]
@@ -301,7 +302,7 @@ def test_calibration_reports_failure_instead_of_an_extreme_threshold() -> None:
         scores[start : start + 4] = 0.999
     scored = [
         ScoredClip(
-            StreamingClip("tv.wav", [], target="007", category="background_audio"),
+            StreamingClip("tv.wav", expected_count=0, target="007", category="background_audio"),
             timeline(scores),
         )
     ]
@@ -410,7 +411,7 @@ def streaming_project(tmp_path: Path, folder: str, annotations: bool = True):
                 [
                     {"file": "session.wav", "target": "007",
                      "events": [{"start": 1.0, "end": 2.0}]},
-                    {"file": "tv.wav", "target": "007", "events": []},
+                    {"file": "tv.wav", "target": "007", "events": [], "expected_count": 0},
                 ]
             ),
             encoding="utf-8",
@@ -460,7 +461,9 @@ def test_a_flat_streaming_folder_works(tmp_path: Path) -> None:
     root = tmp_path / "p" / Config().paths.streaming_dir
     root.mkdir(parents=True)
     (root / "tv.wav").write_bytes(b"")
-    (root / "annotations.json").write_text('[{"file": "tv.wav", "events": []}]', encoding="utf-8")
+    (root / "annotations.json").write_text(
+        '[{"file": "tv.wav", "events": [], "expected_count": 0}]', encoding="utf-8"
+    )
     config = Config().with_overrides(
         {"paths.drive_root": str(tmp_path), "paths.project_dir": "p"}
     )
@@ -499,3 +502,152 @@ def test_status_summarises_an_annotated_set(tmp_path: Path) -> None:
     status = streaming_status(streaming_project(tmp_path, Config().paths.streaming_dir))
     assert status.startswith("ok")
     assert "2 annotated" in status and "1 repetition(s)" in status and "1 negative-only" in status
+
+
+# ---------------------------------------------------------------------------
+# Positive-only sessions: count-only annotation, and what it cannot measure
+# ---------------------------------------------------------------------------
+def session_timeline(repetitions: int = 5, windows: int = 600):
+    """A long recording with `repetitions` well-separated utterances."""
+    scores = np.full(windows, 0.02, dtype=np.float32)
+    for index in range(repetitions):
+        start = 50 + index * 100
+        scores[start : start + 4] = 0.95
+    return timeline(scores)
+
+
+def test_a_count_only_session_scores_the_count(tmp_path: Path) -> None:
+    """"I said it five times" is enough to check the counter reaches five."""
+    clip = StreamingClip("session.wav", expected_count=5, target="007")
+    evaluation = evaluate_timelines([ScoredClip(clip, session_timeline(5))], detector())
+    assert evaluation.counts.recordings == 1
+    assert evaluation.counts.expected == 5
+    assert evaluation.counts.detected == 5
+    assert evaluation.counts.count_accuracy == pytest.approx(1.0)
+
+
+def test_a_miscount_is_reported_with_its_direction() -> None:
+    clip = StreamingClip("session.wav", expected_count=8, target="007")
+    evaluation = evaluate_timelines([ScoredClip(clip, session_timeline(5))], detector())
+    assert evaluation.counts.detected == 5
+    assert evaluation.counts.per_file["session.wav"]["error"] == -3
+    assert evaluation.counts.count_accuracy == pytest.approx(1 - 3 / 8)
+
+
+def test_count_only_sessions_never_produce_false_activations() -> None:
+    """The central rule for this annotation mode: a detection in a count-only
+    recording cannot be called false, so it must not reach FA/hour."""
+    clip = StreamingClip("session.wav", expected_count=2, target="007")
+    evaluation = evaluate_timelines([ScoredClip(clip, session_timeline(5))], detector())
+    assert evaluation.metrics.false_events == 0
+    assert evaluation.metrics.duration_seconds == 0.0
+    assert not np.isfinite(evaluation.metrics.false_activations_per_hour)
+
+
+def test_a_positive_only_set_says_fa_per_hour_is_unmeasured() -> None:
+    clip = StreamingClip("session.wav", expected_count=5, target="007")
+    evaluation = evaluate_timelines([ScoredClip(clip, session_timeline(5))], detector())
+    assert not evaluation.measures_false_activations
+    assert "FALSE ACTIVATIONS PER HOUR IS UNMEASURED" in evaluation.summary()
+
+
+def test_an_unannotated_recording_is_excluded_not_called_negative(caplog) -> None:
+    """The trap this replaces: an empty annotation used to mean "no target in
+    here", so a session of somebody reciting the target scored as pure false
+    activations - the worst possible number, and a wrong one."""
+    import logging
+
+    clip = StreamingClip("mystery.wav", target="007")   # nothing stated
+    with caplog.at_level(logging.WARNING, logger="src.streaming_eval"):
+        evaluation = evaluate_timelines([ScoredClip(clip, session_timeline(5))], detector())
+    assert evaluation.skipped == ["mystery.wav"]
+    assert evaluation.metrics.false_events == 0
+    assert "expected_count" in caplog.text
+
+
+def test_expected_count_zero_is_a_negative_only_recording() -> None:
+    clip = StreamingClip("tv.wav", expected_count=0, target="007", category="noise")
+    evaluation = evaluate_timelines([ScoredClip(clip, session_timeline(3))], detector())
+    assert evaluation.metrics.expected == 0
+    assert evaluation.metrics.false_events == 3
+    assert evaluation.measures_false_activations
+
+
+def test_timestamps_still_beat_both(tmp_path: Path) -> None:
+    """A timestamped session measures everything the other two modes cannot."""
+    truth = [(index * 20.0 + 10.0 - 0.3, index * 20.0 + 10.0 + 0.6) for index in range(5)]
+    clip = StreamingClip("session.wav", events=truth, target="007")
+    evaluation = evaluate_timelines([ScoredClip(clip, session_timeline(5))], detector())
+    assert evaluation.metrics.expected == 5
+    assert evaluation.metrics.duration_seconds > 0
+    assert evaluation.measures_false_activations
+
+
+# ---------------------------------------------------------------------------
+# Proposing events from loudness
+# ---------------------------------------------------------------------------
+def spoken_session(repetitions: int, sample_rate: int = 16000, gap: float = 7.0):
+    audio = np.zeros(int((3 + repetitions * gap) * sample_rate), dtype=np.float32)
+    truth = []
+    for index in range(repetitions):
+        start = int((3 + index * gap) * sample_rate)
+        length = int(1.5 * sample_rate)
+        audio[start : start + length] = 0.3 * np.sin(
+            2 * np.pi * 220 * np.arange(length) / sample_rate
+        )
+        truth.append((start / sample_rate, (start + length) / sample_rate))
+    return audio, truth
+
+
+def test_proposed_events_recover_well_separated_repetitions() -> None:
+    from src.streaming_eval import propose_events
+
+    audio, truth = spoken_session(8)
+    proposed = propose_events(audio, 16000)
+    assert len(proposed) == len(truth)
+    for (start, end), (true_start, true_end) in zip(proposed, truth):
+        assert abs(start - true_start) < 0.1
+        assert abs(end - true_end) < 0.1
+
+
+def test_proposal_is_model_free() -> None:
+    """It must not use the detector being evaluated: scoring a model against its
+    own output makes recall 100% however bad the model is.
+
+    Checked on the compiled names rather than the source text - the docstring
+    explains why it is model-free and therefore says "model" a great deal."""
+    from src.streaming_eval import propose_events
+
+    referenced = set(propose_events.__code__.co_names)
+    assert not referenced & {
+        "detect_events", "EventDetector", "StreamingDetector", "scorer", "predict"
+    }
+
+
+def test_silence_proposes_nothing() -> None:
+    from src.streaming_eval import propose_events
+
+    assert propose_events(np.zeros(16000 * 5, dtype=np.float32), 16000) == []
+
+
+def test_a_proposal_fills_the_template(tmp_path: Path) -> None:
+    from src.audio import write_wav
+    from src.streaming_eval import load_annotations, write_annotation_template
+
+    audio, truth = spoken_session(4)
+    write_wav(tmp_path / "session.wav", audio, 16000)
+    path = write_annotation_template(
+        tmp_path / "annotations.json", tmp_path, target="007", propose=True, expected_count=None
+    )
+    clips = load_annotations(path)
+    assert clips[0].mode == "timestamps"
+    assert clips[0].expected == len(truth)
+
+
+def test_a_template_without_proposals_defaults_to_negative_only(tmp_path: Path) -> None:
+    from src.streaming_eval import load_annotations, write_annotation_template
+
+    (tmp_path / "tv.wav").write_bytes(b"")
+    path = write_annotation_template(tmp_path / "annotations.json", tmp_path, target="007")
+    clips = load_annotations(path)
+    assert clips[0].mode == "negative"

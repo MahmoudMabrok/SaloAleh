@@ -31,7 +31,12 @@ import numpy as np
 
 from .config import ReadinessConfig
 from .speakers import SpeakerReport
-from .streaming_eval import CalibrationResult, EventMetrics, NegativeClipReport
+from .streaming_eval import (
+    CalibrationResult,
+    CountAccuracy,
+    EventMetrics,
+    NegativeClipReport,
+)
 from .targets import TargetDatasetReport
 from .target_export import QuantizationReport
 
@@ -173,6 +178,7 @@ def assess_readiness(
     dataset: Optional[TargetDatasetReport] = None,
     isolation: Optional[SpeakerReport] = None,
     streaming: Optional[EventMetrics] = None,
+    counts: Optional["CountAccuracy"] = None,
     hard_negatives: Optional[NegativeClipReport] = None,
     quantization: Optional[QuantizationReport] = None,
     calibration: Optional[CalibrationResult] = None,
@@ -274,18 +280,31 @@ def assess_readiness(
             )
 
     # -- streaming ----------------------------------------------------------
-    if streaming is None or streaming.duration_seconds <= 0:
-        for name in ("event precision", "event recall", "false activations/hour", "duplicate rate"):
+    measured = streaming is not None and streaming.duration_seconds > 0
+    if not measured:
+        detail = "no streaming evaluation - clip accuracy cannot stand in for this"
+        if counts is not None and counts.recordings:
+            # Count-only sessions measure whether the counter reaches the right
+            # number, which is what the user sees - but they cannot say whether a
+            # detection was real, so precision and FA/hour stay unmeasured.
             checks.append(
                 _check(
-                    name,
+                    "count accuracy",
                     "Streaming",
-                    None,
-                    None,
-                    None,
-                    "no streaming evaluation - clip accuracy cannot stand in for this",
+                    counts.count_accuracy,
+                    config.min_event_recall,
+                    bool(np.isfinite(counts.count_accuracy))
+                    and counts.count_accuracy >= config.min_event_recall,
+                    f"{counts.count_accuracy:.1%} over {counts.recordings} counted "
+                    f"session(s) ({counts.detected}/{counts.expected} counted)",
                 )
             )
+            detail = (
+                "only count-only sessions - they say whether the counter reaches the "
+                "right number, not whether it stays quiet on other audio"
+            )
+        for name in ("event precision", "event recall", "false activations/hour", "duplicate rate"):
+            checks.append(_check(name, "Streaming", None, None, None, detail))
     else:
         checks.append(
             _check(
