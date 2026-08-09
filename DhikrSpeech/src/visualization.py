@@ -23,16 +23,18 @@ LOGGER = logging.getLogger(__name__)
 PathLike = Union[str, Path]
 
 __all__ = [
+    "plot_architecture_comparison",
     "plot_class_distribution",
     "plot_confidence_distribution",
     "plot_confusion_matrix",
+    "plot_detector_scores",
     "plot_duration_histogram",
     "plot_log_mel",
     "plot_negative_type_false_positives",
     "plot_per_class_metrics",
     "plot_roc_curves",
+    "plot_score_timeline",
     "plot_speaker_distribution",
-    "plot_streaming_timeline",
     "plot_threshold_sweep",
     "plot_training_history",
     "plot_waveform",
@@ -376,6 +378,54 @@ def plot_confidence_distribution(
     return figure
 
 
+def plot_score_timeline(
+    timeline,
+    events: Sequence = (),
+    truth: Sequence = (),
+    activation: Optional[float] = None,
+    release: Optional[float] = None,
+    title: str = "streaming timeline",
+) -> Figure:
+    """``P(target)`` over a recording, with detections and ground truth.
+
+    The single most useful picture in the project: a missed repetition, a phrase
+    counted twice and a false activation on the TV all look completely different
+    here, and identical in a table of accuracies.
+    """
+    figure, axis = plt.subplots(figsize=(12.0, 3.6))
+    times = np.asarray(timeline.times, dtype=np.float32)
+    scores = np.asarray(timeline.scores, dtype=np.float32)
+
+    raw = getattr(timeline, "raw_scores", None)
+    if raw is not None:
+        axis.plot(times, np.asarray(raw), color="#adb5bd", linewidth=0.8, label="raw")
+    axis.plot(times, scores, color="#264653", linewidth=1.3, label="P(target)")
+
+    for index, (start, end) in enumerate(truth):
+        axis.axvspan(
+            start, end, color="#2a9d8f", alpha=0.18,
+            label="annotated repetition" if index == 0 else None,
+        )
+    for index, event in enumerate(events):
+        axis.axvline(
+            event.time, color="#e76f51", linestyle="-", linewidth=1.4,
+            label="detected event" if index == 0 else None,
+        )
+    if activation is not None:
+        axis.axhline(activation, color="#e63946", linestyle="--", linewidth=1.0,
+                     label=f"activation {activation:g}")
+    if release is not None:
+        axis.axhline(release, color="#f4a261", linestyle=":", linewidth=1.0,
+                     label=f"release {release:g}")
+
+    axis.set_xlabel("seconds")
+    axis.set_ylabel("P(target)")
+    axis.set_ylim(-0.02, 1.02)
+    axis.set_xlim(float(times[0]) if times.size else 0.0, float(times[-1]) if times.size else 1.0)
+    axis.set_title(title)
+    axis.grid(**_GRID)
+    axis.legend(fontsize=8, ncol=3, loc="upper right")
+
 def plot_speaker_distribution(
     recordings_per_speaker: Mapping[str, int],
     title: str = "recordings per speaker",
@@ -409,133 +459,124 @@ def plot_speaker_distribution(
     return figure
 
 
-def plot_streaming_timeline(
-    scan,
-    events: Sequence = (),
-    truth: Sequence = (),
-    detector=None,
-    title: str = "streaming predictions",
-    ignore: Sequence[str] = ("unknown",),
-) -> Figure:
-    """The whole streaming story for one recording, on one time axis.
-
-    Top: every class's probability over time, with the activation and release
-    thresholds drawn in - this is where you see whether the hysteresis band is in
-    the right place. Bottom: what was annotated against what was detected, so a
-    miss, a false activation and a duplicate are visually distinct rather than
-    three numbers in a table.
-    """
-    figure, (top, bottom) = plt.subplots(
-        2, 1, figsize=(11.0, 5.4), gridspec_kw={"height_ratios": [3, 1]}, sharex=True
-    )
-    ignored = {name.lower() for name in ignore}
-    palette = plt.get_cmap("tab10")
-    for index, label in enumerate(scan.labels):
-        dimmed = label.lower() in ignored
-        top.plot(
-            scan.times,
-            scan.probabilities[:, index],
-            label=label,
-            color="#adb5bd" if dimmed else palette(index % 10),
-            linewidth=0.9 if not dimmed else 0.7,
-            alpha=0.5 if dimmed else 1.0,
-        )
-    if detector is not None:
-        top.axhline(
-            detector.confidence_threshold,
-            color="#e63946",
-            linestyle="--",
-            linewidth=1.0,
-            label=f"activation {detector.confidence_threshold:g}",
-        )
-        top.axhline(
-            detector.release_threshold,
-            color="#f4a261",
-            linestyle=":",
-            linewidth=1.0,
-            label=f"release {detector.release_threshold:g}",
-        )
-    for event in events:
-        top.axvspan(event.start, max(event.end, event.start + 0.05), color="#2a9d8f", alpha=0.18)
-        top.axvline(event.trigger_time, color="#2a9d8f", linewidth=1.2)
-    top.set_ylim(0.0, 1.02)
-    top.set_ylabel("probability")
-    top.set_title(title)
-    top.grid(**_GRID)
-    top.legend(fontsize=7, ncol=3, loc="upper right")
-
-    for annotation in truth:
-        bottom.axvspan(annotation.start, annotation.end, ymin=0.55, ymax=0.95,
-                       color="#264653", alpha=0.6)
-    for event in events:
-        bottom.axvspan(event.start, max(event.end, event.start + 0.05), ymin=0.05,
-                       ymax=0.45, color="#2a9d8f", alpha=0.7)
-    bottom.set_yticks([0.25, 0.75])
-    bottom.set_yticklabels(["detected", "annotated"], fontsize=8)
-    bottom.set_ylim(0.0, 1.0)
-    bottom.set_xlabel("seconds")
-    bottom.set_xlim(0.0, max(float(scan.times[-1]) + scan.window_seconds, 1.0))
-    bottom.grid(axis="x", **_GRID)
-
     figure.tight_layout()
     return figure
 
 
 def plot_threshold_sweep(
-    points: Sequence,
-    target_false_activations_per_hour: Optional[float] = None,
+    rows: Sequence,
+    budget: Optional[float] = None,
     chosen: Optional[float] = None,
     title: str = "threshold sweep",
 ) -> Figure:
-    """Recall and false activations per hour against the threshold.
+    """Event recall/precision and FA/hour against the activation threshold.
 
-    The two curves are the whole trade-off, and the budget line is what decides
-    it: the operating point is the leftmost threshold whose FA/hour curve is under
-    that line, not the peak of anything.
+    Two axes on purpose: the choice is a trade between the left one (how much is
+    counted) and the right one (how much is counted wrongly), and the budget line
+    is what actually decides it.
     """
-    thresholds = [point.threshold for point in points]
-    recalls = [point.recall for point in points]
-    false_rates = [point.false_activations_per_hour for point in points]
+    thresholds = [row.activation for row in rows]
+    recall = [row.metrics.recall for row in rows]
+    precision = [row.metrics.precision for row in rows]
+    false_alarms = [row.metrics.false_activations_per_hour for row in rows]
 
-    figure, (left, right) = plt.subplots(1, 2, figsize=(11.0, 4.0))
-    left.plot(thresholds, recalls, marker="o", color="#2a9d8f", label="event recall")
-    left.plot(
-        thresholds,
-        [point.precision for point in points],
-        marker="s",
-        color="#457b9d",
-        label="event precision",
-    )
-    left.set_xlabel("threshold")
-    left.set_ylabel("rate")
-    left.set_ylim(0.0, 1.05)
-    left.grid(**_GRID)
-    left.legend(fontsize=8)
+    figure, axis = plt.subplots(figsize=(9.0, 4.2))
+    axis.plot(thresholds, recall, color="#2a9d8f", marker="o", markersize=2.5, label="event recall")
+    axis.plot(thresholds, precision, color="#457b9d", marker="o", markersize=2.5,
+              label="event precision")
+    axis.set_xlabel("activation threshold")
+    axis.set_ylabel("event precision / recall")
+    axis.set_ylim(-0.02, 1.02)
+    axis.grid(**_GRID)
 
-    right.plot(thresholds, false_rates, marker="o", color="#e76f51")
-    right.set_xlabel("threshold")
-    right.set_ylabel("false activations / hour")
-    right.set_yscale("symlog", linthresh=0.1)
-    if target_false_activations_per_hour is not None:
-        right.axhline(
-            target_false_activations_per_hour,
-            color="#264653",
-            linestyle="--",
-            linewidth=1.0,
-            label=f"budget {target_false_activations_per_hour:g}/h",
-        )
-        right.legend(fontsize=8)
-    right.grid(**_GRID)
+    right = axis.twinx()
+    right.plot(thresholds, false_alarms, color="#e76f51", linewidth=1.4, label="FA / hour")
+    right.set_ylabel("false activations per hour")
+    if budget is not None:
+        right.axhline(budget, color="#e63946", linestyle="--", linewidth=1.0,
+                      label=f"budget {budget:g}/h")
+    if chosen is not None:
+        axis.axvline(chosen, color="#264653", linestyle=":", linewidth=1.4,
+                     label=f"chosen {chosen:g}")
 
-    for axis in (left, right):
-        if chosen is not None:
-            axis.axvline(chosen, color="#8d99ae", linestyle=":", linewidth=1.2)
-
-    figure.suptitle(title)
+    handles, labels = axis.get_legend_handles_labels()
+    extra_handles, extra_labels = right.get_legend_handles_labels()
+    axis.legend(handles + extra_handles, labels + extra_labels, fontsize=8, loc="center left")
+    axis.set_title(title)
     figure.tight_layout()
     return figure
 
 
+def plot_detector_scores(
+    scores: np.ndarray,
+    y_true: np.ndarray,
+    negative_types: Optional[Sequence[str]] = None,
+    threshold: float = 0.5,
+    title: str = "P(target) by clip type",
+) -> Figure:
+    """Score histogram: target clips against each kind of negative.
+
+    Overlap on the right of the threshold is where false counts come from, and
+    which negative category is doing the overlapping is the actionable part - it
+    names the recordings to go and collect.
+    """
+    scores = np.asarray(scores, dtype=np.float32)
+    y_true = np.asarray(y_true, dtype=np.int32)
+    bins = np.linspace(0.0, 1.0, 41)
+
+    figure, axis = plt.subplots(figsize=(9.0, 4.2))
+    axis.hist(scores[y_true == 1], bins=bins, alpha=0.8, color="#2a9d8f", label="target")
+
+    if negative_types is not None and len(negative_types) != scores.size:
+        LOGGER.warning(
+            "%d negative types for %d clips - falling back to one negative histogram; "
+            "the per-category breakdown needs one entry per clip",
+            len(negative_types),
+            scores.size,
+        )
+        negative_types = None
+
+    if negative_types:
+        types = np.asarray(negative_types)
+        palette = ["#e76f51", "#e9c46a", "#457b9d", "#8d99ae", "#6d597a", "#b56576"]
+        for index, name in enumerate(sorted(set(types[y_true != 1]))):
+            mask = (types == name) & (y_true != 1)
+            axis.hist(
+                scores[mask], bins=bins, histtype="step", linewidth=1.4,
+                color=palette[index % len(palette)], label=name,
+            )
+    else:
+        axis.hist(scores[y_true != 1], bins=bins, alpha=0.6, color="#e76f51", label="not target")
+
+    axis.axvline(threshold, color="#264653", linestyle=":", linewidth=1.4,
+                 label=f"threshold {threshold:g}")
+    axis.set_xlabel("P(target)")
+    axis.set_ylabel("clips")
+    axis.set_yscale("symlog")
+    axis.set_title(title)
+    axis.grid(axis="y", **_GRID)
+    axis.legend(fontsize=8)
+    figure.tight_layout()
+    return figure
+
+
+def plot_architecture_comparison(rows: Sequence[Mapping], title: str = "architecture comparison") -> Figure:
+    """INT8 size, FA/hour, event F1 and latency for each architecture."""
+    labels = [str(row["architecture"]) for row in rows]
+    panels = [
+        ("int8_kb", "INT8 size (KB)", "#457b9d"),
+        ("fa_per_hour", "false activations / hour", "#e76f51"),
+        ("event_f1", "event F1", "#2a9d8f"),
+        ("latency_ms", "latency (ms, this machine)", "#6d597a"),
+    ]
+    figure, axes = plt.subplots(1, len(panels), figsize=(4.0 * len(panels), 3.6))
+    for axis, (key, label, colour) in zip(np.atleast_1d(axes), panels):
+        values = [float(row.get(key) or 0.0) for row in rows]
+        axis.bar(labels, values, color=colour)
+        axis.set_title(label, fontsize=10)
+        axis.tick_params(axis="x", rotation=20, labelsize=8)
+        axis.grid(axis="y", **_GRID)
+    figure.suptitle(title)
 def plot_negative_type_false_positives(
     rows: Sequence,
     title: str = "false positives by negative audio type",

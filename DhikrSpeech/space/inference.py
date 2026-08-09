@@ -4,19 +4,23 @@ The Space has to reproduce the training front-end exactly, so nothing here
 reimplements it: the conditioning comes from ``src.audio`` and the log-mel
 extractor from ``src.features``, the same modules the notebook trains with.
 
-What this module adds on top is the part that is specific to the Space:
+What this module adds on top is the part the pipeline does not have:
 
 * loading an exported ``.tflite`` (or Keras) model **without** importing
   TensorFlow when a LiteRT runtime is available, so the Space stays light;
-* rebuilding the front-end from ``model_meta.json`` rather than from
-  ``configs/config.yaml``, because the exported model is the authority - a
-  config that has moved on since the export would silently produce features the
-  model was never trained on.
+* rebuilding the front-end from the export's metadata (``model_metadata.json``
+  for a per-target export, ``model_meta.json`` for the older multi-class one)
+  rather than from ``configs/config.yaml``, because the exported model is the
+  authority - a config that has moved on since the export would silently produce
+  features the model was never trained on;
+* a sliding-window scanner and a run-based counter, for eyeballing an export on
+  a real recording.
 
-The sliding-window front-end, the TFLite runtime helpers and the event detector
-are **not** reimplemented here: they come from ``src.streaming``, the same code
-the notebook calibrates thresholds with. A Space that counted by its own rules
-would happily disagree with the numbers the pipeline reports.
+Note that the counter here is **not** the production event detector. What ships
+is the hysteresis state machine in ``src/streaming.py``, calibrated per target
+and described in that target's ``model_metadata.json``; this one is a simpler
+run-based count that works for any export, including the older multi-class ones.
+Use ``05 - Streaming`` in the notebook for numbers to make a decision on.
 """
 
 from __future__ import annotations
@@ -37,15 +41,9 @@ for _candidate in (_HERE, _HERE.parent):
     if (_candidate / "src" / "__init__.py").exists() and str(_candidate) not in sys.path:
         sys.path.insert(0, str(_candidate))
 
-from src.config import Config, DetectorConfig, default_config_path  # noqa: E402
-from src.features import FeatureStats  # noqa: E402
-from src.streaming import (  # noqa: E402
-    StreamingFrontend,
-    detect_events,
-    dequantize_output as _dequantize_output,
-    make_interpreter as _make_interpreter,
-    quantize_input as _quantize_input,
-)
+from src.audio import fit_length, normalize_loudness, trim_silence  # noqa: E402
+from src.config import Config, default_config_path  # noqa: E402
+from src.features import FeatureStats, LogMelExtractor  # noqa: E402
 
 LOGGER = logging.getLogger(__name__)
 
@@ -94,7 +92,7 @@ def display_label(label: str, phrases: Dict[int, str]) -> str:
 # Front-end
 # ---------------------------------------------------------------------------
 def resolve_config(meta: Optional[Dict] = None, config_path: Optional[Path] = None) -> Config:
-    """Config for a model, with ``model_meta.json`` overriding ``config.yaml``.
+    """Config for a model, with the export's metadata overriding ``config.yaml``.
 
     The exported metadata records the front-end the weights were actually
     trained with. ``configs/config.yaml`` is a moving target - it may have been
@@ -130,19 +128,136 @@ def resolve_config(meta: Optional[Dict] = None, config_path: Optional[Path] = No
     try:
         return base.with_overrides(overrides)
     except (KeyError, ValueError, TypeError) as exc:
-        LOGGER.warning("model_meta.json front-end could not be applied (%s); using config.yaml", exc)
+        LOGGER.warning("the export front-end could not be applied (%s); using config.yaml", exc)
         return base
 
 
-# The front-end is `src.streaming.StreamingFrontend` - the one implementation of
-# the conditioning and windowing, shared with the notebook and the export
-# verification. The alias keeps this module's older name working.
-Frontend = StreamingFrontend
+@dataclass
+class Frontend:
+    """Waveform -> ``(frames, n_mels)`` log-mel, exactly as in training."""
+
+    config: Config
+    stats: Optional[FeatureStats] = None
+    extractor: LogMelExtractor = field(init=False)
+
+    def __post_init__(self) -> None:
+        self.extractor = LogMelExtractor(
+            config=self.config.features,
+            sample_rate=self.config.audio.sample_rate,
+            stats=self.stats,
+        )
+
+    # -- geometry -----------------------------------------------------------
+    @property
+    def sample_rate(self) -> int:
+        return self.config.audio.sample_rate
+
+    @property
+    def clip_samples(self) -> int:
+        return self.config.audio.clip_samples
+
+    @property
+    def clip_seconds(self) -> float:
+        return float(self.config.audio.clip_seconds)
+
+    @property
+    def input_shape(self) -> Tuple[int, int, int]:
+        return self.config.input_shape
+
+    # -- conditioning -------------------------------------------------------
+    def condition(self, samples: np.ndarray, trim: bool = True) -> np.ndarray:
+        """Trim, loudness-normalise and fit one clip to the model's length.
+
+        ``trim`` is a parameter rather than a config read because silence
+        trimming is right for a clip the user recorded on purpose and wrong for
+        a window cut out of a longer stream - trimming a window slides its
+        content in time and destroys the alignment the scanner depends on.
+        """
+        result = np.asarray(samples, dtype=np.float32)
+        audio = self.config.audio
+        if trim and audio.trim.enabled:
+            result = trim_silence(result, self.sample_rate, audio.trim.top_db, audio.trim.pad_ms)
+        if audio.normalize.enabled:
+            result = normalize_loudness(
+                result, audio.normalize.target_dbfs, audio.normalize.peak_ceiling
+            )
+        return fit_length(result, self.clip_samples, audio.fit_mode)
+
+    def features(self, samples: np.ndarray, trim: bool = True) -> np.ndarray:
+        return self.extractor(self.condition(samples, trim=trim))
+
+    def windows(
+        self, samples: np.ndarray, hop_seconds: float
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """Slide the model's clip window over a longer recording.
+
+        Returns ``(start_times, features)`` where ``features`` is
+        ``(N, frames, n_mels)``. The tail is always covered: a recording shorter
+        than one window, or a leftover shorter than the hop, is zero-padded into
+        a final window rather than dropped.
+        """
+        audio = np.asarray(samples, dtype=np.float32)
+        window = self.clip_samples
+        hop = max(int(round(hop_seconds * self.sample_rate)), 1)
+
+        if audio.size <= window:
+            starts = [0]
+        else:
+            starts = list(range(0, audio.size - window + 1, hop))
+            if starts[-1] + window < audio.size:
+                starts.append(audio.size - window)
+
+        stacked = [self.features(audio[start : start + window], trim=False) for start in starts]
+        times = np.asarray(starts, dtype=np.float32) / float(self.sample_rate)
+        return times, np.stack(stacked).astype(np.float32)
 
 
 # ---------------------------------------------------------------------------
 # Model
 # ---------------------------------------------------------------------------
+def _make_interpreter(model_path: Path, num_threads: int = 1):
+    """LiteRT first, ``tf.lite`` only as a fallback.
+
+    ``ai-edge-litert`` is a ~30 MB wheel; TensorFlow is ~600 MB. Preferring
+    LiteRT is what lets this Space run without TensorFlow installed at all.
+    """
+    try:
+        from ai_edge_litert.interpreter import Interpreter  # type: ignore
+
+        return Interpreter(model_path=str(model_path), num_threads=num_threads)
+    except ImportError:
+        pass
+    try:
+        import tensorflow as tf  # type: ignore
+    except ImportError as exc:  # pragma: no cover - environment problem, not logic
+        raise RuntimeError(
+            "no TFLite runtime available - install 'ai-edge-litert' (preferred) "
+            "or 'tensorflow'"
+        ) from exc
+    return tf.lite.Interpreter(model_path=str(model_path), num_threads=num_threads)
+
+
+def _quantize_input(array: np.ndarray, detail: Dict) -> np.ndarray:
+    dtype = detail["dtype"]
+    if dtype == np.float32:
+        return array.astype(np.float32)
+    scale, zero_point = detail["quantization"]
+    if not scale:
+        return array.astype(dtype)
+    info = np.iinfo(dtype)
+    return np.clip(np.round(array / scale) + zero_point, info.min, info.max).astype(dtype)
+
+
+def _dequantize_output(array: np.ndarray, detail: Dict) -> np.ndarray:
+    dtype = detail["dtype"]
+    if dtype == np.float32:
+        return array.astype(np.float32)
+    scale, zero_point = detail["quantization"]
+    if not scale:
+        return array.astype(np.float32)
+    return (array.astype(np.float32) - zero_point) * scale
+
+
 def _load_keras(path: Path, input_shape: Tuple[int, int, int]):
     """Load a ``.keras`` file or a SavedModel directory as a callable model.
 
@@ -212,6 +327,13 @@ class DhikrModel:
     ) -> "DhikrModel":
         model_path = Path(model_path)
         folder = model_path.parent
+        # A per-target export (exports/007/) writes `model_metadata.json`, the
+        # multi-class export writes `model_meta.json`. Both carry the same
+        # `frontend`/`audio` blocks, so either is enough to rebuild the front-end
+        # the weights were trained with - and missing it entirely means silently
+        # falling back to config.yaml, which is the mismatch this lookup exists
+        # to avoid.
+        meta_path = meta_path or _first_existing(folder, "model_metadata.json")
         meta_path = meta_path or _first_existing(folder, "model_meta.json")
         labels_path = labels_path or _first_existing(folder, "labels.txt")
 
@@ -321,7 +443,7 @@ class DhikrModel:
         return (
             f"front-end produces {tuple(expected)} but the model expects "
             f"{tuple(actual[1:]) if len(actual) == 4 else tuple(actual)}. "
-            "Predictions will be wrong - export labels.txt/model_meta.json together "
+            "Predictions will be wrong - export labels.txt and the model metadata together "
             "with the .tflite file."
         )
 
@@ -408,6 +530,10 @@ class Detection:
     end: float
     time: float
     confidence: float
+    # Window index the run currently ends at. Adjacency has to be checked on the
+    # index, not the timestamp: a rejected window in the middle leaves no gap in
+    # time when the hop is small, but it does break the run.
+    last_index: int = -1
 
 
 @dataclass
@@ -431,46 +557,72 @@ def count_detections(
 ) -> Tuple[List[Detection], Dict[str, int]]:
     """Turn per-window probabilities into counted events.
 
-    The counting itself is ``src.streaming.EventDetector`` - the same state
-    machine the notebook calibrates and the Android app is specified against, so
-    what this Space shows is what the pipeline measured. One dhikr spans many
-    windows, so the unit of counting is a run of agreeing windows however long it
-    lasts, held together by hysteresis (a release threshold below the activation
-    one) and followed by a per-class cooldown.
+    One dhikr spans many windows, so the top class stays above the threshold for
+    as long as the phrase lasts. Counting windows would therefore count a single
+    dhikr four or five times; so would a plain refractory timer whenever the
+    phrase outlasts the timer, which is exactly the case for the longer dhikr.
 
-    The two knobs the UI exposes map onto the detector: ``threshold`` is the
-    activation threshold, and ``min_gap_seconds`` is the cooldown - the shortest
-    silence that separates two counts of the same phrase.
+    So the unit of counting is a **run**: consecutive windows agreeing on the
+    same above-threshold label are one event, however long it lasts.
+    ``min_gap_seconds`` then closes the gap *between* runs - two runs of the same
+    label separated by less than it are the same dhikr flickering, not two. Runs
+    are grouped per label, so two different phrases said back to back stay two
+    counts even with no silence between them.
 
-    ``min_consecutive_hits`` is 1 here, unlike the production default of 2: this
-    tab is a diagnostic for "does the model hear the phrase at all", and swallowing
-    single-window hits would hide exactly the weak recognition it is there to
-    show.
+    Each event is reported at its most confident window.
     """
-    config = DetectorConfig(
-        confidence_threshold=float(threshold),
-        release_threshold=min(0.4, float(threshold)),
-        min_consecutive_hits=1,
-        release_windows=2,
-        cooldown_ms=float(min_gap_seconds) * 1000.0,
-        ignore_labels=list(ignore),
-    )
-    events = detect_events(scan.times, scan.probabilities, scan.labels, config)
+    ignored = {item.lower() for item in ignore}
 
-    detections = [
-        Detection(
-            label=event.label,
-            start=event.start,
-            end=event.end,
-            time=event.peak_time,
-            confidence=event.peak_confidence,
-        )
-        for event in events
-    ]
+    # -- pass 1: consecutive same-label windows over the threshold become runs --
+    runs: List[Detection] = []
+    for index in range(scan.windows):
+        probabilities = scan.probabilities[index]
+        best = int(np.argmax(probabilities))
+        label = scan.labels[best]
+        confidence = float(probabilities[best])
+        time = float(scan.times[index])
+        if confidence < threshold or label.lower() in ignored:
+            continue
+        current = runs[-1] if runs else None
+        if current is not None and current.label == label and current.last_index == index - 1:
+            current.end = time
+            current.last_index = index
+            if confidence > current.confidence:
+                current.confidence = confidence
+                current.time = time
+        else:
+            runs.append(
+                Detection(
+                    label=label,
+                    start=time,
+                    end=time,
+                    time=time,
+                    confidence=confidence,
+                    last_index=index,
+                )
+            )
+
+    # -- pass 2: merge same-label runs that a brief dip split in two -----------
+    merged: List[Detection] = []
+    last_end: Dict[str, float] = {}
+    for run in runs:
+        previous_end = last_end.get(run.label)
+        if previous_end is not None and run.start - previous_end < min_gap_seconds:
+            for existing in reversed(merged):
+                if existing.label == run.label:
+                    existing.end = run.end
+                    if run.confidence > existing.confidence:
+                        existing.confidence = run.confidence
+                        existing.time = run.time
+                    break
+        else:
+            merged.append(run)
+        last_end[run.label] = run.end
+
     counts: Dict[str, int] = {}
-    for detection in detections:
+    for detection in merged:
         counts[detection.label] = counts.get(detection.label, 0) + 1
-    return detections, counts
+    return merged, counts
 
 
 # ---------------------------------------------------------------------------

@@ -114,13 +114,13 @@ def test_a_flat_unknown_folder_still_works(tmp_path):
     )
     index = index_of(config)
     assert index.negative_counts() == {"unknown": 1}
-    assert all(sample.negative_type == "" for sample in index.samples if sample.label == "006")
+    assert all(sample.negative_type is None for sample in index.samples if sample.label == "006")
 
 
 def test_target_phrases_have_no_negative_type(project):
     index = index_of(project)
     assert all(
-        sample.negative_type == ""
+        sample.negative_type is None
         for sample in index.samples
         if sample.label in ("006", "007")
     )
@@ -183,8 +183,8 @@ def test_a_manifest_without_the_new_columns_still_loads(tmp_path, caplog):
     )
     records = load_manifest(legacy)
     assert len(records) == 1
-    assert records[0].speaker == ""
-    assert records[0].negative_type == ""
+    assert records[0].speaker is None
+    assert records[0].negative_type is None
     assert "predates the speaker/negative_type columns" in caplog.text
 
 

@@ -51,6 +51,7 @@ function validateConfiguration(config) {
   validateUnknownPrompt(config, ids);
   validateNoisePrompt(config, ids);
   validateStreamingRecording(config);
+  validateNegativeRecording(config, ids);
 
   if (config.recording.minimumDurationMs < 1 ||
       config.recording.maximumDurationMs < config.recording.minimumDurationMs) {
@@ -164,6 +165,73 @@ function validateStreamingRecording(config) {
   }
 }
 
+/**
+ * The long negative take: minutes of ordinary sound with no dhikr in it, filed
+ * under a non-phrase folder inside the streaming tree. It is the only recording
+ * on the page that can measure false activations per hour, and the checks here
+ * are about the two ways a misconfiguration would silently destroy that:
+ *
+ * - a numeric folder name would sit in `streaming/` looking exactly like a
+ *   phrase folder, so hours of television would be read as that phrase's
+ *   repetition takes — every miss a false negative, every silence a miss;
+ * - a card with no `recording.negative` would offer a button whose mode the
+ *   server refuses, which reads to a volunteer as the page being broken.
+ */
+function validateNegativeRecording(config, phraseIds) {
+  const negative = config.recording.negative;
+  const prompt = config.longNoisePrompt;
+
+  if (prompt !== null && prompt !== undefined && !negative) {
+    throw new Error('longNoisePrompt is set but recording.negative is not; the card would have no recorder.');
+  }
+  if (negative === null || negative === undefined) return;
+
+  if (typeof negative !== 'object') throw new Error('recording.negative must be an object or null.');
+  for (const key of ['minimumDurationMs', 'maximumDurationMs', 'maximumUploadBytes']) {
+    if (!Number.isFinite(negative[key]) || negative[key] <= 0) {
+      throw new Error(`recording.negative.${key} must be a positive number.`);
+    }
+  }
+  if (negative.maximumDurationMs < negative.minimumDurationMs) {
+    throw new Error('recording.negative duration limits are invalid.');
+  }
+  // False activations are counted per hour, so a negative take that fits inside
+  // a clip's five seconds measures nothing and its own limits would be doing
+  // nothing either.
+  if (negative.maximumDurationMs <= config.recording.maximumDurationMs) {
+    throw new Error('recording.negative.maximumDurationMs must exceed recording.maximumDurationMs; it holds minutes of audio.');
+  }
+
+  const streamingFolder = String(config.storage.streamingSubfolder || '').trim();
+  if (!streamingFolder) {
+    throw new Error('storage.streamingSubfolder is required when recording.negative is set (e.g. "streaming").');
+  }
+  const folder = String(config.storage.streamingNegativeFolderName || '').trim();
+  if (!folder) {
+    throw new Error('storage.streamingNegativeFolderName is required when recording.negative is set (e.g. "negative").');
+  }
+  if (/^\d+$/.test(folder)) {
+    throw new Error('storage.streamingNegativeFolderName must not be numeric; inside streaming/ it would be read as a phrase folder.');
+  }
+  if (folder === streamingFolder || folder === String(config.storage.datasetSubfolder).trim()) {
+    throw new Error('storage.streamingNegativeFolderName must differ from streamingSubfolder and datasetSubfolder.');
+  }
+
+  if (prompt === null || prompt === undefined) return;
+  if (typeof prompt !== 'object') throw new Error('longNoisePrompt must be an object or null.');
+  if (!Number.isInteger(prompt.id)) throw new Error(`longNoisePrompt.id must be an integer: ${prompt.id}`);
+  if (phraseIds.has(prompt.id)) throw new Error(`longNoisePrompt.id ${prompt.id} collides with a phrase id.`);
+  for (const other of ['unknownPrompt', 'noisePrompt']) {
+    if (config[other] && config[other].id === prompt.id) {
+      throw new Error(`longNoisePrompt.id ${prompt.id} collides with ${other}.id.`);
+    }
+  }
+  if (typeof prompt.text !== 'string' || !prompt.text.trim()) throw new Error('longNoisePrompt has no text.');
+  if (typeof prompt.note !== 'string' || !prompt.note.trim()) {
+    throw new Error('longNoisePrompt has no note; "record several minutes" is not actionable without the one rule that matters.');
+  }
+}
+
 function write(filename, contents) {
   fs.writeFileSync(path.join(outputDirectory, filename), contents, 'utf8');
 }
@@ -222,13 +290,15 @@ function bootstrapData(source) {
       preferredSampleRate: source.recording.preferredSampleRate,
       preferredChannelCount: source.recording.preferredChannelCount,
       acceptedMimeTypes: source.recording.acceptedMimeTypes,
-      streaming: source.recording.streaming || null
+      streaming: source.recording.streaming || null,
+      negative: source.recording.negative || null
     },
     theme: source.theme,
     ui: source.ui,
     phrases: visiblePhrases(source),
     unknownPrompt: source.unknownPrompt || null,
-    noisePrompt: source.noisePrompt || null
+    noisePrompt: source.noisePrompt || null,
+    longNoisePrompt: source.longNoisePrompt || null
   };
 }
 

@@ -392,13 +392,13 @@ def test_macro_f1_degrades_gracefully_on_a_keras_build_without_it(caplog):
     """
     assert SparseMacroF1 is None  # the stub has no F1Score to subclass
     with caplog.at_level(logging.INFO, logger="src.trainer"):
-        metrics = build_metrics(3, TrainingConfig(macro_f1=True))
+        metrics = build_metrics(5, TrainingConfig(macro_f1=True))
     assert [metric.name for metric in metrics] == ["accuracy", "top3_accuracy"]
     assert "no F1Score metric" in caplog.text
 
 
 def test_macro_f1_can_be_switched_off_without_a_message(caplog):
     with caplog.at_level(logging.INFO, logger="src.trainer"):
-        metrics = build_metrics(3, TrainingConfig(macro_f1=False))
+        metrics = build_metrics(5, TrainingConfig(macro_f1=False))
     assert len(metrics) == 2
     assert "F1Score" not in caplog.text

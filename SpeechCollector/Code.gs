@@ -11,15 +11,25 @@ const RUNTIME_KEYS = Object.freeze({
 });
 
 /**
- * The two kinds of recording a card can produce. A clip is one utterance and is
- * a training example; a streaming take is the same dhikr repeated N times in one
- * long clip, and is evaluation material. They differ in allowed duration, size
- * and destination folder, so the mode is validated rather than trusted: a client
- * cannot file a 90-second take as a training clip, nor a one-second one as a
- * repetition take.
+ * The three kinds of recording a card can produce.
+ *
+ * - A **clip** is one utterance and is a training example.
+ * - A **streaming** take is the same dhikr repeated N times in one long clip.
+ * - A **negative** take is minutes of ordinary sound holding no dhikr at all.
+ *
+ * The last two are evaluation material and measure different things: a
+ * repetition take can only show whether the counter reaches ten, because every
+ * detection in it lands on a dhikr that really is there; only a negative take
+ * can show the counter firing when nobody said anything.
+ *
+ * They differ in allowed duration, size and destination folder, so the mode is
+ * validated rather than trusted: a client cannot file a 90-second take as a
+ * training clip, nor a one-second one as a repetition take, nor put five minutes
+ * of television in a phrase's folder.
  */
 const MODE_CLIP = 'clip';
 const MODE_STREAMING = 'streaming';
+const MODE_NEGATIVE = 'negative';
 
 /** Serves the mobile web application. */
 function doGet() {
@@ -37,13 +47,15 @@ function doGet() {
       preferredSampleRate: CONFIG.recording.preferredSampleRate,
       preferredChannelCount: CONFIG.recording.preferredChannelCount,
       acceptedMimeTypes: CONFIG.recording.acceptedMimeTypes,
-      streaming: CONFIG.recording.streaming || null
+      streaming: CONFIG.recording.streaming || null,
+      negative: CONFIG.recording.negative || null
     },
     theme: CONFIG.theme,
     ui: CONFIG.ui,
     phrases: visiblePhrases_(),
     unknownPrompt: CONFIG.unknownPrompt || null,
-    noisePrompt: CONFIG.noisePrompt || null
+    noisePrompt: CONFIG.noisePrompt || null,
+    longNoisePrompt: CONFIG.longNoisePrompt || null
   });
 
   return template.evaluate()
@@ -172,8 +184,8 @@ function visiblePhrases_() {
 }
 
 /**
- * Every prompt an upload may name: the phrases plus the two non-phrase cards
- * (out-of-vocabulary speech, and background noise).
+ * Every prompt an upload may name: the phrases plus the three non-phrase cards
+ * (out-of-vocabulary speech, background noise, and the long negative take).
  *
  * Hidden phrases are still accepted. A volunteer who kept a tab open across a
  * redeploy would otherwise lose the take waiting on a card that has since been
@@ -183,6 +195,7 @@ function allPrompts_() {
   var prompts = CONFIG.phrases.slice();
   if (CONFIG.unknownPrompt) prompts.push(CONFIG.unknownPrompt);
   if (CONFIG.noisePrompt) prompts.push(CONFIG.noisePrompt);
+  if (CONFIG.longNoisePrompt) prompts.push(CONFIG.longNoisePrompt);
   return prompts;
 }
 
@@ -194,14 +207,22 @@ function isNoisePrompt_(prompt) {
   return Boolean(CONFIG.noisePrompt) && prompt.id === CONFIG.noisePrompt.id;
 }
 
+function isLongNoisePrompt_(prompt) {
+  return Boolean(CONFIG.longNoisePrompt) && prompt.id === CONFIG.longNoisePrompt.id;
+}
+
 /**
  * The folder a prompt writes into: the configured `unknown` folder for the
- * negative class, the `noise` folder for background noise, a zero-padded phrase
- * id for everything else. The first two are names the pipeline knows
- * (`classes.unknown_class`, `paths.noise_dir`); the rest are its class folders.
+ * negative class, the `noise` folder for background noise, the streaming tree's
+ * `negative` folder for a long take with no dhikr in it, and a zero-padded
+ * phrase id for everything else. The first three are names the pipeline knows
+ * (`classes.unknown_class`, `paths.noise_dir`, and a non-numeric folder under
+ * `paths.streaming_dir`, which is how it tells shared negative material from a
+ * phrase's own takes); the rest are its class folders.
  */
 function classFolderName_(prompt) {
   if (isNoisePrompt_(prompt)) return CONFIG.storage.noiseFolderName;
+  if (isLongNoisePrompt_(prompt)) return CONFIG.storage.streamingNegativeFolderName;
   if (isUnknownPrompt_(prompt)) return CONFIG.storage.unknownFolderName;
   return padPhraseId_(prompt.id);
 }
@@ -217,10 +238,13 @@ function classFolderName_(prompt) {
  * dhikr N times, so it is not a training example at all, and a trainer scanning
  * `dataset/{id}/` must never find one there. It gets `streaming/{id}/` beside
  * the dataset instead — same class folder name, different tree.
+ *
+ * A negative take joins it in that tree, under a folder that is deliberately not
+ * a phrase id: it belongs to no phrase, and every target's evaluation reads it.
  */
 function classParentFolder_(rootFolder, prompt, mode) {
   if (isNoisePrompt_(prompt)) return rootFolder;
-  if (mode === MODE_STREAMING) {
+  if (mode === MODE_STREAMING || mode === MODE_NEGATIVE) {
     return createFolderIfMissing(rootFolder, CONFIG.storage.streamingSubfolder);
   }
   return createFolderIfMissing(rootFolder, CONFIG.storage.datasetSubfolder);
@@ -231,19 +255,26 @@ function streamingSettings_() {
   return CONFIG.recording.streaming || null;
 }
 
+/** The configured long negative take, or null when that card is dropped. */
+function negativeSettings_() {
+  return CONFIG.recording.negative || null;
+}
+
 /**
- * The duration and size bounds this mode is held to. A repetition take needs
+ * The duration and size bounds this mode is held to. Each evaluation take needs
  * limits a training clip must never be allowed (90 seconds would be a whole
- * conversation filed as one utterance), so they are separate rather than the
- * clip's bounds widened for everyone.
+ * conversation filed as one utterance; five minutes doubly so), so they are
+ * separate rather than the clip's bounds widened for everyone.
  */
 function recordingLimits_(mode) {
-  const streaming = streamingSettings_();
-  if (mode === MODE_STREAMING && streaming) {
+  const settings = mode === MODE_NEGATIVE
+    ? negativeSettings_()
+    : (mode === MODE_STREAMING ? streamingSettings_() : null);
+  if (settings) {
     return {
-      minimumDurationMs: streaming.minimumDurationMs,
-      maximumDurationMs: streaming.maximumDurationMs,
-      maximumUploadBytes: streaming.maximumUploadBytes
+      minimumDurationMs: settings.minimumDurationMs,
+      maximumDurationMs: settings.maximumDurationMs,
+      maximumUploadBytes: settings.maximumUploadBytes
     };
   }
   return {
@@ -255,20 +286,24 @@ function recordingLimits_(mode) {
 
 /** The body-size ceiling doPost applies before it knows which mode it is reading. */
 function largestUploadBytes_() {
-  const streaming = streamingSettings_();
-  return streaming
-    ? Math.max(CONFIG.recording.maximumUploadBytes, streaming.maximumUploadBytes)
-    : CONFIG.recording.maximumUploadBytes;
+  return [streamingSettings_(), negativeSettings_()].reduce(function(largest, settings) {
+    return settings ? Math.max(largest, settings.maximumUploadBytes) : largest;
+  }, CONFIG.recording.maximumUploadBytes);
 }
 
 /**
- * The `x10` token a repetition take carries in its filename. The collector
- * cannot produce the event timings a streaming annotation needs, so the count it
- * asked for is written where it cannot be separated from the audio: whoever
- * builds `annotations.json` later reads how many events the clip should hold off
- * the file itself rather than off a spreadsheet row.
+ * The `x{n}` token an evaluation take carries in its filename: how many times
+ * the dhikr is in the audio. `x10` for a repetition take, and **`x0` for a
+ * negative take** — zero is not the absence of a count, it is the count, and it
+ * is the one that measures false activations.
+ *
+ * The collector cannot produce event timings, so the number it asked for is
+ * written where it cannot be separated from the audio: the pipeline derives
+ * `annotations.json` from the filename and the folder
+ * (`streaming_eval.collector_annotations`) rather than anyone writing it.
  */
 function repetitionTag_(mode) {
+  if (mode === MODE_NEGATIVE) return negativeSettings_() ? 'x0' : '';
   const streaming = streamingSettings_();
   return mode === MODE_STREAMING && streaming ? 'x' + streaming.repetitions : '';
 }
@@ -365,6 +400,22 @@ function validateRequest_(request) {
     if (nonPhraseFolderName_(phrase)) {
       throw publicError_('INVALID_MODE', 'Only a phrase can be recorded as a repetition take.');
     }
+  }
+  if (mode === MODE_NEGATIVE) {
+    if (!negativeSettings_()) {
+      throw publicError_('INVALID_MODE', 'Long negative takes are not enabled.');
+    }
+    // A negative take is filed under a folder that means "no dhikr in here", so
+    // letting a phrase card claim the mode would mark that phrase's own audio as
+    // proof the counter should have stayed silent.
+    if (!isLongNoisePrompt_(phrase)) {
+      throw publicError_('INVALID_MODE', 'Only the long negative card can be recorded as a negative take.');
+    }
+  } else if (isLongNoisePrompt_(phrase)) {
+    // The reverse, and the more damaging of the two: that card in any other mode
+    // would put its audio in `dataset/{negative}/`, inventing a training class
+    // out of television — the trainer scans dataset/ and would learn it.
+    throw publicError_('INVALID_MODE', 'The long negative card records negative takes only.');
   }
   const limits = recordingLimits_(mode);
 
@@ -522,6 +573,7 @@ function findExistingSample_(sheet, sampleId) {
 /** The class-folder name for a non-phrase prompt, or '' for a real phrase. */
 function nonPhraseFolderName_(prompt) {
   if (isNoisePrompt_(prompt)) return CONFIG.storage.noiseFolderName;
+  if (isLongNoisePrompt_(prompt)) return CONFIG.storage.streamingNegativeFolderName;
   if (isUnknownPrompt_(prompt)) return CONFIG.storage.unknownFolderName;
   return '';
 }
@@ -563,12 +615,15 @@ function createFilename_(classFolderName, speakerToken, mimeType, repetitionTag)
 
 /**
  * An absent or unrecognised mode is a clip. Older clients send no mode at all,
- * and the safe reading of "unknown" is the stricter of the two: a clip is
+ * and the safe reading of "unknown" is the strictest of the three: a clip is
  * bounded to five seconds and lands in the dataset, which is where every
- * recording went before repetition takes existed.
+ * recording went before the evaluation takes existed.
  */
 function normalizeMode_(mode) {
-  return String(mode || '').trim().toLowerCase() === MODE_STREAMING ? MODE_STREAMING : MODE_CLIP;
+  const value = String(mode || '').trim().toLowerCase();
+  if (value === MODE_STREAMING) return MODE_STREAMING;
+  if (value === MODE_NEGATIVE) return MODE_NEGATIVE;
+  return MODE_CLIP;
 }
 
 function padPhraseId_(phraseId) {

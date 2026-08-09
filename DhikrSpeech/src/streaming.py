@@ -1,49 +1,50 @@
-"""Streaming inference: sliding windows, and turning them into counted events.
+"""Continuous-microphone inference: sliding windows and the event detector.
 
-The app does not classify clips. It holds the microphone open while the user
-recites, and the counter has to go up exactly once per utterance. That is a
-different problem from the one clip accuracy measures, and it has its own ways of
-being wrong:
+Production input is not a clip, it is an open microphone. That changes the
+problem in two ways this module exists to handle.
 
-* one dhikr covers several windows, so counting windows counts it several times;
-* confidence wobbles around any single threshold, so a run splits in two and the
-  counter jumps by two for one phrase;
-* a long phrase outlasts a plain refractory timer, which then counts it twice;
-* every second of unrelated speech is another chance to fire.
+**The window slides.** A phrase is scored many times as it passes through
+overlapping windows, so the model output is a *timeline*, not a prediction. The
+front-end here is deliberately the training front-end (``src.audio`` +
+``src.features``) with one difference: windows are never silence-trimmed.
+Trimming a clip a user recorded on purpose is right; trimming a window cut out of
+a stream slides its content in time and destroys the alignment the whole timeline
+depends on.
 
-So this module has two halves. :class:`StreamingFrontend` slides the model's
-window over a continuous signal using **exactly** the training front-end - no
-second implementation of the conditioning, because a front-end that drifts from
-the trained one is an accuracy loss nothing reports. :class:`EventDetector` is a
-state machine over the resulting per-window probabilities:
+**Counting windows is not counting dhikr.** One utterance holds the score above
+the threshold for as long as it lasts, so ``P(target) > threshold`` would count a
+single repetition four or five times. A plain refractory timer is no better: any
+timer long enough to swallow a 2-second phrase also swallows the next repetition
+of someone saying the dhikr quickly.
 
-    IDLE --(conf >= activation)--> CANDIDATE --(enough hits)--> CONFIRMED
-      ^                                |                            |
-      |                          (released)                  (released, then)
-      +------------------------------ + <-------------------- COOLDOWN
+So counting is a state machine with hysteresis::
 
-with hysteresis (activation > release) so a wobble cannot restart an event, and a
-per-class cooldown so an utterance cannot be counted twice while two different
-phrases said back to back still count as two.
+    IDLE --score>=activation--> CANDIDATE --enough hits--> CONFIRMED
+      ^                                                        |
+      |                                          score<release for
+      |                                          release_windows
+      |                                                        v
+      +---------------- cooldown elapsed ------------------ COOLDOWN
 
-Nothing here imports TensorFlow. A TFLite interpreter comes from LiteRT when it
-is installed, so this module runs in the Hugging Face Space and in any
-lightweight environment; ``src.export`` and the Space both call into it rather
-than keeping their own copies.
+Re-arming is driven by the **release**, not by the cooldown: the detector becomes
+ready again as soon as the confidence has genuinely fallen away, so four quick
+repetitions produce four events. ``cooldown_ms`` is a short safety net on top of
+that, not the separator - set it long enough to be the separator and rapid
+repetitions get merged (requirement 19).
 """
 
 from __future__ import annotations
 
 import logging
-import warnings
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
+from enum import Enum
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
-from .audio import fit_length, normalize_loudness, trim_silence
-from .config import AudioConfig, Config, DetectorConfig, SmoothingConfig, StreamingConfig
+from .audio import fit_length, normalize_loudness
+from .config import AudioConfig, Config, DetectorConfig, SmoothingConfig
 from .features import FeatureStats, LogMelExtractor
 
 LOGGER = logging.getLogger(__name__)
@@ -51,701 +52,559 @@ LOGGER = logging.getLogger(__name__)
 PathLike = Union[str, Path]
 
 __all__ = [
+    "DetectorState",
+    "Event",
     "EventDetector",
-    "ProbabilitySmoother",
-    "StreamingEvent",
+    "KerasScorer",
+    "ScoreTimeline",
+    "StreamingDetector",
     "StreamingFrontend",
-    "WindowScan",
-    "dequantize_output",
+    "StreamingResult",
+    "TFLiteScorer",
     "detect_events",
-    "make_interpreter",
-    "quantize_input",
-    "scan_signal",
-    "smooth_probabilities",
-    "tflite_predict",
-    "tflite_runner",
-    "window_starts",
+    "detector_with_threshold",
+    "make_scorer",
+    "smooth_scores",
+    "target_score",
 ]
 
-# Detector states. Strings rather than an enum so they survive JSON round-trips
-# and read plainly in a report.
-IDLE = "idle"
-CANDIDATE = "candidate"
-CONFIRMED = "confirmed"
-COOLDOWN = "cooldown"
+# Column of P(target) in a 2-output softmax; see src.targets.TARGET_INDEX.
+TARGET_COLUMN = 1
+
+# Window timestamps accumulate from the hop, so "has the cooldown expired?" at an
+# exact boundary is otherwise decided by float representation error rather than by
+# the configured value: with a 0.2 s hop and a 200 ms cooldown, whether the very
+# next window is admitted depends on 0.6000000000000001 + 0.2 > 0.8. A window
+# arriving exactly `cooldown_ms` later is outside the cooldown, so the comparison
+# is made with a tolerance far below any real hop.
+_TIME_EPSILON = 1e-6
+
+
+# ---------------------------------------------------------------------------
+# Scores
+# ---------------------------------------------------------------------------
+def target_score(probabilities: np.ndarray, output_mode: Optional[str] = None) -> np.ndarray:
+    """Reduce a model's output to a 1-D ``P(target)`` per window.
+
+    Accepts both production heads - one sigmoid output, or a two-output softmax
+    whose column 1 is the target. A wider output is refused rather than guessed
+    at: a multi-class model is not a single-target detector, and silently reading
+    one of its columns as ``P(target)`` would produce a plausible timeline with no
+    meaning.
+    """
+    array = np.asarray(probabilities, dtype=np.float32)
+    if array.ndim == 1:
+        return array.astype(np.float32)
+    if array.ndim != 2:
+        raise ValueError(f"expected (windows,) or (windows, outputs), got shape {array.shape}")
+
+    outputs = array.shape[1]
+    if output_mode == "sigmoid" and outputs != 1:
+        raise ValueError(f"output_mode is 'sigmoid' but the model has {outputs} outputs")
+    if outputs == 1:
+        return array[:, 0].astype(np.float32)
+    if outputs == 2:
+        return array[:, TARGET_COLUMN].astype(np.float32)
+    raise ValueError(
+        f"a single-target detector needs 1 or 2 outputs, this model has {outputs}. "
+        "Multi-class models are not detectors - train one model per dhikr "
+        "(target.phrase_id) or use the 06 comparison experiment."
+    )
+
+
+def smooth_scores(scores: Sequence[float], config: SmoothingConfig) -> np.ndarray:
+    """Optional temporal smoothing of the score timeline.
+
+    Causal in both modes, so the offline timeline and the on-device stream see
+    the same value at the same window. Keep it light: smoothing wide enough to
+    bridge the gap between two repetitions merges them into one event, and a
+    missed count is exactly what this project is trying to avoid.
+    """
+    values = np.asarray(list(scores), dtype=np.float32)
+    if values.size == 0 or config.mode == "none":
+        return values
+    if config.mode == "ema":
+        alpha = float(config.ema_alpha)
+        smoothed = np.empty_like(values)
+        running = float(values[0])
+        for index, value in enumerate(values):
+            running = alpha * float(value) + (1.0 - alpha) * running if index else float(value)
+            smoothed[index] = running
+        return smoothed
+    if config.mode == "moving_average":
+        width = int(config.window)
+        smoothed = np.empty_like(values)
+        for index in range(values.size):
+            start = max(index - width + 1, 0)
+            smoothed[index] = float(values[start : index + 1].mean())
+        return smoothed
+    raise ValueError(f"unsupported smoothing mode '{config.mode}'")
 
 
 # ---------------------------------------------------------------------------
 # Front-end
 # ---------------------------------------------------------------------------
-def window_starts(num_samples: int, window: int, hop: int) -> List[int]:
-    """Sample offsets of each sliding window, tail always covered.
-
-    A signal shorter than one window, or a leftover shorter than the hop, still
-    produces a final window (zero-padded / back-aligned) rather than being
-    dropped - a dhikr at the very end of a recording must not be invisible.
-    """
-    if window <= 0:
-        raise ValueError("window must be positive")
-    hop = max(int(hop), 1)
-    if num_samples <= window:
-        return [0]
-    starts = list(range(0, num_samples - window + 1, hop))
-    if starts[-1] + window < num_samples:
-        starts.append(num_samples - window)
-    return starts
-
-
 @dataclass
 class StreamingFrontend:
-    """Waveform -> ``(frames, n_mels)`` log-mel windows, exactly as in training.
+    """Waveform -> per-window log-mel features, identical to training.
 
-    The one implementation of the conditioning + feature path outside the
-    training input pipeline: the notebook, the export verification and the
-    Hugging Face Space all use this class, so none of them can drift from what
-    the weights were trained on.
+    ``window_seconds`` defaults to the clip length the model was trained on. It
+    is separate from ``audio.clip_seconds`` only so that an experiment can scan
+    with a different window than it trained with; production must keep them
+    equal, and :meth:`window_samples` is what the exported metadata reports.
     """
 
-    config: Config
-    stats: Optional[FeatureStats] = None
-    extractor: LogMelExtractor = field(init=False)
+    audio: AudioConfig
+    extractor: LogMelExtractor
+    window_seconds: Optional[float] = None
+    hop_seconds: float = 0.2
+    # Per-window loudness normalisation, matching how training clips were
+    # conditioned. Off means the model sees raw levels and its scores move with
+    # the microphone gain.
+    normalize: bool = True
 
-    def __post_init__(self) -> None:
-        self.extractor = LogMelExtractor(
-            config=self.config.features,
-            sample_rate=self.config.audio.sample_rate,
-            stats=self.stats,
+    @classmethod
+    def from_config(
+        cls, config: Config, stats: Optional[FeatureStats] = None
+    ) -> "StreamingFrontend":
+        return cls(
+            audio=config.audio,
+            extractor=LogMelExtractor(
+                config=config.features, sample_rate=config.audio.sample_rate, stats=stats
+            ),
+            window_seconds=config.streaming.window_for(config.audio.clip_seconds),
+            hop_seconds=config.streaming.hop_seconds,
+            normalize=config.audio.normalize.enabled,
         )
-
-    # -- geometry -----------------------------------------------------------
-    @property
-    def audio(self) -> AudioConfig:
-        return self.config.audio
 
     @property
     def sample_rate(self) -> int:
-        return self.config.audio.sample_rate
+        return int(self.audio.sample_rate)
 
     @property
-    def clip_samples(self) -> int:
-        return self.config.audio.clip_samples
+    def window_samples(self) -> int:
+        seconds = self.window_seconds or self.audio.clip_seconds
+        return int(round(float(seconds) * self.sample_rate))
 
     @property
-    def clip_seconds(self) -> float:
-        return float(self.config.audio.clip_seconds)
+    def hop_samples(self) -> int:
+        return max(int(round(float(self.hop_seconds) * self.sample_rate)), 1)
 
-    @property
-    def input_shape(self) -> Tuple[int, int, int]:
-        return self.config.input_shape
-
-    # -- conditioning -------------------------------------------------------
-    def condition(self, samples: np.ndarray, trim: bool = True) -> np.ndarray:
-        """Trim, loudness-normalise and fit one clip to the model's length.
-
-        ``trim`` is a parameter rather than a config read because silence
-        trimming is right for a clip the user recorded on purpose and wrong for a
-        window cut out of a stream: trimming a window slides its content in time
-        and destroys the alignment every event timestamp depends on.
-        """
-        result = np.asarray(samples, dtype=np.float32)
-        audio = self.audio
-        if trim and audio.trim.enabled:
-            result = trim_silence(result, self.sample_rate, audio.trim.top_db, audio.trim.pad_ms)
-        if audio.normalize.enabled:
+    def condition(self, window: np.ndarray) -> np.ndarray:
+        """Level-normalise and fit one window - never trim (see module docstring)."""
+        result = np.asarray(window, dtype=np.float32)
+        if self.normalize:
             result = normalize_loudness(
-                result, audio.normalize.target_dbfs, audio.normalize.peak_ceiling
+                result, self.audio.normalize.target_dbfs, self.audio.normalize.peak_ceiling
             )
-        return fit_length(result, self.clip_samples, audio.fit_mode)
+        return fit_length(result, self.window_samples, self.audio.fit_mode)
 
-    def features(self, samples: np.ndarray, trim: bool = True) -> np.ndarray:
-        return self.extractor(self.condition(samples, trim=trim))
+    def features(self, window: np.ndarray) -> np.ndarray:
+        return self.extractor(self.condition(window))
 
-    def windows(
-        self,
-        samples: np.ndarray,
-        hop_seconds: float,
-        window_seconds: Optional[float] = None,
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        """Slide the window over a longer recording.
+    def windows(self, samples: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """``(start_times, features)`` over a recording of any length.
 
-        Returns ``(start_times, features)`` with ``features`` shaped
-        ``(N, frames, n_mels)``. ``window_seconds`` defaults to the model's clip
-        length; overriding it is only meaningful for experiments, since the model
-        was trained on one length.
+        The tail is always covered: a recording shorter than one window, or a
+        leftover shorter than one hop, is padded into a final window rather than
+        dropped - a dhikr said in the last second of a session still counts.
         """
         audio = np.asarray(samples, dtype=np.float32)
-        window = (
-            int(round(window_seconds * self.sample_rate))
-            if window_seconds
-            else self.clip_samples
-        )
-        hop = max(int(round(hop_seconds * self.sample_rate)), 1)
-        starts = window_starts(audio.size, window, hop)
+        window = self.window_samples
+        hop = self.hop_samples
 
-        stacked = [self.features(audio[start : start + window], trim=False) for start in starts]
+        if audio.size <= window:
+            starts = [0]
+        else:
+            starts = list(range(0, audio.size - window + 1, hop))
+            if starts[-1] + window < audio.size:
+                starts.append(audio.size - window)
+
+        stacked = [self.features(audio[start : start + window]) for start in starts]
         times = np.asarray(starts, dtype=np.float32) / float(self.sample_rate)
         return times, np.stack(stacked).astype(np.float32)
 
 
 # ---------------------------------------------------------------------------
-# TFLite runtime (shared with src.export and the Space)
+# Scorers
 # ---------------------------------------------------------------------------
-def make_interpreter(model_path: PathLike, num_threads: int = 1):
-    """Build a TFLite interpreter, preferring LiteRT.
+class KerasScorer:
+    """Scores windows with a Keras model (the training-time reference)."""
 
-    ``ai-edge-litert`` is a ~30 MB wheel and is what ``tf.lite.Interpreter``
-    became; TensorFlow is ~600 MB and warns on every construction from TF 2.20.
-    Preferring LiteRT is what lets this module - and the Space - run without
-    TensorFlow at all, while ``tf.lite`` stays the fallback for older installs.
-    """
-    try:
-        from ai_edge_litert.interpreter import Interpreter  # type: ignore
+    backend = "keras"
 
-        return Interpreter(model_path=str(model_path), num_threads=num_threads)
-    except ImportError:
-        pass
-    try:
-        import tensorflow as tf  # type: ignore
-    except ImportError as exc:  # pragma: no cover - environment problem, not logic
-        raise RuntimeError(
-            "no TFLite runtime available - install 'ai-edge-litert' (preferred) "
-            "or 'tensorflow'"
-        ) from exc
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        return tf.lite.Interpreter(model_path=str(model_path), num_threads=num_threads)
+    def __init__(self, model, output_mode: Optional[str] = None) -> None:
+        self.model = model
+        self.output_mode = output_mode
+
+    def __call__(self, features: np.ndarray) -> np.ndarray:
+        batch = _as_batch(features)
+        raw = np.asarray(self.model(batch, training=False), dtype=np.float32)
+        return target_score(raw, self.output_mode)
 
 
-def quantize_input(array: np.ndarray, detail: Dict) -> np.ndarray:
-    """Cast float features into the interpreter's input dtype."""
-    dtype = detail["dtype"]
-    if dtype == np.float32:
-        return array.astype(np.float32)
-    scale, zero_point = detail["quantization"]
-    if not scale:
-        return array.astype(dtype)
-    info = np.iinfo(dtype)
-    return np.clip(np.round(array / scale) + zero_point, info.min, info.max).astype(dtype)
+class TFLiteScorer:
+    """Scores windows with an exported ``.tflite`` model.
 
-
-def dequantize_output(array: np.ndarray, detail: Dict) -> np.ndarray:
-    dtype = detail["dtype"]
-    if dtype == np.float32:
-        return array.astype(np.float32)
-    scale, zero_point = detail["quantization"]
-    if not scale:
-        return array.astype(np.float32)
-    return (array.astype(np.float32) - zero_point) * scale
-
-
-def tflite_predict(interpreter, features: np.ndarray) -> np.ndarray:
-    """Run one clip (or a batch, one clip at a time) through an interpreter."""
-    input_detail = interpreter.get_input_details()[0]
-    output_detail = interpreter.get_output_details()[0]
-
-    batch = np.asarray(features, dtype=np.float32)
-    if batch.ndim == 2:
-        batch = batch[np.newaxis, ...]
-    if batch.ndim == 3 and batch.shape[-1] != 1:
-        batch = batch[..., np.newaxis]
-
-    outputs: List[np.ndarray] = []
-    for sample in batch:
-        interpreter.set_tensor(
-            input_detail["index"], quantize_input(sample[np.newaxis, ...], input_detail)
-        )
-        interpreter.invoke()
-        raw = interpreter.get_tensor(output_detail["index"])
-        outputs.append(dequantize_output(raw, output_detail)[0])
-    return np.stack(outputs)
-
-
-def tflite_runner(model_path: PathLike, num_threads: int = 1) -> Callable[[np.ndarray], np.ndarray]:
-    """``(N, frames, mels) -> (N, classes)`` backed by a ``.tflite`` file.
-
-    The counterpart for Keras is the model itself; :func:`scan_signal` accepts
-    either, so the same streaming code scores the checkpoint and the export and
-    the two can be compared window by window.
-    """
-    interpreter = make_interpreter(model_path, num_threads=num_threads)
-    interpreter.allocate_tensors()
-
-    def run(features: np.ndarray) -> np.ndarray:
-        return tflite_predict(interpreter, features)
-
-    return run
-
-
-def _as_runner(model) -> Callable[[np.ndarray], np.ndarray]:
-    """Accept a Keras model, a ``.tflite`` path or a plain callable."""
-    if isinstance(model, (str, Path)):
-        return tflite_runner(model)
-    if callable(model):
-        def run(features: np.ndarray) -> np.ndarray:
-            batch = np.asarray(features, dtype=np.float32)
-            if batch.ndim == 3:
-                batch = batch[..., np.newaxis]
-            try:
-                output = model(batch, training=False)
-            except TypeError:  # a plain callable that takes no `training` flag
-                output = model(batch)
-            return np.asarray(output, dtype=np.float32)
-
-        return run
-    raise TypeError(f"cannot run a model of type {type(model).__name__}")
-
-
-# ---------------------------------------------------------------------------
-# Smoothing
-# ---------------------------------------------------------------------------
-def smooth_probabilities(
-    probabilities: np.ndarray, config: SmoothingConfig
-) -> np.ndarray:
-    """Temporal smoothing of ``(windows, classes)`` probabilities.
-
-    Causal on purpose - each window is smoothed with the ones *before* it, never
-    after - so an offline sweep and the phone produce the same numbers. Both
-    methods keep the rows summing to one, so a smoothed value is still a
-    probability and the thresholds keep their meaning.
-    """
-    array = np.asarray(probabilities, dtype=np.float32)
-    if not config.enabled or array.ndim != 2 or array.shape[0] == 0:
-        return array
-
-    if config.method == "ema":
-        smoothed = np.empty_like(array)
-        state = array[0]
-        smoothed[0] = state
-        for index in range(1, array.shape[0]):
-            state = config.alpha * array[index] + (1.0 - config.alpha) * state
-            smoothed[index] = state
-    else:
-        width = max(int(config.window), 1)
-        if width == 1:
-            return array
-        smoothed = np.empty_like(array)
-        for index in range(array.shape[0]):
-            start = max(0, index - width + 1)
-            smoothed[index] = array[start : index + 1].mean(axis=0)
-
-    totals = np.clip(smoothed.sum(axis=1, keepdims=True), 1e-12, None)
-    return (smoothed / totals).astype(np.float32)
-
-
-@dataclass
-class ProbabilitySmoother:
-    """Online form of :func:`smooth_probabilities`, for a real stream."""
-
-    config: SmoothingConfig
-    _history: List[np.ndarray] = field(default_factory=list, init=False)
-    _state: Optional[np.ndarray] = field(default=None, init=False)
-
-    def reset(self) -> None:
-        self._history.clear()
-        self._state = None
-
-    def push(self, probabilities: np.ndarray) -> np.ndarray:
-        row = np.asarray(probabilities, dtype=np.float32)
-        if not self.config.enabled:
-            return row
-        if self.config.method == "ema":
-            self._state = (
-                row
-                if self._state is None
-                else self.config.alpha * row + (1.0 - self.config.alpha) * self._state
-            )
-            smoothed = self._state
-        else:
-            self._history.append(row)
-            if len(self._history) > max(int(self.config.window), 1):
-                self._history.pop(0)
-            smoothed = np.mean(np.stack(self._history), axis=0)
-        total = float(np.clip(smoothed.sum(), 1e-12, None))
-        return (smoothed / total).astype(np.float32)
-
-
-# ---------------------------------------------------------------------------
-# Events
-# ---------------------------------------------------------------------------
-@dataclass
-class StreamingEvent:
-    """One counted dhikr.
-
-    ``start`` is the first window of the run, ``end`` the last one still above
-    the release threshold, and ``trigger_time`` the moment the event was
-    *confirmed* - the instant the counter would tick on the phone, which is what
-    latency should be measured against. ``peak_confidence`` is the highest
-    probability seen anywhere in the run.
+    This is the one that matters: it runs the same flatbuffer Android ships,
+    through the same quantisation, so a streaming evaluation done here is a
+    statement about the shipped artefact rather than about the checkpoint.
     """
 
-    label: str
-    start: float
-    end: float
-    trigger_time: float
-    peak_confidence: float
-    windows: int = 1
-    peak_time: float = 0.0
-
-    @property
-    def duration(self) -> float:
-        return max(self.end - self.start, 0.0)
-
-    def overlaps(self, start: float, end: float) -> float:
-        """Seconds of overlap with ``[start, end]`` (0 when they are disjoint)."""
-        return max(0.0, min(self.end, end) - max(self.start, start))
-
-    def to_dict(self) -> Dict[str, object]:
-        return {
-            "label": self.label,
-            "start": round(float(self.start), 3),
-            "end": round(float(self.end), 3),
-            "trigger_time": round(float(self.trigger_time), 3),
-            "peak_confidence": round(float(self.peak_confidence), 4),
-            "windows": int(self.windows),
-        }
-
-
-@dataclass
-class _ActiveEvent:
-    """Detector bookkeeping for the run currently being tracked."""
-
-    label: str
-    index: int
-    hits: int
-    misses: int
-    event: StreamingEvent
-    confirmed: bool = False
-
-
-class EventDetector:
-    """One count per utterance, from a stream of per-window probabilities.
-
-    Feed windows in with :meth:`push` (online, exactly what Android does) or hand
-    a whole recording to :func:`detect_events`. :meth:`push` returns an event at
-    the moment it is *confirmed*; the same object keeps being extended while the
-    utterance continues, so the caller's list ends up holding final spans.
-
-    The rules, and what each one is there to stop:
-
-    * **activation threshold** - a window must be this confident to start or feed
-      a candidate;
-    * **min_consecutive_hits** - a single confident window is a glitch, not a
-      dhikr;
-    * **release threshold** (below activation) - an ongoing event survives a dip,
-      so one utterance stays one event;
-    * **release_windows** - how long that dip may last before the event closes;
-    * **cooldown** - dead time per class after an event, so the tail of an
-      utterance cannot immediately start another;
-    * **ignore_labels** - ``unknown`` is the model saying "not a dhikr" and is
-      never counted.
-    """
+    backend = "tflite"
 
     def __init__(
         self,
-        labels: Sequence[str],
-        config: Optional[DetectorConfig] = None,
-        hop_seconds: Optional[float] = None,
+        model_path: PathLike,
+        num_threads: int = 1,
+        output_mode: Optional[str] = None,
     ) -> None:
-        self.labels = list(labels)
-        self.config = config or DetectorConfig()
-        self.hop_seconds = float(hop_seconds) if hop_seconds else None
-        self._ignored = {name.lower() for name in self.config.ignore_labels}
-        self._candidates = [
-            index for index, label in enumerate(self.labels) if label.lower() not in self._ignored
-        ]
-        self._active: Optional[_ActiveEvent] = None
-        self._cooldown_until: Dict[str, float] = {}
-        self._index = -1
-        self.events: List[StreamingEvent] = []
+        from .export import make_interpreter, tflite_predict
 
-    # -- state --------------------------------------------------------------
+        self.path = Path(model_path)
+        self.output_mode = output_mode
+        self._predict = tflite_predict
+        self.interpreter = make_interpreter(self.path, num_threads=num_threads)
+        self.interpreter.allocate_tensors()
+
+    def __call__(self, features: np.ndarray) -> np.ndarray:
+        batch = _as_batch(features)
+        raw = self._predict(self.interpreter, batch)
+        return target_score(np.asarray(raw, dtype=np.float32), self.output_mode)
+
+
+def _as_batch(features: np.ndarray) -> np.ndarray:
+    batch = np.asarray(features, dtype=np.float32)
+    if batch.ndim == 2:  # one window (frames, mels)
+        batch = batch[np.newaxis, ...]
+    if batch.ndim == 3:  # (N, frames, mels) -> add the channel axis
+        batch = batch[..., np.newaxis]
+    return batch
+
+
+def make_scorer(
+    model: Union[PathLike, object],
+    output_mode: Optional[str] = None,
+    num_threads: int = 1,
+) -> Union[KerasScorer, TFLiteScorer]:
+    """Build the right scorer for a ``.tflite`` path or an in-memory Keras model."""
+    if isinstance(model, (str, Path)):
+        path = Path(model)
+        if path.suffix.lower() == ".tflite":
+            return TFLiteScorer(path, num_threads=num_threads, output_mode=output_mode)
+        raise ValueError(f"unsupported model file for streaming: {path}")
+    return KerasScorer(model, output_mode=output_mode)
+
+
+# ---------------------------------------------------------------------------
+# Timeline
+# ---------------------------------------------------------------------------
+@dataclass
+class ScoreTimeline:
+    """``P(target)`` per window over one recording."""
+
+    times: np.ndarray            # window start times, seconds
+    scores: np.ndarray           # P(target), same length
+    window_seconds: float
+    hop_seconds: float
+    raw_scores: Optional[np.ndarray] = None  # before smoothing, when it was applied
+
+    def __post_init__(self) -> None:
+        self.times = np.asarray(self.times, dtype=np.float32)
+        self.scores = np.asarray(self.scores, dtype=np.float32)
+        if self.times.shape != self.scores.shape:
+            raise ValueError("times and scores must have the same length")
+
     @property
-    def state(self) -> str:
-        if self._active is None:
-            return IDLE
-        return CONFIRMED if self._active.confirmed else CANDIDATE
+    def windows(self) -> int:
+        return int(self.scores.size)
+
+    @property
+    def duration_seconds(self) -> float:
+        """Audio covered, i.e. the last window's end."""
+        if not self.windows:
+            return 0.0
+        return float(self.times[-1] + self.window_seconds)
+
+    @property
+    def max_score(self) -> float:
+        return float(self.scores.max()) if self.windows else 0.0
+
+    def centre_times(self) -> np.ndarray:
+        return self.times + float(self.window_seconds) / 2.0
+
+
+# ---------------------------------------------------------------------------
+# Event detector
+# ---------------------------------------------------------------------------
+class DetectorState(str, Enum):
+    IDLE = "idle"
+    CANDIDATE = "candidate"
+    CONFIRMED = "confirmed"
+    COOLDOWN = "cooldown"
+
+
+@dataclass
+class Event:
+    """One counted repetition.
+
+    ``start`` is the first window that crossed the activation threshold and
+    ``end`` the last window that stayed above release, so ``[start, end]`` covers
+    the audio the detector was firing on. ``time`` is the centre of the most
+    confident window - the single timestamp to compare against an annotation.
+    """
+
+    start: float
+    end: float
+    time: float
+    peak_score: float
+    windows: int = 1
+    confirmed_at: float = 0.0
+
+    @property
+    def duration(self) -> float:
+        return max(float(self.end) - float(self.start), 0.0)
+
+    def to_dict(self) -> Dict[str, float]:
+        return {**asdict(self), "duration": self.duration}
+
+
+@dataclass
+class EventDetector:
+    """Hysteresis state machine turning a score stream into counted events.
+
+    Online by construction: :meth:`push` takes one window at a time and returns
+    an event at the moment it is confirmed, which is what an Android service
+    needs (the counter increments while the user is still speaking, not when the
+    phrase ends). :func:`detect_events` is the offline convenience wrapper.
+
+    The returned :class:`Event` keeps being updated - ``end``, ``peak_score`` and
+    ``windows`` grow until the utterance releases - so a caller holding the object
+    sees the final span without waiting for it.
+    """
+
+    config: DetectorConfig
+    window_seconds: float = 2.0
+
+    state: DetectorState = field(default=DetectorState.IDLE, init=False)
+    _hits: int = field(default=0, init=False)
+    _below: int = field(default=0, init=False)
+    _current: Optional[Event] = field(default=None, init=False)
+    _cooldown_until: float = field(default=0.0, init=False)
+    events: List[Event] = field(default_factory=list, init=False)
 
     def reset(self) -> None:
-        self._active = None
-        self._cooldown_until.clear()
-        self._index = -1
+        self.state = DetectorState.IDLE
+        self._hits = 0
+        self._below = 0
+        self._current = None
+        self._cooldown_until = 0.0
         self.events = []
 
-    def in_cooldown(self, label: str, time: float) -> bool:
-        return time < self._cooldown_until.get(label, float("-inf"))
+    # -- online ------------------------------------------------------------
+    def push(self, time: float, score: float) -> Optional[Event]:
+        """Feed one window. Returns the event when this window confirms one."""
+        time = float(time)
+        score = float(score)
+        config = self.config
 
-    # -- the machine --------------------------------------------------------
-    def push(self, time: float, probabilities: np.ndarray) -> Optional[StreamingEvent]:
-        """Feed one window. Returns the event if this window confirmed one."""
-        self._index += 1
-        row = np.asarray(probabilities, dtype=np.float32).ravel()
-        if row.size != len(self.labels):
-            raise ValueError(
-                f"expected {len(self.labels)} probabilities, got {row.size} - the "
-                f"model and labels.txt disagree"
-            )
+        if self.state is DetectorState.COOLDOWN:
+            if time < self._cooldown_until - _TIME_EPSILON:
+                return None
+            # Cooldown is a safety net, not a separator: the moment it expires the
+            # same window is re-examined, so a fast repetition is not thrown away
+            # for arriving one window too early.
+            self.state = DetectorState.IDLE
 
-        best_label, best_score = self._best_candidate(row)
-        confirmed: Optional[StreamingEvent] = None
-
-        if self._active is not None:
-            confirmed = self._advance(time, best_label, best_score, row)
-            if confirmed is not None or self._active is not None:
-                return confirmed
-            # The event closed on this window. A different phrase may already be
-            # sounding - two dhikr with no gap between them - so the same window
-            # is allowed to start the next candidate rather than being lost.
-
-        if best_label is not None and best_score >= self.config.threshold_for(best_label):
-            if not self.in_cooldown(best_label, time):
-                self._active = _ActiveEvent(
-                    label=best_label,
-                    index=self._index,
-                    hits=1,
-                    misses=0,
-                    event=StreamingEvent(
-                        label=best_label,
-                        start=float(time),
-                        end=float(time),
-                        trigger_time=float(time),
-                        peak_confidence=float(best_score),
-                        windows=1,
-                        peak_time=float(time),
-                    ),
+        if self.state is DetectorState.IDLE:
+            if score >= config.activation_threshold:
+                self._current = Event(
+                    start=time,
+                    end=time + self.window_seconds,
+                    time=time + self.window_seconds / 2.0,
+                    peak_score=score,
+                    windows=1,
                 )
-                confirmed = self._maybe_confirm(time)
-        return confirmed
-
-    def _best_candidate(self, row: np.ndarray) -> Tuple[Optional[str], float]:
-        """Highest-scoring countable class in one window.
-
-        Read over the countable classes only, so a window where ``unknown`` wins
-        outright still shows how close the runner-up phrase came - the detector's
-        own thresholds decide, not an argmax over classes it can never count.
-        """
-        if not self._candidates:
-            return (None, 0.0)
-        best = max(self._candidates, key=lambda index: float(row[index]))
-        return (self.labels[best], float(row[best]))
-
-    def _advance(
-        self,
-        time: float,
-        best_label: Optional[str],
-        best_score: float,
-        row: np.ndarray,
-    ) -> Optional[StreamingEvent]:
-        active = self._active
-        assert active is not None
-        score = float(row[self.labels.index(active.label)])
-        activation = self.config.threshold_for(active.label)
-
-        if score >= activation and (best_label == active.label or best_label is None):
-            active.hits += 1
-            active.misses = 0
-            active.event.end = float(time)
-            active.event.windows += 1
-            if score > active.event.peak_confidence:
-                active.event.peak_confidence = score
-                active.event.peak_time = float(time)
-            return self._maybe_confirm(time)
-
-        if score >= self.config.release_threshold:
-            # Between the thresholds: the utterance is still going, it just dipped.
-            active.misses = 0
-            active.event.end = float(time)
-            active.event.windows += 1
-            if score > active.event.peak_confidence:
-                active.event.peak_confidence = score
-                active.event.peak_time = float(time)
+                self._hits = 1
+                self._below = 0
+                self.state = DetectorState.CANDIDATE
+                return self._maybe_confirm(time)
             return None
 
-        # Below the release threshold. A confidently different phrase closes the
-        # event straight away; otherwise it takes `release_windows` quiet windows,
-        # which is what keeps one utterance from breaking into two counts.
-        other_wins = (
-            best_label is not None
-            and best_label != active.label
-            and best_score >= self.config.threshold_for(best_label)
-        )
-        active.misses += 1
-        if other_wins or active.misses >= self.config.release_windows:
-            self._close(time)
+        if self.state is DetectorState.CANDIDATE:
+            assert self._current is not None
+            if score >= config.activation_threshold:
+                self._hits += 1
+                self._track(time, score)
+                return self._maybe_confirm(time)
+            if score >= config.release_threshold:
+                # In the hysteresis band: the utterance is still going, but this
+                # window does not count towards min_consecutive_hits.
+                self._track(time, score)
+                return None
+            self.state = DetectorState.IDLE
+            self._current = None
+            self._hits = 0
+            return None
+
+        # CONFIRMED - wait for the score to fall away before re-arming.
+        assert self._current is not None
+        if score >= config.release_threshold:
+            self._below = 0
+            self._track(time, score)
+            return None
+        self._below += 1
+        if self._below >= config.release_windows:
+            self.state = DetectorState.COOLDOWN
+            self._cooldown_until = time + config.cooldown_ms / 1000.0
+            self._current = None
+            self._hits = 0
+            self._below = 0
         return None
 
-    def _maybe_confirm(self, time: float) -> Optional[StreamingEvent]:
-        active = self._active
-        assert active is not None
-        if active.confirmed:
-            return None
-        if active.hits < self.config.min_consecutive_hits:
-            return None
-        if active.event.duration < self.config.min_event_duration:
-            # Long enough in hits but not yet in time: keep collecting rather than
-            # rejecting, so a slow phrase is confirmed a window later.
-            return None
-        active.confirmed = True
-        active.event.trigger_time = float(time)
-        self.events.append(active.event)
-        return active.event
-
-    def _close(self, time: float) -> None:
-        active = self._active
-        self._active = None
-        if active is None:
+    def _track(self, time: float, score: float) -> None:
+        event = self._current
+        if event is None:
             return
-        if active.confirmed:
-            self._cooldown_until[active.label] = (
-                float(active.event.end) + self.config.cooldown_ms / 1000.0
-            )
+        event.end = time + self.window_seconds
+        event.windows += 1
+        if score > event.peak_score:
+            event.peak_score = score
+            event.time = time + self.window_seconds / 2.0
 
-    def flush(self) -> List[StreamingEvent]:
-        """Close any event still open at the end of the stream.
+    def _maybe_confirm(self, time: float) -> Optional[Event]:
+        event = self._current
+        if event is None or self.state is not DetectorState.CANDIDATE:
+            return None
+        if self._hits < self.config.min_consecutive_hits:
+            return None
+        if (time - event.start) < self.config.min_event_seconds - _TIME_EPSILON:
+            return None
+        self.state = DetectorState.CONFIRMED
+        self._below = 0
+        event.confirmed_at = time
+        self.events.append(event)
+        return event
 
-        An utterance that runs to the end of a recording is a real utterance; it
-        just has no window after it to release on.
-        """
-        if self._active is not None:
-            self._close(self._active.event.end)
+    # -- offline -----------------------------------------------------------
+    def run(self, timeline: ScoreTimeline) -> List[Event]:
+        self.reset()
+        self.window_seconds = float(timeline.window_seconds)
+        for time, score in zip(timeline.times, timeline.scores):
+            self.push(float(time), float(score))
         return list(self.events)
 
 
-def detect_events(
-    times: Sequence[float],
-    probabilities: np.ndarray,
-    labels: Sequence[str],
-    config: Optional[DetectorConfig] = None,
-    smoothing: Optional[SmoothingConfig] = None,
-) -> List[StreamingEvent]:
-    """Run the detector over a whole recording's windows.
-
-    Smoothing, when supplied, is applied first - the same order the phone uses,
-    so a threshold calibrated here means the same thing there.
-    """
-    array = np.asarray(probabilities, dtype=np.float32)
-    if smoothing is not None:
-        array = smooth_probabilities(array, smoothing)
-    detector = EventDetector(labels, config)
-    for time, row in zip(times, array):
-        detector.push(float(time), row)
-    return detector.flush()
+def detect_events(timeline: ScoreTimeline, config: DetectorConfig) -> List[Event]:
+    """Run the state machine over a finished timeline."""
+    return EventDetector(config=config, window_seconds=timeline.window_seconds).run(timeline)
 
 
 # ---------------------------------------------------------------------------
-# Scanning a recording
+# End to end
 # ---------------------------------------------------------------------------
 @dataclass
-class WindowScan:
-    """Per-window probabilities over one recording, plus what produced them."""
+class StreamingResult:
+    """A scored recording plus the events counted in it."""
 
-    times: np.ndarray
-    probabilities: np.ndarray  # (windows, classes), after smoothing
-    raw_probabilities: np.ndarray  # before smoothing
-    labels: List[str]
-    duration: float
-    hop_seconds: float
-    window_seconds: float
+    timeline: ScoreTimeline
+    events: List[Event] = field(default_factory=list)
     source: str = ""
 
     @property
-    def num_windows(self) -> int:
-        return int(self.probabilities.shape[0])
+    def count(self) -> int:
+        return len(self.events)
 
-    def scores(self, label: str) -> np.ndarray:
-        """The probability of one class over time."""
-        return self.probabilities[:, self.labels.index(label)]
+    @property
+    def duration_seconds(self) -> float:
+        return self.timeline.duration_seconds
 
-    def target_scores(self, ignore: Sequence[str] = ("unknown",)) -> np.ndarray:
-        """Best countable-class probability per window."""
-        ignored = {name.lower() for name in ignore}
-        columns = [
-            index for index, label in enumerate(self.labels) if label.lower() not in ignored
-        ]
-        if not columns:
-            return np.zeros(self.num_windows, dtype=np.float32)
-        return self.probabilities[:, columns].max(axis=1)
-
-    def predicted_distribution(self) -> Dict[str, int]:
-        """How many windows each class won - the shape of a stress test's noise."""
-        counts = np.bincount(
-            self.probabilities.argmax(axis=1), minlength=len(self.labels)
-        )
+    def to_dict(self) -> Dict[str, object]:
         return {
-            self.labels[index]: int(counts[index])
-            for index in np.argsort(counts)[::-1]
+            "source": self.source,
+            "duration_seconds": round(self.duration_seconds, 3),
+            "windows": self.timeline.windows,
+            "max_score": round(self.timeline.max_score, 4),
+            "count": self.count,
+            "events": [event.to_dict() for event in self.events],
         }
 
-    def detect(
-        self, config: Optional[DetectorConfig] = None
-    ) -> List[StreamingEvent]:
-        """Events from the already-smoothed probabilities."""
-        return detect_events(self.times, self.probabilities, self.labels, config)
 
+@dataclass
+class StreamingDetector:
+    """Front-end + model + smoothing + event detector, in one object.
 
-def scan_signal(
-    samples: np.ndarray,
-    model,
-    frontend: StreamingFrontend,
-    streaming: StreamingConfig,
-    labels: Sequence[str],
-    source: str = "",
-    batch_windows: int = 256,
-) -> WindowScan:
-    """Slide the window over a recording and score every window.
-
-    ``model`` is a Keras model, a path to a ``.tflite`` file, or any callable
-    taking ``(N, frames, mels, 1)``. Everything downstream - events, metrics,
-    calibration - reads the returned :class:`WindowScan`, so a recording is
-    scored once and every threshold in a sweep reuses those probabilities instead
-    of re-running inference.
-
-    Features are built and scored in chunks of ``batch_windows``. A minute of
-    audio at a 0.25 s hop is 240 windows of ``(frames, mels)`` floats; an hour is
-    14,400, which is gigabytes if they are all materialised at once. Only the
-    probabilities - three floats per window - are kept.
+    This is the Python mirror of what the Android service does, and the thing
+    every streaming metric is measured through, so the numbers in a report
+    describe the deployed behaviour and not a clip-level proxy for it.
     """
-    audio = np.asarray(samples, dtype=np.float32)
-    window_seconds = streaming.window_for(frontend.audio)
-    window = int(round(window_seconds * frontend.sample_rate))
-    hop = max(int(round(streaming.hop_seconds * frontend.sample_rate)), 1)
-    starts = window_starts(audio.size, window, hop)
-    runner = _as_runner(model)
 
-    chunks: List[np.ndarray] = []
-    size = max(int(batch_windows), 1)
-    for offset in range(0, len(starts), size):
-        block = starts[offset : offset + size]
-        features = np.stack(
-            [frontend.features(audio[start : start + window], trim=False) for start in block]
-        ).astype(np.float32)
-        scored = np.asarray(runner(features), dtype=np.float32)
-        if scored.ndim != 2 or scored.shape[0] != features.shape[0]:
-            raise ValueError(
-                f"model returned {scored.shape} for {features.shape[0]} windows - "
-                f"expected (windows, classes)"
-            )
-        chunks.append(scored)
+    frontend: StreamingFrontend
+    scorer: Callable[[np.ndarray], np.ndarray]
+    detector: DetectorConfig
+    smoothing: SmoothingConfig = field(default_factory=SmoothingConfig)
 
-    times = np.asarray(starts, dtype=np.float32) / float(frontend.sample_rate)
-    raw = np.concatenate(chunks, axis=0) if chunks else np.zeros((0, len(labels)), np.float32)
-    if raw.shape[1] != len(labels):
-        raise ValueError(
-            f"model has {raw.shape[1]} outputs but {len(labels)} labels were given - "
-            f"export labels.txt together with the model"
+    @classmethod
+    def from_config(
+        cls,
+        config: Config,
+        model: Union[PathLike, object],
+        stats: Optional[FeatureStats] = None,
+        detector: Optional[DetectorConfig] = None,
+        num_threads: int = 1,
+    ) -> "StreamingDetector":
+        return cls(
+            frontend=StreamingFrontend.from_config(config, stats=stats),
+            scorer=make_scorer(model, output_mode=config.target.output_mode, num_threads=num_threads),
+            detector=detector or config.streaming.detector,
+            smoothing=config.streaming.smoothing,
         )
-    # An INT8 model dequantises to values that only approximately sum to 1.
-    # Renormalise so a probability is always a probability and a threshold means
-    # the same thing for every variant.
-    totals = np.clip(raw.sum(axis=1, keepdims=True), 1e-12, None)
-    normalised = (raw / totals).astype(np.float32)
 
-    return WindowScan(
-        times=np.asarray(times, dtype=np.float32),
-        probabilities=smooth_probabilities(normalised, streaming.smoothing),
-        raw_probabilities=normalised,
-        labels=list(labels),
-        duration=float(audio.size) / float(frontend.sample_rate),
-        hop_seconds=float(streaming.hop_seconds),
-        window_seconds=float(window_seconds),
-        source=source,
+    def score(self, samples: np.ndarray) -> ScoreTimeline:
+        times, features = self.frontend.windows(samples)
+        raw = np.asarray(self.scorer(features), dtype=np.float32)
+        smoothed = smooth_scores(raw, self.smoothing)
+        return ScoreTimeline(
+            times=times,
+            scores=smoothed,
+            window_seconds=float(self.frontend.window_samples) / self.frontend.sample_rate,
+            hop_seconds=float(self.frontend.hop_seconds),
+            raw_scores=raw if self.smoothing.mode != "none" else None,
+        )
+
+    def run(self, samples: np.ndarray, source: str = "") -> StreamingResult:
+        timeline = self.score(samples)
+        return StreamingResult(
+            timeline=timeline,
+            events=detect_events(timeline, self.detector),
+            source=source,
+        )
+
+    def run_file(self, path: PathLike) -> StreamingResult:
+        from .audio import load_audio
+
+        samples = load_audio(path, self.frontend.sample_rate)
+        return self.run(samples, source=str(path))
+
+
+def detector_with_threshold(
+    config: DetectorConfig,
+    activation: float,
+    release: Optional[float] = None,
+    release_ratio: float = 0.6,
+) -> DetectorConfig:
+    """Copy of ``config`` at a new operating point, for a threshold sweep.
+
+    ``release`` defaults to ``activation x release_ratio`` so the hysteresis gap
+    scales with the threshold instead of collapsing at high activation values -
+    at activation 0.98 a fixed release of 0.40 is not hysteresis, it is a cliff.
+    """
+    resolved_release = float(release) if release is not None else activation * release_ratio
+    return DetectorConfig(
+        activation_threshold=float(activation),
+        release_threshold=min(float(resolved_release), float(activation)),
+        min_consecutive_hits=config.min_consecutive_hits,
+        min_event_seconds=config.min_event_seconds,
+        release_windows=config.release_windows,
+        cooldown_ms=config.cooldown_ms,
     )

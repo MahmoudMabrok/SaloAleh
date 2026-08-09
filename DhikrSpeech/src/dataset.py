@@ -88,10 +88,12 @@ MANIFEST_FIELDS = [
     "split",
     "duration",
     # Appended after the original eight, so a manifest written by this version
-    # still opens in anything that reads the first columns positionally, and a
-    # manifest written before it still loads here (the reader defaults them).
-    "speaker",
+    # still opens in anything that reads the first columns positionally, and one
+    # written before it still loads here (the reader defaults them). Empty
+    # `negative_type` means a target phrase; empty `speaker` means identity could
+    # not be resolved.
     "negative_type",
+    "speaker",
 ]
 
 ISSUE_KINDS = (
@@ -140,25 +142,44 @@ def load_phrases(path: PathLike) -> List[Phrase]:
 
 @dataclass(frozen=True)
 class Sample:
-    """A single recording on disk."""
+    """A single recording on disk.
+
+    ``rel_dir`` is the sample's folder *as it exists in the dataset* (``007``,
+    ``negatives/hard/007``, ...), which is not the same as ``label`` in
+    single-target mode where every negative is labelled ``unknown``. Conditioned
+    clips are cached under ``rel_dir``, so the shared negative pool is
+    preprocessed once and reused by every target rather than re-written per run.
+
+    ``negative_type`` is the :data:`src.targets.NEGATIVE_TYPES` category of a
+    negative and ``None`` for the target's own clips.
+    """
 
     path: Path
     label: str
     class_index: int
     phrase_id: Optional[int]
     text: str
-    # Who spoke it, when that can be established (see src/speakers.py). None means
-    # unknown, which is reported rather than assumed away.
-    speaker: Optional[str] = None
+    # Folder the clip came from, relative to `dataset/` - `007`,
+    # `unknown/hard_negative`, ... Conditioned clips are cached under it, so the
+    # shared negative pool is written once and reused by every target rather than
+    # re-conditioned per run. Not the same as `label`, which is `unknown` for
+    # every negative in single-target mode.
+    rel_dir: str = ""
     # Which kind of negative this is, for clips under `unknown/`: the subfolder
     # name (`hard_negative`, `noise`, ...) or the unknown class name for a flat
-    # folder. Empty for a target phrase. It never changes the training label - it
+    # folder. None for a target phrase. It never changes the training label - it
     # exists so evaluation can say *what kind* of audio produced a false positive.
-    negative_type: str = ""
+    negative_type: Optional[str] = None
+    # Who spoke it, when that can be established. None means unknown, which is
+    # reported rather than assumed away.
+    speaker: Optional[str] = None
     # Path relative to the class folder, e.g. `hard_negative/ali_003.wav`. Keeps
-    # two same-named files in different subfolders apart when they are written to
-    # `processed/`.
+    # two same-named files in different subfolders apart under `processed/`.
     relative_path: str = ""
+
+    @property
+    def cache_dir(self) -> str:
+        return self.rel_dir or self.label
 
 
 @dataclass
@@ -169,6 +190,9 @@ class DatasetIndex:
     class_names: List[str]
     phrases: Dict[int, str] = field(default_factory=dict)
     root: Optional[Path] = None
+    # Set in single-target mode; None for a multi-class index.
+    target_id: Optional[int] = None
+    target_text: str = ""
     speaker_source: str = SOURCE_NONE
 
     @property
@@ -348,7 +372,12 @@ def scan_dataset(
                     class_index=class_to_index[label],
                     phrase_id=phrase_id,
                     text=text,
-                    negative_type=_negative_type(relative, is_negative, unknown_class),
+                    rel_dir=(
+                        f"{label}/{relative.parent.as_posix()}"
+                        if relative.parent != Path(".")
+                        else label
+                    ),
+                    negative_type=_negative_type(relative, is_negative, unknown_class) or None,
                     relative_path=relative.as_posix(),
                 )
             )
@@ -674,8 +703,8 @@ class ManifestRecord:
     text: str
     split: str
     duration: float
-    speaker: str = ""
-    negative_type: str = ""
+    negative_type: Optional[str] = None
+    speaker: Optional[str] = None
 
     def resolve(self, root: PathLike) -> Path:
         candidate = Path(self.path)
@@ -691,6 +720,8 @@ def save_manifest(records: Sequence[ManifestRecord], path: PathLike) -> Path:
         for record in records:
             row = asdict(record)
             row["phrase_id"] = "" if record.phrase_id is None else record.phrase_id
+            row["negative_type"] = record.negative_type or ""
+            row["speaker"] = record.speaker or ""
             writer.writerow(row)
     LOGGER.info("manifest with %d rows written to %s", len(records), destination)
     return destination
@@ -699,7 +730,7 @@ def save_manifest(records: Sequence[ManifestRecord], path: PathLike) -> Path:
 def load_manifest(path: PathLike) -> List[ManifestRecord]:
     """Read a manifest.
 
-    ``speaker`` and ``negative_type`` are read with a default, so a manifest
+    ``negative_type`` and ``speaker`` are read with a default, so a manifest
     written before those columns existed still loads - it simply has no speaker
     information, which the speaker report then reports as such rather than
     crashing halfway through a notebook.
@@ -707,7 +738,7 @@ def load_manifest(path: PathLike) -> List[ManifestRecord]:
     source = Path(path)
     if not source.is_file():
         raise FileNotFoundError(
-            f"manifest not found at {source} - run notebook 02_preprocessing first"
+            f"manifest not found at {source} - run the preprocessing stage first"
         )
     records: List[ManifestRecord] = []
     with open(source, "r", encoding="utf-8") as handle:
@@ -724,8 +755,8 @@ def load_manifest(path: PathLike) -> List[ManifestRecord]:
                     text=row["text"],
                     split=row["split"],
                     duration=float(row["duration"]),
-                    speaker=(row.get("speaker") or "").strip(),
-                    negative_type=(row.get("negative_type") or "").strip(),
+                    negative_type=(row.get("negative_type") or "").strip() or None,
+                    speaker=(row.get("speaker") or "").strip() or None,
                 )
             )
     if legacy and records:
@@ -826,15 +857,25 @@ def preprocess_dataset(
     exclude: Optional[Iterable[str]] = None,
     overwrite: bool = False,
     progress: ProgressFn = None,
+    speakers: Optional[Dict[str, Optional[str]]] = None,
+    destination_root: Optional[PathLike] = None,
 ) -> Tuple[List[ManifestRecord], PreprocessSummary]:
     """Write conditioned copies of every recording and build manifest records.
 
     Output is 16 kHz mono PCM16, silence trimmed, loudness normalised and fitted
     to ``audio.clip_seconds`` - the exact tensor the model sees at inference.
+
+    In single-target mode ``destination_root`` should be
+    ``config.clip_cache_path()``: clips are then keyed by the *source* folder and
+    by the audio geometry, so the shared negative pool is conditioned once and
+    every target that uses the same window reuses those files instead of writing
+    its own copy (requirement 32). ``speakers`` maps ``str(sample.path)`` to a
+    speaker id and is carried into the manifest.
     """
     audio_config = config.audio
-    destination_root = config.paths.processed_path
+    destination_root = Path(destination_root or config.paths.processed_path)
     destination_root.mkdir(parents=True, exist_ok=True)
+    speaker_map = speakers or {}
 
     blocked = set(exclude or ())
     records: List[ManifestRecord] = []
@@ -850,11 +891,10 @@ def preprocess_dataset(
                 progress(position, total)
             continue
 
-        # The subfolder structure inside a class folder is preserved, so
-        # `unknown/noise/a.wav` and `unknown/tv/a.wav` stay two files rather than
-        # silently overwriting each other in `processed/unknown/a.wav`.
-        inside = Path(sample.relative_path) if sample.relative_path else Path(sample.path.name)
-        relative = Path(sample.label) / inside.with_suffix(".wav")
+        # `cache_dir` carries the subfolder as well as the class folder, so
+        # `unknown/noise/a.wav` and `unknown/hard_negative/a.wav` stay two files
+        # rather than silently overwriting each other under one `unknown/`.
+        relative = Path(sample.cache_dir) / f"{sample.path.stem}.wav"
         target = destination_root / relative
         try:
             if target.exists() and not overwrite:
@@ -874,8 +914,8 @@ def preprocess_dataset(
                     text=sample.text,
                     split="",
                     duration=audio_config.clip_seconds,
-                    speaker=sample.speaker or "",
                     negative_type=sample.negative_type,
+                    speaker=sample.speaker or speaker_map.get(source_text),
                 )
             )
         except Exception as exc:  # noqa: BLE001

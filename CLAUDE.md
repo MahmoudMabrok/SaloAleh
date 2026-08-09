@@ -362,76 +362,135 @@ All workflows use secrets: `FIREBASE_SERVICE_ACCOUNT`, `FIREBASE_DATABASE_URL`.
 ## DhikrSpeech (offline dhikr phrase spotter)
 
 `DhikrSpeech/` — Colab training pipeline that turns volunteer recordings (collected by
-`SpeechCollector/`, recruited from the app's Voice dhikr screen) into a quantised TFLite model.
+`SpeechCollector/`, recruited from the app's Voice dhikr screen) into quantised TFLite models.
 Python, not part of the KMP build. Full docs in `DhikrSpeech/README.md`; the concepts behind the
 pipeline (for someone with no ML/audio background, and the reference when explaining the model to
-other engineers) are in `DhikrSpeech/docs/LEARNING_GUIDE.md`.
+other engineers) are in `DhikrSpeech/docs/LEARNING_GUIDE.md`; what to record and how much of it is
+in `DhikrSpeech/docs/DATA_COLLECTION.md`.
 
-- **`notebooks/DhikrSpeech.ipynb` is the only notebook.** It runs the whole pipeline top to bottom in
-  six stages (`01 · Dataset` … `06 · Streaming`), plus an optional `07 · Experiment` that is not part
-  of the pipeline and is skipped by a normal run. The per-stage notebooks it was built from were
-  deleted deliberately — do not recreate them, and make every notebook change here.
-- **The deliverable is a counter, not a classifier.** The app listens continuously and must increment
-  once per utterance while staying silent through conversation, TV and other dhikr, so clip accuracy
-  (stage 04) does not describe it. `src/streaming.py` slides the training front-end over continuous
-  audio and runs an event state machine (`idle → candidate → confirmed → cooldown`, activation above
-  release for hysteresis, cooldown **per class**); `src/streaming_eval.py` scores it against hand
-  annotations in `streaming_test/` and produces the release-critical number, **false activations per
-  hour**. Threshold calibration takes `streaming.target_false_activations_per_hour` as a hard
-  constraint and maximises recall inside it — and reports "no viable threshold" rather than settling
-  on 0.95 when nothing meets the budget. `src/readiness.py` turns all of it into a verdict where an
-  **unmeasured check never passes** (`NOT READY` / `EXPERIMENTAL` / `READY FOR DEVICE TEST`).
-- **Speaker leakage fails preprocessing, it does not warn.** Speaker ids come from `speakers.csv`, a
-  per-speaker subfolder, or a filename pattern (`split.speaker.*`, `src/speakers.py`);
-  `assign_splits` groups whole speakers, and `verify_manifest_splits` raises when one spans two
-  splits. The collector's `sp<8 hex>` device token is matched out of the box, and a token equal to
-  the class folder's name is rejected — without that guard `006_sp…_….webm` would resolve to the
-  class id and put a whole class in one split. With no speaker information at all the reports say
-  prominently that the evaluation is *not* speaker-independent rather than implying it is.
-- **Negatives are structured but stay one class.** Anything under `dataset/unknown/**` trains as the
-  single `unknown` output; the subfolder (`hard_negative`, `partial_phrase`, `other_dhikr`,
-  `normal_speech`, `noise`) is kept in the manifest as `negative_type` so evaluation can report the
-  false-positive rate per category. `hard_negative` — the near-miss phrases — is the folder that
-  decides the model, and it must be real recordings, not target audio cut into fragments.
-- **`exports/model_metadata.json` is the Android contract** (`src/android.py`): tensor quantisation
-  scale/zero-point, window and hop, the *calibrated* thresholds, every detector parameter and the
-  model SHA256, plus a `calibrated` flag so a default is never read as a measurement. Alongside it,
-  `write_frontend_parity` exports a fixed WAV and the exact feature tensor the pipeline produces from
-  it, so an Android front-end mismatch is caught by a number rather than costing silent accuracy.
-- **Stage `07 · Experiment` answers "one model per dhikr?"** — the recurring proposal to replace the
-  multi-class model with N binary detectors. `src/experiments.py` trains one one-vs-rest model per
-  phrase and scores them against the multi-class model on the *same* clips, holding the manifest,
-  splits, architecture, augmentation, optimiser, seed and epoch budget fixed so the difference is the
-  approach. It reports three things separately because they can disagree: per-phrase detection
-  (threshold-free AUC/AP), naming the right phrase (both sides restricted to the phrase columns, so
-  `unknown` cannot absorb a mistake), and staying quiet on `unknown` clips (same accept rule for
-  both). It is built to be able to return a **tie** — Wilson intervals sit next to every accuracy and
-  a sub-`0.02` AUC difference is reported as noise, not a winner. The expected result is that
-  one-vs-rest loses on the nested-prefix phrases (`سبحان الله` ⊂ `سبحان الله وبحمده` ⊂
-  `سبحان الله العظيم وبحمده`, `اللهم صل على محمد` ⊂ `اللهم صل وسلم على نبينا محمد`), which softmax
-  learns as competing outputs and a binary detector never sees as a label. Runs land in
-  `checkpoints/ovr_{phrase}/`, separate from the shipped run, and are never exported.
-- **`DhikrSpeech/tests/` is pytest over the scoring logic only** (`python3 -m pytest DhikrSpeech/tests`,
-  needs numpy/scikit-learn/librosa but **not** TensorFlow — `experiments.py` imports `models`/`trainer`
-  lazily inside the training function to keep it that way). Training itself is not covered: it needs a
-  GPU and the dataset on Drive. What is covered is the arithmetic that could silently produce a wrong
-  verdict — including `test_trainer_diagnostics.py` (the overfitting notes and the resume guard),
-  which stubs TensorFlow only when it is genuinely absent so it never shadows a real install. The
-  streaming half is covered the same way — the event state machine, event matching, FA/hour and the
-  calibration policy are fed hand-built probabilities whose right answer is known by construction.
+- **The production architecture is single-target, one independent model per dhikr.** The app loads
+  `exports/007/dhikr_007_int8.tflite` when the user picks 007, and that model answers one question —
+  *was this exact phrase spoken, completely?* Everything else is `unknown`, **including the other
+  dhikr and incomplete versions of this phrase**. There is deliberately no path that produces a
+  multi-class production model; `target.phrase_id: null` reverts to the legacy multi-class mode,
+  which exists only for the `08 · Experiment` comparison and for old manifests.
+- **The metric is not accuracy.** A false count is far more damaging than a miss, so the release
+  metrics are false activations per hour, event precision, event recall, duplicate rate and
+  hard-negative FP rate — measured on continuous audio (`src/streaming_eval.py`), never on isolated
+  clips. `src/readiness.py` turns them into `NOT READY` / `EXPERIMENTAL` / `READY FOR DEVICE TEST`,
+  and treats an **unmeasured** criterion as unmeasured rather than as a pass: a target with no
+  streaming evaluation can never read READY however high its clip accuracy is. Do not add a code
+  path that lets clip metrics alone produce READY.
+- **Negatives live under `dataset/unknown/<category>/` and carry that category through the
+  manifest** (derived in `src/dataset.py`, ordered in `src/targets.py` `NEGATIVE_TYPES`):
+  `hard_negative`, `partial_phrase`, `other_dhikr`, `normal_speech`, `noise`, `unknown`. They all
+  train as `unknown` but are **evaluated separately**, because "99% accurate" and "cannot tell a
+  complete phrase from its first three words" are both true of the same run. `hard_negative/` is
+  **shared across targets**, so a near-miss recorded to fool 006 that is a complete recording of
+  007's phrase would teach 007 to reject itself — nothing can detect that, it is a collection rule
+  (`docs/DATA_COLLECTION.md`). `scan_target_dataset` delegates to `scan_dataset` rather than
+  walking the tree again, so a target scan and a multi-class scan agree by construction.
+- **Splitting is by speaker and is verified, not assumed** (`src/speakers.py` resolves,
+  `dataset.assign_splits` groups, `dataset.verify_manifest_splits` checks). Isolation is global: a
+  voice's positives and the negatives they also recorded land in the same split, so a speaker
+  cannot enter training through the negative pool. `split.speaker.require_disjoint` (default) makes
+  a leak an error. Sources are tried `speakers.csv` → per-speaker subfolder → filename patterns;
+  the SpeechCollector device token `sp<8 hex>` is matched **first**, because a pattern taking the
+  leading token would extract the CLASS ID from `006_sp8d358495_…` and make every recording of a
+  phrase one "speaker" — whole classes in one split, nothing looking wrong.
+  `src/speaker_backfill.py` derives a token for pre-token uploads. With no source resolving the
+  pipeline prints **EVALUATION IS NOT SPEAKER-INDEPENDENT** and readiness caps at EXPERIMENTAL —
+  keep that behaviour.
+- **Counting is a hysteresis state machine, not a threshold** (`src/streaming.py`): IDLE → CANDIDATE
+  → CONFIRMED → COOLDOWN, counted on confirmation, **re-armed by the release** so rapid repetitions
+  stay separate. `cooldown_ms` is a safety net; making it the separator merges repetitions. Window
+  timestamps accumulate from the hop, so the cooldown comparison carries a `_TIME_EPSILON` — without
+  it, whether a repetition arriving exactly one cooldown later is counted depends on float
+  representation error.
+- **Streaming annotations state one of three things, and never nothing** (`StreamingClip.mode`):
+  timestamped `events` (precision, recall, FA/hour), `expected_count: 0` (a negative-only
+  recording — FA/hour and precision), or `expected_count: n` (count accuracy only). An entry with
+  neither is `unannotated`: **excluded and reported, never assumed to be negative** — reading an
+  empty `events` list as "no target here" scored a recording of somebody reciting the target as
+  pure false activations. **SpeechCollector's evaluation takes annotate themselves**: it uploads to
+  `streaming/{paddedId}/{id}_x10_{sp…}_…` (a repetition take) and
+  `streaming/negative/negative_x0_{sp…}_…` (minutes with no dhikr in them), and both halves of an
+  annotation are in those names, so `collector_annotations`/`ensure_collector_annotations` derive
+  `annotations.json` on first load and `write_collector_annotations` merges later uploads in without
+  touching an existing entry. `x10` gives count accuracy only — every take contains the target, so
+  no detection in one is known to be wrong; **`x0` is what makes FA/hour measurable**, and it parses
+  to `expected_count: 0` with **`target: None`** so one such recording counts for every target.
+  Guard the auto-derive on `expected_count is not None`, never truthiness — `0` is the count that
+  matters most.
+- **The collector's third recorder is the long negative take** (`SpeechCollector/`:
+  `recording.negative` + `longNoisePrompt`, mode `negative`, its own card). Minutes (20s–5min, vs
+  the repetition take's 8–90s) because FA is counted per *hour*. The server validates the mode **in
+  both directions** — no other prompt may claim it (a phrase doing so would mark its own recitation
+  as proof the counter should have stayed silent) and that prompt may claim no other (clip mode
+  would put television in `dataset/negative/`, inventing a training class). Its folder name must
+  stay **non-numeric**: inside `streaming/` a numeric name reads as a phrase folder. Build-time
+  checks in `build.mjs` (`validateNegativeRecording`) enforce both.
+- **Thresholds are calibrated per target, never hard-coded** (`src/streaming_eval.py`
+  `calibrate_threshold`): the lowest activation threshold whose measured FA/hour stays inside
+  `calibration.target_false_activations_per_hour`. When none qualifies it reports **failure** rather
+  than picking an extreme value — do not "fix" that by widening the sweep.
+- **`exports/<target>/` is the Android contract.** `model_metadata.json` (built by
+  `src/target_export.py`) carries window geometry, every front-end parameter, input/output
+  quantisation scale and zero point, *this target's* calibrated detector settings and the
+  measurements behind them, so Android needs no hidden constants. Parameters calibrated for 006 say
+  nothing about 007. `src/parity.py` writes `frontend_test.wav` / `frontend_expected.npy` /
+  `frontend_metadata.json` so a front-end mismatch is a one-line device check instead of a model
+  that returns confident nonsense.
+- **INT8 is verified, not assumed.** Keras / float32 / INT8 are scored on the same positives,
+  negatives, hard negatives *and* streaming windows; INT8 is rejected when it drifts beyond
+  tolerance **or** adds false activations per hour — a variant whose probabilities look close but
+  which counts more is the failure a probability-only check misses.
+- **`notebooks/DhikrSpeech.ipynb` is the only notebook.** `TARGET_PHRASE_ID` at the top scopes every
+  stage: `01 · Dataset` … `04 · Evaluation`, `05 · Streaming` (the stage that decides shipping),
+  `06 · Export`, optional `07 · Architectures` and `08 · Experiment`. The per-stage notebooks it was
+  built from were deleted deliberately — do not recreate them, and make every notebook change here.
+  `train.py` is the CLI equivalent (`--target 007`, `--targets 001,007`, `--stage dataset`).
+- **Model registry**: `ds_cnn` (baseline, keep it), `ds_cnn_tiny`, `tc_resnet8`. `model_presets` in
+  the config overrides only what makes each one that architecture, so an architecture comparison
+  changes the architecture and nothing else. BC-ResNet is intentionally absent — add it only with a
+  measurement asking for it. The head switches between a 2-output softmax and a 1-output sigmoid via
+  `target.output_mode`; read `P(target)` through `src.streaming.target_score`, which refuses a
+  multi-class output rather than guessing a column.
+- **Conditioned clips are cached per source folder and audio geometry**
+  (`processed/audio/16000hz_2s/<source folder>/`, from `Sample.rel_dir`), so the shared negative
+  pool is written once and reused by every target with the same window; a target overriding
+  `clip_seconds` (`target.phrase_overrides`) gets its own cache. Do not key the cache on the label
+  — in single-target mode every negative is labelled `unknown`, and `unknown/noise/a.wav` would
+  collide with `unknown/hard_negative/a.wav`.
+- **Section `08 · Experiment` is historical**, kept because the question keeps being asked. It
+  compares N one-vs-rest detectors against a multi-class model on the same clips, holding manifest,
+  splits, architecture, augmentation, optimiser, seed and epoch budget fixed. It reports Wilson
+  intervals and calls a sub-`0.02` AUC difference noise rather than a winner. Its "committee"
+  (`argmax` over N models) is **not** what the app does — Android loads one model and reads one score
+  against a calibrated threshold. Runs land in `checkpoints/ovr_{phrase}/` and are never exported.
+- **`DhikrSpeech/tests/` is pytest, and needs no TensorFlow, GPU or Drive**
+  (`python3 -m pytest DhikrSpeech/tests`; needs numpy/scikit-learn/librosa/soundfile). Training
+  itself is not covered — it needs a GPU and the dataset. What is covered is everything that could
+  silently produce a wrong verdict: single-target dataset mapping and negative categories
+  (`test_targets.py`), speaker resolution and leakage detection (`test_speakers.py`), the event
+  detector including rapid repetitions and duplicate suppression (`test_streaming.py`), event
+  metrics, FA/hour and threshold calibration (`test_streaming_eval.py`), the Android metadata
+  contract, front-end parity and INT8 verification (`test_export_contract.py`), the readiness
+  verdict (`test_readiness.py`), an end-to-end dataset stage on synthetic WAVs (`test_pipeline.py`),
+  and the older one-vs-rest scoring and trainer diagnostics. `test_trainer_diagnostics.py` stubs
+  TensorFlow only when it is genuinely absent, so it never shadows a real install.
 - `configs/config.yaml` is the only place settings live; the notebooks read it and hold no
   thresholds or hyperparameters of their own. All logic lives in `DhikrSpeech/src/`.
 - **`DhikrSpeech/space/` is the Gradio app for testing an export** (classify a clip, scan a
   recording and count the dhikr in it, read the export metadata). It imports the front-end from
-  `src/` rather than reimplementing it (`StreamingFrontend`, the TFLite runtime helpers and the event
-  detector are all shared, so the Space counts by the rules the pipeline calibrates), and it derives
-  that front-end from the export's
-  `model_meta.json` — not `config.yaml` — so a retuned config cannot silently feed the model
-  features it was never trained on. Runs on LiteRT, so it does **not** install TensorFlow; a
-  `.keras`/SavedModel export needs `tensorflow` added to `space/requirements.txt`. Counting is
-  run-based (a run of agreeing above-threshold windows is one dhikr, however long); the refractory
-  period only merges runs split by a brief dip — a plain refractory timer would split any phrase
-  that outlasts it. Deploy with `space/deploy.sh <user>/<space>`, which stages `src/`,
+  `src/` rather than reimplementing it, and it derives that front-end from the export's metadata
+  (`model_metadata.json` for a per-target export, `model_meta.json` for the legacy multi-class one)
+  — not `config.yaml` — so a retuned config cannot silently feed the model features it was never
+  trained on. Runs on LiteRT, so it does **not** install TensorFlow; a `.keras`/SavedModel export
+  needs `tensorflow` added to `space/requirements.txt`. Its counting is run-based (a run of agreeing
+  above-threshold windows is one dhikr, however long) and is **not** the production detector — what
+  ships is the calibrated state machine in `src/streaming.py`. The Space is for eyeballing an
+  export; `05 · Streaming` is for deciding on one. Deploy with `space/deploy.sh <user>/<space>`, which stages `src/`,
   `configs/config.yaml` and `phrases.json` into the Space repo (they are gitignored inside
   `space/` so the pipeline stays single-sourced) and creates the Space private if absent.
 - **Models come from a shared folder, not from git** (`space/sources.py`). `space/model_source.txt`
@@ -445,70 +504,26 @@ other engineers) are in `DhikrSpeech/docs/LEARNING_GUIDE.md`.
   notebook's `05 · Export` **after** the filterbank is written so the snapshot is complete. The
   export root still holds the latest model (what the app ships); the `history/` subfolder keeps a
   dated, browsable snapshot of every published model — the `.tflite` variants plus their sidecars
-  (`labels.txt`, `model_meta.json`, `mel_filterbank.json`); the bulky `saved_model/` is excluded.
+  (`labels.txt`, the model metadata, `mel_filterbank.json`); the bulky `saved_model/` is excluded.
   `<phrases>` is `config.classes.include_phrases` (`p6-7`, or `pall` for all folders) with a `+unk`
   marker appended when `config.classes.include_unknown` is on, and `<accuracy>` the evaluation-split
   accuracy from `reports/evaluation.json` (`accNA` when absent).
   The Space's Drive fetcher **skips `history/` wholesale** (`_wanted_from_drive` in
   `space/sources.py`, same shape as the `saved_model/` skip), so a Space pointed at the export root
   loads only the latest model — point it at a `history/<name>/` subfolder to publish an older one.
-- The app **warns when a model has no `unknown` class** — softmax gives silence and noise to a
-  phrase, so such a model reports high confidence on non-dhikr audio and the scan count cannot be
-  trusted without a high threshold. The real fix is `classes.include_unknown` plus an `unknown`
-  folder in the dataset. That folder is filled by the collector: `SpeechCollector`'s `unknownPrompt`
-  card (in its `config.ts`) asks volunteers for any ordinary word that is *not* a dhikr
+- The Space **warns when a model has no `unknown` class** — softmax gives silence and noise to a
+  phrase, so such a model reports high confidence on non-dhikr audio and its scan count cannot be
+  trusted without a high threshold. This applies to legacy multi-class exports; a single-target
+  model always has one (`unknown` is half of what it is trained to say). `dataset/unknown/` is
+  filled by the collector: `SpeechCollector`'s last card
+  (`unknownPrompt` in its `config.ts`) asks volunteers for any ordinary word that is *not* a dhikr
   and uploads it straight to `dataset/unknown/`. It is intentionally absent from `phrases.json` —
   `unknown` is a class folder, and `scan_dataset` labels it from the folder name.
-- **`noise/` is filled the same way but is not a class.** The collector's last card (`noisePrompt`)
-  asks for background noise with no speech, and its audio lands in `{root}/noise/` — a **sibling** of
-  `dataset/`, matching `paths.noise_dir`. These clips are never labelled; `augmentation.background_noise`
-  mixes them underneath training clips. Filing them under `dataset/` would make `scan_dataset` learn
-  hiss as a class, which is why `classParentFolder_` in the collector's `Code.gs` picks the parent
-  from the prompt and the build refuses a `noiseFolderName` equal to `datasetSubfolder`.
-- **The collector also records long "say it ten times" takes**, from a second button on every phrase
-  card (`recording.streaming` in `SpeechCollector/config.ts`). One take holds the dhikr
-  `repetitions` times and lands in `{root}/streaming/{paddedId}/` — a **sibling** of `dataset/`, for
-  the same reason `noise/` is one: it is not a single training example and `scan_dataset` must never
-  see it. Duration/size limits and the destination are enforced **per mode on the server**, so a
-  90-second take cannot be filed as a clip and the unknown/noise prompts cannot use the mode at all.
-  The filename carries the expected event count (`006_x10_sp3f9a2c41_…`) because the page can supply
-  the count but not the timings. Nothing in the pipeline reads `streaming/` — it is the recruitment
-  half of stage 06, and converting a folder of takes into `streaming_test/audio/*.wav` +
-  `annotations.json` is still manual.
-- **Collector filenames carry a speaker token**: `<class>_sp<8 hex>_<timestamp>_<suffix>`, from a
-  random UUID the volunteer's browser mints once and keeps (`speech_collector_speaker_id`). It is
-  already the id in force — `split.speaker.source: auto` resolves through
-  `filename_patterns`, whose first entry is `(?P<speaker>sp[0-9a-f]{8})`. (The legacy
-  `split.group_regex` is `null` and superseded; setting it would only override the `speaker` section,
-  not enable it.) A file with **no** token resolves to no speaker and becomes its own group, so a
-  dataset part-way through the rollout is grouped only where the token exists — `auto_match_ratio`
-  (0.6) decides whether stage 01 warns about that, and coverage below it means the validation
-  accuracy is still optimistic for the untagged remainder.
-- **Pre-token recordings can be given a token after the fact** by notebook section `4b`
-  (`DhikrSpeech/src/speaker_backfill.py`): it reads the collector's metadata sheet, derives
-  `sp<8 hex>` from `sha256(browser|platform)`, and renames the untagged files on the mounted Drive.
-  It lives in the notebook, not in Apps Script, because Colab mounts Drive as a filesystem — the
-  rename is local rather than a per-file Drive API call under a 6-minute execution limit. It
-  **over-groups** (one bucket per browser/platform, so distinct volunteers merge), which is the safe
-  direction since leakage only ever goes down, and `BackfillPlan.summary()` prints the group sizes so
-  a single dominant bucket is visible *before* anything is renamed. Rows with neither field, filenames
-  outside the collector's shape, and existing targets are counted and skipped rather than guessed at.
-  Nothing writes back to the spreadsheet — rows are matched with any token stripped, so the walk is
-  idempotent against the stale sheet, and `reports/speaker_backfill.csv` is the old→new record.
-  `write_speakers_csv` is the non-destructive alternative (same grouping, nothing renamed).
-- `classes.include_phrases` picks which phrase ids the model learns (currently `[6, 7]`). Applied in
-  `scan_dataset`, so it decides the class vocabulary, the
-  manifest's class indices, the model's output width and `labels.txt`. Changing it requires re-running
-  preprocessing and a fresh training run; `Trainer` refuses an incompatible backup.
-- **The collector's phrase list is not the model's.** `SpeechCollector/config.ts` defines 11 phrase
-  ids and shows seven cards; the others carry `hidden: true`, which takes the card off the page while
-  keeping the id, its `dataset/{id}/` folder and its `phrases.json` label. Never delete a phrase
-  entry to retire it — the label goes with it and the freed id is inherited by the next phrase added,
-  along with the old recordings. Id 11 is the four Baqiyat spoken as one utterance (the way the
-  Baqiyat/Ten Days challenges are recited); ids 1–4 are those same words on their own, so 11 has each
-  of them as a prefix — the nested-prefix case section `06 · Experiment` exists to test. Of those
-  four only id 1 (سبحان الله) still has a card, and the page leads with 1, 6, 7 adjacent because
-  those three are nested prefixes a skimming volunteer would otherwise mix up.
+- `classes.include_phrases` is **legacy multi-class only** (`target.phrase_id: null`): it picks
+  which phrase ids that model learns, applied in `scan_dataset`, and decides the class vocabulary,
+  the manifest's class indices, the output width and `labels.txt`. Changing it requires re-running
+  preprocessing and a fresh training run; `Trainer` refuses an incompatible backup. It has no effect
+  in single-target mode, where `target.phrase_id` decides everything.
 - Convergence follows **optimiser steps** (`ceil(train_clips / batch_size) × epochs`), not epochs.
   The dataset is small, so the defaults are tuned small-batch/many-epochs and the training cell warns
   under 2000 steps.

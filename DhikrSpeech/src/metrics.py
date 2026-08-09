@@ -29,9 +29,11 @@ PathLike = Union[str, Path]
 
 __all__ = [
     "ClassMetrics",
+    "DetectorEvaluation",
     "ErrorCase",
     "EvaluationResult",
     "NegativeTypeMetrics",
+    "evaluate_detector",
     "evaluate_model",
     "predict_dataset",
     "wilson_interval",
@@ -573,6 +575,224 @@ class EvaluationResult:
             "errors": errors_path,
             "confusion_matrix": matrix_path,
         }
+
+
+# ---------------------------------------------------------------------------
+# Single-target (detector) clip metrics
+# ---------------------------------------------------------------------------
+@dataclass
+class DetectorEvaluation:
+    """Clip-level quality of a single-target detector at one threshold.
+
+    Accuracy is deliberately not the headline. With negatives outnumbering
+    positives 3:1 a model that never fires is 75% accurate, so what is reported
+    is precision, recall and - the number that predicts on-device behaviour - the
+    false-positive rate *per negative category*. A detector that is flawless on
+    room tone and fires on half the near-misses has one number worth knowing, and
+    it is not its accuracy.
+    """
+
+    threshold: float
+    y_true: np.ndarray
+    scores: np.ndarray
+    negative_types: List[str] = field(default_factory=list)
+    paths: List[str] = field(default_factory=list)
+
+    @property
+    def num_samples(self) -> int:
+        return int(self.y_true.size)
+
+    @property
+    def positives(self) -> int:
+        return int(np.count_nonzero(self.y_true == 1))
+
+    @property
+    def negatives(self) -> int:
+        return int(np.count_nonzero(self.y_true != 1))
+
+    @property
+    def accepted(self) -> np.ndarray:
+        return self.scores >= self.threshold
+
+    @property
+    def true_positives(self) -> int:
+        return int(np.count_nonzero((self.y_true == 1) & self.accepted))
+
+    @property
+    def false_positives(self) -> int:
+        return int(np.count_nonzero((self.y_true != 1) & self.accepted))
+
+    @property
+    def false_negatives(self) -> int:
+        return int(np.count_nonzero((self.y_true == 1) & ~self.accepted))
+
+    @property
+    def precision(self) -> float:
+        detected = self.true_positives + self.false_positives
+        return self.true_positives / detected if detected else float("nan")
+
+    @property
+    def recall(self) -> float:
+        return self.true_positives / self.positives if self.positives else float("nan")
+
+    @property
+    def f1(self) -> float:
+        precision, recall = self.precision, self.recall
+        if not np.isfinite(precision) or not np.isfinite(recall) or precision + recall == 0:
+            return float("nan")
+        return 2 * precision * recall / (precision + recall)
+
+    @property
+    def false_positive_rate(self) -> float:
+        return self.false_positives / self.negatives if self.negatives else float("nan")
+
+    @property
+    def accuracy(self) -> float:
+        correct = self.true_positives + (self.negatives - self.false_positives)
+        return correct / self.num_samples if self.num_samples else float("nan")
+
+    @property
+    def auc(self) -> float:
+        """Threshold-free separation. NaN when the split has only one class."""
+        if not self.positives or not self.negatives:
+            return float("nan")
+        false_positive_rate, true_positive_rate, _ = roc_curve(
+            (self.y_true == 1).astype(np.int32), self.scores
+        )
+        return float(auc(false_positive_rate, true_positive_rate))
+
+    def by_negative_type(self) -> Dict[str, Dict[str, float]]:
+        """False-positive rate per negative category, worst first when sorted."""
+        if not self.negative_types:
+            return {}
+        result: Dict[str, Dict[str, float]] = {}
+        types = np.asarray(self.negative_types)
+        for name in sorted(set(types[self.y_true != 1])):
+            mask = (types == name) & (self.y_true != 1)
+            clips = int(np.count_nonzero(mask))
+            if not clips:
+                continue
+            fired = int(np.count_nonzero(mask & self.accepted))
+            result[str(name)] = {
+                "clips": clips,
+                "false_positives": fired,
+                "false_positive_rate": round(fired / clips, 4),
+                "max_score": round(float(self.scores[mask].max()), 4),
+                "mean_score": round(float(self.scores[mask].mean()), 4),
+            }
+        return result
+
+    def worst_false_positives(self, limit: int = 12) -> List[Dict[str, object]]:
+        mask = (self.y_true != 1) & self.accepted
+        order = np.argsort(self.scores)[::-1]
+        rows: List[Dict[str, object]] = []
+        for index in order:
+            if not mask[index]:
+                continue
+            rows.append(
+                {
+                    "path": self.paths[index] if index < len(self.paths) else "",
+                    "negative_type": (
+                        self.negative_types[index] if index < len(self.negative_types) else ""
+                    ),
+                    "score": round(float(self.scores[index]), 4),
+                }
+            )
+            if len(rows) >= limit:
+                break
+        return rows
+
+    def to_dict(self) -> Dict[str, object]:
+        low, high = wilson_interval(self.recall, self.positives) if self.positives else (
+            float("nan"),
+            float("nan"),
+        )
+        return {
+            "threshold": self.threshold,
+            "clips": self.num_samples,
+            "positives": self.positives,
+            "negatives": self.negatives,
+            "true_positives": self.true_positives,
+            "false_positives": self.false_positives,
+            "false_negatives": self.false_negatives,
+            "precision": _finite(self.precision),
+            "recall": _finite(self.recall),
+            "recall_ci95": [_finite(low), _finite(high)],
+            "f1": _finite(self.f1),
+            "false_positive_rate": _finite(self.false_positive_rate),
+            "accuracy": _finite(self.accuracy),
+            "auc": _finite(self.auc),
+            "by_negative_type": self.by_negative_type(),
+            "worst_false_positives": self.worst_false_positives(),
+        }
+
+    def save(self, path: PathLike) -> Path:
+        destination = Path(path)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(
+            json.dumps(self.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+        return destination
+
+    def summary(self) -> str:
+        lines = [
+            f"threshold      : {self.threshold:.2f}",
+            f"clips          : {self.num_samples} ({self.positives} target / "
+            f"{self.negatives} other)",
+            f"precision      : {_percent(self.precision)}",
+            f"recall         : {_percent(self.recall)}",
+            f"F1             : {_percent(self.f1)}",
+            f"false positives: {self.false_positives} ({_percent(self.false_positive_rate)} "
+            f"of negatives)",
+            f"AUC            : {self.auc:.4f}" if np.isfinite(self.auc) else "AUC            : n/a",
+        ]
+        breakdown = self.by_negative_type()
+        if breakdown:
+            lines.append("")
+            lines.append(f"{'negative type':<20}{'clips':>7}{'FP':>6}{'rate':>9}{'max P':>8}")
+            for name, entry in sorted(
+                breakdown.items(), key=lambda item: item[1]["false_positive_rate"], reverse=True
+            ):
+                lines.append(
+                    f"{name:<20}{int(entry['clips']):>7}{int(entry['false_positives']):>6}"
+                    f"{entry['false_positive_rate'] * 100:>8.1f}%{entry['max_score']:>8.3f}"
+                )
+        if self.positives < 20:
+            lines.append(
+                f"\n!! {self.positives} target clips in this split - recall moves in steps of "
+                f"{100.0 / max(self.positives, 1):.0f} points and its interval covers most of "
+                f"the range. This cannot tell a good detector from a bad one."
+            )
+        return "\n".join(lines)
+
+
+def _finite(value: float) -> Optional[float]:
+    return None if value is None or not np.isfinite(value) else round(float(value), 4)
+
+
+def _percent(value: float) -> str:
+    return "n/a" if not np.isfinite(value) else f"{value * 100:.1f}%"
+
+
+def evaluate_detector(
+    y_true: Sequence[int],
+    scores: Sequence[float],
+    threshold: float = 0.5,
+    negative_types: Optional[Sequence[Optional[str]]] = None,
+    paths: Optional[Sequence[str]] = None,
+) -> DetectorEvaluation:
+    """Wrap labels and ``P(target)`` scores into :class:`DetectorEvaluation`."""
+    truth = np.asarray(list(y_true), dtype=np.int32).ravel()
+    values = np.asarray(list(scores), dtype=np.float32).ravel()
+    if truth.size != values.size:
+        raise ValueError(f"{truth.size} labels but {values.size} scores")
+    return DetectorEvaluation(
+        threshold=float(threshold),
+        y_true=truth,
+        scores=values,
+        negative_types=[str(item or "unknown") for item in (negative_types or [])],
+        paths=list(paths or []),
+    )
 
 
 def predict_dataset(model, dataset) -> Tuple[np.ndarray, np.ndarray]:

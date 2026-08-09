@@ -289,6 +289,21 @@ h1 {
   color: #3f545f;
 }
 
+/* The long negative take. It shares the noise card's cool grey — both ask for
+   audio rather than a phrase — but carries a deeper badge, because this is the
+   one card where saying a dhikr even once ruins several minutes of recording. */
+.phrase-card-longNoise .phrase-panel {
+  border-color: #c8d2d8;
+  background: linear-gradient(155deg, #f8fafb, #e2e9ee);
+}
+
+.phrase-card-longNoise .phrase-text { font-size: clamp(1.15rem, 4.6vw, 1.4rem); }
+
+.phrase-card-longNoise .card-badge {
+  background: #3f545f;
+  color: #ffffff;
+}
+
 .recorder-panel {
   margin-top: 11px;
   text-align: center;

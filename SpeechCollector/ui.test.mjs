@@ -38,11 +38,14 @@ const phrases = bootstrap.phrases;
 // The page offers one card per prompt: every visible phrase, then the unknown
 // card, then the noise card. Indices are derived rather than written down, so
 // parking a phrase in config.ts moves the tests with it.
+const negative = bootstrap.recording.negative;
 const prompts = [...phrases];
 if (bootstrap.unknownPrompt) prompts.push(bootstrap.unknownPrompt);
 if (bootstrap.noisePrompt) prompts.push(bootstrap.noisePrompt);
+if (bootstrap.longNoisePrompt && negative) prompts.push(bootstrap.longNoisePrompt);
 const unknownIndex = bootstrap.unknownPrompt ? phrases.length : -1;
-const noiseIndex = bootstrap.noisePrompt ? prompts.length - 1 : -1;
+const noiseIndex = bootstrap.noisePrompt ? phrases.length + (bootstrap.unknownPrompt ? 1 : 0) : -1;
+const longNoiseIndex = bootstrap.longNoisePrompt && negative ? prompts.length - 1 : -1;
 const lastIndex = prompts.length - 1;
 const UPLOAD_COUNTS_KEY = 'speech_collector_upload_counts';
 const STREAMING_COUNTS_KEY = 'speech_collector_streaming_counts';
@@ -53,9 +56,26 @@ const SPEAKER_ID_KEY = 'speech_collector_speaker_id';
 const streaming = bootstrap.recording.streaming;
 const streamingDurationMs = streaming ? streaming.minimumDurationMs + 2000 : 0;
 
-/** A UI string as the page renders it, with the repetition count filled in. */
-const ui = (key) =>
-  streaming ? bootstrap.ui[key].replaceAll('{reps}', String(streaming.repetitions)) : bootstrap.ui[key];
+// The long negative take: minutes of ordinary sound with no dhikr in it, on its
+// own card with its own single button.
+const negativeDurationMs = negative ? negative.minimumDurationMs + 5000 : 0;
+
+/** A UI string as the page renders it, with every configured number filled in. */
+const ui = (key) => {
+  let text = bootstrap.ui[key];
+  if (streaming) text = text.replaceAll('{reps}', String(streaming.repetitions));
+  if (negative) {
+    text = text
+      .replaceAll('{minutes}', String(Math.round(negative.maximumDurationMs / 60000)))
+      .replaceAll('{seconds}', String(Math.round(negative.minimumDurationMs / 1000)));
+  }
+  return text;
+};
+
+// The last card that records ordinary clips. The long-negative card, when it is
+// on the page, is last overall but rejects anything under its own minimum, so a
+// clip-length take there is not the same test.
+const lastClipIndex = longNoiseIndex >= 0 ? lastIndex - 1 : lastIndex;
 
 // The static shell from Index.html. Everything else is created by the app.
 const SHELL_IDS = [
@@ -449,12 +469,12 @@ const disabled = (environment, id) => environment.dom.get(id).disabled;
 // 9. A failed upload keeps its take, offers a retry, and never tallies.
 {
   const environment = createEnvironment({ uploadOk: false });
-  await recordTake(environment, lastIndex);
-  await uploadTake(environment, lastIndex);
+  await recordTake(environment, lastClipIndex);
+  await uploadTake(environment, lastClipIndex);
   assert.equal(environment.storage.has(UPLOAD_COUNTS_KEY), false, 'A failed upload must not be tallied.');
-  assert.equal(disabled(environment, `upload-${lastIndex}`), false, 'The take must be kept for a retry.');
-  assert.equal(text(environment, `upload-label-${lastIndex}`), bootstrap.ui.retry, 'The button must offer a retry.');
-  assert.equal(text(environment, `tally-${lastIndex}`), '', 'Nothing was uploaded, so nothing is tallied.');
+  assert.equal(disabled(environment, `upload-${lastClipIndex}`), false, 'The take must be kept for a retry.');
+  assert.equal(text(environment, `upload-label-${lastClipIndex}`), bootstrap.ui.retry, 'The button must offer a retry.');
+  assert.equal(text(environment, `tally-${lastClipIndex}`), '', 'Nothing was uploaded, so nothing is tallied.');
 }
 
 // 10. The upload-all bar counts waiting takes and appears only once it beats
@@ -817,4 +837,112 @@ if (streaming) {
   assert.equal(disabled(environment, 'stop-1'), false, 'The live card must be stoppable.');
 }
 
-console.log('UI behaviour tests passed: per-prompt recorders, the unknown and noise cards, the repetition recorder, single-take locking, uploads, tallies, and the speaker id.');
+/** The long negative take, driven from the one button its card offers. */
+async function recordNegativeTake(environment, durationMs = negativeDurationMs) {
+  environment.dom.get(`record-${longNoiseIndex}`).dispatch('click');
+  await settle();
+  environment.clock.now += durationMs;
+  environment.dom.get(`stop-${longNoiseIndex}`).dispatch('click');
+  await settle();
+}
+
+// 30. The long-negative card comes last, asks for minutes of audio with no dhikr
+//     in it, and marks itself apart. It is the only card whose recordings can
+//     ever show the counter firing when nobody said anything.
+if (longNoiseIndex >= 0) {
+  const environment = createEnvironment();
+  assert.equal(text(environment, `phrase-${longNoiseIndex}`), bootstrap.longNoisePrompt.text);
+  assert.equal(text(environment, `note-${longNoiseIndex}`), bootstrap.longNoisePrompt.note);
+  assert.equal(text(environment, `badge-${longNoiseIndex}`), bootstrap.ui.longNoiseBadge);
+  assert.match(
+    environment.dom.get(`card-${longNoiseIndex}`).className,
+    /phrase-card-longNoise/,
+    'The long-negative card must be styled apart from the phrases and the other two.'
+  );
+  assert.equal(
+    text(environment, `record-label-${longNoiseIndex}`),
+    ui('longNoiseRecord'),
+    'Its one button must name the take it actually records.'
+  );
+  assert.equal(
+    environment.dom.find(`streaming-record-${longNoiseIndex}`),
+    null,
+    'There is no dhikr here to say ten times.'
+  );
+}
+
+// 31. Its wording is the opposite of every other card's: saying the dhikr is what
+//     ruins the sample, and the card never repeats the single-utterance rule or
+//     the repetition prompt.
+if (longNoiseIndex >= 0) {
+  const environment = createEnvironment();
+  environment.dom.get(`record-${longNoiseIndex}`).dispatch('click');
+  await settle();
+  assert.equal(text(environment, `status-${longNoiseIndex}`), ui('longNoiseRecording'));
+
+  environment.clock.now += negativeDurationMs;
+  environment.dom.get(`stop-${longNoiseIndex}`).dispatch('click');
+  await settle();
+  assert.equal(text(environment, `status-${longNoiseIndex}`), ui('longNoiseRecordingReady'));
+  assert.equal(
+    text(environment, `record-label-${longNoiseIndex}`),
+    ui('longNoiseReRecord'),
+    'The button must offer to replace its own waiting take.'
+  );
+
+  // The phrase cards keep the shared wording, so the override is scoped.
+  await recordTake(environment, 0);
+  assert.equal(text(environment, 'status-0'), bootstrap.ui.recordingReady);
+}
+
+// 32. A clip-length take under this card is rejected, and the correction names
+//     the real mistake: not "say it once more" but "record for longer".
+if (longNoiseIndex >= 0) {
+  const environment = createEnvironment();
+  await recordNegativeTake(environment, bootstrap.recording.minimumDurationMs + 200);
+  assert.equal(text(environment, `status-${longNoiseIndex}`), ui('longNoiseTooShort'));
+  assert.equal(
+    disabled(environment, `upload-${longNoiseIndex}`),
+    true,
+    'A take too short to be worth an hour-rate measurement must not upload.'
+  );
+}
+
+// 33. A negative take uploads under its own mode — which is what files it in
+//     streaming/negative/ with an x0 tag rather than in dataset/ — and is
+//     tallied apart from the training clips.
+if (longNoiseIndex >= 0) {
+  const environment = createEnvironment();
+  await recordNegativeTake(environment);
+  await uploadTake(environment, longNoiseIndex);
+
+  assert.equal(environment.uploads[0].mode, 'negative', 'The payload must name the negative mode.');
+  assert.equal(environment.uploads[0].phrase_id, bootstrap.longNoisePrompt.id);
+  assert.equal(
+    environment.storage.has(UPLOAD_COUNTS_KEY),
+    false,
+    'Minutes of television are not a training clip.'
+  );
+  assert.deepEqual(
+    JSON.parse(environment.storage.get(STREAMING_COUNTS_KEY)),
+    { [bootstrap.longNoisePrompt.id]: 1 },
+    'A negative take must be tallied against its own card.'
+  );
+  assert.equal(
+    text(environment, `tally-${longNoiseIndex}`),
+    ui('longNoiseCount').replace('{count}', '1'),
+    'The card must show its own tally, not an empty clip tally.'
+  );
+  assert.equal(text(environment, 'tally-0'), '', 'No phrase may be credited with a negative take.');
+}
+
+// 34. A take longer than a repetition take is still kept: length is the whole
+//     point here, since false activations are counted per hour.
+if (longNoiseIndex >= 0 && negative.maximumDurationMs > 120000) {
+  const environment = createEnvironment();
+  await recordNegativeTake(environment, 120000);
+  assert.equal(text(environment, `timer-${longNoiseIndex}`), '02:00.0', 'The timer must keep counting past two minutes.');
+  assert.equal(disabled(environment, `upload-${longNoiseIndex}`), false, 'A long take must be kept, not truncated away.');
+}
+
+console.log('UI behaviour tests passed: per-prompt recorders, the unknown, noise and long-negative cards, the repetition recorder, single-take locking, uploads, tallies, and the speaker id.');

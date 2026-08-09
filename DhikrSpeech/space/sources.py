@@ -273,7 +273,7 @@ def _fetch_drive_folder(source: str, target: Path) -> FetchResult:
     if not wanted:
         raise SourceError(
             f"That Drive folder holds {len(listing)} file(s), none of them an export. "
-            "It needs dhikr_*.tflite plus labels.txt and model_meta.json."
+            "It needs dhikr_*.tflite plus labels.txt and model_metadata.json."
         )
 
     downloaded: List[str] = []

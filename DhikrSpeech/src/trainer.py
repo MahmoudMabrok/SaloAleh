@@ -66,6 +66,8 @@ __all__ = [
     "build_metrics",
     "TrainingArtifacts",
     "WarmupCosineDecay",
+    "build_loss",
+    "build_metrics",
     "config_differences",
     "configure_mixed_precision",
     "sanity_overfit",
@@ -250,6 +252,13 @@ else:  # pragma: no cover - Keras builds older than 2.13
 
 
 def build_loss(num_classes: int, config: TrainingConfig) -> keras.losses.Loss:
+    """Loss for ``num_classes`` model outputs.
+
+    One output is the sigmoid detector: integer 0/1 labels go straight into
+    binary crossentropy, which applies ``label_smoothing`` itself.
+    """
+    if num_classes == 1:
+        return keras.losses.BinaryCrossentropy(label_smoothing=config.label_smoothing)
     if config.label_smoothing > 0.0:
         return SparseCategoricalCrossentropyWithSmoothing(
             num_classes=num_classes, label_smoothing=config.label_smoothing
@@ -258,22 +267,38 @@ def build_loss(num_classes: int, config: TrainingConfig) -> keras.losses.Loss:
 
 
 def build_metrics(num_classes: int, config: TrainingConfig) -> List:
-    """Accuracy, top-3 and - when the Keras build has it - macro F1.
+    """Metrics that mean something for the width of the output.
 
-    ``val_accuracy`` alone is a poor guide on an unbalanced split: a model that
-    answers ``unknown`` to everything scores whatever share ``unknown`` has.
-    Macro F1 weighs every class equally and drops when a class is being ignored,
-    which is the failure this dataset produces most often.
+    A **detector** (one sigmoid output) is judged on precision and recall, never
+    on accuracy: with negatives at twice the positives, a model that never fires
+    is already 67% accurate. `top3` is meaningless below four classes and macro
+    F1 is redundant on two, so neither is added there.
 
-    It is a *metric*, not a callback: ``keras.metrics.F1Score`` accumulates
-    per-class true/false positives on device, so there is nothing fragile to
-    schedule. Keras builds without it (older 2.x) simply do not get the metric,
-    rather than the run failing at compile time.
+    For the legacy multi-class model, `val_accuracy` alone is just as poor a
+    guide - a model answering `unknown` to everything scores whatever share
+    `unknown` has. Macro F1 weighs every class equally and drops when a class is
+    being ignored, which is the failure that dataset produces most often. It is a
+    *metric*, not a callback: `keras.metrics.F1Score` accumulates per-class
+    true/false positives on device, so there is nothing fragile to schedule, and
+    Keras builds without it simply do not get the metric rather than failing at
+    compile time.
     """
-    metrics = [
-        keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
-        keras.metrics.SparseTopKCategoricalAccuracy(k=3, name="top3_accuracy"),
-    ]
+    if num_classes == 1:
+        return [
+            keras.metrics.BinaryAccuracy(name="accuracy"),
+            keras.metrics.Precision(name="precision"),
+            keras.metrics.Recall(name="recall"),
+            keras.metrics.AUC(name="auc"),
+        ]
+
+    metrics: List = [keras.metrics.SparseCategoricalAccuracy(name="accuracy")]
+    if num_classes > 3:
+        metrics.append(keras.metrics.SparseTopKCategoricalAccuracy(k=3, name="top3_accuracy"))
+    # Two classes are the target/unknown detector: macro F1 over two columns adds
+    # nothing that precision and recall do not already say.
+    if num_classes <= 2:
+        return metrics
+
     if not config.macro_f1 or SparseMacroF1 is None:
         if config.macro_f1 and SparseMacroF1 is None:
             LOGGER.info(
@@ -340,6 +365,10 @@ class TrainingArtifacts:
     num_classes: Optional[int] = None
     resumed: bool = False
     val_size: Optional[int] = None
+    # Share of positives in the validation split. For a single-target detector
+    # "chance" is the majority class, not 1/num_classes: on a 1:3 split a model
+    # that never fires already scores 0.75.
+    positive_rate: Optional[float] = None
 
     def best_epoch(self, monitor: str = "val_accuracy", mode: str = "max") -> Optional[int]:
         values = self.history.get(monitor)
@@ -362,7 +391,14 @@ class TrainingArtifacts:
 
     @property
     def chance_level(self) -> Optional[float]:
-        """Accuracy a constant prediction reaches on a balanced split."""
+        """Accuracy a constant prediction reaches on this split.
+
+        Balanced multi-class: ``1 / num_classes``. A detector: the majority
+        class, which is the number a model that never fires actually scores - and
+        is far above 0.5 whenever negatives outnumber positives.
+        """
+        if self.positive_rate is not None and 0.0 <= self.positive_rate <= 1.0:
+            return float(max(self.positive_rate, 1.0 - self.positive_rate))
         if not self.num_classes or self.num_classes < 2:
             return None
         return 1.0 / float(self.num_classes)
@@ -656,6 +692,7 @@ class Trainer:
         initial_epoch: int = 0,
         verbose: int = 1,
         val_size: Optional[int] = None,
+        positive_rate: Optional[float] = None,
     ) -> TrainingArtifacts:
         """Run ``fit`` and return the artefacts.
 
@@ -713,6 +750,7 @@ class Trainer:
             num_classes=int(self.num_classes),
             resumed=resumed,
             val_size=int(val_size) if val_size else None,
+            positive_rate=float(positive_rate) if positive_rate is not None else None,
         )
 
     def _check_resume_compatibility(self) -> None:
@@ -806,10 +844,22 @@ def sanity_overfit(
     ``steps`` batches. ``model`` is cloned, so the caller's weights are untouched.
     """
     clone = keras.models.clone_model(model)
+    num_outputs = int(clone.output_shape[-1])
     clone.compile(
         optimizer=keras.optimizers.Adam(learning_rate=learning_rate),
-        loss=keras.losses.SparseCategoricalCrossentropy(),
-        metrics=[keras.metrics.SparseCategoricalAccuracy(name="accuracy")],
+        # No label smoothing here: this test wants the model to memorise, and
+        # smoothing would stop it reaching the near-1.0 that makes the verdict
+        # readable.
+        loss=(
+            keras.losses.BinaryCrossentropy()
+            if num_outputs == 1
+            else keras.losses.SparseCategoricalCrossentropy()
+        ),
+        metrics=[
+            keras.metrics.BinaryAccuracy(name="accuracy")
+            if num_outputs == 1
+            else keras.metrics.SparseCategoricalAccuracy(name="accuracy")
+        ],
     )
     history = clone.fit(
         dataset.repeat(),
@@ -832,7 +882,11 @@ def sanity_overfit(
     # normal; a collapse to chance in *inference* while this stays high is not.
     correct = total = 0
     for features, labels in dataset:
-        predicted = tf.argmax(clone(features, training=True), axis=-1, output_type=tf.int32)
+        outputs = clone(features, training=True)
+        if num_outputs == 1:
+            predicted = tf.cast(tf.reshape(outputs, [-1]) >= 0.5, tf.int32)
+        else:
+            predicted = tf.argmax(outputs, axis=-1, output_type=tf.int32)
         labels = tf.cast(tf.reshape(labels, [-1]), tf.int32)
         correct += int(tf.reduce_sum(tf.cast(tf.equal(predicted, labels), tf.int32)))
         total += int(tf.size(labels))

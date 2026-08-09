@@ -31,10 +31,13 @@
 
   // What a take is. A clip holds the dhikr once and trains the model; a
   // streaming take holds it `repetitions` times in one long recording and
-  // measures the counter. A card records one take at a time either way — the two
-  // buttons choose what kind, and the take carries its own kind from there.
+  // measures whether the counter reaches that many; a negative take holds no
+  // dhikr at all for minutes and measures how often the counter fires anyway.
+  // A card records one take at a time — the buttons choose what kind, and the
+  // take carries its own kind from there.
   const CLIP = 'clip';
   const STREAMING = 'streaming';
+  const NEGATIVE = 'negative';
 
   const IDLE = 'idle';
   const RECORDING = 'recording';
@@ -201,21 +204,34 @@
   }
 
   /**
-   * A UI string with the repetition count filled in. The number appears in the
-   * button, the hint and four status lines, so it is written once in the config
-   * and substituted here rather than spelled out in six Arabic strings that
-   * would then have to be edited together.
+   * A UI string with its numbers filled in. Each appears in a button, a hint and
+   * several status lines, so they are written once in the config and substituted
+   * here rather than spelled out in Arabic strings that would then have to be
+   * edited together — and would keep saying "ten" after the config said eleven.
    */
   function uiText(key) {
     const value = config.ui[key];
     if (typeof value !== 'string') return value;
     const streaming = streamingSettings();
-    return streaming ? value.replaceAll('{reps}', String(streaming.repetitions)) : value;
+    const negative = negativeSettings();
+    let text = value;
+    if (streaming) text = text.replaceAll('{reps}', String(streaming.repetitions));
+    if (negative) {
+      text = text
+        .replaceAll('{minutes}', String(Math.round(negative.maximumDurationMs / 60000)))
+        .replaceAll('{seconds}', String(Math.round(negative.minimumDurationMs / 1000)));
+    }
+    return text;
   }
 
   /** The repetition-take settings, or null when the second button is dropped. */
   function streamingSettings() {
     return config.recording.streaming || null;
+  }
+
+  /** The long negative-take settings, or null when that card is dropped. */
+  function negativeSettings() {
+    return config.recording.negative || null;
   }
 
   /**
@@ -224,8 +240,8 @@
    * mis-filed recording.
    */
   function limitsFor(mode) {
-    const streaming = streamingSettings();
-    if (mode === STREAMING && streaming) return streaming;
+    if (mode === NEGATIVE && negativeSettings()) return negativeSettings();
+    if (mode === STREAMING && streamingSettings()) return streamingSettings();
     return config.recording;
   }
 
@@ -245,33 +261,53 @@
   // ---------------------------------------------------------------------------
 
   /**
-   * The two non-phrase cards come last: the phrases are what a volunteer came
-   * for, and these read as the odd ones out at the end rather than mixed in.
-   * Noise sits after unknown because it is the one card with nothing to say.
+   * The non-phrase cards come last: the phrases are what a volunteer came for,
+   * and these read as the odd ones out at the end rather than mixed in. Noise
+   * sits after unknown because it is the one card with nothing to say, and the
+   * long negative take last of all because it is the longest ask on the page.
    *
    * `kind` is what the rest of the page reads — it picks the card's styling, its
-   * badge, and the wording of its status lines. The backend decides where the
-   * audio is filed from the prompt's id alone.
+   * badge, the wording of its status lines and which mode its record button
+   * starts. The backend decides where the audio is filed from the prompt's id
+   * and that mode.
    */
   function collectPrompts() {
     const prompts = config.phrases.map((phrase) => ({ ...phrase, kind: 'phrase' }));
     if (config.unknownPrompt) prompts.push({ ...config.unknownPrompt, kind: 'unknown' });
     if (config.noisePrompt) prompts.push({ ...config.noisePrompt, kind: 'noise' });
+    // Dropped with its recorder: the card's only button records in negative mode,
+    // so without those settings it would offer a take the server would refuse.
+    if (config.longNoisePrompt && negativeSettings()) {
+      prompts.push({ ...config.longNoisePrompt, kind: 'longNoise' });
+    }
     return prompts;
   }
 
   /**
-   * The noise card is told to stay silent, so every string that would tell it to
-   * "say the phrase once" is swapped for its noise wording. Falls back to the
-   * shared string, so a missing override reads as the old copy rather than blank.
+   * What a card's record button produces. Every card records clips except the
+   * long negative one, whose single button records the take that gives the whole
+   * card its point — there is no clip-length version of "several minutes of
+   * audio with no dhikr in it".
    */
-  function promptText(card, key, mode) {
+  function primaryMode(prompt) {
+    return prompt.kind === 'longNoise' ? NEGATIVE : CLIP;
+  }
+
+  /**
+   * The two cards that are told not to say the phrase get their own wording, so
+   * every string that would tell them to "say it once" is swapped. Falls back to
+   * the shared string, so a missing override reads as the old copy, not blank.
+   */
+  function promptText(prompt, key, mode) {
+    // The long negative card first: it is the only card whose every take is a
+    // negative one, so its wording is never the streaming or the shared copy.
+    if (prompt.kind === 'longNoise') return uiText(`longNoise${capitalize(key)}`) || uiText(key);
     // A repetition take is the one place the single-utterance wording is wrong,
-    // so it overrides first: its status lines say to repeat the phrase, which is
+    // so it overrides next: its status lines say to repeat the phrase, which is
     // the opposite of what every other string on the card says. Only phrases can
     // be repeated, so this never collides with the noise overrides below.
     if (mode === STREAMING) return uiText(`streaming${capitalize(key)}`) || uiText(key);
-    if (card.prompt.kind !== 'noise') return uiText(key);
+    if (prompt.kind !== 'noise') return uiText(key);
     return uiText(`noise${capitalize(key)}`) || uiText(key);
   }
 
@@ -352,7 +388,13 @@
     root.appendChild(status);
 
     const buttons = make('div', 'button-grid');
-    const record = makeButton(`record-${index}`, 'button-primary', '●', `record-label-${index}`, uiText('record'));
+    const record = makeButton(
+      `record-${index}`,
+      'button-primary',
+      '●',
+      `record-label-${index}`,
+      promptText(prompt, 'record', primaryMode(prompt))
+    );
     const stop = makeButton(`stop-${index}`, 'button-danger', '■', `stop-label-${index}`, uiText('stop'));
     const play = makeButton(`play-${index}`, 'button-secondary', '▶', `play-label-${index}`, uiText('play'));
     const upload = makeButton(`upload-${index}`, 'button-accent', '⬆', `upload-label-${index}`, uiText('upload'));
@@ -400,7 +442,7 @@
       }
     };
 
-    record.root.addEventListener('click', () => startRecording(card, CLIP));
+    record.root.addEventListener('click', () => startRecording(card, primaryMode(prompt)));
     if (streamingRecord) {
       streamingRecord.root.addEventListener('click', () => startRecording(card, STREAMING));
     }
@@ -436,6 +478,7 @@
   async function startRecording(card, mode) {
     if (state.microphoneUnavailable) return;
     if (mode === STREAMING && !allowsStreaming(card.prompt)) return;
+    if (mode === NEGATIVE && card.prompt.kind !== 'longNoise') return;
     // One microphone means one take at a time; every other card is locked while
     // this one runs, and a card waiting on its upload cannot be recorded over.
     if (state.activeIndex !== -1) return;
@@ -464,7 +507,7 @@
       state.activeMode = mode;
       state.startedAt = performance.now();
       state.recorder.start(200);
-      setCardState(card, RECORDING, promptText(card, 'recording', mode), 'info');
+      setCardState(card, RECORDING, promptText(card.prompt, 'recording', mode), 'info');
       startTimer(card);
       startWaveform(card, stream);
       state.automaticStopId = window.setTimeout(
@@ -574,7 +617,7 @@
       // A repetition take that is too short is a different mistake from a clip
       // that is: it means the phrase was not said the full ten times, so saying
       // "record for at least one second" would be the wrong correction.
-      setCardState(card, IDLE, promptText(card, 'tooShort', mode), 'error');
+      setCardState(card, IDLE, promptText(card.prompt, 'tooShort', mode), 'error');
       return;
     }
 
@@ -599,7 +642,7 @@
       sampleId: createSampleId(),
       url: URL.createObjectURL(blob)
     };
-    setCardState(card, READY, promptText(card, 'recordingReady', mode), 'success');
+    setCardState(card, READY, promptText(card.prompt, 'recordingReady', mode), 'success');
   }
 
   function handleRecorderError(card, error) {
@@ -706,7 +749,7 @@
       setCardState(
         card,
         IDLE,
-        `<strong>${escapeHtml(uiText('uploadSuccessTitle'))}</strong><br>${escapeHtml(promptText(card, 'uploadSuccessBody', mode))}`,
+        `<strong>${escapeHtml(uiText('uploadSuccessTitle'))}</strong><br>${escapeHtml(promptText(card.prompt, 'uploadSuccessBody', mode))}`,
         'success',
         true
       );
@@ -761,7 +804,10 @@
     else card.dom.status.textContent = card.message;
 
     card.dom.record.disabled = locked;
-    card.dom.recordLabel.textContent = uiText(waitingMode === CLIP ? 'reRecord' : 'record');
+    // "Re-record" only when this button is the one that would replace the take.
+    const primary = primaryMode(card.prompt);
+    card.dom.recordLabel.textContent =
+      promptText(card.prompt, waitingMode === primary ? 'reRecord' : 'record', primary);
     if (card.dom.streamingRecord) {
       card.dom.streamingRecord.disabled = locked;
       card.dom.streamingRecordLabel.textContent =
@@ -789,12 +835,20 @@
   function badgeText(prompt) {
     if (prompt.kind === 'unknown') return config.ui.unknownBadge || '';
     if (prompt.kind === 'noise') return config.ui.noiseBadge || '';
+    if (prompt.kind === 'longNoise') return config.ui.longNoiseBadge || '';
     return '';
   }
 
+  /**
+   * The card's own contribution. The long negative card never produces clips, so
+   * its pill reads the long-take tally instead — the clip tally would sit at zero
+   * however many recordings the volunteer uploaded.
+   */
   function tallyLabel(card) {
-    const count = uploadCount(card.prompt.id);
-    return count ? uiText('recordedCount').replace('{count}', String(count)) : '';
+    const longNoise = card.prompt.kind === 'longNoise';
+    const count = longNoise ? streamingCount(card.prompt.id) : uploadCount(card.prompt.id);
+    if (!count) return '';
+    return uiText(longNoise ? 'longNoiseCount' : 'recordedCount').replace('{count}', String(count));
   }
 
   function streamingTallyLabel(card) {
@@ -841,9 +895,10 @@
     return uploadCount(phraseId) + streamingCount(phraseId);
   }
 
+  /** Clips on one tally, the long evaluation takes (repetition and negative) on the other. */
   function recordUploadedPhrase(card, mode) {
-    const counts = mode === STREAMING ? state.streamingCounts : state.uploadCounts;
-    const key = mode === STREAMING ? STREAMING_COUNTS_KEY : UPLOAD_COUNTS_KEY;
+    const counts = mode === CLIP ? state.uploadCounts : state.streamingCounts;
+    const key = mode === CLIP ? UPLOAD_COUNTS_KEY : STREAMING_COUNTS_KEY;
     counts[card.prompt.id] = (Number(counts[card.prompt.id]) || 0) + 1;
     saveCounts(key, counts);
   }

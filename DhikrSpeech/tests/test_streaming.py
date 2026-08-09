@@ -1,13 +1,9 @@
-"""Tests for the streaming window geometry, smoothing and the event detector.
+"""Tests for the streaming event detector.
 
-The detector is where a working model becomes a working counter, and every rule
-in it exists to stop one specific way of counting wrong. Each of those is pinned
-down here on hand-built probability sequences: one long utterance must be one
-count, a confidence wobble must not become two, a single confident window must
-not become one at all, and two different phrases said back to back must stay two.
-
-No audio, no model, no TensorFlow - the state machine is fed the numbers a model
-would have produced.
+Hand-built score timelines with a known right answer. These are the tests that
+decide whether the counter on the phone is trustworthy: one utterance must make
+exactly one event, four quick repetitions must make four, and a score hovering
+around the threshold must not make a stream of them.
 """
 
 from __future__ import annotations
@@ -22,231 +18,257 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.config import DetectorConfig, SmoothingConfig
 from src.streaming import (
-    CANDIDATE,
-    CONFIRMED,
-    IDLE,
+    DetectorState,
     EventDetector,
-    ProbabilitySmoother,
+    ScoreTimeline,
     detect_events,
-    smooth_probabilities,
-    window_starts,
+    detector_with_threshold,
+    smooth_scores,
+    target_score,
 )
 
-LABELS = ["006", "007", "unknown"]
-HOP = 0.25
+HOP = 0.2
+WINDOW = 1.0
 
 
-def probabilities(sequence):
-    """``[("006", 0.9), ("unknown", 0.95), ...]`` -> a (windows, 3) array."""
-    rows = []
-    for label, confidence in sequence:
-        row = np.zeros(len(LABELS), dtype=np.float32)
-        index = LABELS.index(label)
-        row[index] = confidence
-        spare = max(1.0 - confidence, 0.0)
-        others = [position for position in range(len(LABELS)) if position != index]
-        for position in others:
-            row[position] = spare / len(others)
-        rows.append(row / row.sum())
-    return np.stack(rows)
-
-
-def times(count):
-    return [index * HOP for index in range(count)]
-
-
-def events_for(sequence, config=None):
-    array = probabilities(sequence)
-    return detect_events(times(len(sequence)), array, LABELS, config or DetectorConfig())
-
-
-# ---------------------------------------------------------------------------
-# Window geometry
-# ---------------------------------------------------------------------------
-def test_window_starts_covers_the_tail():
-    starts = window_starts(num_samples=100, window=40, hop=30)
-    assert starts[0] == 0
-    assert starts[-1] + 40 == 100  # the last window reaches the end
-
-
-def test_window_starts_on_a_signal_shorter_than_one_window():
-    assert window_starts(num_samples=10, window=40, hop=10) == [0]
-
-
-def test_window_starts_rejects_a_zero_window():
-    with pytest.raises(ValueError):
-        window_starts(100, 0, 10)
-
-
-# ---------------------------------------------------------------------------
-# Smoothing
-# ---------------------------------------------------------------------------
-def test_moving_average_is_causal_and_keeps_rows_normalised():
-    array = probabilities([("006", 0.9)] * 3 + [("unknown", 0.9)] * 3)
-    smoothed = smooth_probabilities(
-        array, SmoothingConfig(enabled=True, method="moving_average", window=3)
-    )
-    assert np.allclose(smoothed.sum(axis=1), 1.0)
-    # Causal: the first row cannot have been influenced by later windows.
-    assert np.allclose(smoothed[0], array[0])
-
-
-def test_ema_smoothing_lags_a_step_change():
-    array = probabilities([("unknown", 0.95)] * 3 + [("006", 0.95)] * 3)
-    smoothed = smooth_probabilities(
-        array, SmoothingConfig(enabled=True, method="ema", alpha=0.5)
-    )
-    target = LABELS.index("006")
-    assert smoothed[3, target] < array[3, target]
-    assert smoothed[5, target] > smoothed[3, target]
-
-
-def test_smoothing_can_be_disabled():
-    array = probabilities([("006", 0.9)] * 4)
-    assert np.allclose(
-        smooth_probabilities(array, SmoothingConfig(enabled=False)), array
+def timeline(scores, hop: float = HOP, window: float = WINDOW) -> ScoreTimeline:
+    values = np.asarray(scores, dtype=np.float32)
+    return ScoreTimeline(
+        times=np.arange(values.size, dtype=np.float32) * hop,
+        scores=values,
+        window_seconds=window,
+        hop_seconds=hop,
     )
 
 
-def test_online_smoother_matches_the_offline_pass():
-    array = probabilities([("006", 0.9), ("006", 0.4), ("unknown", 0.8), ("006", 0.7)])
-    for config in (
-        SmoothingConfig(enabled=True, method="moving_average", window=3),
-        SmoothingConfig(enabled=True, method="ema", alpha=0.4),
-    ):
-        offline = smooth_probabilities(array, config)
-        smoother = ProbabilitySmoother(config)
-        online = np.stack([smoother.push(row) for row in array])
-        assert np.allclose(offline, online, atol=1e-6)
+def config(**kwargs) -> DetectorConfig:
+    base = dict(
+        activation_threshold=0.7,
+        release_threshold=0.4,
+        min_consecutive_hits=2,
+        release_windows=2,
+        cooldown_ms=200.0,
+    )
+    base.update(kwargs)
+    return DetectorConfig(**base)
+
+
+def utterance(length: int = 5, peak: float = 0.95):
+    """A rise, a plateau above activation, and a fall back to silence."""
+    return [0.05, 0.3] + [peak] * length + [0.3, 0.05, 0.02]
 
 
 # ---------------------------------------------------------------------------
-# The counting rules
+# The core promise: one utterance, one event
 # ---------------------------------------------------------------------------
-def test_one_long_utterance_is_one_event():
-    """Eight confident windows in a row are one dhikr, not eight."""
-    sequence = [("unknown", 0.95)] * 2 + [("006", 0.9)] * 8 + [("unknown", 0.95)] * 4
-    events = events_for(sequence)
+def test_one_utterance_makes_exactly_one_event() -> None:
+    events = detect_events(timeline(utterance()), config())
     assert len(events) == 1
-    assert events[0].label == "006"
-    assert events[0].windows == 8
+    assert events[0].peak_score == pytest.approx(0.95)
 
 
-def test_a_dip_above_the_release_threshold_does_not_split_an_event():
-    """Hysteresis: confidence wobbling mid-phrase must not count twice."""
-    sequence = [
-        ("006", 0.9),
-        ("006", 0.9),
-        ("006", 0.5),  # between release (0.4) and activation (0.8)
-        ("006", 0.5),
-        ("006", 0.9),
-        ("unknown", 0.95),
-        ("unknown", 0.95),
-    ]
-    assert len(events_for(sequence)) == 1
+def test_a_long_utterance_still_makes_one_event() -> None:
+    """A phrase outlasting any plausible refractory timer must not be counted twice."""
+    events = detect_events(timeline(utterance(length=30)), config())
+    assert len(events) == 1
 
 
-def test_a_single_confident_window_is_not_an_event():
-    sequence = [("unknown", 0.95), ("006", 0.99), ("unknown", 0.95), ("unknown", 0.95)]
-    assert events_for(sequence) == []
+def test_event_span_covers_the_utterance() -> None:
+    events = detect_events(timeline(utterance(length=5)), config())
+    event = events[0]
+    assert event.start == pytest.approx(0.4)
+    assert event.end >= event.start + 0.8
+    assert event.start <= event.time <= event.end
 
 
-def test_min_consecutive_hits_is_honoured():
-    config = DetectorConfig(min_consecutive_hits=4)
-    sequence = [("006", 0.9)] * 3 + [("unknown", 0.95)] * 4
-    assert events_for(sequence, config) == []
-    assert len(events_for([("006", 0.9)] * 4 + [("unknown", 0.95)] * 4, config)) == 1
+# ---------------------------------------------------------------------------
+# Rapid repetitions (requirement 19)
+# ---------------------------------------------------------------------------
+def test_four_rapid_repetitions_make_four_events() -> None:
+    scores = []
+    for _ in range(4):
+        scores += [0.9, 0.9, 0.9, 0.1, 0.05]  # ~0.6 s phrase, ~0.4 s gap
+    events = detect_events(timeline(scores), config())
+    assert len(events) == 4
 
 
-def test_cooldown_suppresses_a_second_count_from_the_same_utterance():
-    """A brief drop and recovery inside the cooldown is one dhikr, not two."""
-    sequence = [("006", 0.9)] * 3 + [("unknown", 0.95)] + [("006", 0.9)] * 3
-    assert len(events_for(sequence)) == 1
+def test_release_rearms_before_the_cooldown_would() -> None:
+    """Re-arming is release-driven; the cooldown is a safety net, not the separator."""
+    scores = [0.9, 0.9, 0.05, 0.05, 0.9, 0.9, 0.05, 0.05]
+    quick = detect_events(timeline(scores), config(cooldown_ms=0.0))
+    assert len(quick) == 2
 
 
-def test_a_gap_longer_than_the_cooldown_gives_two_counts():
-    sequence = [("006", 0.9)] * 3 + [("unknown", 0.95)] * 8 + [("006", 0.9)] * 3
-    events = events_for(sequence)
+def test_an_over_long_cooldown_merges_repetitions() -> None:
+    """Documents the failure mode: cooldown must stay short."""
+    scores = [0.9, 0.9, 0.05, 0.05, 0.9, 0.9, 0.05, 0.05]
+    merged = detect_events(timeline(scores), config(cooldown_ms=5000.0))
+    assert len(merged) == 1
+
+
+def test_cooldown_expiring_on_a_window_boundary_admits_that_window() -> None:
+    """Regression: window times accumulate from the hop, so a cooldown that ends
+    exactly on a window must not be decided by float representation error.
+
+    With a 0.2 s hop and a 200 ms cooldown the second repetition arrives exactly
+    as the cooldown expires; before the tolerance in `push` it was dropped
+    whenever `0.6000000000000001 + 0.2` landed above `0.8`."""
+    scores = [0.9, 0.9, 0.05, 0.05, 0.9, 0.9, 0.05, 0.05]
+    events = detect_events(timeline(scores), config(cooldown_ms=200.0))
     assert len(events) == 2
-    assert events[1].trigger_time > events[0].end
 
 
-def test_two_different_phrases_back_to_back_stay_two_counts():
-    """The cooldown is per class, so a different phrase is never suppressed."""
-    events = events_for([("006", 0.9)] * 3 + [("007", 0.9)] * 3)
-    assert [event.label for event in events] == ["006", "007"]
-
-
-def test_unknown_is_never_counted():
-    assert events_for([("unknown", 0.99)] * 20) == []
-
-
-def test_min_event_duration_rejects_a_short_burst():
-    config = DetectorConfig(min_event_duration=1.0, min_consecutive_hits=2)
-    # Two windows = 0.25 s of span, under the 1 s minimum.
-    assert events_for([("006", 0.95)] * 2 + [("unknown", 0.95)] * 4, config) == []
-    assert len(events_for([("006", 0.95)] * 8 + [("unknown", 0.95)] * 4, config)) == 1
-
-
-def test_per_class_threshold_overrides_the_global_one():
-    config = DetectorConfig(
-        confidence_threshold=0.8, per_class_thresholds={"007": 0.95}
-    )
-    assert len(events_for([("006", 0.85)] * 4, config)) == 1
-    assert events_for([("007", 0.85)] * 4, config) == []
-
-
-def test_an_event_still_open_at_the_end_of_the_stream_is_kept():
-    events = events_for([("unknown", 0.95)] * 2 + [("006", 0.9)] * 4)
+def test_no_dip_means_no_second_event() -> None:
+    """Two repetitions with no gap at all are indistinguishable from one long one."""
+    events = detect_events(timeline([0.9] * 20), config())
     assert len(events) == 1
 
 
-def test_event_span_and_peak_are_reported():
-    sequence = [("unknown", 0.95)] * 2 + [("006", 0.85), ("006", 0.99), ("006", 0.85)]
-    event = events_for(sequence)[0]
-    assert event.start == pytest.approx(0.5)
-    assert event.end == pytest.approx(1.0)
-    assert event.peak_confidence == pytest.approx(0.99, abs=0.02)
-    assert event.trigger_time >= event.start
+# ---------------------------------------------------------------------------
+# Hysteresis
+# ---------------------------------------------------------------------------
+def test_hovering_between_the_thresholds_makes_one_event() -> None:
+    scores = [0.9, 0.9, 0.5, 0.75, 0.5, 0.8, 0.55, 0.9, 0.05, 0.02]
+    events = detect_events(timeline(scores), config())
+    assert len(events) == 1
+
+
+def test_a_single_spike_is_rejected() -> None:
+    """min_consecutive_hits is what stops one noisy window becoming a count."""
+    events = detect_events(timeline([0.05, 0.99, 0.05, 0.02]), config(min_consecutive_hits=2))
+    assert events == []
+
+
+def test_one_hit_is_enough_when_configured() -> None:
+    events = detect_events(timeline([0.05, 0.99, 0.05]), config(min_consecutive_hits=1))
+    assert len(events) == 1
+
+
+def test_minimum_event_duration_rejects_a_short_burst() -> None:
+    scores = [0.9, 0.9, 0.05, 0.05, 0.05]
+    assert detect_events(timeline(scores), config(min_event_seconds=1.0)) == []
+    assert len(detect_events(timeline(scores), config(min_event_seconds=0.0))) == 1
+
+
+def test_scores_below_release_never_fire() -> None:
+    assert detect_events(timeline([0.3] * 30), config()) == []
+
+
+def test_release_windows_require_a_sustained_drop() -> None:
+    """A one-window dip inside an utterance must not re-arm the detector."""
+    scores = [0.9, 0.9, 0.9, 0.1, 0.9, 0.9, 0.05, 0.05, 0.05]
+    events = detect_events(timeline(scores), config(release_windows=3))
+    assert len(events) == 1
 
 
 # ---------------------------------------------------------------------------
-# Online use
+# Online behaviour
 # ---------------------------------------------------------------------------
-def test_push_returns_the_event_at_the_moment_it_is_confirmed():
-    detector = EventDetector(LABELS, DetectorConfig())
-    array = probabilities([("unknown", 0.95), ("006", 0.9), ("006", 0.9), ("006", 0.9)])
-    returned = [detector.push(index * HOP, row) for index, row in enumerate(array)]
-    assert returned[0] is None
-    assert returned[1] is None  # one hit is not yet an event
-    assert returned[2] is not None  # confirmed on the second consecutive hit
-    assert returned[3] is None  # still the same event, not a new one
-    assert len(detector.flush()) == 1
+def test_push_returns_the_event_at_confirmation() -> None:
+    detector = EventDetector(config=config(), window_seconds=WINDOW)
+    emitted = [detector.push(index * HOP, score) for index, score in enumerate(utterance())]
+    confirmed = [event for event in emitted if event is not None]
+    assert len(confirmed) == 1
+    assert detector.state in (DetectorState.IDLE, DetectorState.COOLDOWN)
 
 
-def test_states_move_idle_candidate_confirmed():
-    detector = EventDetector(LABELS, DetectorConfig(min_consecutive_hits=2))
-    array = probabilities([("unknown", 0.95), ("006", 0.9), ("006", 0.9)])
-    assert detector.state == IDLE
-    detector.push(0.0, array[0])
-    assert detector.state == IDLE
-    detector.push(HOP, array[1])
-    assert detector.state == CANDIDATE
-    detector.push(2 * HOP, array[2])
-    assert detector.state == CONFIRMED
+def test_the_emitted_event_keeps_growing_until_release() -> None:
+    detector = EventDetector(config=config(), window_seconds=WINDOW)
+    event = None
+    for index, score in enumerate(utterance(length=6)):
+        event = detector.push(index * HOP, score) or event
+    assert event is not None
+    assert event.windows > 2  # it was updated after it was handed back
 
 
-def test_detector_rejects_a_probability_row_of_the_wrong_width():
-    detector = EventDetector(LABELS, DetectorConfig())
-    with pytest.raises(ValueError, match="labels.txt"):
-        detector.push(0.0, np.array([0.5, 0.5], dtype=np.float32))
-
-
-def test_reset_clears_events_and_cooldowns():
-    detector = EventDetector(LABELS, DetectorConfig())
-    for index, row in enumerate(probabilities([("006", 0.9)] * 4)):
-        detector.push(index * HOP, row)
+def test_reset_clears_state() -> None:
+    detector = EventDetector(config=config(), window_seconds=WINDOW)
+    for index, score in enumerate(utterance()):
+        detector.push(index * HOP, score)
     detector.reset()
+    assert detector.state is DetectorState.IDLE
     assert detector.events == []
-    assert detector.state == IDLE
-    assert not detector.in_cooldown("006", 0.0)
+
+
+# ---------------------------------------------------------------------------
+# Scores and smoothing
+# ---------------------------------------------------------------------------
+def test_target_score_reads_a_sigmoid_head() -> None:
+    assert target_score(np.array([[0.2], [0.9]])).tolist() == pytest.approx([0.2, 0.9])
+
+
+def test_target_score_reads_the_softmax_target_column() -> None:
+    assert target_score(np.array([[0.8, 0.2], [0.1, 0.9]])).tolist() == pytest.approx([0.2, 0.9])
+
+
+def test_target_score_refuses_a_multiclass_model() -> None:
+    with pytest.raises(ValueError, match="one model per dhikr"):
+        target_score(np.zeros((3, 5)))
+
+
+def test_sigmoid_mode_rejects_a_two_output_model() -> None:
+    with pytest.raises(ValueError, match="sigmoid"):
+        target_score(np.zeros((3, 2)), output_mode="sigmoid")
+
+
+def test_smoothing_none_is_a_passthrough() -> None:
+    values = [0.1, 0.9, 0.2]
+    assert smooth_scores(values, SmoothingConfig(mode="none")).tolist() == pytest.approx(values)
+
+
+def test_ema_smoothing_is_causal_and_starts_at_the_first_value() -> None:
+    smoothed = smooth_scores([1.0, 0.0, 0.0], SmoothingConfig(mode="ema", ema_alpha=0.5))
+    assert smoothed[0] == pytest.approx(1.0)
+    assert smoothed[1] == pytest.approx(0.5)
+    assert smoothed[2] == pytest.approx(0.25)
+
+
+def test_moving_average_uses_only_past_windows() -> None:
+    smoothed = smooth_scores([0.0, 1.0, 1.0], SmoothingConfig(mode="moving_average", window=2))
+    assert smoothed.tolist() == pytest.approx([0.0, 0.5, 1.0])
+
+
+RAPID_PAIR = [0.9, 0.9, 0.05, 0.05, 0.9, 0.9, 0.05, 0.05]
+
+
+def test_light_smoothing_keeps_two_repetitions_apart() -> None:
+    smoothed = smooth_scores(RAPID_PAIR, SmoothingConfig(mode="ema", ema_alpha=0.8))
+    assert len(detect_events(timeline(smoothed), config())) == 2
+
+
+def test_heavy_smoothing_loses_a_rapid_repetition() -> None:
+    """The cost of smoothing, pinned down rather than described.
+
+    At alpha 0.4 the EMA needs several windows to climb back after the dip, so the
+    second repetition never gets its two consecutive hits and the count is lost.
+    This is why `streaming.smoothing.mode` defaults to `none` and why the
+    calibration sweep should be re-run after changing it.
+    """
+    smoothed = smooth_scores(RAPID_PAIR, SmoothingConfig(mode="ema", ema_alpha=0.4))
+    assert len(detect_events(timeline(smoothed), config())) < 2
+
+
+# ---------------------------------------------------------------------------
+# Threshold helper
+# ---------------------------------------------------------------------------
+def test_release_scales_with_the_activation_threshold() -> None:
+    tuned = detector_with_threshold(config(), 0.9, release_ratio=0.6)
+    assert tuned.activation_threshold == pytest.approx(0.9)
+    assert tuned.release_threshold == pytest.approx(0.54)
+
+
+def test_explicit_release_is_clamped_below_activation() -> None:
+    tuned = detector_with_threshold(config(), 0.5, release=0.9)
+    assert tuned.release_threshold <= tuned.activation_threshold
+
+
+# ---------------------------------------------------------------------------
+# Timeline geometry
+# ---------------------------------------------------------------------------
+def test_timeline_duration_includes_the_last_window() -> None:
+    assert timeline([0.1] * 5).duration_seconds == pytest.approx(0.8 + WINDOW)
+
+
+def test_timeline_rejects_mismatched_lengths() -> None:
+    with pytest.raises(ValueError, match="same length"):
+        ScoreTimeline(times=np.zeros(3), scores=np.zeros(4), window_seconds=1.0, hop_seconds=0.2)

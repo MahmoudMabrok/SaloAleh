@@ -18,9 +18,14 @@ import yaml
 
 LOGGER = logging.getLogger(__name__)
 
+# Streaming folders already reported as a fallback, so the warning is said once
+# per path rather than on every resolution.
+_STREAMING_FALLBACKS_REPORTED: set = set()
+
 __all__ = [
     "AudioConfig",
     "AugmentationConfig",
+    "CalibrationConfig",
     "ClassesConfig",
     "Config",
     "DetectorConfig",
@@ -28,6 +33,7 @@ __all__ = [
     "ExportConfig",
     "FeatureConfig",
     "ModelConfig",
+    "NegativeSamplingConfig",
     "PathsConfig",
     "QualityConfig",
     "ReadinessConfig",
@@ -35,6 +41,7 @@ __all__ = [
     "SpeakerConfig",
     "SplitConfig",
     "StreamingConfig",
+    "TargetConfig",
     "TrainingConfig",
     "available_presets",
     "load_config",
@@ -165,7 +172,7 @@ class PathsConfig:
     exports_dir: str = "exports"
     logs_dir: str = "logs"
     reports_dir: str = "reports"
-    streaming_dir: str = "streaming_test"
+    streaming_dir: str = "streaming"
     phrases_file: str = "phrases.json"
     unknown_class: str = "unknown"
     speakers_file: str = "speakers.csv"
@@ -216,10 +223,51 @@ class PathsConfig:
         """Optional ``speakers.csv`` mapping recordings to speaker ids."""
         return self.resolve(self.speakers_file)
 
+    # Names a streaming set is plausibly filed under. `streaming_dir` is tried
+    # first; these are only consulted when it does not exist, so a project that
+    # named the folder something reasonable is not told its data is missing.
+    STREAMING_ALIASES = ("streaming", "streaming_test", "streaming_tests", "streaming_eval")
+
     @property
     def streaming_path(self) -> Path:
-        """Long-form recordings + ``annotations.json`` for streaming evaluation."""
+        """The configured location of the long-form recordings.
+
+        This is where the pipeline *writes* (an annotation skeleton, say). To
+        read an existing set use :meth:`resolve_streaming_path`, which also finds
+        the folder when it was filed under one of the usual other names.
+        """
         return self.resolve(self.streaming_dir)
+
+    def resolve_streaming_path(self) -> Path:
+        """The streaming set as it exists on disk, or the configured path.
+
+        Looks for the configured folder first and falls back to the handful of
+        names a streaming set is plausibly filed under. The fallback is logged,
+        never silent: reading `streaming/` while the config says `streaming_test`
+        is something the next person needs to know, and the alternative -
+        reporting "missing" at a folder the user is looking straight at - is
+        worse than either.
+        """
+        configured = self.streaming_path
+        if configured.is_dir():
+            return configured
+        for name in self.STREAMING_ALIASES:
+            candidate = self.resolve(name)
+            if candidate == configured or not candidate.is_dir():
+                continue
+            # Loud, but once: this is resolved on nearly every streaming call and
+            # four copies of the same line reads as four different problems.
+            if candidate not in _STREAMING_FALLBACKS_REPORTED:
+                _STREAMING_FALLBACKS_REPORTED.add(candidate)
+                LOGGER.warning(
+                    "paths.streaming_dir is '%s', which does not exist; using '%s' "
+                    "instead. Set paths.streaming_dir to '%s' to make this explicit.",
+                    self.streaming_dir,
+                    candidate.name,
+                    candidate.name,
+                )
+            return candidate
+        return configured
 
     @property
     def manifest_path(self) -> Path:
@@ -470,6 +518,96 @@ class ClassesConfig:
 
 
 @dataclass
+class TargetConfig:
+    """Single-target (binary phrase spotting) mode - the production architecture.
+
+    Android loads one model per dhikr: the user picks a phrase, the app loads that
+    phrase's ``.tflite``, and the model answers one question - *was this exact
+    phrase just spoken, completely?* Everything else, including the other dhikr and
+    incomplete versions of this one, is a negative.
+
+    ``phrase_id: null`` leaves the pipeline in the legacy multi-class mode, which
+    is kept for the ``06 - Experiment`` comparison and for old manifests.
+    """
+
+    phrase_id: Optional[int] = None
+    # softmax = 2 outputs (target, unknown), sigmoid = 1 output P(target).
+    # Both are supported so the two can be compared rather than assumed.
+    output_mode: str = "softmax"
+    # Other phrase folders (dataset/001, dataset/002, ...) become negatives.
+    auto_other_dhikr_negatives: bool = True
+    # `unknown/hard_negative/` is shared across every target: a near-miss
+    # recorded to fool 006 may be a complete recording of 007's phrase, and as a
+    # negative for 007 it would teach the model to reject its own target. The
+    # layout cannot express that, so it is a collection rule rather than a
+    # setting - see docs/DATA_COLLECTION.md.
+    # Per-target overrides, keyed by the zero-padded folder name:
+    #   phrase_overrides: {"007": {clip_seconds: 2.5}}
+    # Applied by Config.for_target(). Only `clip_seconds` is honoured today.
+    phrase_overrides: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if self.output_mode not in ("softmax", "sigmoid"):
+            raise ValueError("target.output_mode must be 'softmax' or 'sigmoid'")
+        if self.phrase_id is not None and int(self.phrase_id) < 1:
+            raise ValueError("target.phrase_id must be 1 or greater")
+
+    @property
+    def enabled(self) -> bool:
+        return self.phrase_id is not None
+
+    @property
+    def folder(self) -> Optional[str]:
+        """The target's zero-padded dataset folder, e.g. 7 -> ``007``."""
+        return None if self.phrase_id is None else f"{int(self.phrase_id):03d}"
+
+    @property
+    def num_outputs(self) -> int:
+        return 1 if self.output_mode == "sigmoid" else 2
+
+    def overrides_for(self, phrase_id: int) -> Dict[str, Any]:
+        """Overrides for one target, accepting ``7``, ``"7"`` or ``"007"`` as the key."""
+        keys = (f"{int(phrase_id):03d}", str(int(phrase_id)), int(phrase_id))
+        for key in keys:
+            value = self.phrase_overrides.get(key)  # type: ignore[arg-type]
+            if isinstance(value, dict):
+                return dict(value)
+        return {}
+
+
+@dataclass
+class NegativeSamplingConfig:
+    """How much of the negative pool one run trains on, and which parts of it.
+
+    The shared negative pool grows without bound while positives stay in the
+    hundreds, so training on every negative every run would drown the phrase.
+    ``ratio`` caps negatives at ``ratio x positives``; ``weights`` decides which
+    negatives survive that cut - hard negatives and partial phrases are worth far
+    more per clip than another minute of room tone.
+    """
+
+    enabled: bool = True
+    ratio: float = 2.0
+    weights: Dict[str, float] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if self.ratio <= 0.0:
+            raise ValueError("negative_sampling.ratio must be positive")
+        cleaned: Dict[str, float] = {}
+        for key, value in (self.weights or {}).items():
+            weight = float(value)
+            if weight < 0.0:
+                raise ValueError(f"negative_sampling.weights['{key}'] must be >= 0")
+            cleaned[str(key)] = weight
+        self.weights = cleaned
+
+    def weight_for(self, negative_type: Optional[str], default: float = 1.0) -> float:
+        if not negative_type:
+            return default
+        return float(self.weights.get(negative_type, default))
+
+
+@dataclass
 class SpeakerConfig:
     """How a recording is traced back to the person who spoke it.
 
@@ -602,6 +740,12 @@ class ModelConfig:
     activation: str = "relu"
     pool: str = "gap"
     bn_momentum: float = 0.9
+    # TC-ResNet8 only. The mel axis becomes the channel axis and convolution runs
+    # along time alone, which is why it is so much cheaper than DS-CNN at the same
+    # accuracy on short keywords.
+    tc_channels: List[int] = field(default_factory=lambda: [16, 24, 32, 48])
+    tc_kernel: int = 9
+    tc_stem_kernel: int = 3
 
     def __post_init__(self) -> None:
         for name in ("stem_kernel", "stem_stride", "block_kernel"):
@@ -610,6 +754,8 @@ class ModelConfig:
                 raise ValueError(f"model.{name} must hold exactly two values (time, freq)")
         if self.pool not in ("gap", "flatten"):
             raise ValueError("model.pool must be 'gap' or 'flatten'")
+        if len(self.tc_channels) < 2:
+            raise ValueError("model.tc_channels needs a stem channel plus at least one block")
 
 
 @dataclass
@@ -692,81 +838,6 @@ class EvaluationConfig:
 # Streaming - continuous listening, event counting and calibration
 # ---------------------------------------------------------------------------
 @dataclass
-class SmoothingConfig:
-    """Optional temporal smoothing of the per-window probabilities.
-
-    Smoothing trades reaction time for stability. Too much of it and two dhikr
-    said back to back merge into one event, which is exactly the failure the
-    counter must not have - so this is deliberately mild and easy to switch off.
-    """
-
-    enabled: bool = True
-    method: str = "moving_average"  # moving_average | ema
-    window: int = 3                 # moving_average: windows averaged
-    alpha: float = 0.5              # ema: weight of the newest window
-
-    def __post_init__(self) -> None:
-        if self.method not in ("moving_average", "ema"):
-            raise ValueError("streaming.smoothing.method must be moving_average|ema")
-        if self.window < 1:
-            raise ValueError("streaming.smoothing.window must be >= 1")
-        if not 0.0 < self.alpha <= 1.0:
-            raise ValueError("streaming.smoothing.alpha must be in (0, 1]")
-
-
-@dataclass
-class DetectorConfig:
-    """Event detector: how window probabilities become counted dhikr.
-
-    None of these numbers is a good default until it has been calibrated against
-    real streaming recordings (section 06 of the notebook). They are a starting
-    point chosen to be conservative, because a false count is worse than a missed
-    one.
-    """
-
-    # Activation: a window at or above this can start / sustain a candidate.
-    confidence_threshold: float = 0.80
-    # Hysteresis. Below this the event is releasing; between the two the event
-    # neither starts nor ends, which is what stops a confidence wobble around a
-    # single threshold from producing two counts for one utterance.
-    release_threshold: float = 0.40
-    # Windows above the activation threshold before an event is confirmed.
-    min_consecutive_hits: int = 2
-    # Seconds an event must last before it counts. 0 disables the check.
-    min_event_duration: float = 0.0
-    # Windows below the release threshold before an active event is closed.
-    release_windows: int = 2
-    # Dead time after an event of the same class closes. Per class, so two
-    # different phrases spoken back to back still count as two.
-    cooldown_ms: float = 700.0
-    # Classes that never produce an event. `unknown` is the model's way of saying
-    # "not a dhikr", so it is never counted.
-    ignore_labels: List[str] = field(default_factory=lambda: ["unknown"])
-    # Per-class activation thresholds, e.g. {"006": 0.82, "007": 0.90}. A class
-    # with no entry uses `confidence_threshold`.
-    per_class_thresholds: Dict[str, float] = field(default_factory=dict)
-
-    def __post_init__(self) -> None:
-        if not 0.0 < self.confidence_threshold <= 1.0:
-            raise ValueError("streaming.detector.confidence_threshold must be in (0, 1]")
-        if not 0.0 <= self.release_threshold <= 1.0:
-            raise ValueError("streaming.detector.release_threshold must be in [0, 1]")
-        if self.release_threshold > self.confidence_threshold:
-            raise ValueError(
-                "streaming.detector.release_threshold must not exceed "
-                "confidence_threshold - hysteresis needs activation >= release"
-            )
-        if self.min_consecutive_hits < 1:
-            raise ValueError("streaming.detector.min_consecutive_hits must be >= 1")
-        if self.release_windows < 1:
-            raise ValueError("streaming.detector.release_windows must be >= 1")
-
-    def threshold_for(self, label: str) -> float:
-        """Activation threshold for one class."""
-        return float(self.per_class_thresholds.get(label, self.confidence_threshold))
-
-
-@dataclass
 class EventMatchConfig:
     """How a detected event is matched to an annotated one.
 
@@ -784,94 +855,150 @@ class EventMatchConfig:
 
 
 @dataclass
-class CalibrationConfig:
-    """Threshold sweep and the policy that picks the operating point."""
+class SmoothingConfig:
+    """Optional smoothing of the per-window score before the detector sees it.
 
-    min_threshold: float = 0.40
-    max_threshold: float = 0.95
-    step: float = 0.05
-    # Pick the lowest threshold whose false-activation rate stays inside the
-    # budget, maximising recall. Anything else optimises the wrong thing: recall
-    # alone drives the threshold to 0, accuracy alone hides the false counts.
-    policy: str = "min_threshold_within_budget"
-    per_class: bool = True
+    Deliberately weak by default. Smoothing wide enough to bridge the dip between
+    two repetitions merges them into one event, which costs a count - the failure
+    mode this project cares about least is a missed *dip*, not a missed peak.
+    """
+
+    mode: str = "none"          # none | ema | moving_average
+    ema_alpha: float = 0.6      # weight of the newest window (1.0 = no smoothing)
+    window: int = 3             # moving_average only, in windows
 
     def __post_init__(self) -> None:
-        if self.policy not in ("min_threshold_within_budget", "max_f1"):
-            raise ValueError(
-                "streaming.calibration.policy must be "
-                "min_threshold_within_budget|max_f1"
-            )
-        if self.step <= 0.0:
-            raise ValueError("streaming.calibration.step must be positive")
-        if not 0.0 < self.min_threshold <= self.max_threshold <= 1.0:
-            raise ValueError(
-                "streaming.calibration thresholds must satisfy 0 < min <= max <= 1"
-            )
+        if self.mode not in ("none", "ema", "moving_average"):
+            raise ValueError("streaming.smoothing.mode must be none|ema|moving_average")
+        if not 0.0 < self.ema_alpha <= 1.0:
+            raise ValueError("streaming.smoothing.ema_alpha must be in (0, 1]")
+        if self.window < 1:
+            raise ValueError("streaming.smoothing.window must be >= 1")
 
-    def thresholds(self) -> List[float]:
-        values: List[float] = []
-        current = self.min_threshold
-        while current <= self.max_threshold + 1e-9:
-            values.append(round(current, 6))
-            current += self.step
-        return values
+
+@dataclass
+class DetectorConfig:
+    """Hysteresis event detector - one complete utterance must make one event.
+
+    ``activation_threshold`` must sit above ``release_threshold``: the gap is what
+    stops a score hovering near one threshold from flickering into a stream of
+    events. Re-arming is release-driven (see :mod:`src.streaming`), so a user
+    repeating the dhikr quickly is separated by the dip between repetitions rather
+    than by waiting out a cooldown.
+    """
+
+    activation_threshold: float = 0.70
+    release_threshold: float = 0.40
+    min_consecutive_hits: int = 2
+    min_event_seconds: float = 0.0
+    release_windows: int = 2
+    cooldown_ms: float = 200.0
+
+    def __post_init__(self) -> None:
+        if not 0.0 < self.activation_threshold <= 1.0:
+            raise ValueError("detector.activation_threshold must be in (0, 1]")
+        if not 0.0 <= self.release_threshold <= 1.0:
+            raise ValueError("detector.release_threshold must be in [0, 1]")
+        if self.release_threshold > self.activation_threshold:
+            raise ValueError(
+                "detector.release_threshold must not exceed activation_threshold - "
+                "hysteresis needs activation > release"
+            )
+        if self.min_consecutive_hits < 1:
+            raise ValueError("detector.min_consecutive_hits must be >= 1")
+        if self.release_windows < 1:
+            raise ValueError("detector.release_windows must be >= 1")
+        if self.cooldown_ms < 0.0:
+            raise ValueError("detector.cooldown_ms must be >= 0")
 
 
 @dataclass
 class StreamingConfig:
-    """Continuous-listening configuration - the deployed shape of the model."""
+    """Continuous-microphone inference: window geometry, smoothing, detector."""
 
-    # Defaults to audio.clip_seconds: the window must be the length the model was
-    # trained on, and a mismatch is a silent accuracy loss rather than an error.
+    # null = audio.clip_seconds, i.e. the window the model was trained on. Only
+    # set this if the model really was trained on a different length.
     window_seconds: Optional[float] = None
-    hop_seconds: float = 0.25
-    # The release-critical number: how often the counter fires when nobody said a
-    # dhikr. Calibration will not pick a threshold that breaks this budget.
-    target_false_activations_per_hour: float = 0.5
-    audio_subdir: str = "audio"
-    annotations_file: str = "annotations.json"
+    hop_seconds: float = 0.20
     smoothing: SmoothingConfig = field(default_factory=SmoothingConfig)
     detector: DetectorConfig = field(default_factory=DetectorConfig)
-    matching: EventMatchConfig = field(default_factory=EventMatchConfig)
-    calibration: CalibrationConfig = field(default_factory=CalibrationConfig)
+    # Where the recordings live is `paths.streaming_dir` - one setting, because
+    # two knobs for one path is how a project ends up reporting "missing" at a
+    # folder that is right there.
+    annotations_file: str = "annotations.json"
+    audio_dirname: str = "audio"
+    # A detection counts for a ground-truth event when it falls inside
+    # [start - tolerance, end + tolerance].
+    match_tolerance_seconds: float = 0.75
 
     def __post_init__(self) -> None:
         if self.hop_seconds <= 0.0:
             raise ValueError("streaming.hop_seconds must be positive")
         if self.window_seconds is not None and self.window_seconds <= 0.0:
-            raise ValueError("streaming.window_seconds must be positive")
-        if self.target_false_activations_per_hour < 0.0:
-            raise ValueError(
-                "streaming.target_false_activations_per_hour must not be negative"
-            )
+            raise ValueError("streaming.window_seconds must be positive when set")
+        if self.match_tolerance_seconds < 0.0:
+            raise ValueError("streaming.match_tolerance_seconds must be >= 0")
 
-    def window_for(self, audio: "AudioConfig") -> float:
-        """The window length in force, defaulting to the model's clip length."""
-        return float(self.window_seconds or audio.clip_seconds)
+    def window_for(self, clip_seconds: float) -> float:
+        return float(self.window_seconds if self.window_seconds else clip_seconds)
+
+
+@dataclass
+class CalibrationConfig:
+    """Threshold sweep driven by a false-activation budget, not by accuracy.
+
+    0.5 is not a threshold, it is a default. The activation threshold that ships
+    is the lowest one whose measured false activations per hour stay inside
+    ``target_false_activations_per_hour`` - and when no threshold manages that,
+    calibration reports a failure instead of picking the most extreme value and
+    calling it tuned.
+    """
+
+    enabled: bool = True
+    min_threshold: float = 0.40
+    max_threshold: float = 0.99
+    step: float = 0.01
+    target_false_activations_per_hour: float = 0.5
+    min_event_recall: float = 0.0
+    # release_threshold = activation x this, unless release_threshold is set.
+    release_ratio: float = 0.6
+    release_threshold: Optional[float] = None
+
+    def __post_init__(self) -> None:
+        if not 0.0 < self.min_threshold <= self.max_threshold <= 1.0:
+            raise ValueError("calibration thresholds must satisfy 0 < min <= max <= 1")
+        if self.step <= 0.0:
+            raise ValueError("calibration.step must be positive")
+        if not 0.0 < self.release_ratio <= 1.0:
+            raise ValueError("calibration.release_ratio must be in (0, 1]")
+        if self.target_false_activations_per_hour < 0.0:
+            raise ValueError("calibration.target_false_activations_per_hour must be >= 0")
 
 
 @dataclass
 class ReadinessConfig:
-    """Thresholds the production-readiness report checks against.
+    """Release criteria for one target. Project policy, not scientific constants.
 
-    Every one of them is configurable, and the report prints the value it used
-    next to the measurement, so "READY" always says what it means by ready.
+    Every one of these is a threshold somebody chose; they are here so the choice
+    is explicit and reviewable, and so "READY" can never mean "validation accuracy
+    looked high".
     """
 
-    enabled: bool = True
-    max_speaker_leaks: int = 0
-    min_speakers: int = 10
-    min_clips_per_target: int = 100
-    min_event_recall: float = 0.90
+    max_speaker_leakage: int = 0
+    min_positive_speakers: int = 10
+    min_positive_clips: int = 100
+    # The dataset size at which the numbers stop being provisional.
+    recommended_positive_clips: int = 200
+    recommended_positive_speakers: int = 20
     min_event_precision: float = 0.95
+    min_event_recall: float = 0.90
     max_false_activations_per_hour: float = 0.5
-    max_hard_negative_fp_rate: float = 0.02
-    # Clip accuracy the quantised model may lose against float32.
-    max_tflite_accuracy_drop: float = 0.02
-    # Extra false activations per hour INT8 may add before it is rejected.
-    max_tflite_extra_false_activations_per_hour: float = 0.1
-    min_streaming_minutes: float = 20.0
+    max_hard_negative_fp_rate: float = 0.05
+    max_duplicate_rate: float = 0.05
+    # INT8 is rejected as the production model when quantisation costs more than
+    # this many extra false activations per hour, or drifts more than this.
+    max_int8_fa_per_hour_increase: float = 0.10
+    max_int8_probability_drift: float = 0.05
 
 
 @dataclass
@@ -892,15 +1019,19 @@ class Config:
     seed: int = 1337
     paths: PathsConfig = field(default_factory=PathsConfig)
     classes: ClassesConfig = field(default_factory=ClassesConfig)
+    target: TargetConfig = field(default_factory=TargetConfig)
     audio: AudioConfig = field(default_factory=AudioConfig)
     features: FeatureConfig = field(default_factory=FeatureConfig)
     augmentation: AugmentationConfig = field(default_factory=AugmentationConfig)
+    negative_sampling: NegativeSamplingConfig = field(default_factory=NegativeSamplingConfig)
     split: SplitConfig = field(default_factory=SplitConfig)
     quality: QualityConfig = field(default_factory=QualityConfig)
     model: ModelConfig = field(default_factory=ModelConfig)
+    model_presets: Dict[str, Dict[str, Any]] = field(default_factory=dict)
     training: TrainingConfig = field(default_factory=TrainingConfig)
     evaluation: EvaluationConfig = field(default_factory=EvaluationConfig)
     streaming: StreamingConfig = field(default_factory=StreamingConfig)
+    calibration: CalibrationConfig = field(default_factory=CalibrationConfig)
     readiness: ReadinessConfig = field(default_factory=ReadinessConfig)
     export: ExportConfig = field(default_factory=ExportConfig)
 
@@ -961,6 +1092,92 @@ class Config:
             )
         return (frames, self.features.n_mels, 1)
 
+    # -- single-target mode -------------------------------------------------
+    def for_target(self, phrase_id: Optional[int]) -> "Config":
+        """Copy of this config bound to one target phrase.
+
+        Applies ``target.phrase_overrides[<id>]`` on top - today that is
+        ``clip_seconds``, because a two-word dhikr and a seven-word one do not
+        belong in the same window (see ``README`` / requirement 15). Passing
+        ``None`` returns a copy in legacy multi-class mode.
+        """
+        if phrase_id is None:
+            return self.with_overrides({"target.phrase_id": None})
+
+        identifier = int(phrase_id)
+        overrides: Dict[str, Any] = {"target.phrase_id": identifier}
+        target_overrides = self.target.overrides_for(identifier)
+        unknown = set(target_overrides) - {"clip_seconds"}
+        if unknown:
+            raise KeyError(
+                f"target.phrase_overrides['{identifier:03d}'] has unsupported key(s): "
+                f"{', '.join(sorted(unknown))} (only 'clip_seconds' is honoured)"
+            )
+        if "clip_seconds" in target_overrides:
+            overrides["audio.clip_seconds"] = float(target_overrides["clip_seconds"])
+        return self.with_overrides(overrides)
+
+    @property
+    def target_folder(self) -> Optional[str]:
+        return self.target.folder
+
+    @property
+    def clip_tag(self) -> str:
+        """Identifies the *audio geometry* a processed clip was written with.
+
+        Conditioned clips are fitted to ``clip_seconds`` at ``sample_rate``, so two
+        targets with the same geometry can share the same cached files and two with
+        different geometry must not. Used as the cache directory name, which is
+        what makes the shared negative pool preprocessed once rather than once per
+        target (requirement 32).
+        """
+        return f"{self.audio.sample_rate}hz_{self.audio.clip_seconds:g}s"
+
+    def clip_cache_path(self) -> Path:
+        """Where conditioned clips for this geometry live."""
+        return self.paths.processed_path / "audio" / self.clip_tag
+
+    def target_manifest_path(self, phrase_id: Optional[int] = None) -> Path:
+        """Manifest for one target. Split and labels are target-specific."""
+        identifier = self.target.phrase_id if phrase_id is None else int(phrase_id)
+        if identifier is None:
+            return self.paths.manifest_path
+        return self.paths.processed_path / "manifests" / f"target_{int(identifier):03d}.csv"
+
+    def target_export_path(self, phrase_id: Optional[int] = None) -> Path:
+        """``exports/<target id>/`` - one independent model per dhikr."""
+        identifier = self.target.phrase_id if phrase_id is None else int(phrase_id)
+        if identifier is None:
+            return self.paths.exports_path
+        return self.paths.exports_path / f"{int(identifier):03d}"
+
+    @property
+    def streaming_path(self) -> Path:
+        return self.paths.streaming_path
+
+    def resolved_model(self) -> ModelConfig:
+        """``model`` with ``model_presets[model.name]`` applied on top.
+
+        Presets keep the architecture comparison honest: every architecture reads
+        the same ``model`` block and only overrides the handful of values that make
+        it that architecture, so a comparison run cannot accidentally also change
+        dropout or BatchNorm momentum.
+        """
+        preset = self.model_presets.get(self.model.name)
+        if not preset:
+            return self.model
+        known = {f.name for f in dataclasses.fields(ModelConfig)}
+        unknown = set(preset) - known
+        if unknown:
+            raise KeyError(
+                f"model_presets['{self.model.name}'] has unknown key(s): "
+                f"{', '.join(sorted(unknown))}"
+            )
+        data = {f.name: getattr(self.model, f.name) for f in dataclasses.fields(ModelConfig)}
+        data.update(preset)
+        data["name"] = self.model.name
+        return ModelConfig(**data)
+
     # -- helpers ------------------------------------------------------------
     def to_dict(self) -> Dict[str, Any]:
         """Plain nested dict of the configuration itself.
@@ -1000,15 +1217,20 @@ class Config:
 
     def summary(self) -> str:
         frames, mels, _ = self.input_shape
+        if self.target.enabled:
+            vocabulary = (
+                f"single target {self.target.folder} vs everything else "
+                f"({self.target.output_mode}, {self.target.num_outputs} output"
+                f"{'s' if self.target.num_outputs > 1 else ''})"
+            )
+        elif self.classes.enabled:
+            vocabulary = f"multi-class: phrases {self.classes.include_phrases} only"
+        else:
+            vocabulary = "multi-class: every folder in the dataset"
         return "\n".join(
             [
                 f"project root      : {self.paths.root}",
-                f"classes           : "
-                + (
-                    f"phrases {self.classes.include_phrases} only"
-                    if self.classes.enabled
-                    else "every folder in the dataset"
-                ),
+                f"classes           : {vocabulary}",
                 f"sample rate       : {self.audio.sample_rate} Hz, mono, PCM{self.audio.bit_depth}",
                 f"clip length       : {self.audio.clip_seconds:g} s "
                 f"({self.audio.clip_samples} samples)",
@@ -1022,11 +1244,11 @@ class Config:
                 f"speakers          : split.speaker.source = "
                 f"{self.split.resolved_speaker().source}",
                 f"streaming         : window "
-                f"{self.streaming.window_for(self.audio):g} s / hop "
+                f"{self.streaming.window_for(self.audio.clip_seconds):g} s / hop "
                 f"{self.streaming.hop_seconds:g} s, activation "
-                f"{self.streaming.detector.confidence_threshold:.2f} / release "
+                f"{self.streaming.detector.activation_threshold:.2f} / release "
                 f"{self.streaming.detector.release_threshold:.2f}, "
-                f"FA budget {self.streaming.target_false_activations_per_hour:g}/h",
+                f"FA budget {self.calibration.target_false_activations_per_hour:g}/h",
                 f"seed              : {self.seed}",
             ]
             + ([f"preset            : {self.preset}"] if self.preset else [])

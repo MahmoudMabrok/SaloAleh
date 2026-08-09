@@ -1,20 +1,41 @@
-"""Streaming evaluation: events, false activations per hour, threshold calibration.
+"""Streaming evaluation: event metrics, false activations per hour, calibration.
 
-Clip accuracy answers "given that someone said one of these, which one was it".
-The counter in the app has to answer something harder: over an hour of open
-microphone, how many dhikr did it count, and how many of those were not dhikr at
-all. This module measures that, on long recordings with hand annotations.
+A model that classifies isolated clips well is not the thing being shipped. What
+ships listens continuously, and its quality is four numbers:
 
-The headline number is **false activations per hour**. It is the one that decides
-whether the feature is usable: a missed dhikr is a small annoyance the user can
-see and repeat, a counter that ticks during a conversation is a broken feature.
-So the threshold is not chosen to maximise accuracy or even F1 - it is the lowest
-threshold that stays inside the configured FA/hour budget, and when no threshold
-does, this module says so instead of quietly picking 0.99.
+============================  ==========================================
+false activations / hour      counts nobody said. The release-critical one.
+event precision / recall      of the counted events, how many were real, and
+                              of the real repetitions, how many were counted
+duplicate rate                one utterance counted twice
+hard-negative FP rate         near-misses ("سبحان الله" for target 007)
+                              accepted as the target
+============================  ==========================================
 
-Everything works from cached :class:`~src.streaming.WindowScan` objects, so a
-sweep over twelve thresholds costs twelve state-machine passes, not twelve runs
-of the model.
+Everything here is measured through :class:`src.streaming.StreamingDetector`, so
+the numbers describe the deployed behaviour rather than a clip-level proxy for
+it. Scoring is separated from counting on purpose: :func:`score_clips` runs the
+model once, and every threshold in a sweep then replays the *state machine* over
+those cached timelines. A 60-point sweep therefore costs one forward pass, not
+sixty.
+
+Annotations live in ``streaming/annotations.json``::
+
+    [
+      {"file": "session_001.wav", "target": "007",
+       "events": [{"start": 12.3, "end": 14.1}, ...]},
+      {"file": "tv_noise.wav", "target": "007", "category": "background_audio",
+       "events": [], "expected_count": 0}
+    ]
+
+``expected_count: 0`` is a negative-only stress recording (requirement 23): every
+event detected in it is a false activation, and ``category`` says what kind of
+audio produced it. An entry with neither ``events`` nor an ``expected_count``
+states nothing and is excluded rather than assumed - see :class:`StreamingClip`.
+
+Recordings uploaded by SpeechCollector's repetition recorder carry their phrase
+and their repetition count in the filename, so they annotate themselves; see
+:func:`collector_annotations`.
 """
 
 from __future__ import annotations
@@ -22,173 +43,594 @@ from __future__ import annotations
 import json
 import logging
 import math
+import re
+from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
-from .config import CalibrationConfig, DetectorConfig, EventMatchConfig, StreamingConfig
-from .streaming import StreamingEvent, WindowScan, detect_events
+from .config import CalibrationConfig, Config, DetectorConfig
+from .streaming import (
+    Event,
+    ScoreTimeline,
+    StreamingDetector,
+    detect_events,
+    detector_with_threshold,
+)
 
 LOGGER = logging.getLogger(__name__)
 
 PathLike = Union[str, Path]
 
 __all__ = [
-    "AnnotatedEvent",
     "CalibrationResult",
+    "ClipEventResult",
+    "CountAccuracy",
+    "EventMetrics",
     "MatchResult",
-    "NegativeStressResult",
+    "NegativeClipReport",
+    "ScoredClip",
     "StreamingClip",
-    "StreamingMetrics",
-    "ThresholdPoint",
+    "StreamingEvaluation",
+    "ThresholdRow",
     "annotation_template",
-    "calibrate_per_class",
+    "collector_annotations",
+    "ensure_collector_annotations",
+    "propose_events",
     "calibrate_threshold",
-    "clip_threshold_sweep",
-    "evaluate_streaming",
+    "evaluate_negative_clips",
+    "evaluate_timelines",
     "load_annotations",
+    "load_streaming_set",
     "match_events",
-    "negative_stress_test",
-    "sweep_thresholds",
+    "parse_collector_take",
+    "score_clips",
+    "streaming_audio_root",
+    "streaming_status",
+    "write_annotation_template",
+    "write_collector_annotations",
 ]
 
 SECONDS_PER_HOUR = 3600.0
 
-# Recall below this at the chosen operating point means the threshold is quiet
-# rather than accurate: it meets the false-activation budget by hardly firing.
-LOW_RECALL = 0.5
+AUDIO_SUFFIXES = (".wav", ".flac", ".ogg", ".mp3", ".m4a", ".webm")
 
 
 # ---------------------------------------------------------------------------
 # Annotations
 # ---------------------------------------------------------------------------
-@dataclass(frozen=True)
-class AnnotatedEvent:
-    """One dhikr somebody actually said, as marked by hand."""
-
-    label: str
-    start: float
-    end: float
-
-    @property
-    def duration(self) -> float:
-        return max(self.end - self.start, 0.0)
-
-    @property
-    def midpoint(self) -> float:
-        return (self.start + self.end) / 2.0
+# How a recording can be annotated, in decreasing order of what it can measure.
+MODE_TIMESTAMPS = "timestamps"   # every repetition marked: precision, recall, FA/hour
+MODE_COUNT = "count"             # "I said it 50 times": count error only
+MODE_NEGATIVE = "negative"       # contains no target at all: FA/hour
+MODE_UNANNOTATED = "unannotated"  # nothing stated - measures nothing
 
 
 @dataclass
 class StreamingClip:
-    """One long-form recording and what is in it."""
+    """One long-form recording and what is known about the target in it.
 
-    path: Path
-    events: List[AnnotatedEvent] = field(default_factory=list)
-    # Recordings with no target dhikr at all: conversation, TV, other dhikr,
-    # street noise. These carry the release-critical number - every event on one
-    # of them is a false activation, and no annotation can be "missed".
-    negative_only: bool = False
-    # What kind of negative audio, when it is one: `other_dhikr`, `tv`, ... Free
-    # text, matched against the dataset's negative categories where they overlap.
-    negative_type: str = ""
-    note: str = ""
+    Three useful states, and one that is not:
 
-    @property
-    def name(self) -> str:
-        return self.path.name
+    ``events`` given
+        Every repetition marked with a start and end. The only state that can
+        measure event precision, recall *and* false activations per hour.
+    ``expected_count`` given, no ``events``
+        "I said it 50 times, I did not write down where." Enough to measure
+        whether the counter reaches 50 - which is what the user actually sees -
+        without anyone timestamping an hour of audio. Cannot measure FA/hour: a
+        miscount could be two misses and one false fire, and nothing here can
+        tell those apart.
+    ``expected_count: 0``
+        A negative-only stress recording. Every detection is a false activation.
 
-    @property
-    def is_negative(self) -> bool:
-        return self.negative_only or not self.events
-
-
-def annotation_template(files: Sequence[str]) -> Dict[str, object]:
-    """A skeleton ``annotations.json`` for a folder of recordings."""
-    return {
-        "files": [
-            {"file": name, "events": [{"class": "006", "start": 0.0, "end": 0.0}]}
-            for name in files
-        ]
-    }
-
-
-def _parse_event(payload: Dict) -> Optional[AnnotatedEvent]:
-    label = payload.get("class", payload.get("label"))
-    if label is None:
-        return None
-    start = float(payload.get("start", 0.0))
-    end = float(payload.get("end", start))
-    if end < start:
-        start, end = end, start
-    return AnnotatedEvent(label=str(label), start=start, end=end)
-
-
-def load_annotations(
-    path: PathLike, audio_dir: Optional[PathLike] = None
-) -> List[StreamingClip]:
-    """Read ``annotations.json``.
-
-    The format is deliberately small - annotating long recordings by hand is the
-    expensive part, so the file asks for as little as possible::
-
-        {
-          "files": [
-            {"file": "test_001.wav",
-             "events": [{"class": "006", "start": 12.3, "end": 13.8},
-                        {"class": "007", "start": 25.1, "end": 27.0}]},
-            {"file": "negative_tv.wav", "events": [], "negative_type": "tv"}
-          ]
-        }
-
-    A bare list of those entries is accepted too, ``label`` works as well as
-    ``class``, and timings need only be roughly right - matching is tolerant (see
-    ``streaming.matching`` in the config). A file with no events is a
-    negative-only recording, which is where the false-activation rate comes from.
+    Neither given is :data:`MODE_UNANNOTATED`, and it is **excluded** rather than
+    assumed. Treating it as negative-only - which an empty ``events`` list used
+    to mean - scores a recording of somebody reciting the target as pure false
+    activations, which is both the worst possible number and a completely wrong
+    one.
     """
-    source = Path(path)
-    if not source.is_file():
-        raise FileNotFoundError(
-            f"no annotations at {source} - see 'Streaming test recordings' in "
-            f"README.md for the folder layout"
-        )
-    payload = json.loads(source.read_text(encoding="utf-8"))
-    entries = payload.get("files", []) if isinstance(payload, dict) else payload
-    root = Path(audio_dir) if audio_dir else source.parent
 
+    file: str
+    events: List[Tuple[float, float]] = field(default_factory=list)
+    # Repetitions in the recording when they were counted but not timestamped.
+    # 0 states "no target in here"; None states nothing.
+    expected_count: Optional[int] = None
+    target: Optional[str] = None
+    # For recordings that hold no target: what kind of audio this is, so a false
+    # activation can be attributed ("TV", "other_dhikr", "street").
+    category: Optional[str] = None
+    duration: Optional[float] = None
+    notes: str = ""
+
+    @property
+    def mode(self) -> str:
+        if self.events:
+            return MODE_TIMESTAMPS
+        if self.expected_count is None:
+            return MODE_UNANNOTATED
+        return MODE_NEGATIVE if self.expected_count == 0 else MODE_COUNT
+
+    @property
+    def expected(self) -> int:
+        """Repetitions this recording is known to contain."""
+        if self.events:
+            return len(self.events)
+        return int(self.expected_count or 0)
+
+    @property
+    def is_negative_only(self) -> bool:
+        return self.mode == MODE_NEGATIVE
+
+    @property
+    def measures_false_activations(self) -> bool:
+        """Whether a detection in this recording can be called false.
+
+        Only when every repetition is accounted for: timestamps say where they
+        are, and ``expected_count: 0`` says there are none. A count-only
+        recording cannot attribute a detection either way.
+        """
+        return self.mode in (MODE_TIMESTAMPS, MODE_NEGATIVE)
+
+    def matches_target(self, target_folder: Optional[str]) -> bool:
+        """Whether this recording belongs to a given target's evaluation set.
+
+        An annotation without a ``target`` is shared material - room tone, TV,
+        conversation - and counts for every target.
+        """
+        if target_folder is None or self.target is None:
+            return True
+        text = str(self.target).strip()
+        try:
+            return f"{int(text):03d}" == target_folder
+        except ValueError:
+            return text == target_folder
+
+
+def propose_events(
+    samples: np.ndarray,
+    sample_rate: int,
+    min_event_seconds: float = 0.4,
+    max_event_seconds: float = 6.0,
+    min_gap_seconds: float = 0.25,
+    threshold_db: float = -35.0,
+    frame_ms: float = 20.0,
+) -> List[Tuple[float, float]]:
+    """Propose repetition boundaries from loudness alone - a draft to review.
+
+    For a session of somebody reciting one phrase with pauses between
+    repetitions, the pauses are visible in the energy envelope, so a plain
+    frame-energy segmentation gets the boundaries approximately right and turns
+    "timestamp an hour of audio" into "check and nudge a list".
+
+    Deliberately **model-free**. Proposing events with the detector being
+    evaluated would be circular - the model would be scored against its own
+    output and recall would come out 100% no matter how bad it was. Loudness
+    knows nothing about the model, so a missed repetition stays missed.
+
+    It is a draft in the honest sense: it cannot tell a repetition from a cough,
+    it merges two repetitions run together, and it splits one that pauses in the
+    middle. Read it before trusting it.
+    """
+    audio = np.asarray(samples, dtype=np.float32)
+    if audio.size == 0:
+        return []
+
+    frame = max(int(round(frame_ms * sample_rate / 1000.0)), 1)
+    usable = (audio.size // frame) * frame
+    if usable < frame:
+        return []
+    frames = audio[:usable].reshape(-1, frame)
+    rms = np.sqrt(np.mean(np.square(frames, dtype=np.float64), axis=1))
+    with np.errstate(divide="ignore"):
+        decibels = 20.0 * np.log10(np.maximum(rms, 1e-12))
+
+    loud = decibels >= threshold_db
+    if not loud.any():
+        return []
+
+    # Bridge gaps shorter than min_gap_seconds so a breath inside one repetition
+    # does not split it in two.
+    bridge = int(round(min_gap_seconds * sample_rate / frame))
+    padded = loud.copy()
+    silent_run = 0
+    for index, value in enumerate(loud):
+        if value:
+            if 0 < silent_run <= bridge:
+                padded[index - silent_run : index] = True
+            silent_run = 0
+        else:
+            silent_run += 1
+
+    events: List[Tuple[float, float]] = []
+    start: Optional[int] = None
+    for index, value in enumerate(padded):
+        if value and start is None:
+            start = index
+        elif not value and start is not None:
+            events.append((start, index))
+            start = None
+    if start is not None:
+        events.append((start, padded.size))
+
+    seconds = frame / float(sample_rate)
+    proposed = [
+        (round(begin * seconds, 3), round(end * seconds, 3))
+        for begin, end in events
+        if min_event_seconds <= (end - begin) * seconds <= max_event_seconds
+    ]
+    LOGGER.info(
+        "proposed %d event(s) from %d loud region(s) - review before using",
+        len(proposed),
+        len(events),
+    )
+    return proposed
+
+
+def audio_files(
+    audio_dir: PathLike,
+    extensions: Sequence[str] = AUDIO_SUFFIXES,
+    recursive: bool = True,
+) -> List[Path]:
+    """Recordings under ``audio_dir``, sorted, hidden files excluded.
+
+    Recursive by default because the collector files its repetition takes per
+    phrase (``streaming/007/…``) while a hand-assembled set is usually flat.
+    Both layouts have to work, and which one is present is not worth asking
+    about.
+    """
+    root = Path(audio_dir)
+    if not root.is_dir():
+        return []
+    suffixes = {ext.lower() for ext in extensions}
+    walk = root.rglob("*") if recursive else root.iterdir()
+    return sorted(
+        path
+        for path in walk
+        if path.is_file()
+        and path.suffix.lower() in suffixes
+        and not path.name.startswith(".")
+    )
+
+
+def annotation_template(
+    audio_dir: PathLike,
+    target: Optional[str] = None,
+    extensions: Sequence[str] = AUDIO_SUFFIXES,
+    propose: bool = False,
+    sample_rate: int = 16000,
+    expected_count: Optional[int] = 0,
+) -> List[Dict[str, object]]:
+    """A skeleton ``annotations.json`` for a folder of long-form recordings.
+
+    ``expected_count`` is what every entry starts as, and the default of ``0``
+    says "no target in this recording" - correct for a folder of television and
+    street audio, which then needs no editing at all. Pass ``None`` for a folder
+    of sessions, so each entry is obviously unfinished rather than quietly
+    claiming to be a negative.
+
+    ``propose=True`` decodes each recording and fills ``events`` from
+    :func:`propose_events`, turning the job from timestamping into reviewing.
+    The proposal is loudness-based and knows nothing about the model, so it can
+    be wrong in ways only a listen will catch - which is the point of it being a
+    draft.
+    """
+    root = Path(audio_dir)
+    files = audio_files(root, extensions)
+
+    entries: List[Dict[str, object]] = []
+    for path in files:
+        events: List[Dict[str, float]] = []
+        if propose:
+            from .audio import load_audio
+
+            try:
+                samples = load_audio(path, sample_rate)
+                events = [
+                    {"start": start, "end": end}
+                    for start, end in propose_events(samples, sample_rate)
+                ]
+            except Exception as exc:  # noqa: BLE001 - one bad file must not stop the rest
+                LOGGER.warning("could not propose events for %s: %s", path.name, exc)
+
+        entry: Dict[str, object] = {
+            "file": path.relative_to(root).as_posix(),
+            "target": target,
+        }
+        if events:
+            entry["events"] = events
+            entry["reviewed"] = False
+        else:
+            entry["events"] = []
+            entry["expected_count"] = expected_count
+        entry["category"] = "uncategorised"
+        entries.append(entry)
+    return entries
+
+
+def write_annotation_template(
+    path: PathLike,
+    audio_dir: PathLike,
+    target: Optional[str] = None,
+    overwrite: bool = False,
+    propose: bool = False,
+    sample_rate: int = 16000,
+    expected_count: Optional[int] = 0,
+) -> Path:
+    """Write :func:`annotation_template` to ``path``, refusing to clobber."""
+    destination = Path(path)
+    if destination.exists() and not overwrite:
+        raise FileExistsError(
+            f"{destination} already exists - annotations are hand-made, so this "
+            f"refuses to overwrite them. Pass overwrite=True if that is really what "
+            f"you want."
+        )
+    entries = annotation_template(
+        audio_dir,
+        target=target,
+        propose=propose,
+        sample_rate=sample_rate,
+        expected_count=expected_count,
+    )
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(
+        json.dumps(entries, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+    proposed = sum(len(entry.get("events") or []) for entry in entries)
+    LOGGER.info(
+        "annotation skeleton for %d recording(s) written to %s%s",
+        len(entries),
+        destination,
+        f" with {proposed} proposed event(s) to review" if proposed else "",
+    )
+    return destination
+
+
+# ---------------------------------------------------------------------------
+# Annotations the collector already wrote
+# ---------------------------------------------------------------------------
+# SpeechCollector's evaluation recorders write what they asked for into the
+# filename, so every take they produce states its own annotation:
+#
+#     streaming/007/007_x10_sp8d358495_20260803_183015_ab12cd.webm
+#              ^^^ ^^^ ^^^
+#              |   |   `- the speaker token, matched by split.speaker
+#              |   `- the repetitions the volunteer was asked for
+#              `- the phrase folder
+#
+#     streaming/negative/negative_x0_sp8d358495_20260803_190211_77cd10.webm
+#                        ^^^^^^^^ ^^
+#                        |        `- zero: nothing in here should be counted
+#                        `- a NON-numeric folder, so it belongs to no phrase
+#
+# The two things an annotation needs - which phrase, and how many times it is in
+# there - are therefore already on the file, and nobody has to write anything.
+#
+# The two takes measure different halves. A repetition take gives count accuracy
+# and nothing else: everything in it is really there, so no detection in it can
+# be called wrong. `x0` is the other half and the release-critical one - a
+# recording where every detection is a false activation. Timestamps remain the
+# only thing neither can derive.
+COLLECTOR_REPETITION_PATTERN = re.compile(r"_x(?P<count>\d+)(?=[_.])")
+
+
+def parse_collector_take(
+    path: PathLike,
+    root: Optional[PathLike] = None,
+) -> Tuple[Optional[int], Optional[str]]:
+    """``(repetitions, target)`` read off a collector filename and its folder.
+
+    Either half is ``None`` when the name does not state it. A file with no
+    ``_x<n>_`` tag is not a repetition take - most likely a hand-added recording
+    - and is never given a count by assumption.
+    """
+    file_path = Path(path)
+    match = COLLECTOR_REPETITION_PATTERN.search(file_path.name)
+    repetitions = int(match.group("count")) if match else None
+
+    # The phrase folder first: the collector always files a take under it, and it
+    # is the one place a rename cannot quietly change the meaning of the audio.
+    candidates: List[str] = []
+    if root is not None:
+        try:
+            relative = file_path.relative_to(Path(root))
+        except ValueError:
+            relative = None
+        if relative is not None and len(relative.parts) > 1:
+            candidates.append(relative.parts[-2])
+    candidates.append(file_path.name.split("_", 1)[0])
+
+    for candidate in candidates:
+        try:
+            return repetitions, f"{int(candidate):03d}"
+        except ValueError:
+            continue
+    return repetitions, None
+
+
+def collector_annotations(
+    audio_dir: PathLike,
+    extensions: Sequence[str] = AUDIO_SUFFIXES,
+    category: str = "target_session",
+) -> List[Dict[str, object]]:
+    """Annotation entries derived from what the collector already recorded.
+
+    A repetition take (``_x10_`` under a phrase folder) becomes a count-mode
+    entry. A negative take (``_x0_`` under a non-phrase folder) becomes
+    ``expected_count: 0`` with **no target** - it holds no dhikr at all, so it is
+    shared material and every target's evaluation counts it, and every detection
+    in it is a false activation.
+
+    Recordings that state neither are still listed - with ``expected_count:
+    null``, which the evaluator excludes and reports - so a hand-added file is
+    visible and one field from usable rather than silently absent.
+    """
+    root = Path(audio_dir)
+    entries: List[Dict[str, object]] = []
+    counted = negatives = 0
+    for path in audio_files(root, extensions):
+        repetitions, target = parse_collector_take(path, root)
+        relative = path.relative_to(root)
+        folder = relative.parts[-2] if len(relative.parts) > 1 else None
+        entry: Dict[str, object] = {
+            "file": relative.as_posix(),
+            "target": target,
+            "events": [],
+        }
+        if repetitions == 0:
+            # Zero is the count, not the absence of one. `target` stays null on
+            # purpose: nothing was said, so this recording is evidence for every
+            # target rather than for the folder it happens to sit in.
+            entry["target"] = None
+            entry["expected_count"] = 0
+            entry["category"] = folder or "negative"
+            negatives += 1
+        elif repetitions is not None and target is not None:
+            entry["expected_count"] = repetitions
+            entry["category"] = category
+            counted += 1
+        else:
+            # Never guessed at. A take whose phrase is unknown would otherwise be
+            # shared material - scored against every target as events that are
+            # not in it - and a count assumed for an untagged file would be
+            # invented ground truth.
+            entry["expected_count"] = None
+            entry["category"] = "uncategorised"
+            entry["notes"] = (
+                "no repetition tag in the filename"
+                if repetitions is None
+                else "could not tell which phrase this is - set 'target'"
+            )
+        entries.append(entry)
+
+    LOGGER.info(
+        "%d of %d recording(s) under %s are tagged: %d repetition take(s), "
+        "%d negative-only",
+        counted + negatives,
+        len(entries),
+        root,
+        counted,
+        negatives,
+    )
+    return entries
+
+
+def write_collector_annotations(
+    path: PathLike,
+    audio_dir: PathLike,
+    extensions: Sequence[str] = AUDIO_SUFFIXES,
+    merge: bool = True,
+) -> Path:
+    """Write (or extend) ``annotations.json`` from the collector's filenames.
+
+    ``merge`` keeps every existing entry **verbatim** and appends only files that
+    are not listed yet. That is what makes this safe to re-run after each round
+    of uploads: hand-written timestamps, categories and negative-only entries are
+    never touched, and new takes annotate themselves.
+    """
+    destination = Path(path)
+    existing: List[Dict[str, object]] = []
+    if destination.is_file():
+        if not merge:
+            raise FileExistsError(
+                f"{destination} already exists. Pass merge=True to add only the "
+                f"recordings it does not list yet, which never edits an entry."
+            )
+        payload = json.loads(destination.read_text(encoding="utf-8"))
+        if isinstance(payload, dict):
+            payload = payload.get("clips") or payload.get("recordings") or []
+        existing = list(payload)
+
+    known = {str(entry.get("file")) for entry in existing}
+    added = [
+        entry
+        for entry in collector_annotations(audio_dir, extensions)
+        if entry["file"] not in known
+    ]
+
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(
+        json.dumps(existing + added, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+    LOGGER.info(
+        "%s: %d entr(y/ies) kept, %d added from collector filenames",
+        destination,
+        len(existing),
+        len(added),
+    )
+    return destination
+
+
+def ensure_collector_annotations(config: Config) -> Optional[Path]:
+    """Derive ``annotations.json`` when it is missing and the takes are tagged.
+
+    Only fires when at least one recording carries a repetition tag, so a folder
+    of hand-recorded audio is left alone (and keeps refusing to be clobbered by
+    :func:`write_annotation_template`) instead of gaining a file of empty
+    entries.
+    """
+    root = config.paths.resolve_streaming_path()
+    destination = root / config.streaming.annotations_file
+    if destination.exists() or not root.is_dir():
+        return None
+
+    audio = streaming_audio_root(config)
+    entries = collector_annotations(audio)
+    # `is not None`, not truthiness: a negative take's count is 0, and a folder
+    # holding only negatives is the most valuable one here.
+    tagged = [entry for entry in entries if entry.get("expected_count") is not None]
+    if not tagged:
+        return None
+
+    write_collector_annotations(destination, audio, merge=False)
+    negatives = sum(1 for entry in tagged if entry["expected_count"] == 0)
+    LOGGER.warning(
+        "wrote %s from the collector's filenames: %d repetition take(s) annotated "
+        "with the count they were recorded for, %d negative-only recording(s). %s",
+        destination,
+        len(tagged) - negatives,
+        negatives,
+        "Repetition takes measure count accuracy only - every one of them contains "
+        "the target, so no detection in one is known to be wrong."
+        if negatives
+        else "These measure count accuracy. They cannot measure false activations "
+        "per hour - every one of them contains the target - so add audio with no "
+        "target in it, marked expected_count: 0.",
+    )
+    return destination
+
+
+def load_annotations(path: PathLike) -> List[StreamingClip]:
+    """Read ``annotations.json``. Accepts a list or a ``{"clips": [...]}`` wrapper."""
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    if isinstance(payload, dict):
+        payload = payload.get("clips") or payload.get("recordings") or []
     clips: List[StreamingClip] = []
-    for entry in entries:
-        if not isinstance(entry, dict):
-            continue
-        name = entry.get("file") or entry.get("path")
-        if not name:
-            LOGGER.warning("annotation entry without a 'file' key, skipping: %r", entry)
-            continue
-        candidate = Path(name)
-        resolved = candidate if candidate.is_absolute() else root / candidate
-        events = [
-            event
-            for event in (_parse_event(item) for item in entry.get("events", []) or [])
-            if event is not None
-        ]
+    for entry in payload:
+        events: List[Tuple[float, float]] = []
+        for item in entry.get("events") or []:
+            if isinstance(item, dict):
+                start = float(item["start"])
+                end = float(item.get("end", start))
+            else:  # a bare [start, end] pair
+                start, end = float(item[0]), float(item[1])
+            if end < start:
+                raise ValueError(f"{entry.get('file')}: event ends before it starts ({start}, {end})")
+            events.append((start, end))
+        events.sort()
+        expected = entry.get("expected_count", entry.get("count"))
         clips.append(
             StreamingClip(
-                path=resolved,
-                events=sorted(events, key=lambda item: item.start),
-                negative_only=bool(entry.get("negative", not events)),
-                negative_type=str(entry.get("negative_type", "") or ""),
-                note=str(entry.get("note", "") or ""),
+                file=str(entry["file"]),
+                events=events,
+                expected_count=int(expected) if expected is not None else None,
+                target=str(entry["target"]) if entry.get("target") is not None else None,
+                category=entry.get("category"),
+                duration=float(entry["duration"]) if entry.get("duration") else None,
+                notes=str(entry.get("notes", "")),
             )
-        )
-
-    missing = [clip.name for clip in clips if not clip.path.is_file()]
-    if missing:
-        LOGGER.warning(
-            "%d annotated file(s) are not on disk and will be skipped: %s",
-            len(missing),
-            ", ".join(missing[:5]),
         )
     return clips
 
@@ -198,88 +640,55 @@ def load_annotations(
 # ---------------------------------------------------------------------------
 @dataclass
 class MatchResult:
-    """Which detections matched which annotations, for one recording."""
+    """Which detections landed on which annotated repetition."""
 
-    matched: List[Tuple[StreamingEvent, AnnotatedEvent]] = field(default_factory=list)
-    duplicates: List[Tuple[StreamingEvent, AnnotatedEvent]] = field(default_factory=list)
-    false_positives: List[StreamingEvent] = field(default_factory=list)
-    missed: List[AnnotatedEvent] = field(default_factory=list)
-
-    @property
-    def true_positives(self) -> int:
-        return len(self.matched)
-
-
-def _matches(
-    detection: StreamingEvent, annotation: AnnotatedEvent, config: EventMatchConfig
-) -> bool:
-    if config.require_label_match and detection.label != annotation.label:
-        return False
-    overlap = detection.overlaps(annotation.start, annotation.end)
-    if overlap > config.min_overlap_seconds:
-        return True
-    if config.min_overlap_seconds > 0.0:
-        return False
-    # No overlap: accept a trigger close to the annotated span. Hand annotation
-    # is not millisecond-accurate, and the detector fires part-way through a
-    # phrase rather than at its start.
-    tolerance = config.tolerance_seconds
-    if tolerance <= 0.0:
-        return False
-    distance = max(
-        annotation.start - detection.end, detection.start - annotation.end, 0.0
-    )
-    if distance <= tolerance:
-        return True
-    return abs(detection.trigger_time - annotation.midpoint) <= tolerance
+    matched: List[Tuple[int, int]] = field(default_factory=list)   # (truth, detection)
+    duplicates: List[Tuple[int, int]] = field(default_factory=list)
+    false_detections: List[int] = field(default_factory=list)
+    missed: List[int] = field(default_factory=list)
 
 
 def match_events(
-    detected: Sequence[StreamingEvent],
-    annotated: Sequence[AnnotatedEvent],
-    config: Optional[EventMatchConfig] = None,
+    detections: Sequence[Event],
+    truth: Sequence[Tuple[float, float]],
+    tolerance: float = 0.75,
 ) -> MatchResult:
-    """Pair detections with annotations, in time order.
+    """Assign detections to annotated repetitions, in time order.
 
-    Each annotation can be matched once. A second detection landing on an
-    already-matched annotation is a **duplicate**, not a false positive: it is the
-    same utterance counted twice, which is a different bug (the detector's
-    cooldown or hysteresis) from firing at something nobody said. Both hurt
-    precision; keeping them apart is what makes the report actionable.
+    A detection belongs to a repetition when its peak time falls inside
+    ``[start - tolerance, end + tolerance]``. The peak is used rather than the
+    span because the span is a window-length superset of the utterance and would
+    happily overlap the neighbouring repetition when someone repeats the dhikr
+    quickly.
+
+    A second detection landing on an already-matched repetition is a
+    **duplicate**, not a false positive: it is the same failure the state machine
+    exists to prevent, and lumping the two together would hide it.
     """
-    config = config or EventMatchConfig()
     result = MatchResult()
-    claimed: Dict[int, StreamingEvent] = {}
+    consumed: Dict[int, int] = {}
 
-    for detection in sorted(detected, key=lambda item: item.trigger_time):
-        candidates = [
-            index
-            for index, annotation in enumerate(annotated)
-            if _matches(detection, annotation, config)
-        ]
-        if not candidates:
-            result.false_positives.append(detection)
-            continue
-        free = [index for index in candidates if index not in claimed]
-        if free:
-            # Nearest free annotation, so a detection does not steal the match of
-            # a neighbouring one it happens to reach.
-            index = min(
-                free,
-                key=lambda position: abs(
-                    detection.trigger_time - annotated[position].midpoint
-                ),
-            )
-            claimed[index] = detection
-            result.matched.append((detection, annotated[index]))
+    ordered = sorted(range(len(detections)), key=lambda index: detections[index].time)
+    for detection_index in ordered:
+        detection = detections[detection_index]
+        best: Optional[int] = None
+        best_distance = math.inf
+        for truth_index, (start, end) in enumerate(truth):
+            if not (start - tolerance) <= detection.time <= (end + tolerance):
+                continue
+            centre = (start + end) / 2.0
+            distance = abs(detection.time - centre)
+            if distance < best_distance:
+                best, best_distance = truth_index, distance
+        if best is None:
+            result.false_detections.append(detection_index)
+        elif best in consumed:
+            result.duplicates.append((best, detection_index))
         else:
-            result.duplicates.append((detection, annotated[candidates[0]]))
+            consumed[best] = detection_index
+            result.matched.append((best, detection_index))
 
-    result.missed = [
-        annotation
-        for index, annotation in enumerate(annotated)
-        if index not in claimed
-    ]
+    result.missed = [index for index in range(len(truth)) if index not in consumed]
     return result
 
 
@@ -287,865 +696,876 @@ def match_events(
 # Metrics
 # ---------------------------------------------------------------------------
 @dataclass
-class LabelMetrics:
-    label: str
+class EventMetrics:
+    """Event-level quality over one or more recordings."""
+
     expected: int = 0
     detected: int = 0
-    true_positives: int = 0
-    false_positives: int = 0
-    false_negatives: int = 0
+    correct: int = 0
+    missed: int = 0
+    false_events: int = 0
     duplicates: int = 0
+    duration_seconds: float = 0.0
+    false_by_category: Dict[str, int] = field(default_factory=dict)
+    max_negative_score: float = 0.0
 
-    @property
-    def recall(self) -> float:
-        return self.true_positives / self.expected if self.expected else float("nan")
+    def __add__(self, other: "EventMetrics") -> "EventMetrics":
+        merged_categories: Counter = Counter(self.false_by_category)
+        merged_categories.update(other.false_by_category)
+        return EventMetrics(
+            expected=self.expected + other.expected,
+            detected=self.detected + other.detected,
+            correct=self.correct + other.correct,
+            missed=self.missed + other.missed,
+            false_events=self.false_events + other.false_events,
+            duplicates=self.duplicates + other.duplicates,
+            duration_seconds=self.duration_seconds + other.duration_seconds,
+            false_by_category=dict(merged_categories),
+            max_negative_score=max(self.max_negative_score, other.max_negative_score),
+        )
 
     @property
     def precision(self) -> float:
-        return self.true_positives / self.detected if self.detected else float("nan")
+        """Correct detections over everything the detector counted.
 
-
-@dataclass
-class StreamingMetrics:
-    """Event-level results over a set of long recordings."""
-
-    expected: int
-    detected: int
-    true_positives: int
-    false_positives: int
-    false_negatives: int
-    duplicates: int
-    duration_seconds: float
-    negative_duration_seconds: float = 0.0
-    negative_false_positives: int = 0
-    per_label: Dict[str, LabelMetrics] = field(default_factory=dict)
-    per_negative_type: Dict[str, Dict[str, float]] = field(default_factory=dict)
-    per_file: List[Dict[str, object]] = field(default_factory=list)
-    threshold: Optional[float] = None
-    highest_false_confidence: float = 0.0
-
-    # -- headline numbers ---------------------------------------------------
-    @property
-    def precision(self) -> float:
-        """Correct detections over detections that fired at *something real*.
-
-        Duplicates are excluded here and reported separately, because they are a
-        different defect with a different fix: a false positive is the model
-        firing at audio nobody spoke a dhikr into, a duplicate is the detector
-        counting one utterance twice (cooldown / hysteresis). See
-        :attr:`counting_precision` for the number the user actually experiences.
+        Duplicates count against precision because on device they *are* extra
+        counts - the user sees the number move twice for one dhikr.
         """
-        total = self.true_positives + self.false_positives
-        return self.true_positives / total if total else float("nan")
-
-    @property
-    def counting_precision(self) -> float:
-        """Correct counts over every count the app would have made.
-
-        Duplicates *are* in the denominator: on the phone a double count is as
-        wrong as a phantom one. This is the number to quote when describing what
-        the user sees; :attr:`precision` is the one to quote when describing the
-        model.
-        """
-        total = self.true_positives + self.false_positives + self.duplicates
-        return self.true_positives / total if total else float("nan")
+        return self.correct / self.detected if self.detected else float("nan")
 
     @property
     def recall(self) -> float:
-        return self.true_positives / self.expected if self.expected else float("nan")
+        return self.correct / self.expected if self.expected else float("nan")
 
     @property
     def f1(self) -> float:
         precision, recall = self.precision, self.recall
-        if not np.isfinite(precision) or not np.isfinite(recall) or precision + recall == 0:
+        if not np.isfinite(precision) or not np.isfinite(recall) or (precision + recall) == 0:
             return float("nan")
         return 2.0 * precision * recall / (precision + recall)
-
-    @property
-    def hours(self) -> float:
-        return self.duration_seconds / SECONDS_PER_HOUR
-
-    @property
-    def false_activations_per_hour(self) -> float:
-        """The release-critical number: wrong counts per hour of listening.
-
-        Duplicates are excluded here - they are counted separately, because they
-        are a detector-tuning problem while a false activation is a model problem,
-        and mixing them hides which one to fix.
-        """
-        return self.false_positives / self.hours if self.hours > 0 else float("nan")
-
-    @property
-    def negative_false_activations_per_hour(self) -> float:
-        """FA/hour measured on recordings with no dhikr in them at all."""
-        hours = self.negative_duration_seconds / SECONDS_PER_HOUR
-        return self.negative_false_positives / hours if hours > 0 else float("nan")
 
     @property
     def duplicate_rate(self) -> float:
         return self.duplicates / self.expected if self.expected else float("nan")
 
-    # -- reporting ----------------------------------------------------------
+    @property
+    def false_activations_per_hour(self) -> float:
+        """The release-critical number. Undefined without measured audio."""
+        if self.duration_seconds <= 0.0:
+            return float("nan")
+        return self.false_events / (self.duration_seconds / SECONDS_PER_HOUR)
+
     def to_dict(self) -> Dict[str, object]:
         return {
-            "threshold": self.threshold,
             "expected": self.expected,
             "detected": self.detected,
-            "true_positives": self.true_positives,
-            "false_positives": self.false_positives,
-            "false_negatives": self.false_negatives,
+            "correct": self.correct,
+            "missed": self.missed,
+            "false_events": self.false_events,
             "duplicates": self.duplicates,
             "duration_seconds": round(self.duration_seconds, 2),
-            "negative_duration_seconds": round(self.negative_duration_seconds, 2),
-            "precision": self.precision,
-            "counting_precision": self.counting_precision,
-            "recall": self.recall,
-            "f1": self.f1,
-            "false_activations_per_hour": self.false_activations_per_hour,
-            "negative_false_activations_per_hour": (
-                self.negative_false_activations_per_hour
-            ),
-            "duplicate_rate": self.duplicate_rate,
-            "highest_false_confidence": self.highest_false_confidence,
-            "per_label": {
-                label: {
-                    "expected": item.expected,
-                    "detected": item.detected,
-                    "true_positives": item.true_positives,
-                    "false_positives": item.false_positives,
-                    "false_negatives": item.false_negatives,
-                    "duplicates": item.duplicates,
-                    "recall": item.recall,
-                    "precision": item.precision,
-                }
-                for label, item in sorted(self.per_label.items())
-            },
-            "per_negative_type": self.per_negative_type,
-            "per_file": self.per_file,
+            "duration_hours": round(self.duration_seconds / SECONDS_PER_HOUR, 4),
+            "precision": _round(self.precision),
+            "recall": _round(self.recall),
+            "f1": _round(self.f1),
+            "duplicate_rate": _round(self.duplicate_rate),
+            "false_activations_per_hour": _round(self.false_activations_per_hour),
+            "false_by_category": dict(sorted(self.false_by_category.items())),
+            "max_negative_score": _round(self.max_negative_score),
         }
 
-    def save(self, directory: PathLike, name: str = "streaming_evaluation") -> Path:
-        target = Path(directory)
-        target.mkdir(parents=True, exist_ok=True)
-        destination = target / f"{name}.json"
+    def summary(self) -> str:
+        lines = [
+            f"expected repetitions : {self.expected}",
+            f"detected             : {self.detected}",
+            f"correct              : {self.correct}",
+            f"missed               : {self.missed}",
+            f"false events         : {self.false_events}",
+            f"duplicates           : {self.duplicates}",
+            "",
+            f"event precision      : {_percent(self.precision)}",
+            f"event recall         : {_percent(self.recall)}",
+            f"event F1             : {_percent(self.f1)}",
+            f"duplicate rate       : {_percent(self.duplicate_rate)}",
+            f"FA / hour            : {self.false_activations_per_hour:.2f} "
+            f"over {self.duration_seconds / SECONDS_PER_HOUR:.2f} h",
+        ]
+        if self.false_by_category:
+            lines.append("")
+            lines.append("false activations by audio category:")
+            for name, count in sorted(
+                self.false_by_category.items(), key=lambda item: item[1], reverse=True
+            ):
+                lines.append(f"  {name:<20} {count}")
+        return "\n".join(lines)
+
+
+def _round(value: float, digits: int = 4) -> Optional[float]:
+    return None if value is None or not np.isfinite(value) else round(float(value), digits)
+
+
+def _percent(value: float) -> str:
+    return "n/a" if not np.isfinite(value) else f"{value * 100:.1f}%"
+
+
+# ---------------------------------------------------------------------------
+# Scoring and evaluation
+# ---------------------------------------------------------------------------
+@dataclass
+class ScoredClip:
+    """A recording's score timeline, kept so threshold sweeps are cheap."""
+
+    clip: StreamingClip
+    timeline: ScoreTimeline
+
+
+@dataclass
+class ClipEventResult:
+    """Per-recording outcome at one operating point."""
+
+    file: str
+    category: Optional[str]
+    metrics: EventMetrics
+    events: List[Event] = field(default_factory=list)
+    false_times: List[float] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "file": self.file,
+            "category": self.category,
+            "metrics": self.metrics.to_dict(),
+            "events": [event.to_dict() for event in self.events],
+            "false_times": [round(float(value), 2) for value in self.false_times],
+        }
+
+
+def score_clips(
+    detector: StreamingDetector,
+    clips: Sequence[StreamingClip],
+    root: PathLike,
+    target_folder: Optional[str] = None,
+    progress: Optional[Callable[[str, int, int], None]] = None,
+) -> List[ScoredClip]:
+    """Run the model over every annotated recording once.
+
+    Recordings annotated for a different target are skipped; recordings with no
+    ``target`` are shared negative material and are always included.
+    """
+    root = Path(root)
+    selected = [clip for clip in clips if clip.matches_target(target_folder)]
+    scored: List[ScoredClip] = []
+    for position, clip in enumerate(selected, start=1):
+        path = root / clip.file
+        if not path.is_file():
+            LOGGER.warning("annotation refers to %s, which does not exist - skipped", path)
+            continue
+        if progress:
+            progress(clip.file, position, len(selected))
+        timeline = detector.score(_load(path, detector.frontend.sample_rate))
+        scored.append(ScoredClip(clip=clip, timeline=timeline))
+    if not scored:
+        LOGGER.warning(
+            "no streaming recordings were scored - check %s and the 'target' field of "
+            "each annotation",
+            root,
+        )
+    return scored
+
+
+def _load(path: Path, sample_rate: int) -> np.ndarray:
+    from .audio import load_audio
+
+    return load_audio(path, sample_rate)
+
+
+@dataclass
+class CountAccuracy:
+    """How close the counter got, on sessions counted but not timestamped.
+
+    This is the number a user would notice: they said it fifty times and the app
+    says forty-seven. It cannot separate three misses from four misses and one
+    false fire - only timestamps can - but it needs no annotation beyond a number
+    somebody already knew, which is why it is worth having.
+    """
+
+    per_file: Dict[str, Dict[str, int]] = field(default_factory=dict)
+
+    def add(self, file: str, expected: int, detected: int) -> None:
+        self.per_file[file] = {
+            "expected": int(expected),
+            "detected": int(detected),
+            "error": int(detected) - int(expected),
+        }
+
+    @property
+    def recordings(self) -> int:
+        return len(self.per_file)
+
+    @property
+    def expected(self) -> int:
+        return sum(entry["expected"] for entry in self.per_file.values())
+
+    @property
+    def detected(self) -> int:
+        return sum(entry["detected"] for entry in self.per_file.values())
+
+    @property
+    def absolute_error(self) -> int:
+        """Total miscount, ignoring direction - overs do not cancel unders."""
+        return sum(abs(entry["error"]) for entry in self.per_file.values())
+
+    @property
+    def count_accuracy(self) -> float:
+        """1 - (total miscount / total expected). Negative when wildly over."""
+        return 1.0 - self.absolute_error / self.expected if self.expected else float("nan")
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "recordings": self.recordings,
+            "expected": self.expected,
+            "detected": self.detected,
+            "absolute_error": self.absolute_error,
+            "count_accuracy": _round(self.count_accuracy),
+            "per_file": dict(sorted(self.per_file.items())),
+        }
+
+    def summary(self) -> str:
+        if not self.recordings:
+            return ""
+        lines = [
+            f"count-only sessions  : {self.recordings}",
+            f"expected / detected  : {self.expected} / {self.detected} "
+            f"({self.detected - self.expected:+d})",
+            f"count accuracy       : {_percent(self.count_accuracy)} "
+            f"(total miscount {self.absolute_error})",
+        ]
+        worst = sorted(self.per_file.items(), key=lambda kv: -abs(kv[1]["error"]))[:5]
+        for name, entry in worst:
+            if entry["error"]:
+                lines.append(
+                    f"  {name:<32} said {entry['expected']}, counted {entry['detected']} "
+                    f"({entry['error']:+d})"
+                )
+        return "\n".join(lines)
+
+
+@dataclass
+class StreamingEvaluation:
+    """Aggregate event metrics plus the per-recording breakdown."""
+
+    metrics: EventMetrics
+    per_clip: List[ClipEventResult] = field(default_factory=list)
+    detector: Optional[DetectorConfig] = None
+    tolerance: float = 0.75
+    counts: CountAccuracy = field(default_factory=CountAccuracy)
+    # Recordings that stated nothing, so measured nothing.
+    skipped: List[str] = field(default_factory=list)
+
+    @property
+    def measures_false_activations(self) -> bool:
+        """Whether any recording could show a false activation.
+
+        A set of positive-only sessions cannot: every detection in them lands on
+        a repetition that is really there, so FA/hour comes out 0.00 and means
+        nothing. That is worth saying out loud rather than reporting as a pass.
+        """
+        return any(item.metrics.duration_seconds > 0 for item in self.per_clip)
+
+    @property
+    def negative_only(self) -> "EventMetrics":
+        """Metrics restricted to recordings that contain no target at all."""
+        total = EventMetrics()
+        for item in self.per_clip:
+            if item.metrics.expected == 0:
+                total = total + item.metrics
+        return total
+
+    def worst_clips(self, limit: int = 5) -> List[ClipEventResult]:
+        """Recordings producing the most false activations, worst first."""
+        return sorted(
+            self.per_clip,
+            key=lambda item: (item.metrics.false_events, item.metrics.missed),
+            reverse=True,
+        )[:limit]
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "detector": asdict(self.detector) if self.detector else None,
+            "match_tolerance_seconds": self.tolerance,
+            "overall": self.metrics.to_dict(),
+            "negative_only": self.negative_only.to_dict(),
+            "count_only": self.counts.to_dict(),
+            "unannotated": list(self.skipped),
+            "per_clip": [item.to_dict() for item in self.per_clip],
+        }
+
+    def save(self, path: PathLike) -> Path:
+        destination = Path(path)
+        destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_text(
-            json.dumps(_jsonable(self.to_dict()), indent=2, ensure_ascii=False),
-            encoding="utf-8",
+            json.dumps(self.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8"
         )
         LOGGER.info("streaming evaluation written to %s", destination)
         return destination
 
-    def summary(self, target_fa_per_hour: Optional[float] = None) -> str:
-        lines = [
-            f"audio               : {self.duration_seconds / 60.0:.1f} min "
-            f"({self.negative_duration_seconds / 60.0:.1f} min with no dhikr)",
-            f"Expected Dhikr      : {self.expected}",
-            f"Correct detections  : {self.true_positives}",
-            f"Missed              : {self.false_negatives}",
-            f"False detections    : {self.false_positives}",
-            f"Duplicate detections: {self.duplicates}",
-            "",
-            f"Event precision     : {self.precision:.1%}",
-            f"Event recall        : {self.recall:.1%}",
-            f"Event F1            : {self.f1:.1%}",
-            f"False activations/hr: {self.false_activations_per_hour:.2f}",
-        ]
-        if self.duplicates:
+    def summary(self) -> str:
+        lines = []
+        if self.metrics.expected or self.metrics.duration_seconds:
+            lines.append(self.metrics.summary())
+        if self.counts.recordings:
+            if lines:
+                lines.append("")
+            lines.append(self.counts.summary())
             lines.append(
-                f"Counting precision  : {self.counting_precision:.1%} "
-                f"(duplicates included - what the user sees)"
+                "  (count-only sessions cannot measure false activations per hour - a\n"
+                "   miscount could be two misses and one false fire, and nothing here can\n"
+                "   tell those apart. Timestamps or negative-only audio can.)"
             )
-        if self.negative_duration_seconds > 0:
-            lines.append(
-                f"  on negative audio : "
-                f"{self.negative_false_activations_per_hour:.2f}/hr "
-                f"({self.negative_false_positives} in "
-                f"{self.negative_duration_seconds / 60.0:.1f} min)"
-            )
-        if self.per_negative_type:
+        negative = self.negative_only
+        if negative.duration_seconds > 0:
             lines.append("")
-            lines.append("false activations by negative audio type:")
-            for name, payload in sorted(self.per_negative_type.items()):
+            lines.append(
+                f"negative-only stress: {negative.duration_seconds / SECONDS_PER_HOUR:.2f} h "
+                f"with no target, {negative.false_events} false event(s), "
+                f"{negative.false_activations_per_hour:.2f} FA/h, peak confidence "
+                f"{negative.max_negative_score:.3f}"
+            )
+        if not self.measures_false_activations:
+            lines.append("")
+            lines.append(
+                "!! FALSE ACTIVATIONS PER HOUR IS UNMEASURED. Every annotated recording\n"
+                "   here contains the target, so there is no audio in which a detection is\n"
+                "   known to be wrong. Recall says the counter fires often enough; nothing\n"
+                "   yet says it stays quiet. An hour of television or conversation, marked\n"
+                "   expected_count: 0, is the cheapest fix and needs no timestamps."
+            )
+        worst = [item for item in self.worst_clips() if item.metrics.false_events]
+        if worst:
+            lines.append("")
+            lines.append("worst recordings:")
+            for item in worst:
                 lines.append(
-                    f"  {name:<18}{int(payload['false_positives']):>4} in "
-                    f"{payload['minutes']:.1f} min "
-                    f"({payload['per_hour']:.2f}/hr)"
+                    f"  {item.file:<32} {item.metrics.false_events} false "
+                    f"({item.category or 'uncategorised'}) at "
+                    + ", ".join(f"{value:.1f}s" for value in item.false_times[:6])
                 )
-        if self.per_label:
-            lines.append("")
-            lines.append(f"{'class':<10}{'expected':>9}{'found':>7}{'missed':>8}{'false':>7}{'recall':>9}")
-            for label, item in sorted(self.per_label.items()):
-                lines.append(
-                    f"{label:<10}{item.expected:>9}{item.true_positives:>7}"
-                    f"{item.false_negatives:>8}{item.false_positives:>7}"
-                    f"{item.recall:>9.1%}"
-                )
-        if target_fa_per_hour is not None and np.isfinite(self.false_activations_per_hour):
-            verdict = (
-                "within budget"
-                if self.false_activations_per_hour <= target_fa_per_hour
-                else "OVER BUDGET"
-            )
-            lines.append("")
-            lines.append(
-                f"FA/hour budget      : {target_fa_per_hour:g} - {verdict}"
-            )
-        if self.duration_seconds < 20.0 * 60.0:
-            lines.append(
-                f"\n!! only {self.duration_seconds / 60.0:.1f} minutes of streaming audio. "
-                f"FA/hour extrapolates from what happened here: at this length one "
-                f"false activation is worth "
-                f"{SECONDS_PER_HOUR / max(self.duration_seconds, 1.0):.1f}/hour, so the "
-                f"number moves in huge steps and cannot be compared against a budget of "
-                f"0.5. Record more, and record the boring cases - conversation, TV, a "
-                f"quiet room."
-            )
         return "\n".join(lines)
 
 
-def _jsonable(value):
-    """Replace non-finite floats with null so the report is valid JSON."""
-    if isinstance(value, dict):
-        return {key: _jsonable(item) for key, item in value.items()}
-    if isinstance(value, (list, tuple)):
-        return [_jsonable(item) for item in value]
-    if isinstance(value, float) and not math.isfinite(value):
-        return None
-    if isinstance(value, (np.floating, np.integer)):
-        return _jsonable(value.item())
-    return value
+def evaluate_timelines(
+    scored: Sequence[ScoredClip],
+    detector: DetectorConfig,
+    tolerance: float = 0.75,
+) -> StreamingEvaluation:
+    """Replay the event state machine over cached timelines at one operating point.
 
-
-def evaluate_streaming(
-    pairs: Sequence[Tuple[StreamingClip, WindowScan]],
-    detector: Optional[DetectorConfig] = None,
-    matching: Optional[EventMatchConfig] = None,
-) -> StreamingMetrics:
-    """Score detections against annotations over every recording.
-
-    ``pairs`` is ``(clip, scan)`` - the annotation and the cached per-window
-    probabilities. Re-running this with a different ``detector`` costs only the
-    state machine, which is what makes the threshold sweep affordable.
+    Each recording is scored by what its annotation can actually support:
+    timestamped ones give precision, recall and FA/hour; count-only ones give a
+    count error and are kept out of FA/hour entirely; unannotated ones are
+    excluded and reported, never guessed at.
     """
-    detector = detector or DetectorConfig()
-    matching = matching or EventMatchConfig()
+    total = EventMetrics()
+    per_clip: List[ClipEventResult] = []
+    counts = CountAccuracy()
+    skipped: List[str] = []
 
-    metrics = StreamingMetrics(
-        expected=0,
-        detected=0,
-        true_positives=0,
-        false_positives=0,
-        false_negatives=0,
-        duplicates=0,
-        duration_seconds=0.0,
-        threshold=detector.confidence_threshold,
-    )
-    negative_types: Dict[str, Dict[str, float]] = {}
+    for item in scored:
+        events = detect_events(item.timeline, detector)
+        clip = item.clip
+        duration = clip.duration or item.timeline.duration_seconds
 
-    for clip, scan in pairs:
-        events = detect_events(scan.times, scan.probabilities, scan.labels, detector)
-        result = match_events(events, clip.events, matching)
+        if clip.mode == MODE_UNANNOTATED:
+            skipped.append(clip.file)
+            continue
 
-        metrics.expected += len(clip.events)
-        metrics.detected += len(events)
-        metrics.true_positives += result.true_positives
-        metrics.false_positives += len(result.false_positives)
-        metrics.false_negatives += len(result.missed)
-        metrics.duplicates += len(result.duplicates)
-        metrics.duration_seconds += scan.duration
-
-        for event in result.false_positives:
-            metrics.highest_false_confidence = max(
-                metrics.highest_false_confidence, float(event.peak_confidence)
+        if clip.mode == MODE_COUNT:
+            counts.add(clip.file, expected=clip.expected, detected=len(events))
+            per_clip.append(
+                ClipEventResult(
+                    file=clip.file,
+                    category=clip.category or "count_only",
+                    metrics=EventMetrics(duration_seconds=0.0),
+                    events=events,
+                )
             )
+            continue
 
-        if clip.is_negative:
-            metrics.negative_duration_seconds += scan.duration
-            metrics.negative_false_positives += len(result.false_positives)
-            category = clip.negative_type or "unlabelled"
-            bucket = negative_types.setdefault(
-                category, {"false_positives": 0.0, "seconds": 0.0}
+        match = match_events(events, clip.events, tolerance)
+        category = clip.category or ("target_session" if clip.events else "uncategorised")
+        false_times = [events[index].time for index in match.false_detections]
+
+        metrics = EventMetrics(
+            expected=len(clip.events),
+            detected=len(events),
+            correct=len(match.matched),
+            missed=len(match.missed),
+            false_events=len(match.false_detections),
+            duplicates=len(match.duplicates),
+            duration_seconds=float(duration),
+            false_by_category=({category: len(match.false_detections)}
+                               if match.false_detections else {}),
+            max_negative_score=(
+                item.timeline.max_score if clip.is_negative_only else 0.0
+            ),
+        )
+        total = total + metrics
+        per_clip.append(
+            ClipEventResult(
+                file=clip.file,
+                category=clip.category,
+                metrics=metrics,
+                events=events,
+                false_times=false_times,
             )
-            bucket["false_positives"] += len(result.false_positives)
-            bucket["seconds"] += scan.duration
-
-        for annotation in clip.events:
-            item = metrics.per_label.setdefault(
-                annotation.label, LabelMetrics(annotation.label)
-            )
-            item.expected += 1
-        for event in events:
-            item = metrics.per_label.setdefault(event.label, LabelMetrics(event.label))
-            item.detected += 1
-        for detection, _ in result.matched:
-            metrics.per_label[detection.label].true_positives += 1
-        for detection in result.false_positives:
-            metrics.per_label[detection.label].false_positives += 1
-        for detection, _ in result.duplicates:
-            metrics.per_label[detection.label].duplicates += 1
-        for annotation in result.missed:
-            metrics.per_label[annotation.label].false_negatives += 1
-
-        metrics.per_file.append(
-            {
-                "file": clip.name,
-                "duration": round(scan.duration, 2),
-                "negative_only": clip.is_negative,
-                "negative_type": clip.negative_type,
-                "expected": len(clip.events),
-                "detected": len(events),
-                "true_positives": result.true_positives,
-                "false_positives": len(result.false_positives),
-                "missed": len(result.missed),
-                "duplicates": len(result.duplicates),
-            }
         )
 
-    metrics.per_negative_type = {
-        name: {
-            "false_positives": payload["false_positives"],
-            "minutes": payload["seconds"] / 60.0,
-            "per_hour": (
-                payload["false_positives"] / (payload["seconds"] / SECONDS_PER_HOUR)
-                if payload["seconds"] > 0
-                else float("nan")
-            ),
-        }
-        for name, payload in negative_types.items()
-    }
-    return metrics
+    if skipped:
+        LOGGER.warning(
+            "%d recording(s) have neither timestamps nor an expected_count and were "
+            "excluded: %s. An empty annotation is not the same as 'no target in here' - "
+            "set expected_count: 0 to state that, or expected_count: <n> for a session "
+            "you counted but did not timestamp.",
+            len(skipped),
+            ", ".join(skipped[:5]),
+        )
+
+    return StreamingEvaluation(
+        metrics=total,
+        per_clip=per_clip,
+        detector=detector,
+        tolerance=tolerance,
+        counts=counts,
+        skipped=skipped,
+    )
 
 
 # ---------------------------------------------------------------------------
-# Negative-only stress test
+# Hard negatives (clip level)
 # ---------------------------------------------------------------------------
 @dataclass
-class NegativeStressResult:
-    """What the detector does over audio containing no dhikr at all.
+class NegativeClipReport:
+    """Clip-level false-positive rate, broken down by negative category.
 
-    Release-critical, and the cheapest evaluation to collect: no annotation is
-    needed, because the right answer for the whole recording is zero. Any
-    conversation, television, Quran recitation or street recording works.
+    The streaming numbers say how often the detector fires on continuous audio;
+    this says *what kind of sound* it fires on, one clip at a time, which is what
+    tells a collection effort where the next 50 recordings should come from.
     """
 
-    files: int
-    duration_seconds: float
-    windows: int
-    false_events: int
-    per_label: Dict[str, int] = field(default_factory=dict)
-    predicted_distribution: Dict[str, int] = field(default_factory=dict)
-    highest_confidence: float = 0.0
-    highest_confidence_label: str = ""
-    highest_confidence_time: float = 0.0
-    per_file: List[Dict[str, object]] = field(default_factory=list)
+    threshold: float
+    total: int
+    false_positives: int
+    by_type: Dict[str, Dict[str, float]] = field(default_factory=dict)
+    worst: List[Dict[str, object]] = field(default_factory=list)
 
     @property
-    def hours(self) -> float:
-        return self.duration_seconds / SECONDS_PER_HOUR
+    def false_positive_rate(self) -> float:
+        return self.false_positives / self.total if self.total else float("nan")
+
+    def rate_for(self, negative_type: str) -> float:
+        entry = self.by_type.get(negative_type)
+        if not entry or not entry.get("clips"):
+            return float("nan")
+        return float(entry["false_positives"]) / float(entry["clips"])
 
     @property
-    def false_activations_per_hour(self) -> float:
-        return self.false_events / self.hours if self.hours > 0 else float("nan")
+    def hard_negative_fp_rate(self) -> float:
+        return self.rate_for("hard_negative")
 
     def to_dict(self) -> Dict[str, object]:
         return {
-            "files": self.files,
-            "duration_seconds": round(self.duration_seconds, 2),
-            "windows": self.windows,
-            "false_events": self.false_events,
-            "false_activations_per_hour": self.false_activations_per_hour,
-            "per_label": dict(self.per_label),
-            "predicted_distribution": dict(self.predicted_distribution),
-            "highest_confidence": self.highest_confidence,
-            "highest_confidence_label": self.highest_confidence_label,
-            "highest_confidence_time": self.highest_confidence_time,
-            "per_file": self.per_file,
+            "threshold": self.threshold,
+            "clips": self.total,
+            "false_positives": self.false_positives,
+            "false_positive_rate": _round(self.false_positive_rate),
+            "hard_negative_fp_rate": _round(self.hard_negative_fp_rate),
+            "by_type": self.by_type,
+            "worst": self.worst,
         }
 
-    def summary(self, target_fa_per_hour: Optional[float] = None) -> str:
+    def summary(self) -> str:
         lines = [
-            f"files               : {self.files}",
-            f"audio duration      : {self.duration_seconds / 60.0:.1f} min",
-            f"windows processed   : {self.windows}",
-            f"false target events : {self.false_events}",
-            f"false activations/hr: {self.false_activations_per_hour:.2f}",
+            f"threshold            : {self.threshold:.2f}",
+            f"negative clips       : {self.total}",
+            f"false detections     : {self.false_positives} "
+            f"({_percent(self.false_positive_rate)})",
+            "",
+            f"{'category':<20}{'clips':>7}{'FP':>6}{'rate':>9}{'max P':>8}",
         ]
-        if self.per_label:
+        for name, entry in sorted(
+            self.by_type.items(), key=lambda item: item[1].get("false_positive_rate", 0.0),
+            reverse=True,
+        ):
             lines.append(
-                "  by class          : "
-                + ", ".join(f"{label}={count}" for label, count in sorted(self.per_label.items()))
+                f"{name:<20}{int(entry['clips']):>7}{int(entry['false_positives']):>6}"
+                f"{entry['false_positive_rate'] * 100:>8.1f}%{entry['max_score']:>8.3f}"
             )
-        if self.predicted_distribution:
+        if self.worst:
             lines.append("")
-            lines.append("windows won by each class (should be almost all 'unknown'):")
-            for label, count in self.predicted_distribution.items():
-                share = count / max(self.windows, 1)
-                lines.append(f"  {label:<12}{count:>7}  {share:>6.1%}")
-        if self.highest_confidence_label:
-            lines.append("")
-            lines.append(
-                f"highest false confidence: {self.highest_confidence:.3f} "
-                f"({self.highest_confidence_label} at "
-                f"{self.highest_confidence_time:.1f} s) - listen to that moment; it is "
-                f"the closest this model came to counting nothing as a dhikr"
-            )
-        if target_fa_per_hour is not None and np.isfinite(self.false_activations_per_hour):
-            lines.append("")
-            lines.append(
-                f"budget {target_fa_per_hour:g}/hr - "
-                + (
-                    "PASS"
-                    if self.false_activations_per_hour <= target_fa_per_hour
-                    else "FAIL"
+            lines.append("most confident false positives:")
+            for item in self.worst:
+                lines.append(
+                    f"  {item['score']:.3f}  {item['negative_type']:<16} {item['path']}"
                 )
-            )
         return "\n".join(lines)
 
 
-def negative_stress_test(
-    scans: Sequence[WindowScan],
-    detector: Optional[DetectorConfig] = None,
-) -> NegativeStressResult:
-    """Run the detector over recordings that contain no target dhikr."""
-    detector = detector or DetectorConfig()
-    result = NegativeStressResult(files=len(scans), duration_seconds=0.0, windows=0, false_events=0)
-    distribution: Dict[str, int] = {}
+def evaluate_negative_clips(
+    detector: StreamingDetector,
+    records: Sequence,
+    root: PathLike,
+    threshold: float,
+    limit_per_type: Optional[int] = None,
+    worst_examples: int = 12,
+) -> NegativeClipReport:
+    """Score negative clips one window at a time and report what gets through.
 
-    for scan in scans:
-        events = detect_events(scan.times, scan.probabilities, scan.labels, detector)
-        result.duration_seconds += scan.duration
-        result.windows += scan.num_windows
-        result.false_events += len(events)
-        for event in events:
-            result.per_label[event.label] = result.per_label.get(event.label, 0) + 1
-        for label, count in scan.predicted_distribution().items():
-            distribution[label] = distribution.get(label, 0) + count
-
-        scores = scan.target_scores(ignore=detector.ignore_labels)
-        if scores.size:
-            position = int(np.argmax(scores))
-            peak = float(scores[position])
-            if peak > result.highest_confidence:
-                result.highest_confidence = peak
-                columns = [
-                    index
-                    for index, label in enumerate(scan.labels)
-                    if label.lower() not in {name.lower() for name in detector.ignore_labels}
-                ]
-                best = columns[int(np.argmax(scan.probabilities[position, columns]))]
-                result.highest_confidence_label = scan.labels[best]
-                result.highest_confidence_time = float(scan.times[position])
-
-        result.per_file.append(
-            {
-                "file": scan.source or "(unnamed)",
-                "duration": round(scan.duration, 2),
-                "windows": scan.num_windows,
-                "false_events": len(events),
-            }
-        )
-
-    result.predicted_distribution = dict(
-        sorted(distribution.items(), key=lambda item: item[1], reverse=True)
+    ``records`` are :class:`src.dataset.ManifestRecord` negatives (the ones whose
+    ``negative_type`` is set). Each clip is scored as a single window - it is
+    already exactly one window long - so this is the same score the streaming
+    detector would see with the utterance centred.
+    """
+    root = Path(root)
+    by_type: Dict[str, Dict[str, float]] = defaultdict(
+        lambda: {"clips": 0.0, "false_positives": 0.0, "max_score": 0.0, "mean_score": 0.0}
     )
-    return result
+    seen: Counter = Counter()
+    offenders: List[Dict[str, object]] = []
+    total = false_positives = 0
+
+    for record in records:
+        negative_type = getattr(record, "negative_type", None) or "unknown"
+        if limit_per_type and seen[negative_type] >= limit_per_type:
+            continue
+        seen[negative_type] += 1
+        path = record.resolve(root)
+        if not path.is_file():
+            LOGGER.warning("negative clip missing: %s", path)
+            continue
+        samples = _load(path, detector.frontend.sample_rate)
+        features = detector.frontend.features(samples)
+        score = float(np.asarray(detector.scorer(features)).ravel()[0])
+
+        total += 1
+        entry = by_type[negative_type]
+        entry["clips"] += 1
+        entry["mean_score"] += score
+        entry["max_score"] = max(entry["max_score"], score)
+        if score >= threshold:
+            false_positives += 1
+            entry["false_positives"] += 1
+            offenders.append(
+                {
+                    "path": str(record.path),
+                    "negative_type": negative_type,
+                    "score": round(score, 4),
+                }
+            )
+
+    for entry in by_type.values():
+        clips = entry["clips"] or 1.0
+        entry["mean_score"] = round(entry["mean_score"] / clips, 4)
+        entry["max_score"] = round(entry["max_score"], 4)
+        entry["false_positive_rate"] = round(entry["false_positives"] / clips, 4)
+
+    offenders.sort(key=lambda item: item["score"], reverse=True)
+    return NegativeClipReport(
+        threshold=float(threshold),
+        total=total,
+        false_positives=false_positives,
+        by_type={name: dict(entry) for name, entry in sorted(by_type.items())},
+        worst=offenders[:worst_examples],
+    )
 
 
 # ---------------------------------------------------------------------------
 # Threshold calibration
 # ---------------------------------------------------------------------------
 @dataclass
-class ThresholdPoint:
-    """One point of the sweep."""
+class ThresholdRow:
+    """One operating point of the sweep."""
 
-    threshold: float
-    recall: float
-    precision: float
-    f1: float
-    false_activations_per_hour: float
-    true_positives: int
-    false_positives: int
-    duplicates: int
-    expected: int
+    activation: float
+    release: float
+    metrics: EventMetrics
 
-    def row(self) -> Dict[str, object]:
+    def to_dict(self) -> Dict[str, object]:
         return {
-            "threshold": round(self.threshold, 3),
-            "recall": round(self.recall, 4) if np.isfinite(self.recall) else None,
-            "precision": round(self.precision, 4) if np.isfinite(self.precision) else None,
-            "F1": round(self.f1, 4) if np.isfinite(self.f1) else None,
-            "FA/hour": (
-                round(self.false_activations_per_hour, 3)
-                if np.isfinite(self.false_activations_per_hour)
-                else None
-            ),
-            "found": self.true_positives,
-            "false": self.false_positives,
-            "duplicates": self.duplicates,
+            "activation_threshold": round(self.activation, 4),
+            "release_threshold": round(self.release, 4),
+            **self.metrics.to_dict(),
         }
 
 
 @dataclass
 class CalibrationResult:
-    """The chosen operating point, and whether it actually met the budget."""
+    """Outcome of the sweep, including the honest failure case."""
 
-    threshold: Optional[float]
-    satisfied: bool
-    policy: str
-    target_false_activations_per_hour: float
-    points: List[ThresholdPoint] = field(default_factory=list)
-    per_class: Dict[str, float] = field(default_factory=dict)
-    label: Optional[str] = None
+    rows: List[ThresholdRow] = field(default_factory=list)
+    activation: Optional[float] = None
+    release: Optional[float] = None
+    target_fa_per_hour: float = 0.5
+    min_recall: float = 0.0
     reason: str = ""
 
     @property
-    def chosen(self) -> Optional[ThresholdPoint]:
-        if self.threshold is None:
+    def satisfied(self) -> bool:
+        return self.activation is not None
+
+    @property
+    def chosen(self) -> Optional[ThresholdRow]:
+        if self.activation is None:
             return None
         return min(
-            self.points,
-            key=lambda point: abs(point.threshold - self.threshold),
+            (row for row in self.rows if math.isclose(row.activation, self.activation)),
+            key=lambda row: abs(row.release - (self.release or row.release)),
             default=None,
         )
 
+    def best_by_fa(self) -> Optional[ThresholdRow]:
+        """The row with the fewest false activations, whatever its recall."""
+        finite = [row for row in self.rows if np.isfinite(row.metrics.false_activations_per_hour)]
+        if not finite:
+            return None
+        return min(
+            finite,
+            key=lambda row: (row.metrics.false_activations_per_hour, -(row.metrics.recall or 0.0)),
+        )
+
     def to_dict(self) -> Dict[str, object]:
+        chosen = self.chosen
         return {
-            "threshold": self.threshold,
             "satisfied": self.satisfied,
-            "policy": self.policy,
-            "label": self.label,
-            "target_false_activations_per_hour": self.target_false_activations_per_hour,
-            "per_class": dict(self.per_class),
             "reason": self.reason,
-            "points": [asdict(point) for point in self.points],
+            "target_false_activations_per_hour": self.target_fa_per_hour,
+            "min_event_recall": self.min_recall,
+            "activation_threshold": self.activation,
+            "release_threshold": self.release,
+            "chosen": chosen.to_dict() if chosen else None,
+            "sweep": [row.to_dict() for row in self.rows],
         }
 
     def to_dataframe(self):
         import pandas as pd  # lazily imported: only notebooks need pandas
 
-        return pd.DataFrame([point.row() for point in self.points])
+        return pd.DataFrame([row.to_dict() for row in self.rows])
+
+    def save(self, path: PathLike) -> Path:
+        destination = Path(path)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(
+            json.dumps(self.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+        return destination
 
     def summary(self) -> str:
-        lines = [
-            f"policy            : {self.policy}",
-            f"FA/hour budget    : {self.target_false_activations_per_hour:g}",
-        ]
-        if self.threshold is None:
-            lines.append("recommended       : none")
-        else:
-            lines.append(f"recommended       : {self.threshold:.2f}")
-            point = self.chosen
-            if point is not None:
-                def percent(value: float) -> str:
-                    return f"{value:.1%}" if np.isfinite(value) else "n/a"
-
-                lines.append(
-                    f"at that threshold : recall {percent(point.recall)} | precision "
-                    f"{percent(point.precision)} | "
-                    f"{point.false_activations_per_hour:.2f} FA/hour"
-                )
-        if self.per_class:
-            lines.append("per-class         : " + ", ".join(
-                f"{label} {value:.2f}" for label, value in sorted(self.per_class.items())
-            ))
-        if self.reason:
-            lines.append(f"\n!! {self.reason}")
-        return "\n".join(lines)
-
-
-def sweep_thresholds(
-    pairs: Sequence[Tuple[StreamingClip, WindowScan]],
-    detector: DetectorConfig,
-    matching: EventMatchConfig,
-    thresholds: Sequence[float],
-    label: Optional[str] = None,
-) -> List[ThresholdPoint]:
-    """Evaluate every candidate threshold on the cached scans.
-
-    ``label`` sweeps one class's threshold while every other class keeps the one
-    it already has, which is what per-class calibration needs: 006 and 007 are not
-    equally hard, and forcing them to share a threshold costs recall on the easy
-    one to protect the difficult one.
-    """
-    points: List[ThresholdPoint] = []
-    for threshold in thresholds:
-        if label is None:
-            candidate = DetectorConfig(
-                **{
-                    **asdict(detector),
-                    "confidence_threshold": float(threshold),
-                    # Keep the hysteresis ratio rather than a fixed release value:
-                    # a release threshold above the activation is meaningless, and
-                    # a fixed one stops being hysteresis as activation moves.
-                    "release_threshold": min(
-                        detector.release_threshold, float(threshold)
-                    ),
-                    "per_class_thresholds": {},
-                }
+        if not self.rows:
+            return "no thresholds were evaluated - the streaming set is empty."
+        if self.satisfied:
+            row = self.chosen
+            assert row is not None
+            return "\n".join(
+                [
+                    f"activation threshold : {self.activation:.2f}",
+                    f"release threshold    : {self.release:.2f}",
+                    f"FA / hour            : {row.metrics.false_activations_per_hour:.2f} "
+                    f"(budget {self.target_fa_per_hour:.2f})",
+                    f"event precision      : {_percent(row.metrics.precision)}",
+                    f"event recall         : {_percent(row.metrics.recall)}",
+                    "",
+                    "Lowest threshold inside the false-activation budget, which is also "
+                    "the highest recall inside it.",
+                ]
             )
-        else:
-            per_class = dict(detector.per_class_thresholds)
-            per_class[label] = float(threshold)
-            candidate = DetectorConfig(
-                **{
-                    **asdict(detector),
-                    "release_threshold": min(
-                        detector.release_threshold, float(threshold)
-                    ),
-                    "per_class_thresholds": per_class,
-                }
-            )
-
-        metrics = evaluate_streaming(pairs, candidate, matching)
-        if label is not None:
-            per_label = metrics.per_label.get(label, LabelMetrics(label))
-            recall = per_label.recall
-            precision = per_label.precision
-            expected = per_label.expected
-            true_positives = per_label.true_positives
-            false_positives = per_label.false_positives
-            duplicates = per_label.duplicates
-            f1 = (
-                2.0 * precision * recall / (precision + recall)
-                if np.isfinite(precision) and np.isfinite(recall) and precision + recall > 0
-                else float("nan")
-            )
-            fa_per_hour = (
-                false_positives / metrics.hours if metrics.hours > 0 else float("nan")
-            )
-        else:
-            recall, precision, f1 = metrics.recall, metrics.precision, metrics.f1
-            expected = metrics.expected
-            true_positives = metrics.true_positives
-            false_positives = metrics.false_positives
-            duplicates = metrics.duplicates
-            fa_per_hour = metrics.false_activations_per_hour
-
-        points.append(
-            ThresholdPoint(
-                threshold=float(threshold),
-                recall=recall,
-                precision=precision,
-                f1=f1,
-                false_activations_per_hour=fa_per_hour,
-                true_positives=true_positives,
-                false_positives=false_positives,
-                duplicates=duplicates,
-                expected=expected,
-            )
+        best = self.best_by_fa()
+        detail = (
+            f"The best any threshold managed is "
+            f"{best.metrics.false_activations_per_hour:.2f} FA/h at activation "
+            f"{best.activation:.2f} (recall {_percent(best.metrics.recall)})."
+            if best
+            else ""
         )
-    return points
-
-
-def _choose(
-    points: Sequence[ThresholdPoint],
-    target: float,
-    policy: str,
-    label: Optional[str] = None,
-) -> CalibrationResult:
-    """Apply the policy to a finished sweep."""
-    result = CalibrationResult(
-        threshold=None,
-        satisfied=False,
-        policy=policy,
-        target_false_activations_per_hour=float(target),
-        points=list(points),
-        label=label,
-    )
-    if not points:
-        result.reason = "no thresholds were evaluated"
-        return result
-
-    if policy == "max_f1":
-        best = max(
-            points,
-            key=lambda point: (point.f1 if np.isfinite(point.f1) else -1.0),
+        return "\n".join(
+            [
+                "CALIBRATION FAILED - no threshold meets the release criteria.",
+                f"budget: <= {self.target_fa_per_hour:.2f} FA/h"
+                + (f" and recall >= {self.min_recall:.2f}" if self.min_recall else ""),
+                detail,
+                "",
+                self.reason,
+                "",
+                "This is a data result, not a tuning result: pushing the threshold higher "
+                "trades away recall without fixing what the model is confusing. Collect "
+                "hard negatives of the kind listed in the streaming report first.",
+            ]
         )
-        result.threshold = best.threshold
-        result.satisfied = (
-            np.isfinite(best.false_activations_per_hour)
-            and best.false_activations_per_hour <= target
-        )
-        if not result.satisfied:
-            result.reason = (
-                f"policy 'max_f1' ignores the false-activation budget: the chosen "
-                f"threshold {best.threshold:.2f} produces "
-                f"{best.false_activations_per_hour:.2f} FA/hour against a budget of "
-                f"{target:g}. Use it to explore, not to ship."
-            )
-        return result
-
-    within = [
-        point
-        for point in points
-        if np.isfinite(point.false_activations_per_hour)
-        and point.false_activations_per_hour <= target
-    ]
-    if within:
-        # Inside the budget, recall is what is left to maximise; the lowest
-        # threshold breaks ties, since recall usually plateaus over several
-        # candidates and the lowest of those leaves the most headroom for a
-        # quieter speaker.
-        chosen = max(
-            within,
-            key=lambda point: (
-                point.recall if np.isfinite(point.recall) else -1.0,
-                -point.threshold,
-            ),
-        )
-        result.threshold = chosen.threshold
-        result.satisfied = True
-        if np.isfinite(chosen.recall) and chosen.recall < LOW_RECALL:
-            # Inside the budget, but only because it barely fires at all. This is
-            # a pass on paper and a broken feature in the app, so it says so.
-            result.reason = (
-                f"the budget is met at {chosen.threshold:.2f}, but recall there is "
-                f"only {chosen.recall:.1%}: every threshold quiet enough to stay "
-                f"inside {target:g} FA/hour also misses most real dhikr. The model "
-                f"is not separating dhikr from the rest of the audio well enough to "
-                f"have a usable operating point - more speakers and more hard "
-                f"negatives, not a different threshold."
-            )
-        return result
-
-    strictest = max(points, key=lambda point: point.threshold)
-    result.threshold = None
-    result.satisfied = False
-    result.reason = (
-        f"NO threshold in the sweep meets the budget of {target:g} false "
-        f"activations per hour - even {strictest.threshold:.2f} produces "
-        f"{strictest.false_activations_per_hour:.2f}/hour"
-        + (f" for '{label}'" if label else "")
-        + ". Raising the threshold further is not the fix: the model is firing "
-        "confidently on audio that is not a dhikr. Collect hard negatives of "
-        "whatever it fires on, plus more speakers, and retrain. Shipping this "
-        "means a counter that ticks during conversation."
-    )
-    return result
 
 
 def calibrate_threshold(
-    pairs: Sequence[Tuple[StreamingClip, WindowScan]],
-    streaming: StreamingConfig,
-    calibration: Optional[CalibrationConfig] = None,
+    scored: Sequence[ScoredClip],
+    config: CalibrationConfig,
+    detector: DetectorConfig,
+    tolerance: float = 0.75,
 ) -> CalibrationResult:
-    """Pick the global activation threshold from streaming data.
+    """Sweep the activation threshold under a false-activation budget.
 
-    The policy is deliberately not "best F1": F1 weighs a missed dhikr and a
-    false count equally, and they are not equal here. The default policy takes the
-    false-activation budget as a hard constraint and maximises recall inside it.
+    Selection is *the lowest activation threshold whose measured FA/hour stays
+    inside the budget* (and whose recall clears ``min_event_recall`` when one is
+    set). Lower thresholds detect more, so the lowest admissible one is also the
+    highest-recall admissible one.
+
+    When nothing qualifies the result says so. Reaching for 0.99 and reporting it
+    as "calibrated" would ship a model that counts almost nothing and hide the
+    fact that the negatives, not the threshold, are the problem (requirement 25).
     """
-    calibration = calibration or streaming.calibration
-    points = sweep_thresholds(
-        pairs,
-        streaming.detector,
-        streaming.matching,
-        calibration.thresholds(),
-    )
-    return _choose(
-        points,
-        streaming.target_false_activations_per_hour,
-        calibration.policy,
-    )
-
-
-def calibrate_per_class(
-    pairs: Sequence[Tuple[StreamingClip, WindowScan]],
-    streaming: StreamingConfig,
-    labels: Sequence[str],
-    calibration: Optional[CalibrationConfig] = None,
-    base_threshold: Optional[float] = None,
-) -> Dict[str, CalibrationResult]:
-    """One threshold per target class, each with its own share of the FA budget.
-
-    Phrases are not equally difficult - a nested phrase that contains another one
-    needs a stricter threshold than a distinct one - so a single global value
-    either lets the hard class fire too often or throttles the easy class for
-    nothing. The budget is divided evenly between the classes so the *total* stays
-    inside the configured FA/hour.
-    """
-    calibration = calibration or streaming.calibration
-    ignored = {name.lower() for name in streaming.detector.ignore_labels}
-    targets = [label for label in labels if label.lower() not in ignored]
-    if not targets:
-        return {}
-
-    share = streaming.target_false_activations_per_hour / float(len(targets))
-    detector = streaming.detector
-    if base_threshold is not None:
-        detector = DetectorConfig(
-            **{**asdict(detector), "confidence_threshold": float(base_threshold)}
+    rows: List[ThresholdRow] = []
+    if not scored:
+        return CalibrationResult(
+            rows=rows,
+            target_fa_per_hour=config.target_false_activations_per_hour,
+            min_recall=config.min_event_recall,
+            reason="no annotated streaming recordings were scored.",
         )
 
-    results: Dict[str, CalibrationResult] = {}
-    for label in targets:
-        points = sweep_thresholds(
-            pairs,
+    steps = int(round((config.max_threshold - config.min_threshold) / config.step)) + 1
+    for index in range(max(steps, 1)):
+        activation = min(config.min_threshold + index * config.step, config.max_threshold)
+        candidate = detector_with_threshold(
             detector,
-            streaming.matching,
-            calibration.thresholds(),
-            label=label,
+            activation,
+            release=config.release_threshold,
+            release_ratio=config.release_ratio,
         )
-        results[label] = _choose(points, share, calibration.policy, label=label)
-    return results
-
-
-# ---------------------------------------------------------------------------
-# Clip-level fallback
-# ---------------------------------------------------------------------------
-def clip_threshold_sweep(
-    y_true: np.ndarray,
-    y_prob: np.ndarray,
-    class_names: Sequence[str],
-    thresholds: Sequence[float],
-    unknown_class: str = "unknown",
-    negative_types: Optional[Sequence[str]] = None,
-    hard_negative_type: str = "hard_negative",
-) -> List[Dict[str, object]]:
-    """Threshold sweep on isolated clips, for when no streaming data exists yet.
-
-    This cannot produce a false-activation *rate* - clips have no duration in the
-    sense an hour of listening does - so it reports what it can: how often a real
-    phrase is accepted, and how often unknown audio is. Read it as a shortlist for
-    the streaming sweep, never as a substitute: a model that rejects 99% of
-    2-second unknown clips can still fire several times a minute on continuous
-    speech, because continuous speech contains far more windows and far more
-    near-misses than a clip set does.
-    """
-    truth = np.asarray(y_true).ravel()
-    probabilities = np.asarray(y_prob, dtype=np.float32)
-    names = list(class_names)
-    target_columns = [index for index, name in enumerate(names) if name != unknown_class]
-    if not target_columns:
-        raise ValueError("no target classes to sweep - the manifest holds only unknown")
-
-    best_target = probabilities[:, target_columns].max(axis=1)
-    predicted = np.array(
-        [target_columns[index] for index in probabilities[:, target_columns].argmax(axis=1)]
-    )
-    is_target = np.isin(truth, target_columns)
-    is_unknown = ~is_target
-    categories = (
-        np.asarray(negative_types, dtype=object)
-        if negative_types is not None
-        else np.full(truth.shape, "", dtype=object)
-    )
-    is_hard = is_unknown & (categories == hard_negative_type)
-
-    rows: List[Dict[str, object]] = []
-    for threshold in thresholds:
-        accepted = best_target >= threshold
-        correct = accepted & is_target & (predicted == truth)
-        row: Dict[str, object] = {
-            "threshold": round(float(threshold), 3),
-            "target recall": float(correct.sum() / max(int(is_target.sum()), 1)),
-            "unknown accepted": float(
-                (accepted & is_unknown).sum() / max(int(is_unknown.sum()), 1)
-            ),
-        }
-        if int(is_hard.sum()):
-            row["hard-negative accepted"] = float(
-                (accepted & is_hard).sum() / int(is_hard.sum())
+        evaluation = evaluate_timelines(scored, candidate, tolerance)
+        rows.append(
+            ThresholdRow(
+                activation=activation,
+                release=candidate.release_threshold,
+                metrics=evaluation.metrics,
             )
-        rows.append(row)
-    return rows
+        )
+        if activation >= config.max_threshold:
+            break
+
+    budget = config.target_false_activations_per_hour
+    admissible = [
+        row
+        for row in rows
+        if np.isfinite(row.metrics.false_activations_per_hour)
+        and row.metrics.false_activations_per_hour <= budget
+        and (
+            not config.min_event_recall
+            or (np.isfinite(row.metrics.recall) and row.metrics.recall >= config.min_event_recall)
+        )
+    ]
+    if not admissible:
+        within_budget = [
+            row
+            for row in rows
+            if np.isfinite(row.metrics.false_activations_per_hour)
+            and row.metrics.false_activations_per_hour <= budget
+        ]
+        reason = (
+            "No threshold stays inside the false-activation budget."
+            if not within_budget
+            else (
+                f"Thresholds inside the budget exist, but none reaches the required "
+                f"event recall of {config.min_event_recall:.2f} - the model cannot be "
+                f"both quiet enough and sensitive enough on this data."
+            )
+        )
+        return CalibrationResult(
+            rows=rows,
+            target_fa_per_hour=budget,
+            min_recall=config.min_event_recall,
+            reason=reason,
+        )
+
+    chosen = min(admissible, key=lambda row: row.activation)
+    return CalibrationResult(
+        rows=rows,
+        activation=chosen.activation,
+        release=chosen.release,
+        target_fa_per_hour=budget,
+        min_recall=config.min_event_recall,
+        reason=(
+            f"lowest activation threshold within {budget:.2f} FA/h "
+            f"({len(admissible)} of {len(rows)} swept thresholds qualified)"
+        ),
+    )
+
+
+def load_streaming_set(config: Config) -> List[StreamingClip]:
+    """Read the project's streaming annotations, or an empty list.
+
+    Distinguishes the three ways this comes up empty, because they need
+    different answers and "missing" for all of them is what sends somebody
+    looking for a folder that is already there.
+    """
+    root = config.paths.resolve_streaming_path()
+    if not root.is_dir():
+        LOGGER.warning(
+            "no streaming recordings: %s does not exist (looked for %s under %s). "
+            "Event metrics, FA/hour and threshold calibration cannot run, and clip "
+            "accuracy alone cannot decide whether this model is shippable.",
+            root,
+            ", ".join(config.paths.STREAMING_ALIASES),
+            config.paths.root,
+        )
+        return []
+
+    annotations = root / config.streaming.annotations_file
+    if not annotations.is_file():
+        # A collector repetition take says in its own filename which phrase it
+        # holds and how many times, so it annotates itself.
+        ensure_collector_annotations(config)
+
+    if not annotations.is_file():
+        recordings = len(audio_files(streaming_audio_root(config)))
+        LOGGER.warning(
+            "%s exists but has no %s%s. Scaffold one with "
+            "write_annotation_template(path, audio_dir, target=...): every entry starts "
+            "with an empty `events` list, which is already correct for a negative-only "
+            "stress recording.",
+            root,
+            config.streaming.annotations_file,
+            f" (the folder holds {recordings} recording(s))" if recordings else "",
+        )
+        return []
+
+    clips = load_annotations(annotations)
+    if not clips:
+        LOGGER.warning("%s parsed to zero recordings", annotations)
+    return clips
+
+
+def streaming_audio_root(config: Config) -> Path:
+    """Directory the annotation ``file`` fields are relative to.
+
+    ``<streaming>/audio/`` when it exists, the streaming folder itself otherwise -
+    so both the documented layout and a flat folder of recordings work.
+    """
+    root = config.paths.resolve_streaming_path()
+    nested = root / config.streaming.audio_dirname
+    return nested if nested.is_dir() else root
+
+
+def streaming_status(config: Config) -> str:
+    """One line for the notebook: what was found, and where."""
+    configured = config.streaming_path
+    root = config.paths.resolve_streaming_path()
+    if not root.is_dir():
+        return f"MISSING  {configured}"
+
+    annotations = root / config.streaming.annotations_file
+    recordings = len(audio_files(streaming_audio_root(config)))
+    note = "" if root == configured else f"  (paths.streaming_dir says '{configured.name}')"
+    if not annotations.is_file():
+        return f"no {config.streaming.annotations_file}  {root}  [{recordings} recording(s)]{note}"
+    clips = load_annotations(annotations)
+    events = sum(len(clip.events) for clip in clips)
+    counted = sum(1 for clip in clips if clip.mode == MODE_COUNT)
+    negatives = sum(1 for clip in clips if clip.is_negative_only)
+    return (
+        f"ok  {root}  [{len(clips)} annotated, {events} timestamped repetition(s), "
+        f"{counted} counted take(s), {negatives} negative-only]{note}"
+    )

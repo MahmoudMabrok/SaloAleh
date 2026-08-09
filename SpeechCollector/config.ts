@@ -18,7 +18,7 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     // The Apps Script /exec URL of this project. The standalone page is not
     // served by Apps Script, so it cannot call ScriptApp.getService().getUrl()
     // and needs the deployment URL as its upload endpoint.
-    webAppUrl: "https://script.google.com/macros/s/AKfycbwidP0GUJ3VnqSnPa4fS7YZv0QZdjI5uIfvC3UVRXb4IXzak7vW3idqdL3JVyiv_PgZtw/exec",
+    webAppUrl: "https://script.google.com/macros/s/AKfycbw-GrATK5v9D4jI3gpCs1tkF8ILpR-5kgE-bKq4oLi-Njdlq5_XO3RgKcnTkJRoKyYxcg/exec",
 
     // Public URL of dist/voice.html. Apps Script renders every web app inside a
     // googleusercontent.com sandbox iframe that does not delegate the
@@ -58,14 +58,28 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     // long clip holding the same dhikr N times in a row. Like `noise`, this is a
     // SIBLING of datasetSubfolder — these clips are not single training
     // examples, so a trainer scanning `dataset/` must never see them. They are
-    // the raw material for DhikrSpeech's streaming evaluation (stage 06), whose
-    // `paths.streaming_dir` wants `streaming_test/audio/*.wav` plus a hand
-    // `annotations.json`; the collector cannot produce timings, so it files the
-    // takes per phrase here and the conversion to that layout stays a manual
-    // step. The expected repetition count travels in the filename (`_x10_`), so
-    // a clip is never separated from the number of events it is meant to hold.
+    // the raw material for DhikrSpeech's streaming evaluation, whose
+    // `paths.streaming_dir` reads this folder directly — per-phrase subfolders
+    // and all. The expected repetition count travels in the filename (`_x10_`),
+    // so a clip is never separated from the number of events it is meant to
+    // hold, and the pipeline derives `annotations.json` from the two of them
+    // (`streaming_eval.collector_annotations`) rather than anyone writing it.
+    // Timings are still not derivable, and nor is the false-activation rate:
+    // every take here contains the dhikr, so no detection in one is known to be
+    // wrong. That number needs audio with no dhikr in it, which this collector
+    // does not gather.
     // Layout: `{root}/streaming/{paddedPhraseId}/`.
     streamingSubfolder: "streaming",
+
+    // Where the long negative takes land (see `recording.negative` below):
+    // `{root}/streaming/{streamingNegativeFolderName}/`, a sibling of the
+    // per-phrase folders inside the same streaming tree. It is deliberately NOT
+    // a phrase folder and must never look like one — the pipeline reads the
+    // folder as the phrase a take belongs to, and a numeric name here would file
+    // hours of television as somebody reciting that phrase. A negative take
+    // belongs to no phrase: it is shared material, and every target's evaluation
+    // counts it.
+    streamingNegativeFolderName: "negative",
 
     // The collector writes this file at the ROOT of the dataset folder (a
     // sibling of datasetSubfolder), regenerated from `phrases` below whenever
@@ -119,6 +133,28 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
       // Opus at the configured bitrate needs ~1.5 MB for a 90 s take, so this is
       // headroom rather than a limit anyone reaches. It exists because the body
       // Apps Script has to base64-decode is ~1.38x this number.
+      maximumUploadBytes: 8 * 1024 * 1024
+    },
+
+    // The third recorder, on its own card: several minutes of ordinary sound
+    // holding NO dhikr at all. It answers the one question no other recording on
+    // this page can, and the one the release actually turns on — how often the
+    // counter fires when nobody said anything.
+    //
+    // Every other take here contains a dhikr, including the repetition takes, so
+    // no detection in any of them is known to be wrong. Those measure whether the
+    // counter reaches ten; only audio with nothing in it can measure how often it
+    // reaches one by mistake. It is also the cheapest recording in the project:
+    // set the phone down next to a television and press stop five minutes later.
+    //
+    // Long, therefore, is the entire point — false activations are counted per
+    // HOUR, so the limit is minutes rather than the repetition take's ninety
+    // seconds, and an hour of material is twelve takes instead of forty. The
+    // ceiling is what Apps Script can still base64-decode in one request.
+    // Set to null to drop the card.
+    negative: {
+      minimumDurationMs: 20000,
+      maximumDurationMs: 300000,
       maximumUploadBytes: 8 * 1024 * 1024
     }
   },
@@ -195,7 +231,20 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     streamingRecordingReady: "التسجيل الطويل جاهز. استمع إليه للتأكد أنه يحتوي على العبارة {reps} مرات، ثم ارفعه.",
     streamingUploadSuccessBody: "تم رفع التسجيل الطويل. يمكنك تسجيل مقطع آخر لنفس العبارة — {reps} مرات في كل مقطع.",
     streamingTooShort: "التسجيل أقصر من أن يحتوي على {reps} مرات. أعد التسجيل وقل العبارة {reps} مرات كاملة.",
-    streamingCount: "🔁 {count} تسجيل متكرر"
+    streamingCount: "🔁 {count} تسجيل متكرر",
+    // The long negative take. Its rule is the opposite of every other card's:
+    // there, saying the dhikr is the sample; here, saying it once ruins the
+    // whole recording. `{minutes}` is the maximum length and `{seconds}` the
+    // minimum, both substituted from recording.negative so the wording cannot
+    // drift from the limits the page and the server actually enforce.
+    longNoiseBadge: "بدون ذكر",
+    longNoiseRecord: "تسجيل طويل بدون ذكر",
+    longNoiseReRecord: "إعادة التسجيل الطويل",
+    longNoiseRecording: "جارٍ التسجيل… اترك الهاتف يسجّل ما حولك ولا تقل أي ذكر إطلاقًا، حتى {minutes} دقائق، ثم اضغط «إيقاف».",
+    longNoiseRecordingReady: "التسجيل جاهز. استمع إليه للتأكد أنه لا يحتوي على أي عبارة من عبارات هذه الصفحة، ثم ارفعه.",
+    longNoiseTooShort: "التسجيل قصير جدًا. سجّل {seconds} ثانية على الأقل — كلما طال التسجيل زادت فائدته.",
+    longNoiseUploadSuccessBody: "تم رفع التسجيل. كل دقيقة إضافية من صوت خالٍ من الذكر تفيدنا — سجّل من مكان آخر أو وقت آخر.",
+    longNoiseCount: "🔇 {count} تسجيل طويل"
   },
 
   spreadsheetColumns: [
@@ -286,5 +335,22 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     id: -1,
     text: "سجّل صوت المكان من حولك بدون أي كلام",
     note: "اترك الميكروفون يلتقط ما حولك: ضجيج الشارع، أصوات البيت، مروحة، سيارة، أو حتى غرفة هادئة. لا تتكلم ولا تقل ذكرًا في هذا التسجيل — هذه الأصوات تُخلط تحت تسجيلات الذكر أثناء التدريب حتى يعمل العدّاد في الأماكن الصاخبة."
+  },
+
+  // The long negative take (see `recording.negative`). Unlike `noisePrompt`,
+  // which asks for a few seconds of hiss to mix *underneath* training clips,
+  // this asks for several minutes of ordinary life to play back *to the finished
+  // counter* and see how often it counts something nobody said. Kalām is welcome
+  // here — television, conversation, a lesson — because ordinary speech is
+  // exactly what a counter must sit through in silence.
+  //
+  // Its audio is the only thing that can measure false activations per hour, so
+  // it lands in `{root}/streaming/{streamingNegativeFolderName}/` rather than in
+  // `dataset/`: it is evaluation material, not a training class.
+  // Set to null to drop the card. Non-phrase prompt ids are <= 0 by convention.
+  longNoisePrompt: {
+    id: -2,
+    text: "سجّل عدة دقائق من الصوت المحيط بدون أي ذكر",
+    note: "ضع الهاتف بجوار التلفاز أو في مجلس فيه حديث عادي أو في الشارع، واتركه يسجّل عدة دقائق. الكلام العادي هنا مطلوب لا ممنوع. الشرط الوحيد أن لا تُقال في التسجيل أي عبارة من عبارات هذه الصفحة ولو مرة واحدة — هذه التسجيلات هي وحدها التي تكشف إن كان العدّاد يَعُدّ أذكارًا لم يقلها أحد."
   }
 });
