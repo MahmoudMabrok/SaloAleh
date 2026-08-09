@@ -407,6 +407,18 @@ in `DhikrSpeech/docs/DATA_COLLECTION.md`.
   timestamps accumulate from the hop, so the cooldown comparison carries a `_TIME_EPSILON` — without
   it, whether a repetition arriving exactly one cooldown later is counted depends on float
   representation error.
+- **Streaming annotations state one of three things, and never nothing** (`StreamingClip.mode`):
+  timestamped `events` (precision, recall, FA/hour), `expected_count: 0` (a negative-only
+  recording — FA/hour and precision), or `expected_count: n` (count accuracy only). An entry with
+  neither is `unannotated`: **excluded and reported, never assumed to be negative** — reading an
+  empty `events` list as "no target here" scored a recording of somebody reciting the target as
+  pure false activations. **SpeechCollector's repetition takes annotate themselves**: it uploads to
+  `streaming/{paddedId}/{id}_x10_{sp…}_…` and both halves of a count annotation are in that name,
+  so `collector_annotations`/`ensure_collector_annotations` derive `annotations.json` on first load
+  and `write_collector_annotations` merges later uploads in without touching an existing entry. They
+  give count accuracy only — every take contains the target, so **FA/hour stays unmeasured until
+  someone adds audio marked `expected_count: 0`**, and readiness must keep capping at EXPERIMENTAL
+  until they do.
 - **Thresholds are calibrated per target, never hard-coded** (`src/streaming_eval.py`
   `calibrate_threshold`): the lowest activation threshold whose measured FA/hour stays inside
   `calibration.target_false_activations_per_hour`. When none qualifies it reports **failure** rather

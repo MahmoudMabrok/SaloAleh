@@ -162,9 +162,10 @@ other names are found automatically. The `audio/` subfolder is optional.
 
 ```text
 streaming/
-├── audio/
+├── 007/                     as SpeechCollector uploads them, per phrase
+│   └── 007_x10_sp8d358495_20260803_183015_ab12cd.webm
+├── audio/                   optional; a flat folder works too
 │   ├── session_001.wav      someone repeating the dhikr, minutes at a time
-│   ├── session_002.wav
 │   ├── tv_arabic.wav        ZERO target phrases
 │   ├── conversation.wav     ZERO target phrases
 │   └── street.wav           ZERO target phrases
@@ -181,11 +182,41 @@ streaming/
 
 ### Who writes the annotations
 
-A person does — but far less of one than it sounds, and there are three levels of
-effort, each measuring more than the last.
+For the recordings SpeechCollector produces: **nobody**. They annotate
+themselves, and the pipeline reads them without being asked.
+
+The collector's second button on every phrase card asks for one long take of the
+same dhikr said ten times, and writes the number it asked for into the filename:
+
+```text
+streaming/007/007_x10_sp8d358495_20260803_183015_ab12cd.webm
+         ^^^  ^^^ ^^^
+          |    |   `- repetitions the volunteer was asked for
+          |    `- the phrase
+          `- the phrase folder
+```
+
+Both halves of a count annotation are therefore already on the file. On the first
+run, `load_streaming_set` writes `annotations.json` from them and says so; to do
+it by hand, or to fold in new uploads later:
+
+```python
+from src.streaming_eval import write_collector_annotations
+
+write_collector_annotations(root / "streaming/annotations.json", root / "streaming")
+```
+
+It **merges**: every existing entry is kept exactly as it is and only unlisted
+files are added, so it is safe to re-run after each round of uploads and it will
+never touch a timestamp you wrote. A recording with no `_x10_` tag is listed with
+`expected_count: null` rather than given a count that nobody stated.
+
+For anything else, a person writes it — but far less of one than it sounds, and
+there are three levels of effort, each measuring more than the last.
 
 | you write | effort | measures |
 |---|---|---|
+| nothing — a collector take | none, it is in the filename | count accuracy |
 | `expected_count: 0` | nothing | **FA/hour**, event precision |
 | `expected_count: 50` | a number you already knew | count accuracy |
 | `events: [{start, end}, …]` | minutes per recording | everything: precision, recall, duplicates, FA/hour |
@@ -193,6 +224,12 @@ effort, each measuring more than the last.
 **Negative-only recordings need no annotation at all.** An hour of television
 marked `expected_count: 0` is a complete, valid entry — and it carries the
 release-critical number. This is the cheapest useful data in the project.
+
+> **Collector takes cannot replace it.** Every one of them contains the target,
+> so no detection in them is known to be wrong, and FA/hour stays unmeasured
+> however many are collected. Ten thousand repetition takes and no negative-only
+> audio still reads `EXPERIMENTAL`. That is not a gap in the annotations — it is
+> a gap in the recordings, and the fix is an hour of television.
 
 **Sessions you counted but did not timestamp** need one number: how many times
 you said it. `expected_count: 50` measures whether the counter reaches 50, which

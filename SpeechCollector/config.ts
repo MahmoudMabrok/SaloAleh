@@ -58,12 +58,16 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     // long clip holding the same dhikr N times in a row. Like `noise`, this is a
     // SIBLING of datasetSubfolder — these clips are not single training
     // examples, so a trainer scanning `dataset/` must never see them. They are
-    // the raw material for DhikrSpeech's streaming evaluation (stage 06), whose
-    // `paths.streaming_dir` wants `streaming_test/audio/*.wav` plus a hand
-    // `annotations.json`; the collector cannot produce timings, so it files the
-    // takes per phrase here and the conversion to that layout stays a manual
-    // step. The expected repetition count travels in the filename (`_x10_`), so
-    // a clip is never separated from the number of events it is meant to hold.
+    // the raw material for DhikrSpeech's streaming evaluation, whose
+    // `paths.streaming_dir` reads this folder directly — per-phrase subfolders
+    // and all. The expected repetition count travels in the filename (`_x10_`),
+    // so a clip is never separated from the number of events it is meant to
+    // hold, and the pipeline derives `annotations.json` from the two of them
+    // (`streaming_eval.collector_annotations`) rather than anyone writing it.
+    // Timings are still not derivable, and nor is the false-activation rate:
+    // every take here contains the dhikr, so no detection in one is known to be
+    // wrong. That number needs audio with no dhikr in it, which this collector
+    // does not gather.
     // Layout: `{root}/streaming/{paddedPhraseId}/`.
     streamingSubfolder: "streaming",
 

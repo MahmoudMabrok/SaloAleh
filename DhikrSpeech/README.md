@@ -465,6 +465,8 @@ missing. `audio/` is optional: a flat folder of recordings next to `annotations.
 
 ```text
 streaming/
+├── 007/                     SpeechCollector's repetition takes, per phrase
+│   └── 007_x10_sp8d358495_20260803_183015_ab12cd.webm
 ├── audio/
 │   ├── session_001.wav      someone repeating the dhikr, minutes at a time
 │   └── tv_arabic.wav        zero target phrases
@@ -473,16 +475,37 @@ streaming/
 
 ```json
 [
+  {"file": "007/007_x10_sp8d358495_20260803_183015_ab12cd.webm", "target": "007",
+   "events": [], "expected_count": 10},
   {"file": "session_001.wav", "target": "007",
    "events": [{"start": 12.3, "end": 14.1}, {"start": 19.0, "end": 20.8}]},
-  {"file": "tv_arabic.wav", "target": "007", "category": "background_audio", "events": []}
+  {"file": "tv_arabic.wav", "target": "007", "category": "background_audio",
+   "events": [], "expected_count": 0}
 ]
 ```
 
-A recording with **no** events is a negative-only stress test: every event detected in it is a
-false activation, and `category` attributes it. These are the cheapest recordings in the whole
-project — leave a phone recording the television — and they carry the most important number.
-An annotation with no `target` is shared material and counts for every model.
+Three ways to state what is in a recording, in decreasing order of what they measure:
+
+| annotation | measures |
+|---|---|
+| `events: [{start, end}, …]` | everything: precision, recall, duplicates, FA/hour |
+| `expected_count: 0` | **FA/hour** and event precision — the release-critical pair |
+| `expected_count: n` | count accuracy only |
+
+`expected_count: 0` is a negative-only stress test: every event detected in it is a false
+activation, and `category` attributes it. These are the cheapest recordings in the whole project
+— leave a phone recording the television — and they carry the most important number.
+
+An entry with **neither** states nothing, so it is excluded and reported rather than guessed at.
+It used to be read as "no target in here", which scored a recording of somebody reciting the
+target as pure false activations. An annotation with no `target` is shared material and counts
+for every model.
+
+The first row needs no author. SpeechCollector's repetition recorder writes the phrase and the
+repetition count into the filename (`007_x10_…`), so `load_streaming_set` derives
+`annotations.json` from the takes on first run — see
+[DATA_COLLECTION.md](docs/DATA_COLLECTION.md#who-writes-the-annotations). Those takes measure
+count accuracy and cannot measure FA/hour, because every one of them contains the target.
 
 ### What it reports
 

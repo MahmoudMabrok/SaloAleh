@@ -395,6 +395,155 @@ def test_an_empty_folder_gives_an_empty_template(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Annotations the collector already wrote
+# ---------------------------------------------------------------------------
+# SpeechCollector's repetition recorder asks for the dhikr N times and writes N
+# into the filename, so a take states its own phrase and its own event count.
+# These check that it is read rather than assumed - and that what it cannot say
+# is still not said.
+TAKE = "007_x10_sp8d358495_20260803_183015_ab12cd.webm"
+
+
+def collector_folder(tmp_path: Path, *names: str) -> Path:
+    """`streaming/007/…`, the layout the collector uploads."""
+    folder = tmp_path / "007"
+    folder.mkdir(parents=True, exist_ok=True)
+    for name in names or (TAKE,):
+        (folder / name).write_bytes(b"")
+    return tmp_path
+
+
+def test_the_count_and_the_phrase_are_read_off_the_collector_filename() -> None:
+    from src.streaming_eval import parse_collector_take
+
+    assert parse_collector_take(TAKE) == (10, "007")
+
+
+def test_the_phrase_folder_names_the_target(tmp_path: Path) -> None:
+    """The folder is checked before the filename: a rename cannot quietly move a
+    take to another phrase's evaluation set."""
+    from src.streaming_eval import parse_collector_take
+
+    root = collector_folder(tmp_path, "renamed_x10_take.webm")
+    assert parse_collector_take(root / "007" / "renamed_x10_take.webm", root) == (10, "007")
+
+
+def test_a_file_with_no_repetition_tag_is_never_given_a_count() -> None:
+    """A hand-added recording is not a repetition take, and inventing a count for
+    it would be inventing ground truth."""
+    from src.streaming_eval import parse_collector_take
+
+    assert parse_collector_take("007_sp8d358495_20260803_183015_ab12cd.webm") == (None, "007")
+
+
+def test_collector_takes_annotate_themselves(tmp_path: Path) -> None:
+    from src.streaming_eval import MODE_COUNT, load_annotations, write_collector_annotations
+
+    root = collector_folder(tmp_path)
+    path = write_collector_annotations(root / "annotations.json", root)
+    clips = load_annotations(path)
+
+    assert len(clips) == 1
+    assert clips[0].file == f"007/{TAKE}"
+    assert clips[0].target == "007"
+    assert clips[0].expected == 10
+    assert clips[0].mode == MODE_COUNT
+
+
+def test_a_derived_take_cannot_measure_false_activations(tmp_path: Path) -> None:
+    """The honest limit of deriving annotations: a recording that contains the
+    target can never show a detection to be wrong, so FA/hour stays unmeasured
+    however many takes are collected."""
+    from src.streaming_eval import load_annotations, write_collector_annotations
+
+    root = collector_folder(tmp_path)
+    clips = load_annotations(write_collector_annotations(root / "annotations.json", root))
+    assert not clips[0].measures_false_activations
+
+    scored = [ScoredClip(clip=clips[0], timeline=timeline([0.1] * 10))]
+    evaluation = evaluate_timelines(scored, DetectorConfig())
+    assert not evaluation.measures_false_activations
+    assert evaluation.counts.recordings == 1
+
+
+def test_an_unidentifiable_take_is_listed_but_not_shared(tmp_path: Path) -> None:
+    """A take whose phrase cannot be told would otherwise be scored against every
+    target as repetitions that are not in its audio."""
+    from src.streaming_eval import MODE_UNANNOTATED, collector_annotations
+
+    (tmp_path / "mystery_x10_take.wav").write_bytes(b"")
+    entry = collector_annotations(tmp_path)[0]
+    assert entry["target"] is None
+    assert entry["expected_count"] is None
+    assert "target" in entry["notes"]
+
+    from src.streaming_eval import StreamingClip
+
+    assert StreamingClip(file=str(entry["file"])).mode == MODE_UNANNOTATED
+
+
+def test_merging_never_edits_an_existing_entry(tmp_path: Path) -> None:
+    """Re-running after each round of uploads is the normal case, so hand-written
+    timestamps and negative-only entries have to survive it untouched."""
+    from src.streaming_eval import load_annotations, write_collector_annotations
+
+    root = collector_folder(tmp_path)
+    (root / "tv.wav").write_bytes(b"")
+    path = root / "annotations.json"
+    path.write_text(
+        json.dumps(
+            [
+                {"file": f"007/{TAKE}", "target": "007",
+                 "events": [{"start": 1.0, "end": 2.0}], "category": "reviewed_by_hand"},
+                {"file": "tv.wav", "target": "007", "events": [], "expected_count": 0},
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (root / "007" / f"second_x10_{TAKE}").write_bytes(b"")
+
+    clips = {clip.file: clip for clip in load_annotations(write_collector_annotations(path, root))}
+    assert len(clips) == 3
+    assert clips[f"007/{TAKE}"].events == [(1.0, 2.0)]        # kept verbatim
+    assert clips["tv.wav"].is_negative_only
+    assert clips[f"007/second_x10_{TAKE}"].expected == 10     # newly derived
+
+
+def test_the_streaming_set_derives_its_own_annotations(tmp_path: Path) -> None:
+    """End to end: collector takes on disk, no annotations.json, nobody asked."""
+    from src.config import Config
+    from src.streaming_eval import load_streaming_set, streaming_status
+
+    root = tmp_path / "p" / Config().paths.streaming_dir
+    collector_folder(root)
+    config = Config().with_overrides(
+        {"paths.drive_root": str(tmp_path), "paths.project_dir": "p", "target.phrase_id": 7}
+    )
+
+    clips = load_streaming_set(config)
+    assert [clip.expected for clip in clips] == [10]
+    assert (root / "annotations.json").is_file()
+    assert "1 counted take(s)" in streaming_status(config)
+
+
+def test_untagged_recordings_are_left_alone(tmp_path: Path) -> None:
+    """Nothing states a count, so nothing is written - and the template's refusal
+    to clobber hand-made annotations is still the guard it was."""
+    from src.config import Config
+    from src.streaming_eval import ensure_collector_annotations
+
+    root = tmp_path / "p" / Config().paths.streaming_dir
+    root.mkdir(parents=True)
+    (root / "session_001.wav").write_bytes(b"")
+    config = Config().with_overrides(
+        {"paths.drive_root": str(tmp_path), "paths.project_dir": "p"}
+    )
+
+    assert ensure_collector_annotations(config) is None
+    assert not (root / "annotations.json").exists()
+
+
+# ---------------------------------------------------------------------------
 # Finding the streaming set
 # ---------------------------------------------------------------------------
 def streaming_project(tmp_path: Path, folder: str, annotations: bool = True):
@@ -501,7 +650,8 @@ def test_status_summarises_an_annotated_set(tmp_path: Path) -> None:
 
     status = streaming_status(streaming_project(tmp_path, Config().paths.streaming_dir))
     assert status.startswith("ok")
-    assert "2 annotated" in status and "1 repetition(s)" in status and "1 negative-only" in status
+    assert "2 annotated" in status and "1 timestamped repetition(s)" in status
+    assert "0 counted take(s)" in status and "1 negative-only" in status
 
 
 # ---------------------------------------------------------------------------

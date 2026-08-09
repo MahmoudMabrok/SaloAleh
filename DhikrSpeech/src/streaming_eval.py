@@ -19,18 +19,23 @@ model once, and every threshold in a sweep then replays the *state machine* over
 those cached timelines. A 60-point sweep therefore costs one forward pass, not
 sixty.
 
-Annotations live in ``streaming_test/annotations.json``::
+Annotations live in ``streaming/annotations.json``::
 
     [
       {"file": "session_001.wav", "target": "007",
        "events": [{"start": 12.3, "end": 14.1}, ...]},
       {"file": "tv_noise.wav", "target": "007", "category": "background_audio",
-       "events": []}
+       "events": [], "expected_count": 0}
     ]
 
-A clip with no events is a negative-only stress recording (requirement 23): every
+``expected_count: 0`` is a negative-only stress recording (requirement 23): every
 event detected in it is a false activation, and ``category`` says what kind of
-audio produced it.
+audio produced it. An entry with neither ``events`` nor an ``expected_count``
+states nothing and is excluded rather than assumed - see :class:`StreamingClip`.
+
+Recordings uploaded by SpeechCollector's repetition recorder carry their phrase
+and their repetition count in the filename, so they annotate themselves; see
+:func:`collector_annotations`.
 """
 
 from __future__ import annotations
@@ -38,6 +43,7 @@ from __future__ import annotations
 import json
 import logging
 import math
+import re
 from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -70,6 +76,8 @@ __all__ = [
     "StreamingEvaluation",
     "ThresholdRow",
     "annotation_template",
+    "collector_annotations",
+    "ensure_collector_annotations",
     "propose_events",
     "calibrate_threshold",
     "evaluate_negative_clips",
@@ -77,13 +85,17 @@ __all__ = [
     "load_annotations",
     "load_streaming_set",
     "match_events",
+    "parse_collector_take",
     "score_clips",
     "streaming_audio_root",
     "streaming_status",
     "write_annotation_template",
+    "write_collector_annotations",
 ]
 
 SECONDS_PER_HOUR = 3600.0
+
+AUDIO_SUFFIXES = (".wav", ".flac", ".ogg", ".mp3", ".m4a", ".webm")
 
 
 # ---------------------------------------------------------------------------
@@ -257,10 +269,36 @@ def propose_events(
     return proposed
 
 
+def audio_files(
+    audio_dir: PathLike,
+    extensions: Sequence[str] = AUDIO_SUFFIXES,
+    recursive: bool = True,
+) -> List[Path]:
+    """Recordings under ``audio_dir``, sorted, hidden files excluded.
+
+    Recursive by default because the collector files its repetition takes per
+    phrase (``streaming/007/…``) while a hand-assembled set is usually flat.
+    Both layouts have to work, and which one is present is not worth asking
+    about.
+    """
+    root = Path(audio_dir)
+    if not root.is_dir():
+        return []
+    suffixes = {ext.lower() for ext in extensions}
+    walk = root.rglob("*") if recursive else root.iterdir()
+    return sorted(
+        path
+        for path in walk
+        if path.is_file()
+        and path.suffix.lower() in suffixes
+        and not path.name.startswith(".")
+    )
+
+
 def annotation_template(
     audio_dir: PathLike,
     target: Optional[str] = None,
-    extensions: Sequence[str] = (".wav", ".flac", ".ogg", ".mp3", ".m4a", ".webm"),
+    extensions: Sequence[str] = AUDIO_SUFFIXES,
     propose: bool = False,
     sample_rate: int = 16000,
     expected_count: Optional[int] = 0,
@@ -280,12 +318,7 @@ def annotation_template(
     draft.
     """
     root = Path(audio_dir)
-    suffixes = {ext.lower() for ext in extensions}
-    files = sorted(
-        path
-        for path in root.iterdir()
-        if path.is_file() and path.suffix.lower() in suffixes
-    ) if root.is_dir() else []
+    files = audio_files(root, extensions)
 
     entries: List[Dict[str, object]] = []
     for path in files:
@@ -302,7 +335,10 @@ def annotation_template(
             except Exception as exc:  # noqa: BLE001 - one bad file must not stop the rest
                 LOGGER.warning("could not propose events for %s: %s", path.name, exc)
 
-        entry: Dict[str, object] = {"file": path.name, "target": target}
+        entry: Dict[str, object] = {
+            "file": path.relative_to(root).as_posix(),
+            "target": target,
+        }
         if events:
             entry["events"] = events
             entry["reviewed"] = False
@@ -348,6 +384,191 @@ def write_annotation_template(
         len(entries),
         destination,
         f" with {proposed} proposed event(s) to review" if proposed else "",
+    )
+    return destination
+
+
+# ---------------------------------------------------------------------------
+# Annotations the collector already wrote
+# ---------------------------------------------------------------------------
+# SpeechCollector's second recorder asks for one long take holding the same
+# dhikr N times, and writes the number it asked for into the filename:
+#
+#     streaming/007/007_x10_sp8d358495_20260803_183015_ab12cd.webm
+#              ^^^ ^^^ ^^^
+#              |   |   `- the speaker token, matched by split.speaker
+#              |   `- the repetitions the volunteer was asked for
+#              `- the phrase folder
+#
+# So for every take the collector produces, the two things an annotation needs -
+# which phrase, and how many times it is in there - are already on the file. That
+# makes count-mode annotation (`expected_count: N`) derivable, and nobody has to
+# write anything.
+#
+# Timestamps still are not derivable, and neither is FA/hour: a take that
+# contains the target cannot show a detection to be wrong. These entries measure
+# count accuracy, which is what a user notices; the release-critical number still
+# needs audio marked `expected_count: 0`.
+COLLECTOR_REPETITION_PATTERN = re.compile(r"_x(?P<count>\d+)(?=[_.])")
+
+
+def parse_collector_take(
+    path: PathLike,
+    root: Optional[PathLike] = None,
+) -> Tuple[Optional[int], Optional[str]]:
+    """``(repetitions, target)`` read off a collector filename and its folder.
+
+    Either half is ``None`` when the name does not state it. A file with no
+    ``_x<n>_`` tag is not a repetition take - most likely a hand-added recording
+    - and is never given a count by assumption.
+    """
+    file_path = Path(path)
+    match = COLLECTOR_REPETITION_PATTERN.search(file_path.name)
+    repetitions = int(match.group("count")) if match else None
+
+    # The phrase folder first: the collector always files a take under it, and it
+    # is the one place a rename cannot quietly change the meaning of the audio.
+    candidates: List[str] = []
+    if root is not None:
+        try:
+            relative = file_path.relative_to(Path(root))
+        except ValueError:
+            relative = None
+        if relative is not None and len(relative.parts) > 1:
+            candidates.append(relative.parts[-2])
+    candidates.append(file_path.name.split("_", 1)[0])
+
+    for candidate in candidates:
+        try:
+            return repetitions, f"{int(candidate):03d}"
+        except ValueError:
+            continue
+    return repetitions, None
+
+
+def collector_annotations(
+    audio_dir: PathLike,
+    extensions: Sequence[str] = AUDIO_SUFFIXES,
+    category: str = "target_session",
+) -> List[Dict[str, object]]:
+    """Annotation entries derived from what the collector already recorded.
+
+    One entry per repetition take, with ``expected_count`` from the filename tag
+    and ``target`` from the phrase folder. Recordings that state neither are
+    still listed - with ``expected_count: null``, which the evaluator excludes
+    and reports - so a hand-added file is visible and one field from usable
+    rather than silently absent.
+    """
+    root = Path(audio_dir)
+    entries: List[Dict[str, object]] = []
+    derived = 0
+    for path in audio_files(root, extensions):
+        repetitions, target = parse_collector_take(path, root)
+        entry: Dict[str, object] = {
+            "file": path.relative_to(root).as_posix(),
+            "target": target,
+            "events": [],
+        }
+        if repetitions is not None and target is not None:
+            entry["expected_count"] = repetitions
+            entry["category"] = category
+            derived += 1
+        else:
+            # Never guessed at. A take whose phrase is unknown would otherwise be
+            # shared material - scored against every target as events that are
+            # not in it - and a count assumed for an untagged file would be
+            # invented ground truth.
+            entry["expected_count"] = None
+            entry["category"] = "uncategorised"
+            entry["notes"] = (
+                "no repetition tag in the filename"
+                if repetitions is None
+                else "could not tell which phrase this is - set 'target'"
+            )
+        entries.append(entry)
+
+    LOGGER.info(
+        "%d of %d recording(s) under %s carry a collector repetition tag",
+        derived,
+        len(entries),
+        root,
+    )
+    return entries
+
+
+def write_collector_annotations(
+    path: PathLike,
+    audio_dir: PathLike,
+    extensions: Sequence[str] = AUDIO_SUFFIXES,
+    merge: bool = True,
+) -> Path:
+    """Write (or extend) ``annotations.json`` from the collector's filenames.
+
+    ``merge`` keeps every existing entry **verbatim** and appends only files that
+    are not listed yet. That is what makes this safe to re-run after each round
+    of uploads: hand-written timestamps, categories and negative-only entries are
+    never touched, and new takes annotate themselves.
+    """
+    destination = Path(path)
+    existing: List[Dict[str, object]] = []
+    if destination.is_file():
+        if not merge:
+            raise FileExistsError(
+                f"{destination} already exists. Pass merge=True to add only the "
+                f"recordings it does not list yet, which never edits an entry."
+            )
+        payload = json.loads(destination.read_text(encoding="utf-8"))
+        if isinstance(payload, dict):
+            payload = payload.get("clips") or payload.get("recordings") or []
+        existing = list(payload)
+
+    known = {str(entry.get("file")) for entry in existing}
+    added = [
+        entry
+        for entry in collector_annotations(audio_dir, extensions)
+        if entry["file"] not in known
+    ]
+
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(
+        json.dumps(existing + added, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+    LOGGER.info(
+        "%s: %d entr(y/ies) kept, %d added from collector filenames",
+        destination,
+        len(existing),
+        len(added),
+    )
+    return destination
+
+
+def ensure_collector_annotations(config: Config) -> Optional[Path]:
+    """Derive ``annotations.json`` when it is missing and the takes are tagged.
+
+    Only fires when at least one recording carries a repetition tag, so a folder
+    of hand-recorded audio is left alone (and keeps refusing to be clobbered by
+    :func:`write_annotation_template`) instead of gaining a file of empty
+    entries.
+    """
+    root = config.paths.resolve_streaming_path()
+    destination = root / config.streaming.annotations_file
+    if destination.exists() or not root.is_dir():
+        return None
+
+    audio = streaming_audio_root(config)
+    entries = collector_annotations(audio)
+    if not any(entry.get("expected_count") for entry in entries):
+        return None
+
+    write_collector_annotations(destination, audio, merge=False)
+    LOGGER.warning(
+        "wrote %s from the collector's filenames: %d take(s) annotated with the "
+        "repetition count they were recorded for. These measure count accuracy. "
+        "They cannot measure false activations per hour - every one of them "
+        "contains the target - so add audio with no target in it, marked "
+        "expected_count: 0.",
+        destination,
+        sum(1 for entry in entries if entry.get("expected_count")),
     )
     return destination
 
@@ -1265,10 +1486,12 @@ def load_streaming_set(config: Config) -> List[StreamingClip]:
 
     annotations = root / config.streaming.annotations_file
     if not annotations.is_file():
-        audio = streaming_audio_root(config)
-        recordings = (
-            sum(1 for path in audio.iterdir() if path.is_file()) if audio.is_dir() else 0
-        )
+        # A collector repetition take says in its own filename which phrase it
+        # holds and how many times, so it annotates itself.
+        ensure_collector_annotations(config)
+
+    if not annotations.is_file():
+        recordings = len(audio_files(streaming_audio_root(config)))
         LOGGER.warning(
             "%s exists but has no %s%s. Scaffold one with "
             "write_annotation_template(path, audio_dir, target=...): every entry starts "
@@ -1305,17 +1528,15 @@ def streaming_status(config: Config) -> str:
         return f"MISSING  {configured}"
 
     annotations = root / config.streaming.annotations_file
-    audio = streaming_audio_root(config)
-    recordings = (
-        sum(1 for path in audio.iterdir() if path.is_file()) if audio.is_dir() else 0
-    )
+    recordings = len(audio_files(streaming_audio_root(config)))
     note = "" if root == configured else f"  (paths.streaming_dir says '{configured.name}')"
     if not annotations.is_file():
         return f"no {config.streaming.annotations_file}  {root}  [{recordings} recording(s)]{note}"
     clips = load_annotations(annotations)
     events = sum(len(clip.events) for clip in clips)
+    counted = sum(1 for clip in clips if clip.mode == MODE_COUNT)
     negatives = sum(1 for clip in clips if clip.is_negative_only)
     return (
-        f"ok  {root}  [{len(clips)} annotated, {events} repetition(s), "
-        f"{negatives} negative-only]{note}"
+        f"ok  {root}  [{len(clips)} annotated, {events} timestamped repetition(s), "
+        f"{counted} counted take(s), {negatives} negative-only]{note}"
     )
