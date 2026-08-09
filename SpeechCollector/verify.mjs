@@ -109,6 +109,52 @@ if (bootstrap.recording.streaming) {
   );
 }
 
+// The long negative take: minutes of ordinary sound with no dhikr in it. It is
+// the only recording the collector gathers that can measure false activations
+// per hour, so the page has to say the one thing that would waste it — that a
+// single dhikr anywhere in those minutes makes the whole take unusable.
+if (bootstrap.recording.negative) {
+  const negative = bootstrap.recording.negative;
+  assert.ok(
+    negative.maximumDurationMs > bootstrap.recording.maximumDurationMs,
+    'A negative take must run longer than a clip; false activations are counted per hour.'
+  );
+  assert.ok(
+    negative.minimumDurationMs > bootstrap.recording.minimumDurationMs,
+    'A negative take must demand more than a clip\'s minimum.'
+  );
+  assert.ok(bootstrap.longNoisePrompt, 'recording.negative is configured but no card asks for one.');
+  assert.ok(bootstrap.longNoisePrompt.text, 'longNoisePrompt has no text for the card to show.');
+  assert.ok(
+    bootstrap.longNoisePrompt.note,
+    'longNoisePrompt has no note; "record several minutes" is not actionable without the rule.'
+  );
+  for (const other of [bootstrap.unknownPrompt, bootstrap.noisePrompt]) {
+    if (other) assert.notEqual(bootstrap.longNoisePrompt.id, other.id, 'longNoisePrompt.id collides with another card.');
+  }
+  assert.ok(
+    !bootstrap.phrases.some((phrase) => phrase.id === bootstrap.longNoisePrompt.id),
+    'longNoisePrompt.id collides with a phrase id, so its uploads would be filed as that phrase.'
+  );
+  for (const key of [
+    'longNoiseBadge', 'longNoiseRecord', 'longNoiseReRecord', 'longNoiseRecording',
+    'longNoiseRecordingReady', 'longNoiseTooShort', 'longNoiseUploadSuccessBody', 'longNoiseCount'
+  ]) {
+    assert.ok(bootstrap.ui[key], `The "${key}" UI string is missing from the bootstrap payload.`);
+  }
+  // The limits live in config, not in the Arabic: a string spelling out "five
+  // minutes" would keep saying it after the config said three.
+  assert.ok(bootstrap.ui.longNoiseRecording.includes('{minutes}'), 'longNoiseRecording must carry the {minutes} placeholder.');
+  assert.ok(bootstrap.ui.longNoiseTooShort.includes('{seconds}'), 'longNoiseTooShort must carry the {seconds} placeholder.');
+  assert.ok(bootstrap.ui.longNoiseCount.includes('{count}'), 'longNoiseCount must contain the {count} placeholder.');
+  // The one rule that decides whether the recording is worth anything.
+  assert.match(
+    bootstrap.longNoisePrompt.note,
+    /بدون أي ذكر|لا تُقال|بلا ذكر/,
+    'The long-negative note must say that no dhikr may be spoken in the take.'
+  );
+}
+
 // A hidden phrase is parked, not deleted: no card, but its id and label live on
 // so the recordings already in its folder stay readable to the trainer.
 assert.ok(
@@ -413,12 +459,100 @@ if (bootstrap.recording.streaming) {
     'A clip filename must be unchanged by the repetition feature.'
   );
 
-  // An unrecognised mode is read as a clip, the stricter of the two: that is
-  // where every recording went before repetition takes existed.
-  for (const [input, expected] of [['streaming', 'streaming'], ['STREAMING', 'streaming'], ['clip', 'clip'], ['', 'clip'], ['nonsense', 'clip']]) {
+  // An unrecognised mode is read as a clip, the strictest of the three: that is
+  // where every recording went before the evaluation takes existed.
+  for (const [input, expected] of [
+    ['streaming', 'streaming'], ['STREAMING', 'streaming'], ['negative', 'negative'],
+    ['NEGATIVE', 'negative'], ['clip', 'clip'], ['', 'clip'], ['nonsense', 'clip']
+  ]) {
     backendContext.mode = input;
     assert.equal(vm.runInContext('normalizeMode_(mode)', backendContext), expected, `normalizeMode_(${JSON.stringify(input)})`);
   }
+}
+
+// The negative take, server side. Its mode is the only one that files audio
+// under a folder meaning "no dhikr in here", so it is checked in both
+// directions: no other card may claim it, and this card may claim nothing else.
+if (bootstrap.recording.negative) {
+  const negative = bootstrap.recording.negative;
+  const negativeId = bootstrap.longNoisePrompt.id;
+  const negativePayload = {
+    ...validPayload,
+    phrase_id: negativeId,
+    mode: 'negative',
+    duration_ms: negative.minimumDurationMs + 1000
+  };
+
+  backendContext.payload = negativePayload;
+  const negativeRequest = vm.runInContext('validateRequest_(payload)', backendContext);
+  assert.equal(negativeRequest.mode, 'negative');
+  assert.equal(
+    negativeRequest.limits.maximumDurationMs,
+    negative.maximumDurationMs,
+    'A negative take must be held to the negative duration limit, not the clip or streaming one.'
+  );
+  assert.equal(
+    negativeRequest.phraseText,
+    'negative',
+    'The sheet must record the folder for a negative take, not the card\'s instruction text.'
+  );
+
+  // A phrase claiming the negative mode would mark its own recitation as proof
+  // the counter should have stayed silent — the most damaging mislabel here.
+  backendContext.payload = { ...negativePayload, phrase_id: bootstrap.phrases[0].id };
+  assert.throws(
+    () => vm.runInContext('validateRequest_(payload)', backendContext),
+    (error) => error.publicCode === 'INVALID_MODE',
+    'Only the long-negative card may record a negative take.'
+  );
+
+  // ...and the reverse: this card in clip mode would land in dataset/negative/,
+  // inventing a training class out of television.
+  backendContext.payload = { ...validPayload, phrase_id: negativeId };
+  assert.throws(
+    () => vm.runInContext('validateRequest_(payload)', backendContext),
+    (error) => error.publicCode === 'INVALID_MODE',
+    'The long-negative card must not be recordable as a training clip.'
+  );
+  backendContext.payload = { ...negativePayload, mode: 'streaming' };
+  assert.throws(
+    () => vm.runInContext('validateRequest_(payload)', backendContext),
+    (error) => error.publicCode === 'INVALID_MODE',
+    'The long-negative card holds no dhikr, so it cannot hold ten of them.'
+  );
+
+  // A non-numeric folder inside streaming/, so the pipeline reads it as shared
+  // material rather than as one phrase's repetition takes.
+  assert.ok(
+    !generatedPhrases.some((phrase) => phrase.id === negativeId),
+    'phrases.json must not list the long-negative prompt; it is a folder, not a phrase.'
+  );
+
+  const folderName = vm.runInContext('classFolderName_(CONFIG.longNoisePrompt)', backendContext);
+  assert.equal(folderName, 'negative', 'A negative take must be filed under the streaming tree\'s negative folder.');
+  assert.ok(!/^\d+$/.test(folderName), 'The negative folder must not look like a zero-padded phrase id.');
+  backendContext.fakeFolder = fakeFolder;
+  assert.equal(
+    vm.runInContext('classParentFolder_(fakeFolder("root"), CONFIG.longNoisePrompt, "negative").folderName', backendContext),
+    'streaming',
+    'A negative take must hang off streaming/, beside dataset/ — it is evaluation material, not a class.'
+  );
+
+  // x0 is not the absence of a count. It is the count, and it is the one that
+  // says every detection in this audio is a false activation.
+  assert.equal(
+    vm.runInContext('repetitionTag_("negative")', backendContext),
+    'x0',
+    'A negative take must carry x0: zero events expected in it.'
+  );
+  assert.match(
+    vm.runInContext(
+      'createFilename_(classFolderName_(CONFIG.longNoisePrompt), speakerToken_("3f9a2c41-1111-2222-3333-444455556666"), "audio/webm", repetitionTag_("negative"))',
+      backendContext
+    ),
+    /^negative_x0_sp3f9a2c41_\d{8}_\d{6}_[0-9a-f]{6}\.webm$/,
+    'A negative filename must read folder, then x0, then speaker token — the shape the pipeline parses.'
+  );
 }
 
 backendContext.payload = { ...validPayload, phrase_id: 999 };
@@ -443,7 +577,8 @@ const requiredFunctions = [
   'doGet', 'doPost', 'saveAudio', 'createFolderIfMissing', 'appendSpreadsheetRow', 'jsonResponse',
   'phrasesJsonContent_', 'ensurePhrasesFile_', 'allPrompts_', 'classFolderName_',
   'visiblePhrases_', 'classParentFolder_', 'speakerToken_',
-  'normalizeMode_', 'recordingLimits_', 'repetitionTag_', 'largestUploadBytes_'
+  'normalizeMode_', 'recordingLimits_', 'repetitionTag_', 'largestUploadBytes_',
+  'negativeSettings_', 'isLongNoisePrompt_'
 ];
 for (const functionName of requiredFunctions) {
   assert.equal(

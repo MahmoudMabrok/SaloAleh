@@ -164,6 +164,8 @@ other names are found automatically. The `audio/` subfolder is optional.
 streaming/
 ├── 007/                     as SpeechCollector uploads them, per phrase
 │   └── 007_x10_sp8d358495_20260803_183015_ab12cd.webm
+├── negative/                the long-negative card: ZERO dhikr, shared by every target
+│   └── negative_x0_sp8d358495_20260803_190211_77cd10.webm
 ├── audio/                   optional; a flat folder works too
 │   ├── session_001.wav      someone repeating the dhikr, minutes at a time
 │   ├── tv_arabic.wav        ZERO target phrases
@@ -185,8 +187,8 @@ streaming/
 For the recordings SpeechCollector produces: **nobody**. They annotate
 themselves, and the pipeline reads them without being asked.
 
-The collector's second button on every phrase card asks for one long take of the
-same dhikr said ten times, and writes the number it asked for into the filename:
+The collector has two recorders for this set, and each writes what it asked for
+into the filename:
 
 ```text
 streaming/007/007_x10_sp8d358495_20260803_183015_ab12cd.webm
@@ -194,9 +196,15 @@ streaming/007/007_x10_sp8d358495_20260803_183015_ab12cd.webm
           |    |   `- repetitions the volunteer was asked for
           |    `- the phrase
           `- the phrase folder
+
+streaming/negative/negative_x0_sp8d358495_20260803_190211_77cd10.webm
+          ^^^^^^^^ ^^^^^^^^ ^^
+             |        |      `- zero: nothing in here should be counted
+             |        `- a non-phrase name, so it belongs to no target
+             `- the long negative card's folder
 ```
 
-Both halves of a count annotation are therefore already on the file. On the first
+Both halves of an annotation are therefore already on the file. On the first
 run, `load_streaming_set` writes `annotations.json` from them and says so; to do
 it by hand, or to fold in new uploads later:
 
@@ -216,20 +224,28 @@ there are three levels of effort, each measuring more than the last.
 
 | you write | effort | measures |
 |---|---|---|
-| nothing — a collector take | none, it is in the filename | count accuracy |
+| nothing — a collector `x10` take | none, it is in the filename | count accuracy |
+| nothing — a collector `x0` take | none, it is in the filename | **FA/hour**, event precision |
 | `expected_count: 0` | nothing | **FA/hour**, event precision |
 | `expected_count: 50` | a number you already knew | count accuracy |
 | `events: [{start, end}, …]` | minutes per recording | everything: precision, recall, duplicates, FA/hour |
 
 **Negative-only recordings need no annotation at all.** An hour of television
 marked `expected_count: 0` is a complete, valid entry — and it carries the
-release-critical number. This is the cheapest useful data in the project.
+release-critical number. This is the cheapest useful data in the project, and the
+collector's long-negative card produces it directly: set a phone down next to a
+television, press stop five minutes later, upload.
 
-> **Collector takes cannot replace it.** Every one of them contains the target,
+> **Repetition takes cannot replace it.** Every one of them contains the target,
 > so no detection in them is known to be wrong, and FA/hour stays unmeasured
-> however many are collected. Ten thousand repetition takes and no negative-only
-> audio still reads `EXPERIMENTAL`. That is not a gap in the annotations — it is
-> a gap in the recordings, and the fix is an hour of television.
+> however many are collected. Ten thousand `x10` takes and no `x0` audio still
+> reads `EXPERIMENTAL`. That is not a gap in the annotations — it is a gap in the
+> recordings, and twelve five-minute takes is an hour of it.
+>
+> The one rule for those takes: **not a single dhikr anywhere in the minutes**.
+> Ordinary speech is wanted here — a counter has to sit through conversation in
+> silence — but one recitation in the middle turns a correct detection into a
+> recorded false activation, and nothing downstream can tell.
 
 **Sessions you counted but did not timestamp** need one number: how many times
 you said it. `expected_count: 50` measures whether the counter reaches 50, which

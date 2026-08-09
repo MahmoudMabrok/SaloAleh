@@ -467,6 +467,8 @@ missing. `audio/` is optional: a flat folder of recordings next to `annotations.
 streaming/
 ├── 007/                     SpeechCollector's repetition takes, per phrase
 │   └── 007_x10_sp8d358495_20260803_183015_ab12cd.webm
+├── negative/                its long-negative takes: zero dhikr, shared by every target
+│   └── negative_x0_sp8d358495_20260803_190211_77cd10.webm
 ├── audio/
 │   ├── session_001.wav      someone repeating the dhikr, minutes at a time
 │   └── tv_arabic.wav        zero target phrases
@@ -501,11 +503,12 @@ It used to be read as "no target in here", which scored a recording of somebody 
 target as pure false activations. An annotation with no `target` is shared material and counts
 for every model.
 
-The first row needs no author. SpeechCollector's repetition recorder writes the phrase and the
-repetition count into the filename (`007_x10_…`), so `load_streaming_set` derives
-`annotations.json` from the takes on first run — see
-[DATA_COLLECTION.md](docs/DATA_COLLECTION.md#who-writes-the-annotations). Those takes measure
-count accuracy and cannot measure FA/hour, because every one of them contains the target.
+The last two rows need no author. SpeechCollector's two evaluation recorders write what they
+asked for into the filename — `007_x10_…` for a repetition take, `negative_x0_…` for minutes of
+audio with no dhikr in it — so `load_streaming_set` derives `annotations.json` from them on first
+run; see [DATA_COLLECTION.md](docs/DATA_COLLECTION.md#who-writes-the-annotations). The `x10` takes
+measure count accuracy and cannot measure FA/hour, because every one of them contains the target;
+the `x0` takes are what makes FA/hour measurable at all.
 
 ### What it reports
 

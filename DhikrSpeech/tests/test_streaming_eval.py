@@ -482,6 +482,77 @@ def test_an_unidentifiable_take_is_listed_but_not_shared(tmp_path: Path) -> None
     assert StreamingClip(file=str(entry["file"])).mode == MODE_UNANNOTATED
 
 
+def test_a_negative_take_annotates_itself_as_zero(tmp_path: Path) -> None:
+    """`_x0_` under a non-phrase folder is the release-critical annotation: an
+    hour of ordinary sound in which every detection is a false activation."""
+    from src.streaming_eval import MODE_NEGATIVE, load_annotations, write_collector_annotations
+
+    folder = tmp_path / "negative"
+    folder.mkdir()
+    (folder / "negative_x0_sp8d358495_20260803_190211_77cd10.webm").write_bytes(b"")
+    clips = load_annotations(write_collector_annotations(tmp_path / "annotations.json", tmp_path))
+
+    assert clips[0].mode == MODE_NEGATIVE
+    assert clips[0].expected_count == 0
+    assert clips[0].category == "negative"
+    assert clips[0].measures_false_activations
+    # No target: nothing was said, so it is evidence for every target at once.
+    assert clips[0].target is None
+    assert clips[0].matches_target("007") and clips[0].matches_target("006")
+
+
+def test_a_negative_take_makes_false_activations_measurable(tmp_path: Path) -> None:
+    """The whole point of the card that produces these. Repetition takes alone
+    leave FA/hour unmeasured; one negative recording turns a detection into a
+    number the release decision can be made on."""
+    from src.streaming_eval import load_annotations, write_collector_annotations
+
+    (tmp_path / "007").mkdir()
+    (tmp_path / "007" / TAKE).write_bytes(b"")
+    (tmp_path / "negative").mkdir()
+    (tmp_path / "negative" / "negative_x0_sp8d358495_20260803_190211_77cd10.webm").write_bytes(b"")
+    clips = {
+        clip.file: clip
+        for clip in load_annotations(
+            write_collector_annotations(tmp_path / "annotations.json", tmp_path)
+        )
+    }
+
+    # The repetition take alone: quiet, and measuring nothing about false firing.
+    quiet = ScoredClip(clip=clips[f"007/{TAKE}"], timeline=timeline([0.1] * 10))
+    assert not evaluate_timelines([quiet], detector()).measures_false_activations
+
+    # The negative recording, with the detector firing once in it. Nobody said
+    # anything, so that one detection is a false activation - and countable.
+    fired = ScoredClip(
+        clip=clips["negative/negative_x0_sp8d358495_20260803_190211_77cd10.webm"],
+        timeline=timeline([0.1, 0.1, 0.9, 0.9, 0.9, 0.1, 0.1, 0.1, 0.1, 0.1]),
+    )
+    evaluation = evaluate_timelines([quiet, fired], detector())
+    assert evaluation.measures_false_activations
+    assert evaluation.metrics.false_events == 1
+    assert np.isfinite(evaluation.metrics.false_activations_per_hour)
+    assert evaluation.metrics.false_by_category == {"negative": 1}
+
+
+def test_a_folder_of_only_negatives_still_derives(tmp_path: Path) -> None:
+    """Zero is a count. Guarding the auto-derive on truthiness would skip exactly
+    the folder that carries the release-critical number."""
+    from src.config import Config
+    from src.streaming_eval import ensure_collector_annotations, load_streaming_set
+
+    root = tmp_path / "p" / Config().paths.streaming_dir
+    (root / "negative").mkdir(parents=True)
+    (root / "negative" / "negative_x0_sp8d358495_20260803_190211_77cd10.webm").write_bytes(b"")
+    config = Config().with_overrides(
+        {"paths.drive_root": str(tmp_path), "paths.project_dir": "p", "target.phrase_id": 7}
+    )
+
+    assert ensure_collector_annotations(config) is not None
+    clips = load_streaming_set(config)
+    assert len(clips) == 1 and clips[0].is_negative_only
+
+
 def test_merging_never_edits_an_existing_entry(tmp_path: Path) -> None:
     """Re-running after each round of uploads is the normal case, so hand-written
     timestamps and negative-only entries have to survive it untouched."""

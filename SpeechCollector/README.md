@@ -49,6 +49,7 @@ Open `config.ts` in a text editor. This is the single source for:
 - Sheet name and column order
 - Minimum/maximum recording duration and upload-size limit
 - The repetition take: how many times, and its own duration and size limits
+- The long negative take: its own duration and size limits, and its folder
 - Accepted audio MIME types and preferred sample rate
 - Arabic UI text
 - Theme colors, page language, direction, and timezone
@@ -129,11 +130,61 @@ recording: {
   `repetitions` does not leave the Arabic behind.
 - Set `recording.streaming: null` to drop the second button from every card.
 
-**These recordings are not yet in the pipeline's layout.** Stage 06 reads
-`streaming_test/audio/*.wav` plus a hand-written `annotations.json` with event
-timings; the collector produces per-phrase folders of counted takes. Converting
-one to the other — and annotating the timings — stays a manual step. What the
-collector removes is the recording itself.
+**These recordings annotate themselves.** DhikrSpeech reads
+`{root}/streaming/` directly, per-phrase subfolders and all, and derives
+`annotations.json` from the filename and the folder
+(`src/streaming_eval.py`, `collector_annotations`) — the `x10` tag is the
+`expected_count` and the folder is the target. Event *timings* are still not
+derivable, and stay a manual step for anyone who wants event precision and
+recall rather than count accuracy.
+
+### The long negative card (several minutes, no dhikr at all)
+
+The last card asks for **minutes of ordinary sound containing no dhikr
+whatsoever** — a television, a conversation, a lesson, a street. Ordinary speech
+is welcome here; a single dhikr anywhere in the take is what ruins it.
+
+It exists because of a gap nothing else on this page can fill. Every other
+recording here contains a dhikr, repetition takes included, so no detection in
+any of them is known to be wrong. Those measure whether the counter *reaches*
+ten. Only audio with nothing in it can measure how often it reaches one by
+mistake — **false activations per hour**, which is the number the release
+decision is actually made on.
+
+Configured by `longNoisePrompt` plus `recording.negative`:
+
+```js
+recording: {
+  negative: { minimumDurationMs: 20000, maximumDurationMs: 300000, maximumUploadBytes: 8 * 1024 * 1024 }
+},
+longNoisePrompt: { id: -2, text: "…", note: "…" }
+```
+
+- **Its own third mode.** The upload carries `mode: "negative"`, and the server
+  validates it **in both directions**: no other card may claim the mode (a phrase
+  doing so would mark its own recitation as proof the counter should have stayed
+  silent), and this card may claim no other (in clip mode its audio would land in
+  `dataset/negative/`, inventing a training class out of television).
+- **Minutes, not seconds.** False activations are counted per *hour*, so the
+  ceiling is five minutes rather than the repetition take's ninety seconds — an
+  hour of material is twelve takes instead of forty. The ceiling is what Apps
+  Script can still base64-decode in one request.
+- **Its audio goes to `{root}/streaming/{negative}/`**
+  (`storage.streamingNegativeFolderName`), a sibling of the per-phrase folders
+  inside the same streaming tree. The name must **not** be numeric — the pipeline
+  reads a folder there as the phrase a take belongs to, and a numeric name would
+  file hours of television as somebody reciting that phrase. The build refuses it.
+- **The filename carries `x0`**:
+  `negative_x0_sp3f9a2c41_20260803_190211_77cd10.webm`. Zero is not the absence
+  of a count — it is the count, and it is the one that says every detection in
+  this audio is a false activation. The pipeline reads it into
+  `expected_count: 0` with **no target**, so a single such recording counts for
+  every phrase's evaluation at once.
+- It is tallied on the long-take pill (`🔇`), never as a training clip, and its
+  strings carry `{minutes}`/`{seconds}` rather than written-out numbers.
+- Set `recording.negative: null` (or `longNoisePrompt: null`) to drop the card.
+  The build refuses a prompt without the recorder, which would offer a button the
+  server rejects.
 
 ### Recommended: use an existing Drive folder
 

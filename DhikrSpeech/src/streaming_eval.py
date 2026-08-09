@@ -391,8 +391,8 @@ def write_annotation_template(
 # ---------------------------------------------------------------------------
 # Annotations the collector already wrote
 # ---------------------------------------------------------------------------
-# SpeechCollector's second recorder asks for one long take holding the same
-# dhikr N times, and writes the number it asked for into the filename:
+# SpeechCollector's evaluation recorders write what they asked for into the
+# filename, so every take they produce states its own annotation:
 #
 #     streaming/007/007_x10_sp8d358495_20260803_183015_ab12cd.webm
 #              ^^^ ^^^ ^^^
@@ -400,15 +400,19 @@ def write_annotation_template(
 #              |   `- the repetitions the volunteer was asked for
 #              `- the phrase folder
 #
-# So for every take the collector produces, the two things an annotation needs -
-# which phrase, and how many times it is in there - are already on the file. That
-# makes count-mode annotation (`expected_count: N`) derivable, and nobody has to
-# write anything.
+#     streaming/negative/negative_x0_sp8d358495_20260803_190211_77cd10.webm
+#                        ^^^^^^^^ ^^
+#                        |        `- zero: nothing in here should be counted
+#                        `- a NON-numeric folder, so it belongs to no phrase
 #
-# Timestamps still are not derivable, and neither is FA/hour: a take that
-# contains the target cannot show a detection to be wrong. These entries measure
-# count accuracy, which is what a user notices; the release-critical number still
-# needs audio marked `expected_count: 0`.
+# The two things an annotation needs - which phrase, and how many times it is in
+# there - are therefore already on the file, and nobody has to write anything.
+#
+# The two takes measure different halves. A repetition take gives count accuracy
+# and nothing else: everything in it is really there, so no detection in it can
+# be called wrong. `x0` is the other half and the release-critical one - a
+# recording where every detection is a false activation. Timestamps remain the
+# only thing neither can derive.
 COLLECTOR_REPETITION_PATTERN = re.compile(r"_x(?P<count>\d+)(?=[_.])")
 
 
@@ -453,26 +457,40 @@ def collector_annotations(
 ) -> List[Dict[str, object]]:
     """Annotation entries derived from what the collector already recorded.
 
-    One entry per repetition take, with ``expected_count`` from the filename tag
-    and ``target`` from the phrase folder. Recordings that state neither are
-    still listed - with ``expected_count: null``, which the evaluator excludes
-    and reports - so a hand-added file is visible and one field from usable
-    rather than silently absent.
+    A repetition take (``_x10_`` under a phrase folder) becomes a count-mode
+    entry. A negative take (``_x0_`` under a non-phrase folder) becomes
+    ``expected_count: 0`` with **no target** - it holds no dhikr at all, so it is
+    shared material and every target's evaluation counts it, and every detection
+    in it is a false activation.
+
+    Recordings that state neither are still listed - with ``expected_count:
+    null``, which the evaluator excludes and reports - so a hand-added file is
+    visible and one field from usable rather than silently absent.
     """
     root = Path(audio_dir)
     entries: List[Dict[str, object]] = []
-    derived = 0
+    counted = negatives = 0
     for path in audio_files(root, extensions):
         repetitions, target = parse_collector_take(path, root)
+        relative = path.relative_to(root)
+        folder = relative.parts[-2] if len(relative.parts) > 1 else None
         entry: Dict[str, object] = {
-            "file": path.relative_to(root).as_posix(),
+            "file": relative.as_posix(),
             "target": target,
             "events": [],
         }
-        if repetitions is not None and target is not None:
+        if repetitions == 0:
+            # Zero is the count, not the absence of one. `target` stays null on
+            # purpose: nothing was said, so this recording is evidence for every
+            # target rather than for the folder it happens to sit in.
+            entry["target"] = None
+            entry["expected_count"] = 0
+            entry["category"] = folder or "negative"
+            negatives += 1
+        elif repetitions is not None and target is not None:
             entry["expected_count"] = repetitions
             entry["category"] = category
-            derived += 1
+            counted += 1
         else:
             # Never guessed at. A take whose phrase is unknown would otherwise be
             # shared material - scored against every target as events that are
@@ -488,10 +506,13 @@ def collector_annotations(
         entries.append(entry)
 
     LOGGER.info(
-        "%d of %d recording(s) under %s carry a collector repetition tag",
-        derived,
+        "%d of %d recording(s) under %s are tagged: %d repetition take(s), "
+        "%d negative-only",
+        counted + negatives,
         len(entries),
         root,
+        counted,
+        negatives,
     )
     return entries
 
@@ -557,18 +578,26 @@ def ensure_collector_annotations(config: Config) -> Optional[Path]:
 
     audio = streaming_audio_root(config)
     entries = collector_annotations(audio)
-    if not any(entry.get("expected_count") for entry in entries):
+    # `is not None`, not truthiness: a negative take's count is 0, and a folder
+    # holding only negatives is the most valuable one here.
+    tagged = [entry for entry in entries if entry.get("expected_count") is not None]
+    if not tagged:
         return None
 
     write_collector_annotations(destination, audio, merge=False)
+    negatives = sum(1 for entry in tagged if entry["expected_count"] == 0)
     LOGGER.warning(
-        "wrote %s from the collector's filenames: %d take(s) annotated with the "
-        "repetition count they were recorded for. These measure count accuracy. "
-        "They cannot measure false activations per hour - every one of them "
-        "contains the target - so add audio with no target in it, marked "
-        "expected_count: 0.",
+        "wrote %s from the collector's filenames: %d repetition take(s) annotated "
+        "with the count they were recorded for, %d negative-only recording(s). %s",
         destination,
-        sum(1 for entry in entries if entry.get("expected_count")),
+        len(tagged) - negatives,
+        negatives,
+        "Repetition takes measure count accuracy only - every one of them contains "
+        "the target, so no detection in one is known to be wrong."
+        if negatives
+        else "These measure count accuracy. They cannot measure false activations "
+        "per hour - every one of them contains the target - so add audio with no "
+        "target in it, marked expected_count: 0.",
     )
     return destination
 

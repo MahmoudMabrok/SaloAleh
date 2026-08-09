@@ -3,7 +3,7 @@
  * Configuration is injected from config.ts by build.mjs.
  */
 
-const CONFIG = Object.freeze(JSON.parse('{"app":{"title":"Dhikr Speech Dataset","htmlTitle":"Arabic Speech Dataset Collector","language":"ar","direction":"rtl","timezone":"Africa/Cairo"},"deployment":{"webAppUrl":"https://script.google.com/macros/s/AKfycbzjzlCBYMoLqRlKgoHNYUc7Txoq1fOHlC5nOSktMNDoFnWp8HhQ0GaZ8rHsXfSsU8QCkQ/exec","standaloneUrl":"https://mahmoudmabrok.github.io/SaloAleh/voice.html"},"storage":{"rootFolderId":"1v8qS5-8NBiQOstqHSBapEpGb0O5eQyRy","rootFolderName":"Dhikr Speech Dataset","datasetSubfolder":"dataset","unknownFolderName":"unknown","noiseFolderName":"noise","streamingSubfolder":"streaming","phrasesFile":"phrases.json","spreadsheetId":"17nkSzNoyBB4PvCkaelLdyW82wFgcRPYoPAVDoEE5NoI","spreadsheetName":"Dhikr Speech Dataset Metadata","sheetName":"samples","phraseFolderDigits":3},"recording":{"minimumDurationMs":1000,"maximumDurationMs":5000,"maximumUploadBytes":5242880,"preferredSampleRate":16000,"preferredChannelCount":1,"acceptedMimeTypes":["audio/wav","audio/x-wav","audio/webm","audio/ogg","audio/mp4","audio/mpeg"],"streaming":{"repetitions":10,"minimumDurationMs":8000,"maximumDurationMs":90000,"maximumUploadBytes":8388608}},"theme":{"primary":"#176b45","primaryDark":"#0d4f32","primarySoft":"#e9f6ef","accent":"#d6a53a","pageBackground":"#f4f8f5","cardBackground":"#ffffff","text":"#17362a","mutedText":"#61746b","danger":"#b3261e"},"ui":{"hero":"❤️ ساعدنا في بناء ميزة الذكر بالصوت","singleTakeRule":"قاعدة واحدة مهمة: في زر «تسجيل» العادي كل تسجيل يحتوي على ذكر واحد يُقال مرة واحدة فقط. لا تكرّر العبارة داخل التسجيل نفسه — التكرار له زره الخاص وحده.","listHint":"لكل عبارة مسجّلها الخاص. سجّل وارفع كل عبارة على حدة، ويمكنك رفع عدة عينات لنفس العبارة — كل عينة إضافية تفيدنا، بشرط أن يكون في كل تسجيل نطق واحد فقط.","summaryPhrases":"{recorded} من {total} عبارات لها تسجيل","summarySamples":"{count} عينة مرفوعة","recordedCount":"✓ {count} عينة مرفوعة","record":"تسجيل","reRecord":"إعادة التسجيل","stop":"إيقاف","play":"استماع","pause":"إيقاف الاستماع","upload":"رفع التسجيل","uploading":"جارٍ الرفع…","uploadQueued":"في الانتظار…","uploadAll":"رفع كل التسجيلات الجاهزة ({count})","timerReady":"00:00.0","microphoneHint":"اقرأ العبارة مرة واحدة بصوت واضح في مكان هادئ، ثم اضغط «إيقاف».","privacy":"لا نجمع الاسم أو البريد أو الهاتف أو الموقع. يُحفظ التسجيل والبيانات التقنية الأساسية فقط، مع رمز عشوائي يُنشأ في متصفحك ليُعرف أن تسجيلاتك من جهاز واحد — وهو غير مرتبط بك بأي شكل.","ready":"اضغط «تسجيل» عند أي عبارة واسمح باستخدام الميكروفون، ثم قل العبارة مرة واحدة.","recording":"جارٍ التسجيل… قل العبارة مرة واحدة فقط ثم اضغط «إيقاف».","recordingReady":"التسجيل جاهز. استمع إليه للتأكد أنه يحتوي على العبارة مرة واحدة فقط، ثم ارفعه.","microphoneDenied":"تم رفض إذن الميكروفون. افتح إعدادات الموقع في المتصفح، فعّل الميكروفون، ثم أعد تحميل الصفحة.","microphoneBlocked":"المتصفح لا يعرض طلب الإذن لأن الصفحة معروضة داخل إطار لا يسمح بالميكروفون. افتح صفحة التسجيل في نافذة مستقلة ثم اضغط «تسجيل».","microphoneMissing":"لم يُعثر على ميكروفون متاح. وصّل ميكروفونًا أو تحقق من إعدادات الصوت ثم حاول مجددًا.","microphoneBusy":"الميكروفون مشغول بتطبيق آخر. أغلق التطبيقات التي تستخدمه ثم حاول مجددًا.","insecureContext":"التسجيل يتطلب فتح الصفحة عبر رابط https. افتح الرابط الرسمي للصفحة ثم حاول مجددًا.","openStandalone":"فتح صفحة التسجيل","unsupported":"هذا المتصفح لا يدعم تسجيل الصوت. جرّب إصدارًا حديثًا من Chrome أو Safari.","tooShort":"التسجيل قصير جدًا. سجّل لمدة ثانية واحدة على الأقل.","tooLarge":"حجم التسجيل كبير جدًا. سجّل مقطعًا أقصر ثم حاول مجددًا.","uploadSuccessTitle":"✅ شكرًا لك!","uploadSuccessBody":"تم رفع العينة. يمكنك تسجيل عينة جديدة لنفس العبارة — نطق واحد في كل تسجيل.","uploadFailedTitle":"فشل رفع التسجيل","uploadFailedBody":"احتفظنا بالتسجيل. تحقق من الإنترنت ثم حاول مجددًا.","retry":"إعادة المحاولة","unknownBadge":"ليست ذكرًا","noiseBadge":"ضجيج فقط","noiseRecording":"جارٍ التسجيل… لا تتكلم، اترك أصوات المكان تُسجَّل وحدها.","noiseRecordingReady":"التسجيل جاهز. استمع إليه للتأكد أنه لا يحتوي على كلام، ثم ارفعه.","noiseUploadSuccessBody":"تم رفع العينة. سجّل ضجيجًا من مكان آخر أو وقت آخر — التنوّع هنا هو المفيد.","streamingRecord":"تسجيل {reps} مرات","streamingReRecord":"إعادة تسجيل الـ{reps} مرات","streamingHint":"زر «تسجيل {reps} مرات» مختلف تمامًا: مقطع واحد طويل تقول فيه العبارة {reps} مرات، مع وقفة قصيرة بين كل مرة والتي تليها. هذه التسجيلات وحدها تقيس هل يَعُدّ التطبيق كل ذكر مرة واحدة أثناء الاستماع المتواصل.","streamingRecording":"جارٍ التسجيل… قل العبارة {reps} مرات مع وقفة قصيرة بين كل مرة، ثم اضغط «إيقاف».","streamingRecordingReady":"التسجيل الطويل جاهز. استمع إليه للتأكد أنه يحتوي على العبارة {reps} مرات، ثم ارفعه.","streamingUploadSuccessBody":"تم رفع التسجيل الطويل. يمكنك تسجيل مقطع آخر لنفس العبارة — {reps} مرات في كل مقطع.","streamingTooShort":"التسجيل أقصر من أن يحتوي على {reps} مرات. أعد التسجيل وقل العبارة {reps} مرات كاملة.","streamingCount":"🔁 {count} تسجيل متكرر"},"spreadsheetColumns":["sample_id","phrase_id","phrase_text","filename","duration_ms","sample_rate","browser","platform","language","created_at","drive_file_id","drive_url"],"phrases":[{"id":1,"text":"سبحان الله"},{"id":6,"text":"سبحان الله وبحمده"},{"id":7,"text":"سبحان الله العظيم وبحمده"},{"id":8,"text":"لا حول ولا قوة إلا بالله"},{"id":5,"text":"أستغفر الله"},{"id":9,"text":"اللهم صل على محمد"},{"id":11,"text":"سبحان الله، الحمد لله، الله أكبر، لا إله إلا الله"},{"id":2,"text":"الحمد لله","hidden":true},{"id":3,"text":"الله أكبر","hidden":true},{"id":4,"text":"لا إله إلا الله","hidden":true},{"id":10,"text":"اللهم صل وسلم على نبينا محمد","hidden":true}],"unknownPrompt":{"id":0,"text":"قل أي كلمة عادية ليست ذكرًا","note":"مثل «صباح الخير» أو «كيف حالك» أو أي كلمة تخطر ببالك. قلها مرة واحدة فقط في التسجيل بلا تكرار، وغيّر الكلمة في كل تسجيل جديد — هذه العينات تعلّم النموذج ما ليس ذكرًا حتى لا يَعُدّ كلامك العادي."},"noisePrompt":{"id":-1,"text":"سجّل صوت المكان من حولك بدون أي كلام","note":"اترك الميكروفون يلتقط ما حولك: ضجيج الشارع، أصوات البيت، مروحة، سيارة، أو حتى غرفة هادئة. لا تتكلم ولا تقل ذكرًا في هذا التسجيل — هذه الأصوات تُخلط تحت تسجيلات الذكر أثناء التدريب حتى يعمل العدّاد في الأماكن الصاخبة."}}'));
+const CONFIG = Object.freeze(JSON.parse('{"app":{"title":"Dhikr Speech Dataset","htmlTitle":"Arabic Speech Dataset Collector","language":"ar","direction":"rtl","timezone":"Africa/Cairo"},"deployment":{"webAppUrl":"https://script.google.com/macros/s/AKfycbwidP0GUJ3VnqSnPa4fS7YZv0QZdjI5uIfvC3UVRXb4IXzak7vW3idqdL3JVyiv_PgZtw/exec","standaloneUrl":"https://mahmoudmabrok.github.io/SaloAleh/voice.html"},"storage":{"rootFolderId":"1v8qS5-8NBiQOstqHSBapEpGb0O5eQyRy","rootFolderName":"Dhikr Speech Dataset","datasetSubfolder":"dataset","unknownFolderName":"unknown","noiseFolderName":"noise","streamingSubfolder":"streaming","streamingNegativeFolderName":"negative","phrasesFile":"phrases.json","spreadsheetId":"17nkSzNoyBB4PvCkaelLdyW82wFgcRPYoPAVDoEE5NoI","spreadsheetName":"Dhikr Speech Dataset Metadata","sheetName":"samples","phraseFolderDigits":3},"recording":{"minimumDurationMs":1000,"maximumDurationMs":5000,"maximumUploadBytes":5242880,"preferredSampleRate":16000,"preferredChannelCount":1,"acceptedMimeTypes":["audio/wav","audio/x-wav","audio/webm","audio/ogg","audio/mp4","audio/mpeg"],"streaming":{"repetitions":10,"minimumDurationMs":8000,"maximumDurationMs":90000,"maximumUploadBytes":8388608},"negative":{"minimumDurationMs":20000,"maximumDurationMs":300000,"maximumUploadBytes":8388608}},"theme":{"primary":"#176b45","primaryDark":"#0d4f32","primarySoft":"#e9f6ef","accent":"#d6a53a","pageBackground":"#f4f8f5","cardBackground":"#ffffff","text":"#17362a","mutedText":"#61746b","danger":"#b3261e"},"ui":{"hero":"❤️ ساعدنا في بناء ميزة الذكر بالصوت","singleTakeRule":"قاعدة واحدة مهمة: في زر «تسجيل» العادي كل تسجيل يحتوي على ذكر واحد يُقال مرة واحدة فقط. لا تكرّر العبارة داخل التسجيل نفسه — التكرار له زره الخاص وحده.","listHint":"لكل عبارة مسجّلها الخاص. سجّل وارفع كل عبارة على حدة، ويمكنك رفع عدة عينات لنفس العبارة — كل عينة إضافية تفيدنا، بشرط أن يكون في كل تسجيل نطق واحد فقط.","summaryPhrases":"{recorded} من {total} عبارات لها تسجيل","summarySamples":"{count} عينة مرفوعة","recordedCount":"✓ {count} عينة مرفوعة","record":"تسجيل","reRecord":"إعادة التسجيل","stop":"إيقاف","play":"استماع","pause":"إيقاف الاستماع","upload":"رفع التسجيل","uploading":"جارٍ الرفع…","uploadQueued":"في الانتظار…","uploadAll":"رفع كل التسجيلات الجاهزة ({count})","timerReady":"00:00.0","microphoneHint":"اقرأ العبارة مرة واحدة بصوت واضح في مكان هادئ، ثم اضغط «إيقاف».","privacy":"لا نجمع الاسم أو البريد أو الهاتف أو الموقع. يُحفظ التسجيل والبيانات التقنية الأساسية فقط، مع رمز عشوائي يُنشأ في متصفحك ليُعرف أن تسجيلاتك من جهاز واحد — وهو غير مرتبط بك بأي شكل.","ready":"اضغط «تسجيل» عند أي عبارة واسمح باستخدام الميكروفون، ثم قل العبارة مرة واحدة.","recording":"جارٍ التسجيل… قل العبارة مرة واحدة فقط ثم اضغط «إيقاف».","recordingReady":"التسجيل جاهز. استمع إليه للتأكد أنه يحتوي على العبارة مرة واحدة فقط، ثم ارفعه.","microphoneDenied":"تم رفض إذن الميكروفون. افتح إعدادات الموقع في المتصفح، فعّل الميكروفون، ثم أعد تحميل الصفحة.","microphoneBlocked":"المتصفح لا يعرض طلب الإذن لأن الصفحة معروضة داخل إطار لا يسمح بالميكروفون. افتح صفحة التسجيل في نافذة مستقلة ثم اضغط «تسجيل».","microphoneMissing":"لم يُعثر على ميكروفون متاح. وصّل ميكروفونًا أو تحقق من إعدادات الصوت ثم حاول مجددًا.","microphoneBusy":"الميكروفون مشغول بتطبيق آخر. أغلق التطبيقات التي تستخدمه ثم حاول مجددًا.","insecureContext":"التسجيل يتطلب فتح الصفحة عبر رابط https. افتح الرابط الرسمي للصفحة ثم حاول مجددًا.","openStandalone":"فتح صفحة التسجيل","unsupported":"هذا المتصفح لا يدعم تسجيل الصوت. جرّب إصدارًا حديثًا من Chrome أو Safari.","tooShort":"التسجيل قصير جدًا. سجّل لمدة ثانية واحدة على الأقل.","tooLarge":"حجم التسجيل كبير جدًا. سجّل مقطعًا أقصر ثم حاول مجددًا.","uploadSuccessTitle":"✅ شكرًا لك!","uploadSuccessBody":"تم رفع العينة. يمكنك تسجيل عينة جديدة لنفس العبارة — نطق واحد في كل تسجيل.","uploadFailedTitle":"فشل رفع التسجيل","uploadFailedBody":"احتفظنا بالتسجيل. تحقق من الإنترنت ثم حاول مجددًا.","retry":"إعادة المحاولة","unknownBadge":"ليست ذكرًا","noiseBadge":"ضجيج فقط","noiseRecording":"جارٍ التسجيل… لا تتكلم، اترك أصوات المكان تُسجَّل وحدها.","noiseRecordingReady":"التسجيل جاهز. استمع إليه للتأكد أنه لا يحتوي على كلام، ثم ارفعه.","noiseUploadSuccessBody":"تم رفع العينة. سجّل ضجيجًا من مكان آخر أو وقت آخر — التنوّع هنا هو المفيد.","streamingRecord":"تسجيل {reps} مرات","streamingReRecord":"إعادة تسجيل الـ{reps} مرات","streamingHint":"زر «تسجيل {reps} مرات» مختلف تمامًا: مقطع واحد طويل تقول فيه العبارة {reps} مرات، مع وقفة قصيرة بين كل مرة والتي تليها. هذه التسجيلات وحدها تقيس هل يَعُدّ التطبيق كل ذكر مرة واحدة أثناء الاستماع المتواصل.","streamingRecording":"جارٍ التسجيل… قل العبارة {reps} مرات مع وقفة قصيرة بين كل مرة، ثم اضغط «إيقاف».","streamingRecordingReady":"التسجيل الطويل جاهز. استمع إليه للتأكد أنه يحتوي على العبارة {reps} مرات، ثم ارفعه.","streamingUploadSuccessBody":"تم رفع التسجيل الطويل. يمكنك تسجيل مقطع آخر لنفس العبارة — {reps} مرات في كل مقطع.","streamingTooShort":"التسجيل أقصر من أن يحتوي على {reps} مرات. أعد التسجيل وقل العبارة {reps} مرات كاملة.","streamingCount":"🔁 {count} تسجيل متكرر","longNoiseBadge":"بدون ذكر","longNoiseRecord":"تسجيل طويل بدون ذكر","longNoiseReRecord":"إعادة التسجيل الطويل","longNoiseRecording":"جارٍ التسجيل… اترك الهاتف يسجّل ما حولك ولا تقل أي ذكر إطلاقًا، حتى {minutes} دقائق، ثم اضغط «إيقاف».","longNoiseRecordingReady":"التسجيل جاهز. استمع إليه للتأكد أنه لا يحتوي على أي عبارة من عبارات هذه الصفحة، ثم ارفعه.","longNoiseTooShort":"التسجيل قصير جدًا. سجّل {seconds} ثانية على الأقل — كلما طال التسجيل زادت فائدته.","longNoiseUploadSuccessBody":"تم رفع التسجيل. كل دقيقة إضافية من صوت خالٍ من الذكر تفيدنا — سجّل من مكان آخر أو وقت آخر.","longNoiseCount":"🔇 {count} تسجيل طويل"},"spreadsheetColumns":["sample_id","phrase_id","phrase_text","filename","duration_ms","sample_rate","browser","platform","language","created_at","drive_file_id","drive_url"],"phrases":[{"id":1,"text":"سبحان الله"},{"id":6,"text":"سبحان الله وبحمده"},{"id":7,"text":"سبحان الله العظيم وبحمده"},{"id":8,"text":"لا حول ولا قوة إلا بالله"},{"id":5,"text":"أستغفر الله"},{"id":9,"text":"اللهم صل على محمد"},{"id":11,"text":"سبحان الله، الحمد لله، الله أكبر، لا إله إلا الله"},{"id":2,"text":"الحمد لله","hidden":true},{"id":3,"text":"الله أكبر","hidden":true},{"id":4,"text":"لا إله إلا الله","hidden":true},{"id":10,"text":"اللهم صل وسلم على نبينا محمد","hidden":true}],"unknownPrompt":{"id":0,"text":"قل أي كلمة عادية ليست ذكرًا","note":"مثل «صباح الخير» أو «كيف حالك» أو أي كلمة تخطر ببالك. قلها مرة واحدة فقط في التسجيل بلا تكرار، وغيّر الكلمة في كل تسجيل جديد — هذه العينات تعلّم النموذج ما ليس ذكرًا حتى لا يَعُدّ كلامك العادي."},"noisePrompt":{"id":-1,"text":"سجّل صوت المكان من حولك بدون أي كلام","note":"اترك الميكروفون يلتقط ما حولك: ضجيج الشارع، أصوات البيت، مروحة، سيارة، أو حتى غرفة هادئة. لا تتكلم ولا تقل ذكرًا في هذا التسجيل — هذه الأصوات تُخلط تحت تسجيلات الذكر أثناء التدريب حتى يعمل العدّاد في الأماكن الصاخبة."},"longNoisePrompt":{"id":-2,"text":"سجّل عدة دقائق من الصوت المحيط بدون أي ذكر","note":"ضع الهاتف بجوار التلفاز أو في مجلس فيه حديث عادي أو في الشارع، واتركه يسجّل عدة دقائق. الكلام العادي هنا مطلوب لا ممنوع. الشرط الوحيد أن لا تُقال في التسجيل أي عبارة من عبارات هذه الصفحة ولو مرة واحدة — هذه التسجيلات هي وحدها التي تكشف إن كان العدّاد يَعُدّ أذكارًا لم يقلها أحد."}}'));
 const RUNTIME_KEYS = Object.freeze({
   ROOT_FOLDER_ID: 'SPEECH_COLLECTOR_ROOT_FOLDER_ID',
   SPREADSHEET_ID: 'SPEECH_COLLECTOR_SPREADSHEET_ID',
@@ -11,15 +11,25 @@ const RUNTIME_KEYS = Object.freeze({
 });
 
 /**
- * The two kinds of recording a card can produce. A clip is one utterance and is
- * a training example; a streaming take is the same dhikr repeated N times in one
- * long clip, and is evaluation material. They differ in allowed duration, size
- * and destination folder, so the mode is validated rather than trusted: a client
- * cannot file a 90-second take as a training clip, nor a one-second one as a
- * repetition take.
+ * The three kinds of recording a card can produce.
+ *
+ * - A **clip** is one utterance and is a training example.
+ * - A **streaming** take is the same dhikr repeated N times in one long clip.
+ * - A **negative** take is minutes of ordinary sound holding no dhikr at all.
+ *
+ * The last two are evaluation material and measure different things: a
+ * repetition take can only show whether the counter reaches ten, because every
+ * detection in it lands on a dhikr that really is there; only a negative take
+ * can show the counter firing when nobody said anything.
+ *
+ * They differ in allowed duration, size and destination folder, so the mode is
+ * validated rather than trusted: a client cannot file a 90-second take as a
+ * training clip, nor a one-second one as a repetition take, nor put five minutes
+ * of television in a phrase's folder.
  */
 const MODE_CLIP = 'clip';
 const MODE_STREAMING = 'streaming';
+const MODE_NEGATIVE = 'negative';
 
 /** Serves the mobile web application. */
 function doGet() {
@@ -37,13 +47,15 @@ function doGet() {
       preferredSampleRate: CONFIG.recording.preferredSampleRate,
       preferredChannelCount: CONFIG.recording.preferredChannelCount,
       acceptedMimeTypes: CONFIG.recording.acceptedMimeTypes,
-      streaming: CONFIG.recording.streaming || null
+      streaming: CONFIG.recording.streaming || null,
+      negative: CONFIG.recording.negative || null
     },
     theme: CONFIG.theme,
     ui: CONFIG.ui,
     phrases: visiblePhrases_(),
     unknownPrompt: CONFIG.unknownPrompt || null,
-    noisePrompt: CONFIG.noisePrompt || null
+    noisePrompt: CONFIG.noisePrompt || null,
+    longNoisePrompt: CONFIG.longNoisePrompt || null
   });
 
   return template.evaluate()
@@ -172,8 +184,8 @@ function visiblePhrases_() {
 }
 
 /**
- * Every prompt an upload may name: the phrases plus the two non-phrase cards
- * (out-of-vocabulary speech, and background noise).
+ * Every prompt an upload may name: the phrases plus the three non-phrase cards
+ * (out-of-vocabulary speech, background noise, and the long negative take).
  *
  * Hidden phrases are still accepted. A volunteer who kept a tab open across a
  * redeploy would otherwise lose the take waiting on a card that has since been
@@ -183,6 +195,7 @@ function allPrompts_() {
   var prompts = CONFIG.phrases.slice();
   if (CONFIG.unknownPrompt) prompts.push(CONFIG.unknownPrompt);
   if (CONFIG.noisePrompt) prompts.push(CONFIG.noisePrompt);
+  if (CONFIG.longNoisePrompt) prompts.push(CONFIG.longNoisePrompt);
   return prompts;
 }
 
@@ -194,14 +207,22 @@ function isNoisePrompt_(prompt) {
   return Boolean(CONFIG.noisePrompt) && prompt.id === CONFIG.noisePrompt.id;
 }
 
+function isLongNoisePrompt_(prompt) {
+  return Boolean(CONFIG.longNoisePrompt) && prompt.id === CONFIG.longNoisePrompt.id;
+}
+
 /**
  * The folder a prompt writes into: the configured `unknown` folder for the
- * negative class, the `noise` folder for background noise, a zero-padded phrase
- * id for everything else. The first two are names the pipeline knows
- * (`classes.unknown_class`, `paths.noise_dir`); the rest are its class folders.
+ * negative class, the `noise` folder for background noise, the streaming tree's
+ * `negative` folder for a long take with no dhikr in it, and a zero-padded
+ * phrase id for everything else. The first three are names the pipeline knows
+ * (`classes.unknown_class`, `paths.noise_dir`, and a non-numeric folder under
+ * `paths.streaming_dir`, which is how it tells shared negative material from a
+ * phrase's own takes); the rest are its class folders.
  */
 function classFolderName_(prompt) {
   if (isNoisePrompt_(prompt)) return CONFIG.storage.noiseFolderName;
+  if (isLongNoisePrompt_(prompt)) return CONFIG.storage.streamingNegativeFolderName;
   if (isUnknownPrompt_(prompt)) return CONFIG.storage.unknownFolderName;
   return padPhraseId_(prompt.id);
 }
@@ -217,10 +238,13 @@ function classFolderName_(prompt) {
  * dhikr N times, so it is not a training example at all, and a trainer scanning
  * `dataset/{id}/` must never find one there. It gets `streaming/{id}/` beside
  * the dataset instead — same class folder name, different tree.
+ *
+ * A negative take joins it in that tree, under a folder that is deliberately not
+ * a phrase id: it belongs to no phrase, and every target's evaluation reads it.
  */
 function classParentFolder_(rootFolder, prompt, mode) {
   if (isNoisePrompt_(prompt)) return rootFolder;
-  if (mode === MODE_STREAMING) {
+  if (mode === MODE_STREAMING || mode === MODE_NEGATIVE) {
     return createFolderIfMissing(rootFolder, CONFIG.storage.streamingSubfolder);
   }
   return createFolderIfMissing(rootFolder, CONFIG.storage.datasetSubfolder);
@@ -231,19 +255,26 @@ function streamingSettings_() {
   return CONFIG.recording.streaming || null;
 }
 
+/** The configured long negative take, or null when that card is dropped. */
+function negativeSettings_() {
+  return CONFIG.recording.negative || null;
+}
+
 /**
- * The duration and size bounds this mode is held to. A repetition take needs
+ * The duration and size bounds this mode is held to. Each evaluation take needs
  * limits a training clip must never be allowed (90 seconds would be a whole
- * conversation filed as one utterance), so they are separate rather than the
- * clip's bounds widened for everyone.
+ * conversation filed as one utterance; five minutes doubly so), so they are
+ * separate rather than the clip's bounds widened for everyone.
  */
 function recordingLimits_(mode) {
-  const streaming = streamingSettings_();
-  if (mode === MODE_STREAMING && streaming) {
+  const settings = mode === MODE_NEGATIVE
+    ? negativeSettings_()
+    : (mode === MODE_STREAMING ? streamingSettings_() : null);
+  if (settings) {
     return {
-      minimumDurationMs: streaming.minimumDurationMs,
-      maximumDurationMs: streaming.maximumDurationMs,
-      maximumUploadBytes: streaming.maximumUploadBytes
+      minimumDurationMs: settings.minimumDurationMs,
+      maximumDurationMs: settings.maximumDurationMs,
+      maximumUploadBytes: settings.maximumUploadBytes
     };
   }
   return {
@@ -255,20 +286,24 @@ function recordingLimits_(mode) {
 
 /** The body-size ceiling doPost applies before it knows which mode it is reading. */
 function largestUploadBytes_() {
-  const streaming = streamingSettings_();
-  return streaming
-    ? Math.max(CONFIG.recording.maximumUploadBytes, streaming.maximumUploadBytes)
-    : CONFIG.recording.maximumUploadBytes;
+  return [streamingSettings_(), negativeSettings_()].reduce(function(largest, settings) {
+    return settings ? Math.max(largest, settings.maximumUploadBytes) : largest;
+  }, CONFIG.recording.maximumUploadBytes);
 }
 
 /**
- * The `x10` token a repetition take carries in its filename. The collector
- * cannot produce the event timings a streaming annotation needs, so the count it
- * asked for is written where it cannot be separated from the audio: whoever
- * builds `annotations.json` later reads how many events the clip should hold off
- * the file itself rather than off a spreadsheet row.
+ * The `x{n}` token an evaluation take carries in its filename: how many times
+ * the dhikr is in the audio. `x10` for a repetition take, and **`x0` for a
+ * negative take** — zero is not the absence of a count, it is the count, and it
+ * is the one that measures false activations.
+ *
+ * The collector cannot produce event timings, so the number it asked for is
+ * written where it cannot be separated from the audio: the pipeline derives
+ * `annotations.json` from the filename and the folder
+ * (`streaming_eval.collector_annotations`) rather than anyone writing it.
  */
 function repetitionTag_(mode) {
+  if (mode === MODE_NEGATIVE) return negativeSettings_() ? 'x0' : '';
   const streaming = streamingSettings_();
   return mode === MODE_STREAMING && streaming ? 'x' + streaming.repetitions : '';
 }
@@ -365,6 +400,22 @@ function validateRequest_(request) {
     if (nonPhraseFolderName_(phrase)) {
       throw publicError_('INVALID_MODE', 'Only a phrase can be recorded as a repetition take.');
     }
+  }
+  if (mode === MODE_NEGATIVE) {
+    if (!negativeSettings_()) {
+      throw publicError_('INVALID_MODE', 'Long negative takes are not enabled.');
+    }
+    // A negative take is filed under a folder that means "no dhikr in here", so
+    // letting a phrase card claim the mode would mark that phrase's own audio as
+    // proof the counter should have stayed silent.
+    if (!isLongNoisePrompt_(phrase)) {
+      throw publicError_('INVALID_MODE', 'Only the long negative card can be recorded as a negative take.');
+    }
+  } else if (isLongNoisePrompt_(phrase)) {
+    // The reverse, and the more damaging of the two: that card in any other mode
+    // would put its audio in `dataset/{negative}/`, inventing a training class
+    // out of television — the trainer scans dataset/ and would learn it.
+    throw publicError_('INVALID_MODE', 'The long negative card records negative takes only.');
   }
   const limits = recordingLimits_(mode);
 
@@ -522,6 +573,7 @@ function findExistingSample_(sheet, sampleId) {
 /** The class-folder name for a non-phrase prompt, or '' for a real phrase. */
 function nonPhraseFolderName_(prompt) {
   if (isNoisePrompt_(prompt)) return CONFIG.storage.noiseFolderName;
+  if (isLongNoisePrompt_(prompt)) return CONFIG.storage.streamingNegativeFolderName;
   if (isUnknownPrompt_(prompt)) return CONFIG.storage.unknownFolderName;
   return '';
 }
@@ -563,12 +615,15 @@ function createFilename_(classFolderName, speakerToken, mimeType, repetitionTag)
 
 /**
  * An absent or unrecognised mode is a clip. Older clients send no mode at all,
- * and the safe reading of "unknown" is the stricter of the two: a clip is
+ * and the safe reading of "unknown" is the strictest of the three: a clip is
  * bounded to five seconds and lands in the dataset, which is where every
- * recording went before repetition takes existed.
+ * recording went before the evaluation takes existed.
  */
 function normalizeMode_(mode) {
-  return String(mode || '').trim().toLowerCase() === MODE_STREAMING ? MODE_STREAMING : MODE_CLIP;
+  const value = String(mode || '').trim().toLowerCase();
+  if (value === MODE_STREAMING) return MODE_STREAMING;
+  if (value === MODE_NEGATIVE) return MODE_NEGATIVE;
+  return MODE_CLIP;
 }
 
 function padPhraseId_(phraseId) {

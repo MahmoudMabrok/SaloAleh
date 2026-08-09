@@ -412,13 +412,24 @@ in `DhikrSpeech/docs/DATA_COLLECTION.md`.
   recording — FA/hour and precision), or `expected_count: n` (count accuracy only). An entry with
   neither is `unannotated`: **excluded and reported, never assumed to be negative** — reading an
   empty `events` list as "no target here" scored a recording of somebody reciting the target as
-  pure false activations. **SpeechCollector's repetition takes annotate themselves**: it uploads to
-  `streaming/{paddedId}/{id}_x10_{sp…}_…` and both halves of a count annotation are in that name,
-  so `collector_annotations`/`ensure_collector_annotations` derive `annotations.json` on first load
-  and `write_collector_annotations` merges later uploads in without touching an existing entry. They
-  give count accuracy only — every take contains the target, so **FA/hour stays unmeasured until
-  someone adds audio marked `expected_count: 0`**, and readiness must keep capping at EXPERIMENTAL
-  until they do.
+  pure false activations. **SpeechCollector's evaluation takes annotate themselves**: it uploads to
+  `streaming/{paddedId}/{id}_x10_{sp…}_…` (a repetition take) and
+  `streaming/negative/negative_x0_{sp…}_…` (minutes with no dhikr in them), and both halves of an
+  annotation are in those names, so `collector_annotations`/`ensure_collector_annotations` derive
+  `annotations.json` on first load and `write_collector_annotations` merges later uploads in without
+  touching an existing entry. `x10` gives count accuracy only — every take contains the target, so
+  no detection in one is known to be wrong; **`x0` is what makes FA/hour measurable**, and it parses
+  to `expected_count: 0` with **`target: None`** so one such recording counts for every target.
+  Guard the auto-derive on `expected_count is not None`, never truthiness — `0` is the count that
+  matters most.
+- **The collector's third recorder is the long negative take** (`SpeechCollector/`:
+  `recording.negative` + `longNoisePrompt`, mode `negative`, its own card). Minutes (20s–5min, vs
+  the repetition take's 8–90s) because FA is counted per *hour*. The server validates the mode **in
+  both directions** — no other prompt may claim it (a phrase doing so would mark its own recitation
+  as proof the counter should have stayed silent) and that prompt may claim no other (clip mode
+  would put television in `dataset/negative/`, inventing a training class). Its folder name must
+  stay **non-numeric**: inside `streaming/` a numeric name reads as a phrase folder. Build-time
+  checks in `build.mjs` (`validateNegativeRecording`) enforce both.
 - **Thresholds are calibrated per target, never hard-coded** (`src/streaming_eval.py`
   `calibrate_threshold`): the lowest activation threshold whose measured FA/hour stays inside
   `calibration.target_false_activations_per_hour`. When none qualifies it reports **failure** rather
