@@ -18,7 +18,7 @@ globalThis.SPEECH_COLLECTOR_CONFIG = Object.freeze({
     // The Apps Script /exec URL of this project. The standalone page is not
     // served by Apps Script, so it cannot call ScriptApp.getService().getUrl()
     // and needs the deployment URL as its upload endpoint.
-    webAppUrl: "https://script.google.com/macros/s/AKfycbwidP0GUJ3VnqSnPa4fS7YZv0QZdjI5uIfvC3UVRXb4IXzak7vW3idqdL3JVyiv_PgZtw/exec",
+    webAppUrl: "https://script.google.com/macros/s/AKfycbw-GrATK5v9D4jI3gpCs1tkF8ILpR-5kgE-bKq4oLi-Njdlq5_XO3RgKcnTkJRoKyYxcg/exec",
 
     // Public URL of dist/voice.html. Apps Script renders every web app inside a
     // googleusercontent.com sandbox iframe that does not delegate the
