@@ -1,0 +1,47 @@
+--- a/DhikrSpeech/src/streaming.py
++++ b/DhikrSpeech/src/streaming.py
+@@ -46,6 +46,12 @@
+ from .audio import fit_length, normalize_loudness
+ from .config import AudioConfig, Config, DetectorConfig, SmoothingConfig
+ from .features import FeatureStats, LogMelExtractor
++from .tflite_runtime import (
++    dequantize_output,
++    make_interpreter,
++    quantize_input,
++    tflite_predict,
++)
+ 
+ LOGGER = logging.getLogger(__name__)
+ 
+@@ -61,11 +67,15 @@
+     "StreamingFrontend",
+     "StreamingResult",
+     "TFLiteScorer",
++    "dequantize_output",
+     "detect_events",
+     "detector_with_threshold",
++    "make_interpreter",
+     "make_scorer",
++    "quantize_input",
+     "smooth_scores",
+     "target_score",
++    "tflite_predict",
+ ]
+ 
+@@ -259,17 +269,14 @@
+         num_threads: int = 1,
+         output_mode: Optional[str] = None,
+     ) -> None:
+-        from .export import make_interpreter, tflite_predict
+-
+         self.path = Path(model_path)
+         self.output_mode = output_mode
+-        self._predict = tflite_predict
+         self.interpreter = make_interpreter(self.path, num_threads=num_threads)
+         self.interpreter.allocate_tensors()
+ 
+     def __call__(self, features: np.ndarray) -> np.ndarray:
+         batch = _as_batch(features)
+-        raw = self._predict(self.interpreter, batch)
++        raw = tflite_predict(self.interpreter, batch)
+         return target_score(np.asarray(raw, dtype=np.float32), self.output_mode)
