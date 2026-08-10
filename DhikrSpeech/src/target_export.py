@@ -36,7 +36,7 @@ from typing import Dict, List, Optional, Sequence, Union
 import numpy as np
 
 from .config import Config, DetectorConfig
-from .streaming_eval import EventMetrics
+from .streaming_eval import CountAccuracy, EventMetrics
 
 LOGGER = logging.getLogger(__name__)
 
@@ -165,6 +165,7 @@ def build_target_metadata(
     tensors: Optional[Dict[str, Dict[str, object]]] = None,
     dataset: Optional[Dict[str, object]] = None,
     streaming: Optional[EventMetrics] = None,
+    counts: Optional[CountAccuracy] = None,
     evaluation: Optional[Dict[str, object]] = None,
     calibration: Optional[Dict[str, object]] = None,
     quantization: Optional[Dict[str, object]] = None,
@@ -294,6 +295,8 @@ def build_target_metadata(
         payload["evaluation"] = evaluation
     if streaming is not None:
         payload["streaming"] = streaming.to_dict()
+    if counts is not None:
+        payload["counts"] = counts.to_dict()
     if calibration:
         payload["calibration"] = calibration
     if quantization:

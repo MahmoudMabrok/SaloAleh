@@ -28,7 +28,7 @@ from src.parity import (
     compare_parity,
     write_parity_assets,
 )
-from src.streaming_eval import EventMetrics
+from src.streaming_eval import CountAccuracy, EventMetrics
 from src.target_export import (
     build_target_metadata,
     compare_scores,
@@ -143,6 +143,24 @@ def test_metadata_includes_the_measurements_it_was_signed_off_on(config: Config)
     assert payload["streaming"]["precision"] == pytest.approx(0.9899, abs=1e-3)
     assert payload["dataset"]["positive_speakers"] == 24
     assert payload["readiness"]["status"] == "READY FOR DEVICE TEST"
+
+
+def test_metadata_carries_count_only_streaming_accuracy(config: Config) -> None:
+    counts = CountAccuracy()
+    counts.add("target_007_x10.wav", expected=10, detected=9)
+
+    payload = metadata(config, counts=counts)
+
+    assert payload["counts"] == {
+        "recordings": 1,
+        "expected": 10,
+        "detected": 9,
+        "absolute_error": 1,
+        "count_accuracy": 0.9,
+        "per_file": {
+            "target_007_x10.wav": {"expected": 10, "detected": 9, "error": -1}
+        },
+    }
 
 
 def test_metadata_reflects_the_output_mode(config: Config) -> None:
