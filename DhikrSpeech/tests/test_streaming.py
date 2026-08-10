@@ -16,19 +16,32 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from src import tflite_runtime
 from src.config import DetectorConfig, SmoothingConfig
 from src.streaming import (
     DetectorState,
     EventDetector,
     ScoreTimeline,
+    dequantize_output,
     detect_events,
     detector_with_threshold,
+    make_interpreter,
+    quantize_input,
     smooth_scores,
     target_score,
+    tflite_predict,
 )
 
 HOP = 0.2
 WINDOW = 1.0
+
+
+def test_streaming_reexports_the_shared_tflite_helpers() -> None:
+    """Regression: export imports these names from streaming during setup."""
+    assert make_interpreter is tflite_runtime.make_interpreter
+    assert quantize_input is tflite_runtime.quantize_input
+    assert dequantize_output is tflite_runtime.dequantize_output
+    assert tflite_predict is tflite_runtime.tflite_predict
 
 
 def timeline(scores, hop: float = HOP, window: float = WINDOW) -> ScoreTimeline:
