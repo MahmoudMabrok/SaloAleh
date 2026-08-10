@@ -1,0 +1,51 @@
+{
+  "purpose": "Front-end parity check. Decode frontend_test.wav, run the Android log-mel front-end directly over the decoded samples, and compare the result against frontend_expected.npy element-wise.",
+  "recipe": [
+    "decode frontend_test.wav (PCM16 mono, already exactly one window long)",
+    "do NOT trim, pad or re-normalise - the file is already conditioned",
+    "compute the log-mel features with the parameters under 'frontend'",
+    "compare against frontend_expected with |a - b| <= tolerance"
+  ],
+  "audio": {
+    "file": "frontend_test.wav",
+    "sample_rate": 16000,
+    "channels": 1,
+    "encoding": "PCM16",
+    "samples": 32000,
+    "seconds": 2.0,
+    "sha256": "4c06d977d69fb491e1485292bdeea26d966dbe784131cdff48fb1bc272a75f6a"
+  },
+  "expected": {
+    "file": "frontend_expected.npy",
+    "format": "numpy .npy, little-endian float32, C order",
+    "shape": [
+      197,
+      40
+    ],
+    "layout": "(frames, mel_bins)",
+    "dtype": "float32",
+    "sha256": "1a16af05eaa98df242f9e9d24bc1b190b5993cea92e7aa91217fc890b667f6d9",
+    "min": -1.3775211572647095,
+    "max": 4.2422990798950195,
+    "mean": -3.020775523054908e-07
+  },
+  "tolerance": 0.001,
+  "frontend": {
+    "sample_rate": 16000,
+    "n_mels": 40,
+    "n_fft": 512,
+    "win_length": 480,
+    "hop_length": 160,
+    "window": "hann_periodic",
+    "center": false,
+    "fmin": 20.0,
+    "fmax": 7600.0,
+    "mel_scale": "slaney",
+    "mel_norm": "slaney",
+    "log": "log(mel + 1e-06)",
+    "log_offset": 1e-06,
+    "normalize": "per_example",
+    "stats": null
+  },
+  "seed": 1337
+}

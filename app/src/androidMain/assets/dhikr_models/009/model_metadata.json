@@ -1,0 +1,292 @@
+{
+  "target_phrase_id": "009",
+  "target_phrase_text": "اللهم صل على محمد",
+  "model_version": "1",
+  "architecture": "ds_cnn",
+  "output_mode": "softmax",
+  "task": "binary phrase spotting: does this window contain the complete target phrase? Every other sound, including other dhikr and incomplete versions of this phrase, is 'unknown'.",
+  "sample_rate": 16000,
+  "clip_samples": 32000,
+  "window_seconds": 2.0,
+  "hop_seconds": 0.2,
+  "labels": [
+    "unknown",
+    "target"
+  ],
+  "target_index": 1,
+  "feature": {
+    "n_mels": 40,
+    "window_ms": 30.0,
+    "hop_ms": 10.0,
+    "n_fft": 512,
+    "fmin": 20.0,
+    "fmax": 7600.0,
+    "log_offset": 1e-06,
+    "normalization": "per_example",
+    "center": false,
+    "input_shape": [
+      197,
+      40,
+      1
+    ],
+    "input_layout": "(frames, mel_bins, 1) float32 log-mel, time major",
+    "sample_rate": 16000,
+    "win_length": 480,
+    "hop_length": 160,
+    "window": "hann_periodic",
+    "mel_scale": "slaney",
+    "mel_norm": "slaney",
+    "log": "log(mel + 1e-06)",
+    "normalize": "per_example",
+    "stats": null
+  },
+  "audio_conditioning": {
+    "channels": 1,
+    "bit_depth": 16,
+    "trim_windows": false,
+    "loudness_normalize": true,
+    "target_dbfs": -20.0,
+    "peak_ceiling": 0.99,
+    "fit_mode": "center",
+    "note": "Streaming windows are level-normalised and never silence-trimmed; trimming a window slides its content in time."
+  },
+  "frontend": {
+    "sample_rate": 16000,
+    "n_mels": 40,
+    "n_fft": 512,
+    "win_length": 480,
+    "hop_length": 160,
+    "window": "hann_periodic",
+    "center": false,
+    "fmin": 20.0,
+    "fmax": 7600.0,
+    "mel_scale": "slaney",
+    "mel_norm": "slaney",
+    "log": "log(mel + 1e-06)",
+    "log_offset": 1e-06,
+    "normalize": "per_example",
+    "stats": null
+  },
+  "audio": {
+    "sample_rate": 16000,
+    "channels": 1,
+    "bit_depth": 16,
+    "clip_seconds": 2.0,
+    "clip_samples": 32000,
+    "fit_mode": "center",
+    "trim": {
+      "enabled": true,
+      "top_db": 30.0,
+      "pad_ms": 50.0
+    },
+    "normalize": {
+      "enabled": true,
+      "target_dbfs": -20.0,
+      "peak_ceiling": 0.99
+    }
+  },
+  "classes": [
+    {
+      "index": 0,
+      "label": "unknown"
+    },
+    {
+      "index": 1,
+      "label": "target"
+    }
+  ],
+  "tensors": {
+    "input": {
+      "name": "serving_default_log_mel:0",
+      "shape": [
+        1,
+        197,
+        40,
+        1
+      ],
+      "dtype": "int8",
+      "quantization": {
+        "scale": 0.023764966055750847,
+        "zero_point": -33,
+        "quantized": true
+      }
+    },
+    "output": {
+      "name": "StatefulPartitionedCall_1:0",
+      "shape": [
+        1,
+        2
+      ],
+      "dtype": "int8",
+      "quantization": {
+        "scale": 0.00390625,
+        "zero_point": -128,
+        "quantized": true
+      }
+    }
+  },
+  "detection": {
+    "activation_threshold": 0.7,
+    "release_threshold": 0.4,
+    "min_consecutive_hits": 2,
+    "min_event_seconds": 0.0,
+    "release_windows": 2,
+    "cooldown_ms": 200.0,
+    "smoothing": {
+      "mode": "none",
+      "ema_alpha": 0.6,
+      "window": 3
+    },
+    "state_machine": "idle -> candidate -> confirmed -> cooldown -> idle",
+    "note": "Count on confirmation, then wait for the score to fall below the release threshold for release_windows before re-arming. The cooldown is a safety net, not the separator between repetitions."
+  },
+  "model": {
+    "file": "dhikr_009_int8.tflite",
+    "parameter_count": 23682,
+    "file_size_bytes": 44712,
+    "file_size_kb": 43.66,
+    "sha256": "a27e74c359aee393ef41d02dcc25b3737876d3f0847f107b10fe1f283c15a47a",
+    "variants": {
+      "float32": "dhikr_009_float32.tflite",
+      "int8": "dhikr_009_int8.tflite"
+    }
+  },
+  "seed": 1337,
+  "dataset": {
+    "positive_clips": 66,
+    "positive_speakers": 17,
+    "negative_clips": 658,
+    "speakers_known": true,
+    "speaker_leakage": 0
+  },
+  "evaluation": {
+    "threshold": 0.7,
+    "clips": 68,
+    "positives": 6,
+    "negatives": 62,
+    "true_positives": 0,
+    "false_positives": 0,
+    "false_negatives": 6,
+    "precision": null,
+    "recall": 0.0,
+    "recall_ci95": [
+      0.0,
+      0.3903
+    ],
+    "f1": null,
+    "false_positive_rate": 0.0,
+    "accuracy": 0.9118,
+    "auc": 0.5645,
+    "by_negative_type": {
+      "other_dhikr": {
+        "clips": 53,
+        "false_positives": 0,
+        "false_positive_rate": 0.0,
+        "max_score": 0.5102,
+        "mean_score": 0.1261
+      },
+      "unknown": {
+        "clips": 9,
+        "false_positives": 0,
+        "false_positive_rate": 0.0,
+        "max_score": 0.1831,
+        "mean_score": 0.0803
+      }
+    },
+    "worst_false_positives": []
+  },
+  "quantization": {
+    "recommended": "int8",
+    "variants": [
+      {
+        "variant": "float32",
+        "accepted": true,
+        "max_probability_delta": 0.0,
+        "tolerance": 0.05,
+        "threshold_disagreements": 0,
+        "fa_per_hour_delta": null,
+        "event_count_delta": null,
+        "size_bytes": 94108,
+        "clip_sets": [
+          {
+            "name": "positives",
+            "samples": 6,
+            "threshold": 0.7,
+            "max_delta": 1.4901161193847656e-07,
+            "mean_delta": 5.898376305898031e-08,
+            "disagreements": 0,
+            "reference_accept_rate": 0.0,
+            "candidate_accept_rate": 0.0,
+            "disagreement_rate": 0.0
+          },
+          {
+            "name": "negatives",
+            "samples": 62,
+            "threshold": 0.7,
+            "max_delta": 2.086162567138672e-07,
+            "mean_delta": 4.290092375970656e-08,
+            "disagreements": 0,
+            "reference_accept_rate": 0.0,
+            "candidate_accept_rate": 0.0,
+            "disagreement_rate": 0.0
+          }
+        ],
+        "reference_events": null,
+        "candidate_events": null,
+        "reasons": [
+          "no streaming comparison was run, so the event-level effect of quantisation is unmeasured - clip drift alone cannot rule it out"
+        ]
+      },
+      {
+        "variant": "int8",
+        "accepted": true,
+        "max_probability_delta": 0.017982,
+        "tolerance": 0.05,
+        "threshold_disagreements": 0,
+        "fa_per_hour_delta": null,
+        "event_count_delta": null,
+        "size_bytes": 44712,
+        "clip_sets": [
+          {
+            "name": "positives",
+            "samples": 6,
+            "threshold": 0.7,
+            "max_delta": 0.006439298391342163,
+            "mean_delta": 0.004182811516026656,
+            "disagreements": 0,
+            "reference_accept_rate": 0.0,
+            "candidate_accept_rate": 0.0,
+            "disagreement_rate": 0.0
+          },
+          {
+            "name": "negatives",
+            "samples": 62,
+            "threshold": 0.7,
+            "max_delta": 0.017982065677642822,
+            "mean_delta": 0.0029120953423121283,
+            "disagreements": 0,
+            "reference_accept_rate": 0.0,
+            "candidate_accept_rate": 0.0,
+            "disagreement_rate": 0.0
+          }
+        ],
+        "reference_events": null,
+        "candidate_events": null,
+        "reasons": [
+          "no streaming comparison was run, so the event-level effect of quantisation is unmeasured - clip drift alone cannot rule it out"
+        ]
+      }
+    ]
+  },
+  "frontend_parity": {
+    "audio": "frontend_test.wav",
+    "expected": "frontend_expected.npy",
+    "metadata": "frontend_metadata.json",
+    "feature_shape": [
+      197,
+      40
+    ],
+    "tolerance": 0.001,
+    "audio_sha256": "4c06d977d69fb491e1485292bdeea26d966dbe784131cdff48fb1bc272a75f6a"
+  }
+}
