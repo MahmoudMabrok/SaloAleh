@@ -25,7 +25,7 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import List, Optional, Sequence
+from typing import List, Optional, Sequence, Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -59,7 +59,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--all-targets",
         action="store_true",
-        help="train every phrase in phrases.json (respecting classes.include_phrases)",
+        help="train every collected phrase folder listed in phrases.json",
     )
     parser.add_argument("--config", help="path to config.yaml (default: configs/config.yaml)")
     parser.add_argument(
@@ -177,6 +177,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     targets = resolve_targets(config, requested)
 
     runs: List[TargetRun] = []
+    failures: List[Tuple[int, str]] = []
     for position, target_id in enumerate(targets, start=1):
         print(f"\n{'=' * 72}\ntarget {target_id:03d}  ({position}/{len(targets)})\n{'=' * 72}")
         try:
@@ -197,7 +198,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             )
         except Exception as exc:  # noqa: BLE001 - one target must not stop the batch
             LOGGER.exception("target %03d failed", target_id)
-            print(f"target {target_id:03d} FAILED: {type(exc).__name__}: {exc}")
+            reason = f"{type(exc).__name__}: {exc}"
+            failures.append((target_id, reason))
+            print(f"target {target_id:03d} FAILED: {reason}")
             continue
         if run.readiness:
             print()
@@ -208,10 +211,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     print(f"\n{'=' * 72}")
     for run in runs:
         print(f"  {run.target_id:03d}  {run.status:<22} {run.target_text}")
-    failed = len(targets) - len(runs)
-    if failed:
-        print(f"  {failed} target(s) failed - see the log above")
-    return 1 if failed else 0
+    if failures:
+        print("\nfailed targets:")
+        for target_id, reason in failures:
+            print(f"  {target_id:03d}  {reason}")
+        print("completed exports were kept; rerun one failure with --target <id>")
+    return 1 if failures else 0
 
 
 if __name__ == "__main__":

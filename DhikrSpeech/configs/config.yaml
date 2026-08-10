@@ -86,9 +86,10 @@ classes:
 # So training is binary phrase spotting, one independent model per phrase, and a
 # false count is far more damaging than an occasional miss.
 #
-# `phrase_id: all` builds one independent model for every phrase in phrases.json
-# (or the subset in classes.include_phrases). The CLI binds each id separately,
-# so manifests, checkpoints, calibration and exports never mix across phrases.
+# `phrase_id: all` builds one independent model for every numeric dataset folder
+# also listed in phrases.json (or the subset in classes.include_phrases). Catalog
+# entries with no collected folder are reported and skipped. The CLI binds each
+# id separately, so manifests, checkpoints, calibration and exports never mix.
 # `phrase_id: null` is only the legacy multi-class comparison mode.
 target:
   phrase_id: all

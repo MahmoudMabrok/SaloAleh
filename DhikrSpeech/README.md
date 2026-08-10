@@ -115,7 +115,7 @@ The notebook contains no thresholds, paths or hyperparameters of its own — it 
 1. Put your recordings on Drive (below).
 2. Open `notebooks/DhikrSpeech.ipynb` in Colab → **Runtime → Change runtime type → GPU**.
 3. Run **Build every configured phrase model end to end**. With the default
-   `target.phrase_id: all`, it creates one independent export folder per phrase.
+   `target.phrase_id: all`, it creates one independent export folder per collected phrase.
 4. Use the detailed cells below it only when inspecting or debugging one target.
 5. Copy the `exports/<target>/` folders into `app/src/main/assets/dhikr/<target>/`.
 
@@ -990,7 +990,7 @@ The ones worth knowing:
 | key | what it does |
 |---|---|
 | `paths.drive_root` / `paths.project_dir` | where the dataset lives |
-| `target.phrase_id` | `all` = one model per phrase; a numeric id = one model; `null` = legacy multi-class |
+| `target.phrase_id` | `all` = one model per collected/catalogued phrase; a numeric id = one model; `null` = legacy multi-class |
 | `target.output_mode` | `softmax` (2 outputs) or `sigmoid` (1 output) |
 | `target.auto_other_dhikr_negatives` | use the other phrase folders as negatives |
 | `target.phrase_overrides` | per-target `clip_seconds` |
@@ -1142,9 +1142,10 @@ compare against, and reading manifests written before the change. **It is not th
 path** — nothing in it produces the per-target export, the streaming evaluation or the Android
 metadata contract, so a model trained this way cannot be shipped by the app.
 
-For the production batch, use `phrase_id: all`, not `null`. The batch selector is expanded before
-training and every iteration receives a numeric target-bound config, so checkpoints, manifests,
-threshold calibration and `exports/<id>/` remain isolated.
+For the production batch, use `phrase_id: all`, not `null`. The batch selector intersects numeric
+`dataset/<id>/` folders with `phrases.json`; catalog entries whose recordings have not been
+collected yet are reported and skipped. Every iteration receives a numeric target-bound config, so
+checkpoints, manifests, threshold calibration and `exports/<id>/` remain isolated.
 
 After changing the vocabulary, re-run preprocessing (the manifest carries the old classes
 otherwise) and train under a fresh run: an old checkpoint has the wrong number of outputs, and

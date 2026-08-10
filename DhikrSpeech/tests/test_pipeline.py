@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -24,6 +25,7 @@ from src.config import Config
 from src.dataset import load_manifest
 from src.pipeline import prepare_target, resolve_targets, training_records
 from src.targets import TARGET_INDEX
+import train as train_cli
 
 SPEAKERS = [f"spk{index:02d}" for index in range(12)]
 
@@ -248,6 +250,17 @@ def test_all_target_selector_expands_the_phrase_catalog(project: Config) -> None
     assert batch.for_target(7).target.folder == "007"
 
 
+def test_all_target_selector_skips_catalog_phrases_without_dataset_folders(
+    project: Config,
+) -> None:
+    catalog = json.loads(project.paths.phrases_path.read_text(encoding="utf-8"))
+    catalog.append({"id": 8, "text": "catalogued but not collected"})
+    project.paths.phrases_path.write_text(json.dumps(catalog), encoding="utf-8")
+    batch = project.with_overrides({"target.phrase_id": "all"})
+
+    assert resolve_targets(batch, []) == [6, 7]
+
+
 def test_all_target_selector_respects_the_configured_phrase_subset(project: Config) -> None:
     batch = project.with_overrides(
         {"target.phrase_id": "all", "classes.include_phrases": [7]}
@@ -268,3 +281,28 @@ def test_a_missing_target_is_an_error() -> None:
 def test_a_non_numeric_target_is_an_error(project: Config) -> None:
     with pytest.raises(ValueError, match="not a phrase id"):
         resolve_targets(project, ["seven"])
+
+
+def test_batch_cli_repeats_failure_reasons_in_the_final_summary(
+    project: Config, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture,
+) -> None:
+    monkeypatch.setattr(train_cli, "load_config", lambda _path: project)
+    monkeypatch.setattr(train_cli, "resolve_targets", lambda _config, _requested: [6, 7])
+
+    def fake_run(_config, target_id, **_kwargs):
+        if target_id == 6:
+            raise ValueError("training needs a non-empty train and val split")
+        return SimpleNamespace(
+            target_id=7,
+            target_text="سبحان الله العظيم وبحمده",
+            status="EXPERIMENTAL",
+            readiness=None,
+        )
+
+    monkeypatch.setattr(train_cli, "run_target", fake_run)
+    monkeypatch.setattr(train_cli, "write_run_report", lambda *_args: None)
+
+    assert train_cli.main(["--all-targets", "--quiet"]) == 1
+    final_summary = capsys.readouterr().out.rsplit("=" * 72, 1)[-1]
+    assert "failed targets:" in final_summary
+    assert "006  ValueError: training needs a non-empty train and val split" in final_summary

@@ -86,19 +86,45 @@ __all__ = [
 def resolve_targets(config: Config, targets: Optional[Sequence[Union[int, str]]]) -> List[int]:
     """Resolve numeric ids or ``all`` into independent per-phrase runs.
 
-    ``all`` comes from either the CLI or ``target.phrase_id``. It means every id
-    in ``phrases.json``, narrowed by ``classes.include_phrases`` when that list is
-    configured. The phrase catalog is the authority rather than directory names:
-    a missing dataset folder then fails loudly for that target while the batch
-    continues with the rest.
+    ``all`` comes from either the CLI or ``target.phrase_id``. It means every
+    numeric phrase folder that exists in the dataset and is named in
+    ``phrases.json``, narrowed by ``classes.include_phrases`` when configured.
+    The catalog can legitimately contain phrases whose recordings have not been
+    collected yet; those are reported and skipped rather than turning an
+    otherwise successful batch into exit code 1. An explicitly requested
+    ``--target`` still fails loudly when its dataset is missing.
     """
     def every_phrase() -> List[int]:
         phrases = load_phrases(config.paths.phrases_path)
         selected = set(config.classes.include_phrases or [])
-        identifiers = [phrase.id for phrase in phrases if not selected or phrase.id in selected]
+        catalog = {phrase.id for phrase in phrases}
+        dataset_root = config.paths.dataset_path
+        if not dataset_root.is_dir():
+            raise FileNotFoundError(f"dataset directory not found: {dataset_root}")
+        collected = {
+            int(path.name)
+            for path in dataset_root.iterdir()
+            if path.is_dir() and path.name.isdigit() and int(path.name) > 0
+        }
+        candidates = catalog & collected
+        identifiers = sorted(candidates & selected if selected else candidates)
+        skipped = sorted((catalog & selected if selected else catalog) - collected)
+        if skipped:
+            LOGGER.warning(
+                "batch skips catalog phrase(s) with no dataset folder: %s",
+                ", ".join(f"{identifier:03d}" for identifier in skipped),
+            )
+        uncatalogued = sorted(collected - catalog)
+        if uncatalogued:
+            LOGGER.warning(
+                "batch skips dataset folder(s) missing from phrases.json: %s",
+                ", ".join(f"{identifier:03d}" for identifier in uncatalogued),
+            )
         if not identifiers:
             scope = " selected by classes.include_phrases" if selected else ""
-            raise ValueError(f"phrases.json contains no phrases{scope}")
+            raise ValueError(
+                f"no collected phrase folders{scope} are also present in phrases.json"
+            )
         return identifiers
 
     if not targets:
