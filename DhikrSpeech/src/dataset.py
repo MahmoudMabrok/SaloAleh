@@ -145,7 +145,7 @@ class Sample:
     """A single recording on disk.
 
     ``rel_dir`` is the sample's folder *as it exists in the dataset* (``007``,
-    ``negatives/hard/007``, ...), which is not the same as ``label`` in
+    ``unknown/hard_negative``, ...), which is not the same as ``label`` in
     single-target mode where every negative is labelled ``unknown``. Conditioned
     clips are cached under ``rel_dir``, so the shared negative pool is
     preprocessed once and reused by every target rather than re-written per run.

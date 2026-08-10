@@ -993,7 +993,6 @@ The ones worth knowing:
 | `target.phrase_id` | **which dhikr this model is for**; `null` = legacy multi-class mode |
 | `target.output_mode` | `softmax` (2 outputs) or `sigmoid` (1 output) |
 | `target.auto_other_dhikr_negatives` | use the other phrase folders as negatives |
-| `target.include_other_hard_negatives` | use `hard/<other id>/` too — off, and for good reason |
 | `target.phrase_overrides` | per-target `clip_seconds` |
 | `negative_sampling.ratio` / `weights` | how much of the negative pool one run trains on |
 | `split.speaker.source` | `auto` / `metadata` / `filename` / `parent` / `none` |

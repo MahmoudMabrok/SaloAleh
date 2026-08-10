@@ -9,6 +9,7 @@ and only shows up as a detector that fires on the wrong phrase.
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -28,6 +29,7 @@ from src.targets import (
     recommend_clip_seconds,
     sample_negatives,
     scan_target_dataset,
+    target_negative_paths,
 )
 
 PHRASES = [
@@ -66,6 +68,48 @@ def scan(root: Path, **kwargs):
 # ---------------------------------------------------------------------------
 # Positive / negative mapping
 # ---------------------------------------------------------------------------
+def test_negative_paths_are_every_non_target_folder_plus_unknown(tmp_path: Path) -> None:
+    root = tmp_path / "dataset"
+    for name in ("007", "006", "001", "unknown", ".cache"):
+        (root / name).mkdir(parents=True)
+
+    paths = target_negative_paths(root, TargetConfig(phrase_id=7))
+
+    assert [path.name for path in paths] == ["001", "006", "unknown"]
+
+
+def test_notebook_location_cell_lists_non_target_folders_and_unknown(
+    tmp_path: Path, capsys
+) -> None:
+    dataset = tmp_path / "project" / "dataset"
+    for name in ("007", "006", "001", "unknown"):
+        (dataset / name).mkdir(parents=True)
+
+    config = Config().with_overrides(
+        {
+            "paths.drive_root": str(tmp_path),
+            "paths.project_dir": "project",
+            "target.phrase_id": 7,
+        }
+    )
+    paths = config.paths
+    notebook_path = Path(__file__).resolve().parents[1] / "notebooks" / "DhikrSpeech.ipynb"
+    notebook = json.loads(notebook_path.read_text(encoding="utf-8"))
+    source = "".join(
+        next(cell["source"] for cell in notebook["cells"] if cell.get("id") == "cell-006")
+    )
+
+    exec(compile(source, str(notebook_path), "exec"), {"config": config, "paths": paths})
+
+    output = capsys.readouterr().out
+    assert "negative/001" in output
+    assert "negative/006" in output
+    assert "negative/unknown" in output
+    assert "negative/007" not in output
+    assert "target_negative_paths(" in source
+    assert "negatives_dir" not in source
+
+
 def test_target_folder_is_the_only_positive(dataset: Path) -> None:
     index = scan(dataset)
     positives = [s for s in index.samples if s.class_index == TARGET_INDEX]
@@ -267,7 +311,9 @@ def test_report_flags_a_missing_hard_negative_set(tmp_path: Path) -> None:
     touch(root, "006", 200)
     index = scan_target_dataset(root, PHRASES, TargetConfig(phrase_id=7))
     report = build_target_report(index, config=Config())
-    assert any("hard negative" in note for note in report.recommendations())
+    assert any(
+        "unknown/hard_negative/" in note for note in report.recommendations()
+    )
 
 
 def test_report_counts_speakers_when_known(dataset: Path) -> None:

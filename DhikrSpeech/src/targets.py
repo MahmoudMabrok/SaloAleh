@@ -71,6 +71,7 @@ __all__ = [
     "sample_negatives",
     "scan_target_dataset",
     "target_class_names",
+    "target_negative_paths",
 ]
 
 # Class indices inside a single-target run. 1 is the target so that
@@ -106,6 +107,42 @@ HARD_NEGATIVE = "hard_negative"
 def target_class_names() -> List[str]:
     """Class list in class-index order: ``["unknown", "target"]``."""
     return [UNKNOWN_LABEL, TARGET_LABEL]
+
+
+def target_negative_paths(
+    dataset_dir: PathLike,
+    target: TargetConfig,
+    unknown_class: str = UNKNOWN_LABEL,
+) -> List[Path]:
+    """Top-level folders that supply negatives for one target.
+
+    The binary dataset has no single ``negatives`` directory. When automatic
+    other-dhikr negatives are enabled, every visible dataset folder except the
+    active target contributes negatives; ``unknown/`` always contributes them.
+    A missing ``unknown/`` path is still returned so setup/status UIs can report
+    it as missing instead of silently omitting the expected negative source.
+    """
+    if not target.enabled:
+        raise ValueError("target_negative_paths needs target.phrase_id to be set")
+
+    root = Path(dataset_dir)
+    folders: Dict[str, Path] = {}
+    if root.is_dir():
+        for entry in root.iterdir():
+            if not entry.is_dir() or entry.name.startswith("."):
+                continue
+            if entry.name == target.folder:
+                continue
+            if entry.name != unknown_class and not target.auto_other_dhikr_negatives:
+                continue
+            folders[entry.name] = entry
+
+    folders.setdefault(unknown_class, root / unknown_class)
+
+    def sort_key(path: Path) -> Tuple[int, Union[int, str]]:
+        return (0, int(path.name)) if path.name.isdigit() else (1, path.name)
+
+    return sorted(folders.values(), key=sort_key)
 
 
 def scan_target_dataset(
@@ -415,7 +452,7 @@ class TargetDatasetReport:
                 "no hard negatives. Without recordings of the target's prefixes and "
                 "near-misses ('سبحان الله', 'سبحان الله العظيم', ...) the model learns "
                 "to fire on the opening words, which is the single most common cause of "
-                "false counts. Collect them under negatives/hard/<target>/."
+                "false counts. Collect them under unknown/hard_negative/."
             )
         if not self.negative_clips:
             notes.append(
