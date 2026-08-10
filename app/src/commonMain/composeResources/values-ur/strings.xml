@@ -972,4 +972,16 @@
     <string name="backup_error_same">یہ اکاؤنٹ پہلے ہی اس آلے پر استعمال ہو رہا ہے۔</string>
     <string name="backup_error_not_found">اس کوڈ کا کوئی اکاؤنٹ موجود نہیں۔</string>
     <string name="backup_error_failed">سرور تک رسائی نہیں ہو سکی۔ اپنا انٹرنیٹ دیکھ کر دوبارہ کوشش کریں۔</string>
+    <string name="settings_dhikr_model_test">🎙️ شناختی ماڈل آزمائیں</string>
+    <string name="dhikr_model_test_title">ذکر ماڈل ٹیسٹ</string>
+    <string name="dhikr_model_test_intro">جملے کا ماڈل ID یا متن سے منتخب کریں، پھر سننا شروع کریں۔ مکمل جملے کی تصدیق کے بعد ہی شمار ہوگا۔</string>
+    <string name="dhikr_model_phrase_label">جملے کی ID یا متن</string>
+    <string name="dhikr_model_phrase_hint">مثال: 7، 007، یا ذکر کا مکمل متن</string>
+    <string name="dhikr_model_no_bundles">ابھی assets/dhikr_models میں کوئی ماڈل بنڈل موجود نہیں۔</string>
+    <string name="dhikr_model_load">لوڈ کریں</string>
+    <string name="dhikr_model_start">سننا شروع کریں</string>
+    <string name="dhikr_model_stop">روکیں</string>
+    <string name="dhikr_model_confirmed_count">تصدیق شدہ تکرار</string>
+    <string name="dhikr_model_score">ماڈل اسکور: %1$.3f</string>
+    <string name="dhikr_model_runtime_state">رن ٹائم: %1$s · ڈیٹیکٹر: %2$s</string>
 </resources>

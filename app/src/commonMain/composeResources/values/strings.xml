@@ -1022,4 +1022,16 @@
     <string name="backup_error_same">هذا هو الحساب المستخدم على هذا الجهاز بالفعل.</string>
     <string name="backup_error_not_found">لا يوجد حساب بهذا الرمز.</string>
     <string name="backup_error_failed">تعذّر الاتصال بالخادم. تأكد من الإنترنت وحاول مجددًا.</string>
+    <string name="settings_dhikr_model_test">🎙️ اختبار نموذج التعرّف</string>
+    <string name="dhikr_model_test_title">اختبار نموذج الذكر</string>
+    <string name="dhikr_model_test_intro">اختر نموذج عبارة بالرقم أو بالنص، ثم ابدأ الاستماع. تُحتسب العبارة فقط بعد تأكيد كاشف النموذج الكامل.</string>
+    <string name="dhikr_model_phrase_label">رقم العبارة أو نصها</string>
+    <string name="dhikr_model_phrase_hint">مثال: 7 أو 007 أو نص الذكر كاملًا</string>
+    <string name="dhikr_model_no_bundles">لا توجد حزم نماذج داخل assets/dhikr_models بعد.</string>
+    <string name="dhikr_model_load">تحميل</string>
+    <string name="dhikr_model_start">بدء الاستماع</string>
+    <string name="dhikr_model_stop">إيقاف</string>
+    <string name="dhikr_model_confirmed_count">مرات مؤكدة</string>
+    <string name="dhikr_model_score">درجة النموذج: %1$.3f</string>
+    <string name="dhikr_model_runtime_state">التشغيل: %1$s · الكاشف: %2$s</string>
 </resources>

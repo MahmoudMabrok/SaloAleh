@@ -5,6 +5,7 @@ local.properties
 .kotlin
 .DS_Store
 /build
+/dhikr-model/build/
 /captures
 .externalNativeBuild
 .cxx

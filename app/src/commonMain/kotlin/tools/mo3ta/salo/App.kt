@@ -79,6 +79,7 @@ import tools.mo3ta.salo.ui.settings.PaywallScreen
 import tools.mo3ta.salo.ui.settings.ReferralScreen
 import tools.mo3ta.salo.ui.settings.AccountBackupScreen
 import tools.mo3ta.salo.ui.settings.VoiceDhikrScreen
+import tools.mo3ta.salo.ui.settings.DhikrModelTestScreen
 import tools.mo3ta.salo.ui.settings.PremiumPromoDialog
 import tools.mo3ta.salo.ui.settings.PurchaseSuccessDialog
 import tools.mo3ta.salo.ui.settings.SettingsScreen
@@ -192,6 +193,7 @@ fun App(
         var showExtensionQr by remember { mutableStateOf(false) }
         var showReferral by remember { mutableStateOf(false) }
         var showVoiceDhikr by remember { mutableStateOf(false) }
+        var showDhikrModelTest by remember { mutableStateOf(false) }
         var showAccountBackup by remember { mutableStateOf(false) }
         var showPaywall by remember { mutableStateOf(false) }
         var nicknamePromptRequested by remember { mutableStateOf(false) }
@@ -201,6 +203,7 @@ fun App(
             enabled = showPaywall ||
                 showReferral ||
                 showVoiceDhikr ||
+                showDhikrModelTest ||
                 showAccountBackup ||
                 showDhikrRewards ||
                 showBaqiyatChallenge ||
@@ -222,6 +225,7 @@ fun App(
                 showPaywall -> showPaywall = false
                 showReferral -> showReferral = false
                 showVoiceDhikr -> showVoiceDhikr = false
+                showDhikrModelTest -> showDhikrModelTest = false
                 showAccountBackup -> showAccountBackup = false
                 showDhikrRewards -> showDhikrRewards = false
                 showBaqiyatChallenge -> showBaqiyatChallenge = false
@@ -291,6 +295,7 @@ fun App(
         val nicknamePromptBlocked = showPaywall ||
             showReferral ||
             showVoiceDhikr ||
+            showDhikrModelTest ||
             showAccountBackup ||
             showDhikrRewards ||
             showBaqiyatChallenge ||
@@ -320,6 +325,7 @@ fun App(
             showPaywall -> PaywallScreen(onBack = { showPaywall = false })
             showReferral -> ReferralScreen(onBack = { showReferral = false })
             showVoiceDhikr -> VoiceDhikrScreen(onBack = { showVoiceDhikr = false })
+            showDhikrModelTest -> DhikrModelTestScreen(onBack = { showDhikrModelTest = false })
             showAccountBackup -> AccountBackupScreen(onBack = { showAccountBackup = false })
             showExtensionQr -> ExtensionQrScreen(onBack = { showExtensionQr = false })
             showOnboarding -> OnboardingScreen(
@@ -441,6 +447,7 @@ fun App(
                                 onOpenPaywall = { showPaywall = true },
                                 onOpenReferral = { showReferral = true },
                                 onOpenVoiceDhikr = { showVoiceDhikr = true },
+                                onOpenDhikrModelTest = { showDhikrModelTest = true },
                                 onOpenAccountBackup = { showAccountBackup = true },
                             )
                         }

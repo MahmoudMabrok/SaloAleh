@@ -95,6 +95,7 @@ fun SettingsScreen(
     onOpenPaywall: () -> Unit = {},
     onOpenReferral: () -> Unit = {},
     onOpenVoiceDhikr: () -> Unit = {},
+    onOpenDhikrModelTest: () -> Unit = {},
     onOpenAccountBackup: () -> Unit = {},
 ) {
     val store: NotificationSettingsStore = koinInject()
@@ -239,6 +240,14 @@ fun SettingsScreen(
                     onOpenVoiceDhikr()
                 },
             )
+
+            if (dhikrModelTestAvailable) {
+                SettingLinkRow(
+                    label = stringResource(Res.string.settings_dhikr_model_test),
+                    labelColor = MohamedLoversPalette.GoldGlow,
+                    onClick = onOpenDhikrModelTest,
+                )
+            }
 
             Text(
                 text = stringResource(Res.string.settings_account_header),

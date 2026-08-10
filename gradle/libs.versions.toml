@@ -25,6 +25,7 @@ firebaseMessaging = "24.1.0"
 gmsCodeScanner = "16.1.0"
 billing = "9.1.0"
 installReferrer = "2.2"
+liteRt = "1.4.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -62,9 +63,12 @@ firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging
 gms-code-scanner = { group = "com.google.android.gms", name = "play-services-code-scanner", version.ref = "gmsCodeScanner" }
 billing = { group = "com.android.billingclient", name = "billing", version.ref = "billing" }
 install-referrer = { group = "com.android.installreferrer", name = "installreferrer", version.ref = "installReferrer" }
+litert = { group = "com.google.ai.edge.litert", name = "litert", version.ref = "liteRt" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }

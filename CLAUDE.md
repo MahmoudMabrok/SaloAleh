@@ -441,6 +441,15 @@ in `DhikrSpeech/docs/DATA_COLLECTION.md`.
   nothing about 007. `src/parity.py` writes `frontend_test.wav` / `frontend_expected.npy` /
   `frontend_metadata.json` so a front-end mismatch is a one-line device check instead of a model
   that returns confident nonsense.
+- **`dhikr-model/` is the Android runtime for that contract.** `DhikrModelRunner` accepts a numeric
+  phrase id (`7`/`007`) or the exact phrase text and owns bundle discovery, SHA/tensor validation,
+  microphone capture, the metadata-driven log-mel front-end, LiteRT quantisation/inference,
+  smoothing and the calibrated hysteresis detector. Bundles live at
+  `app/src/androidMain/assets/dhikr_models/<padded id>/`; copy the exact model named by metadata's
+  `model.file` — INT8 only when verification recommended it, otherwise the float32 export.
+  The Settings → Voice dhikr section exposes an Android-only test screen with live score, detector
+  state and confirmed count. Challenge integration should collect `runner.events`; it must never
+  increment from a raw score threshold.
 - **INT8 is verified, not assumed.** Keras / float32 / INT8 are scored on the same positives,
   negatives, hard negatives *and* streaming windows; INT8 is rejected when it drifts beyond
   tolerance **or** adds false activations per hour — a variant whose probabilities look close but

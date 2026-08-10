@@ -1010,4 +1010,16 @@
     <string name="backup_error_same">That account is already the one in use on this device.</string>
     <string name="backup_error_not_found">No account exists for that code.</string>
     <string name="backup_error_failed">Could not reach the server. Check your connection and try again.</string>
+    <string name="settings_dhikr_model_test">🎙️ Test recognition model</string>
+    <string name="dhikr_model_test_title">Dhikr model test</string>
+    <string name="dhikr_model_test_intro">Choose a phrase model by ID or text, then start listening. A phrase is counted only when the complete-phrase detector confirms it.</string>
+    <string name="dhikr_model_phrase_label">Phrase ID or text</string>
+    <string name="dhikr_model_phrase_hint">For example: 7, 007, or the complete dhikr text</string>
+    <string name="dhikr_model_no_bundles">No model bundles are installed in assets/dhikr_models yet.</string>
+    <string name="dhikr_model_load">Load</string>
+    <string name="dhikr_model_start">Start listening</string>
+    <string name="dhikr_model_stop">Stop</string>
+    <string name="dhikr_model_confirmed_count">confirmed repetitions</string>
+    <string name="dhikr_model_score">Model score: %1$.3f</string>
+    <string name="dhikr_model_runtime_state">Runtime: %1$s · detector: %2$s</string>
 </resources>
