@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Train and export one dhikr detector, or a batch of them.
 
+    python train.py                                  config selects all phrases
+    python train.py --all-targets                    every phrase, explicitly
     python train.py --target 007                     one target, end to end
     python train.py --targets 001,002,006,007        one model each, in sequence
     python train.py --target 007 --stage dataset     dataset report only, no TF
@@ -53,6 +55,11 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--targets",
         help="comma-separated phrase ids; one independent model is trained per id",
+    )
+    parser.add_argument(
+        "--all-targets",
+        action="store_true",
+        help="train every phrase in phrases.json (respecting classes.include_phrases)",
     )
     parser.add_argument("--config", help="path to config.yaml (default: configs/config.yaml)")
     parser.add_argument(
@@ -165,6 +172,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         requested.append(args.target)
     if args.targets:
         requested.extend(part for part in args.targets.split(",") if part.strip())
+    if args.all_targets:
+        requested.append("all")
     targets = resolve_targets(config, requested)
 
     runs: List[TargetRun] = []
@@ -176,7 +185,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 target_id,
                 stage=args.stage,
                 architecture=args.arch,
-                run_name=args.run_name,
+                run_name=(
+                    f"{args.run_name}_{target_id:03d}"
+                    if args.run_name and len(targets) > 1
+                    else args.run_name
+                ),
                 fresh=args.fresh,
                 overwrite_audio=args.overwrite_audio,
                 calibrate=not args.no_calibrate,

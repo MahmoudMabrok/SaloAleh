@@ -526,11 +526,13 @@ class TargetConfig:
     phrase just spoken, completely?* Everything else, including the other dhikr and
     incomplete versions of this one, is a negative.
 
-    ``phrase_id: null`` leaves the pipeline in the legacy multi-class mode, which
-    is kept for the ``06 - Experiment`` comparison and for old manifests.
+    ``phrase_id: all`` is the batch selector: orchestration expands it to every
+    configured phrase, then :meth:`Config.for_target` binds a fresh config to one
+    numeric id for each independent run. ``phrase_id: null`` leaves the pipeline
+    in legacy multi-class mode for the comparison experiment and old manifests.
     """
 
-    phrase_id: Optional[int] = None
+    phrase_id: Optional[Union[int, str]] = None
     # softmax = 2 outputs (target, unknown), sigmoid = 1 output P(target).
     # Both are supported so the two can be compared rather than assumed.
     output_mode: str = "softmax"
@@ -549,17 +551,31 @@ class TargetConfig:
     def __post_init__(self) -> None:
         if self.output_mode not in ("softmax", "sigmoid"):
             raise ValueError("target.output_mode must be 'softmax' or 'sigmoid'")
-        if self.phrase_id is not None and int(self.phrase_id) < 1:
+        if isinstance(self.phrase_id, str):
+            value = self.phrase_id.strip().lower()
+            if value == "all":
+                self.phrase_id = "all"
+            elif value.isdigit():
+                self.phrase_id = int(value)
+            else:
+                raise ValueError("target.phrase_id must be a positive id, 'all', or null")
+        if self.phrase_id is not None and self.phrase_id != "all" and int(self.phrase_id) < 1:
             raise ValueError("target.phrase_id must be 1 or greater")
 
     @property
     def enabled(self) -> bool:
-        return self.phrase_id is not None
+        """Whether this config is bound to one numeric target."""
+        return self.phrase_id is not None and self.phrase_id != "all"
+
+    @property
+    def batch_enabled(self) -> bool:
+        """Whether orchestration should build one model for every selected phrase."""
+        return self.phrase_id == "all"
 
     @property
     def folder(self) -> Optional[str]:
         """The target's zero-padded dataset folder, e.g. 7 -> ``007``."""
-        return None if self.phrase_id is None else f"{int(self.phrase_id):03d}"
+        return f"{int(self.phrase_id):03d}" if self.enabled else None
 
     @property
     def num_outputs(self) -> int:
@@ -1139,15 +1155,19 @@ class Config:
 
     def target_manifest_path(self, phrase_id: Optional[int] = None) -> Path:
         """Manifest for one target. Split and labels are target-specific."""
-        identifier = self.target.phrase_id if phrase_id is None else int(phrase_id)
-        if identifier is None:
+        identifier = int(phrase_id) if phrase_id is not None else self.target.phrase_id
+        if not self.target.enabled and phrase_id is None:
+            return self.paths.manifest_path
+        if identifier is None or identifier == "all":
             return self.paths.manifest_path
         return self.paths.processed_path / "manifests" / f"target_{int(identifier):03d}.csv"
 
     def target_export_path(self, phrase_id: Optional[int] = None) -> Path:
         """``exports/<target id>/`` - one independent model per dhikr."""
-        identifier = self.target.phrase_id if phrase_id is None else int(phrase_id)
-        if identifier is None:
+        identifier = int(phrase_id) if phrase_id is not None else self.target.phrase_id
+        if not self.target.enabled and phrase_id is None:
+            return self.paths.exports_path
+        if identifier is None or identifier == "all":
             return self.paths.exports_path
         return self.paths.exports_path / f"{int(identifier):03d}"
 
@@ -1217,7 +1237,9 @@ class Config:
 
     def summary(self) -> str:
         frames, mels, _ = self.input_shape
-        if self.target.enabled:
+        if self.target.batch_enabled:
+            vocabulary = "batch: one binary model per selected phrase"
+        elif self.target.enabled:
             vocabulary = (
                 f"single target {self.target.folder} vs everything else "
                 f"({self.target.output_mode}, {self.target.num_outputs} output"

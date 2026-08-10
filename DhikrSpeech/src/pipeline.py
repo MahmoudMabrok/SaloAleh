@@ -1,9 +1,10 @@
 """End-to-end orchestration for one target, and for a batch of them.
 
-``train.py --target 007`` and ``train.py --targets 001,002,007`` run through
-here. Batching trains **one target at a time and exports one independent model
-each** - there is deliberately no path in this module that produces a single
-multi-class model, because that is not what Android loads.
+``train.py --target 007``, ``train.py --targets 001,002,007`` and the configured
+``target.phrase_id: all`` batch run through here. Batching trains **one target at
+a time and exports one independent model each** - there is deliberately no path
+in this module that produces a single multi-class production model, because that
+is not what Android loads.
 
 The stages are separate functions rather than one script so the notebook can run
 them individually and inspect what each produced:
@@ -83,12 +84,30 @@ __all__ = [
 
 
 def resolve_targets(config: Config, targets: Optional[Sequence[Union[int, str]]]) -> List[int]:
-    """Normalise ``--targets 001,7`` into ``[1, 7]``, or fall back to the config."""
+    """Resolve numeric ids or ``all`` into independent per-phrase runs.
+
+    ``all`` comes from either the CLI or ``target.phrase_id``. It means every id
+    in ``phrases.json``, narrowed by ``classes.include_phrases`` when that list is
+    configured. The phrase catalog is the authority rather than directory names:
+    a missing dataset folder then fails loudly for that target while the batch
+    continues with the rest.
+    """
+    def every_phrase() -> List[int]:
+        phrases = load_phrases(config.paths.phrases_path)
+        selected = set(config.classes.include_phrases or [])
+        identifiers = [phrase.id for phrase in phrases if not selected or phrase.id in selected]
+        if not identifiers:
+            scope = " selected by classes.include_phrases" if selected else ""
+            raise ValueError(f"phrases.json contains no phrases{scope}")
+        return identifiers
+
     if not targets:
+        if config.target.batch_enabled:
+            return every_phrase()
         if not config.target.enabled:
             raise ValueError(
                 "no target given and target.phrase_id is null in the config - "
-                "pass --target 007 or set target.phrase_id"
+                "pass --target 007, pass --all-targets, or set target.phrase_id"
             )
         return [int(config.target.phrase_id)]  # type: ignore[arg-type]
 
@@ -96,6 +115,11 @@ def resolve_targets(config: Config, targets: Optional[Sequence[Union[int, str]]]
     for item in targets:
         text = str(item).strip()
         if not text:
+            continue
+        if text.lower() == "all":
+            for value in every_phrase():
+                if value not in resolved:
+                    resolved.append(value)
             continue
         try:
             value = int(text)

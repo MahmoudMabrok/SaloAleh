@@ -86,10 +86,12 @@ classes:
 # So training is binary phrase spotting, one independent model per phrase, and a
 # false count is far more damaging than an occasional miss.
 #
-# `phrase_id: null` puts the pipeline back in the legacy multi-class mode, which
-# only the 06 comparison experiment and old manifests still use.
+# `phrase_id: all` builds one independent model for every phrase in phrases.json
+# (or the subset in classes.include_phrases). The CLI binds each id separately,
+# so manifests, checkpoints, calibration and exports never mix across phrases.
+# `phrase_id: null` is only the legacy multi-class comparison mode.
 target:
-  phrase_id: 7                       # 007 سبحان الله العظيم وبحمده
+  phrase_id: all
   # softmax = 2 outputs (unknown, target); sigmoid = 1 output P(target).
   # Both are supported so they can be compared rather than assumed. softmax is
   # the default because it is the smaller change from the existing pipeline.

@@ -238,6 +238,28 @@ def test_target_defaults_to_the_config(project: Config) -> None:
     assert resolve_targets(project, []) == [7]
 
 
+def test_all_target_selector_expands_the_phrase_catalog(project: Config) -> None:
+    batch = project.with_overrides({"target.phrase_id": "all"})
+
+    assert batch.target.batch_enabled
+    assert not batch.target.enabled
+    assert resolve_targets(batch, []) == [6, 7]
+    assert batch.for_target(6).target.folder == "006"
+    assert batch.for_target(7).target.folder == "007"
+
+
+def test_all_target_selector_respects_the_configured_phrase_subset(project: Config) -> None:
+    batch = project.with_overrides(
+        {"target.phrase_id": "all", "classes.include_phrases": [7]}
+    )
+
+    assert resolve_targets(batch, []) == [7]
+
+
+def test_cli_all_target_selector_can_override_one_configured_target(project: Config) -> None:
+    assert resolve_targets(project, ["all"]) == [6, 7]
+
+
 def test_a_missing_target_is_an_error() -> None:
     with pytest.raises(ValueError, match="no target given"):
         resolve_targets(Config(), [])

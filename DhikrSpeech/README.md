@@ -71,8 +71,8 @@ One Colab notebook, one config file, one reusable Python package, plus a CLI for
 ```text
 DhikrSpeech/
 ├── notebooks/
-│   └── DhikrSpeech.ipynb         the whole pipeline for one target, run top to bottom
-├── train.py                      CLI: train/export one target or a batch of them
+│   └── DhikrSpeech.ipynb         batch build + detailed one-target drill-down
+├── train.py                      CLI: train/export every target or an explicit subset
 ├── src/
 │   ├── config.py                 typed config loaded from configs/config.yaml
 │   ├── audio.py                  decode, trim, normalise, fit length, write WAV
@@ -114,13 +114,16 @@ The notebook contains no thresholds, paths or hyperparameters of its own — it 
 
 1. Put your recordings on Drive (below).
 2. Open `notebooks/DhikrSpeech.ipynb` in Colab → **Runtime → Change runtime type → GPU**.
-3. Set `TARGET_PHRASE_ID` in the *Choose the target* cell.
-4. **Runtime → Run all**, or stage by stage.
-5. Copy `exports/<target>/` into `app/src/main/assets/dhikr/<target>/`.
+3. Run **Build every configured phrase model end to end**. With the default
+   `target.phrase_id: all`, it creates one independent export folder per phrase.
+4. Use the detailed cells below it only when inspecting or debugging one target.
+5. Copy the `exports/<target>/` folders into `app/src/main/assets/dhikr/<target>/`.
 
-Or from a shell, for one target or several:
+Or from a shell, for every target, one target, or a subset:
 
 ```bash
+python train.py                               # target.phrase_id: all → every phrase
+python train.py --all-targets                 # every phrase, explicitly
 python train.py --target 007                  # dataset → train → evaluate → stream → export
 python train.py --targets 001,002,006,007     # one independent model each, in sequence
 python train.py --target 007 --stage dataset  # the dataset report only; no TensorFlow needed
@@ -987,7 +990,7 @@ The ones worth knowing:
 | key | what it does |
 |---|---|
 | `paths.drive_root` / `paths.project_dir` | where the dataset lives |
-| `target.phrase_id` | **which dhikr this model is for**; `null` = legacy multi-class mode |
+| `target.phrase_id` | `all` = one model per phrase; a numeric id = one model; `null` = legacy multi-class |
 | `target.output_mode` | `softmax` (2 outputs) or `sigmoid` (1 output) |
 | `target.auto_other_dhikr_negatives` | use the other phrase folders as negatives |
 | `target.phrase_overrides` | per-target `clip_seconds` |
@@ -1083,9 +1086,10 @@ false-activation rate; a model trained on more data has a different score distri
 old threshold is a number from a different measurement.
 
 **Adding a new dhikr** is a new target, not a new class: create `dataset/<id>/`, add it to
-`phrases.json`, collect hard negatives for it under `unknown/hard_negative/`, and run
-`python train.py --target <id>`. Nothing that already shipped is invalidated — which is the one
-unambiguous operational win of this architecture.
+`phrases.json`, and collect hard negatives for it under `unknown/hard_negative/`. The next
+`python train.py` batch includes it automatically; `python train.py --target <id>` builds only that
+new model. Nothing that already shipped is invalidated — which is the one unambiguous operational
+win of this architecture.
 
 Re-splitting note: the speaker-safe split re-randomises from the seed each time preprocessing
 runs, so a speaker can move between train and test as the dataset grows. That is fine for
@@ -1137,6 +1141,10 @@ It exists for two things: the `08 · Experiment` comparison, which needs a multi
 compare against, and reading manifests written before the change. **It is not the production
 path** — nothing in it produces the per-target export, the streaming evaluation or the Android
 metadata contract, so a model trained this way cannot be shipped by the app.
+
+For the production batch, use `phrase_id: all`, not `null`. The batch selector is expanded before
+training and every iteration receives a numeric target-bound config, so checkpoints, manifests,
+threshold calibration and `exports/<id>/` remain isolated.
 
 After changing the vocabulary, re-run preprocessing (the manifest carries the old classes
 otherwise) and train under a fresh run: an old checkpoint has the wrong number of outputs, and
