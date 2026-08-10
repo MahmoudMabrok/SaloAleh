@@ -706,25 +706,22 @@ pip install -r requirements.txt
 python app.py                                       # http://127.0.0.1:7860
 ```
 
-It pulls the export from the shared folder named in `space/model_source.txt` on startup — a Google
-Drive folder, a `hf://user/repo`, a direct URL or a local path — so there is nothing to copy.
+It pulls the export root from the shared folder named in `space/model_source.txt` on startup — a
+Google Drive folder, a `hf://user/repo`, a direct URL or a local path — so there is nothing to copy.
+Target subfolders (`006/`, `007/`, ...) are preserved because every phrase owns identically named
+`labels.txt` and `model_metadata.json` sidecars.
 `DHIKR_MODEL_SOURCE` overrides it, `DHIKR_MODEL_DIR` points at a local exports folder instead, and
-the *Load a model* tab takes a link or the files directly.
+the *Add phrase models* tab takes a link or the files directly.
 
-Four tabs: classify one clip (with the log-mel the model saw), scan a long recording and count the
-dhikr in it, read the export's metadata and benchmarks, and swap models without redeploying.
-Several `.tflite` variants can be loaded side by side, so comparing `int8` against `float32` on the
-same clip is one click.
+The picker is phrase-first and marks the recommended quantisation variant. Four tabs test one clip
+as target-vs-not-target, count only the selected phrase with the exported hysteresis detector, show
+that phrase's calibration/measurements, and add more phrase bundles. Several `.tflite` variants can
+live inside each target folder, so INT8/float32 comparison remains one click away.
 
-It runs on **LiteRT**, not TensorFlow, so it installs in seconds. It also reads the front-end from
-`model_meta.json` rather than `configs/config.yaml` — the exported metadata is what the weights were
-trained with, and a config retuned since the export would otherwise feed the model features it has
-never seen. When the two disagree about the input shape, the app says so on screen.
-
-It also warns when a model has **no `unknown` class**. That is worth watching for: softmax sums to 1,
-so a model trained only on phrases has nowhere to put silence or background noise and hands it to a
-phrase instead, confidently. Accuracy on held-out *phrase* clips stays high while the counter fires
-on nothing at all — which is exactly the failure the evaluation notebook cannot see.
+It runs on **LiteRT**, not TensorFlow, so it installs in seconds. It reads the target id, output mode,
+front-end and calibrated detector from each `model_metadata.json`, not from the current config. This
+also matters for one-output sigmoid exports: the scalar is P(target) and must never be normalised as
+a one-class softmax, which would make every window read 100% target.
 
 To publish it as a Hugging Face Space, `space/deploy.sh` stages `src/`, `configs/config.yaml` and
 `phrases.json` alongside the app and pushes — the Space is a separate git repo and cannot import
@@ -764,7 +761,7 @@ The TFLite model input is a `(frames, n_mels, 1)` **log mel spectrogram**, not a
 must reproduce the training front-end exactly — a mismatch here is the single most common reason a
 model that scored 98 % in section 04 behaves randomly on a phone.
 
-Every parameter is in `model_meta.json`; with the defaults in this repository:
+Every parameter is in `model_metadata.json`; with the defaults in this repository:
 
 | parameter | value |
 |---|---|
@@ -791,7 +788,7 @@ import kotlin.math.ln
 import kotlin.math.sqrt
 
 /**
- * Reproduces src/features.py::LogMelExtractor. Parameters must match model_meta.json.
+ * Reproduces src/features.py::LogMelExtractor. Parameters must match model_metadata.json.
  * melFilterbank is the "filters" array from mel_filterbank.json: [nMels][nFft / 2 + 1].
  */
 class LogMelFrontend(

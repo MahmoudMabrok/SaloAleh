@@ -10,14 +10,15 @@ source                       example
 Google Drive folder          https://drive.google.com/drive/folders/<id>
 Google Drive file            https://drive.google.com/file/d/<id>/view
 Hugging Face repo            hf://user/dhikrspeech-models  (or just user/repo)
-direct file URL              https://example.com/dhikr_int8.tflite
+direct file URL              https://example.com/dhikr_007_int8.tflite
 local path                   /mnt/exports
 ===========================  ==================================================
 
-A folder is worth more than a single file here: ``labels.txt`` and
-``model_meta.json`` have to travel with the ``.tflite``, and fetching the folder
-is what keeps them together. A lone ``.tflite`` loads with positional class
-names and the front-end guessed from ``config.yaml``.
+The source should normally be the **export root**, with one subfolder per phrase.
+Every target owns a ``labels.txt`` and ``model_metadata.json`` with the same
+filenames, so preserving ``006/``, ``007/``, ... is what keeps each TFLite model
+with its phrase text, front-end and calibrated detector. A lone ``.tflite`` can
+only infer the phrase id from its filename and must guess the rest.
 """
 
 from __future__ import annotations

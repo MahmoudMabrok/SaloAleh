@@ -12,11 +12,11 @@ license: mit
 short_description: Test an offline Arabic dhikr phrase spotter and counter
 ---
 
-# DhikrSpeech · model playground
+# DhikrSpeech · per-phrase model playground
 
-A Gradio Space for testing an exported **DhikrSpeech** model — the offline Arabic dhikr phrase
-spotter that [SaloAleh](https://github.com/MahmoudMabrok/SaloAleh) ships to Android as a quantised
-TFLite file.
+A Gradio Space for testing exported **DhikrSpeech** models. SaloAleh ships one independent binary
+TFLite model per Arabic dhikr phrase; the picker therefore starts with the phrase, then shows the
+available quantisation variants for that target.
 
 The training notebook already reports accuracy, a confusion matrix and ROC curves. What it cannot
 tell you is how the exported flatbuffer behaves on audio someone just spoke into a microphone, and
@@ -25,10 +25,10 @@ That is what this Space is for.
 
 | Tab | What it answers |
 |---|---|
-| **Single clip** | Does the model recognise this phrase, and what did it actually see? |
-| **Scan a recording** | How many dhikr are in this recording, and where? |
-| **Model info** | Which build is this, what front-end does it need, how fast is it? |
-| **Load a model** | Try a different export without redeploying. |
+| **Test one clip** | Does the selected phrase model accept this clip, and what did it see? |
+| **Count selected phrase** | How many repetitions of this exact phrase are in the recording? |
+| **Phrase model details** | Which target, variant, detector calibration and measurements are loaded? |
+| **Add phrase models** | Fetch an export root or upload one complete phrase bundle. |
 
 Audio is processed in memory for the length of the request and never written to disk.
 
@@ -36,23 +36,23 @@ Audio is processed in memory for the length of the request and never written to 
 
 ## Adding a model
 
-The exports are not in git — they are produced on Drive by section **05 · Export** of
+The exports are not in git — they are produced on Drive by section **06 · Export** of
 `notebooks/DhikrSpeech.ipynb`. There are three ways in, and the first needs no copying at all.
 
 ### 1 · From a shared folder (default)
 
-`model_source.txt` holds a link the Space pulls on every start, so a fresh deploy comes up with a
-model already loaded:
+`model_source.txt` holds a link the Space pulls on every start, so a fresh deploy comes up with all
+available phrase models already loaded:
 
 ```
 https://drive.google.com/drive/folders/<id>     # share as "Anyone with the link"
 hf://<user>/<repo>                              # a Hugging Face model repo
-https://example.com/dhikr_int8.tflite           # a direct file URL
+https://example.com/dhikr_007_int8.tflite       # one direct model (metadata unavailable)
 /mnt/exports                                    # a local path
 ```
 
 `DHIKR_MODEL_SOURCE` overrides the file, so a hosted Space can be repointed from its **Settings →
-Variables** without a commit. The **Load a model** tab also takes a link at runtime.
+Variables** without a commit. The **Add phrase models** tab also takes a link at runtime.
 
 Only the export is fetched (`*.tflite`, `labels.txt`, `model_metadata.json`, …) — a `saved_model/`
 directory is skipped unless `DHIKR_FETCH_SAVEDMODEL=1`, since the Space runs LiteRT and could not
@@ -67,61 +67,52 @@ repos through an `HF_TOKEN` secret, and is versioned.
 
 ### 2 · Committed to the Space
 
-Put the export in `model/`:
+Put each target export in its own folder under `model/`:
 
 ```
 model/
-├── dhikr_007_int8.tflite    # a per-target export; or dhikr_float32 from the legacy one
-├── labels.txt               # one label per model output
-└── model_metadata.json      # front-end parameters, detector settings, measurements
+├── 006/
+│   ├── dhikr_006_int8.tflite
+│   ├── labels.txt
+│   └── model_metadata.json
+└── 007/
+    ├── dhikr_007_int8.tflite
+    ├── dhikr_007_float32.tflite
+    ├── labels.txt
+    └── model_metadata.json
 ```
 
-All three matter:
+The target folder is essential because every export has identically named sidecars. Flattening the
+tree would make phrase 007's metadata overwrite phrase 006's. All three artefact types matter:
 
 - **`labels.txt`** names the outputs. Without it every one shows as `class_0`, `class_1`, …
-- **`model_metadata.json`** (or `model_meta.json` from a legacy multi-class export) records the
-  front-end the weights were trained with, and the Space trusts it
-  over `configs/config.yaml`. This is not a detail: a config that was retuned after the export would
-  otherwise feed the model features it has never seen, and the predictions would be quietly wrong
-  rather than visibly broken. When the two disagree about the input shape, the Space says so on
-  screen instead of guessing.
+- **`model_metadata.json`** records the target phrase, binary output mode, front-end, calibrated
+  activation/release detector and measurements. The Space trusts it over `configs/config.yaml`.
+  A lone model can infer its target id from `dhikr_007_*.tflite`, but cannot reconstruct the phrase
+  text or the detector safely.
 
-Several `.tflite` files can live side by side — the dropdown at the top switches between them, so
-comparing `int8` against `float32` on the same clip is one click.
+Several variants can live inside one phrase folder. The picker marks the export's recommended
+variant and keeps INT8/float32 comparison one click away without confusing variants with phrases.
 
 ### 3 · Uploaded at runtime
 
-The **Load a model** tab takes the files directly. They go to a temp folder and are lost on restart;
-use one of the first two routes to make a model stick.
+The **Add phrase models** tab takes one complete target bundle at a time. It installs it under a
+temporary `<phrase id>/` folder, so adding 007 never overwrites 006. Uploads are lost on restart;
+use one of the first two routes to make them stick.
 
 ---
 
-### What the Space's counter is, and is not
+### What the Space counts
 
-The **scan** tab counts with a simple run-based rule: a run of agreeing above-threshold windows is
-one dhikr, and the refractory period only merges runs split by a brief dip. It works for any
-export, including the older multi-class ones, and it is good for eyeballing a model on a real
-recording.
+The **Count selected phrase** tab uses `src.streaming.EventDetector`, the production hysteresis
+state machine. Its window hop, activation threshold, release threshold, confirming windows,
+release windows, cooldown and smoothing all come from the selected target's
+`model_metadata.json`. Changing the visible thresholds is useful for diagnosis, but it does not
+replace calibration in stage **05 · Streaming** of the notebook.
 
-It is **not** what ships. Production counting is the hysteresis state machine in
-`src/streaming.py` — activation and release thresholds, minimum consecutive hits, release windows
-and a cooldown — calibrated per target against a measured false-activation budget and written
-into that target's `model_metadata.json`. For numbers to make a shipping decision on, use
-`05 · Streaming` in the notebook: it reports events, duplicates and false activations per hour
-against annotated recordings.
-
-## A model with no `unknown` class
-
-If the export's classes are all phrases, the app says so on the scan tab and in the model info.
-It is worth understanding why: softmax always sums to 1, so a model that only knows phrases has
-nowhere to put silence, breathing or background speech — it assigns all of that mass to phrases and
-reports high confidence while doing it. The classifier is not broken; it was never given the option
-to say "that was not a dhikr".
-
-For a counter this matters more than accuracy does, because most of a recording is *not* dhikr. Two
-things help, in order: train with an `unknown` folder (`classes.include_unknown` in
-`configs/config.yaml`), and until then raise the confidence threshold on the scan tab and read the
-per-window probability plot rather than the count alone.
+Each model is binary: `target` means this exact phrase; `unknown` or `1 - P(target)` means anything
+else, including other dhikr. A one-output sigmoid export is handled as scalar P(target)—it is never
+normalised as a one-class softmax, which would incorrectly turn every window into 100% target.
 
 ---
 
@@ -158,52 +149,36 @@ Re-running the script updates it in place.
 The staged copies (`src/`, `configs/`, `phrases.json` inside `space/`) are gitignored in this repo —
 they exist only in the Space, so there is one source of truth for the pipeline code.
 
-Add `model/*.tflite` to the push with `--with-model` once you are happy with an export; without it
-the Space deploys empty and you upload a model through the UI.
+Add `model/<phrase id>/*.tflite` to the push with `--with-model` once exports are ready. The deploy
+script copies the tree recursively so each target keeps its own metadata and labels.
 
 ---
 
 ## How the counting works
 
-Scanning slides the model's fixed window (2 s by default) over the recording at a configurable hop
-and classifies each position, so one dhikr produces a *run* of confident windows, not a single one —
-and the longer the phrase, the longer the run.
+Scanning slides the selected phrase model's fixed window over the recording. The target score must
+cross the activation threshold for the configured number of consecutive windows before one event
+is confirmed. Once confirmed, it remains the same event while the score is above the lower release
+threshold. Re-arming requires the configured number of released windows; the short cooldown is only
+a safety net. This prevents one long utterance from being counted repeatedly without swallowing
+rapid genuine repetitions.
 
-That is why the unit of counting is the **run**, not the window: consecutive windows agreeing on the
-same above-threshold label are one event however long they last. A plain "ignore this phrase for N
-seconds after counting it" timer looks equivalent and is not — it splits any phrase that stays
-confident for longer than N into two counts, which is exactly what the longer dhikr do.
-
-The counting itself is `src.streaming.EventDetector` — the same state machine the notebook calibrates
-in stage 06 and the Android app is specified against, so what this Space shows is what the pipeline
-measured. A run is held together by **hysteresis**: an event needs the confidence threshold to start
-but only a lower release threshold to continue, so a wobble mid-phrase cannot end one event and start
-another.
-
-The **refractory period** is the detector's cooldown: it closes gaps *between* runs, so two runs of
-the same phrase closer together than it are one dhikr flickering, not two. It is applied per label,
-so two different phrases said back to back stay two counts even with no silence between them.
-
-One difference from production: this tab confirms an event from a **single** confident window, where
-the shipped default asks for two in a row. This is a diagnostic for "does the model hear the phrase
-at all", and swallowing single-window hits would hide exactly the weak recognition it is here to
-show.
-
-Three controls, and what to reach for when:
+The controls start at the values exported for this phrase:
 
 | Symptom | Control |
 |---|---|
-| Noise and breaths are counted | Raise the **confidence threshold** |
-| One dhikr counted twice, with a dip between the halves | Raise the **refractory period** |
-| A genuine repetition merged into one count | Lower the **refractory period** |
-| Dhikr missed entirely | Lower the threshold; if it does not help, the model is the problem — check the clip tab |
+| Noise and breaths are counted | Raise **activation**; then recalibrate against negative audio |
+| One dhikr counted twice | Lower **release** or collect the fragment as a hard negative |
+| A genuine repetition is merged | Raise **release** so the gap re-arms sooner |
+| Dhikr missed entirely | Lower activation carefully; inspect the one-clip target score first |
 
 The **detections table** shows each event's first and last confident window, so a count that spans
 0.0–1.75 s is a solid hit and one that spans a single window is a flicker worth raising the
 threshold against.
 
-The per-window probability plot is the diagnostic: a model that works shows clean peaks per phrase,
-a model that has collapsed shows one class flat near 1.0 for the whole recording.
+The probability plot shows only the selected phrase and its complement. A healthy model produces
+clean target peaks and falls away between repetitions; a model flat near 1.0 is not usable however
+good its held-out clip accuracy looked.
 
 ---
 

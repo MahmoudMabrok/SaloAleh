@@ -1,4 +1,4 @@
-"""Inference layer for the DhikrSpeech Hugging Face Space.
+"""Inference layer for the per-phrase DhikrSpeech Hugging Face Space.
 
 The Space has to reproduce the training front-end exactly, so nothing here
 reimplements it: the conditioning comes from ``src.audio`` and the log-mel
@@ -8,27 +8,24 @@ What this module adds on top is the part the pipeline does not have:
 
 * loading an exported ``.tflite`` (or Keras) model **without** importing
   TensorFlow when a LiteRT runtime is available, so the Space stays light;
-* rebuilding the front-end from the export's metadata (``model_metadata.json``
-  for a per-target export, ``model_meta.json`` for the older multi-class one)
-  rather than from ``configs/config.yaml``, because the exported model is the
-  authority - a config that has moved on since the export would silently produce
-  features the model was never trained on;
-* a sliding-window scanner and a run-based counter, for eyeballing an export on
-  a real recording.
+* rebuilding the target id, binary output mode, front-end and detector from that
+  phrase's ``model_metadata.json`` rather than from the moving config;
+* preserving sigmoid P(target) as a scalar probability (normalising one output
+  would turn every window into 100% target);
+* sliding-window inference followed by ``src.streaming.EventDetector``, the same
+  calibrated hysteresis state machine the notebook measures and Android mirrors.
 
-Note that the counter here is **not** the production event detector. What ships
-is the hysteresis state machine in ``src/streaming.py``, calibrated per target
-and described in that target's ``model_metadata.json``; this one is a simpler
-run-based count that works for any export, including the older multi-class ones.
-Use ``05 - Streaming`` in the notebook for numbers to make a decision on.
+The older multi-class loader and run counter remain as compatibility utilities,
+but the UI only offers exports that can be identified as one target phrase.
 """
 
 from __future__ import annotations
 
 import json
 import logging
+import re
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
@@ -44,6 +41,7 @@ for _candidate in (_HERE, _HERE.parent):
 from src.audio import fit_length, normalize_loudness, trim_silence  # noqa: E402
 from src.config import Config, default_config_path  # noqa: E402
 from src.features import FeatureStats, LogMelExtractor  # noqa: E402
+from src.streaming import ScoreTimeline, detect_events, smooth_scores  # noqa: E402
 
 LOGGER = logging.getLogger(__name__)
 
@@ -53,7 +51,9 @@ __all__ = [
     "Frontend",
     "ScanResult",
     "count_detections",
+    "count_target_detections",
     "discover_models",
+    "export_descriptor",
     "load_phrases",
     "resolve_config",
 ]
@@ -88,6 +88,53 @@ def display_label(label: str, phrases: Dict[int, str]) -> str:
     return label
 
 
+_TARGET_MODEL_NAME = re.compile(
+    r"^dhikr_(?P<target>\d{3})_(?P<variant>float32|dynamic_range|int8)$"
+)
+
+
+def export_descriptor(model_path: Path, phrases: Optional[Dict[int, str]] = None) -> Dict[str, object]:
+    """Cheap target/variant identity for a model picker, without opening LiteRT."""
+    path = Path(model_path)
+    meta: Dict[str, object] = {}
+    for name in ("model_metadata.json", "model_meta.json"):
+        candidate = path.parent / name
+        if not candidate.is_file():
+            continue
+        try:
+            meta = json.loads(candidate.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError) as exc:
+            LOGGER.warning("could not read %s: %s", candidate, exc)
+        break
+
+    stem = path.stem
+    match = _TARGET_MODEL_NAME.match(stem)
+    raw_target = meta.get("target_phrase_id") or (match.group("target") if match else None)
+    target_id = int(raw_target) if raw_target is not None and str(raw_target).isdigit() else None
+    phrase_map = phrases if phrases is not None else load_phrases()
+    target_text = str(meta.get("target_phrase_text") or "").strip()
+    if not target_text and target_id is not None:
+        target_text = phrase_map.get(target_id, "")
+
+    variant = match.group("variant") if match else path.suffix.lower().lstrip(".")
+    recommended = str((meta.get("quantization") or {}).get("recommended") or "")
+    target_key = f"{target_id:03d}" if target_id is not None else None
+    target_name = (
+        f"{target_key} · {target_text}" if target_key and target_text else target_key or target_text
+    )
+    return {
+        "path": path,
+        "target_id": target_id,
+        "target_key": target_key,
+        "target_text": target_text,
+        "target_name": target_name or "Unknown target",
+        "variant": variant,
+        "recommended_variant": recommended or None,
+        "recommended": bool(recommended and variant == recommended),
+        "metadata": meta,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Front-end
 # ---------------------------------------------------------------------------
@@ -104,7 +151,7 @@ def resolve_config(meta: Optional[Dict] = None, config_path: Optional[Path] = No
 
     overrides: Dict[str, object] = {}
     audio = meta.get("audio") or {}
-    frontend = meta.get("frontend") or {}
+    frontend = meta.get("frontend") or meta.get("feature") or {}
 
     sample_rate = int(frontend.get("sample_rate") or audio.get("sample_rate") or base.audio.sample_rate)
     overrides["audio.sample_rate"] = sample_rate
@@ -124,6 +171,28 @@ def resolve_config(meta: Optional[Dict] = None, config_path: Optional[Path] = No
         overrides["features.window_ms"] = float(frontend["win_length"]) * 1000.0 / sample_rate
     if frontend.get("hop_length"):
         overrides["features.hop_ms"] = float(frontend["hop_length"]) * 1000.0 / sample_rate
+
+    if meta.get("target_phrase_id") is not None:
+        overrides["target.phrase_id"] = int(meta["target_phrase_id"])
+    if meta.get("output_mode"):
+        overrides["target.output_mode"] = str(meta["output_mode"])
+    if meta.get("hop_seconds") is not None:
+        overrides["streaming.hop_seconds"] = float(meta["hop_seconds"])
+
+    detection = meta.get("detection") or {}
+    for key in (
+        "activation_threshold",
+        "release_threshold",
+        "min_consecutive_hits",
+        "min_event_seconds",
+        "release_windows",
+        "cooldown_ms",
+    ):
+        if key in detection:
+            overrides[f"streaming.detector.{key}"] = detection[key]
+    for key, value in (detection.get("smoothing") or {}).items():
+        if key in ("mode", "ema_alpha", "window"):
+            overrides[f"streaming.smoothing.{key}"] = value
 
     try:
         return base.with_overrides(overrides)
@@ -276,7 +345,7 @@ def _load_keras(path: Path, input_shape: Tuple[int, int, int]):
         except ImportError as exc:
             raise RuntimeError(
                 f"{path.name} needs Keras/TensorFlow, which this Space does not "
-                "install. Use a .tflite export (section 05 of the notebook), or add "
+                "install. Use a .tflite export (section 06 of the notebook), or add "
                 "'tensorflow' to requirements.txt."
             ) from exc
 
@@ -327,12 +396,9 @@ class DhikrModel:
     ) -> "DhikrModel":
         model_path = Path(model_path)
         folder = model_path.parent
-        # A per-target export (exports/007/) writes `model_metadata.json`, the
-        # multi-class export writes `model_meta.json`. Both carry the same
-        # `frontend`/`audio` blocks, so either is enough to rebuild the front-end
-        # the weights were trained with - and missing it entirely means silently
-        # falling back to config.yaml, which is the mismatch this lookup exists
-        # to avoid.
+        # A current per-target export (exports/007/) writes
+        # `model_metadata.json`. The legacy name remains a read-only fallback;
+        # the UI itself only offers models that identify one target phrase.
         meta_path = meta_path or _first_existing(folder, "model_metadata.json")
         meta_path = meta_path or _first_existing(folder, "model_meta.json")
         labels_path = labels_path or _first_existing(folder, "labels.txt")
@@ -408,8 +474,65 @@ class DhikrModel:
             return sum(f.stat().st_size for f in self.path.rglob("*") if f.is_file()) / 1024.0
         return self.path.stat().st_size / 1024.0
 
+    @property
+    def target_id(self) -> Optional[int]:
+        raw = self.meta.get("target_phrase_id")
+        if raw is not None and str(raw).isdigit():
+            return int(raw)
+        return export_descriptor(self.path, self.phrases)["target_id"]  # type: ignore[return-value]
+
+    @property
+    def target_text(self) -> str:
+        text = str(self.meta.get("target_phrase_text") or "").strip()
+        if text:
+            return text
+        return self.phrases.get(self.target_id or -1, "")
+
+    @property
+    def target_name(self) -> str:
+        key = f"{self.target_id:03d}" if self.target_id is not None else "target"
+        return f"{key} · {self.target_text}" if self.target_text else key
+
+    @property
+    def variant(self) -> str:
+        return str(export_descriptor(self.path, self.phrases)["variant"])
+
+    @property
+    def recommended_variant(self) -> Optional[str]:
+        value = (self.meta.get("quantization") or {}).get("recommended")
+        return str(value) if value else None
+
+    @property
+    def is_single_target(self) -> bool:
+        return self.target_id is not None and self.num_classes in (1, 2)
+
+    @property
+    def target_index(self) -> int:
+        configured = self.meta.get("target_index")
+        if configured is not None:
+            index = int(configured)
+            if 0 <= index < self.num_classes:
+                return index
+        for index, label in enumerate(self.labels):
+            if label.lower() == "target":
+                return index
+        return 0 if self.num_classes == 1 else self.num_classes - 1
+
+    def label_name(self, label: str) -> str:
+        if self.is_single_target and label.lower() == "target":
+            return self.target_name
+        if self.is_single_target and label.lower() == UNKNOWN_LABEL:
+            return "Not target · unknown"
+        return display_label(label, self.phrases)
+
     def display_labels(self) -> List[str]:
-        return [display_label(label, self.phrases) for label in self.labels]
+        return [self.label_name(label) for label in self.labels]
+
+    def target_scores(self, probabilities: np.ndarray) -> np.ndarray:
+        values = np.asarray(probabilities, dtype=np.float32)
+        if values.ndim == 1:
+            values = values[np.newaxis, ...]
+        return values[:, self.target_index]
 
     @property
     def has_unknown(self) -> bool:
@@ -424,7 +547,7 @@ class DhikrModel:
         with no ``unknown`` class the threshold is the *only* thing standing
         between background noise and a count.
         """
-        if self.has_unknown:
+        if self.has_unknown or self.is_single_target:
             return None
         return (
             f"This model has no `unknown` class (its {self.num_classes} outputs are all "
@@ -476,10 +599,17 @@ class DhikrModel:
                 )
             raw = np.stack(outputs)
 
-        # The exported graph ends in softmax, but an INT8 model dequantises to
-        # values that only approximately sum to 1, and a model exported without
-        # the activation would come back as logits. Renormalise either way so a
-        # probability is always a probability.
+        if raw.ndim == 1:
+            raw = raw[:, np.newaxis]
+
+        # A one-output per-target model is sigmoid P(target). Normalising its
+        # single column would turn every prediction into 1.0, so it must stay a
+        # scalar probability. Two-output models end in softmax; INT8
+        # dequantisation only approximately preserves their sum.
+        if self.num_classes == 1:
+            if raw.min() < 0.0 or raw.max() > 1.0:
+                raw = 1.0 / (1.0 + np.exp(-raw))
+            return np.clip(raw, 0.0, 1.0).astype(np.float32)
         if raw.min() < 0.0 or not np.allclose(raw.sum(axis=-1), 1.0, atol=0.05):
             raw = _softmax(raw)
         else:
@@ -625,6 +755,55 @@ def count_detections(
     return merged, counts
 
 
+def count_target_detections(
+    scan: ScanResult,
+    model: DhikrModel,
+    activation_threshold: Optional[float] = None,
+    release_threshold: Optional[float] = None,
+) -> Tuple[List[Detection], Dict[str, int]]:
+    """Count one per-target model with its exported production state machine."""
+    if not model.is_single_target:
+        raise ValueError("count_target_detections needs a per-target export")
+
+    base = model.frontend.config.streaming.detector
+    activation = float(
+        base.activation_threshold if activation_threshold is None else activation_threshold
+    )
+    release = float(base.release_threshold if release_threshold is None else release_threshold)
+    detector = replace(
+        base,
+        activation_threshold=activation,
+        release_threshold=min(release, activation),
+    )
+
+    raw_scores = model.target_scores(scan.probabilities)
+    scores = smooth_scores(raw_scores, model.frontend.config.streaming.smoothing)
+    hop_seconds = (
+        float(scan.times[1] - scan.times[0])
+        if scan.times.size > 1
+        else float(model.frontend.config.streaming.hop_seconds)
+    )
+    timeline = ScoreTimeline(
+        times=np.asarray(scan.times, dtype=np.float32),
+        scores=np.asarray(scores, dtype=np.float32),
+        window_seconds=model.frontend.clip_seconds,
+        hop_seconds=hop_seconds,
+        raw_scores=(raw_scores if model.frontend.config.streaming.smoothing.mode != "none" else None),
+    )
+    events = detect_events(timeline, detector)
+    detections = [
+        Detection(
+            label="target",
+            start=event.start,
+            end=event.end,
+            time=event.time,
+            confidence=event.peak_score,
+        )
+        for event in events
+    ]
+    return detections, {model.target_name: len(detections)}
+
+
 # ---------------------------------------------------------------------------
 # Discovery
 # ---------------------------------------------------------------------------
@@ -635,10 +814,10 @@ def discover_models(folder: Path, recursive: bool = False) -> List[Path]:
     a SavedModel directory or ``.keras`` file is listed after them so a checkout
     with TensorFlow available can still use it.
 
-    ``recursive`` is for fetched folders: a shared Drive folder or a Hub snapshot
-    keeps its own structure (``exports/dhikr_int8.tflite``), so a top-level glob
-    would find nothing. A SavedModel's own subdirectories are skipped - it is one
-    model, not a folder of them.
+    ``recursive`` is for export roots: a shared Drive folder or Hub snapshot
+    keeps its target structure (``exports/007/dhikr_007_int8.tflite``), so a
+    top-level glob would find nothing. A SavedModel's own subdirectories are
+    skipped - it is one model, not a folder of them.
     """
     folder = Path(folder)
     if not folder.exists():

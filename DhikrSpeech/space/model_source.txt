@@ -6,7 +6,7 @@
 # Accepted forms:
 #   https://drive.google.com/drive/folders/<id>     (share as "Anyone with the link")
 #   hf://<user>/<repo>                              (Hugging Face model repo)
-#   https://example.com/dhikr_int8.tflite           (direct file URL)
+#   https://example.com/dhikr_007_int8.tflite       (one model; metadata unavailable)
 #   /mnt/exports                                    (local path)
 #
 # DHIKR_MODEL_SOURCE overrides this, so a Space can be repointed from its

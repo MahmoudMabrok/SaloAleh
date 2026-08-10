@@ -11,8 +11,9 @@
 #   ./deploy.sh <user-or-org>/<space-name>
 #   ./deploy.sh <user-or-org>/<space-name> --with-model
 #
-# --with-model also uploads model/ (exported .tflite + sidecars). Without it the
-# Space deploys empty and a model is uploaded through the UI.
+# --with-model also uploads model/<phrase id>/ recursively, preserving each
+# target's identically named sidecars. Without it the Space deploys empty and
+# phrase exports are fetched or uploaded through the UI.
 
 set -euo pipefail
 
@@ -75,18 +76,15 @@ find "$CHECKOUT/src" -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null |
 
 if [[ "$WITH_MODEL" == "1" ]]; then
   mkdir -p "$CHECKOUT/model"
-  shopt -s nullglob
-  artefacts=("$SPACE_DIR"/model/*.tflite "$SPACE_DIR"/model/labels*.* "$SPACE_DIR"/model/model_meta.json)
-  shopt -u nullglob
-  if [[ ${#artefacts[@]} -eq 0 ]]; then
-    echo "--with-model was passed but model/ holds no export" >&2
+  if ! find "$SPACE_DIR/model" -type f -name 'dhikr_[0-9][0-9][0-9]_*.tflite' -print -quit | grep -q .; then
+    echo "--with-model was passed but model/<phrase id>/ holds no per-target export" >&2
     exit 1
   fi
-  cp "${artefacts[@]}" "$CHECKOUT/model/"
+  cp -R "$SPACE_DIR/model/." "$CHECKOUT/model/"
   # .tflite is binary and can exceed the 10 MB plain-git limit on the Hub.
   ( cd "$CHECKOUT" && git lfs track "*.tflite" >/dev/null 2>&1 || true )
   [[ -f "$CHECKOUT/.gitattributes" ]] && git -C "$CHECKOUT" add .gitattributes
-  echo "==> including $(ls "$CHECKOUT/model" | tr '\n' ' ')"
+  echo "==> including phrase models: $(find "$CHECKOUT/model" -type f -name '*.tflite' -exec basename {} \; | tr '\n' ' ')"
 fi
 
 cd "$CHECKOUT"
