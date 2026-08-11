@@ -75,6 +75,7 @@ __all__ = [
     "StreamingClip",
     "StreamingEvaluation",
     "ThresholdRow",
+    "add_target_scoped_stream_negatives",
     "annotation_template",
     "collector_annotations",
     "ensure_collector_annotations",
@@ -89,6 +90,7 @@ __all__ = [
     "score_clips",
     "streaming_audio_root",
     "streaming_status",
+    "target_scoped_stream_negative_id",
     "write_annotation_template",
     "write_collector_annotations",
 ]
@@ -414,6 +416,15 @@ def write_annotation_template(
 # recording where every detection is a false activation. Timestamps remain the
 # only thing neither can derive.
 COLLECTOR_REPETITION_PATTERN = re.compile(r"_x(?P<count>\d+)(?=[_.])")
+TARGET_SCOPED_STREAM_NEGATIVE = re.compile(
+    r"(?:^|_)stream_negative_(?P<target>\d{1,3})(?=_|$)", re.IGNORECASE
+)
+
+
+def target_scoped_stream_negative_id(path: PathLike) -> Optional[int]:
+    """Target named by ``*stream_negative_<id>*`` or ``None`` when untagged."""
+    match = TARGET_SCOPED_STREAM_NEGATIVE.search(Path(path).stem)
+    return int(match.group("target")) if match else None
 
 
 def parse_collector_take(
@@ -458,7 +469,8 @@ def collector_annotations(
     """Annotation entries derived from what the collector already recorded.
 
     A repetition take (``_x10_`` under a phrase folder) becomes a count-mode
-    entry. A negative take (``_x0_`` under a non-phrase folder) becomes
+    entry. ``stream_negative_006`` becomes a zero-count hard negative scoped to
+    target 006. A negative take (``_x0_`` under a non-phrase folder) becomes
     ``expected_count: 0`` with **no target** - it holds no dhikr at all, so it is
     shared material and every target's evaluation counts it, and every detection
     in it is a false activation.
@@ -472,6 +484,7 @@ def collector_annotations(
     counted = negatives = 0
     for path in audio_files(root, extensions):
         repetitions, target = parse_collector_take(path, root)
+        scoped_negative = target_scoped_stream_negative_id(path)
         relative = path.relative_to(root)
         folder = relative.parts[-2] if len(relative.parts) > 1 else None
         entry: Dict[str, object] = {
@@ -479,7 +492,13 @@ def collector_annotations(
             "target": target,
             "events": [],
         }
-        if repetitions == 0:
+        if scoped_negative is not None:
+            entry["target"] = f"{scoped_negative:03d}"
+            entry["expected_count"] = 0
+            entry["category"] = "hard_negative"
+            entry["notes"] = f"target-scoped by filename: stream_negative_{scoped_negative:03d}"
+            negatives += 1
+        elif repetitions == 0:
             # Zero is the count, not the absence of one. `target` stays null on
             # purpose: nothing was said, so this recording is evidence for every
             # target rather than for the folder it happens to sit in.
@@ -515,6 +534,34 @@ def collector_annotations(
         negatives,
     )
     return entries
+
+
+def add_target_scoped_stream_negatives(
+    clips: Sequence[StreamingClip],
+    audio_dir: PathLike,
+    extensions: Sequence[str] = AUDIO_SUFFIXES,
+) -> List[StreamingClip]:
+    """Overlay filename-scoped streaming negatives onto loaded annotations.
+
+    This also discovers uploads added after ``annotations.json`` was created.
+    Filename truth wins for a tagged file: it contains zero instances of exactly
+    the named target and is not shared with other target evaluations.
+    """
+    root = Path(audio_dir)
+    by_file = {clip.file: clip for clip in clips}
+    for path in audio_files(root, extensions):
+        target = target_scoped_stream_negative_id(path)
+        if target is None:
+            continue
+        relative = path.relative_to(root).as_posix()
+        by_file[relative] = StreamingClip(
+            file=relative,
+            expected_count=0,
+            target=f"{target:03d}",
+            category="hard_negative",
+            notes=f"target-scoped by filename: stream_negative_{target:03d}",
+        )
+    return list(by_file.values())
 
 
 def write_collector_annotations(
@@ -1532,7 +1579,9 @@ def load_streaming_set(config: Config) -> List[StreamingClip]:
         )
         return []
 
-    clips = load_annotations(annotations)
+    clips = add_target_scoped_stream_negatives(
+        load_annotations(annotations), streaming_audio_root(config)
+    )
     if not clips:
         LOGGER.warning("%s parsed to zero recordings", annotations)
     return clips

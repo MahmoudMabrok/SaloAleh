@@ -155,6 +155,18 @@ def test_hard_negatives_are_shared_across_targets(dataset: Path) -> None:
         assert negative_breakdown(index.samples)["hard_negative"] == 5
 
 
+def test_filename_scoped_hard_negative_is_used_only_for_its_target(dataset: Path) -> None:
+    tagged = dataset / "unknown" / "unknown_spABC_01_000_hard_negative_006.wav"
+    tagged.write_bytes(b"")
+
+    for phrase_id, expected in ((6, True), (7, False)):
+        index = scan_target_dataset(dataset, PHRASES, TargetConfig(phrase_id=phrase_id))
+        matches = [sample for sample in index.samples if sample.path == tagged]
+        assert bool(matches) is expected
+        if matches:
+            assert matches[0].negative_type == "hard_negative"
+
+
 def test_cache_dir_follows_the_source_folder_not_the_label(dataset: Path) -> None:
     """Shared negatives must land in the same cache slot for every target,
     otherwise each target re-conditions the whole pool."""

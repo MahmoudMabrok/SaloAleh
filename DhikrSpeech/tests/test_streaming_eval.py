@@ -501,6 +501,39 @@ def test_a_negative_take_annotates_itself_as_zero(tmp_path: Path) -> None:
     assert clips[0].matches_target("007") and clips[0].matches_target("006")
 
 
+def test_stream_negative_filename_is_scoped_to_its_target(tmp_path: Path) -> None:
+    from src.streaming_eval import MODE_NEGATIVE, collector_annotations
+
+    (tmp_path / "stream_negative_006.wav").write_bytes(b"")
+    entry = collector_annotations(tmp_path)[0]
+
+    assert entry["target"] == "006"
+    assert entry["expected_count"] == 0
+    assert entry["category"] == "hard_negative"
+    clip = StreamingClip(
+        file=str(entry["file"]),
+        expected_count=int(entry["expected_count"]),
+        target=str(entry["target"]),
+        category=str(entry["category"]),
+    )
+    assert clip.mode == MODE_NEGATIVE
+    assert clip.matches_target("006")
+    assert not clip.matches_target("007")
+
+
+def test_new_stream_negative_is_added_after_annotations_exist(tmp_path: Path) -> None:
+    from src.streaming_eval import add_target_scoped_stream_negatives
+
+    existing = StreamingClip("tv.wav", expected_count=0, category="background_audio")
+    (tmp_path / "stream_negative_7_new.wav").write_bytes(b"")
+
+    clips = add_target_scoped_stream_negatives([existing], tmp_path)
+    by_file = {clip.file: clip for clip in clips}
+    assert set(by_file) == {"tv.wav", "stream_negative_7_new.wav"}
+    assert by_file["stream_negative_7_new.wav"].target == "007"
+    assert by_file["stream_negative_7_new.wav"].category == "hard_negative"
+
+
 def test_a_negative_take_makes_false_activations_measurable(tmp_path: Path) -> None:
     """The whole point of the card that produces these. Repetition takes alone
     leave FA/hour unmeasured; one negative recording turns a detection into a

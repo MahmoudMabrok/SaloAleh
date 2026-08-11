@@ -207,11 +207,11 @@ plus mispronounced and trailed-off attempts. Without them the model learns to fi
 opening words, which is the single most common cause of false counts — and because those clips
 *are* dhikr, no amount of TV or room tone substitutes for them.
 
-`unknown/hard_negative/` is **shared across every target**, and that carries a real risk the
-layout cannot express: a near-miss recorded to fool 006 (`سبحان الله وبحمده`) may be a complete
-recording of **007's** phrase, and used as a negative for 007 it would teach the model to reject
-its own target. Nothing in the pipeline can detect that. Keep a clip that contains another
-target's complete phrase out of the folder.
+Untagged files under `unknown/hard_negative/` are shared across every target. Scope a collected
+near-miss by ending its filename in `_hard_negative_<target_id>`: for example,
+`unknown_spABC_01_000_hard_negative_006.wav` is used only while building target 006 and excluded
+from every other target. This prevents a near-miss for 006 that is a complete 007 phrase from
+teaching the 007 model to reject itself.
 
 **Do not manufacture hard negatives by cropping positives.** A crop has the same voice, room,
 microphone and level as the positive it came from, so the model can separate the two on cues
@@ -474,7 +474,8 @@ streaming/
 │   └── negative_x0_sp8d358495_20260803_190211_77cd10.webm
 ├── audio/
 │   ├── session_001.wav      someone repeating the dhikr, minutes at a time
-│   └── tv_arabic.wav        zero target phrases
+│   ├── tv_arabic.wav        zero target phrases, shared by every target
+│   └── stream_negative_006.wav  zero target phrases, target 006 only
 └── annotations.json
 ```
 
@@ -488,6 +489,10 @@ streaming/
    "events": [], "expected_count": 0}
 ]
 ```
+
+`stream_negative_<target_id>` files require no manual annotation entry. They are loaded as
+zero-count `hard_negative` recordings for that target only, including files added after
+`annotations.json` already exists.
 
 Three ways to state what is in a recording, in decreasing order of what they measure:
 

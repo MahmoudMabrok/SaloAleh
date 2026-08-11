@@ -101,7 +101,10 @@ trained on. Speaker ids cost nothing at recording time and cannot be recovered a
 
 ## Hard negatives: the highest-value recordings in the project
 
-Under `dataset/unknown/hard_negative/`, which is **shared by every target**.
+Store them under `dataset/unknown/` or `dataset/unknown/hard_negative/`. End target-specific
+filenames in `_hard_negative_<target_id>`; for example,
+`unknown_spABC_01_000_hard_negative_006.wav` is used only for target 006. Untagged files under
+`hard_negative/` remain shared by every target.
 
 For each target, write down its prefixes, its suffixes, and the other dhikr that share most of
 its words — then record real people saying those. Examples:
@@ -119,11 +122,9 @@ Aim for **50–100 hard negatives per target from 10+ speakers** before treating
 finished. They are weighted highest in `negative_sampling.weights` for a reason — one hard
 negative teaches more than ten clips of room tone.
 
-Because the folder is shared, one rule matters more than the rest: **a hard negative must not
-contain another target's complete phrase**. A near-miss recorded to fool 006 that happens to be a
-clean recording of `سبحان الله العظيم وبحمده` is, for target 007, a positive filed as a negative -
-and it teaches 007 to reject itself. Nothing in the pipeline can detect that; it is a rule for
-whoever files the recordings.
+For legacy untagged files, one rule matters more than the rest: **a shared hard negative must not
+contain another target's complete phrase**. Prefer the filename tag whenever the recording was
+collected to fool one particular target; the pipeline then excludes it from all other targets.
 
 Also useful, and shared across targets: `dataset/unknown/partial_phrase/` for incomplete
 utterances of any dhikr.
@@ -169,6 +170,7 @@ streaming/
 ├── audio/                   optional; a flat folder works too
 │   ├── session_001.wav      someone repeating the dhikr, minutes at a time
 │   ├── tv_arabic.wav        ZERO target phrases
+│   ├── stream_negative_006.wav  ZERO target phrases, target 006 only
 │   ├── conversation.wav     ZERO target phrases
 │   └── street.wav           ZERO target phrases
 └── annotations.json
@@ -213,6 +215,10 @@ from src.streaming_eval import write_collector_annotations
 
 write_collector_annotations(root / "streaming/annotations.json", root / "streaming")
 ```
+
+A file containing `stream_negative_<target_id>` in its name is also self-annotating: it has
+`expected_count: 0`, category `hard_negative`, and belongs only to the named target. The loader
+discovers these files even when `annotations.json` was created before the latest uploads.
 
 It **merges**: every existing entry is kept exactly as it is and only unlisted
 files are added, so it is safe to re-run after each round of uploads and it will

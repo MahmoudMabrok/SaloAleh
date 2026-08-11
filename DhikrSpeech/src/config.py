@@ -538,11 +538,9 @@ class TargetConfig:
     output_mode: str = "softmax"
     # Other phrase folders (dataset/001, dataset/002, ...) become negatives.
     auto_other_dhikr_negatives: bool = True
-    # `unknown/hard_negative/` is shared across every target: a near-miss
-    # recorded to fool 006 may be a complete recording of 007's phrase, and as a
-    # negative for 007 it would teach the model to reject its own target. The
-    # layout cannot express that, so it is a collection rule rather than a
-    # setting - see docs/DATA_COLLECTION.md.
+    # Untagged `unknown/hard_negative/` clips are shared. A filename ending in
+    # `_hard_negative_006` scopes that clip to target 006, preventing a near-miss
+    # for one detector from poisoning another target's UNKNOWN class.
     # Per-target overrides, keyed by the zero-padded folder name:
     #   phrase_overrides: {"007": {clip_seconds: 2.5}}
     # Applied by Config.for_target(). Only `clip_seconds` is honoured today.

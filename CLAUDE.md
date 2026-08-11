@@ -385,9 +385,9 @@ in `DhikrSpeech/docs/DATA_COLLECTION.md`.
   manifest** (derived in `src/dataset.py`, ordered in `src/targets.py` `NEGATIVE_TYPES`):
   `hard_negative`, `partial_phrase`, `other_dhikr`, `normal_speech`, `noise`, `unknown`. They all
   train as `unknown` but are **evaluated separately**, because "99% accurate" and "cannot tell a
-  complete phrase from its first three words" are both true of the same run. `hard_negative/` is
-  **shared across targets**, so a near-miss recorded to fool 006 that is a complete recording of
-  007's phrase would teach 007 to reject itself — nothing can detect that, it is a collection rule
+  complete phrase from its first three words" are both true of the same run. Untagged
+  `hard_negative/` clips are shared; `_hard_negative_<target_id>` in a filename scopes it to one
+  target and excludes it from all others, preventing cross-target label poisoning
   (`docs/DATA_COLLECTION.md`). `scan_target_dataset` delegates to `scan_dataset` rather than
   walking the tree again, so a target scan and a multi-class scan agree by construction.
 - **Splitting is by speaker and is verified, not assumed** (`src/speakers.py` resolves,

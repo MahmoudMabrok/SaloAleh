@@ -100,12 +100,9 @@ target:
   # Every other phrase folder (dataset/001, dataset/006, ...) becomes a negative.
   # These are the hard negatives that cost nothing - they are already collected.
   auto_other_dhikr_negatives: true
-  # Negatives live under dataset/unknown/<category>/ and are shared by every
-  # target; the category is the subfolder name. Note that hard_negative/ is
-  # shared too: a near-miss recorded to fool 006 may be a complete recording of
-  # 007's phrase, and as a negative for 007 it would teach the model to reject
-  # its own target. That is a collection rule, not a setting - see
-  # docs/DATA_COLLECTION.md.
+  # Negatives live under dataset/unknown/<category>/. Untagged files are shared;
+  # a filename ending `_hard_negative_006` is used only as a hard negative for
+  # target 006. See docs/DATA_COLLECTION.md.
   # Per-target window length. A two-word dhikr and a seven-word one do not belong
   # in the same window; the dataset report prints a recommendation from the
   # measured utterance durations, and applying it stays a human decision because

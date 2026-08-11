@@ -30,19 +30,17 @@ The category is the first subfolder under ``unknown/``. It is derived once by
 tree a second time - so a target scan sees exactly the folders, the categories
 and the speaker ids that a multi-class scan does.
 
-One caveat the layout cannot express, stated plainly because it is a real way to
-poison a model: ``unknown/hard_negative/`` is **shared across targets**. A
-near-miss recorded to fool 006 (``سبحان الله وبحمده``) may be a complete
-recording of 007's phrase, and used as a negative for 007 it would teach the
-model to reject its own target. Nothing here can detect that. Keep a clip that
-contains another target's complete phrase out of the folder, or give each target
-its own subfolder (``unknown/hard_negative/007/``) and set
-``target.hard_negative_subfolders``.
+Untagged files in ``unknown/hard_negative/`` are shared across targets. A
+collector can instead scope a near-miss to one detector by ending its filename
+with ``_hard_negative_<target_id>``. For example,
+``unknown_spABC_01_000_hard_negative_006.wav`` is a hard negative for 006 and is
+excluded from every other target's dataset.
 """
 
 from __future__ import annotations
 
 import logging
+import re
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field, replace
 from pathlib import Path
@@ -70,6 +68,7 @@ __all__ = [
     "recommend_clip_seconds",
     "sample_negatives",
     "scan_target_dataset",
+    "target_scoped_hard_negative_id",
     "target_class_names",
     "target_negative_paths",
 ]
@@ -102,6 +101,15 @@ NEGATIVE_TYPES: Tuple[str, ...] = (
 # What a clip from another phrase folder is called once it becomes a negative.
 OTHER_DHIKR = "other_dhikr"
 HARD_NEGATIVE = "hard_negative"
+TARGET_SCOPED_HARD_NEGATIVE = re.compile(
+    r"(?:^|_)hard_negative_(?P<target>\d{1,3})(?=_|$)", re.IGNORECASE
+)
+
+
+def target_scoped_hard_negative_id(path: PathLike) -> Optional[int]:
+    """Target named by ``*_hard_negative_<id>`` or ``None`` when untagged."""
+    match = TARGET_SCOPED_HARD_NEGATIVE.search(Path(path).stem)
+    return int(match.group("target")) if match else None
 
 
 def target_class_names() -> List[str]:
@@ -211,7 +219,17 @@ def scan_target_dataset(
                 continue
             negative_type = OTHER_DHIKR
         else:
-            negative_type = sample.negative_type or unknown_class
+            scoped_target = target_scoped_hard_negative_id(sample.path)
+            if scoped_target is not None and scoped_target != int(target.phrase_id or 0):
+                # A near-miss collected for another detector may be this target's
+                # complete phrase. Exclude it instead of teaching the model that
+                # its own target is UNKNOWN.
+                continue
+            negative_type = (
+                HARD_NEGATIVE
+                if scoped_target is not None
+                else sample.negative_type or unknown_class
+            )
 
         samples.append(
             replace(
