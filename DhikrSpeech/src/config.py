@@ -533,9 +533,9 @@ class TargetConfig:
     """
 
     phrase_id: Optional[Union[int, str]] = None
-    # softmax = 2 outputs (target, unknown), sigmoid = 1 output P(target).
+    # softmax = 2 outputs (unknown, target), sigmoid = 1 output P(target).
     # Both are supported so the two can be compared rather than assumed.
-    output_mode: str = "softmax"
+    output_mode: str = "sigmoid"
     # Other phrase folders (dataset/001, dataset/002, ...) become negatives.
     auto_other_dhikr_negatives: bool = True
     # Untagged `unknown/hard_negative/` clips are shared. A filename ending in
@@ -775,16 +775,16 @@ class ModelConfig:
 @dataclass
 class EarlyStoppingConfig:
     enabled: bool = True
-    monitor: str = "val_accuracy"
+    monitor: str = "val_pr_auc"
     mode: str = "max"
-    patience: int = 12
+    patience: int = 40
     min_delta: float = 0.001
     restore_best_weights: bool = True
 
 
 @dataclass
 class CheckpointConfig:
-    monitor: str = "val_accuracy"
+    monitor: str = "val_pr_auc"
     mode: str = "max"
     save_best_only: bool = True
     save_freq: str = "epoch"
@@ -823,7 +823,7 @@ class TrainingConfig:
     early_stopping: EarlyStoppingConfig = field(default_factory=EarlyStoppingConfig)
     checkpoint: CheckpointConfig = field(default_factory=CheckpointConfig)
     tensorboard: TensorBoardConfig = field(default_factory=TensorBoardConfig)
-    resume: bool = True
+    resume: bool = False
     cache: bool = True
     prefetch: bool = True
 
@@ -1260,6 +1260,9 @@ class Config:
                 f"({self.model.blocks} blocks x {self.model.block_filters} filters)",
                 f"training          : {self.training.epochs} epochs, "
                 f"batch {self.training.batch_size}, optimizer {self.training.optimizer}",
+                f"checkpoint        : {self.training.checkpoint.monitor} "
+                f"({self.training.checkpoint.mode}); resume "
+                f"{'on' if self.training.resume else 'off'}",
                 f"augmentation      : {'on' if self.augmentation.enabled else 'off'}",
                 f"speakers          : split.speaker.source = "
                 f"{self.split.resolved_speaker().source}",

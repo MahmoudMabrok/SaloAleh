@@ -194,8 +194,16 @@ def plot_feature_grid(
 def plot_training_history(
     history: Mapping[str, Sequence[float]], title: str = "training history"
 ) -> Figure:
-    """Loss, accuracy and (when logged) learning rate over epochs."""
+    """Training curves, including detector metrics when present."""
     panels = [("loss", "val_loss", "loss"), ("accuracy", "val_accuracy", "accuracy")]
+    for train_key, val_key, label in (
+        ("target_f1", "val_target_f1", "target F1"),
+        ("pr_auc", "val_pr_auc", "PR AUC"),
+        ("precision", "val_precision", "target precision"),
+        ("recall", "val_recall", "target recall"),
+    ):
+        if train_key in history or val_key in history:
+            panels.append((train_key, val_key, label))
     has_lr = any(key in history for key in ("lr", "learning_rate"))
     total = len(panels) + (1 if has_lr else 0)
 
@@ -217,10 +225,8 @@ def plot_training_history(
                 label=f"val {label}",
                 color="#e76f51",
             )
-            best = (
-                int(np.argmin(history[val_key]))
-                if label == "loss"
-                else int(np.argmax(history[val_key]))
+            best = int(np.argmin(history[val_key])) if label == "loss" else int(
+                np.argmax(history[val_key])
             )
             axis.axvline(best + 1, color="#264653", linestyle=":", linewidth=1.0)
         axis.set_xlabel("epoch")

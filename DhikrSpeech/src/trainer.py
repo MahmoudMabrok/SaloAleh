@@ -1,9 +1,8 @@
-"""Training loop: seeding, mixed precision, schedules, callbacks, resume.
+"""Training loop: seeding, mixed precision, schedules, callbacks and safe resume.
 
-A run is identified by ``run_name`` (default: the model name). Re-running
-notebook 03 with the same name picks the run up where it stopped, because
-``BackupAndRestore`` keeps the optimiser state and epoch counter in
-``checkpoints/<run_name>/backup``.
+A run is identified by ``run_name`` (default: the model name). Resume is opt-in;
+when enabled, ``BackupAndRestore`` may restore only when the saved config snapshot
+exactly matches the live experiment.
 """
 
 from __future__ import annotations
@@ -44,6 +43,7 @@ PathLike = Union[str, Path]
 OVERFIT_GAP = 0.15
 EARLY_PEAK_FRACTION = 0.4
 COARSE_VAL_SPLIT = 30
+CHANCE_TOLERANCE = 0.02
 
 # Config sections whose values change what a run produces, and which therefore make
 # a resumed run a different experiment from the one the config now describes.
@@ -62,6 +62,7 @@ RESUME_SENSITIVE_SECTIONS = (
 __all__ = [
     "SparseCategoricalCrossentropyWithSmoothing",
     "SparseMacroF1",
+    "TargetF1",
     "Trainer",
     "build_metrics",
     "TrainingArtifacts",
@@ -251,6 +252,109 @@ else:  # pragma: no cover - Keras builds older than 2.13
     SparseMacroF1 = None  # type: ignore[assignment]
 
 
+@keras.saving.register_keras_serializable(package="dhikrspeech")
+class TargetF1(keras.metrics.Metric):
+    """Binary TARGET F1 accumulated over the whole epoch.
+
+    Keras resets metric state between epochs, so keeping TP/FP/FN as weights
+    avoids the biased result produced by averaging independent per-batch F1
+    values. Labels are integer UNKNOWN=0 / TARGET=1 and predictions are the
+    single sigmoid P(target) output.
+    """
+
+    def __init__(self, threshold: float = 0.5, name: str = "target_f1", **kwargs) -> None:
+        super().__init__(name=name, **kwargs)
+        self.threshold = float(threshold)
+        self.true_positives = self.add_weight(name="tp", initializer="zeros")
+        self.false_positives = self.add_weight(name="fp", initializer="zeros")
+        self.false_negatives = self.add_weight(name="fn", initializer="zeros")
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        truth = tf.equal(tf.cast(tf.reshape(y_true, [-1]), tf.int32), 1)
+        # Last column is P(target) for both (batch, 1) sigmoid and legacy
+        # (batch, 2) [UNKNOWN, TARGET] softmax outputs.
+        scores = tf.reshape(y_pred, [-1, tf.shape(y_pred)[-1]])[:, -1]
+        predicted = scores >= self.threshold
+        weights = tf.ones_like(tf.cast(truth, self.dtype))
+        if sample_weight is not None:
+            weights = weights * tf.cast(tf.reshape(sample_weight, [-1]), self.dtype)
+        self.true_positives.assign_add(
+            tf.reduce_sum(weights * tf.cast(truth & predicted, self.dtype))
+        )
+        self.false_positives.assign_add(
+            tf.reduce_sum(weights * tf.cast(~truth & predicted, self.dtype))
+        )
+        self.false_negatives.assign_add(
+            tf.reduce_sum(weights * tf.cast(truth & ~predicted, self.dtype))
+        )
+
+    def result(self):
+        return tf.math.divide_no_nan(
+            2.0 * self.true_positives,
+            2.0 * self.true_positives + self.false_positives + self.false_negatives,
+        )
+
+    def reset_state(self) -> None:
+        for variable in (self.true_positives, self.false_positives, self.false_negatives):
+            variable.assign(0.0)
+
+    def get_config(self) -> Dict[str, object]:
+        config = super().get_config()
+        config["threshold"] = self.threshold
+        return config
+
+
+@keras.saving.register_keras_serializable(package="dhikrspeech")
+class TargetPrecision(TargetF1):
+    """TARGET precision for a sigmoid or legacy two-output softmax detector."""
+
+    def result(self):
+        return tf.math.divide_no_nan(
+            self.true_positives, self.true_positives + self.false_positives
+        )
+
+
+@keras.saving.register_keras_serializable(package="dhikrspeech")
+class TargetRecall(TargetF1):
+    """TARGET recall for a sigmoid or legacy two-output softmax detector."""
+
+    def result(self):
+        return tf.math.divide_no_nan(
+            self.true_positives, self.true_positives + self.false_negatives
+        )
+
+
+@keras.saving.register_keras_serializable(package="dhikrspeech")
+class SparseTargetAUC(keras.metrics.AUC):
+    """AUC adapter from integer labels to a detector's P(target) column."""
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        truth = tf.cast(tf.equal(tf.cast(tf.reshape(y_true, [-1]), tf.int32), 1), tf.float32)
+        scores = tf.reshape(y_pred, [-1, tf.shape(y_pred)[-1]])[:, -1]
+        return super().update_state(truth, scores, sample_weight)
+
+
+@keras.saving.register_keras_serializable(package="dhikrspeech")
+class SparseMacroAUC(keras.metrics.AUC):
+    """Macro AUC for sparse integer labels in legacy multi-class runs."""
+
+    def __init__(self, num_classes: int, name: str = "pr_auc", **kwargs) -> None:
+        kwargs.setdefault("multi_label", True)
+        kwargs.setdefault("num_labels", int(num_classes))
+        super().__init__(name=name, **kwargs)
+        self.num_classes = int(num_classes)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        labels = tf.cast(tf.reshape(y_true, [-1]), tf.int32)
+        one_hot = tf.one_hot(labels, depth=self.num_classes, dtype=y_pred.dtype)
+        return super().update_state(one_hot, y_pred, sample_weight)
+
+    def get_config(self) -> Dict[str, object]:
+        config = super().get_config()
+        config["num_classes"] = self.num_classes
+        return config
+
+
 def build_loss(num_classes: int, config: TrainingConfig) -> keras.losses.Loss:
     """Loss for ``num_classes`` model outputs.
 
@@ -289,16 +393,25 @@ def build_metrics(num_classes: int, config: TrainingConfig) -> List:
             keras.metrics.Precision(name="precision"),
             keras.metrics.Recall(name="recall"),
             keras.metrics.AUC(name="auc"),
+            keras.metrics.AUC(curve="PR", name="pr_auc"),
+            TargetF1(name="target_f1"),
+        ]
+
+    if num_classes == 2:
+        return [
+            keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
+            TargetPrecision(name="precision"),
+            TargetRecall(name="recall"),
+            SparseTargetAUC(name="auc"),
+            SparseTargetAUC(curve="PR", name="pr_auc"),
+            TargetF1(name="target_f1"),
         ]
 
     metrics: List = [keras.metrics.SparseCategoricalAccuracy(name="accuracy")]
     if num_classes > 3:
         metrics.append(keras.metrics.SparseTopKCategoricalAccuracy(k=3, name="top3_accuracy"))
-    # Two classes are the target/unknown detector: macro F1 over two columns adds
-    # nothing that precision and recall do not already say.
-    if num_classes <= 2:
-        return metrics
-
+    # Keeps the default val_pr_auc checkpoint valid in legacy multi-class mode.
+    metrics.append(SparseMacroAUC(num_classes=num_classes, curve="PR", name="pr_auc"))
     if not config.macro_f1 or SparseMacroF1 is None:
         if config.macro_f1 and SparseMacroF1 is None:
             LOGGER.info(
@@ -362,6 +475,7 @@ class TrainingArtifacts:
     tensorboard_dir: Path
     csv_log_path: Path
     epochs_completed: int
+    last_model_path: Optional[Path] = None
     num_classes: Optional[int] = None
     resumed: bool = False
     val_size: Optional[int] = None
@@ -369,14 +483,25 @@ class TrainingArtifacts:
     # "chance" is the majority class, not 1/num_classes: on a 1:3 split a model
     # that never fires already scores 0.75.
     positive_rate: Optional[float] = None
+    val_target_count: Optional[int] = None
+    checkpoint_monitor: str = "val_accuracy"
+    checkpoint_mode: str = "max"
 
-    def best_epoch(self, monitor: str = "val_accuracy", mode: str = "max") -> Optional[int]:
+    def best_epoch(
+        self, monitor: Optional[str] = None, mode: Optional[str] = None
+    ) -> Optional[int]:
+        monitor = monitor or self.checkpoint_monitor
+        mode = mode or self.checkpoint_mode
         values = self.history.get(monitor)
         if not values:
             return None
         return int(np.argmax(values) if mode == "max" else np.argmin(values)) + 1
 
-    def best_value(self, monitor: str = "val_accuracy", mode: str = "max") -> Optional[float]:
+    def best_value(
+        self, monitor: Optional[str] = None, mode: Optional[str] = None
+    ) -> Optional[float]:
+        monitor = monitor or self.checkpoint_monitor
+        mode = mode or self.checkpoint_mode
         values = self.history.get(monitor)
         if not values:
             return None
@@ -414,25 +539,31 @@ class TrainingArtifacts:
         """Plain-language reading of the curves, so a dead run says so out loud."""
         notes: List[str] = []
         chance = self.chance_level
-        best_val = self.best_value("val_accuracy")
-        best_train = self.best_value("accuracy")
+        best_val = self.best_value("val_accuracy", "max")
+        best_train = self.best_value("accuracy", "max")
         if chance is None or best_val is None or best_train is None:
             return notes
 
-        # A hair above chance is still chance: a constant prediction scores
-        # exactly 1/num_classes on a balanced split.
-        margin = 1.25 * chance
-        if best_val <= margin and best_train <= margin:
+        train_at_chance = best_train <= chance + CHANCE_TOLERANCE
+        val_at_chance = best_val <= chance + CHANCE_TOLERANCE
+        target_progress = self._binary_target_progress()
+
+        if target_progress:
             notes.append(
-                "the model never learned anything - training accuracy is at chance too. "
-                "Look at the input pipeline, the label mapping and the number of optimiser "
-                "steps (steps_per_epoch x epochs) before touching the topology."
+                "target metrics improved even though accuracy remains close to the majority "
+                "baseline. The detector learned useful TARGET ranking/detections; judge it "
+                "with validation PR-AUC, target precision/recall/F1 and the confusion matrix."
             )
-        elif best_val <= margin:
+            notes.extend(self._generalisation_notes(best_train, best_val))
+        elif train_at_chance and val_at_chance:
             notes.append(
-                "training accuracy climbed but validation stayed at chance: the model "
-                "memorised the training clips. Usually too few recordings or too few "
-                "speakers, sometimes BatchNorm moving statistics that never converged."
+                "The model appears not to have learned the training task. Inspect labels, "
+                "input pipeline, optimiser steps and feature generation."
+            )
+        elif val_at_chance:
+            notes.append(
+                "The model learned/memorized the training set but did not generalize to "
+                "validation: validation stayed at the majority-class baseline."
             )
         else:
             notes.extend(self._generalisation_notes(best_train, best_val))
@@ -446,6 +577,20 @@ class TrainingArtifacts:
             )
         return notes
 
+    def _binary_target_progress(self) -> bool:
+        """Whether minority-class metrics show learning hidden by accuracy."""
+        if self.num_classes != 1:
+            return False
+        prevalence = self.positive_rate if self.positive_rate is not None else 0.0
+        pr_auc = self.best_value("val_pr_auc", "max")
+        target_f1 = self.best_value("val_target_f1", "max")
+        recall = self.best_value("val_recall", "max")
+        return bool(
+            (pr_auc is not None and pr_auc > prevalence + CHANCE_TOLERANCE)
+            or (target_f1 is not None and target_f1 > CHANCE_TOLERANCE)
+            or (recall is not None and recall > CHANCE_TOLERANCE)
+        )
+
     def _generalisation_notes(self, best_train: float, best_val: float) -> List[str]:
         """Notes for a run that learned something but did not generalise.
 
@@ -455,15 +600,18 @@ class TrainingArtifacts:
         """
         notes: List[str] = []
         gap = best_train - best_val
-        best_epoch = self.best_epoch() or 0
+        best_epoch = self.best_epoch("val_accuracy", "max") or 0
 
         if gap >= OVERFIT_GAP:
             restored = ""
-            train_at_best = self.value_at("accuracy", best_epoch)
-            if train_at_best is not None:
+            checkpoint_epoch = self.best_epoch()
+            train_at_best = self.value_at("accuracy", checkpoint_epoch or 0)
+            val_at_best = self.value_at("val_accuracy", checkpoint_epoch or 0)
+            if train_at_best is not None and val_at_best is not None:
                 restored = (
-                    f" The weights that were kept are epoch {best_epoch}'s "
-                    f"(train {train_at_best:.2f} / val {best_val:.2f}); the "
+                    f" The {self.checkpoint_monitor} checkpoint is epoch "
+                    f"{checkpoint_epoch} (train {train_at_best:.2f} / val_accuracy "
+                    f"{val_at_best:.2f}); the "
                     f"{best_train:.2f} training accuracy belongs to a later, worse model."
                 )
             notes.append(
@@ -486,9 +634,8 @@ class TrainingArtifacts:
                 f"validation peaked at epoch {best_epoch} of {self.epochs_completed} and "
                 "never beat it again: the run had learned everything this dataset can teach "
                 "it within the first few epochs, and the rest only fitted the training split "
-                f"harder. Early stopping restored the epoch-{best_epoch} weights, so the "
-                "checkpoint is the best one seen - but more epochs will not help this "
-                "dataset, and neither will a longer patience."
+                f"harder. Checkpoint selection still follows {self.checkpoint_monitor}; more "
+                "epochs will not help this dataset, and neither will a longer patience."
             )
 
         resolution = self.val_resolution
@@ -503,38 +650,76 @@ class TrainingArtifacts:
         return notes
 
     def summary(self) -> str:
-        lines = [f"run              : {self.run_name}", f"epochs completed : {self.epochs_completed}"]
-        best_train_epoch = self.best_epoch("accuracy")
+        binary = self.num_classes == 1
+        lines = [f"run                : {self.run_name}", f"epochs completed   : {self.epochs_completed}"]
+        if binary and self.val_size is not None:
+            targets = (
+                self.val_target_count
+                if self.val_target_count is not None
+                else int(round((self.positive_rate or 0.0) * self.val_size))
+            )
+            unknown = self.val_size - targets
+            lines.extend(
+                [
+                    f"validation clips   : {self.val_size}",
+                    f"validation target  : {targets}",
+                    f"validation unknown : {unknown}",
+                    f"majority baseline  : {self.chance_level:.4f}",
+                ]
+            )
+            for metric, label in (
+                ("val_pr_auc", "best val_pr_auc"),
+                ("val_target_f1", "best val_target_f1"),
+                ("val_precision", "best val_precision"),
+                ("val_recall", "best val_recall"),
+            ):
+                value = self.best_value(metric, "max")
+                if value is not None:
+                    lines.append(f"{label:<19}: {value:.4f}")
+            checkpoint_epoch = self.best_epoch()
+            lines.append(f"checkpoint metric  : {self.checkpoint_monitor}")
+            if checkpoint_epoch is not None:
+                lines.append(f"checkpoint epoch   : {checkpoint_epoch}")
+                checkpoint_value = self.value_at(self.checkpoint_monitor, checkpoint_epoch)
+                if checkpoint_value is not None:
+                    lines.append(f"checkpoint value   : {checkpoint_value:.4f}")
+        best_train_epoch = self.best_epoch("accuracy", "max")
         if best_train_epoch is not None:
             lines.append(
-                f"best accuracy    : {self.best_value('accuracy'):.4f} "
+                f"best accuracy      : {self.best_value('accuracy', 'max'):.4f} "
                 f"(epoch {best_train_epoch}, training split)"
             )
-        best_epoch = self.best_epoch()
-        if best_epoch is not None:
+        best_epoch = self.best_epoch("val_accuracy", "max")
+        if best_epoch is not None and not binary:
             chance = self.chance_level
             suffix = f" - chance is {chance:.4f}" if chance else ""
             lines.append(
-                f"best val_accuracy: {self.best_value():.4f} (epoch {best_epoch}){suffix}"
+                f"best val_accuracy: {self.best_value('val_accuracy', 'max'):.4f} "
+                f"(epoch {best_epoch}){suffix}"
             )
-            # The two "best" lines above are two different models: the best training
-            # accuracy is whatever the run drifted to, the checkpoint is the best
-            # validation epoch. Spell out the pair that actually shipped, so the
-            # train/val gap being read is the gap of one model.
-            restored_train = self.value_at("accuracy", best_epoch)
-            restored_val = self.value_at("val_accuracy", best_epoch)
+            checkpoint_epoch = self.best_epoch()
+            lines.append(f"checkpoint metric: {self.checkpoint_monitor}")
+            if checkpoint_epoch is not None:
+                lines.append(f"checkpoint epoch : {checkpoint_epoch}")
+            # Spell out accuracy at the model actually selected by the configured
+            # monitor; this need not be the epoch with best val_accuracy.
+            restored_train = self.value_at("accuracy", checkpoint_epoch or 0)
+            restored_val = self.value_at("val_accuracy", checkpoint_epoch or 0)
             if restored_train is not None and restored_val is not None:
                 lines.append(
-                    f"restored weights : epoch {best_epoch} - train {restored_train:.4f} / "
+                    f"restored weights : epoch {checkpoint_epoch} - train "
+                    f"{restored_train:.4f} / "
                     f"val {restored_val:.4f} (this is the checkpoint)"
                 )
-        if self.val_size:
+        if self.val_size and not binary:
             resolution = self.val_resolution or 0.0
             lines.append(
                 f"val split        : {self.val_size} clips "
                 f"(one clip = {resolution * 100:.1f} accuracy points)"
             )
-        lines.append(f"best model       : {self.best_model_path}")
+        lines.append(f"best model         : {self.best_model_path}")
+        if self.last_model_path is not None:
+            lines.append(f"last model         : {self.last_model_path}")
         for note in self.diagnose():
             lines.append(f"\n!! {note}")
         return "\n".join(lines)
@@ -580,6 +765,10 @@ class Trainer:
     @property
     def last_weights_path(self) -> Path:
         return self.checkpoint_dir / "last.weights.h5"
+
+    @property
+    def last_model_path(self) -> Path:
+        return self.checkpoint_dir / "last_model.keras"
 
     @property
     def history_path(self) -> Path:
@@ -640,6 +829,22 @@ class Trainer:
                 save_freq=training.checkpoint.save_freq,
                 verbose=1,
             ),
+            # Written every epoch before EarlyStopping can restore an earlier
+            # checkpoint on_train_end. This is the actual final epoch model.
+            keras.callbacks.ModelCheckpoint(
+                filepath=str(self.last_model_path),
+                save_best_only=False,
+                save_weights_only=False,
+                save_freq="epoch",
+                verbose=0,
+            ),
+            keras.callbacks.ModelCheckpoint(
+                filepath=str(self.last_weights_path),
+                save_best_only=False,
+                save_weights_only=True,
+                save_freq="epoch",
+                verbose=0,
+            ),
             keras.callbacks.CSVLogger(str(self.csv_log_path), append=True),
         ]
 
@@ -693,6 +898,7 @@ class Trainer:
         verbose: int = 1,
         val_size: Optional[int] = None,
         positive_rate: Optional[float] = None,
+        val_target_count: Optional[int] = None,
     ) -> TrainingArtifacts:
         """Run ``fit`` and return the artefacts.
 
@@ -715,6 +921,11 @@ class Trainer:
                 self.backup_dir,
             )
 
+        # BackupAndRestore may leave an interrupted backup. Store the matching
+        # config before the first optimiser step so a later process can prove
+        # that restoring it is safe.
+        self.config.save(self.snapshot_path)
+
         history = self.model.fit(
             train_dataset,
             validation_data=validation_dataset,
@@ -728,13 +939,14 @@ class Trainer:
         merged = self._merge_history(history.history) if resumed else {
             key: [float(value) for value in values] for key, values in history.history.items()
         }
-        self.model.save_weights(str(self.last_weights_path))
         self.history_path.write_text(json.dumps(merged, indent=2), encoding="utf-8")
-        self.config.save(self.checkpoint_dir / "config_snapshot.yaml")
 
         if not self.best_model_path.exists():
             # save_best_only never fired (single epoch, or validation missing).
             self.model.save(str(self.best_model_path))
+        if not self.last_model_path.exists():
+            self.model.save(str(self.last_model_path))
+            self.model.save_weights(str(self.last_weights_path))
 
         epochs_completed = len(next(iter(merged.values()), []))
         LOGGER.info("training finished after %d epochs", epochs_completed)
@@ -747,34 +959,39 @@ class Trainer:
             tensorboard_dir=self.log_dir / "tensorboard",
             csv_log_path=self.csv_log_path,
             epochs_completed=epochs_completed,
+            last_model_path=self.last_model_path,
             num_classes=int(self.num_classes),
             resumed=resumed,
             val_size=int(val_size) if val_size else None,
             positive_rate=float(positive_rate) if positive_rate is not None else None,
+            val_target_count=(int(val_target_count) if val_target_count is not None else None),
+            checkpoint_monitor=self.config.training.checkpoint.monitor,
+            checkpoint_mode=self.config.training.checkpoint.mode,
         )
 
     def _check_resume_compatibility(self) -> None:
         """Guard a resume against the config having moved since the backup.
 
-        Two failure modes, and only one of them is fatal:
-
-        * ``classes.include_phrases`` changes the width of the model's output, so
-          restoring the old optimiser state fails deep inside Keras with a shape
-          error that says nothing about the cause. That is raised.
-        * Every other setting - dropout, optimizer, learning rate, augmentation -
-          restores *successfully* and silently produces a run that is not the one
-          the config describes. The changed weights and optimiser slots come from
-          the old settings, the history splices both runs together, and the new
-          value never takes effect. That is warned about, loudly, because it is
-          the one that costs a full run before anyone notices.
+        Any run-producing config drift is fatal. Some changes would fail later
+        with a shape error; others would restore successfully and silently splice
+        incompatible histories. Both are rejected here, and no checkpoint is
+        deleted automatically.
         """
         if not self.snapshot_path.is_file():
-            return
+            raise ValueError(
+                f"run '{self.run_name}' has a BackupAndRestore checkpoint but no config "
+                "snapshot, so compatibility cannot be verified. Start a fresh run with "
+                "--fresh / FRESH_START = True; existing checkpoints are not deleted "
+                "automatically."
+            )
         try:
             previous = Config.load(self.snapshot_path)
-        except Exception as exc:  # noqa: BLE001 - a stale snapshot must not block a run
-            LOGGER.warning("ignoring unreadable config snapshot at %s: %s", self.snapshot_path, exc)
-            return
+        except Exception as exc:
+            raise ValueError(
+                f"unreadable config snapshot at {self.snapshot_path}; refusing to resume "
+                "an experiment whose compatibility cannot be verified. Use --fresh / "
+                "FRESH_START = True."
+            ) from exc
 
         before = previous.classes.include_phrases
         now = self.config.classes.include_phrases
@@ -790,15 +1007,10 @@ class Trainer:
         if not changes:
             return
         detail = "\n".join(f"    {key}: {old!r} -> {new!r}" for key, old, new in changes)
-        LOGGER.warning(
-            "run '%s' is being RESUMED but %d setting(s) changed since its backup was "
-            "written:\n%s\n  The restored weights and optimiser state come from the old "
-            "settings, so these values will not take effect and the reported history "
-            "splices both runs together. Set FRESH_START = True (or pick a new RUN_NAME) "
-            "for the change to mean anything.",
-            self.run_name,
-            len(changes),
-            detail,
+        raise ValueError(
+            f"run '{self.run_name}' cannot resume: {len(changes)} setting(s) changed "
+            f"since its backup was written:\n{detail}\nThe old backup was left untouched. "
+            "Use --fresh / FRESH_START = True or choose a new RUN_NAME."
         )
 
     def _merge_history(self, history: Dict[str, List[float]]) -> Dict[str, List[float]]:
@@ -822,6 +1034,14 @@ class Trainer:
         if not self.best_model_path.exists():
             raise FileNotFoundError(f"no checkpoint at {self.best_model_path}")
         self.model = load_trained_model(self.best_model_path)
+        self._compiled = False
+        return self.model
+
+    def load_last(self) -> keras.Model:
+        """Load the model captured at the actual last completed epoch."""
+        if not self.last_model_path.exists():
+            raise FileNotFoundError(f"no last-epoch model at {self.last_model_path}")
+        self.model = load_trained_model(self.last_model_path)
         self._compiled = False
         return self.model
 
@@ -947,6 +1167,11 @@ def load_trained_model(path: PathLike) -> keras.Model:
         "SparseCategoricalCrossentropyWithSmoothing": (
             SparseCategoricalCrossentropyWithSmoothing
         ),
+        "TargetF1": TargetF1,
+        "TargetPrecision": TargetPrecision,
+        "TargetRecall": TargetRecall,
+        "SparseTargetAUC": SparseTargetAUC,
+        "SparseMacroAUC": SparseMacroAUC,
     }
     if SparseMacroF1 is not None:
         custom_objects["SparseMacroF1"] = SparseMacroF1

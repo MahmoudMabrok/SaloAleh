@@ -19,6 +19,7 @@ from sklearn.metrics import (
     accuracy_score,
     auc,
     confusion_matrix,
+    precision_recall_curve,
     precision_recall_fscore_support,
     roc_curve,
 )
@@ -627,6 +628,10 @@ class DetectorEvaluation:
         return int(np.count_nonzero((self.y_true == 1) & ~self.accepted))
 
     @property
+    def true_negatives(self) -> int:
+        return int(np.count_nonzero((self.y_true != 1) & ~self.accepted))
+
+    @property
     def precision(self) -> float:
         detected = self.true_positives + self.false_positives
         return self.true_positives / detected if detected else float("nan")
@@ -637,14 +642,26 @@ class DetectorEvaluation:
 
     @property
     def f1(self) -> float:
-        precision, recall = self.precision, self.recall
-        if not np.isfinite(precision) or not np.isfinite(recall) or precision + recall == 0:
-            return float("nan")
-        return 2 * precision * recall / (precision + recall)
+        denominator = 2 * self.true_positives + self.false_positives + self.false_negatives
+        return 2 * self.true_positives / denominator if denominator else float("nan")
 
     @property
     def false_positive_rate(self) -> float:
         return self.false_positives / self.negatives if self.negatives else float("nan")
+
+    @property
+    def specificity(self) -> float:
+        return self.true_negatives / self.negatives if self.negatives else float("nan")
+
+    @property
+    def false_negative_rate(self) -> float:
+        return self.false_negatives / self.positives if self.positives else float("nan")
+
+    @property
+    def balanced_accuracy(self) -> float:
+        if not np.isfinite(self.recall) or not np.isfinite(self.specificity):
+            return float("nan")
+        return (self.recall + self.specificity) / 2.0
 
     @property
     def accuracy(self) -> float:
@@ -660,6 +677,20 @@ class DetectorEvaluation:
             (self.y_true == 1).astype(np.int32), self.scores
         )
         return float(auc(false_positive_rate, true_positive_rate))
+
+    @property
+    def roc_auc(self) -> float:
+        return self.auc
+
+    @property
+    def pr_auc(self) -> float:
+        """Area under precision-recall curve; NaN on a one-class split."""
+        if not self.positives or not self.negatives:
+            return float("nan")
+        precision, recall, _ = precision_recall_curve(
+            (self.y_true == 1).astype(np.int32), self.scores
+        )
+        return float(auc(recall, precision))
 
     def by_negative_type(self) -> Dict[str, Dict[str, float]]:
         """False-positive rate per negative category, worst first when sorted."""
@@ -713,6 +744,7 @@ class DetectorEvaluation:
             "positives": self.positives,
             "negatives": self.negatives,
             "true_positives": self.true_positives,
+            "true_negatives": self.true_negatives,
             "false_positives": self.false_positives,
             "false_negatives": self.false_negatives,
             "precision": _finite(self.precision),
@@ -720,8 +752,13 @@ class DetectorEvaluation:
             "recall_ci95": [_finite(low), _finite(high)],
             "f1": _finite(self.f1),
             "false_positive_rate": _finite(self.false_positive_rate),
+            "false_negative_rate": _finite(self.false_negative_rate),
+            "specificity": _finite(self.specificity),
+            "balanced_accuracy": _finite(self.balanced_accuracy),
             "accuracy": _finite(self.accuracy),
             "auc": _finite(self.auc),
+            "roc_auc": _finite(self.roc_auc),
+            "pr_auc": _finite(self.pr_auc),
             "by_negative_type": self.by_negative_type(),
             "worst_false_positives": self.worst_false_positives(),
         }
@@ -739,12 +776,26 @@ class DetectorEvaluation:
             f"threshold      : {self.threshold:.2f}",
             f"clips          : {self.num_samples} ({self.positives} target / "
             f"{self.negatives} other)",
-            f"precision      : {_percent(self.precision)}",
-            f"recall         : {_percent(self.recall)}",
-            f"F1             : {_percent(self.f1)}",
-            f"false positives: {self.false_positives} ({_percent(self.false_positive_rate)} "
-            f"of negatives)",
-            f"AUC            : {self.auc:.4f}" if np.isfinite(self.auc) else "AUC            : n/a",
+            "",
+            "                 predicted",
+            "                 unknown target",
+            f"actual unknown  {self.true_negatives:7d} {self.false_positives:6d}",
+            f"actual target   {self.false_negatives:7d} {self.true_positives:6d}",
+            "",
+            f"target precision : {_percent(self.precision)}",
+            f"target recall    : {_percent(self.recall)}",
+            f"target F1        : {_percent(self.f1)}",
+            f"specificity      : {_percent(self.specificity)}",
+            f"false positive rate: {_percent(self.false_positive_rate)}",
+            f"false negative rate: {_percent(self.false_negative_rate)}",
+            f"balanced accuracy: {_percent(self.balanced_accuracy)}",
+            f"accuracy         : {_percent(self.accuracy)}",
+            f"ROC AUC          : {self.roc_auc:.4f}"
+            if np.isfinite(self.roc_auc)
+            else "ROC AUC          : n/a",
+            f"PR AUC           : {self.pr_auc:.4f}"
+            if np.isfinite(self.pr_auc)
+            else "PR AUC           : n/a",
         ]
         breakdown = self.by_negative_type()
         if breakdown:
@@ -786,6 +837,9 @@ def evaluate_detector(
     values = np.asarray(list(scores), dtype=np.float32).ravel()
     if truth.size != values.size:
         raise ValueError(f"{truth.size} labels but {values.size} scores")
+    invalid = sorted(set(truth.tolist()) - {0, 1})
+    if invalid:
+        raise ValueError(f"binary detector labels must be 0/1, got {invalid}")
     return DetectorEvaluation(
         threshold=float(threshold),
         y_true=truth,

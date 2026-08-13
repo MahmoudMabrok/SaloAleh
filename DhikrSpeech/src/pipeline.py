@@ -62,9 +62,11 @@ from .streaming_eval import (
 from .targets import (
     TARGET_INDEX,
     TargetDatasetReport,
+    binary_split_distribution,
     build_target_report,
     sample_negatives,
     scan_target_dataset,
+    validate_binary_label_mapping,
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -80,6 +82,7 @@ __all__ = [
     "resolve_targets",
     "stream_target",
     "training_records",
+    "training_setup_summary",
 ]
 
 
@@ -260,6 +263,78 @@ def training_records(config: Config, records: Sequence[ManifestRecord]) -> List[
     return [record for record in sampled if record.split == "train"]
 
 
+def training_setup_summary(
+    preparation: TargetPreparation, train_records: Optional[Sequence[ManifestRecord]] = None
+) -> str:
+    """Human-readable binary mapping, split baselines and optimiser-step budget."""
+    config = preparation.config
+    train = list(train_records) if train_records is not None else training_records(
+        config, preparation.records
+    )
+    validate_binary_label_mapping(preparation.records, require_both=True)
+    splits = {
+        "train": train,
+        "validation": filter_split(preparation.records, "val"),
+        "test": filter_split(preparation.records, "test"),
+    }
+    lines = ["Binary label mapping:", "0 -> UNKNOWN", "1 -> TARGET", ""]
+    for name, records in splits.items():
+        distribution = binary_split_distribution(records)
+        baseline = (
+            f"{distribution.majority_baseline:.4f}"
+            if distribution.total
+            else "n/a (empty split)"
+        )
+        lines.extend(
+            [
+                f"{name}:",
+                f"  TARGET = {distribution.target}",
+                f"  UNKNOWN = {distribution.unknown}",
+                f"  majority-class baseline accuracy = {baseline}",
+            ]
+        )
+
+    for index, label in ((0, "UNKNOWN"), (1, "TARGET")):
+        examples = [record.path for record in preparation.records if record.class_index == index][:3]
+        lines.append(f"inspected {label} labels: {', '.join(examples) if examples else 'none'}")
+
+    val_distribution = binary_split_distribution(splits["validation"])
+    if val_distribution.target == 0:
+        lines.extend(
+            [
+                "",
+                "WARNING:",
+                "Validation contains no TARGET clips. TARGET recall, F1 and PR-AUC "
+                "cannot provide a trustworthy checkpoint signal.",
+            ]
+        )
+    elif val_distribution.target < 20:
+        lines.extend(
+            [
+                "",
+                "WARNING:",
+                f"Validation contains only {val_distribution.target} TARGET clips.",
+                "Target recall changes by "
+                f"{100.0 / val_distribution.target:.2f} percentage points for every "
+                "positive clip.",
+                "Treat target metrics as coarse estimates.",
+            ]
+        )
+
+    steps = math.ceil(len(train) / config.training.batch_size) if train else 0
+    lines.extend(
+        [
+            "",
+            f"training clips       : {len(train)}",
+            f"batch size           : {config.training.batch_size}",
+            f"steps per epoch      : {steps}",
+            f"configured epochs    : {config.training.epochs}",
+            f"max optimiser steps  : {steps * config.training.epochs}",
+        ]
+    )
+    return "\n".join(lines)
+
+
 # ---------------------------------------------------------------------------
 # Stage 2 - training
 # ---------------------------------------------------------------------------
@@ -304,6 +379,7 @@ def train_target(
     validation = filter_split(preparation.records, "val")
     if not train or not validation:
         raise ValueError("training needs a non-empty train and val split")
+    print(training_setup_summary(preparation, train))
 
     root = config.clip_cache_path()
     train_dataset = make_tf_dataset(
@@ -342,6 +418,7 @@ def train_target(
         verbose=verbose,
         val_size=len(validation),
         positive_rate=positives / len(validation) if validation else None,
+        val_target_count=positives,
     )
     return trainer, artifacts
 

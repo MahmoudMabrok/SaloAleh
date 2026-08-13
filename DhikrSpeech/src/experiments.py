@@ -158,9 +158,9 @@ def train_one_vs_rest(
     comparison meaningless, so override it only to shorten *both* sides.
 
     ``fresh`` wipes the run directory first. A one-vs-rest run reuses the
-    training machinery, which resumes by default - and silently resuming a
-    binary run left over from a previous experiment would poison the result with
-    weights trained on a different phrase.
+    training machinery. Resume is opt-in and rejects config drift, preventing a
+    binary run left over from a previous experiment from being silently reused
+    for a different phrase.
     """
     # TensorFlow is imported here rather than at module scope so that reading a
     # saved report does not pull in a 600 MB dependency, matching the lazy import
@@ -233,14 +233,14 @@ def train_one_vs_rest(
         "one-vs-rest '%s': %d epochs, best val_accuracy %s",
         positive_label,
         artifacts.epochs_completed,
-        artifacts.best_value(),
+        artifacts.best_value("val_accuracy", "max"),
     )
     return OneVsRestModel(
         label=positive_label,
         run_name=str(trainer.run_name),
         model=trainer.load_best(),
         epochs_completed=artifacts.epochs_completed,
-        best_val_accuracy=artifacts.best_value(),
+        best_val_accuracy=artifacts.best_value("val_accuracy", "max"),
         train_positives=positives,
         train_negatives=negatives,
     )

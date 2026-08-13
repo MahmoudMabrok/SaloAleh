@@ -75,8 +75,8 @@ def test_metadata_names_the_target(config: Config) -> None:
     payload = metadata(config)
     assert payload["target_phrase_id"] == "007"
     assert payload["target_phrase_text"] == TARGET_TEXT
-    assert payload["labels"] == ["unknown", "target"]
-    assert payload["target_index"] == 1
+    assert payload["labels"] == ["target"]
+    assert payload["target_index"] == 0
 
 
 def test_metadata_carries_every_frontend_parameter(config: Config) -> None:
@@ -192,9 +192,9 @@ def test_a_sigmoid_model_gets_one_label(tmp_path: Path) -> None:
 
 
 def test_metadata_labels_follow_the_output_mode(config: Config) -> None:
-    softmax = metadata(config)
+    softmax = metadata(config.with_overrides({"target.output_mode": "softmax"}))
     assert softmax["labels"] == ["unknown", "target"] and softmax["target_index"] == 1
-    sigmoid = metadata(config.with_overrides({"target.output_mode": "sigmoid"}))
+    sigmoid = metadata(config)
     assert sigmoid["labels"] == ["target"] and sigmoid["target_index"] == 0
     assert [entry["label"] for entry in sigmoid["classes"]] == ["target"]
 

@@ -61,9 +61,11 @@ __all__ = [
     "TARGET_INDEX",
     "TARGET_LABEL",
     "TargetDatasetReport",
+    "BinarySplitDistribution",
     "UNKNOWN_INDEX",
     "UNKNOWN_LABEL",
     "build_target_report",
+    "binary_split_distribution",
     "negative_breakdown",
     "recommend_clip_seconds",
     "sample_negatives",
@@ -71,6 +73,7 @@ __all__ = [
     "target_scoped_hard_negative_id",
     "target_class_names",
     "target_negative_paths",
+    "validate_binary_label_mapping",
 ]
 
 # Class indices inside a single-target run. 1 is the target so that
@@ -104,6 +107,63 @@ HARD_NEGATIVE = "hard_negative"
 TARGET_SCOPED_HARD_NEGATIVE = re.compile(
     r"(?:^|_)hard_negative_(?P<target>\d{1,3})(?=_|$)", re.IGNORECASE
 )
+
+
+@dataclass(frozen=True)
+class BinarySplitDistribution:
+    target: int
+    unknown: int
+
+    @property
+    def total(self) -> int:
+        return self.target + self.unknown
+
+    @property
+    def majority_baseline(self) -> float:
+        return max(self.target, self.unknown) / self.total if self.total else float("nan")
+
+
+def binary_split_distribution(records: Sequence[ManifestRecord]) -> BinarySplitDistribution:
+    """TARGET/UNKNOWN counts and constant-majority accuracy for one split."""
+    validate_binary_label_mapping(records)
+    return BinarySplitDistribution(
+        target=sum(record.class_index == TARGET_INDEX for record in records),
+        unknown=sum(record.class_index == UNKNOWN_INDEX for record in records),
+    )
+
+
+def validate_binary_label_mapping(
+    records: Sequence[ManifestRecord], samples_per_class: int = 3, require_both: bool = False
+) -> Dict[int, str]:
+    """Verify the exact labels fed to tf.data are UNKNOWN=0 and TARGET=1.
+
+    The optional sample walk intentionally checks concrete records from each
+    class, rather than trusting only a vocabulary declaration. ``make_tf_dataset``
+    consumes these same ``class_index`` values directly.
+    """
+    expected = {UNKNOWN_INDEX: UNKNOWN_LABEL, TARGET_INDEX: TARGET_LABEL}
+    seen: Dict[int, int] = {UNKNOWN_INDEX: 0, TARGET_INDEX: 0}
+    for record in records:
+        if record.class_index not in expected:
+            raise ValueError(
+                f"invalid binary label {record.class_index} for {record.path}; expected only 0/1"
+            )
+        expected_label = expected[record.class_index]
+        if record.label.lower() != expected_label:
+            raise ValueError(
+                f"invalid binary label mapping for {record.path}: class_index "
+                f"{record.class_index} must be '{expected_label}', got '{record.label}'"
+            )
+        if seen[record.class_index] < max(samples_per_class, 0):
+            # Counting these proves concrete rows in each class were inspected.
+            seen[record.class_index] += 1
+    if require_both:
+        missing = [expected[index].upper() for index, count in seen.items() if count == 0]
+        if missing:
+            raise ValueError(
+                "binary label sanity check needs both classes; missing " + ", ".join(missing)
+            )
+    return {UNKNOWN_INDEX: "UNKNOWN", TARGET_INDEX: "TARGET"}
 
 
 def target_scoped_hard_negative_id(path: PathLike) -> Optional[int]:

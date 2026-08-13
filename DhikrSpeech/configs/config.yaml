@@ -93,10 +93,9 @@ classes:
 # `phrase_id: null` is only the legacy multi-class comparison mode.
 target:
   phrase_id: all
-  # softmax = 2 outputs (unknown, target); sigmoid = 1 output P(target).
-  # Both are supported so they can be compared rather than assumed. softmax is
-  # the default because it is the smaller change from the existing pipeline.
-  output_mode: softmax
+  # sigmoid = one output P(target), matching the production question. Legacy
+  # two-output softmax remains supported for old experiments/checkpoints.
+  output_mode: sigmoid
   # Every other phrase folder (dataset/001, dataset/006, ...) becomes a negative.
   # These are the hard negatives that cost nothing - they are already collected.
   auto_other_dhikr_negatives: true
@@ -390,15 +389,13 @@ training:
   plateau_factor: 0.5
   plateau_patience: 4
 
-  # Also track macro F1. val_accuracy alone flatters a model that answers
-  # `unknown` to everything on an unbalanced split; macro F1 weighs every class
-  # equally and drops when a class is being ignored. Reported by default - set
-  # checkpoint.monitor / early_stopping.monitor to `val_macro_f1` to select on it.
+  # Legacy multi-class experiments also track macro F1. Sigmoid detectors track
+  # TARGET precision, recall, epoch-level F1, ROC AUC and PR AUC.
   macro_f1: true
 
   early_stopping:
     enabled: true
-    monitor: val_accuracy
+    monitor: val_pr_auc
     mode: max
     # Patience is in epochs; with a small dataset an epoch is a handful of steps,
     # so a patience tuned for big-dataset epochs stops the run before it starts.
@@ -407,7 +404,7 @@ training:
     restore_best_weights: true
 
   checkpoint:
-    monitor: val_accuracy
+    monitor: val_pr_auc
     mode: max
     save_best_only: true
     save_freq: epoch
@@ -417,7 +414,7 @@ training:
     histogram_freq: 0
     update_freq: epoch
 
-  resume: true                  # BackupAndRestore: rerunning fit continues the run
+  resume: false                 # opt in only when config snapshot is exactly compatible
   cache: true                   # cache decoded audio of the training split in RAM
   prefetch: true
 

@@ -59,9 +59,17 @@ def _install_tensorflow_stubs() -> None:
             def __init__(self, name=None, **kwargs):
                 self.name = name
 
+            def add_weight(self, name=None, initializer=None, **kwargs):
+                return 0.0
+
         # Deliberately without F1Score: this stands in for a Keras build that
         # predates it, which is the path `build_metrics` has to degrade over.
         keras.metrics = types.SimpleNamespace(
+            Metric=_Metric,
+            BinaryAccuracy=_Metric,
+            Precision=_Metric,
+            Recall=_Metric,
+            AUC=_Metric,
             SparseCategoricalAccuracy=_Metric,
             SparseTopKCategoricalAccuracy=_Metric,
         )
@@ -72,6 +80,7 @@ _install_tensorflow_stubs()
 
 from src.config import Config, TrainingConfig  # noqa: E402
 from src.trainer import (  # noqa: E402
+    CHANCE_TOLERANCE,
     COARSE_VAL_SPLIT,
     OVERFIT_GAP,
     SparseMacroF1,
@@ -92,6 +101,10 @@ def artifacts(
     num_classes: int = 3,
     val_size=None,
     resumed: bool = False,
+    positive_rate=None,
+    checkpoint_monitor: str = "val_accuracy",
+    checkpoint_mode: str = "max",
+    extra_history=None,
 ) -> TrainingArtifacts:
     placeholder = Path("checkpoints/ds_cnn/best_model.keras")
     history = {}
@@ -99,6 +112,7 @@ def artifacts(
         history["accuracy"] = [float(value) for value in accuracy]
     if val_accuracy is not None:
         history["val_accuracy"] = [float(value) for value in val_accuracy]
+    history.update(extra_history or {})
     return TrainingArtifacts(
         run_name="ds_cnn",
         history=history,
@@ -111,6 +125,9 @@ def artifacts(
         num_classes=num_classes,
         resumed=resumed,
         val_size=val_size,
+        positive_rate=positive_rate,
+        checkpoint_monitor=checkpoint_monitor,
+        checkpoint_mode=checkpoint_mode,
     )
 
 
@@ -170,7 +187,7 @@ def test_overfitting_run_reports_gap_early_peak_and_resolution():
     assert "1.00" in gap and "0.80" in gap
     assert "20 points" in gap
     # The pair that shipped, not the max of each curve separately.
-    assert "epoch 10's" in gap
+    assert "val_accuracy checkpoint is epoch 10" in gap
 
     peak = note_matching(notes, "validation peaked")
     assert "epoch 10 of 50" in peak
@@ -223,18 +240,46 @@ def test_unknown_val_size_omits_the_resolution_note():
 # ---------------------------------------------------------------------------
 # diagnose - the pre-existing branches must be untouched
 # ---------------------------------------------------------------------------
-def test_a_dead_run_still_reports_never_learned_anything():
+def test_a_dead_run_reports_that_training_task_was_not_learned():
     notes = artifacts([0.33] * 20, [0.33] * 20).diagnose()
     assert len(notes) == 1
-    assert "never learned anything" in notes[0]
+    assert "not to have learned the training task" in notes[0]
 
 
 def test_validation_at_chance_still_reports_memorisation():
     notes = artifacts([0.99] * 20, [0.34] * 20).diagnose()
     assert len(notes) == 1
-    assert "stayed at chance" in notes[0]
+    assert "stayed at the majority-class baseline" in notes[0]
     # The generalisation branch must not double up on the same failure.
     assert not any("overfitting:" in note for note in notes)
+
+
+def test_high_majority_baseline_does_not_call_learned_training_chance():
+    result = artifacts(
+        [0.6667, 0.9957],
+        [0.94, 0.94],
+        num_classes=1,
+        val_size=200,
+        positive_rate=0.06,
+    )
+    text = "\n".join(result.diagnose()).lower()
+    assert "learned/memorized the training set" in text
+    assert "training accuracy is at chance too" not in text
+    assert "never learned anything" not in text
+    assert CHANCE_TOLERANCE == pytest.approx(0.02)
+
+
+def test_binary_progress_prevents_a_nothing_learned_diagnosis():
+    result = artifacts(
+        [0.94, 0.95],
+        [0.94, 0.94],
+        num_classes=1,
+        positive_rate=0.06,
+        extra_history={"val_pr_auc": [0.06, 0.45], "val_target_f1": [0.0, 0.4]},
+    )
+    text = "\n".join(result.diagnose()).lower()
+    assert "target metrics improved" in text
+    assert "never learned anything" not in text
 
 
 def test_a_resumed_run_is_still_flagged():
@@ -255,7 +300,7 @@ def test_empty_history_diagnoses_nothing():
 def test_summary_separates_the_checkpoint_from_the_best_training_epoch():
     text = overfit_run().summary()
     # Best training accuracy (a later, discarded model) and the restored checkpoint.
-    assert "best accuracy    : 1.0000" in text
+    assert "best accuracy      : 1.0000" in text
     assert "best val_accuracy: 0.8000 (epoch 10)" in text
     assert "restored weights : epoch 10 - train 0.8700 / val 0.8000" in text
     assert "val split        : 20 clips (one clip = 5.0 accuracy points)" in text
@@ -264,6 +309,29 @@ def test_summary_separates_the_checkpoint_from_the_best_training_epoch():
 
 def test_summary_omits_the_val_split_line_when_the_size_is_unknown():
     assert "val split" not in overfit_run(val_size=None).summary()
+
+
+def test_binary_summary_uses_the_configured_checkpoint_monitor():
+    result = artifacts(
+        [0.70, 0.90, 0.99],
+        [0.95, 0.96, 0.97],
+        num_classes=1,
+        val_size=200,
+        positive_rate=0.06,
+        checkpoint_monitor="val_pr_auc",
+        extra_history={
+            "val_pr_auc": [0.20, 0.80, 0.60],
+            "val_target_f1": [0.1, 0.7, 0.6],
+            "val_precision": [0.2, 0.9, 0.8],
+            "val_recall": [0.1, 0.6, 0.5],
+        },
+    )
+    text = result.summary()
+    assert "checkpoint metric  : val_pr_auc" in text
+    assert "checkpoint epoch   : 2" in text
+    assert "best val_pr_auc    : 0.8000" in text
+    assert "best val_target_f1 : 0.7000" in text
+    assert "checkpoint epoch   : 3" not in text
 
 
 # ---------------------------------------------------------------------------
@@ -276,6 +344,18 @@ def config() -> Config:
 
 def test_identical_configs_have_no_differences(config):
     assert config_differences(config, Config()) == []
+
+
+def test_production_defaults_use_sigmoid_pr_auc_and_clean_runs(config):
+    assert config.target.output_mode == "sigmoid"
+    assert config.training.checkpoint.monitor == "val_pr_auc"
+    assert config.training.early_stopping.monitor == "val_pr_auc"
+    assert config.training.resume is False
+    yaml_config = Config.load(Path(__file__).resolve().parents[1] / "configs" / "config.yaml")
+    assert yaml_config.target.output_mode == "sigmoid"
+    assert yaml_config.training.checkpoint.monitor == "val_pr_auc"
+    assert yaml_config.training.early_stopping.monitor == "val_pr_auc"
+    assert yaml_config.training.resume is False
 
 
 def test_differences_name_every_changed_key(config):
@@ -331,15 +411,13 @@ def test_a_changed_class_vocabulary_is_fatal(tmp_path, config):
         trainer._check_resume_compatibility()
 
 
-def test_config_drift_warns_and_names_the_keys(tmp_path, config, caplog):
+def test_config_drift_requires_a_fresh_run(tmp_path, config):
     snapshot = config.with_overrides({"training.optimizer": "adam", "model.dropout": 0.2})
     trainer = trainer_with_snapshot(tmp_path, config, snapshot)
 
-    with caplog.at_level(logging.WARNING, logger="src.trainer"):
+    with pytest.raises(ValueError, match=r"2 setting\(s\) changed") as error:
         trainer._check_resume_compatibility()
-
-    assert len(caplog.records) == 1
-    message = caplog.records[0].getMessage()
+    message = str(error.value)
     assert "2 setting(s) changed" in message
     assert "model.dropout: 0.2 -> 0.3" in message
     assert "training.optimizer: 'adam' -> 'adamw'" in message
@@ -362,23 +440,26 @@ def test_a_moved_dataset_path_does_not_warn(tmp_path, config, caplog):
     assert caplog.records == []
 
 
-def test_a_missing_snapshot_is_not_an_error(tmp_path, config, caplog):
+def test_a_missing_snapshot_cannot_be_resumed_safely(tmp_path, config):
     trainer = trainer_with_snapshot(tmp_path, config, snapshot=None)
     assert not trainer.snapshot_path.is_file()
-    with caplog.at_level(logging.WARNING, logger="src.trainer"):
+    with pytest.raises(ValueError, match="no config snapshot"):
         trainer._check_resume_compatibility()
-    assert caplog.records == []
 
 
-def test_an_unreadable_snapshot_warns_but_does_not_block(tmp_path, config, caplog):
+def test_best_and_last_models_have_separate_paths(tmp_path, config):
+    trainer = trainer_with_snapshot(tmp_path, config)
+    assert trainer.best_model_path.name == "best_model.keras"
+    assert trainer.last_model_path.name == "last_model.keras"
+    assert trainer.best_model_path != trainer.last_model_path
+
+
+def test_an_unreadable_snapshot_cannot_be_resumed_safely(tmp_path, config):
     trainer = trainer_with_snapshot(tmp_path, config, config)
     trainer.snapshot_path.write_text("{ not: valid: yaml: [", encoding="utf-8")
 
-    with caplog.at_level(logging.WARNING, logger="src.trainer"):
+    with pytest.raises(ValueError, match="unreadable config snapshot"):
         trainer._check_resume_compatibility()
-
-    assert len(caplog.records) == 1
-    assert "unreadable config snapshot" in caplog.records[0].getMessage()
 
 
 # ---------------------------------------------------------------------------
@@ -393,12 +474,26 @@ def test_macro_f1_degrades_gracefully_on_a_keras_build_without_it(caplog):
     assert SparseMacroF1 is None  # the stub has no F1Score to subclass
     with caplog.at_level(logging.INFO, logger="src.trainer"):
         metrics = build_metrics(5, TrainingConfig(macro_f1=True))
-    assert [metric.name for metric in metrics] == ["accuracy", "top3_accuracy"]
+    assert [metric.name for metric in metrics] == ["accuracy", "top3_accuracy", "pr_auc"]
     assert "no F1Score metric" in caplog.text
 
 
 def test_macro_f1_can_be_switched_off_without_a_message(caplog):
     with caplog.at_level(logging.INFO, logger="src.trainer"):
         metrics = build_metrics(5, TrainingConfig(macro_f1=False))
-    assert len(metrics) == 2
+    assert [metric.name for metric in metrics] == ["accuracy", "top3_accuracy", "pr_auc"]
     assert "F1Score" not in caplog.text
+
+
+def test_sigmoid_metrics_include_pr_auc_and_target_f1():
+    metrics = build_metrics(1, TrainingConfig())
+    assert [metric.name for metric in metrics] == [
+        "accuracy", "precision", "recall", "auc", "pr_auc", "target_f1"
+    ]
+
+
+def test_legacy_two_output_softmax_keeps_pr_auc_monitor_available():
+    metrics = build_metrics(2, TrainingConfig())
+    assert [metric.name for metric in metrics] == [
+        "accuracy", "precision", "recall", "auc", "pr_auc", "target_f1"
+    ]

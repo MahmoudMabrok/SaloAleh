@@ -316,8 +316,7 @@ a human decision, because it invalidates every cached clip and checkpoint.
 ### The output head
 
 `target.output_mode` picks between a 2-output softmax (`unknown`, `target`) and a 1-output
-sigmoid `P(target)`. Both are supported so the two can be *compared* rather than assumed;
-softmax is the default because it is the smaller change from the rest of the pipeline. Either
+sigmoid `P(target)`. Sigmoid is the production default; legacy softmax remains supported. Either
 way, downstream code reads one number — `src.streaming.target_score` — so nothing else changes.
 
 ### Architectures
@@ -372,8 +371,9 @@ Everything is written to Drive as training runs, so a disconnected Colab session
 
 ```text
 checkpoints/<run_name>/
-├── best_model.keras        best epoch by val_accuracy
-├── last.weights.h5         weights at the final epoch
+├── best_model.keras        best epoch by configured monitor (val_pr_auc by default)
+├── last_model.keras        full model at the actual final epoch
+├── last.weights.h5         weights at the actual final epoch
 ├── history.json            merged across resumed runs
 ├── config_snapshot.yaml    the exact config this run used
 └── backup/                 resume state (optimizer + epoch)
@@ -385,7 +385,8 @@ logs/<run_name>/
 ### Reading the numbers
 
 For a detector, **accuracy is not the headline**. With negatives at twice the positives a model
-that never fires is already 67% accurate. The training log reports precision, recall and AUC;
+that never fires is already 67% accurate. The training log reports precision, recall, TARGET F1,
+ROC AUC and PR AUC; checkpoints and early stopping use validation PR AUC by default.
 `artifacts.summary()` computes "chance" as the majority class rather than `1/num_classes`, so a
 model that has learned to always say no is visible instead of looking like 67% of a good one.
 
@@ -996,7 +997,7 @@ The ones worth knowing:
 |---|---|
 | `paths.drive_root` / `paths.project_dir` | where the dataset lives |
 | `target.phrase_id` | `all` = one model per collected/catalogued phrase; a numeric id = one model; `null` = legacy multi-class |
-| `target.output_mode` | `softmax` (2 outputs) or `sigmoid` (1 output) |
+| `target.output_mode` | `sigmoid` (1 output, default) or legacy `softmax` (2 outputs) |
 | `target.auto_other_dhikr_negatives` | use the other phrase folders as negatives |
 | `target.phrase_overrides` | per-target `clip_seconds` |
 | `negative_sampling.ratio` / `weights` | how much of the negative pool one run trains on |
@@ -1185,14 +1186,14 @@ and the `!!` notes in `artifacts.summary()`). Work through it in this order:
    accuracy near chance is a run that needs more steps, while a flat loss at `ln(num_classes)`
    (2.30 for ten classes) is a run that is not learning at all. Lower `training.batch_size`, raise
    `training.epochs`.
-3. **Check you are not resuming.** With `training.resume: true`, re-running the notebook restores
+3. **Check you are not resuming.** Resume defaults to false. With `training.resume: true`, re-running the notebook restores
    the previous run's weights *and* optimiser state, and splices both runs' histories together — so
    a config change you made in between never took effect, and "epochs completed" counts epochs from
    a run you already abandoned. Set `FRESH_START = True` (or a new `RUN_NAME`) after any config
    change. The summary flags a resumed run, and `fit` compares the config against the snapshot
    stored with the backup — it raises when `classes.include_phrases` changed (the output width
-   moved, so the restore cannot work) and logs a `WARNING` listing every other setting that drifted,
-   because those restore *successfully* and quietly train something the config no longer describes.
+   moved, so the restore cannot work) and rejects every other run-producing setting that drifted.
+   Existing checkpoints are left untouched; use a fresh run name or explicitly reset that run.
 4. **Then look at the data**, which is usually the real answer. Section 03 prints clips per class
    for every split. If section 04 reports `samples : 10` for ten classes, the validation split is
    one clip per class: accuracy can only be 0.0, 0.1, 0.2 … and its 95% interval runs from 0.02 to

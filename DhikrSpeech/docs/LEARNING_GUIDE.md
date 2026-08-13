@@ -511,26 +511,26 @@ small and it never arrives. The best value changes over the run, so we schedule 
 
 ### 4.5 Knowing when to stop
 
-**Early stopping** (`monitor: val_accuracy`, `patience: 40`, `restore_best_weights: true`) watches
-accuracy on the validation split and stops when it has not improved for 40 epochs, then **restores
+**Early stopping** (`monitor: val_pr_auc`, `patience: 40`, `restore_best_weights: true`) watches
+PR AUC on the validation split and stops when it has not improved for 40 epochs, then **restores
 the weights from the best epoch**. Training past the optimum makes the model worse (§6.5), and this
 is the standard defence.
 
 Patience is in *epochs*, and epochs are tiny here — a patience of 5 tuned for a big-data run would
 kill this one before it started. Hence 40.
 
-**Checkpointing** (`save_best_only: true`) writes the weights to disk whenever validation accuracy
+**Checkpointing** (`save_best_only: true`) writes the model whenever validation PR AUC
 improves, so a Colab disconnect at epoch 250 does not cost you the run.
 
-**`resume: true`** uses Keras' `BackupAndRestore`: re-running the training cell continues from where
+**`resume: true`** (opt-in; the default is false) uses Keras' `BackupAndRestore`: re-running the training cell continues from where
 it stopped — weights, optimiser state *and* epoch counter.
 
 > **The resume trap.** Because resume restores everything, changing a config value and re-running
 > applies your change *on top of the old model*, and you will not notice. `Trainer._check_resume_compatibility`
 > ([`../src/trainer.py`](../src/trainer.py)) defends this: a changed `classes.include_phrases` **raises**
 > (the output width moved — the old weights are structurally incompatible), and drift in any other
-> resume-sensitive section logs a WARNING naming each changed key. After a config change, set
-> `FRESH_START = True`.
+> resume-sensitive section **raises before fitting** and names each changed key. Existing artifacts
+> are left untouched; after a config change, use a new `RUN_NAME` or set `FRESH_START = True`.
 
 ### 4.6 Mixed precision
 
@@ -676,10 +676,9 @@ explicitly, and also prints the epoch validation peaked at and *how many accurac
 validation clip is worth* — with 60 validation clips one clip is 1.7 points, so a "3-point
 improvement" is two clips and probably noise.
 
-> **`summary()` prints two numbers that are two different models.** `best accuracy` is the best
-> *training* epoch; `best val_accuracy` is the restored checkpoint. Comparing them tells you nothing.
-> The `restored weights` line shows the train/val pair *from the same epoch* — the model that actually
-> shipped — and it is the only gap that means anything.
+> **`summary()` names the configured checkpoint metric and epoch.** `best accuracy` and
+> `best val_accuracy` can belong to different models; neither identifies the saved model when the
+> monitor is `val_pr_auc`. The checkpoint line shows the epoch that was actually selected.
 
 In order of effectiveness, the fixes are: **more recordings from more speakers** (always first),
 stronger augmentation, `model.width_multiplier: 0.5`, more dropout, more weight decay.

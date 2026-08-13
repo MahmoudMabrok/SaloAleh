@@ -29,6 +29,7 @@ from src.streaming_eval import (
     load_annotations,
     match_events,
 )
+from src.metrics import evaluate_detector
 
 HOP = 0.2
 WINDOW = 1.0
@@ -56,6 +57,20 @@ def detector(activation: float = 0.7) -> DetectorConfig:
         release_windows=2,
         cooldown_ms=200.0,
     )
+
+
+def test_binary_clip_report_exposes_all_negative_collapse() -> None:
+    result = evaluate_detector([0] * 188 + [1] * 12, [0.0] * 200, threshold=0.5)
+    assert (result.true_negatives, result.false_positives) == (188, 0)
+    assert (result.false_negatives, result.true_positives) == (12, 0)
+    assert result.accuracy == pytest.approx(0.94)
+    assert result.specificity == pytest.approx(1.0)
+    assert result.false_negative_rate == pytest.approx(1.0)
+    assert result.balanced_accuracy == pytest.approx(0.5)
+    text = result.summary()
+    assert "actual unknown" in text
+    assert "188" in text and "12" in text
+    assert "PR AUC" in text and "balanced accuracy" in text
 
 
 # ---------------------------------------------------------------------------

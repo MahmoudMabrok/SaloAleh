@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import sys
+from types import SimpleNamespace
 from pathlib import Path
 
 import pytest
@@ -25,12 +26,15 @@ from src.targets import (
     UNKNOWN_INDEX,
     UNKNOWN_LABEL,
     build_target_report,
+    binary_split_distribution,
     negative_breakdown,
     recommend_clip_seconds,
     sample_negatives,
     scan_target_dataset,
     target_negative_paths,
+    validate_binary_label_mapping,
 )
+from src.pipeline import training_setup_summary
 
 PHRASES = [
     Phrase(id=1, text="سبحان الله"),
@@ -63,6 +67,56 @@ def dataset(tmp_path: Path) -> Path:
 def scan(root: Path, **kwargs):
     target = TargetConfig(phrase_id=7, **kwargs)
     return scan_target_dataset(root, PHRASES, target)
+
+
+def record(label: str, class_index: int, path: str, split: str = "train") -> ManifestRecord:
+    return ManifestRecord(path, path, label, class_index, None, label, split, 1.0)
+
+
+def test_binary_label_mapping_accepts_unknown_zero_target_one() -> None:
+    mapping = validate_binary_label_mapping(
+        [record("unknown", 0, "u.wav"), record("target", 1, "t.wav")]
+    )
+    assert mapping == {0: "UNKNOWN", 1: "TARGET"}
+
+
+def test_binary_split_distribution_reports_majority_baseline() -> None:
+    rows = [record("unknown", 0, f"u{i}.wav") for i in range(188)]
+    rows += [record("target", 1, f"t{i}.wav") for i in range(12)]
+    distribution = binary_split_distribution(rows)
+    assert distribution.target == 12
+    assert distribution.unknown == 188
+    assert distribution.majority_baseline == pytest.approx(0.94)
+
+
+def test_training_setup_prints_split_baselines_warning_and_step_budget() -> None:
+    train = [record("unknown", 0, f"u{i}.wav") for i in range(20)]
+    train += [record("target", 1, f"t{i}.wav") for i in range(10)]
+    validation = [record("unknown", 0, f"vu{i}.wav", "val") for i in range(188)]
+    validation += [record("target", 1, f"vt{i}.wav", "val") for i in range(12)]
+    test = [record("unknown", 0, "test-u.wav", "test"), record("target", 1, "test-t.wav", "test")]
+    config = Config.load(Path(__file__).resolve().parents[1] / "configs" / "config.yaml")
+    preparation = SimpleNamespace(config=config, records=train + validation + test)
+    text = training_setup_summary(preparation, train)
+    assert "0 -> UNKNOWN" in text and "1 -> TARGET" in text
+    assert "Validation contains only 12 TARGET clips" in text
+    assert "8.33 percentage points" in text
+    assert "training clips       : 30" in text
+    assert "steps per epoch      : 2" in text
+    assert "max optimiser steps  : 600" in text
+
+
+@pytest.mark.parametrize(
+    "records",
+    [
+        [record("unknown", 2, "bad.wav")],
+        [record("target", 0, "bad.wav")],
+        [record("other", 1, "bad.wav")],
+    ],
+)
+def test_binary_label_mapping_fails_loudly_on_invalid_labels(records) -> None:
+    with pytest.raises(ValueError, match="binary label"):
+        validate_binary_label_mapping(records)
 
 
 # ---------------------------------------------------------------------------
