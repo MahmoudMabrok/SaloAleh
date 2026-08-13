@@ -55,6 +55,7 @@ __all__ = [
     "DatasetIndex",
     "DatasetIssue",
     "DatasetStatistics",
+    "INSPECTABLE_ISSUE_KINDS",
     "ManifestRecord",
     "Phrase",
     "PreprocessSummary",
@@ -104,6 +105,16 @@ ISSUE_KINDS = (
     "sample_rate",
     "too_short",
     "too_long",
+    "duplicate",
+)
+
+# The audit findings surfaced by the notebook's interactive inspector. Duration
+# findings remain in the validation report, but they are not cleanup categories.
+INSPECTABLE_ISSUE_KINDS = (
+    "corrupted",
+    "silent",
+    "stereo",
+    "sample_rate",
     "duplicate",
 )
 
@@ -506,6 +517,73 @@ class ValidationReport:
 
     def issues_of(self, kind: str) -> List[DatasetIssue]:
         return [issue for issue in self.issues if issue.kind == kind]
+
+    def issue_records(
+        self, kinds: Optional[Sequence[str]] = None
+    ) -> List[Dict[str, object]]:
+        """Return audit findings enriched with the already-collected file metadata.
+
+        This is the reusable handoff between validation and interactive tools. It
+        deliberately joins :attr:`issues` to :attr:`file_stats` instead of opening
+        any recordings again. ``file`` and ``issue`` are stable UI/reporting names;
+        the older ``path``/``kind`` fields remain available on :class:`DatasetIssue`.
+        """
+        selected = set(kinds) if kinds is not None else None
+        stats_by_path = {item.path: item for item in self.file_stats}
+        records: List[Dict[str, object]] = []
+        for issue in self.issues:
+            if selected is not None and issue.kind not in selected:
+                continue
+            stat = stats_by_path.get(issue.path)
+            records.append(
+                {
+                    "file": issue.path,
+                    "issue": issue.kind,
+                    "label": issue.label,
+                    "sample_rate": stat.sample_rate if stat and stat.sample_rate else None,
+                    "channels": stat.channels if stat and stat.channels else None,
+                    "duration": stat.duration if stat and stat.duration > 0.0 else None,
+                    "readable": bool(stat and stat.ok),
+                    "details": issue.detail,
+                    "duplicate_group": stat.content_hash if stat and stat.content_hash else None,
+                }
+            )
+        return records
+
+    def duplicate_groups(self) -> List[List[Dict[str, object]]]:
+        """Return every decoded duplicate group, including its first-seen member.
+
+        Validation records duplicate *issues* only for the later copies so counts
+        retain their historic meaning. An inspector needs all members side by side
+        so a person can decide which file to keep; content hashes already computed
+        by the deep audit provide that grouping without another dataset scan.
+        """
+        grouped: Dict[str, List[FileStats]] = defaultdict(list)
+        for stat in self.file_stats:
+            if stat.content_hash:
+                grouped[stat.content_hash].append(stat)
+
+        result: List[List[Dict[str, object]]] = []
+        for digest, members in grouped.items():
+            if len(members) < 2:
+                continue
+            result.append(
+                [
+                    {
+                        "file": stat.path,
+                        "issue": "duplicate",
+                        "label": stat.label,
+                        "sample_rate": stat.sample_rate or None,
+                        "channels": stat.channels or None,
+                        "duration": stat.duration if stat.duration > 0.0 else None,
+                        "readable": stat.ok,
+                        "details": "member of duplicate group",
+                        "duplicate_group": digest,
+                    }
+                    for stat in members
+                ]
+            )
+        return result
 
     def unusable_paths(self) -> List[str]:
         """Files that must not enter preprocessing."""

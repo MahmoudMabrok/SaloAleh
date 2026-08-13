@@ -26,6 +26,7 @@ from src.streaming_eval import (
     StreamingClip,
     calibrate_threshold,
     evaluate_timelines,
+    extract_streaming_errors,
     load_annotations,
     match_events,
 )
@@ -225,6 +226,81 @@ def test_evaluation_serialises() -> None:
     payload = json.loads(json.dumps(evaluation.to_dict()))
     assert payload["overall"]["expected"] == 1
     assert payload["per_clip"][0]["file"] == "a.wav"
+
+
+def test_streaming_error_inspector_extracts_fp_and_fn_with_local_timelines(
+    tmp_path: Path, monkeypatch
+) -> None:
+    extracted = []
+
+    def fake_extract(source, destination, sample_rate, start, end):
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(b"wav")
+        extracted.append((source, destination, sample_rate, start, end))
+        return destination
+
+    monkeypatch.setattr("src.streaming_eval._extract_error_wav", fake_extract)
+
+    false_positive = ScoredClip(
+        StreamingClip(
+            file="tv.wav",
+            expected_count=0,
+            target="007",
+            category="background_audio",
+        ),
+        timeline(utterance_at(4, total=45, peak=0.93)),
+    )
+    missed_scores = np.full(45, 0.08, dtype=np.float32)
+    false_negative = ScoredClip(
+        StreamingClip(file="session.wav", events=[(5.0, 6.0)], target="007"),
+        timeline(missed_scores),
+    )
+
+    errors = extract_streaming_errors(
+        [false_positive, false_negative],
+        detector(),
+        audio_root=tmp_path / "audio",
+        output_dir=tmp_path / "errors",
+        sample_rate=16_000,
+        tolerance=0.75,
+        context_seconds=1.0,
+    )
+
+    assert [error.kind for error in errors] == ["FP", "FN"]
+    assert errors[0].source_category == "background_audio"
+    assert errors[0].confidence == pytest.approx(0.93)
+    assert errors[1].source_category == "target_session"
+    assert errors[1].timestamp == pytest.approx(5.5)
+    assert errors[1].confidence == pytest.approx(0.08)
+    assert all(Path(error.wav_path).is_file() for error in errors if error.wav_path)
+    assert all(error.timeline_rows() for error in errors)
+    assert errors[0].row()["source_file"] == "tv.wav"
+    assert len(extracted) == 2
+    assert all(call[2] == 16_000 and call[4] > call[3] for call in extracted)
+
+
+def test_streaming_error_wav_is_a_resampled_short_excerpt(tmp_path: Path) -> None:
+    from src.audio import read_wav, write_wav
+    from src.streaming_eval import _extract_error_wav
+
+    source_rate = 8_000
+    source = np.sin(
+        2.0 * np.pi * 220.0 * np.arange(source_rate * 4) / source_rate
+    ).astype(np.float32) * 0.2
+    write_wav(tmp_path / "source.wav", source, source_rate)
+
+    destination = _extract_error_wav(
+        tmp_path / "source.wav",
+        tmp_path / "errors" / "excerpt.wav",
+        sample_rate=16_000,
+        start=1.0,
+        end=2.5,
+    )
+    excerpt, output_rate = read_wav(destination)
+
+    assert output_rate == 16_000
+    assert excerpt.size == pytest.approx(16_000 * 1.5, abs=2)
+    assert np.max(np.abs(excerpt)) > 0.1
 
 
 # ---------------------------------------------------------------------------

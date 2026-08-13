@@ -73,6 +73,7 @@ __all__ = [
     "NegativeClipReport",
     "ScoredClip",
     "StreamingClip",
+    "StreamingError",
     "StreamingEvaluation",
     "ThresholdRow",
     "add_target_scoped_stream_negatives",
@@ -83,6 +84,7 @@ __all__ = [
     "calibrate_threshold",
     "evaluate_negative_clips",
     "evaluate_timelines",
+    "extract_streaming_errors",
     "load_annotations",
     "load_streaming_set",
     "match_events",
@@ -867,6 +869,64 @@ class ScoredClip:
 
 
 @dataclass
+class StreamingError:
+    """One localised false-positive or false-negative streaming error.
+
+    ``confidence`` is the detected event peak for an FP. For an FN it is the
+    highest cached model score in the annotated interval plus the matching
+    tolerance, which shows how close the missed phrase came to firing. The
+    timeline is sliced from the already-scored recording; extracting an error
+    never runs the model again.
+    """
+
+    kind: str
+    file: str
+    source_category: str
+    timestamp: float
+    confidence: float
+    score_timestamp: float
+    excerpt_start: float
+    excerpt_end: float
+    wav_path: Optional[str]
+    timeline_times: List[float] = field(default_factory=list)
+    timeline_scores: List[float] = field(default_factory=list)
+    annotation_start: Optional[float] = None
+    annotation_end: Optional[float] = None
+    extraction_error: str = ""
+
+    def row(self) -> Dict[str, object]:
+        """Compact metadata row for notebook tables and CSV/JSON reports."""
+        return {
+            "error": self.kind,
+            "timestamp_s": round(self.timestamp, 3),
+            "confidence": round(self.confidence, 4),
+            "score_timestamp_s": round(self.score_timestamp, 3),
+            "source_category": self.source_category,
+            "source_file": self.file,
+            "excerpt_start_s": round(self.excerpt_start, 3),
+            "excerpt_end_s": round(self.excerpt_end, 3),
+            "annotation_start_s": (
+                round(self.annotation_start, 3) if self.annotation_start is not None else None
+            ),
+            "annotation_end_s": (
+                round(self.annotation_end, 3) if self.annotation_end is not None else None
+            ),
+            "wav": self.wav_path,
+            "extraction_error": self.extraction_error or None,
+        }
+
+    def timeline_rows(self) -> List[Dict[str, float]]:
+        """The local score timeline as timestamp/confidence rows."""
+        return [
+            {
+                "timestamp_s": round(float(timestamp), 3),
+                "confidence": round(float(score), 4),
+            }
+            for timestamp, score in zip(self.timeline_times, self.timeline_scores)
+        ]
+
+
+@dataclass
 class ClipEventResult:
     """Per-recording outcome at one operating point."""
 
@@ -923,6 +983,200 @@ def _load(path: Path, sample_rate: int) -> np.ndarray:
     from .audio import load_audio
 
     return load_audio(path, sample_rate)
+
+
+def _extract_error_wav(
+    source: Path,
+    destination: Path,
+    sample_rate: int,
+    start: float,
+    end: float,
+) -> Path:
+    """Decode only an error-sized region and write a portable mono PCM16 WAV."""
+    import soundfile as sf
+    from scipy.signal import resample_poly
+
+    from .audio import load_audio, write_wav
+
+    begin = max(float(start), 0.0)
+    finish = max(float(end), begin)
+    try:
+        # SoundFile can seek without decoding the preceding minutes, which is
+        # exactly what an inspector over long streaming recordings needs.
+        with sf.SoundFile(str(source)) as handle:
+            source_rate = int(handle.samplerate)
+            first_frame = min(int(math.floor(begin * source_rate)), len(handle))
+            last_frame = min(int(math.ceil(finish * source_rate)), len(handle))
+            handle.seek(first_frame)
+            decoded = handle.read(
+                max(last_frame - first_frame, 0), dtype="float32", always_2d=True
+            )
+        samples = np.mean(decoded, axis=1, dtype=np.float32)
+        if samples.size and source_rate != sample_rate:
+            common = math.gcd(source_rate, sample_rate)
+            samples = np.asarray(
+                resample_poly(samples, sample_rate // common, source_rate // common),
+                dtype=np.float32,
+            )
+    except Exception:  # Formats unsupported by libsndfile use the normal decoder fallback.
+        samples = load_audio(
+            source,
+            sample_rate,
+            offset=begin,
+            duration=max(finish - begin, 0.0),
+        )
+    if samples.size == 0:
+        raise ValueError("decoded excerpt is empty")
+    return write_wav(destination, samples, sample_rate)
+
+
+def extract_streaming_errors(
+    scored: Sequence[ScoredClip],
+    detector: DetectorConfig,
+    audio_root: PathLike,
+    output_dir: PathLike,
+    sample_rate: int,
+    tolerance: float = 0.75,
+    context_seconds: float = 2.0,
+) -> List[StreamingError]:
+    """Extract a small WAV and cached score timeline around every FP and FN.
+
+    The model is not invoked here. Detections are replayed from each
+    :class:`ScoredClip` timeline, matched exactly as in :func:`evaluate_timelines`,
+    and only the short audio regions surrounding errors are decoded. Count-only
+    and unannotated recordings are skipped because they cannot identify a
+    particular detection as false or locate a missed repetition.
+
+    For false negatives, ``confidence`` is the highest score whose window centre
+    falls within the truth interval plus ``tolerance``. This makes a weak near-hit
+    distinguishable from a completely flat miss.
+    """
+    if context_seconds < 0.0:
+        raise ValueError("context_seconds must be non-negative")
+    if sample_rate <= 0:
+        raise ValueError("sample_rate must be positive")
+
+    root = Path(audio_root)
+    destination_root = Path(output_dir)
+    errors: List[StreamingError] = []
+    ordinal = 0
+
+    for item in scored:
+        clip = item.clip
+        if not clip.measures_false_activations:
+            continue
+
+        events = detect_events(item.timeline, detector)
+        match = match_events(events, clip.events, tolerance)
+        duration = float(clip.duration or item.timeline.duration_seconds)
+        category = clip.category or (
+            "target_session" if clip.events else "uncategorised"
+        )
+        centres = item.timeline.centre_times()
+        scores = item.timeline.scores
+        candidates: List[Dict[str, object]] = []
+
+        for event_index in match.false_detections:
+            event = events[event_index]
+            candidates.append(
+                {
+                    "kind": "FP",
+                    "timestamp": float(event.time),
+                    "confidence": float(event.peak_score),
+                    "score_timestamp": float(event.time),
+                    "region_start": float(event.start),
+                    "region_end": float(event.end),
+                    "annotation_start": None,
+                    "annotation_end": None,
+                }
+            )
+
+        for truth_index in match.missed:
+            truth_start, truth_end = clip.events[truth_index]
+            timestamp = (float(truth_start) + float(truth_end)) / 2.0
+            near_truth = (
+                (centres >= float(truth_start) - tolerance)
+                & (centres <= float(truth_end) + tolerance)
+            )
+            if np.any(near_truth):
+                nearby_indices = np.flatnonzero(near_truth)
+                peak_index = int(nearby_indices[np.argmax(scores[near_truth])])
+                confidence = float(scores[peak_index])
+                score_timestamp = float(centres[peak_index])
+            else:
+                confidence = 0.0
+                score_timestamp = timestamp
+            candidates.append(
+                {
+                    "kind": "FN",
+                    "timestamp": timestamp,
+                    "confidence": confidence,
+                    "score_timestamp": score_timestamp,
+                    "region_start": float(truth_start),
+                    "region_end": float(truth_end),
+                    "annotation_start": float(truth_start),
+                    "annotation_end": float(truth_end),
+                }
+            )
+
+        source = root / clip.file
+        safe_stem = re.sub(r"[^A-Za-z0-9._-]+", "_", Path(clip.file).stem).strip("_")
+        safe_stem = safe_stem or "stream"
+
+        for candidate in sorted(candidates, key=lambda value: float(value["timestamp"])):
+            ordinal += 1
+            region_start = float(candidate["region_start"])
+            region_end = float(candidate["region_end"])
+            excerpt_start = max(0.0, region_start - context_seconds)
+            excerpt_end = min(duration, region_end + context_seconds) if duration else (
+                region_end + context_seconds
+            )
+            local = (centres >= excerpt_start) & (centres <= excerpt_end)
+            local_times = [float(value) for value in centres[local]]
+            local_scores = [float(value) for value in scores[local]]
+
+            timestamp_ms = int(round(float(candidate["timestamp"]) * 1000.0))
+            filename = (
+                f"{str(candidate['kind']).lower()}_{ordinal:04d}_{safe_stem}_"
+                f"{timestamp_ms:010d}ms.wav"
+            )
+            wav_destination = destination_root / filename
+            wav_path: Optional[str] = None
+            extraction_error = ""
+            try:
+                wav_path = str(
+                    _extract_error_wav(
+                        source,
+                        wav_destination,
+                        sample_rate,
+                        excerpt_start,
+                        excerpt_end,
+                    )
+                )
+            except Exception as exc:  # noqa: BLE001 - one bad source must not hide other errors
+                extraction_error = f"{type(exc).__name__}: {exc}"
+                LOGGER.warning("could not extract streaming error from %s: %s", source, exc)
+
+            errors.append(
+                StreamingError(
+                    kind=str(candidate["kind"]),
+                    file=clip.file,
+                    source_category=category,
+                    timestamp=float(candidate["timestamp"]),
+                    confidence=float(candidate["confidence"]),
+                    score_timestamp=float(candidate["score_timestamp"]),
+                    excerpt_start=excerpt_start,
+                    excerpt_end=excerpt_end,
+                    wav_path=wav_path,
+                    timeline_times=local_times,
+                    timeline_scores=local_scores,
+                    annotation_start=candidate["annotation_start"],
+                    annotation_end=candidate["annotation_end"],
+                    extraction_error=extraction_error,
+                )
+            )
+
+    return errors
 
 
 @dataclass
