@@ -6,14 +6,14 @@ package tools.mo3ta.salo.domain
  * Regular tapping is uncapped; only these external batches are limited so a single
  * manual entry can't flood the leaderboard. Applied per challenge, resets each day.
  */
-const val CHALLENGE_MANUAL_DAILY_CAP = 5_000
+const val CHALLENGE_MANUAL_DAILY_CAP = 800
 
 /**
  * Baqiyat's own, lower manual-entry daily cap. Baqiyat is counted in full cycles
  * (one pass over all phrases), so its external batches are limited to a tighter
  * ceiling than the per-count challenges above.
  */
-const val BAQIYAT_MANUAL_DAILY_CAP = 2_000
+const val BAQIYAT_MANUAL_DAILY_CAP = 600
 
 /**
  * Maximum salawat a user may credit to the weekly Mohamed Lovers competition per Cairo day

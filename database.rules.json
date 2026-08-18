@@ -867,7 +867,7 @@
               ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 3"
             },
             "totalCount": {
-              ".validate": "newData.isNumber() && newData.val() >= 0"
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= (newData.parent().child('yesterdayTotalScore').exists() ? newData.parent().child('yesterdayTotalScore').val() : 0) + newData.parent().child('todayCount').val()"
             },
             "yesterdayTotalScore": {
               ".read": true,

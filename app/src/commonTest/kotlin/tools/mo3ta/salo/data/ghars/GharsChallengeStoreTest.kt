@@ -100,7 +100,7 @@ class GharsChallengeStoreTest {
         val store = GharsChallengeStore(MapSettings())
         val day = LocalDate(2026, 7, 12)
         // Over-cap batch is clamped; lifetime credits only the applied amount, not the request.
-        store.addToday(day, CHALLENGE_MANUAL_DAILY_CAP + 5000)
+        store.addToday(day, CHALLENGE_MANUAL_DAILY_CAP +  5000)
         assertEquals(CHALLENGE_MANUAL_DAILY_CAP, store.lifetimeCount())
         // A further batch past the cap applies nothing and adds nothing to lifetime.
         store.addToday(day, 100)
