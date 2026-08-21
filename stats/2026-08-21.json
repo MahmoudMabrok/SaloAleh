@@ -1,0 +1,110 @@
+{
+  "allTimeSalawat": 3941960,
+  "weekSalawat": 3964,
+  "todaySalawat": 3964,
+  "activePlayers": 65,
+  "countriesCount": 3,
+  "countries": [
+    "EG",
+    "IQ",
+    "SY"
+  ],
+  "topScore": 1001,
+  "roundKey": "2026-08-28",
+  "leaderboard": [
+    {
+      "countryCode": "EG",
+      "isSupporter": true,
+      "nickname": "نورهان أيمن🌷",
+      "rank": 1,
+      "rankChange": "new",
+      "score": 686,
+      "uid": "7312bb535d95264110d98bbe513b33bf7895da6e7245a6ce223ca0a9c4c1ded9"
+    },
+    {
+      "countryCode": "EG",
+      "nickname": "ايه",
+      "rank": 2,
+      "rankChange": "down",
+      "score": 658,
+      "uid": "187fd58d0668670c2478e0337aa70a1873e3ead80e8c43c03ee1eebc359849a8"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "heart",
+      "nickname": "c84f24",
+      "rank": 3,
+      "rankChange": "down",
+      "roundStreak": 1,
+      "score": 470,
+      "uid": "5472bc710d53758f8681367b9a447e30b6e89833cf0970dd52cbdae297c84f24"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "crescent",
+      "nickname": "MF1979",
+      "rank": 4,
+      "rankChange": "down",
+      "score": 326,
+      "silverMedals": 1,
+      "uid": "a6edef5b54050a0eeff694c23ec03d8ff1e6110d49bf2452f2bc7a9c52f706ba"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "goldMedals": 1,
+      "nickname": "محمود",
+      "rank": 5,
+      "rankChange": "down",
+      "score": 236,
+      "silverMedals": 1,
+      "uid": "cf0116cf9c1bf2ef2965b238768139059a0088bbb734739297ac650ede2fd00b"
+    },
+    {
+      "countryCode": "EG",
+      "nickname": "الهدي",
+      "rank": 6,
+      "rankChange": "down",
+      "score": 200,
+      "uid": "76626e020a7d45932223ba5eeee768bb507287201287313a7110c1d34c9078c6"
+    },
+    {
+      "countryCode": "EG",
+      "nickname": "ياسمين",
+      "rank": 7,
+      "rankChange": "down",
+      "score": 186,
+      "uid": "6b4a83c051ba8e34f813ee2c75c916320c59fb165425366d28136f0bf1b146c9"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "sprout",
+      "nickname": "مصطفى يونس",
+      "rank": 8,
+      "rankChange": "down",
+      "roundStreak": 1,
+      "score": 163,
+      "uid": "3718e28dd1381620e727c124152573702d2aa2b7c5387b805981b4d9be32e1a3"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "heart",
+      "nickname": "محمد",
+      "rank": 9,
+      "rankChange": "down",
+      "score": 162,
+      "uid": "ea49f4192a125477c83520882c53537f79998fa6bfdb83d7628cef54efed0f24"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "sprout",
+      "nickname": "صباح",
+      "rank": 10,
+      "rankChange": "down",
+      "roundStreak": 1,
+      "score": 131,
+      "uid": "91d5daa066b466b5d52e72975e7aa6103fdd38dd1a466c364f48c82aa78c1172"
+    }
+  ],
+  "updatedAt": "2026-08-21T20:58:10.806Z"
+}
