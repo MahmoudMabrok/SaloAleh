@@ -1,0 +1,129 @@
+{
+  "allTimeSalawat": 4006321,
+  "weekSalawat": 68325,
+  "todaySalawat": 64361,
+  "activePlayers": 199,
+  "countriesCount": 12,
+  "countries": [
+    "AE",
+    "DE",
+    "DZ",
+    "EG",
+    "IQ",
+    "LY",
+    "MA",
+    "NA",
+    "SA",
+    "SD",
+    "SY",
+    "YE"
+  ],
+  "topScore": 12446,
+  "roundKey": "2026-08-28",
+  "leaderboard": [
+    {
+      "countryCode": "EG",
+      "dailyBadge": "star",
+      "goldMedals": 8,
+      "nickname": "يونس",
+      "rank": 1,
+      "rankChange": "same",
+      "roundStreak": 37,
+      "score": 12446,
+      "silverMedals": 4,
+      "uid": "5a4b1d0ed314c539aefe3fedeb07054b2acf361dd98189761e80e047fbf80305"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "lantern",
+      "nickname": "ايه",
+      "rank": 2,
+      "rankChange": "same",
+      "roundStreak": 35,
+      "score": 6731,
+      "uid": "187fd58d0668670c2478e0337aa70a1873e3ead80e8c43c03ee1eebc359849a8"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "crown",
+      "nickname": "مارية رامى",
+      "rank": 3,
+      "rankChange": "same",
+      "roundStreak": 11,
+      "score": 5453,
+      "uid": "2816b19c30093c7163ddf54fe633375e7ed1a636b947b75fa4b1d5cdb6bcb869"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "crown",
+      "nickname": "وصية الرسول ﷺ",
+      "rank": 4,
+      "rankChange": "up",
+      "roundStreak": 13,
+      "score": 5056,
+      "uid": "4d0b1943e69de24f9279909a8fbb68bb2f2098628d6ba648861292ea3fb2cac3"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "crescent",
+      "nickname": "ياسمين",
+      "rank": 5,
+      "rankChange": "down",
+      "roundStreak": 12,
+      "score": 4763,
+      "uid": "6b4a83c051ba8e34f813ee2c75c916320c59fb165425366d28136f0bf1b146c9"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "crescent",
+      "nickname": "الهدي",
+      "rank": 6,
+      "rankChange": "up",
+      "roundStreak": 18,
+      "score": 3562,
+      "uid": "76626e020a7d45932223ba5eeee768bb507287201287313a7110c1d34c9078c6"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "isSupporter": true,
+      "nickname": "نورهان أيمن🌷",
+      "rank": 7,
+      "rankChange": "down",
+      "roundStreak": 12,
+      "score": 2667,
+      "uid": "7312bb535d95264110d98bbe513b33bf7895da6e7245a6ce223ca0a9c4c1ded9"
+    },
+    {
+      "countryCode": "NA",
+      "dailyBadge": "crescent",
+      "nickname": "محمدشمس الدين الهتار",
+      "rank": 8,
+      "rankChange": "down",
+      "roundStreak": 4,
+      "score": 2287,
+      "uid": "a0929b322dd8297792b3535019bad7ad1a575340da18ad4a85db88c27c54be4a"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "nickname": "وفاء محمود خلف",
+      "rank": 9,
+      "rankChange": "down",
+      "roundStreak": 2,
+      "score": 2001,
+      "uid": "b9d860ce859d1d4475a6a4f70ed8c50a88f54dcfb24eb5e6d138fa01e2affb77"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "nickname": "الحمد لله",
+      "rank": 10,
+      "rankChange": "down",
+      "roundStreak": 36,
+      "score": 1745,
+      "uid": "09a8aaec760ae3a9626dbe2037dbe5e2b9f6543a099ba40f377d99dd8e4184c9"
+    }
+  ],
+  "updatedAt": "2026-08-22T20:58:07.613Z"
+}
