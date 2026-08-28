@@ -1,0 +1,116 @@
+{
+  "allTimeSalawat": 4633050,
+  "weekSalawat": 10995,
+  "todaySalawat": 10995,
+  "activePlayers": 82,
+  "countriesCount": 8,
+  "countries": [
+    "AE",
+    "EG",
+    "JO",
+    "NA",
+    "PK",
+    "SA",
+    "SD",
+    "YE"
+  ],
+  "topScore": 2210,
+  "roundKey": "2026-09-04",
+  "leaderboard": [
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "nickname": "mohamed",
+      "rank": 1,
+      "rankChange": "same",
+      "roundStreak": 10,
+      "score": 2210,
+      "uid": "02e511908f5d8ed6ac8c7652babec1d6bc4e1750d4b111c8a05ecf9c0ae118d9"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "mihrab",
+      "goldMedals": 8,
+      "nickname": "يونس",
+      "rank": 2,
+      "rankChange": "same",
+      "score": 1999,
+      "silverMedals": 5,
+      "uid": "5a4b1d0ed314c539aefe3fedeb07054b2acf361dd98189761e80e047fbf80305"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "nickname": "هبة الله",
+      "rank": 3,
+      "rankChange": "up",
+      "score": 1114,
+      "uid": "81babd518c6ea4aaa65a88df1d59d3bef55e8471d52a0c61477aa1316cb45194"
+    },
+    {
+      "bronzeMedals": 1,
+      "countryCode": "NA",
+      "nickname": "محمدشمس الدين الهتار",
+      "rank": 4,
+      "rankChange": "down",
+      "score": 1038,
+      "uid": "a0929b322dd8297792b3535019bad7ad1a575340da18ad4a85db88c27c54be4a"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "lantern",
+      "nickname": "الهدي",
+      "rank": 5,
+      "rankChange": "down",
+      "score": 1000,
+      "uid": "76626e020a7d45932223ba5eeee768bb507287201287313a7110c1d34c9078c6"
+    },
+    {
+      "countryCode": "SD",
+      "dailyBadge": "lantern",
+      "nickname": "أمة الله",
+      "rank": 6,
+      "rankChange": "down",
+      "score": 827,
+      "uid": "63b48f83a7620ca98887fae40ca95ace03acbe1a67dfac93a1c51c3a95334aa9"
+    },
+    {
+      "countryCode": "EG",
+      "goldMedals": 1,
+      "nickname": "محمود",
+      "rank": 7,
+      "rankChange": "down",
+      "score": 672,
+      "silverMedals": 1,
+      "uid": "cf0116cf9c1bf2ef2965b238768139059a0088bbb734739297ac650ede2fd00b"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "heart",
+      "nickname": "زهراء",
+      "rank": 8,
+      "rankChange": "same",
+      "score": 401,
+      "uid": "71fca3a694d828a057ea3427e97568d541a68f8189d65764b414ba1e78b65f2a"
+    },
+    {
+      "countryCode": "EG",
+      "nickname": "صفوت حسين",
+      "rank": 9,
+      "rankChange": "same",
+      "score": 300,
+      "uid": "63f7d4ac1c976db1124fa5f8e601be8d0af7568a9c67625a8ba4e12edb8cbdd5"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "sprout",
+      "nickname": "محمد ثروت",
+      "rank": 10,
+      "rankChange": "same",
+      "roundStreak": 1,
+      "score": 142,
+      "uid": "b1e27259067efc06b00b8cdf3c9deb5a1893ce7d7253e757fadc7bd0385d8ed7"
+    }
+  ],
+  "updatedAt": "2026-08-28T20:58:15.995Z"
+}
