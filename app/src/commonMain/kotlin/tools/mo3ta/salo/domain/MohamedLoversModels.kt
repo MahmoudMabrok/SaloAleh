@@ -1,6 +1,7 @@
 package tools.mo3ta.salo.domain
 
 import kotlinx.datetime.Instant
+import tools.mo3ta.salo.ui.utils.mapCountry
 
 data class MohamedLoversPlayer(
     val uid: String = "",
@@ -87,7 +88,7 @@ const val MOHAMED_LOVERS_TOP_LIMIT = 10
 const val MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE = "NA"
 
 fun buildMohamedLoversDisplayTag(uid: String, countryCode: String, nickname: String = ""): String {
-    val country = countryCode.uppercase().ifBlank { MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE }
+    val country = countryCode.uppercase().ifBlank { MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE }.mapCountry()
     if (nickname.isNotBlank()) return "$country • $nickname"
     val tag = uid.takeLast(6).uppercase().ifBlank { "------" }
     return "$country • $tag"

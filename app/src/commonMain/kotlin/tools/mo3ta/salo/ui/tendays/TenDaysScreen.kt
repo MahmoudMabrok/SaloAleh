@@ -70,6 +70,7 @@ import tools.mo3ta.salo.ui.TakbeerOverlayButton
 import tools.mo3ta.salo.presentation.TenDaysDayState
 import tools.mo3ta.salo.presentation.TenDaysUiState
 import tools.mo3ta.salo.presentation.TenDaysViewModel
+import tools.mo3ta.salo.ui.utils.mapCountry
 
 @Composable
 fun TenDaysScreen(
@@ -909,7 +910,7 @@ private fun MiniLeaderboard(state: TenDaysUiState) {
 
 private fun buildTenDaysDisplayTag(uid: String, countryCode: String): String {
     val tag = uid.takeLast(6).uppercase().ifBlank { "------" }
-    val country = countryCode.uppercase().ifBlank { "--" }
+    val country = countryCode.uppercase().ifBlank { "--" }.mapCountry()
     return "$country • $tag"
 }
 
