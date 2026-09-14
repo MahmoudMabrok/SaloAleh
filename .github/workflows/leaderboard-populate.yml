@@ -13,6 +13,10 @@ on:
         description: 'Round key to populate (yyyy-MM-dd). Defaults to today in Cairo timezone.'
         required: false
         default: ''
+      leaderboard_limit:
+        description: 'Number of leaderboard entries to store (default 30).'
+        required: false
+        default: '30'
 
 jobs:
   populate:
@@ -35,3 +39,4 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
           ROUND_KEY: ${{ github.event.inputs.round_key }}
+          LEADERBOARD_LIMIT: ${{ inputs.leaderboard_limit || github.event.inputs.leaderboard_limit || '30' }}

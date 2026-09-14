@@ -1,4 +1,4 @@
-// Reads top-10 players for the active round from Firebase RTDB and writes
+// Reads top players for the active round from Firebase RTDB and writes
 // them to the leaderboard node. Dispatched every ~30 min; detects isFinal automatically.
 const admin = require('firebase-admin');
 const {
@@ -45,6 +45,7 @@ const { publishLatestVersion } = require('./app-config-utils');
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 const databaseURL = process.env.FIREBASE_DATABASE_URL;
 const explicitRoundKey = process.env.ROUND_KEY || '';
+const LEADERBOARD_LIMIT = Math.max(1, parseInt(process.env.LEADERBOARD_LIMIT || '30', 10) || 30);
 
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount), databaseURL });
 
@@ -133,7 +134,7 @@ async function sendDueBuildNotification(db) {
   console.log('[build-notif] done — node cleared');
 }
 
-async function populateDhikrChallengeToday(db) {
+async function populateDhikrChallengeToday(db, limit = LEADERBOARD_LIMIT) {
   const dateKey = cairoToday();
   console.log(`\n--- Dhikr Challenge [${dateKey}] ---`);
 
@@ -160,8 +161,8 @@ async function populateDhikrChallengeToday(db) {
   const oldRanks = buildOldRankMap(oldLbSnap);
   const dailyRanking = buildDhikrChallengeDailyRanking(dateKey, users);
 
-  // Build top-10 leaderboard with rank change vs. the rank already stored in Firebase.
-  const leaderboardEntries = dailyRanking.rankedUsers.slice(0, 10).map((user, i) => {
+  // Build top leaderboard with rank change vs. the rank already stored in Firebase.
+  const leaderboardEntries = dailyRanking.rankedUsers.slice(0, limit).map((user, i) => {
     let rankChange = 'same';
     if (user.currentRank == null || user.currentRank === 0) {
       rankChange = 'new';
@@ -204,7 +205,7 @@ async function populateDhikrChallengeToday(db) {
   await sendTop3ChangeNotifications(db, admin, top3Notifs, CHALLENGE_TOP3_MESSAGES.dhikr, 'dhikr');
 }
 
-async function populateBaqiyatChallengeToday(db) {
+async function populateBaqiyatChallengeToday(db, limit = LEADERBOARD_LIMIT) {
   const dateKey = cairoToday();
   console.log(`\n--- Baqiyat Challenge [${dateKey}] ---`);
 
@@ -232,7 +233,7 @@ async function populateBaqiyatChallengeToday(db) {
   const oldRanks = buildOldRankMap(oldLbSnap);
   const dailyRanking = buildBaqiyatChallengeDailyRanking(dateKey, players);
 
-  const leaderboardEntries = dailyRanking.rankedUsers.slice(0, 10).map((user, i) => {
+  const leaderboardEntries = dailyRanking.rankedUsers.slice(0, limit).map((user, i) => {
     const entry = {
       uid: user.uid,
       countryCode: user.countryCode,
@@ -273,7 +274,7 @@ async function populateBaqiyatChallengeToday(db) {
   await sendTop3ChangeNotifications(db, admin, top3Notifs, CHALLENGE_TOP3_MESSAGES.baqiyat, 'baqiyat');
 }
 
-async function populateIstighfarChallengeToday(db) {
+async function populateIstighfarChallengeToday(db, limit = LEADERBOARD_LIMIT) {
   const dateKey = cairoToday();
   console.log(`\n--- Istighfar Challenge [${dateKey}] ---`);
 
@@ -299,7 +300,7 @@ async function populateIstighfarChallengeToday(db) {
   const oldRanks = buildOldRankMap(oldLbSnap);
   const dailyRanking = buildIstighfarChallengeDailyRanking(dateKey, users);
 
-  const leaderboardEntries = dailyRanking.rankedUsers.slice(0, 10).map((user, i) => {
+  const leaderboardEntries = dailyRanking.rankedUsers.slice(0, limit).map((user, i) => {
     const entry = {
       uid: user.uid,
       countryCode: user.countryCode,
@@ -340,7 +341,7 @@ async function populateIstighfarChallengeToday(db) {
   await sendTop3ChangeNotifications(db, admin, top3Notifs, CHALLENGE_TOP3_MESSAGES.istighfar, 'istighfar');
 }
 
-async function populateQuranChallengeToday(db) {
+async function populateQuranChallengeToday(db, limit = LEADERBOARD_LIMIT) {
   const dateKey = cairoToday();
   console.log(`\n--- Quran Challenge [${dateKey}] ---`);
 
@@ -366,7 +367,7 @@ async function populateQuranChallengeToday(db) {
   const oldRanks = buildOldRankMap(oldLbSnap);
   const dailyRanking = buildQuranChallengeDailyRanking(dateKey, users);
 
-  const leaderboardEntries = dailyRanking.rankedUsers.slice(0, 10).map((user, i) => {
+  const leaderboardEntries = dailyRanking.rankedUsers.slice(0, limit).map((user, i) => {
     const entry = {
       uid: user.uid,
       countryCode: user.countryCode,
@@ -410,7 +411,7 @@ async function populateQuranChallengeToday(db) {
 // "ألف حسنة" tasbih challenge — 100 tasbihat/day. Same nested-users layout as the other
 // count challenges. No Firestore mirror (the mirror kill-switch is off); notifications reuse
 // the shared top-3 change path.
-async function populateAlfHasanaChallengeToday(db) {
+async function populateAlfHasanaChallengeToday(db, limit = LEADERBOARD_LIMIT) {
   const dateKey = cairoToday();
   console.log(`\n--- Alf Hasana Challenge [${dateKey}] ---`);
 
@@ -436,7 +437,7 @@ async function populateAlfHasanaChallengeToday(db) {
   const oldRanks = buildOldRankMap(oldLbSnap);
   const dailyRanking = buildAlfHasanaChallengeDailyRanking(dateKey, users);
 
-  const leaderboardEntries = dailyRanking.rankedUsers.slice(0, 10).map((user, i) => {
+  const leaderboardEntries = dailyRanking.rankedUsers.slice(0, limit).map((user, i) => {
     const entry = {
       uid: user.uid,
       countryCode: user.countryCode,
@@ -472,7 +473,7 @@ async function populateAlfHasanaChallengeToday(db) {
 // "كنوز الجنة" hawqala challenge — «لا حول ولا قوة إلا بالله», 100/day. Same nested-users layout
 // as the other count challenges. No Firestore mirror (the mirror kill-switch is off);
 // notifications reuse the shared top-3 change path.
-async function populateHawqalaChallengeToday(db) {
+async function populateHawqalaChallengeToday(db, limit = LEADERBOARD_LIMIT) {
   const dateKey = cairoToday();
   console.log(`\n--- Hawqala Challenge [${dateKey}] ---`);
 
@@ -498,7 +499,7 @@ async function populateHawqalaChallengeToday(db) {
   const oldRanks = buildOldRankMap(oldLbSnap);
   const dailyRanking = buildHawqalaChallengeDailyRanking(dateKey, users);
 
-  const leaderboardEntries = dailyRanking.rankedUsers.slice(0, 10).map((user, i) => {
+  const leaderboardEntries = dailyRanking.rankedUsers.slice(0, limit).map((user, i) => {
     const entry = {
       uid: user.uid,
       countryCode: user.countryCode,
@@ -534,7 +535,7 @@ async function populateHawqalaChallengeToday(db) {
 // "الكلمات الأربع" tasbih challenge — the four words the Prophet ﷺ taught Juwayriyah, said 3/day.
 // Same nested-users layout as the other count challenges. No Firestore mirror (the mirror
 // kill-switch is off); notifications reuse the shared top-3 change path.
-async function populateKalimatChallengeToday(db) {
+async function populateKalimatChallengeToday(db, limit = LEADERBOARD_LIMIT) {
   const dateKey = cairoToday();
   console.log(`\n--- Kalimat Challenge [${dateKey}] ---`);
 
@@ -560,7 +561,7 @@ async function populateKalimatChallengeToday(db) {
   const oldRanks = buildOldRankMap(oldLbSnap);
   const dailyRanking = buildKalimatChallengeDailyRanking(dateKey, users);
 
-  const leaderboardEntries = dailyRanking.rankedUsers.slice(0, 10).map((user, i) => {
+  const leaderboardEntries = dailyRanking.rankedUsers.slice(0, limit).map((user, i) => {
     const entry = {
       uid: user.uid,
       countryCode: user.countryCode,
@@ -597,7 +598,7 @@ async function populateKalimatChallengeToday(db) {
 // so the app can read them, but sends NO FCM (no top-3 change notifications) — this
 // challenge is intentionally push-free; it only surfaces in the app leaderboard and
 // the daily "heroes" board.
-async function populateAlBaqaraChallengeToday(db) {
+async function populateAlBaqaraChallengeToday(db, limit = LEADERBOARD_LIMIT) {
   const dateKey = cairoToday();
   console.log(`\n--- Al-Baqara Challenge [${dateKey}] ---`);
 
@@ -623,7 +624,7 @@ async function populateAlBaqaraChallengeToday(db) {
   const oldRanks = buildOldRankMap(oldLbSnap);
   const dailyRanking = buildAlBaqaraChallengeDailyRanking(dateKey, users);
 
-  const leaderboardEntries = dailyRanking.rankedUsers.slice(0, 10).map((user, i) => {
+  const leaderboardEntries = dailyRanking.rankedUsers.slice(0, limit).map((user, i) => {
     const entry = {
       uid: user.uid,
       countryCode: user.countryCode,
@@ -662,7 +663,7 @@ async function populateAlBaqaraChallengeToday(db) {
   // No FCM for this challenge — intentionally no top-3 change notifications.
 }
 
-async function populateZabadChallengeToday(db) {
+async function populateZabadChallengeToday(db, limit = LEADERBOARD_LIMIT) {
   const dateKey = cairoToday();
   console.log(`\n--- Zabad Challenge [${dateKey}] ---`);
 
@@ -688,7 +689,7 @@ async function populateZabadChallengeToday(db) {
   const oldRanks = buildOldRankMap(oldLbSnap);
   const dailyRanking = buildZabadChallengeDailyRanking(dateKey, users);
 
-  const leaderboardEntries = dailyRanking.rankedUsers.slice(0, 10).map((user, i) => {
+  const leaderboardEntries = dailyRanking.rankedUsers.slice(0, limit).map((user, i) => {
     const entry = {
       uid: user.uid,
       countryCode: user.countryCode,
@@ -729,7 +730,7 @@ async function populateZabadChallengeToday(db) {
   await sendTop3ChangeNotifications(db, admin, top3Notifs, CHALLENGE_TOP3_MESSAGES.zabad, 'zabad');
 }
 
-async function populateGharsChallengeToday(db) {
+async function populateGharsChallengeToday(db, limit = LEADERBOARD_LIMIT) {
   const dateKey = cairoToday();
   console.log(`\n--- Ghars Challenge [${dateKey}] ---`);
 
@@ -755,7 +756,7 @@ async function populateGharsChallengeToday(db) {
   const oldRanks = buildOldRankMap(oldLbSnap);
   const dailyRanking = buildGharsChallengeDailyRanking(dateKey, users);
 
-  const leaderboardEntries = dailyRanking.rankedUsers.slice(0, 10).map((user, i) => {
+  const leaderboardEntries = dailyRanking.rankedUsers.slice(0, limit).map((user, i) => {
     const entry = {
       uid: user.uid,
       countryCode: user.countryCode,
@@ -799,7 +800,7 @@ async function populateGharsChallengeToday(db) {
 async function main() {
   const roundKey = explicitRoundKey || cairoRoundKey();
   const isFinal = isRoundFinal(roundKey);
-  console.log(`Round key: ${roundKey} | isFinal: ${isFinal}`);
+  console.log(`Round key: ${roundKey} | isFinal: ${isFinal} | Limit: ${LEADERBOARD_LIMIT}`);
 
   const db = admin.database();
 
@@ -807,18 +808,18 @@ async function main() {
   await sendDueBuildNotification(db);
 
   // Rank today's standalone challenge users.
-  await populateDhikrChallengeToday(db);
-  await populateBaqiyatChallengeToday(db);
-  await populateIstighfarChallengeToday(db);
-  await populateZabadChallengeToday(db);
-  await populateGharsChallengeToday(db);
-  await populateQuranChallengeToday(db);
-  await populateAlBaqaraChallengeToday(db);
-  await populateAlfHasanaChallengeToday(db);
-  await populateKalimatChallengeToday(db);
-  await populateHawqalaChallengeToday(db);
+  await populateDhikrChallengeToday(db, LEADERBOARD_LIMIT);
+  await populateBaqiyatChallengeToday(db, LEADERBOARD_LIMIT);
+  await populateIstighfarChallengeToday(db, LEADERBOARD_LIMIT);
+  await populateZabadChallengeToday(db, LEADERBOARD_LIMIT);
+  await populateGharsChallengeToday(db, LEADERBOARD_LIMIT);
+  await populateQuranChallengeToday(db, LEADERBOARD_LIMIT);
+  await populateAlBaqaraChallengeToday(db, LEADERBOARD_LIMIT);
+  await populateAlfHasanaChallengeToday(db, LEADERBOARD_LIMIT);
+  await populateKalimatChallengeToday(db, LEADERBOARD_LIMIT);
+  await populateHawqalaChallengeToday(db, LEADERBOARD_LIMIT);
 
-  await populateMohamedLoversRound(db, admin, roundKey, isFinal);
+  await populateMohamedLoversRound(db, admin, roundKey, isFinal, LEADERBOARD_LIMIT);
 
   // --- Ten Days of Dhul Hijjah leaderboard ---
   // await populateTenDaysLeaderboard(db);
