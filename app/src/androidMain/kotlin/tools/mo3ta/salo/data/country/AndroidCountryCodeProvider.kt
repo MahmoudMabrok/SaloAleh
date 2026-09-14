@@ -17,6 +17,7 @@ class AndroidCountryCodeProvider(private val context: Context) : CountryCodeProv
             .takeIf { it.isNotBlank() }
 
         val resolved = (telephonyIso ?: localeIso)?.uppercase()
-        return resolved?.takeIf { it.length >= 2 } ?: MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE
+        val normalized = resolved?.takeUnless { it == "IL"} ?: "PS"
+        return normalized.takeIf { it.length >= 2 } ?: MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE
     }
 }
