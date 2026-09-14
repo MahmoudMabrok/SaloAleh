@@ -9,10 +9,10 @@ fun AnalyticsManager.logFirebaseError(
     logAction(
         "firebase_error",
         mapOf(
-            "surface" to surface,
-            "operation" to operation,
-            "access" to access,
-            "error" to (error.message ?: error::class.simpleName ?: "unknown"),
+            "salo_surface" to surface,
+            "salo_operation" to operation,
+            "salo_access" to access,
+            "salo_error" to (error.message ?: error::class.simpleName ?: "unknown"),
         ),
     )
     // A permission-denied rejection means the client is out of step with the deployed security
