@@ -400,3 +400,47 @@ describe('readChallengeRankedUsers', () => {
     await assert.rejects(() => readChallengeRankedUsers(db, 'not_a_challenge', '2026-07-12'));
   });
 });
+
+describe('leaderboard limit slicing', () => {
+  it('limits leaderboard entries to specified limit when users exceed limit', () => {
+    const users = Array.from({ length: 35 }, (_, i) => ({
+      uid: `user-${i + 1}`,
+      count: 100 - i,
+      countryCode: 'EG',
+    }));
+    const dailyRanking = buildDhikrChallengeDailyRanking('2026-07-12', users);
+    const limit = 30;
+    const leaderboardEntries = dailyRanking.rankedUsers.slice(0, limit).map((user, i) => [String(i), user]);
+
+    assert.equal(leaderboardEntries.length, 30);
+    assert.equal(leaderboardEntries[0][0], '0');
+    assert.equal(leaderboardEntries[0][1].uid, 'user-1');
+    assert.equal(leaderboardEntries[29][0], '29');
+    assert.equal(leaderboardEntries[29][1].uid, 'user-30');
+  });
+
+  it('handles user count smaller than limit without errors', () => {
+    const users = Array.from({ length: 5 }, (_, i) => ({
+      uid: `user-${i + 1}`,
+      count: 50 - i,
+      countryCode: 'EG',
+    }));
+    const dailyRanking = buildDhikrChallengeDailyRanking('2026-07-12', users);
+    const limit = 30;
+    const leaderboardEntries = dailyRanking.rankedUsers.slice(0, limit).map((user, i) => [String(i), user]);
+
+    assert.equal(leaderboardEntries.length, 5);
+    assert.equal(leaderboardEntries[0][1].uid, 'user-1');
+    assert.equal(leaderboardEntries[4][1].uid, 'user-5');
+    assert.deepEqual(Object.keys(Object.fromEntries(leaderboardEntries)), ['0', '1', '2', '3', '4']);
+  });
+
+  it('handles empty user list without errors', () => {
+    const dailyRanking = buildDhikrChallengeDailyRanking('2026-07-12', []);
+    const limit = 30;
+    const leaderboardEntries = dailyRanking.rankedUsers.slice(0, limit).map((user, i) => [String(i), user]);
+
+    assert.equal(leaderboardEntries.length, 0);
+    assert.deepEqual(Object.fromEntries(leaderboardEntries), {});
+  });
+});

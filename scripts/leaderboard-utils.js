@@ -590,7 +590,7 @@ async function attachChallengeMedals(db, rootPath, leaderboardEntries) {
 // notifications. Shared by populate-leaderboard.js (periodic runs against whichever
 // round is currently active) and aggregate-all-time.js (seeds the brand-new round
 // right after closing the previous one, at the same 19:10 Cairo cron slot).
-async function populateMohamedLoversRound(db, admin, roundKey, isFinal) {
+async function populateMohamedLoversRound(db, admin, roundKey, isFinal, limit) {
   const playersRef = db.ref(`${MOHAMED_LOVERS_ROOT}/${roundKey}/players`);
 
   // Single ordered query — ascending by totalCount; we reverse for ranking.
