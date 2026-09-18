@@ -4,6 +4,7 @@
 // Usage: node scripts/update-referral-stats.js
 
 const admin = require('firebase-admin');
+const { MIRROR_ENABLED } = require('./firestore-utils');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 const databaseURL = process.env.FIREBASE_DATABASE_URL;
@@ -80,24 +81,28 @@ async function main() {
   await db.ref('/').update(writes);
 
   // Firestore mirror
-  try {
-    const firestore = admin.firestore();
-    const BATCH_LIMIT = 500;
-    const entries = Object.entries(writes);
+  if (MIRROR_ENABLED) {
+    try {
+      const firestore = admin.firestore();
+      const BATCH_LIMIT = 500;
+      const entries = Object.entries(writes);
 
-    for (let i = 0; i < entries.length; i += BATCH_LIMIT) {
-      const chunk = entries.slice(i, i + BATCH_LIMIT);
-      const batch = firestore.batch();
-      for (const [path, data] of chunk) {
-        const code = path.split('/').pop();
-        const docRef = firestore.collection('referral_stats').doc(code);
-        batch.set(docRef, data, { merge: true });
+      for (let i = 0; i < entries.length; i += BATCH_LIMIT) {
+        const chunk = entries.slice(i, i + BATCH_LIMIT);
+        const batch = firestore.batch();
+        for (const [path, data] of chunk) {
+          const code = path.split('/').pop();
+          const docRef = firestore.collection('referral_stats').doc(code);
+          batch.set(docRef, data, { merge: true });
+        }
+        await batch.commit();
+        console.log(`  Firestore batch ${Math.floor(i / BATCH_LIMIT) + 1} committed (${chunk.length} docs)`);
       }
-      await batch.commit();
-      console.log(`  Firestore batch ${Math.floor(i / BATCH_LIMIT) + 1} committed (${chunk.length} docs)`);
+    } catch (err) {
+      console.warn('Firestore mirror failed (non-blocking):', err.message);
     }
-  } catch (err) {
-    console.warn('Firestore mirror failed (non-blocking):', err.message);
+  } else {
+    console.log('[firestore-mirror] referral stats skipped (MIRROR_ENABLED=false)');
   }
 
   const sample = Object.entries(writes).slice(0, 5);

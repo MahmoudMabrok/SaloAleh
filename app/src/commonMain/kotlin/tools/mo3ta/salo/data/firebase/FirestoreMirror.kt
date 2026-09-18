@@ -15,6 +15,12 @@ class FirestoreMirror {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val fs by lazy { Firebase.firestore }
 
+    init {
+        if (!MIRROR_ENABLED) {
+            log.i { "DISABLED via kill-switch — all mirrors are no-ops (RTDB unaffected)" }
+        }
+    }
+
     fun mirrorPlayerIncrement(
         roundKey: String,
         uid: String,
@@ -346,6 +352,7 @@ class FirestoreMirror {
         }
 
     private fun mirror(tag: String, block: suspend () -> Unit) {
+        if (!MIRROR_ENABLED) return
         scope.launch {
             try {
                 block()
@@ -357,6 +364,13 @@ class FirestoreMirror {
     }
 
     companion object {
+        /**
+         * Kill-switch for Phase-1 Firestore dual-write. RTDB is the source of truth
+         * and nothing reads Firestore yet, so flipping this to false is safe.
+         * Keep in sync with `scripts/firestore-utils.js` (`MIRROR_ENABLED`).
+         */
+        const val MIRROR_ENABLED = false
+
         const val ROUNDS_COLLECTION = "mohamed_lovers_rounds"
         const val USERS_COLLECTION = "mohamed_lovers_users"
         const val PLAYERS_SUBCOLLECTION = "players"

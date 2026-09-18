@@ -112,7 +112,7 @@ The same podium-medal concept as the weekly Winner medal badge, but awarded **da
 - Counts are stored server-authoritatively at RTDB `{challengeRoot}/users/{uid}/medals` = `{ gold, silver, bronze }` — a **persistent** node, sibling to the deleted-daily `{dateKey}` nodes (not under a date). Written only by admin scripts (they bypass rules); the client never writes medals. `database.rules.json` gives each `{challengeRoot}/users/{uid}/medals` node `.read: true` with `.validate: false` (server-only); a client write is denied because no write grant reaches this root-level `users` node in the first place (unlike salawat, there is no cascading `users/$uid` write grant here). Ranking recomputes from the live end-of-day counts via `readChallengeRankedUsers`, so it matches the winner-notification and heroes logic.
 - Idempotency: `awardChallengeMedals` writes a `{challengeRoot}/{dateKey}/medalsAwarded` marker on the day node. Because the marker lives on the day node it is deleted with it — a normal re-run after cleanup finds no participants and awards nothing, while a re-run after a crash between award and cleanup sees the marker and skips. Failures are per-challenge isolated so one never blocks the others or the cleanup.
 - No backfill (unlike salawat): challenge day nodes are deleted daily and there is no per-round `achievements` history to derive medals from, so counts only accumulate going forward.
-- Firestore mirror is intentionally skipped — the app-side/script mirror is off behind the `MIRROR_ENABLED = false` kill-switch (`scripts/firestore-utils.js`), so a challenge-medal mirror would be a no-op.
+- Firestore mirror is intentionally skipped — the app-side/script mirror is off behind `MIRROR_ENABLED = false` (`FirestoreMirror.kt` and `scripts/firestore-utils.js`), so a challenge-medal mirror would be a no-op.
 - Strings: reuses `leaderboard_medals_info_{gold,silver,bronze}`, adds `challenge_medals_info_{title,desc}` (all four locales).
 - Tests: `commonTest/data/dhikr/DhikrChallengeFirebaseClientTest.kt` (medal parse), `scripts/challenge-medals.test.js` (award + attach).
 
@@ -296,6 +296,11 @@ Security rules live in `database.rules.json`. Deploy with: `firebase deploy --on
 
 The app and scripts dual-write to both RTDB and Firestore. RTDB remains the source of truth for reads. Phase 2 will switch reads to Firestore and remove RTDB.
 
+Both sides share a kill-switch currently set to **off** (`false`) because of Spark write-quota. Flip **both** to `true` together to re-enable:
+
+- App: `FirestoreMirror.MIRROR_ENABLED` in `app/.../firebase/FirestoreMirror.kt`
+- Scripts: `MIRROR_ENABLED` in `scripts/firestore-utils.js` (also gates inline mirrors in backfill/aggregate/referral scripts)
+
 ### Firestore collections
 
 | Collection | Maps to RTDB path | Purpose |
@@ -315,8 +320,8 @@ The app and scripts dual-write to both RTDB and Firestore. RTDB remains the sour
 
 ### Key files
 
-- `app/.../firebase/FirestoreMirror.kt` — app-side fire-and-forget dual-writer
-- `scripts/firestore-utils.js` — server-side Firestore mirror utilities
+- `app/.../firebase/FirestoreMirror.kt` — app-side fire-and-forget dual-writer (`MIRROR_ENABLED` kill-switch)
+- `scripts/firestore-utils.js` — server-side Firestore mirror utilities (`MIRROR_ENABLED` kill-switch)
 - `firestore.rules` — Firestore security rules
 
 ### FCM during migration
