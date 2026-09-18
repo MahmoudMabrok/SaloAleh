@@ -6,7 +6,7 @@ package tools.mo3ta.salo.domain
  * Regular tapping is uncapped; only these external batches are limited so a single
  * manual entry can't flood the leaderboard. Applied per challenge, resets each day.
  */
-const val CHALLENGE_MANUAL_DAILY_CAP = 800
+const val CHALLENGE_MANUAL_DAILY_CAP = 2000
 
 /**
  * Baqiyat's own, lower manual-entry daily cap. Baqiyat is counted in full cycles
