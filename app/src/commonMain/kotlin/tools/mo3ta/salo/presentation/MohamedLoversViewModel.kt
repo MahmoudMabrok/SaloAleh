@@ -236,7 +236,6 @@ class MohamedLoversViewModel(
         val isNowComplete = dailyGoalStore.isGoalComplete(today)
         val streakResult = roundStreakStore.recordActivity(roundKey, today)
         val streakSnap = roundStreakStore.snapshot(today)
-        val streakSnap = roundStreakStore.snapshot(today)
         // The daily-goal tap progress is the single source of truth for today's competition count:
         // it drives the rank strip and daily badge, and is what we publish for the daily leaderboard.
         val rawTaps = dailyGoalStore.todayProgress(today)
