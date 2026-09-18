@@ -3,6 +3,7 @@
 // Usage: CURRENT_ROUND=2026-07-10 node scripts/backfill-all-time-totals.js
 
 const admin = require('firebase-admin');
+const { MIRROR_ENABLED } = require('./firestore-utils');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 const databaseURL = process.env.FIREBASE_DATABASE_URL;
@@ -74,23 +75,27 @@ async function main() {
   await db.ref('/').update(writes);
 
   // Firestore mirror
-  try {
-    const firestore = admin.firestore();
-    const BATCH_LIMIT = 500;
-    const entries = Object.entries(userTotals);
+  if (MIRROR_ENABLED) {
+    try {
+      const firestore = admin.firestore();
+      const BATCH_LIMIT = 500;
+      const entries = Object.entries(userTotals);
 
-    for (let i = 0; i < entries.length; i += BATCH_LIMIT) {
-      const chunk = entries.slice(i, i + BATCH_LIMIT);
-      const batch = firestore.batch();
-      for (const [uid, total] of chunk) {
-        const docRef = firestore.collection('mohamed_lovers_users').doc(uid);
-        batch.set(docRef, { allTimeTotal: total }, { merge: true });
+      for (let i = 0; i < entries.length; i += BATCH_LIMIT) {
+        const chunk = entries.slice(i, i + BATCH_LIMIT);
+        const batch = firestore.batch();
+        for (const [uid, total] of chunk) {
+          const docRef = firestore.collection('mohamed_lovers_users').doc(uid);
+          batch.set(docRef, { allTimeTotal: total }, { merge: true });
+        }
+        await batch.commit();
+        console.log(`  Firestore batch ${Math.floor(i / BATCH_LIMIT) + 1} committed (${chunk.length} docs)`);
       }
-      await batch.commit();
-      console.log(`  Firestore batch ${Math.floor(i / BATCH_LIMIT) + 1} committed (${chunk.length} docs)`);
+    } catch (err) {
+      console.warn('Firestore mirror failed (non-blocking):', err.message);
     }
-  } catch (err) {
-    console.warn('Firestore mirror failed (non-blocking):', err.message);
+  } else {
+    console.log('[firestore-mirror] allTimeTotal backfill skipped (MIRROR_ENABLED=false)');
   }
 
   // Log a sample for verification

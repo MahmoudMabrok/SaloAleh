@@ -1,6 +1,6 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
-const { timeBoxMirror, writeChangedRanks } = require('./firestore-utils');
+const { MIRROR_ENABLED, timeBoxMirror, writeChangedRanks } = require('./firestore-utils');
 
 // timeBoxMirror guards fire-and-forget Firestore dual-writes: a quota-stalled
 // commit retries RESOURCE_EXHAUSTED for ~10 minutes, which would block the
@@ -103,5 +103,11 @@ describe('writeChangedRanks', () => {
     const { store, userCollectionRef, snapshotDocRef } = makeFakeFirestore({ snapshot: prior, failCommit: true });
     await assert.rejects(() => writeChangedRanks(userCollectionRef, snapshotDocRef, { a: 2 }, 'test'));
     assert.equal(store.snapshot, prior); // not overwritten → next run retries
+  });
+});
+
+describe('MIRROR_ENABLED', () => {
+  it('is exported as a boolean kill-switch for inline script mirrors', () => {
+    assert.equal(typeof MIRROR_ENABLED, 'boolean');
   });
 });

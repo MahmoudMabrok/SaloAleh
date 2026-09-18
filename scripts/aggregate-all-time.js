@@ -8,7 +8,7 @@
 // separate leaderboard-populate dispatch.
 const admin = require('firebase-admin');
 const { addDaysToDateKey, populateMohamedLoversRound } = require('./leaderboard-utils');
-const { mirrorAllTimeTotal, mirrorAchievements, mirrorUserAllTimeTotals } = require('./firestore-utils');
+const { MIRROR_ENABLED, mirrorAllTimeTotal, mirrorAchievements, mirrorUserAllTimeTotals } = require('./firestore-utils');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 const databaseURL = process.env.FIREBASE_DATABASE_URL;
@@ -139,20 +139,22 @@ async function main() {
         console.log(`Incremented medals for ${medalWinners.length} podium winner(s).`);
 
         // Phase 1: mirror medal increments to Firestore (non-blocking).
-        try {
-          const firestore = admin.firestore();
-          const FieldValue = admin.firestore.FieldValue;
-          const batch = firestore.batch();
-          for (const { uid, medalType } of medalWinners) {
-            batch.set(
-              firestore.collection('mohamed_lovers_users').doc(uid),
-              { medals: { [medalType]: FieldValue.increment(1) } },
-              { merge: true },
-            );
+        if (MIRROR_ENABLED) {
+          try {
+            const firestore = admin.firestore();
+            const FieldValue = admin.firestore.FieldValue;
+            const batch = firestore.batch();
+            for (const { uid, medalType } of medalWinners) {
+              batch.set(
+                firestore.collection('mohamed_lovers_users').doc(uid),
+                { medals: { [medalType]: FieldValue.increment(1) } },
+                { merge: true },
+              );
+            }
+            await batch.commit();
+          } catch (err) {
+            console.warn('Medal Firestore mirror failed (non-blocking):', err.message);
           }
-          await batch.commit();
-        } catch (err) {
-          console.warn('Medal Firestore mirror failed (non-blocking):', err.message);
         }
       }
 
