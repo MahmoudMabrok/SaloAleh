@@ -146,9 +146,8 @@ All paths relative to `app/src/commonMain/kotlin/tools/mo3ta/salo/`.
 
 ### Daily Badge Flow
 
-1. Tap count crosses threshold → `DailyBadge.fromTapCount(count)` → badge stored in UI state
-2. `MilestoneTracker.onMilestoneReached()` checks if first time today → triggers `MilestoneCelebration`
-3. Background sync writes `players/{uid}.dailyBadge = badgeKey` to Firebase; other players see it on leaderboard
+1. Today's count (taps, manual "record external", or extension sync) crosses a threshold → `DailyBadge.fromTapCount(count)` → badge stored in UI state (`currentDailyBadge`) and the milestone celebration fires on first crossing
+2. Flush pushes the pending score, then `publishDailyBadgeIfChanged` writes `players/{uid}.dailyBadge` to Firebase so other players see it on the leaderboard. A bulk add that crosses a milestone does not wait for a later tap.
 
 ### Score Masking (Premium)
 
