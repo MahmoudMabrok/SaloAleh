@@ -53,6 +53,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import tools.mo3ta.salo.ui.components.WeeklyGoalSection
+import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.generated.resources.Res
@@ -237,6 +239,15 @@ fun DhikrRewardsScreen(
                 modifier = Modifier.fillMaxSize(),
             )
         }
+        WeeklyGoalSection(
+            challengeId = ChallengeType.DHIKR.id,
+            todayCount = state.todayCount,
+            accent = DhikrColors.LightGreen,
+            modifier = Modifier.align(Alignment.BottomCenter),
+            docked = true,
+            onDark = true,
+        )
+
     }
 
     if (state.showLeaderboard) {

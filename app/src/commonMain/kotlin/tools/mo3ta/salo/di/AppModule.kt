@@ -30,6 +30,7 @@ import tools.mo3ta.salo.data.engagement.ChallengeBadgeStore
 import tools.mo3ta.salo.data.engagement.DailyGoalStore
 import tools.mo3ta.salo.data.engagement.EngagementStore
 import tools.mo3ta.salo.data.engagement.RoundStreakStore
+import tools.mo3ta.salo.data.engagement.WeeklyGoalStore
 import tools.mo3ta.salo.data.firebase.FirestoreMirror
 import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseApi
 import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseClient
@@ -84,6 +85,7 @@ val appModule = module {
     single { DailyGoalStore(get()) }
     single { RoundStreakStore(get()) }
     single { ChallengeBadgeStore(get()) }
+    single { WeeklyGoalStore(get()) }
     single { HeartStore(get()) }
     single { DhikrChallengeStore(get()) }
     single { DhikrChallengeFirebaseClient(get(), get()) }
@@ -146,7 +148,11 @@ val appModule = module {
     viewModel { BaqiyatViewModel(get(), get(), get(), get(), get()) }
     viewModel { AchievementsViewModel(get(), get(), get()) }
     viewModel { AccountBackupViewModel(get()) }
-    viewModel { ChallengesViewModel(get()) }
+    viewModel {
+        ChallengesViewModel(
+            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
+        )
+    }
     viewModel { HadithListViewModel(get()) }
     single { TenDaysStore(get()) }
     single { TenDaysFirebaseClient(get(), get(), get()) }

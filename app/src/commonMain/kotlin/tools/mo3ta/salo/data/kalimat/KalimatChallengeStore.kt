@@ -2,6 +2,7 @@ package tools.mo3ta.salo.data.kalimat
 
 import com.russhwolf.settings.Settings
 import kotlinx.datetime.LocalDate
+import tools.mo3ta.salo.data.engagement.syncWeeklyGoal
 import tools.mo3ta.salo.domain.CHALLENGE_MANUAL_DAILY_CAP
 
 /**
@@ -34,7 +35,7 @@ class KalimatChallengeStore(private val settings: Settings) {
         ensureToday(today)
         val newPending = settings.getInt(KEY_PENDING, 0) + 1
         settings.putInt(KEY_PENDING, newPending)
-        return settings.getInt(KEY_REMOTE, 0) + newPending
+        return publishWeekly(today, settings.getInt(KEY_REMOTE, 0) + newPending)
     }
 
     /** Add [count] pending taps at once (manual entry), clamped to the daily manual cap. */
@@ -48,7 +49,7 @@ class KalimatChallengeStore(private val settings: Settings) {
                 settings.putInt(KEY_MANUAL, usedManual + applied)
             }
         }
-        return settings.getInt(KEY_REMOTE, 0) + settings.getInt(KEY_PENDING, 0)
+        return publishWeekly(today, settings.getInt(KEY_REMOTE, 0) + settings.getInt(KEY_PENDING, 0))
     }
 
     /** Subtract [count] to correct a mistaken entry. Floored at 0; refunds the manual cap ledger. */
@@ -63,7 +64,7 @@ class KalimatChallengeStore(private val settings: Settings) {
             val usedManual = settings.getInt(KEY_MANUAL, 0)
             settings.putInt(KEY_MANUAL, (usedManual - removed).coerceAtLeast(0))
         }
-        return settings.getInt(KEY_REMOTE, 0) + settings.getInt(KEY_PENDING, 0)
+        return publishWeekly(today, settings.getInt(KEY_REMOTE, 0) + settings.getInt(KEY_PENDING, 0))
     }
 
     fun manualRemainingToday(today: LocalDate): Int {
@@ -77,6 +78,7 @@ class KalimatChallengeStore(private val settings: Settings) {
         if (remoteCount > settings.getInt(KEY_REMOTE, 0)) {
             settings.putInt(KEY_REMOTE, remoteCount)
         }
+        publishWeekly(today, settings.getInt(KEY_REMOTE, 0) + settings.getInt(KEY_PENDING, 0))
     }
 
     /** After a successful Firebase write: advance baseline to total and clear pending. */
@@ -84,6 +86,7 @@ class KalimatChallengeStore(private val settings: Settings) {
         ensureToday(today)
         settings.putInt(KEY_REMOTE, total)
         settings.putInt(KEY_PENDING, 0)
+        publishWeekly(today, total)
     }
 
     fun clearPreviousPending() {
@@ -106,6 +109,9 @@ class KalimatChallengeStore(private val settings: Settings) {
         settings.putInt(KEY_PENDING, 0)
         settings.putInt(KEY_MANUAL, 0)
     }
+
+    private fun publishWeekly(today: LocalDate, total: Int): Int =
+        settings.syncWeeklyGoal("kalimat", today, total)
 
     private companion object {
         const val KEY_DATE = "kalimat_challenge_date"

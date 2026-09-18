@@ -75,6 +75,7 @@ import tools.mo3ta.salo.generated.resources.alf_hasana_times
 import tools.mo3ta.salo.generated.resources.alf_hasana_today
 import tools.mo3ta.salo.generated.resources.alf_hasana_view_rewards
 import tools.mo3ta.salo.domain.ChallengeType
+import tools.mo3ta.salo.ui.components.WeeklyGoalSection
 import tools.mo3ta.salo.presentation.AlfHasanaChallengeViewModel
 import tools.mo3ta.salo.ui.alfhasana.AlfHasanaColors
 import tools.mo3ta.salo.ui.alfhasana.AlfHasanaHeroBackground
@@ -160,6 +161,15 @@ fun AlfHasanaChallengeScreen(
             visible = showRewardsSheet,
             onDismiss = { showRewardsSheet = false },
         )
+        WeeklyGoalSection(
+            challengeId = ChallengeType.ALF_HASANA.id,
+            todayCountFlow = viewModel.todayCount,
+            accent = Color(0xFFE9C462),
+            modifier = Modifier.align(Alignment.BottomCenter),
+            docked = true,
+            onDark = true,
+        )
+
     }
 
     if (state.showLeaderboard) {

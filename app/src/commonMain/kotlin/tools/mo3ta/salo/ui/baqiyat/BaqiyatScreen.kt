@@ -51,6 +51,8 @@ import kotlinx.coroutines.flow.StateFlow
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import tools.mo3ta.salo.domain.ChallengeType
+import tools.mo3ta.salo.ui.components.WeeklyGoalSection
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.data.baqiyat.BaqiyatPhrase
@@ -199,6 +201,15 @@ fun BaqiyatScreen(
             Ayah()
 
             Spacer(Modifier.height(18.dp))
+
+            WeeklyGoalSection(
+                challengeId = ChallengeType.BAQIYAT.id,
+                todayCountFlow = viewModel.cycles,
+                accent = Color(0xFFB68CE0),
+                compact = true,
+                onDark = true,
+            )
+            Spacer(Modifier.height(12.dp))
 
             if (manualEntryEnabled) {
                 BaqiyatManualEntryButton(

@@ -101,6 +101,13 @@ import tools.mo3ta.salo.generated.resources.tendays_title
 import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.presentation.ChallengesViewModel
 import tools.mo3ta.salo.ui.components.ChallengeStreakChip
+import tools.mo3ta.salo.ui.components.SetWeeklyGoalSheet
+import tools.mo3ta.salo.ui.components.WeeklyGoalBar
+import tools.mo3ta.salo.data.engagement.WEEKLY_GOAL_UNSET
+import tools.mo3ta.salo.data.engagement.WeeklyGoalStore
+import tools.mo3ta.salo.data.time.daysUntilFriday
+import tools.mo3ta.salo.generated.resources.weekly_goal_week_chip
+import tools.mo3ta.salo.generated.resources.weekly_goal_week_chip_today
 import tools.mo3ta.salo.ui.components.HeroesSheet
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 
@@ -125,6 +132,7 @@ private data class ChallengeItem(
     val overallTotal: Int = 0,
     val streak: Int = 0,
     val participatedToday: Boolean = false,
+    val type: ChallengeType? = null,
     val onClick: () -> Unit,
 )
 
@@ -152,6 +160,9 @@ fun ChallengesScreen(
     val heroesBoard by viewModel.heroesBoard.collectAsState()
     val heroesLoading by viewModel.heroesLoading.collectAsState()
     val showHeroesSheet by viewModel.showHeroesSheet.collectAsState()
+    val weekly by viewModel.weekly.collectAsState()
+    val weeklyGoalStore: WeeklyGoalStore = koinInject()
+    var goalChallenge by remember { mutableStateOf<ChallengeType?>(null) }
 
     LaunchedEffect(Unit) {
         analyticsManager.logView("ChallengesScreen")
@@ -168,6 +179,7 @@ fun ChallengesScreen(
             overallTotal = overallTotals.ghars,
             streak = streaks[ChallengeType.GHARS] ?: 0,
             participatedToday = ChallengeType.GHARS in participatedToday,
+            type = ChallengeType.GHARS,
             onClick = {
                 analyticsManager.logAction(
                     AppAnalytics.OPEN_GHARS_CHALLENGE,
@@ -185,6 +197,7 @@ fun ChallengesScreen(
             overallTotal = overallTotals.dhikr,
             streak = streaks[ChallengeType.DHIKR] ?: 0,
             participatedToday = ChallengeType.DHIKR in participatedToday,
+            type = ChallengeType.DHIKR,
             onClick = {
                 analyticsManager.logAction(
                     AppAnalytics.OPEN_DHIKR_REWARDS,
@@ -202,6 +215,7 @@ fun ChallengesScreen(
             overallTotal = overallTotals.alfHasana,
             streak = streaks[ChallengeType.ALF_HASANA] ?: 0,
             participatedToday = ChallengeType.ALF_HASANA in participatedToday,
+            type = ChallengeType.ALF_HASANA,
             onClick = {
                 analyticsManager.logAction(
                     AppAnalytics.OPEN_ALF_HASANA_CHALLENGE,
@@ -219,6 +233,7 @@ fun ChallengesScreen(
             overallTotal = overallTotals.hawqala,
             streak = streaks[ChallengeType.HAWQALA] ?: 0,
             participatedToday = ChallengeType.HAWQALA in participatedToday,
+            type = ChallengeType.HAWQALA,
             onClick = {
                 analyticsManager.logAction(
                     AppAnalytics.OPEN_HAWQALA_CHALLENGE,
@@ -236,6 +251,7 @@ fun ChallengesScreen(
             overallTotal = overallTotals.kalimat,
             streak = streaks[ChallengeType.KALIMAT] ?: 0,
             participatedToday = ChallengeType.KALIMAT in participatedToday,
+            type = ChallengeType.KALIMAT,
             onClick = {
                 analyticsManager.logAction(
                     AppAnalytics.OPEN_KALIMAT_CHALLENGE,
@@ -253,6 +269,7 @@ fun ChallengesScreen(
             overallTotal = overallTotals.zabad,
             streak = streaks[ChallengeType.ZABAD] ?: 0,
             participatedToday = ChallengeType.ZABAD in participatedToday,
+            type = ChallengeType.ZABAD,
             onClick = {
                 analyticsManager.logAction(
                     AppAnalytics.OPEN_ZABAD_CHALLENGE,
@@ -270,6 +287,7 @@ fun ChallengesScreen(
             overallTotal = overallTotals.baqiyat,
             streak = streaks[ChallengeType.BAQIYAT] ?: 0,
             participatedToday = ChallengeType.BAQIYAT in participatedToday,
+            type = ChallengeType.BAQIYAT,
             onClick = {
                 analyticsManager.logAction(
                     AppAnalytics.OPEN_BAQIYAT_CHALLENGE,
@@ -287,6 +305,7 @@ fun ChallengesScreen(
             overallTotal = overallTotals.istighfar,
             streak = streaks[ChallengeType.ISTIGHFAR] ?: 0,
             participatedToday = ChallengeType.ISTIGHFAR in participatedToday,
+            type = ChallengeType.ISTIGHFAR,
             onClick = {
                 analyticsManager.logAction(
                     AppAnalytics.OPEN_ISTIGHFAR_CHALLENGE,
@@ -304,6 +323,7 @@ fun ChallengesScreen(
             overallTotal = overallTotals.quran,
             streak = streaks[ChallengeType.QURAN] ?: 0,
             participatedToday = ChallengeType.QURAN in participatedToday,
+            type = ChallengeType.QURAN,
             onClick = {
                 analyticsManager.logAction(
                     AppAnalytics.OPEN_QURAN_CHALLENGE,
@@ -386,6 +406,7 @@ fun ChallengesScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     DayCountdownChip()
+                    WeekRemainingChip()
                     if (heroesBoard != null) {
                         HeroOfYesterdayChip(onClick = { viewModel.openHeroesSheet() })
                     }
@@ -395,7 +416,11 @@ fun ChallengesScreen(
         }
 
         items(items) { item ->
-            ChallengeCard(item = item)
+            ChallengeCard(
+                item = item,
+                weekly = item.type?.let { weekly[it] },
+                onSetWeeklyGoal = { goalChallenge = item.type },
+            )
         }
     }
 
@@ -404,6 +429,34 @@ fun ChallengesScreen(
             board = heroesBoard,
             isLoading = heroesLoading,
             onDismiss = { viewModel.dismissHeroesSheet() },
+        )
+    }
+
+    val editing = goalChallenge
+    if (editing != null) {
+        SetWeeklyGoalSheet(
+            isOpen = true,
+            currentGoal = weekly[editing]?.goal ?: 0,
+            accent = items.firstOrNull { it.type == editing }?.accent ?: MohamedLoversPalette.GoldHighlight,
+            onDismiss = { goalChallenge = null },
+            onSave = { goal ->
+                weeklyGoalStore.setGoal(editing, goal)
+                analyticsManager.logAction(
+                    AppAnalytics.SET_WEEKLY_GOAL,
+                    mapOf(
+                        AppAnalytics.PARAM_CHALLENGE to editing.id,
+                        AppAnalytics.PARAM_GOAL to goal.toString(),
+                        AppAnalytics.PARAM_SOURCE to "hub",
+                    ),
+                )
+                viewModel.refreshWeeklyGoals()
+                goalChallenge = null
+            },
+            onClear = {
+                weeklyGoalStore.setGoal(editing, WEEKLY_GOAL_UNSET)
+                viewModel.refreshWeeklyGoals()
+                goalChallenge = null
+            },
         )
     }
 }
@@ -496,8 +549,39 @@ private fun DayCountdownChip() {
     }
 }
 
+
 @Composable
-private fun ChallengeCard(item: ChallengeItem) {
+private fun WeekRemainingChip() {
+    val cairoZone = remember { TimeZone.of("Africa/Cairo") }
+    val today = remember { Clock.System.now().toLocalDateTime(cairoZone).date }
+    val days = daysUntilFriday(today)
+    val accent = MohamedLoversPalette.GoldHighlight
+    Surface(
+        shape = RoundedCornerShape(999.dp),
+        color = accent.copy(alpha = 0.1f),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.22f)),
+        tonalElevation = 0.dp,
+    ) {
+        Text(
+            text = if (days <= 0) {
+                stringResource(Res.string.weekly_goal_week_chip_today)
+            } else {
+                stringResource(Res.string.weekly_goal_week_chip, days)
+            },
+            color = accent,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+        )
+    }
+}
+
+@Composable
+private fun ChallengeCard(
+    item: ChallengeItem,
+    weekly: tools.mo3ta.salo.data.engagement.WeeklyGoalProgress? = null,
+    onSetWeeklyGoal: () -> Unit = {},
+) {
     Surface(
         onClick = item.onClick,
         modifier = Modifier.fillMaxWidth(),
@@ -548,6 +632,16 @@ private fun ChallengeCard(item: ChallengeItem) {
                 if (item.streak > 0) {
                     Spacer(Modifier.height(6.dp))
                     ChallengeStreakChip(streak = item.streak, color = item.accent)
+                }
+                if (weekly != null) {
+                    Spacer(Modifier.height(8.dp))
+                    WeeklyGoalBar(
+                        progress = weekly,
+                        accent = item.accent,
+                        compact = true,
+                        onDark = true,
+                        onClick = onSetWeeklyGoal,
+                    )
                 }
             }
 
