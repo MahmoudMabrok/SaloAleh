@@ -126,4 +126,56 @@ class MohamedLoversViewModelDailyBadgeTest {
         vm.flushPendingSession()
         assertEquals(2, fake.writeDailyBadgeCalls.size)
     }
+
+    @Test
+    fun manual_entry_crossing_a_milestone_updates_local_badge_and_publishes_after_flush() = runTest {
+        val selfPlayerFlow = MutableSharedFlow<Result<MohamedLoversPlayer?>>()
+        val fake = FakeMohamedLoversFirebaseApi()
+        fake.selfPlayerFlow = selfPlayerFlow
+        val vm = buildViewModel(fake)
+        selfPlayerFlow.emit(Result.success(MohamedLoversPlayer(uid = "fake-uid", totalCount = 0)))
+
+        vm.submitManualSalawat(100)
+
+        assertEquals("sprout", vm.state.value.currentDailyBadge)
+        assertEquals("sprout", vm.state.value.milestoneBadgeKey)
+        assertEquals(100, vm.state.value.milestoneThreshold)
+        assertTrue(fake.incrementCalls.isNotEmpty(), "score must be flushed on external add")
+        assertEquals(1, fake.writeDailyBadgeCalls.size)
+        assertEquals("sprout", fake.writeDailyBadgeCalls.first().badgeKey)
+    }
+
+    @Test
+    fun extension_sync_crossing_a_milestone_updates_local_badge_and_publishes_after_flush() = runTest {
+        val selfPlayerFlow = MutableSharedFlow<Result<MohamedLoversPlayer?>>()
+        val fake = FakeMohamedLoversFirebaseApi()
+        fake.selfPlayerFlow = selfPlayerFlow
+        val vm = buildViewModel(fake)
+        selfPlayerFlow.emit(Result.success(MohamedLoversPlayer(uid = "fake-uid", totalCount = 0)))
+
+        vm.applyExtensionScore("2026-05-15", 100)
+
+        assertEquals("sprout", vm.state.value.currentDailyBadge)
+        assertEquals("sprout", vm.state.value.milestoneBadgeKey)
+        assertEquals(100, vm.state.value.milestoneThreshold)
+        assertTrue(fake.incrementCalls.isNotEmpty(), "score must be flushed on extension sync")
+        assertEquals(1, fake.writeDailyBadgeCalls.size)
+        assertEquals("sprout", fake.writeDailyBadgeCalls.first().badgeKey)
+    }
+
+    @Test
+    fun manual_entry_below_first_milestone_does_not_celebrate() = runTest {
+        val selfPlayerFlow = MutableSharedFlow<Result<MohamedLoversPlayer?>>()
+        val fake = FakeMohamedLoversFirebaseApi()
+        fake.selfPlayerFlow = selfPlayerFlow
+        val vm = buildViewModel(fake)
+        selfPlayerFlow.emit(Result.success(MohamedLoversPlayer(uid = "fake-uid", totalCount = 0)))
+
+        vm.submitManualSalawat(9)
+
+        assertEquals(null, vm.state.value.currentDailyBadge)
+        assertEquals(null, vm.state.value.milestoneBadgeKey)
+        assertEquals(null, vm.state.value.milestoneThreshold)
+        assertTrue(fake.writeDailyBadgeCalls.isEmpty(), "badge must not be published below the first threshold")
+    }
 }

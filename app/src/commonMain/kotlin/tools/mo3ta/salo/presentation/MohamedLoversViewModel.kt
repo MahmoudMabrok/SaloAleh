@@ -225,25 +225,15 @@ class MohamedLoversViewModel(
         dailyGoalStore.recordTap(today, 1)
         val isNowComplete = dailyGoalStore.isGoalComplete(today)
         val streakResult = roundStreakStore.recordActivity(roundKey, today)
-        val todayStr = today.toString()
         // The daily-goal tap progress is the single source of truth for today's competition count:
         // it drives the rank strip and daily badge, and is what we publish for the daily leaderboard.
         val rawTaps = dailyGoalStore.todayProgress(today)
-        val badge = DailyBadge.fromTapCount(rawTaps)
-        val lastMilestone = sessionStore.getLastMilestoneLevel(todayStr)
-        var milestoneThreshold: Int? = null
-        var milestoneBadgeKey: String? = null
-        if (badge != null && badge.threshold > lastMilestone) {
-            milestoneThreshold = badge.threshold
-            milestoneBadgeKey = badge.key
-            // Local celebration guard advances immediately (fires the milestone dialog once).
-            sessionStore.saveLastMilestoneLevel(todayStr, badge.threshold)
-            // The server badge is NOT written here. Flushing pushes the pending score first and
-            // then reconciles the badge (see flushPendingSession -> publishDailyBadgeIfChanged), so
-            // the badge never leads the score on the server and a failed publish is retried on the
-            // next flush instead of being lost.
-            flushPendingSession()
-        }
+        val badgeDelta = noteDailyBadgeProgress(today, rawTaps)
+        // The server badge is NOT written here. Flushing pushes the pending score first and
+        // then reconciles the badge (see flushPendingSession -> publishDailyBadgeIfChanged), so
+        // the badge never leads the score on the server and a failed publish is retried on the
+        // next flush instead of being lost.
+        if (badgeDelta.crossedMilestone) flushPendingSession()
         _state.update {
             it.copy(
                 sessionClicks = pending.clickCount,
@@ -251,9 +241,9 @@ class MohamedLoversViewModel(
                 error = null,
                 dailyGoalProgress = rawTaps,
                 dailyGoalJustCompleted = !wasComplete && isNowComplete,
-                milestoneThreshold = milestoneThreshold ?: it.milestoneThreshold,
-                milestoneBadgeKey = milestoneBadgeKey ?: it.milestoneBadgeKey,
-                currentDailyBadge = badge?.key ?: it.currentDailyBadge,
+                milestoneThreshold = badgeDelta.milestoneThreshold ?: it.milestoneThreshold,
+                milestoneBadgeKey = badgeDelta.milestoneBadgeKey ?: it.milestoneBadgeKey,
+                currentDailyBadge = badgeDelta.badgeKey ?: it.currentDailyBadge,
                 lastSalawatElapsedMinutes = 0L,
                 heartScore = heart.first,
                 showHeartRefillNudge = shouldShowHeartRefillNudge(heart.first, heart.second),
@@ -340,6 +330,31 @@ class MohamedLoversViewModel(
     }
 
     /**
+     * Local daily-badge / milestone state for [todayProgress]. Advances the one-shot celebration
+     * guard when a new threshold is crossed. Does not publish to the server — the caller flushes,
+     * then [publishDailyBadgeIfChanged] writes the badge once the score has landed.
+     *
+     * Shared by taps, manual ("record external") entry, and extension sync so a bulk add that
+     * crosses a milestone updates the on-screen medal and fires the celebration without waiting
+     * for a later tap.
+     */
+    private fun noteDailyBadgeProgress(today: LocalDate, todayProgress: Int): DailyBadgeDelta {
+        val badge = DailyBadge.fromTapCount(todayProgress)
+            ?: return DailyBadgeDelta(null, null, null, false)
+        val lastMilestone = sessionStore.getLastMilestoneLevel(today.toString())
+        val crossed = badge.threshold > lastMilestone
+        if (crossed) {
+            sessionStore.saveLastMilestoneLevel(today.toString(), badge.threshold)
+        }
+        return DailyBadgeDelta(
+            badgeKey = badge.key,
+            milestoneThreshold = if (crossed) badge.threshold else null,
+            milestoneBadgeKey = if (crossed) badge.key else null,
+            crossedMilestone = crossed,
+        )
+    }
+
+    /**
      * Publishes the current local daily badge to the player's Firebase record, but only once the
      * score has been flushed (this is called from [flushPendingSession] after the score write). The
      * published level is persisted only on write success, so a failed publish is transparently
@@ -394,11 +409,15 @@ class MohamedLoversViewModel(
         // which now publishes the daily-goal progress) just like taps and manual entries do.
         dailyGoalStore.recordTap(today, count)
         val todayTotal = dailyGoalStore.todayProgress(today)
+        val badgeDelta = noteDailyBadgeProgress(today, todayTotal)
         _state.update {
             it.copy(
                 sessionClicks = pending.clickCount,
                 todayCount = todayTotal,
                 dailyGoalProgress = todayTotal,
+                milestoneThreshold = badgeDelta.milestoneThreshold ?: it.milestoneThreshold,
+                milestoneBadgeKey = badgeDelta.milestoneBadgeKey ?: it.milestoneBadgeKey,
+                currentDailyBadge = badgeDelta.badgeKey ?: it.currentDailyBadge,
                 heartScore = heart.first,
                 showHeartRefillNudge = shouldShowHeartRefillNudge(heart.first, heart.second),
                 roundStreak = streakResult.currentStreak,
@@ -480,6 +499,7 @@ class MohamedLoversViewModel(
         val prevStreak = state.value.roundStreak
         val streakResult = roundStreakStore.recordActivity(roundKey, today)
         val todayTotal = dailyGoalStore.todayProgress(today)
+        val badgeDelta = noteDailyBadgeProgress(today, todayTotal)
         _state.update {
             it.copy(
                 sessionClicks = pending.clickCount,
@@ -487,6 +507,9 @@ class MohamedLoversViewModel(
                 showManualSalawatSheet = false,
                 isSubmittingManualSalawat = true,
                 dailyGoalProgress = todayTotal,
+                milestoneThreshold = badgeDelta.milestoneThreshold ?: it.milestoneThreshold,
+                milestoneBadgeKey = badgeDelta.milestoneBadgeKey ?: it.milestoneBadgeKey,
+                currentDailyBadge = badgeDelta.badgeKey ?: it.currentDailyBadge,
                 lastSalawatElapsedMinutes = 0L,
                 heartScore = heart.first,
                 showHeartRefillNudge = shouldShowHeartRefillNudge(heart.first, heart.second),
@@ -763,6 +786,13 @@ class MohamedLoversViewModel(
         // stop waiting so the board is never left frozen on the previous mode's list.
         const val LEADERBOARD_MODE_SWITCH_TIMEOUT_MS = 6_000L
     }
+
+    private data class DailyBadgeDelta(
+        val badgeKey: String?,
+        val milestoneThreshold: Int?,
+        val milestoneBadgeKey: String?,
+        val crossedMilestone: Boolean,
+    )
 
     fun clearError() = _state.update { it.copy(error = null) }
 
