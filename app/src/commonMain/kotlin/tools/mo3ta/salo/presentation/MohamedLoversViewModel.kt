@@ -162,6 +162,8 @@ class MohamedLoversViewModel(
             // Score masking is scoped to a single round — clear it once a new round has started.
             bootstrap.competitionWindow.roundKey?.let { premiumStore.clearScoreMaskOnNewRound(it) }
 
+            val cairoToday = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
+            val streakSnap = roundStreakStore.reconcile(cairoToday)
             _state.update {
                 it.copy(
                     isLoading = false,
@@ -175,11 +177,19 @@ class MohamedLoversViewModel(
                     status = resolveStatus(bootstrap.firebaseConfigured, bootstrap.competitionWindow),
                     canCount = bootstrap.competitionWindow.networkNow != null,
                     sessionClicks = bootstrap.pendingSession.clickCount,
-                    roundStreak = bootstrap.competitionWindow.roundKey?.let { rk ->
-                        roundStreakStore.getCurrentStreak(rk, Clock.System.todayIn(TimeZone.of("Africa/Cairo")))
-                    } ?: 0,
+                    roundStreak = streakSnap.currentStreak,
+                    streakFreezeRemaining = streakSnap.freezeRemaining,
+                    streakMissedDays = streakSnap.missedDays,
+                    streakAtRisk = streakSnap.isAtRisk,
+                    streakFreezeUntil = streakSnap.freezeUntil?.toString(),
+                    showStreakResetWarning = streakSnap.justReset || it.showStreakResetWarning,
                     error = null,
                 )
+            }
+            if (streakSnap.justReset) {
+                bootstrap.competitionWindow.roundKey?.let { rk ->
+                    publishRoundStreak(rk, 0, 1)
+                }
             }
 
             flushPendingSession()
@@ -225,6 +235,7 @@ class MohamedLoversViewModel(
         dailyGoalStore.recordTap(today, 1)
         val isNowComplete = dailyGoalStore.isGoalComplete(today)
         val streakResult = roundStreakStore.recordActivity(roundKey, today)
+        val streakSnap = roundStreakStore.snapshot(today)
         // The daily-goal tap progress is the single source of truth for today's competition count:
         // it drives the rank strip and daily badge, and is what we publish for the daily leaderboard.
         val rawTaps = dailyGoalStore.todayProgress(today)
@@ -249,6 +260,11 @@ class MohamedLoversViewModel(
                 showHeartRefillNudge = shouldShowHeartRefillNudge(heart.first, heart.second),
                 roundStreak = streakResult.currentStreak,
                 roundStreakCelebration = streakResult.newlyEarnedBadge ?: it.roundStreakCelebration,
+                streakFreezeRemaining = streakSnap.freezeRemaining,
+                streakMissedDays = streakSnap.missedDays,
+                streakAtRisk = streakSnap.isAtRisk,
+                streakFreezeUntil = streakSnap.freezeUntil?.toString(),
+                showStreakResetWarning = false,
             )
         }
         publishRoundStreak(roundKey, streakResult.currentStreak, current.roundStreak)
@@ -257,6 +273,33 @@ class MohamedLoversViewModel(
 
     fun dismissRoundStreakCelebration() {
         _state.update { it.copy(roundStreakCelebration = null) }
+    }
+
+    fun freezeStreak(days: Int) {
+        val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
+        val snap = roundStreakStore.activateFreeze(days, today)
+        _state.update {
+            it.copy(
+                roundStreak = snap.currentStreak,
+                streakFreezeRemaining = snap.freezeRemaining,
+                streakMissedDays = snap.missedDays,
+                streakAtRisk = snap.isAtRisk,
+                streakFreezeUntil = snap.freezeUntil?.toString(),
+                showStreakFreezeDialog = false,
+            )
+        }
+    }
+
+    fun openStreakFreezeDialog() {
+        _state.update { it.copy(showStreakFreezeDialog = true) }
+    }
+
+    fun dismissStreakFreezeDialog() {
+        _state.update { it.copy(showStreakFreezeDialog = false) }
+    }
+
+    fun dismissStreakResetWarning() {
+        _state.update { it.copy(showStreakResetWarning = false) }
     }
 
     /**
@@ -405,6 +448,7 @@ class MohamedLoversViewModel(
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
         val prevStreak = state.value.roundStreak
         val streakResult = roundStreakStore.recordActivity(round, today)
+        val streakSnap = roundStreakStore.snapshot(today)
         // Extension salawat count toward today's competition total (and thus the daily leaderboard,
         // which now publishes the daily-goal progress) just like taps and manual entries do.
         dailyGoalStore.recordTap(today, count)
@@ -422,6 +466,11 @@ class MohamedLoversViewModel(
                 showHeartRefillNudge = shouldShowHeartRefillNudge(heart.first, heart.second),
                 roundStreak = streakResult.currentStreak,
                 roundStreakCelebration = streakResult.newlyEarnedBadge ?: it.roundStreakCelebration,
+                streakFreezeRemaining = streakSnap.freezeRemaining,
+                streakMissedDays = streakSnap.missedDays,
+                streakAtRisk = streakSnap.isAtRisk,
+                streakFreezeUntil = streakSnap.freezeUntil?.toString(),
+                showStreakResetWarning = false,
             )
         }
         publishRoundStreak(round, streakResult.currentStreak, prevStreak)
@@ -498,6 +547,7 @@ class MohamedLoversViewModel(
         dailyGoalStore.recordTap(today, applied)
         val prevStreak = state.value.roundStreak
         val streakResult = roundStreakStore.recordActivity(roundKey, today)
+        val streakSnap = roundStreakStore.snapshot(today)
         val todayTotal = dailyGoalStore.todayProgress(today)
         val badgeDelta = noteDailyBadgeProgress(today, todayTotal)
         _state.update {
@@ -515,6 +565,11 @@ class MohamedLoversViewModel(
                 showHeartRefillNudge = shouldShowHeartRefillNudge(heart.first, heart.second),
                 roundStreak = streakResult.currentStreak,
                 roundStreakCelebration = streakResult.newlyEarnedBadge ?: it.roundStreakCelebration,
+                streakFreezeRemaining = streakSnap.freezeRemaining,
+                streakMissedDays = streakSnap.missedDays,
+                streakAtRisk = streakSnap.isAtRisk,
+                streakFreezeUntil = streakSnap.freezeUntil?.toString(),
+                showStreakResetWarning = false,
                 manualRemaining = manualRemainingNow(today),
             )
         }

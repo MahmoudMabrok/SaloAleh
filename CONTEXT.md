@@ -22,7 +22,8 @@ Read this file before exploring the codebase. It covers vocabulary, file map, da
 | **Round Total / Player Count** | Server-computed aggregates per round: total taps and participant count. |
 | **Daily Badge** | Achievement icon for today's tap count. Thresholds: Spark(10)→Sprout(100)→Heart(200)→Tasbih(500)→Dome(1000)→Crescent(2000)→Lantern(4000)→Crown(5000)→Mihrab(8000)→Star(10000). Resets daily at 19:00. |
 | **Milestone** | First time a user hits a daily badge threshold → triggers confetti animation. |
-| **Grace Period** | 2-day absence allowance in streak tracking. Usable once per absence window. |
+| **Grace Period** | 2-day absence allowance in **app-open** streak tracking (`EngagementStore`). Usable once per 7-day window. |
+| **Streak Freeze** | Daily **zikr/salawat** streak (`RoundStreakStore`) can stay frozen for up to 3 Cairo days. Users can freeze remaining days in the window. 3 consecutive days with no zikr reset the streak. |
 | **Achievement** | Sealed union: `StreakBadge` (7-day or 30-day streak) or `RankAchievement` (top-3 round finish). |
 | **Personal Best Rank** | Lowest (best) rank ever achieved, tracked in `MohamedLoversSessionStore`. |
 | **Score Masking** | Premium feature hiding the user's score from others. Round-scoped; cleared on new round. |
@@ -121,7 +122,7 @@ All paths relative to `app/src/commonMain/kotlin/tools/mo3ta/salo/`.
 | `ui/components/ManualSalawatSheet.kt` | QR scan or number input to import taps |
 | `ui/components/RoundRecapSheet.kt` | Round summary: rank, players, personal best, tap delta |
 | `ui/components/DailyBadgeTiersSheet.kt` | Badge tier progression with current highlighted |
-| `ui/components/UserAchievementsSheet.kt` | Historical rank achievements per round |
+| `ui/components/RoundStreakInfoDialog.kt` | Streak info + freeze remaining + freeze-day picker |
 
 ---
 
@@ -158,9 +159,10 @@ All paths relative to `app/src/commonMain/kotlin/tools/mo3ta/salo/`.
 
 ### Engagement & Streak
 
-1. App launch → `EngagementStore.recordOpen(today)` increments `openCount`, evaluates streak
-2. Streak hits 7 or 30 → unlocks `BadgeType.STREAK_7/30`, stores `earnedDate`
-3. On first unlock → prompts FCM permission
+1. App launch → `EngagementStore.recordOpen(today)` increments `openCount`, evaluates the **open** streak (1-day weekly grace).
+2. Open streak hits 7 or 30 → unlocks `BadgeType.STREAK_7/30`, stores `earnedDate`.
+3. On first unlock → prompts FCM permission.
+4. Any salawat/zikr → `RoundStreakStore.recordActivity(today)` extends the **daily zikr streak**. Missing 1–2 days freezes it; 3 consecutive days with no zikr resets it. Users can freeze remaining days in the 3-day window from the streak dialog.
 
 ---
 

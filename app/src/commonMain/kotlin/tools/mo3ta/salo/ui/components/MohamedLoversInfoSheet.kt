@@ -129,7 +129,7 @@ internal fun MohamedLoversInfoSheet(
     onOpenPaywall: () -> Unit = {},
     onUserClick: (uid: String, displayTag: String) -> Unit = { _, _ -> },
     onBadgeClick: (String) -> Unit = {},
-    onStreakClick: (Int) -> Unit = {},
+    onStreakClick: (Int, Boolean) -> Unit = { _, _ -> },
     onMedalClick: () -> Unit = {},
 ) {
     if (!isOpen) return
@@ -577,7 +577,7 @@ private fun LeaderboardCard(
     onOpenPaywall: () -> Unit = {},
     onUserClick: (uid: String, displayTag: String) -> Unit = { _, _ -> },
     onBadgeClick: (String) -> Unit = {},
-    onStreakClick: (Int) -> Unit = {},
+    onStreakClick: (Int, Boolean) -> Unit = { _, _ -> },
     onMedalClick: () -> Unit = {},
 ) {
     SheetCard {
@@ -719,7 +719,7 @@ private fun LeaderboardRow(
     onSupporterClick: () -> Unit = {},
     onUserClick: (uid: String, displayTag: String) -> Unit = { _, _ -> },
     onBadgeClick: (String) -> Unit = {},
-    onStreakClick: (Int) -> Unit = {},
+    onStreakClick: (Int, Boolean) -> Unit = { _, _ -> },
     onMedalClick: () -> Unit = {},
 ) {
     val rankColor = when (entry.rank) {
@@ -854,7 +854,7 @@ private fun LeaderboardRow(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(4.dp))
                                     .background(MohamedLoversPalette.GoldHighlight.copy(alpha = 0.15f))
-                                    .clickable { onStreakClick(streak) }
+                                    .clickable { onStreakClick(streak, entry.isCurrentUser) }
                                     .padding(horizontal = 5.dp, vertical = 2.dp),
                             )
                         }

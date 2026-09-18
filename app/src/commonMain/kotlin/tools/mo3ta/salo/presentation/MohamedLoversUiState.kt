@@ -89,6 +89,12 @@ data class MohamedLoversUiState(
     // Per-round daily salawat streak ("perfect week" badge)
     val roundStreak: Int = 0,
     val roundStreakCelebration: Achievement.RoundStreakBadge? = null,
+    val streakFreezeRemaining: Int = 0,
+    val streakMissedDays: Int = 0,
+    val streakAtRisk: Boolean = false,
+    val streakFreezeUntil: String? = null,
+    val showStreakResetWarning: Boolean = false,
+    val showStreakFreezeDialog: Boolean = false,
 
     // New round transition
     val showNewRoundCountdown: Boolean = false,
