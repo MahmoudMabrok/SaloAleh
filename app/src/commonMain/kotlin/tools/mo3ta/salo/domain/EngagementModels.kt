@@ -36,10 +36,26 @@ sealed class Achievement {
 /** Number of consecutive active days within a round required to earn the round-streak badge. */
 const val ROUND_STREAK_TARGET = 7
 
+/**
+ * Max days the daily salawat streak can stay frozen without any zikr.
+ * Three consecutive Cairo days with no zikr reset the streak.
+ */
+const val STREAK_FREEZE_MAX_DAYS = 3
+
 /** Outcome of recording a day's salawat activity for the round-streak tracker. */
 data class RoundStreakResult(
     val currentStreak: Int,
     val newlyEarnedBadge: Achievement.RoundStreakBadge?,
+)
+
+/** Live view of the daily salawat streak, including the 3-day freeze window. */
+data class RoundStreakSnapshot(
+    val currentStreak: Int,
+    val missedDays: Int,
+    val freezeRemaining: Int,
+    val isAtRisk: Boolean,
+    val freezeUntil: LocalDate?,
+    val justReset: Boolean = false,
 )
 
 data class UserAchievement(

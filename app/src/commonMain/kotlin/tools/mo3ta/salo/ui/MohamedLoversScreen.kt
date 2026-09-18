@@ -64,10 +64,15 @@ import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.grace_warning
-import tools.mo3ta.salo.generated.resources.mohamed_lovers_badge_score_adjusted
-import tools.mo3ta.salo.generated.resources.mohamed_lovers_daily_cap_reached
 import tools.mo3ta.salo.generated.resources.grace_warning_cta
 import tools.mo3ta.salo.generated.resources.grace_warning_title
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_badge_score_adjusted
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_daily_cap_reached
+import tools.mo3ta.salo.generated.resources.streak_freeze_at_risk
+import tools.mo3ta.salo.generated.resources.streak_freeze_at_risk_title
+import tools.mo3ta.salo.generated.resources.streak_freeze_reset
+import tools.mo3ta.salo.generated.resources.streak_freeze_reset_cta
+import tools.mo3ta.salo.generated.resources.streak_freeze_reset_title
 import tools.mo3ta.salo.generated.resources.heart_index_label
 import tools.mo3ta.salo.generated.resources.heart_index_tooltip
 import tools.mo3ta.salo.generated.resources.heart_index_dialog_body
@@ -216,7 +221,7 @@ fun MohamedLoversScreen(
     }
     var badgeTiersSheetOpen by remember { mutableStateOf(false) }
     var badgeDialogKey by remember { mutableStateOf<String?>(null) }
-    var streakDialogCount by remember { mutableStateOf<Int?>(null) }
+    var streakDialogCount by remember { mutableStateOf<Pair<Int, Boolean>?>(null) }
     var showMedalInfo by remember { mutableStateOf(false) }
     var showRankTooltip by remember { mutableStateOf(false) }
     var showBubbleTooltip by remember { mutableStateOf(false) }
@@ -293,6 +298,14 @@ fun MohamedLoversScreen(
                 if (state.showRoundEndBanner && !state.showRoundEndResults) {
                     Spacer(Modifier.height(8.dp))
                     RoundEndBanner(onClick = { viewModel.onRoundEndBannerClick() })
+                }
+                if (state.streakAtRisk && state.roundStreak > 0) {
+                    Spacer(Modifier.height(8.dp))
+                    StreakAtRiskBanner(
+                        missedDays = state.streakMissedDays,
+                        freezeRemaining = state.streakFreezeRemaining,
+                        onFreeze = { viewModel.openStreakFreezeDialog() },
+                    )
                 }
 
                 Spacer(Modifier.height(14.dp))
@@ -465,7 +478,7 @@ fun MohamedLoversScreen(
                 onOpenPaywall()
             },
             onBadgeClick = { key -> badgeDialogKey = key },
-            onStreakClick = { streak -> streakDialogCount = streak },
+            onStreakClick = { streak, isSelf -> streakDialogCount = streak to isSelf },
             onMedalClick = { showMedalInfo = true },
             onUserClick = { uid, tag ->
                 analyticsManager.logAction(AppAnalytics.LEADERBOARD_USER_CLICK)
@@ -485,9 +498,14 @@ fun MohamedLoversScreen(
                 )
             }
         }
-        streakDialogCount?.let { streak ->
+        streakDialogCount?.let { (streak, isSelf) ->
             RoundStreakInfoDialog(
                 streak = streak,
+                isSelf = isSelf,
+                freezeRemaining = state.streakFreezeRemaining,
+                missedDays = state.streakMissedDays,
+                freezeUntil = state.streakFreezeUntil,
+                onFreeze = if (isSelf) viewModel::freezeStreak else null,
                 onDismiss = { streakDialogCount = null },
             )
         }
@@ -539,6 +557,20 @@ fun MohamedLoversScreen(
         }
         if (state.showGraceWarning) {
             GraceWarningDialog(onDismiss = { viewModel.dismissGraceWarning() })
+        }
+        if (state.showStreakResetWarning) {
+            StreakResetDialog(onDismiss = { viewModel.dismissStreakResetWarning() })
+        }
+        if (state.showStreakFreezeDialog) {
+            RoundStreakInfoDialog(
+                streak = state.roundStreak,
+                isSelf = true,
+                freezeRemaining = state.streakFreezeRemaining,
+                missedDays = state.streakMissedDays,
+                freezeUntil = state.streakFreezeUntil,
+                onFreeze = viewModel::freezeStreak,
+                onDismiss = { viewModel.dismissStreakFreezeDialog() },
+            )
         }
 //        if (announcementsEnabled) {
 //            BubbleFeaturePromo(roundKey = state.roundKey)
@@ -614,6 +646,73 @@ private fun GraceWarningDialog(onDismiss: () -> Unit) {
             TextButton(onClick = onDismiss) {
                 Text(
                     text = stringResource(Res.string.grace_warning_cta),
+                    color = MohamedLoversPalette.GoldHighlight,
+                )
+            }
+        },
+    )
+}
+
+@Composable
+private fun StreakAtRiskBanner(
+    missedDays: Int,
+    freezeRemaining: Int,
+    onFreeze: () -> Unit,
+) {
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.12f),
+        modifier = Modifier
+            .padding(horizontal = 16.dp)
+            .clickable(onClick = onFreeze)
+            .fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+            Text(
+                text = stringResource(Res.string.streak_freeze_at_risk_title),
+                color = MohamedLoversPalette.GoldHighlight,
+                fontSize = 13.sp,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = stringResource(Res.string.streak_freeze_at_risk, missedDays, freezeRemaining),
+                color = MohamedLoversPalette.GoldGlow,
+                fontSize = 12.sp,
+                lineHeight = 18.sp,
+            )
+        }
+    }
+}
+
+@Composable
+private fun StreakResetDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = MohamedLoversPalette.DeepBlue,
+        shape = RoundedCornerShape(20.dp),
+        title = {
+            Text(
+                text = stringResource(Res.string.streak_freeze_reset_title),
+                color = MohamedLoversPalette.GoldHighlight,
+                fontSize = 18.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        text = {
+            Text(
+                text = stringResource(Res.string.streak_freeze_reset),
+                color = MohamedLoversPalette.GoldGlow,
+                fontSize = 14.sp,
+                lineHeight = 22.sp,
+                textAlign = TextAlign.Center,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(
+                    text = stringResource(Res.string.streak_freeze_reset_cta),
                     color = MohamedLoversPalette.GoldHighlight,
                 )
             }
