@@ -14,7 +14,18 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
+import tools.mo3ta.salo.data.alfhasana.AlfHasanaChallengeStore
+import tools.mo3ta.salo.data.baqiyat.BaqiyatStore
+import tools.mo3ta.salo.data.dhikr.DhikrChallengeStore
 import tools.mo3ta.salo.data.engagement.ChallengeBadgeStore
+import tools.mo3ta.salo.data.engagement.WeeklyGoalProgress
+import tools.mo3ta.salo.data.engagement.WeeklyGoalStore
+import tools.mo3ta.salo.data.ghars.GharsChallengeStore
+import tools.mo3ta.salo.data.hawqala.HawqalaChallengeStore
+import tools.mo3ta.salo.data.istighfar.IstighfarChallengeStore
+import tools.mo3ta.salo.data.kalimat.KalimatChallengeStore
+import tools.mo3ta.salo.data.quran.QuranChallengeStore
+import tools.mo3ta.salo.data.zabad.ZabadChallengeStore
 import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.domain.HeroesBoard
 import tools.mo3ta.salo.domain.parseHeroesBoard
@@ -51,6 +62,16 @@ data class ChallengesOverallTotals(
 
 class ChallengesViewModel(
     private val challengeBadgeStore: ChallengeBadgeStore,
+    private val weeklyGoalStore: WeeklyGoalStore,
+    private val dhikrStore: DhikrChallengeStore,
+    private val baqiyatStore: BaqiyatStore,
+    private val istighfarStore: IstighfarChallengeStore,
+    private val zabadStore: ZabadChallengeStore,
+    private val gharsStore: GharsChallengeStore,
+    private val quranStore: QuranChallengeStore,
+    private val alfHasanaStore: AlfHasanaChallengeStore,
+    private val kalimatStore: KalimatChallengeStore,
+    private val hawqalaStore: HawqalaChallengeStore,
 ) : ViewModel() {
 
     private val cairoZone = TimeZone.of("Africa/Cairo")
@@ -89,10 +110,18 @@ class ChallengesViewModel(
     private val _participatedToday = MutableStateFlow(challengeBadgeStore.getActiveChallenges(Clock.System.todayIn(cairoZone)))
     val participatedToday: StateFlow<Set<ChallengeType>> = _participatedToday.asStateFlow()
 
+    private val _weekly = MutableStateFlow(weeklyGoalStore.snapshotAll(Clock.System.todayIn(cairoZone)))
+    val weekly: StateFlow<Map<ChallengeType, WeeklyGoalProgress>> = _weekly.asStateFlow()
+
+    fun refreshWeeklyGoals() {
+        _weekly.value = weeklyGoalStore.snapshotAll(Clock.System.todayIn(cairoZone))
+    }
+
     fun onScreenEntered() {
         val today = Clock.System.todayIn(cairoZone)
         _streaks.value = challengeBadgeStore.getCurrentStreaks(today)
         _participatedToday.value = challengeBadgeStore.getActiveChallenges(today)
+        hydrateWeekly(today)
         _heroesLoading.value = _heroesBoard.value == null
         viewModelScope.launch {
             val dateKey = Clock.System.todayIn(cairoZone).toString()
@@ -159,6 +188,19 @@ class ChallengesViewModel(
             _heroesBoard.value = heroes.await()
             _heroesLoading.value = false
         }
+    }
+
+    private fun hydrateWeekly(today: kotlinx.datetime.LocalDate) {
+        weeklyGoalStore.syncFromTodayCount(ChallengeType.DHIKR, today, dhikrStore.todayCount(today))
+        weeklyGoalStore.syncFromTodayCount(ChallengeType.BAQIYAT, today, baqiyatStore.todayCount(today))
+        weeklyGoalStore.syncFromTodayCount(ChallengeType.ISTIGHFAR, today, istighfarStore.todayCount(today))
+        weeklyGoalStore.syncFromTodayCount(ChallengeType.ZABAD, today, zabadStore.todayCount(today))
+        weeklyGoalStore.syncFromTodayCount(ChallengeType.GHARS, today, gharsStore.todayCount(today))
+        weeklyGoalStore.syncFromTodayCount(ChallengeType.QURAN, today, quranStore.todayCount(today))
+        weeklyGoalStore.syncFromTodayCount(ChallengeType.ALF_HASANA, today, alfHasanaStore.todayCount(today))
+        weeklyGoalStore.syncFromTodayCount(ChallengeType.KALIMAT, today, kalimatStore.todayCount(today))
+        weeklyGoalStore.syncFromTodayCount(ChallengeType.HAWQALA, today, hawqalaStore.todayCount(today))
+        _weekly.value = weeklyGoalStore.snapshotAll(today)
     }
 
     private suspend fun readHeroes(db: dev.gitlive.firebase.database.FirebaseDatabase): HeroesBoard? {

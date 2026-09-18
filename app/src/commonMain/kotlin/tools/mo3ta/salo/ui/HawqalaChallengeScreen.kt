@@ -75,6 +75,7 @@ import tools.mo3ta.salo.generated.resources.hawqala_times
 import tools.mo3ta.salo.generated.resources.hawqala_today
 import tools.mo3ta.salo.generated.resources.hawqala_view_rewards
 import tools.mo3ta.salo.domain.ChallengeType
+import tools.mo3ta.salo.ui.components.WeeklyGoalSection
 import tools.mo3ta.salo.presentation.HawqalaChallengeViewModel
 import tools.mo3ta.salo.ui.hawqala.HawqalaColors
 import tools.mo3ta.salo.ui.hawqala.HawqalaHeroBackground
@@ -160,6 +161,15 @@ fun HawqalaChallengeScreen(
             visible = showRewardsSheet,
             onDismiss = { showRewardsSheet = false },
         )
+        WeeklyGoalSection(
+            challengeId = ChallengeType.HAWQALA.id,
+            todayCountFlow = viewModel.todayCount,
+            accent = Color(0xFFA78BFA),
+            modifier = Modifier.align(Alignment.BottomCenter),
+            docked = true,
+            onDark = true,
+        )
+
     }
 
     if (state.showLeaderboard) {

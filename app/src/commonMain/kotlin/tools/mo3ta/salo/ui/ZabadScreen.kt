@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import tools.mo3ta.salo.domain.ChallengeType
+import tools.mo3ta.salo.ui.components.WeeklyGoalSection
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
@@ -190,6 +191,14 @@ fun ZabadScreen(
             }
         }
         Column(Modifier.fillMaxWidth().padding(28.dp).navigationBarsPadding().align(Alignment.BottomCenter), horizontalAlignment = Alignment.CenterHorizontally) {
+            WeeklyGoalSection(
+                challengeId = ChallengeType.ZABAD.id,
+                todayCount = state.todayCount,
+                accent = Color(0xFF2ED3C4),
+                compact = true,
+                onDark = true,
+            )
+            Spacer(Modifier.height(10.dp))
             Text(stringResource(Res.string.zabad_tap_hint), color = Color(0xB3EAF6F4), textAlign = TextAlign.Center, fontSize = 13.sp, fontFamily = ibmPlexArabicFamily())
             if (manualEntryEnabled) {
                 TextButton(onClick = {

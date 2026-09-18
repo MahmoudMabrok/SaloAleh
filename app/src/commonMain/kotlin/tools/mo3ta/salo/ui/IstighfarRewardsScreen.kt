@@ -69,9 +69,10 @@ import tools.mo3ta.salo.generated.resources.istighfar_times
 import tools.mo3ta.salo.generated.resources.istighfar_today
 import tools.mo3ta.salo.generated.resources.istighfar_view_rewards
 import tools.mo3ta.salo.domain.ChallengeType
+import tools.mo3ta.salo.ui.components.WeeklyGoalSection
+import tools.mo3ta.salo.ui.istighfar.IstighfarColors
 import tools.mo3ta.salo.presentation.IstighfarChallengeViewModel
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
-import tools.mo3ta.salo.ui.istighfar.IstighfarColors
 import tools.mo3ta.salo.ui.istighfar.IstighfarLeaderboardSheet
 import tools.mo3ta.salo.ui.istighfar.IstighfarMilestoneCelebration
 import tools.mo3ta.salo.ui.istighfar.IstighfarProgressRing
@@ -172,6 +173,15 @@ fun IstighfarRewardsScreen(
             onDismiss = { showRewardsSheet = false },
             modifier = Modifier.fillMaxSize(),
         )
+        WeeklyGoalSection(
+            challengeId = ChallengeType.ISTIGHFAR.id,
+            todayCount = state.todayCount,
+            accent = IstighfarColors.LightAmber,
+            modifier = Modifier.align(Alignment.BottomCenter),
+            docked = true,
+            onDark = true,
+        )
+
     }
 
     if (state.showLeaderboard) {

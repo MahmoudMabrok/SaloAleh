@@ -57,7 +57,13 @@ object AppAnalytics {
     const val KALIMAT_TAP = "kalimat_tap"
     const val KALIMAT_SCREEN_VIEW = "kalimat_screen_view"
 
+    const val OPEN_WEEKLY_GOAL = "open_weekly_goal"
+    const val SET_WEEKLY_GOAL = "set_weekly_goal"
+    const val WEEKLY_GOAL_REACHED = "weekly_goal_reached"
+
     const val PARAM_COUNT = "count"
+    const val PARAM_CHALLENGE = "challenge"
+    const val PARAM_GOAL = "goal"
     const val LANGUAGE_CHANGED = "language_changed"
     const val SALAWAT_VARIANT_CHANGED = "salawat_variant_changed"
     const val TAKBEER_SESSION_START = "takbeer_session_start"

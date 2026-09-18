@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import tools.mo3ta.salo.domain.ChallengeType
+import tools.mo3ta.salo.ui.components.WeeklyGoalSection
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -462,6 +463,15 @@ private fun GharsSheet(
                     .background(Brush.horizontalGradient(listOf(GharsColors.DateAmber, GharsColors.Accent))),
             )
         }
+
+        Spacer(Modifier.height(14.dp))
+        WeeklyGoalSection(
+            challengeId = ChallengeType.GHARS.id,
+            todayCount = todayCount,
+            accent = GharsColors.Accent,
+            compact = true,
+            onDark = false,
+        )
 
         Spacer(Modifier.height(16.dp))
 

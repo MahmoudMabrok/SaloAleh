@@ -48,6 +48,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import tools.mo3ta.salo.ui.components.WeeklyGoalSection
+import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.generated.resources.Res
@@ -168,6 +170,15 @@ fun QuranChallengeScreen(
             onDismiss = { showRewardsSheet = false },
             modifier = Modifier.fillMaxSize(),
         )
+        WeeklyGoalSection(
+            challengeId = ChallengeType.QURAN.id,
+            todayCount = state.todayCount,
+            accent = Color(0xFF1F7A5C),
+            modifier = Modifier.align(Alignment.BottomCenter),
+            docked = true,
+            onDark = true,
+        )
+
     }
 
     if (state.showLeaderboard) {

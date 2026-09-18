@@ -2,6 +2,7 @@ package tools.mo3ta.salo.data.quran
 
 import com.russhwolf.settings.Settings
 import kotlinx.datetime.LocalDate
+import tools.mo3ta.salo.data.engagement.syncWeeklyGoal
 import tools.mo3ta.salo.domain.CHALLENGE_MANUAL_DAILY_CAP
 
 class QuranChallengeStore(private val settings: Settings) {
@@ -29,7 +30,7 @@ class QuranChallengeStore(private val settings: Settings) {
         val newPending = settings.getInt(KEY_PENDING, 0) + 1
         settings.putInt(KEY_PENDING, newPending)
         addLifetime(1)
-        return settings.getInt(KEY_REMOTE, 0) + newPending
+        return publishWeekly(today, settings.getInt(KEY_REMOTE, 0) + newPending)
     }
 
     /**
@@ -47,7 +48,7 @@ class QuranChallengeStore(private val settings: Settings) {
                 addLifetime(applied)
             }
         }
-        return settings.getInt(KEY_REMOTE, 0) + settings.getInt(KEY_PENDING, 0)
+        return publishWeekly(today, settings.getInt(KEY_REMOTE, 0) + settings.getInt(KEY_PENDING, 0))
     }
 
     /**
@@ -71,7 +72,7 @@ class QuranChallengeStore(private val settings: Settings) {
             val usedManual = settings.getInt(KEY_MANUAL, 0)
             settings.putInt(KEY_MANUAL, (usedManual - removed).coerceAtLeast(0))
         }
-        return settings.getInt(KEY_REMOTE, 0) + settings.getInt(KEY_PENDING, 0)
+        return publishWeekly(today, settings.getInt(KEY_REMOTE, 0) + settings.getInt(KEY_PENDING, 0))
     }
 
     /** How much more may still be added via manual entry today (cap minus what's used). */
@@ -85,12 +86,14 @@ class QuranChallengeStore(private val settings: Settings) {
         if (remoteCount > settings.getInt(KEY_REMOTE, 0)) {
             settings.putInt(KEY_REMOTE, remoteCount)
         }
+        publishWeekly(today, settings.getInt(KEY_REMOTE, 0) + settings.getInt(KEY_PENDING, 0))
     }
 
     fun onSyncSuccess(today: LocalDate, total: Int) {
         ensureToday(today)
         settings.putInt(KEY_REMOTE, total)
         settings.putInt(KEY_PENDING, 0)
+        publishWeekly(today, total)
     }
 
     fun clearPreviousPending() {
@@ -135,6 +138,9 @@ class QuranChallengeStore(private val settings: Settings) {
         settings.putInt(KEY_PENDING, 0)
         settings.putInt(KEY_MANUAL, 0)
     }
+
+    private fun publishWeekly(today: LocalDate, total: Int): Int =
+        settings.syncWeeklyGoal("quran", today, total)
 
     private companion object {
         const val KEY_DATE = "quran_challenge_date"
