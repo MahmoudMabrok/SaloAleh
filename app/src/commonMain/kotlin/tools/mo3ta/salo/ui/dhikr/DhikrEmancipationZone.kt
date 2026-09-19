@@ -115,6 +115,8 @@ internal fun DhikrEmancipationZone(
     manualEntryVisible: Boolean = true,
     onViewGains: () -> Unit,
     modifier: Modifier = Modifier,
+    showNumericCount: Boolean = true,
+    showFooterActions: Boolean = true,
 ) {
     // The chain and sky live inside the *current* hundred, so every hundred is a fresh
     // emancipation. A completed hundred (count is a positive multiple of 100) shows a full
@@ -243,36 +245,49 @@ internal fun DhikrEmancipationZone(
 
             ShackleChain(count = withinHundred)
 
-            Spacer(Modifier.height(16.dp))
+            if (showNumericCount) {
+                Spacer(Modifier.height(16.dp))
 
-            Text(
-                text = count.toString(),
-                color = Color(0xFFF4F8F0),
-                fontSize = 56.sp,
-                fontWeight = FontWeight.Light,
-                fontFamily = ibmPlexArabicFamily(),
-                lineHeight = 58.sp,
-            )
-            Text(
-                text = stringResource(Res.string.dhikr_gains_count_unit),
-                color = Color(0xFFF4F8F0).copy(alpha = 0.5f),
-                fontSize = 13.sp,
-                fontFamily = ibmPlexArabicFamily(),
-            )
+                Text(
+                    text = count.toString(),
+                    color = Color(0xFFF4F8F0),
+                    fontSize = 56.sp,
+                    fontWeight = FontWeight.Light,
+                    fontFamily = ibmPlexArabicFamily(),
+                    lineHeight = 58.sp,
+                )
+                Text(
+                    text = stringResource(Res.string.dhikr_gains_count_unit),
+                    color = Color(0xFFF4F8F0).copy(alpha = 0.5f),
+                    fontSize = 13.sp,
+                    fontFamily = ibmPlexArabicFamily(),
+                )
+            }
 
             Spacer(Modifier.weight(1f))
 
-            ViewGainsButton(onClick = onViewGains)
+            if (showFooterActions) {
+                ViewGainsButton(onClick = onViewGains)
 
-            Spacer(Modifier.height(10.dp))
-            Text(
-                text = stringResource(Res.string.dhikr_gains_tap_hint),
-                color = Color.White.copy(alpha = 0.4f),
-                fontSize = 12.sp,
-                fontFamily = ibmPlexArabicFamily(),
-                textAlign = TextAlign.Center,
-            )
-            Spacer(Modifier.height(18.dp))
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = stringResource(Res.string.dhikr_gains_tap_hint),
+                    color = Color.White.copy(alpha = 0.4f),
+                    fontSize = 12.sp,
+                    fontFamily = ibmPlexArabicFamily(),
+                    textAlign = TextAlign.Center,
+                )
+                Spacer(Modifier.height(18.dp))
+            } else {
+                Text(
+                    text = stringResource(Res.string.dhikr_gains_tap_hint),
+                    color = Color.White.copy(alpha = 0.4f),
+                    fontSize = 12.sp,
+                    fontFamily = ibmPlexArabicFamily(),
+                    textAlign = TextAlign.Center,
+                )
+                Spacer(Modifier.height(10.dp))
+            }
         }
     }
 }

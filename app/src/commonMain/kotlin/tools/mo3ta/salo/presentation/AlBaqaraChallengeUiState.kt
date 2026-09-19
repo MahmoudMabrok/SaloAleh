@@ -7,6 +7,7 @@ data class AlBaqaraChallengeUiState(
     val dateKey: String = "",
     val todayCount: Int = 0,
     val dailyGoal: Int = ALBAQARA_CHALLENGE_DAILY_GOAL,
+    val lifetimeCount: Int = 0,
     val rank: Int = 0,
     val participantCount: Int = 0,
     val totalTodayAlBaqara: Int = 0,

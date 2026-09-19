@@ -47,6 +47,9 @@ class AlfHasanaChallengeViewModel(
     private val _todayCount = MutableStateFlow(0)
     val todayCount: StateFlow<Int> = _todayCount.asStateFlow()
 
+    private val _lifetimeCount = MutableStateFlow(0)
+    val lifetimeCount: StateFlow<Int> = _lifetimeCount.asStateFlow()
+
     fun onLeaderboardOpened() {
         recalculateLocalLeaderboard()
         _state.update { it.copy(showLeaderboard = true) }
@@ -92,6 +95,7 @@ class AlfHasanaChallengeViewModel(
 
             // Show local total immediately — tapping is never gated on network.
             _todayCount.value = store.todayCount(today)
+            _lifetimeCount.value = store.lifetimeCount()
             _state.update {
                 it.copy(
                     dateKey = today.toString(),
@@ -109,6 +113,7 @@ class AlfHasanaChallengeViewModel(
             if (remoteCount != null) {
                 store.updateRemoteBaseline(today, remoteCount)
                 _todayCount.value = store.todayCount(today)
+            _lifetimeCount.value = store.lifetimeCount()
             }
             maybeRecordWin(today, store.todayCount(today))
 
@@ -121,6 +126,7 @@ class AlfHasanaChallengeViewModel(
         val before = _todayCount.value
         val updated = store.incrementToday(today)
         _todayCount.value = updated
+        _lifetimeCount.value = store.lifetimeCount()
         maybeRecordWin(today, updated)
         // Reward only on reaching the daily goal — no sub-goal milestones.
         if (before < ALF_HASANA_CHALLENGE_DAILY_GOAL && updated >= ALF_HASANA_CHALLENGE_DAILY_GOAL) {
@@ -149,6 +155,7 @@ class AlfHasanaChallengeViewModel(
         val before = store.todayCount(today)
         val updated = store.addToday(today, count)
         _todayCount.value = updated
+        _lifetimeCount.value = store.lifetimeCount()
         maybeRecordWin(today, updated)
         // Reward only on reaching the daily goal — no sub-goal milestones.
         val crossedGoal = before < ALF_HASANA_CHALLENGE_DAILY_GOAL && updated >= ALF_HASANA_CHALLENGE_DAILY_GOAL
@@ -172,6 +179,7 @@ class AlfHasanaChallengeViewModel(
         val today = today()
         val updated = store.subtractToday(today, count)
         _todayCount.value = updated
+        _lifetimeCount.value = store.lifetimeCount()
         _state.update {
             it.copy(
                 dateKey = today.toString(),

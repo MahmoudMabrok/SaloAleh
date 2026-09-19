@@ -122,7 +122,7 @@ All paths relative to `app/src/commonMain/kotlin/tools/mo3ta/salo/`.
 | `ui/components/ManualSalawatSheet.kt` | QR scan or number input to import taps |
 | `ui/components/RoundRecapSheet.kt` | Round summary: rank, players, personal best, tap delta |
 | `ui/components/DailyBadgeTiersSheet.kt` | Badge tier progression with current highlighted |
-| `ui/components/RoundStreakInfoDialog.kt` | Streak info + freeze remaining + freeze-day picker |
+| `ui/components/ChallengeCountSheet.kt` | Shared bottom card: today count, daily goal, lifetime, progress, weekly goal, actions |
 
 ---
 

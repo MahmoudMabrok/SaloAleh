@@ -6,6 +6,7 @@ import tools.mo3ta.salo.domain.BaqiyatLeaderboardEntry
 data class BaqiyatUiState(
     val dateKey: String = "",
     val cyclesCompleted: Int = 0,
+    val lifetimeCount: Int = 0,
     val rank: Int = 0,
     val participantCount: Int = 0,
     val totalTodayBaqiyat: Int = 0,

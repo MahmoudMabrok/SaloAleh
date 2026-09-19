@@ -53,12 +53,20 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
-import tools.mo3ta.salo.ui.components.WeeklyGoalSection
+import tools.mo3ta.salo.ui.components.ChallengeCountSheet
+import tools.mo3ta.salo.ui.components.ChallengeSheetAction
+import tools.mo3ta.salo.ui.components.creamChallengeSheet
 import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.challenge_sheet_goal
+import tools.mo3ta.salo.generated.resources.challenge_sheet_lifetime
+import tools.mo3ta.salo.generated.resources.challenge_sheet_today
 import tools.mo3ta.salo.generated.resources.dhikr_add
+import tools.mo3ta.salo.generated.resources.dhikr_manual_entry_button
+import tools.mo3ta.salo.generated.resources.dhikr_times
+import tools.mo3ta.salo.generated.resources.dhikr_view_gains
 import tools.mo3ta.salo.generated.resources.dhikr_back_cd
 import tools.mo3ta.salo.generated.resources.dhikr_daily_goal
 import tools.mo3ta.salo.generated.resources.dhikr_freed_today
@@ -165,60 +173,71 @@ fun DhikrRewardsScreen(
             .fillMaxSize()
             .background(DhikrHeroBackground),
     ) {
-        if (DHIKR_GAINS_UI_ENABLED) {
-            DhikrEmancipationZone(
-                count = state.todayCount,
-                rank = state.rank,
-                participantCount = state.participantCount,
-                canCount = !state.isLoading,
-                onTap = onHeroTap,
-                onBack = onBack,
-                onRankClick = { viewModel.onLeaderboardOpened() },
-                onManualEntryClick = onHeroManualEntry,
-                manualEntryVisible = manualEntryEnabled,
-                onViewGains = { showGainsSheet = true },
-                modifier = Modifier.fillMaxSize(),
-            )
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                DhikrImmersiveZone(
-                    count = state.todayCount,
-                    target = state.dailyGoal,
-                    rank = state.rank,
-                    participantCount = state.participantCount,
-                    canCount = !state.isLoading,
-                    onTap = onHeroTap,
-                    onBack = onBack,
-                    onRankClick = { viewModel.onLeaderboardOpened() },
-                    onManualEntryClick = onHeroManualEntry,
-                    manualEntryVisible = manualEntryEnabled,
-                )
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                    color = DhikrColors.Cream,
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .navigationBarsPadding()
-                            .padding(horizontal = DhikrSpacing.ScreenHorizontal)
-                            .padding(top = DhikrSpacing.PanelGap, bottom = DhikrSpacing.PanelGap),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        DhikrStatsRow(
-                            freedCount = state.todayCount / 10,
-                            todayCount = state.todayCount,
-                            target = state.dailyGoal,
-                        )
-                    }
+        Column(Modifier.fillMaxSize()) {
+            Box(Modifier.fillMaxWidth().weight(1f)) {
+                if (DHIKR_GAINS_UI_ENABLED) {
+                    DhikrEmancipationZone(
+                        count = state.todayCount,
+                        rank = state.rank,
+                        participantCount = state.participantCount,
+                        canCount = !state.isLoading,
+                        onTap = onHeroTap,
+                        onBack = onBack,
+                        onRankClick = { viewModel.onLeaderboardOpened() },
+                        onManualEntryClick = onHeroManualEntry,
+                        manualEntryVisible = false,
+                        onViewGains = { showGainsSheet = true },
+                        showNumericCount = false,
+                        showFooterActions = false,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                } else {
+                    DhikrImmersiveZone(
+                        count = state.todayCount,
+                        target = state.dailyGoal,
+                        rank = state.rank,
+                        participantCount = state.participantCount,
+                        canCount = !state.isLoading,
+                        onTap = onHeroTap,
+                        onBack = onBack,
+                        onRankClick = { viewModel.onLeaderboardOpened() },
+                        onManualEntryClick = onHeroManualEntry,
+                        manualEntryVisible = false,
+                    )
                 }
             }
+            ChallengeCountSheet(
+                todayCount = state.todayCount,
+                dailyGoal = state.dailyGoal,
+                lifetimeCount = state.lifetimeCount,
+                todayLabel = stringResource(Res.string.challenge_sheet_today),
+                goalLabel = stringResource(Res.string.challenge_sheet_goal),
+                lifetimeLabel = stringResource(Res.string.challenge_sheet_lifetime),
+                unitLabel = stringResource(Res.string.dhikr_times),
+                colors = creamChallengeSheet(
+                    accent = DhikrColors.Green,
+                    cream = DhikrColors.Cream,
+                    muted = DhikrColors.Muted,
+                    stroke = DhikrColors.Stroke,
+                    track = DhikrColors.Track,
+                    progressStart = DhikrColors.LightGreen,
+                    progressEnd = DhikrColors.Green,
+                    primaryButton = DhikrColors.Ink,
+                ),
+                challengeId = ChallengeType.DHIKR.id,
+                primaryAction = ChallengeSheetAction(
+                    label = stringResource(Res.string.dhikr_view_gains),
+                    onClick = { showGainsSheet = true },
+                ),
+                secondaryAction = if (manualEntryEnabled) {
+                    ChallengeSheetAction(
+                        label = stringResource(Res.string.dhikr_manual_entry_button),
+                        onClick = onHeroManualEntry,
+                    )
+                } else {
+                    null
+                },
+            )
         }
 
         val isHundredMilestone = state.celebrationMilestone > 0 && state.celebrationMilestone % 100 == 0
@@ -239,15 +258,6 @@ fun DhikrRewardsScreen(
                 modifier = Modifier.fillMaxSize(),
             )
         }
-        WeeklyGoalSection(
-            challengeId = ChallengeType.DHIKR.id,
-            todayCount = state.todayCount,
-            accent = DhikrColors.LightGreen,
-            modifier = Modifier.align(Alignment.BottomCenter),
-            docked = true,
-            onDark = true,
-        )
-
     }
 
     if (state.showLeaderboard) {

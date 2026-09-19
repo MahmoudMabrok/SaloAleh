@@ -88,6 +88,7 @@ class AlBaqaraChallengeViewModel(
                 it.copy(
                     dateKey = today.toString(),
                     todayCount = store.todayCount(today),
+                    lifetimeCount = store.lifetimeCount(),
                     quranTodayCount = quranStore.todayCount(today),
                     isLoading = false,
                     errorMessage = null,
@@ -101,7 +102,8 @@ class AlBaqaraChallengeViewModel(
             val remoteCount = firebaseClient.fetchUserCount(today.toString(), uid).getOrNull()
             if (remoteCount != null) {
                 store.updateRemoteBaseline(today, remoteCount)
-                _state.update { it.copy(todayCount = store.todayCount(today)) }
+                _state.update { it.copy(todayCount = store.todayCount(today),
+                    lifetimeCount = store.lifetimeCount()) }
             }
 
             // Refresh the Quran baseline so the before→after row is accurate, not stale.
@@ -124,6 +126,7 @@ class AlBaqaraChallengeViewModel(
             it.copy(
                 dateKey = today.toString(),
                 todayCount = updated,
+                lifetimeCount = store.lifetimeCount(),
                 quranTodayCount = quranStore.todayCount(today),
                 showQuranCreditDialog = true,
                 errorMessage = null,
@@ -201,6 +204,7 @@ class AlBaqaraChallengeViewModel(
             it.copy(
                 dateKey = today.toString(),
                 todayCount = updated,
+                lifetimeCount = store.lifetimeCount(),
                 errorMessage = null,
             )
         }

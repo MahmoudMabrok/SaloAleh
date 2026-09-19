@@ -12,6 +12,7 @@ import tools.mo3ta.salo.domain.HawqalaLeaderboardEntry
 data class HawqalaChallengeUiState(
     val dateKey: String = "",
     val dailyGoal: Int = HAWQALA_CHALLENGE_DAILY_GOAL,
+    val lifetimeCount: Int = 0,
     val rank: Int = 0,
     val participantCount: Int = 0,
     val totalTodayHawqala: Int = 0,

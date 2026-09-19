@@ -12,6 +12,7 @@ import tools.mo3ta.salo.domain.CHALLENGE_MANUAL_DAILY_CAP
 data class AlfHasanaChallengeUiState(
     val dateKey: String = "",
     val dailyGoal: Int = ALF_HASANA_CHALLENGE_DAILY_GOAL,
+    val lifetimeCount: Int = 0,
     val rank: Int = 0,
     val participantCount: Int = 0,
     val totalTodayAlfHasana: Int = 0,

@@ -73,6 +73,10 @@
 
     <!-- Challenges Screen -->
     <string name="challenges_title">挑战</string>
+    <string name="challenge_sheet_today">今日</string>
+    <string name="challenge_sheet_goal">每日目标</string>
+    <string name="challenge_sheet_lifetime">累计</string>
+    <string name="challenge_sheet_unit">次</string>
     <string name="challenges_subtitle">为自己选择一项善功并在其中竞争，以便在真主那里成为其中之人。</string>
     <string name="challenges_cairo_time_note">所有时间均以开罗时间为准</string>
     <string name="challenges_day_countdown_label">今日结束还剩</string>

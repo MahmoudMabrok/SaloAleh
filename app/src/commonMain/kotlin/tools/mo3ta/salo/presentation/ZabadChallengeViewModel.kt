@@ -84,6 +84,7 @@ class ZabadChallengeViewModel(
                 it.copy(
                     dateKey = today.toString(),
                     todayCount = store.todayCount(today),
+                    lifetimeCount = store.lifetimeCount(),
                     manualRemainingToday = store.manualRemainingToday(today),
                     currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.ZABAD, today),
                     isLoading = false,
@@ -98,7 +99,8 @@ class ZabadChallengeViewModel(
             val remoteCount = firebaseClient.fetchUserCount(today.toString(), uid).getOrNull()
             if (remoteCount != null) {
                 store.updateRemoteBaseline(today, remoteCount)
-                _state.update { it.copy(todayCount = store.todayCount(today)) }
+                _state.update { it.copy(todayCount = store.todayCount(today),
+                    lifetimeCount = store.lifetimeCount()) }
             }
             maybeRecordWin(today, store.todayCount(today))
 
@@ -116,6 +118,7 @@ class ZabadChallengeViewModel(
             it.copy(
                 dateKey = today.toString(),
                 todayCount = updated,
+                lifetimeCount = store.lifetimeCount(),
                 errorMessage = null,
                 showCelebration = isMilestone || it.showCelebration,
                 celebrationMilestone = if (isMilestone) updated else it.celebrationMilestone,
@@ -157,6 +160,7 @@ class ZabadChallengeViewModel(
             it.copy(
                 dateKey = today.toString(),
                 todayCount = updated,
+                lifetimeCount = store.lifetimeCount(),
                 manualRemainingToday = store.manualRemainingToday(today),
                 showManualZabadSheet = false,
                 isSubmittingManualZabad = true,
@@ -200,6 +204,7 @@ class ZabadChallengeViewModel(
             it.copy(
                 dateKey = today.toString(),
                 todayCount = updated,
+                lifetimeCount = store.lifetimeCount(),
                 manualRemainingToday = store.manualRemainingToday(today),
                 showManualZabadSheet = false,
                 isSubmittingManualZabad = true,
@@ -236,6 +241,7 @@ class ZabadChallengeViewModel(
             it.copy(
                 dateKey = today.toString(),
                 todayCount = updated,
+                lifetimeCount = store.lifetimeCount(),
                 rank = 0,
                 errorMessage = null,
             )

@@ -53,6 +53,9 @@ import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.challenge_sheet_today
+import tools.mo3ta.salo.generated.resources.challenge_sheet_lifetime
+import tools.mo3ta.salo.generated.resources.challenge_sheet_goal
 import tools.mo3ta.salo.generated.resources.hawqala_add
 import tools.mo3ta.salo.generated.resources.hawqala_back_cd
 import tools.mo3ta.salo.generated.resources.hawqala_daily_goal
@@ -75,7 +78,9 @@ import tools.mo3ta.salo.generated.resources.hawqala_times
 import tools.mo3ta.salo.generated.resources.hawqala_today
 import tools.mo3ta.salo.generated.resources.hawqala_view_rewards
 import tools.mo3ta.salo.domain.ChallengeType
-import tools.mo3ta.salo.ui.components.WeeklyGoalSection
+import tools.mo3ta.salo.ui.components.ChallengeCountSheet
+import tools.mo3ta.salo.ui.components.ChallengeSheetAction
+import tools.mo3ta.salo.ui.components.creamChallengeSheet
 import tools.mo3ta.salo.presentation.HawqalaChallengeViewModel
 import tools.mo3ta.salo.ui.hawqala.HawqalaColors
 import tools.mo3ta.salo.ui.hawqala.HawqalaHeroBackground
@@ -132,24 +137,58 @@ fun HawqalaChallengeScreen(
             .fillMaxSize()
             .background(HawqalaHeroBackground),
     ) {
-        HawqalaHeroZone(
-            rank = state.rank,
-            participantCount = state.participantCount,
-            canCount = !state.isLoading,
-            manualEntryVisible = manualEntryEnabled,
-            onTap = viewModel::onHawqalaTap,
-            onBack = onBack,
-            onRankClick = viewModel::onLeaderboardOpened,
-            onManualEntryClick = {
-                analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_HAWQALA)
-                viewModel.showManualSheet()
-            },
-            onViewRewards = { showRewardsSheet = true },
-            // The counter is a self-collecting island: [HawqalaCounter] is its own restartable
-            // composable that subscribes to the todayCount flow internally, so a tap recomposes only
-            // that widget — the enclosing hero (and the rest of the screen) never re-renders on a click.
-            counter = { HawqalaCounter(countFlow = viewModel.todayCount, target = dailyGoalForCounter) },
-        )
+        Column(Modifier.fillMaxSize()) {
+            HawqalaHeroZone(
+                rank = state.rank,
+                participantCount = state.participantCount,
+                canCount = !state.isLoading,
+                manualEntryVisible = false,
+                onTap = viewModel::onHawqalaTap,
+                onBack = onBack,
+                onRankClick = viewModel::onLeaderboardOpened,
+                onManualEntryClick = {
+                    analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_HAWQALA)
+                    viewModel.showManualSheet()
+                },
+                onViewRewards = { showRewardsSheet = true },
+                modifier = Modifier.fillMaxWidth().weight(1f),
+                counter = { HawqalaCounter(countFlow = viewModel.todayCount, target = dailyGoalForCounter) },
+            )
+            ChallengeCountSheet(
+                todayCountFlow = viewModel.todayCount,
+                lifetimeCountFlow = viewModel.lifetimeCount,
+                dailyGoal = state.dailyGoal,
+                lifetimeCount = null,
+                todayLabel = stringResource(Res.string.challenge_sheet_today),
+                goalLabel = stringResource(Res.string.challenge_sheet_goal),
+                lifetimeLabel = stringResource(Res.string.challenge_sheet_lifetime),
+                unitLabel = stringResource(Res.string.hawqala_times),
+                colors = creamChallengeSheet(
+                    accent = HawqalaColors.Accent,
+                    cream = HawqalaColors.Cream,
+                    muted = HawqalaColors.Muted,
+                    stroke = HawqalaColors.Stroke,
+                    track = HawqalaColors.Track,
+                    progressStart = HawqalaColors.LightAccent,
+                    progressEnd = HawqalaColors.Accent,
+                    primaryButton = HawqalaColors.Ink,
+                ),
+                challengeId = ChallengeType.HAWQALA.id,
+                primaryAction = ChallengeSheetAction(
+                    label = stringResource(Res.string.hawqala_view_rewards),
+                    onClick = { showRewardsSheet = true },
+                ),
+                secondaryAction = if (manualEntryEnabled) {
+                    ChallengeSheetAction(
+                        label = stringResource(Res.string.hawqala_manual_entry_button),
+                        onClick = {
+                            analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_HAWQALA)
+                            viewModel.showManualSheet()
+                        },
+                    )
+                } else null,
+            )
+        }
 
         HawqalaMilestoneOverlay(
             milestone = state.celebrationMilestone,
@@ -161,15 +200,6 @@ fun HawqalaChallengeScreen(
             visible = showRewardsSheet,
             onDismiss = { showRewardsSheet = false },
         )
-        WeeklyGoalSection(
-            challengeId = ChallengeType.HAWQALA.id,
-            todayCountFlow = viewModel.todayCount,
-            accent = Color(0xFFA78BFA),
-            modifier = Modifier.align(Alignment.BottomCenter),
-            docked = true,
-            onDark = true,
-        )
-
     }
 
     if (state.showLeaderboard) {
@@ -203,9 +233,10 @@ private fun HawqalaHeroZone(
     onManualEntryClick: () -> Unit,
     onViewRewards: () -> Unit,
     counter: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             // No ripple: a tap on this full-screen surface only updates the counter — never a
             // full-screen ripple across the whole hero (see CLAUDE.md challenge-counter rule).

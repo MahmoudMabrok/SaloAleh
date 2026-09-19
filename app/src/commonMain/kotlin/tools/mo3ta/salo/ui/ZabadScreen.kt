@@ -15,7 +15,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import tools.mo3ta.salo.domain.ChallengeType
-import tools.mo3ta.salo.ui.components.WeeklyGoalSection
+import tools.mo3ta.salo.ui.components.ChallengeCountSheet
+import tools.mo3ta.salo.ui.components.ChallengeSheetAction
+import tools.mo3ta.salo.ui.components.creamChallengeSheet
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
@@ -100,10 +102,11 @@ fun ZabadScreen(
     val sea = calculateZabadSea(state.elapsedSinceWashMillis.milliseconds)
     // the verdict needs the screen to itself — the counter would otherwise print through it
     val counterAlpha by animateFloatAsState(if (state.isWashing) 0f else 1f, label = "counterAlpha")
+    Column(Modifier.fillMaxSize().background(Color(0xFF04121C))) {
     Box(
         Modifier
-            .fillMaxSize()
-            .background(Color(0xFF04121C))
+            .fillMaxWidth()
+            .weight(1f)
             .pointerInput(Unit) {
                 detectTapGestures { offset ->
                     val s = viewModel.state.value
@@ -190,27 +193,42 @@ fun ZabadScreen(
                 )
             }
         }
-        Column(Modifier.fillMaxWidth().padding(28.dp).navigationBarsPadding().align(Alignment.BottomCenter), horizontalAlignment = Alignment.CenterHorizontally) {
-            WeeklyGoalSection(
-                challengeId = ChallengeType.ZABAD.id,
-                todayCount = state.todayCount,
-                accent = Color(0xFF2ED3C4),
-                compact = true,
-                onDark = true,
-            )
-            Spacer(Modifier.height(10.dp))
+        Column(Modifier.fillMaxWidth().padding(28.dp).align(Alignment.BottomCenter), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(stringResource(Res.string.zabad_tap_hint), color = Color(0xB3EAF6F4), textAlign = TextAlign.Center, fontSize = 13.sp, fontFamily = ibmPlexArabicFamily())
-            if (manualEntryEnabled) {
-                TextButton(onClick = {
-                    analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_ZABAD)
-                    viewModel.showManualZabadSheet()
-                }) { Text(stringResource(Res.string.manual_zabad_title), color = Color(0xFF2ED3C4), fontFamily = ibmPlexArabicFamily()) }
-            }
         }
         if (state.isWashing) Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(stringResource(Res.string.zabad_verdict_title), color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold, fontFamily = arefRuqaaFamily())
             Text(stringResource(Res.string.zabad_verdict_sub), color = Color(0xFFE9C46A), fontSize = 17.sp, fontFamily = arefRuqaaFamily())
         }
+    }
+    ChallengeCountSheet(
+        todayCount = state.todayCount,
+        dailyGoal = state.dailyGoal,
+        lifetimeCount = state.lifetimeCount,
+        todayLabel = stringResource(Res.string.challenge_sheet_today),
+        goalLabel = stringResource(Res.string.challenge_sheet_goal),
+        lifetimeLabel = stringResource(Res.string.challenge_sheet_lifetime),
+        unitLabel = stringResource(Res.string.challenge_sheet_unit),
+        colors = creamChallengeSheet(
+            accent = Color(0xFF2ED3C4),
+            cream = Color(0xFFE8F4F2),
+            muted = Color(0xFF5A7A76),
+            stroke = Color(0xFFC5DDD9),
+            track = Color(0xFFD5E8E5),
+            primaryButton = Color(0xFF0B3A3A),
+            primaryButtonText = Color(0xFFEAF6F4),
+        ),
+        challengeId = ChallengeType.ZABAD.id,
+        secondaryAction = if (manualEntryEnabled) {
+            ChallengeSheetAction(
+                label = stringResource(Res.string.manual_zabad_title),
+                onClick = {
+                    analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_ZABAD)
+                    viewModel.showManualZabadSheet()
+                },
+            )
+        } else null,
+    )
     }
     if (state.showLeaderboard) ZabadLeaderboardSheet(entries = state.leaderboard, currentUid = state.currentUid, isLoading = state.isLeaderboardLoading, participantCount = state.participantCount, onDismiss = viewModel::onLeaderboardClosed)
     ManualZabadSheet(isOpen = state.showManualZabadSheet, remaining = state.manualRemainingToday, onDismiss = viewModel::dismissManualZabadSheet, onSubmit = viewModel::submitManualZabad, onSubtract = viewModel::subtractManualZabad)

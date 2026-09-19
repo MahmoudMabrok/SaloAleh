@@ -83,6 +83,7 @@ class DhikrChallengeViewModel(
                 it.copy(
                     dateKey = today.toString(),
                     todayCount = store.todayCount(today),
+                    lifetimeCount = store.lifetimeCount(),
                     manualRemainingToday = store.manualRemainingToday(today),
                     currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.DHIKR, today),
                     isLoading = false,
@@ -97,7 +98,8 @@ class DhikrChallengeViewModel(
             val remoteCount = firebaseClient.fetchUserCount(today.toString(), uid).getOrNull()
             if (remoteCount != null) {
                 store.updateRemoteBaseline(today, remoteCount)
-                _state.update { it.copy(todayCount = store.todayCount(today)) }
+                _state.update { it.copy(todayCount = store.todayCount(today),
+                    lifetimeCount = store.lifetimeCount()) }
             }
             maybeRecordWin(today, store.todayCount(today))
 
@@ -114,6 +116,7 @@ class DhikrChallengeViewModel(
             it.copy(
                 dateKey = today.toString(),
                 todayCount = updated,
+                lifetimeCount = store.lifetimeCount(),
                 errorMessage = null,
                 showCelebration = isMilestone || it.showCelebration,
                 celebrationMilestone = if (isMilestone) updated else it.celebrationMilestone,
@@ -147,6 +150,7 @@ class DhikrChallengeViewModel(
             it.copy(
                 dateKey = today.toString(),
                 todayCount = updated,
+                lifetimeCount = store.lifetimeCount(),
                 manualRemainingToday = store.manualRemainingToday(today),
                 showManualDhikrSheet = false,
                 isSubmittingManualDhikr = true,
@@ -187,6 +191,7 @@ class DhikrChallengeViewModel(
             it.copy(
                 dateKey = today.toString(),
                 todayCount = updated,
+                lifetimeCount = store.lifetimeCount(),
                 manualRemainingToday = store.manualRemainingToday(today),
                 showManualDhikrSheet = false,
                 isSubmittingManualDhikr = true,
@@ -223,6 +228,7 @@ class DhikrChallengeViewModel(
             it.copy(
                 dateKey = today.toString(),
                 todayCount = updated,
+                lifetimeCount = store.lifetimeCount(),
                 rank = 0,
                 errorMessage = null,
             )
