@@ -162,14 +162,6 @@ fun BaqiyatScreen(
 
             Spacer(Modifier.height(8.dp))
 
-            Text(
-                text = stringResource(Res.string.challenge_baqiyat_title),
-                color = MohamedLoversPalette.GoldHighlight,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-            )
-            Spacer(Modifier.height(12.dp))
-
             // The narration first, then the four phrases it names, then the hive that draws it.
             HadithCard()
 
@@ -326,11 +318,6 @@ private fun PhrasesOfTheCycle() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text(
-            text = stringResource(Res.string.baqiyat_phrases_title),
-            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.42f),
-            fontSize = 10.sp,
-        )
         Text(
             text = buildAnnotatedString {
                 named.forEachIndexed { index, phrase ->

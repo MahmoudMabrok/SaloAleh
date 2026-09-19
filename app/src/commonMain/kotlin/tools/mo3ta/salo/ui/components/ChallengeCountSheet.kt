@@ -151,7 +151,7 @@ fun ChallengeCountSheet(
             .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
             .background(colors.background)
             .navigationBarsPadding()
-            .padding(horizontal = 22.dp, vertical = 18.dp),
+            .padding(start = 22.dp, end = 22.dp, top = 16.dp),
     ) {
         Row(verticalAlignment = Alignment.Bottom) {
             Column(Modifier.weight(1f)) {
