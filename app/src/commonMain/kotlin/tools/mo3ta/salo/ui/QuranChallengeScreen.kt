@@ -78,7 +78,6 @@ import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.quran.QuranColors
 import tools.mo3ta.salo.ui.quran.QuranLeaderboardSheet
 import tools.mo3ta.salo.ui.quran.QuranMilestoneCelebration
-import tools.mo3ta.salo.ui.quran.QuranProgressRing
 import tools.mo3ta.salo.ui.quran.QuranRewardsSheet
 import tools.mo3ta.salo.ui.quran.QuranSpacing
 import tools.mo3ta.salo.ui.quran.ManualQuranSheet
@@ -299,9 +298,6 @@ private fun QuranImmersiveZone(
     onViewRewards: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val fraction = (count.toFloat() / target.toFloat()).coerceIn(0f, 1f)
-    val goalsCompleted = if (target > 0) count / target else 0
-
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -380,43 +376,6 @@ private fun QuranImmersiveZone(
                     .padding(top = 2.dp, bottom = 16.dp),
             )
 
-            QuranProgressRing(
-                fraction = fraction,
-                modifier = Modifier.size(220.dp),
-                trackColor = Color.White.copy(alpha = 0.15f),
-                fillColor = QuranColors.LightTeal,
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = stringResource(Res.string.quran_today),
-                        color = Color.White.copy(alpha = 0.55f),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Text(
-                        text = count.toString(),
-                        color = Color.White,
-                        fontSize = 56.sp,
-                        fontWeight = FontWeight.Black,
-                        lineHeight = 60.sp,
-                    )
-                    Text(
-                        text = stringResource(Res.string.quran_pages_label),
-                        color = Color.White.copy(alpha = 0.55f),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(12.dp))
-
-            QuranStatChips(
-                goalsCompleted = goalsCompleted,
-                todayCount = count,
-                target = target,
-            )
-
             Spacer(Modifier.height(8.dp))
             Text(
                 text = stringResource(Res.string.quran_tap_hint),
@@ -433,82 +392,8 @@ private fun QuranImmersiveZone(
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            Spacer(Modifier.height(10.dp))
-
-            ViewRewardsButton(onClick = onViewRewards)
-
             Spacer(Modifier.height(18.dp))
         }
-    }
-}
-
-@Composable
-private fun QuranStatChips(
-    goalsCompleted: Int,
-    todayCount: Int,
-    target: Int,
-) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        HeroStatChip(
-            value = stringResource(Res.string.quran_progress_count, todayCount, target),
-            label = stringResource(Res.string.quran_daily_goal, target),
-        )
-        HeroStatChip(
-            value = goalsCompleted.toString(),
-            label = stringResource(Res.string.quran_pages_read),
-        )
-    }
-}
-
-/** Compact translucent stat pill on the dark hero — replaces the old cream stats panel. */
-@Composable
-private fun HeroStatChip(value: String, label: String) {
-    Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = Color.White.copy(alpha = 0.08f),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.14f)),
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = value,
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-            )
-            Spacer(Modifier.height(2.dp))
-            Text(
-                text = label,
-                color = Color.White.copy(alpha = 0.55f),
-                fontSize = 11.sp,
-                textAlign = TextAlign.Center,
-            )
-        }
-    }
-}
-
-/** "Virtues" — opens the Quran virtues sheet on demand. */
-@Composable
-private fun ViewRewardsButton(onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        shape = CircleShape,
-        color = QuranColors.LightTeal.copy(alpha = 0.16f),
-        border = BorderStroke(1.dp, QuranColors.LightTeal.copy(alpha = 0.55f)),
-    ) {
-        Text(
-            text = stringResource(Res.string.quran_view_rewards),
-            color = QuranColors.LightTeal,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 11.dp),
-        )
     }
 }
 

@@ -162,14 +162,6 @@ fun BaqiyatScreen(
 
             Spacer(Modifier.height(8.dp))
 
-            Text(
-                text = stringResource(Res.string.challenge_baqiyat_title),
-                color = MohamedLoversPalette.GoldHighlight,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-            )
-            Spacer(Modifier.height(12.dp))
-
             // The narration first, then the four phrases it names, then the hive that draws it.
             HadithCard()
 
@@ -198,10 +190,6 @@ fun BaqiyatScreen(
                     .fillMaxWidth()
                     .height(HiveHeight),
             )
-
-            // Sits under the reciter's name pill rather than over it — the foot of the hive is
-            // already occupied by the figure the sparks launch from.
-            CyclesCounter(cycles = viewModel.cycles)
 
             Spacer(Modifier.height(18.dp))
 
@@ -263,43 +251,6 @@ fun BaqiyatScreen(
 @Composable
 private fun hadithPhrases(): List<String> =
     BaqiyatPhrase.entries.map { stringResource(it.labelRes) }
-
-/**
- * The running count, in its own leaf so a tap recomposes this and nothing above it.
- */
-@Composable
-private fun CyclesCounter(
-    cycles: StateFlow<Int>,
-    modifier: Modifier = Modifier,
-) {
-    val value by cycles.collectAsStateWithLifecycle()
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(
-                text = value.toString(),
-                color = Color.White,
-                fontSize = 40.sp,
-                fontWeight = FontWeight.Black,
-                lineHeight = 42.sp,
-            )
-            Spacer(Modifier.width(6.dp))
-            Text(
-                text = stringResource(Res.string.dhikr_times),
-                color = Color.White.copy(alpha = 0.6f),
-                fontSize = 13.sp,
-                modifier = Modifier.padding(bottom = 6.dp),
-            )
-        }
-        Text(
-            text = stringResource(Res.string.baqiyat_cycles_label),
-            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.55f),
-            fontSize = 11.sp,
-        )
-    }
-}
 
 /**
  * Collects the board on its own so the tap-by-tap re-ranking stays inside the sheet instead of
@@ -367,11 +318,6 @@ private fun PhrasesOfTheCycle() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text(
-            text = stringResource(Res.string.baqiyat_phrases_title),
-            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.42f),
-            fontSize = 10.sp,
-        )
         Text(
             text = buildAnnotatedString {
                 named.forEachIndexed { index, phrase ->

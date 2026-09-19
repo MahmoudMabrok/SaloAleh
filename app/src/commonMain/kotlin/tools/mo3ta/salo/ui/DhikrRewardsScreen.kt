@@ -83,15 +83,11 @@ import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.dhikr.DhikrColors
 import tools.mo3ta.salo.ui.dhikr.DhikrEmancipationZone
 import tools.mo3ta.salo.ui.dhikr.DhikrLeaderboardSheet
-import tools.mo3ta.salo.ui.dhikr.DhikrLinearProgress
 import tools.mo3ta.salo.ui.dhikr.DhikrManualEntryButton
 import tools.mo3ta.salo.ui.dhikr.DhikrMilestoneCelebration
-import tools.mo3ta.salo.ui.dhikr.DhikrPanel
-import tools.mo3ta.salo.ui.dhikr.DhikrProgressRing
 import tools.mo3ta.salo.ui.dhikr.DhikrSpacing
 import tools.mo3ta.salo.ui.dhikr.DhikrSpoilsReceipt
 import tools.mo3ta.salo.ui.dhikr.ManualDhikrSheet
-import tools.mo3ta.salo.ui.ghars.ibmPlexArabicFamily
 
 
 // Concept 1 (عتق الرقاب) — the emancipation-engine hero for the 100-dhikr challenge, which
@@ -293,11 +289,6 @@ private fun DhikrImmersiveZone(
     onManualEntryClick: () -> Unit,
     manualEntryVisible: Boolean = true,
 ) {
-    // Ring cycles within the current goal: the moment the goal is reached it returns to 0 and
-    // fills again so counting can continue past it, cycle after cycle.
-    val withinCycle = if (target > 0) count % target else 0
-    val fraction = if (target > 0) (withinCycle.toFloat() / target.toFloat()).coerceIn(0f, 1f) else 0f
-
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -384,35 +375,6 @@ private fun DhikrImmersiveZone(
                     .padding(top = 2.dp, bottom = 12.dp),
             )
 
-            DhikrProgressRing(
-                fraction = fraction,
-                modifier = Modifier.size(220.dp),
-                trackColor = Color.White.copy(alpha = 0.15f),
-                fillColor = DhikrColors.LightGreen,
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = stringResource(Res.string.dhikr_today),
-                        color = Color.White.copy(alpha = 0.55f),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Text(
-                        text = count.toString(),
-                        color = Color.White,
-                        fontSize = 56.sp,
-                        fontWeight = FontWeight.Black,
-                        lineHeight = 60.sp,
-                    )
-                    Text(
-                        text = stringResource(Res.string.dhikr_times),
-                        color = Color.White.copy(alpha = 0.55f),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                    )
-                }
-            }
-
             Spacer(Modifier.height(8.dp))
             Text(
                 text = stringResource(Res.string.dhikr_tap_hint),
@@ -421,60 +383,6 @@ private fun DhikrImmersiveZone(
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(16.dp))
-        }
-    }
-}
-
-@Composable
-private fun DhikrStatsRow(
-    freedCount: Int,
-    todayCount: Int,
-    target: Int,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(DhikrSpacing.PanelGap),
-    ) {
-        DhikrPanel(modifier = Modifier.weight(1f), topOverlap = true) {
-            Text(
-                text = freedCount.toString(),
-                color = DhikrColors.Green,
-                fontSize = 40.sp,
-                fontWeight = FontWeight.Light,
-                fontFamily = ibmPlexArabicFamily(),
-                lineHeight = 42.sp,
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = stringResource(Res.string.dhikr_freed_today),
-                color = DhikrColors.Muted,
-                fontSize = 12.sp,
-                fontFamily = ibmPlexArabicFamily(),
-                textAlign = TextAlign.Center,
-                lineHeight = 18.sp,
-            )
-        }
-        DhikrPanel(modifier = Modifier.weight(1f), topOverlap = true) {
-            Text(
-                text = stringResource(Res.string.dhikr_progress_count, todayCount, target),
-                color = DhikrColors.Ink,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.SemiBold,
-                fontFamily = ibmPlexArabicFamily(),
-            )
-            Spacer(Modifier.height(8.dp))
-            DhikrLinearProgress(
-                fraction = todayCount.toFloat() / target.toFloat(),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text = stringResource(Res.string.dhikr_daily_goal, target),
-                color = DhikrColors.Muted,
-                fontSize = 12.sp,
-                fontFamily = ibmPlexArabicFamily(),
-                textAlign = TextAlign.Center,
-            )
         }
     }
 }

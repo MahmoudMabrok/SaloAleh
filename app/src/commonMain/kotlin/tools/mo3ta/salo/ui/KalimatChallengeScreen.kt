@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -51,7 +50,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.flow.StateFlow
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -67,12 +65,10 @@ import tools.mo3ta.salo.generated.resources.challenge_sheet_today
 import tools.mo3ta.salo.generated.resources.challenge_sheet_goal
 import tools.mo3ta.salo.generated.resources.kalimat_add
 import tools.mo3ta.salo.generated.resources.kalimat_back_cd
-import tools.mo3ta.salo.generated.resources.kalimat_daily_goal
 import tools.mo3ta.salo.generated.resources.kalimat_manual_entry_button
 import tools.mo3ta.salo.generated.resources.kalimat_milestone_subtitle
 import tools.mo3ta.salo.generated.resources.kalimat_hadith_dhikr
 import tools.mo3ta.salo.generated.resources.kalimat_milestone_title
-import tools.mo3ta.salo.generated.resources.kalimat_progress_count
 import tools.mo3ta.salo.generated.resources.kalimat_rank_number
 import tools.mo3ta.salo.generated.resources.kalimat_rank_subtitle
 import tools.mo3ta.salo.generated.resources.kalimat_rank_unranked
@@ -86,7 +82,6 @@ import tools.mo3ta.salo.generated.resources.kalimat_scale_day
 import tools.mo3ta.salo.generated.resources.kalimat_scale_outweigh
 import tools.mo3ta.salo.generated.resources.kalimat_tap_hint
 import tools.mo3ta.salo.generated.resources.kalimat_times
-import tools.mo3ta.salo.generated.resources.kalimat_today
 import tools.mo3ta.salo.generated.resources.kalimat_view_rewards
 import tools.mo3ta.salo.generated.resources.kalimat_word_creation
 import tools.mo3ta.salo.generated.resources.kalimat_word_ink
@@ -96,7 +91,6 @@ import tools.mo3ta.salo.presentation.KalimatChallengeViewModel
 import tools.mo3ta.salo.ui.kalimat.KalimatColors
 import tools.mo3ta.salo.ui.kalimat.KalimatHeroBackground
 import tools.mo3ta.salo.ui.kalimat.KalimatLeaderboardSheet
-import tools.mo3ta.salo.ui.kalimat.KalimatProgressRing
 import tools.mo3ta.salo.ui.kalimat.KalimatScaleCanvas
 import tools.mo3ta.salo.ui.kalimat.KalimatSpacing
 import tools.mo3ta.salo.ui.kalimat.ManualKalimatSheet
@@ -165,9 +159,7 @@ fun KalimatChallengeScreen(
                     analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_KALIMAT)
                     viewModel.showManualSheet()
                 },
-                onViewRewards = { showRewardsSheet = true },
                 modifier = Modifier.fillMaxWidth().weight(1f),
-                counter = { KalimatCounter(countFlow = viewModel.todayCount, target = dailyGoalForCounter) },
                 scale = {
                     KalimatScaleCanvas(
                         words = scaleWords,
@@ -258,8 +250,6 @@ private fun KalimatHeroZone(
     onBack: () -> Unit,
     onRankClick: () -> Unit,
     onManualEntryClick: () -> Unit,
-    onViewRewards: () -> Unit,
-    counter: @Composable () -> Unit,
     scale: @Composable ColumnScope.() -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -356,8 +346,6 @@ private fun KalimatHeroZone(
             // Takes whatever height is left between the transcript and the counter.
             scale()
 
-            counter()
-
             Spacer(Modifier.height(8.dp))
             Text(
                 text = stringResource(Res.string.kalimat_tap_hint),
@@ -367,66 +355,7 @@ private fun KalimatHeroZone(
             )
 
             Spacer(Modifier.height(16.dp))
-
-            ViewRewardsButton(onClick = onViewRewards)
-
-            Spacer(Modifier.height(18.dp))
         }
-    }
-}
-
-/**
- * The counter island: a circular ring showing the running count. This is the ONLY composable that
- * reads the running count, so a tap recomposes just this subtree — never the whole hero (see
- * CLAUDE.md challenge-counter rule). Tapping is handled by the full-screen surface in the hero zone.
- */
-@Composable
-private fun KalimatCounter(
-    countFlow: StateFlow<Int>,
-    target: Int,
-) {
-    val count by countFlow.collectAsStateWithLifecycle()
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        KalimatProgressRing(
-            // Within-cycle progress: the ring returns to 0 the moment the goal is reached and starts
-            // filling again for the next cycle, so counting past the goal restarts the ring each
-            // milestone (the goal celebration still fires to mark the completed cycle). Mirrors the
-            // istighfar/dhikr rings (#155).
-            fractionProvider = { if (target > 0) (count % target).toFloat() / target.toFloat() else 0f },
-            // Trimmed from 220.dp when the scale moved in above it — the ring gave up the space.
-            modifier = Modifier.size(176.dp),
-            trackColor = Color.White.copy(alpha = 0.15f),
-            fillColor = KalimatColors.LightGold,
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = stringResource(Res.string.kalimat_today),
-                    color = Color.White.copy(alpha = 0.55f),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                )
-                Text(
-                    text = count.toString(),
-                    color = Color.White,
-                    fontSize = 56.sp,
-                    fontWeight = FontWeight.Black,
-                    lineHeight = 60.sp,
-                )
-                Text(
-                    text = stringResource(Res.string.kalimat_times),
-                    color = Color.White.copy(alpha = 0.55f),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                )
-            }
-        }
-
-        Spacer(Modifier.height(14.dp))
-
-        HeroStatChip(
-            value = stringResource(Res.string.kalimat_progress_count, count, target),
-            label = stringResource(Res.string.kalimat_daily_goal, target),
-        )
     }
 }
 
@@ -467,29 +396,6 @@ private fun kalimatHadithHighlighted(): AnnotatedString {
 }
 
 @Composable
-private fun HeroStatChip(value: String, label: String) {
-    Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = Color.White.copy(alpha = 0.08f),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.14f)),
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(text = value, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(2.dp))
-            Text(
-                text = label,
-                color = Color.White.copy(alpha = 0.55f),
-                fontSize = 11.sp,
-                textAlign = TextAlign.Center,
-            )
-        }
-    }
-}
-
-@Composable
 private fun KalimatManualEntryButton(onClick: () -> Unit) {
     Surface(
         onClick = onClick,
@@ -507,25 +413,6 @@ private fun KalimatManualEntryButton(onClick: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 14.dp, horizontal = 12.dp),
-        )
-    }
-}
-
-@Composable
-private fun ViewRewardsButton(onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        shape = CircleShape,
-        color = KalimatColors.LightGold.copy(alpha = 0.16f),
-        border = BorderStroke(1.dp, KalimatColors.LightGold.copy(alpha = 0.55f)),
-    ) {
-        Text(
-            text = stringResource(Res.string.kalimat_view_rewards),
-            color = KalimatColors.LightGold,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 11.dp),
         )
     }
 }

@@ -67,7 +67,6 @@ import tools.mo3ta.salo.ui.components.ChallengeCountSheet
 import tools.mo3ta.salo.ui.components.creamChallengeSheet
 import tools.mo3ta.salo.ui.albaqara.AlBaqaraHeroBackground
 import tools.mo3ta.salo.ui.albaqara.AlBaqaraLeaderboardSheet
-import tools.mo3ta.salo.ui.albaqara.AlBaqaraProgressRing
 import tools.mo3ta.salo.ui.albaqara.AlBaqaraQuranCreditDialog
 import tools.mo3ta.salo.ui.albaqara.AlBaqaraSpacing
 
@@ -162,35 +161,6 @@ fun AlBaqaraChallengeScreen(
                     .padding(horizontal = 24.dp)
                     .padding(top = 2.dp, bottom = 20.dp),
             )
-
-            AlBaqaraProgressRing(
-                fraction = if (state.todayCount > 0) 1f else 0f,
-                modifier = Modifier.size(220.dp),
-                trackColor = Color.White.copy(alpha = 0.15f),
-                fillColor = AlBaqaraColors.LightAccent,
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = stringResource(Res.string.albaqara_today),
-                        color = Color.White.copy(alpha = 0.55f),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Text(
-                        text = state.todayCount.toString(),
-                        color = Color.White,
-                        fontSize = 60.sp,
-                        fontWeight = FontWeight.Black,
-                        lineHeight = 64.sp,
-                    )
-                    Text(
-                        text = stringResource(Res.string.albaqara_times),
-                        color = Color.White.copy(alpha = 0.55f),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                    )
-                }
-            }
 
             Spacer(Modifier.height(28.dp))
 
