@@ -53,6 +53,9 @@ import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.challenge_sheet_today
+import tools.mo3ta.salo.generated.resources.challenge_sheet_lifetime
+import tools.mo3ta.salo.generated.resources.challenge_sheet_goal
 import tools.mo3ta.salo.generated.resources.alf_hasana_add
 import tools.mo3ta.salo.generated.resources.alf_hasana_back_cd
 import tools.mo3ta.salo.generated.resources.alf_hasana_daily_goal
@@ -75,7 +78,9 @@ import tools.mo3ta.salo.generated.resources.alf_hasana_times
 import tools.mo3ta.salo.generated.resources.alf_hasana_today
 import tools.mo3ta.salo.generated.resources.alf_hasana_view_rewards
 import tools.mo3ta.salo.domain.ChallengeType
-import tools.mo3ta.salo.ui.components.WeeklyGoalSection
+import tools.mo3ta.salo.ui.components.ChallengeCountSheet
+import tools.mo3ta.salo.ui.components.ChallengeSheetAction
+import tools.mo3ta.salo.ui.components.creamChallengeSheet
 import tools.mo3ta.salo.presentation.AlfHasanaChallengeViewModel
 import tools.mo3ta.salo.ui.alfhasana.AlfHasanaColors
 import tools.mo3ta.salo.ui.alfhasana.AlfHasanaHeroBackground
@@ -132,24 +137,58 @@ fun AlfHasanaChallengeScreen(
             .fillMaxSize()
             .background(AlfHasanaHeroBackground),
     ) {
-        AlfHasanaHeroZone(
-            rank = state.rank,
-            participantCount = state.participantCount,
-            canCount = !state.isLoading,
-            manualEntryVisible = manualEntryEnabled,
-            onTap = viewModel::onTasbihTap,
-            onBack = onBack,
-            onRankClick = viewModel::onLeaderboardOpened,
-            onManualEntryClick = {
-                analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_ALF_HASANA)
-                viewModel.showManualSheet()
-            },
-            onViewRewards = { showRewardsSheet = true },
-            // The counter is a self-collecting island: [AlfHasanaCounter] is its own restartable
-            // composable that subscribes to the todayCount flow internally, so a tap recomposes only
-            // that widget — the enclosing hero (and the rest of the screen) never re-renders on a click.
-            counter = { AlfHasanaCounter(countFlow = viewModel.todayCount, target = dailyGoalForCounter) },
-        )
+        Column(Modifier.fillMaxSize()) {
+            AlfHasanaHeroZone(
+                rank = state.rank,
+                participantCount = state.participantCount,
+                canCount = !state.isLoading,
+                manualEntryVisible = false,
+                onTap = viewModel::onTasbihTap,
+                onBack = onBack,
+                onRankClick = viewModel::onLeaderboardOpened,
+                onManualEntryClick = {
+                    analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_ALF_HASANA)
+                    viewModel.showManualSheet()
+                },
+                onViewRewards = { showRewardsSheet = true },
+                modifier = Modifier.fillMaxWidth().weight(1f),
+                counter = { AlfHasanaCounter(countFlow = viewModel.todayCount, target = dailyGoalForCounter) },
+            )
+            ChallengeCountSheet(
+                todayCountFlow = viewModel.todayCount,
+                lifetimeCountFlow = viewModel.lifetimeCount,
+                dailyGoal = state.dailyGoal,
+                lifetimeCount = null,
+                todayLabel = stringResource(Res.string.challenge_sheet_today),
+                goalLabel = stringResource(Res.string.challenge_sheet_goal),
+                lifetimeLabel = stringResource(Res.string.challenge_sheet_lifetime),
+                unitLabel = stringResource(Res.string.alf_hasana_times),
+                colors = creamChallengeSheet(
+                    accent = AlfHasanaColors.Gold,
+                    cream = AlfHasanaColors.Cream,
+                    muted = AlfHasanaColors.Muted,
+                    stroke = AlfHasanaColors.Stroke,
+                    track = AlfHasanaColors.Track,
+                    progressStart = AlfHasanaColors.LightGold,
+                    progressEnd = AlfHasanaColors.Gold,
+                    primaryButton = AlfHasanaColors.Ink,
+                ),
+                challengeId = ChallengeType.ALF_HASANA.id,
+                primaryAction = ChallengeSheetAction(
+                    label = stringResource(Res.string.alf_hasana_view_rewards),
+                    onClick = { showRewardsSheet = true },
+                ),
+                secondaryAction = if (manualEntryEnabled) {
+                    ChallengeSheetAction(
+                        label = stringResource(Res.string.alf_hasana_manual_entry_button),
+                        onClick = {
+                            analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_ALF_HASANA)
+                            viewModel.showManualSheet()
+                        },
+                    )
+                } else null,
+            )
+        }
 
         AlfHasanaMilestoneOverlay(
             milestone = state.celebrationMilestone,
@@ -161,15 +200,6 @@ fun AlfHasanaChallengeScreen(
             visible = showRewardsSheet,
             onDismiss = { showRewardsSheet = false },
         )
-        WeeklyGoalSection(
-            challengeId = ChallengeType.ALF_HASANA.id,
-            todayCountFlow = viewModel.todayCount,
-            accent = Color(0xFFE9C462),
-            modifier = Modifier.align(Alignment.BottomCenter),
-            docked = true,
-            onDark = true,
-        )
-
     }
 
     if (state.showLeaderboard) {
@@ -203,9 +233,10 @@ private fun AlfHasanaHeroZone(
     onManualEntryClick: () -> Unit,
     onViewRewards: () -> Unit,
     counter: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             // No ripple: a tap on this full-screen surface only updates the counter — never a
             // full-screen ripple across the whole hero (see CLAUDE.md challenge-counter rule).

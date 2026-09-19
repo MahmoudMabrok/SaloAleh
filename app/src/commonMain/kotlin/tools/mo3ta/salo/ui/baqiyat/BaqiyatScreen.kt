@@ -52,7 +52,9 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.domain.ChallengeType
-import tools.mo3ta.salo.ui.components.WeeklyGoalSection
+import tools.mo3ta.salo.ui.components.ChallengeCountSheet
+import tools.mo3ta.salo.ui.components.ChallengeSheetAction
+import tools.mo3ta.salo.ui.components.creamChallengeSheet
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.data.baqiyat.BaqiyatPhrase
@@ -68,6 +70,10 @@ import tools.mo3ta.salo.generated.resources.baqiyat_manual_entry_button
 import tools.mo3ta.salo.generated.resources.baqiyat_phrases_title
 import tools.mo3ta.salo.generated.resources.baqiyat_tap_hint
 import tools.mo3ta.salo.generated.resources.challenge_baqiyat_title
+import tools.mo3ta.salo.generated.resources.challenge_sheet_goal
+import tools.mo3ta.salo.generated.resources.challenge_sheet_lifetime
+import tools.mo3ta.salo.generated.resources.challenge_sheet_today
+import tools.mo3ta.salo.generated.resources.challenge_sheet_unit
 import tools.mo3ta.salo.generated.resources.dhikr_back_cd
 import tools.mo3ta.salo.generated.resources.dhikr_rank_number
 import tools.mo3ta.salo.generated.resources.dhikr_rank_subtitle
@@ -120,10 +126,11 @@ fun BaqiyatScreen(
         }
     }
 
+    Column(Modifier.fillMaxSize().background(MohamedLoversPalette.DeepBlue)) {
     Box(
         modifier = Modifier
-            .fillMaxSize()
-            .background(MohamedLoversPalette.DeepBlue)
+            .fillMaxWidth()
+            .weight(1f)
             // One tap anywhere = one completed cycle. No ripple: a tap only updates the counter
             // and its related parts, never the whole screen.
             .clickable(
@@ -201,27 +208,36 @@ fun BaqiyatScreen(
             Ayah()
 
             Spacer(Modifier.height(18.dp))
-
-            WeeklyGoalSection(
-                challengeId = ChallengeType.BAQIYAT.id,
-                todayCountFlow = viewModel.cycles,
-                accent = Color(0xFFB68CE0),
-                compact = true,
-                onDark = true,
-            )
-            Spacer(Modifier.height(12.dp))
-
-            if (manualEntryEnabled) {
-                BaqiyatManualEntryButton(
-                    onClick = {
-                        analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_BAQIYAT)
-                        viewModel.showManualBaqiyatSheet()
-                    },
-                )
-
-                Spacer(Modifier.height(12.dp))
-            }
         }
+    }
+    ChallengeCountSheet(
+        todayCountFlow = viewModel.cycles,
+        lifetimeCountFlow = viewModel.lifetimeCount,
+        dailyGoal = tools.mo3ta.salo.domain.BAQIYAT_CHALLENGE_DAILY_GOAL,
+        lifetimeCount = null,
+        todayLabel = stringResource(Res.string.challenge_sheet_today),
+        goalLabel = stringResource(Res.string.challenge_sheet_goal),
+        lifetimeLabel = stringResource(Res.string.challenge_sheet_lifetime),
+        unitLabel = stringResource(Res.string.challenge_sheet_unit),
+        colors = creamChallengeSheet(
+            accent = Color(0xFFB68CE0),
+            cream = Color(0xFFF7F1FF),
+            muted = Color(0xFF7A6A8A),
+            stroke = Color(0xFFDDD0EC),
+            track = Color(0xFFE6DCF0),
+            primaryButton = Color(0xFF3A2450),
+        ),
+        challengeId = ChallengeType.BAQIYAT.id,
+        secondaryAction = if (manualEntryEnabled) {
+            ChallengeSheetAction(
+                label = stringResource(Res.string.baqiyat_manual_entry_button),
+                onClick = {
+                    analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_BAQIYAT)
+                    viewModel.showManualBaqiyatSheet()
+                },
+            )
+        } else null,
+    )
     }
 
     if (shell.showLeaderboard) {

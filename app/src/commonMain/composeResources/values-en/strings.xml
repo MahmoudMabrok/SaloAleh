@@ -75,6 +75,10 @@
 
     <!-- Challenges Screen -->
     <string name="challenges_title">Challenges</string>
+    <string name="challenge_sheet_today">Today</string>
+    <string name="challenge_sheet_goal">Daily goal</string>
+    <string name="challenge_sheet_lifetime">Your total</string>
+    <string name="challenge_sheet_unit">times</string>
     <string name="challenges_subtitle">Choose a deed and compete in it, so you may be among its people before Allah.</string>
     <string name="challenges_cairo_time_note">All timings are based on Cairo time</string>
     <string name="challenges_day_countdown_label">Today ends in</string>

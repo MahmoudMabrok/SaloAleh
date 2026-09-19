@@ -75,6 +75,10 @@
 
     <!-- Challenges Screen -->
     <string name="challenges_title">التحديات</string>
+    <string name="challenge_sheet_today">اليوم</string>
+    <string name="challenge_sheet_goal">الهدف اليومي</string>
+    <string name="challenge_sheet_lifetime">إجماليك</string>
+    <string name="challenge_sheet_unit">مرة</string>
     <string name="challenges_subtitle">اختر لنفسك عملا ونافس فيه لكي تكون من اهله عند الله.</string>
     <string name="challenges_cairo_time_note">جميع المواعيد بتوقيت القاهرة</string>
     <string name="challenges_day_countdown_label">ينتهي اليوم بعد</string>

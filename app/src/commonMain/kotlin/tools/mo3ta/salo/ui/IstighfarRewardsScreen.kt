@@ -54,6 +54,9 @@ import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.challenge_sheet_today
+import tools.mo3ta.salo.generated.resources.challenge_sheet_lifetime
+import tools.mo3ta.salo.generated.resources.challenge_sheet_goal
 import tools.mo3ta.salo.generated.resources.istighfar_add
 import tools.mo3ta.salo.generated.resources.istighfar_back_cd
 import tools.mo3ta.salo.generated.resources.istighfar_cycles_label
@@ -69,7 +72,9 @@ import tools.mo3ta.salo.generated.resources.istighfar_times
 import tools.mo3ta.salo.generated.resources.istighfar_today
 import tools.mo3ta.salo.generated.resources.istighfar_view_rewards
 import tools.mo3ta.salo.domain.ChallengeType
-import tools.mo3ta.salo.ui.components.WeeklyGoalSection
+import tools.mo3ta.salo.ui.components.ChallengeCountSheet
+import tools.mo3ta.salo.ui.components.ChallengeSheetAction
+import tools.mo3ta.salo.ui.components.creamChallengeSheet
 import tools.mo3ta.salo.ui.istighfar.IstighfarColors
 import tools.mo3ta.salo.presentation.IstighfarChallengeViewModel
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
@@ -137,29 +142,64 @@ fun IstighfarRewardsScreen(
             .fillMaxSize()
             .background(IstighfarHeroBackground),
     ) {
-        IstighfarImmersiveZone(
-            count = state.todayCount,
-            target = state.dailyGoal,
-            rank = state.rank,
-            participantCount = state.participantCount,
-            canCount = !state.isLoading,
-            onTap = {
-                viewModel.onIstighfarTap()
-                analyticsManager.logAction(
-                    AppAnalytics.ISTIGHFAR_TAP,
-                    mapOf(AppAnalytics.PARAM_COUNT to (state.todayCount + 1).toString()),
-                )
-            },
-            onBack = onBack,
-            onRankClick = { viewModel.onLeaderboardOpened() },
-            onManualEntryClick = {
-                analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_ISTIGHFAR)
-                viewModel.showManualIstighfarSheet()
-            },
-            manualEntryVisible = manualEntryEnabled,
-            onViewRewards = { showRewardsSheet = true },
-            modifier = Modifier.fillMaxSize(),
-        )
+        Column(Modifier.fillMaxSize()) {
+            IstighfarImmersiveZone(
+                count = state.todayCount,
+                target = state.dailyGoal,
+                rank = state.rank,
+                participantCount = state.participantCount,
+                canCount = !state.isLoading,
+                onTap = {
+                    viewModel.onIstighfarTap()
+                    analyticsManager.logAction(
+                        AppAnalytics.ISTIGHFAR_TAP,
+                        mapOf(AppAnalytics.PARAM_COUNT to (state.todayCount + 1).toString()),
+                    )
+                },
+                onBack = onBack,
+                onRankClick = { viewModel.onLeaderboardOpened() },
+                onManualEntryClick = {
+                    analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_ISTIGHFAR)
+                    viewModel.showManualIstighfarSheet()
+                },
+                manualEntryVisible = false,
+                onViewRewards = { showRewardsSheet = true },
+                modifier = Modifier.fillMaxWidth().weight(1f),
+            )
+            ChallengeCountSheet(
+                todayCount = state.todayCount,
+                dailyGoal = state.dailyGoal,
+                lifetimeCount = state.lifetimeCount,
+                todayLabel = stringResource(Res.string.challenge_sheet_today),
+                goalLabel = stringResource(Res.string.challenge_sheet_goal),
+                lifetimeLabel = stringResource(Res.string.challenge_sheet_lifetime),
+                unitLabel = stringResource(Res.string.istighfar_times),
+                colors = creamChallengeSheet(
+                    accent = IstighfarColors.Amber,
+                    cream = IstighfarColors.Cream,
+                    muted = IstighfarColors.Muted,
+                    stroke = IstighfarColors.Stroke,
+                    track = IstighfarColors.Track,
+                    progressStart = IstighfarColors.LightAmber,
+                    progressEnd = IstighfarColors.Amber,
+                    primaryButton = IstighfarColors.Ink,
+                ),
+                challengeId = ChallengeType.ISTIGHFAR.id,
+                primaryAction = ChallengeSheetAction(
+                    label = stringResource(Res.string.istighfar_view_rewards),
+                    onClick = { showRewardsSheet = true },
+                ),
+                secondaryAction = if (manualEntryEnabled) {
+                    ChallengeSheetAction(
+                        label = stringResource(Res.string.istighfar_manual_entry_button),
+                        onClick = {
+                            analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_ISTIGHFAR)
+                            viewModel.showManualIstighfarSheet()
+                        },
+                    )
+                } else null,
+            )
+        }
 
         IstighfarMilestoneCelebration(
             milestone = state.celebrationMilestone,
@@ -173,15 +213,6 @@ fun IstighfarRewardsScreen(
             onDismiss = { showRewardsSheet = false },
             modifier = Modifier.fillMaxSize(),
         )
-        WeeklyGoalSection(
-            challengeId = ChallengeType.ISTIGHFAR.id,
-            todayCount = state.todayCount,
-            accent = IstighfarColors.LightAmber,
-            modifier = Modifier.align(Alignment.BottomCenter),
-            docked = true,
-            onDark = true,
-        )
-
     }
 
     if (state.showLeaderboard) {

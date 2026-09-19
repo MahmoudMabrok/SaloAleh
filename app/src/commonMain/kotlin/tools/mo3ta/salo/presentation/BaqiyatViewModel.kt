@@ -64,6 +64,11 @@ class BaqiyatViewModel(
         .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.Eagerly, _state.value.cyclesCompleted)
 
+    val lifetimeCount: StateFlow<Int> = _state
+        .map { it.lifetimeCount }
+        .distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, _state.value.lifetimeCount)
+
     val leaderboardEntries: StateFlow<List<BaqiyatLeaderboardEntry>> = _state
         .map { it.leaderboard }
         .distinctUntilChanged()
@@ -79,7 +84,7 @@ class BaqiyatViewModel(
     val cycleSerial: StateFlow<Int> = _cycleSerial.asStateFlow()
 
     private fun BaqiyatUiState.withoutTapVaryingFields(): BaqiyatUiState =
-        copy(cyclesCompleted = 0, leaderboard = emptyList())
+        copy(cyclesCompleted = 0, leaderboard = emptyList(), lifetimeCount = 0)
 
     fun onScreenEntered() {
         publishLifetimeTotal()
@@ -101,6 +106,7 @@ class BaqiyatViewModel(
                 it.copy(
                     dateKey = today.toString(),
                     cyclesCompleted = store.todayCount(today),
+                    lifetimeCount = store.lifetimeCount(),
                     manualRemainingToday = store.manualRemainingToday(today),
                     currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.BAQIYAT, today),
                     isLoading = false,
@@ -114,7 +120,8 @@ class BaqiyatViewModel(
             val remoteCount = firebaseClient.fetchUserCount(today.toString(), uid).getOrNull()
             if (remoteCount != null) {
                 store.updateRemoteBaseline(today, remoteCount)
-                _state.update { it.copy(cyclesCompleted = store.todayCount(today)) }
+                _state.update { it.copy(cyclesCompleted = store.todayCount(today),
+                    lifetimeCount = store.lifetimeCount()) }
             }
             maybeRecordWin(today, store.todayCount(today))
 
@@ -135,6 +142,7 @@ class BaqiyatViewModel(
         _state.update {
             it.copy(
                 cyclesCompleted = updated,
+                lifetimeCount = store.lifetimeCount(),
                 showCelebration = true,
                 celebrationMilestone = updated,
             )
@@ -166,6 +174,7 @@ class BaqiyatViewModel(
             it.copy(
                 dateKey = today.toString(),
                 cyclesCompleted = updated,
+                lifetimeCount = store.lifetimeCount(),
                 manualRemainingToday = store.manualRemainingToday(today),
                 showManualBaqiyatSheet = false,
                 isSubmittingManualBaqiyat = true,
@@ -185,6 +194,7 @@ class BaqiyatViewModel(
             it.copy(
                 dateKey = today.toString(),
                 cyclesCompleted = updated,
+                lifetimeCount = store.lifetimeCount(),
                 manualRemainingToday = store.manualRemainingToday(today),
                 showManualBaqiyatSheet = false,
                 isSubmittingManualBaqiyat = true,

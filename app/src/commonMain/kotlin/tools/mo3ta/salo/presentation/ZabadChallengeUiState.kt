@@ -8,6 +8,7 @@ data class ZabadChallengeUiState(
     val dateKey: String = "",
     val todayCount: Int = 0,
     val dailyGoal: Int = ZABAD_CHALLENGE_DAILY_GOAL,
+    val lifetimeCount: Int = 0,
     val rank: Int = 0,
     val participantCount: Int = 0,
     val totalTodayZabad: Int = 0,

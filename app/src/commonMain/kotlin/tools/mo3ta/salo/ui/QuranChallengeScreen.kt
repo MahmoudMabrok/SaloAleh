@@ -48,11 +48,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
-import tools.mo3ta.salo.ui.components.WeeklyGoalSection
+import tools.mo3ta.salo.ui.components.ChallengeCountSheet
+import tools.mo3ta.salo.ui.components.ChallengeSheetAction
+import tools.mo3ta.salo.ui.components.creamChallengeSheet
 import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.challenge_sheet_unit
+import tools.mo3ta.salo.generated.resources.challenge_sheet_today
+import tools.mo3ta.salo.generated.resources.challenge_sheet_lifetime
+import tools.mo3ta.salo.generated.resources.challenge_sheet_goal
 import tools.mo3ta.salo.generated.resources.quran_back_cd
 import tools.mo3ta.salo.generated.resources.quran_daily_goal
 import tools.mo3ta.salo.generated.resources.quran_manual_entry_button
@@ -134,29 +140,64 @@ fun QuranChallengeScreen(
             .fillMaxSize()
             .background(QuranHeroBackground),
     ) {
-        QuranImmersiveZone(
-            count = state.todayCount,
-            target = state.dailyGoal,
-            rank = state.rank,
-            participantCount = state.participantCount,
-            canCount = !state.isLoading,
-            onPageTap = {
-                viewModel.onQuranPageTap()
-                analyticsManager.logAction(
-                    AppAnalytics.QURAN_TAP,
-                    mapOf(AppAnalytics.PARAM_COUNT to (state.todayCount + 1).toString()),
-                )
-            },
-            onBack = onBack,
-            onRankClick = { viewModel.onLeaderboardOpened() },
-            onManualEntryClick = {
-                analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_QURAN)
-                viewModel.showManualQuranSheet()
-            },
-            manualEntryVisible = manualEntryEnabled,
-            onViewRewards = { showRewardsSheet = true },
-            modifier = Modifier.fillMaxSize(),
-        )
+        Column(Modifier.fillMaxSize()) {
+            QuranImmersiveZone(
+                count = state.todayCount,
+                target = state.dailyGoal,
+                rank = state.rank,
+                participantCount = state.participantCount,
+                canCount = !state.isLoading,
+                onPageTap = {
+                    viewModel.onQuranPageTap()
+                    analyticsManager.logAction(
+                        AppAnalytics.QURAN_TAP,
+                        mapOf(AppAnalytics.PARAM_COUNT to (state.todayCount + 1).toString()),
+                    )
+                },
+                onBack = onBack,
+                onRankClick = { viewModel.onLeaderboardOpened() },
+                onManualEntryClick = {
+                    analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_QURAN)
+                    viewModel.showManualQuranSheet()
+                },
+                manualEntryVisible = false,
+                onViewRewards = { showRewardsSheet = true },
+                modifier = Modifier.fillMaxWidth().weight(1f),
+            )
+            ChallengeCountSheet(
+                todayCount = state.todayCount,
+                dailyGoal = state.dailyGoal,
+                lifetimeCount = state.lifetimeCount,
+                todayLabel = stringResource(Res.string.challenge_sheet_today),
+                goalLabel = stringResource(Res.string.challenge_sheet_goal),
+                lifetimeLabel = stringResource(Res.string.challenge_sheet_lifetime),
+                unitLabel = stringResource(Res.string.challenge_sheet_unit),
+                colors = creamChallengeSheet(
+                    accent = QuranColors.Teal,
+                    cream = QuranColors.Cream,
+                    muted = QuranColors.Muted,
+                    stroke = QuranColors.Stroke,
+                    track = QuranColors.Track,
+                    progressStart = QuranColors.LightTeal,
+                    progressEnd = QuranColors.Teal,
+                    primaryButton = QuranColors.Ink,
+                ),
+                challengeId = ChallengeType.QURAN.id,
+                primaryAction = ChallengeSheetAction(
+                    label = stringResource(Res.string.quran_view_rewards),
+                    onClick = { showRewardsSheet = true },
+                ),
+                secondaryAction = if (manualEntryEnabled) {
+                    ChallengeSheetAction(
+                        label = stringResource(Res.string.quran_manual_entry_button),
+                        onClick = {
+                            analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_QURAN)
+                            viewModel.showManualQuranSheet()
+                        },
+                    )
+                } else null,
+            )
+        }
 
         QuranMilestoneCelebration(
             milestone = state.celebrationMilestone,
@@ -170,15 +211,6 @@ fun QuranChallengeScreen(
             onDismiss = { showRewardsSheet = false },
             modifier = Modifier.fillMaxSize(),
         )
-        WeeklyGoalSection(
-            challengeId = ChallengeType.QURAN.id,
-            todayCount = state.todayCount,
-            accent = Color(0xFF1F7A5C),
-            modifier = Modifier.align(Alignment.BottomCenter),
-            docked = true,
-            onDark = true,
-        )
-
     }
 
     if (state.showLeaderboard) {

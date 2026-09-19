@@ -8,6 +8,7 @@ data class IstighfarChallengeUiState(
     val dateKey: String = "",
     val todayCount: Int = 0,
     val dailyGoal: Int = ISTIGHFAR_CHALLENGE_DAILY_GOAL,
+    val lifetimeCount: Int = 0,
     val rank: Int = 0,
     val participantCount: Int = 0,
     val totalTodayIstighfar: Int = 0,

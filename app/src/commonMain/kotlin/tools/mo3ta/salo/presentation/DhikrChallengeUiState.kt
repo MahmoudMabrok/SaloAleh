@@ -8,6 +8,7 @@ data class DhikrChallengeUiState(
     val dateKey: String = "",
     val todayCount: Int = 0,
     val dailyGoal: Int = DHIKR_CHALLENGE_DAILY_GOAL,
+    val lifetimeCount: Int = 0,
     val rank: Int = 0,
     val participantCount: Int = 0,
     val totalTodayDhikr: Int = 0,

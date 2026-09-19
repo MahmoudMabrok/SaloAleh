@@ -43,7 +43,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import tools.mo3ta.salo.domain.ChallengeType
-import tools.mo3ta.salo.ui.components.WeeklyGoalSection
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -79,6 +78,9 @@ import tools.mo3ta.salo.ui.ghars.ManualGharsSheet
 import tools.mo3ta.salo.ui.ghars.PalmGroveCanvas
 import tools.mo3ta.salo.ui.ghars.arefRuqaaFamily
 import tools.mo3ta.salo.ui.ghars.ibmPlexArabicFamily
+import tools.mo3ta.salo.ui.components.ChallengeCountSheet
+import tools.mo3ta.salo.ui.components.ChallengeSheetAction
+import tools.mo3ta.salo.ui.components.ChallengeSheetPalette
 
 @Composable
 fun GharsScreen(
@@ -298,229 +300,86 @@ private fun GharsSheet(
 ) {
     val inGrove = todayCount % GHARS_GROVE_SIZE
     val remaining = GHARS_GROVE_SIZE - inGrove
-    val progress = (todayCount.toFloat() / dailyGoal).coerceIn(0f, 1f)
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
-            .background(GharsColors.SandPale)
-            .navigationBarsPadding()
-            .padding(horizontal = 22.dp, vertical = 18.dp),
-    ) {
-        Row(verticalAlignment = Alignment.Bottom) {
-            Column(Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(Res.string.ghars_today_label),
-                    color = GharsColors.SheetMuted,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    fontFamily = ibmPlexArabicFamily(),
-                )
-                Spacer(Modifier.height(2.dp))
-                Row(verticalAlignment = Alignment.Bottom) {
-                    Text(
-                        text = todayCount.toString(),
-                        color = GharsColors.Accent,
-                        fontSize = 40.sp,
-                        fontWeight = FontWeight.Light,
-                        fontFamily = ibmPlexArabicFamily(),
-                    )
-                    Spacer(Modifier.width(5.dp))
-                    Text(
-                        text = stringResource(Res.string.ghars_unit),
-                        color = GharsColors.SheetMuted,
-                        fontSize = 14.sp,
-                        fontFamily = ibmPlexArabicFamily(),
-                        modifier = Modifier.padding(bottom = 6.dp),
-                    )
-                }
-            }
-            Box(
-                Modifier
-                    .width(1.dp)
-                    .height(44.dp)
-                    .background(GharsColors.SheetStroke),
-            )
-            Spacer(Modifier.width(18.dp))
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = stringResource(Res.string.ghars_goal_label),
-                    color = GharsColors.SheetMuted,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    fontFamily = ibmPlexArabicFamily(),
-                )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = dailyGoal.toString(),
-                    color = GharsColors.SheetMuted,
-                    fontSize = 40.sp,
-                    fontWeight = FontWeight.Light,
-                    fontFamily = ibmPlexArabicFamily(),
-                )
-            }
-        }
-
-        Spacer(Modifier.height(14.dp))
-
-        // Lifetime accumulator — the overall number of palms grown across every day.
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(GharsColors.SheetTrack.copy(alpha = 0.5f))
-                .padding(horizontal = 14.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(
-                text = stringResource(Res.string.ghars_lifetime_label),
-                color = GharsColors.SheetMuted,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                fontFamily = ibmPlexArabicFamily(),
-            )
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text(
-                    text = lifetimePalms.toString(),
-                    color = GharsColors.Accent,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = ibmPlexArabicFamily(),
-                )
-                Spacer(Modifier.width(4.dp))
-                Text(
-                    text = stringResource(Res.string.ghars_unit),
-                    color = GharsColors.SheetMuted,
-                    fontSize = 12.sp,
-                    fontFamily = ibmPlexArabicFamily(),
-                    modifier = Modifier.padding(bottom = 2.dp),
-                )
-            }
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                repeat(4) { i ->
-                    Box(
-                        modifier = Modifier
-                            .size(9.dp)
-                            .clip(CircleShape)
-                            .background(if (i < completedGroves) GharsColors.Accent else GharsColors.SheetTrack),
-                    )
-                    Spacer(Modifier.width(5.dp))
-                }
-                if (completedGroves > 4) {
-                    Text(
-                        text = "+${completedGroves - 4}",
-                        color = GharsColors.Accent,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = ibmPlexArabicFamily(),
-                    )
-                    Spacer(Modifier.width(4.dp))
-                }
-                Text(
-                    text = stringResource(Res.string.ghars_groves_label),
-                    color = GharsColors.SheetMuted,
-                    fontSize = 11.sp,
-                    fontFamily = ibmPlexArabicFamily(),
-                )
-            }
-            Text(
-                text = if (inGrove == 0 && todayCount > 0) {
-                    stringResource(Res.string.ghars_grove_complete)
-                } else {
-                    stringResource(Res.string.ghars_remaining, remaining)
-                },
-                color = GharsColors.SheetMuted,
-                fontSize = 11.sp,
-                fontFamily = ibmPlexArabicFamily(),
-            )
-        }
-
-        Spacer(Modifier.height(9.dp))
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(3.dp)
-                .clip(CircleShape)
-                .background(GharsColors.SheetTrack),
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(progress)
-                    .height(3.dp)
-                    .clip(CircleShape)
-                    .background(Brush.horizontalGradient(listOf(GharsColors.DateAmber, GharsColors.Accent))),
-            )
-        }
-
-        Spacer(Modifier.height(14.dp))
-        WeeklyGoalSection(
-            challengeId = ChallengeType.GHARS.id,
-            todayCount = todayCount,
+    ChallengeCountSheet(
+        todayCount = todayCount,
+        dailyGoal = dailyGoal,
+        lifetimeCount = lifetimePalms,
+        todayLabel = stringResource(Res.string.ghars_today_label),
+        goalLabel = stringResource(Res.string.ghars_goal_label),
+        lifetimeLabel = stringResource(Res.string.ghars_lifetime_label),
+        unitLabel = stringResource(Res.string.ghars_unit),
+        colors = ChallengeSheetPalette(
+            background = GharsColors.SandPale,
             accent = GharsColors.Accent,
-            compact = true,
-            onDark = false,
-        )
-
-        Spacer(Modifier.height(16.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            SheetAction(
-                label = stringResource(Res.string.ghars_gardens_entry),
-                primary = true,
-                modifier = Modifier.weight(1f),
-                onClick = onGardens,
-            )
-            if (manualEntryVisible) {
-                SheetAction(
-                    label = stringResource(Res.string.manual_ghars_title),
-                    primary = false,
-                    modifier = Modifier.weight(1f),
-                    onClick = onManual,
+            muted = GharsColors.SheetMuted,
+            stroke = GharsColors.SheetStroke,
+            track = GharsColors.SheetTrack,
+            progressStart = GharsColors.DateAmber,
+            progressEnd = GharsColors.Accent,
+            primaryButton = GharsColors.PalmDeep,
+            primaryButtonText = Color(0xFFF0E4CB),
+            secondaryButton = Color(0xFFE4D4B7),
+            secondaryButtonText = Color(0xFF6B5740),
+        ),
+        challengeId = ChallengeType.GHARS.id,
+        extraContent = {
+            Spacer(Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    repeat(4) { i ->
+                        Box(
+                            modifier = Modifier
+                                .size(9.dp)
+                                .clip(CircleShape)
+                                .background(if (i < completedGroves) GharsColors.Accent else GharsColors.SheetTrack),
+                        )
+                        Spacer(Modifier.width(5.dp))
+                    }
+                    if (completedGroves > 4) {
+                        Text(
+                            text = "+${completedGroves - 4}",
+                            color = GharsColors.Accent,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = ibmPlexArabicFamily(),
+                        )
+                        Spacer(Modifier.width(4.dp))
+                    }
+                    Text(
+                        text = stringResource(Res.string.ghars_groves_label),
+                        color = GharsColors.SheetMuted,
+                        fontSize = 11.sp,
+                        fontFamily = ibmPlexArabicFamily(),
+                    )
+                }
+                Text(
+                    text = if (inGrove == 0 && todayCount > 0) {
+                        stringResource(Res.string.ghars_grove_complete)
+                    } else {
+                        stringResource(Res.string.ghars_remaining, remaining)
+                    },
+                    color = GharsColors.SheetMuted,
+                    fontSize = 11.sp,
+                    fontFamily = ibmPlexArabicFamily(),
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun SheetAction(
-    label: String,
-    primary: Boolean,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(13.dp))
-            .background(if (primary) GharsColors.PalmDeep else Color(0xFFE4D4B7))
-            .then(if (!primary) Modifier.border(1.dp, GharsColors.SheetStroke, RoundedCornerShape(13.dp)) else Modifier)
-            .clickable(onClick = onClick)
-            .padding(vertical = 12.dp, horizontal = 8.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = label,
-            color = if (primary) Color(0xFFF0E4CB) else Color(0xFF6B5740),
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Medium,
-            fontFamily = ibmPlexArabicFamily(),
-            textAlign = TextAlign.Center,
-            maxLines = 1,
-        )
-    }
+        },
+        primaryAction = ChallengeSheetAction(
+            label = stringResource(Res.string.ghars_gardens_entry),
+            onClick = onGardens,
+        ),
+        secondaryAction = if (manualEntryVisible) {
+            ChallengeSheetAction(
+                label = stringResource(Res.string.manual_ghars_title),
+                onClick = onManual,
+            )
+        } else {
+            null
+        },
+    )
 }

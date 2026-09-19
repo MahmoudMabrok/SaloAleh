@@ -48,6 +48,10 @@ import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.albaqara_times
+import tools.mo3ta.salo.generated.resources.challenge_sheet_goal
+import tools.mo3ta.salo.generated.resources.challenge_sheet_lifetime
+import tools.mo3ta.salo.generated.resources.challenge_sheet_today
 import tools.mo3ta.salo.generated.resources.albaqara_add
 import tools.mo3ta.salo.generated.resources.albaqara_back_cd
 import tools.mo3ta.salo.generated.resources.albaqara_phrase
@@ -55,11 +59,12 @@ import tools.mo3ta.salo.generated.resources.albaqara_rank_number
 import tools.mo3ta.salo.generated.resources.albaqara_rank_subtitle
 import tools.mo3ta.salo.generated.resources.albaqara_rank_unranked
 import tools.mo3ta.salo.generated.resources.albaqara_tap_hint
-import tools.mo3ta.salo.generated.resources.albaqara_times
 import tools.mo3ta.salo.generated.resources.albaqara_today
 import tools.mo3ta.salo.generated.resources.albaqara_undo
 import tools.mo3ta.salo.presentation.AlBaqaraChallengeViewModel
 import tools.mo3ta.salo.ui.albaqara.AlBaqaraColors
+import tools.mo3ta.salo.ui.components.ChallengeCountSheet
+import tools.mo3ta.salo.ui.components.creamChallengeSheet
 import tools.mo3ta.salo.ui.albaqara.AlBaqaraHeroBackground
 import tools.mo3ta.salo.ui.albaqara.AlBaqaraLeaderboardSheet
 import tools.mo3ta.salo.ui.albaqara.AlBaqaraProgressRing
@@ -95,14 +100,15 @@ fun AlBaqaraChallengeScreen(
         }
     }
 
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .background(AlBaqaraHeroBackground),
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
+                .weight(1f)
                 .windowInsetsPadding(WindowInsets.systemBars)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -268,6 +274,24 @@ fun AlBaqaraChallengeScreen(
 
             Spacer(Modifier.height(24.dp))
         }
+        ChallengeCountSheet(
+            todayCount = state.todayCount,
+            dailyGoal = state.dailyGoal,
+            lifetimeCount = state.lifetimeCount,
+            todayLabel = stringResource(Res.string.challenge_sheet_today),
+            goalLabel = stringResource(Res.string.challenge_sheet_goal),
+            lifetimeLabel = stringResource(Res.string.challenge_sheet_lifetime),
+            unitLabel = stringResource(Res.string.albaqara_times),
+            colors = creamChallengeSheet(
+                accent = AlBaqaraColors.Accent,
+                cream = AlBaqaraColors.Cream,
+                muted = AlBaqaraColors.Muted,
+                stroke = AlBaqaraColors.Stroke,
+                track = AlBaqaraColors.Track,
+                primaryButton = AlBaqaraColors.Ink,
+            ),
+            challengeId = "albaqara",
+        )
     }
 
     if (state.showLeaderboard) {

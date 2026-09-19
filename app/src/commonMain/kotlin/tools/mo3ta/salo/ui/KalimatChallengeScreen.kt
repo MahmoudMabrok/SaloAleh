@@ -58,8 +58,13 @@ import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
 import tools.mo3ta.salo.domain.ChallengeType
-import tools.mo3ta.salo.ui.components.WeeklyGoalSection
+import tools.mo3ta.salo.ui.components.ChallengeCountSheet
+import tools.mo3ta.salo.ui.components.ChallengeSheetAction
+import tools.mo3ta.salo.ui.components.creamChallengeSheet
 import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.challenge_sheet_unit
+import tools.mo3ta.salo.generated.resources.challenge_sheet_today
+import tools.mo3ta.salo.generated.resources.challenge_sheet_goal
 import tools.mo3ta.salo.generated.resources.kalimat_add
 import tools.mo3ta.salo.generated.resources.kalimat_back_cd
 import tools.mo3ta.salo.generated.resources.kalimat_daily_goal
@@ -147,39 +152,70 @@ fun KalimatChallengeScreen(
             .fillMaxSize()
             .background(KalimatHeroBackground),
     ) {
-        KalimatHeroZone(
-            rank = state.rank,
-            participantCount = state.participantCount,
-            canCount = !state.isLoading,
-            manualEntryVisible = manualEntryEnabled,
-            onTap = viewModel::onTasbihTap,
-            onBack = onBack,
-            onRankClick = viewModel::onLeaderboardOpened,
-            onManualEntryClick = {
-                analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_KALIMAT)
-                viewModel.showManualSheet()
-            },
-            onViewRewards = { showRewardsSheet = true },
-            // The counter is a self-collecting island: [KalimatCounter] is its own restartable
-            // composable that subscribes to the todayCount flow internally, so a tap recomposes only
-            // that widget — the enclosing hero (and the rest of the screen) never re-renders on a tap.
-            counter = { KalimatCounter(countFlow = viewModel.todayCount, target = dailyGoalForCounter) },
-            // Same contract for the scale: it collects its own signals inside the canvas, so a
-            // tasbiha invalidates the draw phase only.
-            scale = {
-                KalimatScaleCanvas(
-                    words = scaleWords,
-                    dayLabel = scaleDayLabel,
-                    outweighLabel = scaleOutweighLabel,
-                    tasbihSignal = viewModel.tasbihSerial,
-                    countSignal = viewModel.todayCount,
-                    goal = dailyGoalForCounter,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                )
-            },
-        )
+        Column(Modifier.fillMaxSize()) {
+            KalimatHeroZone(
+                rank = state.rank,
+                participantCount = state.participantCount,
+                canCount = !state.isLoading,
+                manualEntryVisible = false,
+                onTap = viewModel::onTasbihTap,
+                onBack = onBack,
+                onRankClick = viewModel::onLeaderboardOpened,
+                onManualEntryClick = {
+                    analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_KALIMAT)
+                    viewModel.showManualSheet()
+                },
+                onViewRewards = { showRewardsSheet = true },
+                modifier = Modifier.fillMaxWidth().weight(1f),
+                counter = { KalimatCounter(countFlow = viewModel.todayCount, target = dailyGoalForCounter) },
+                scale = {
+                    KalimatScaleCanvas(
+                        words = scaleWords,
+                        dayLabel = scaleDayLabel,
+                        outweighLabel = scaleOutweighLabel,
+                        tasbihSignal = viewModel.tasbihSerial,
+                        countSignal = viewModel.todayCount,
+                        goal = dailyGoalForCounter,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                    )
+                },
+            )
+            ChallengeCountSheet(
+                todayCountFlow = viewModel.todayCount,
+                dailyGoal = state.dailyGoal,
+                lifetimeCount = null,
+                todayLabel = stringResource(Res.string.challenge_sheet_today),
+                goalLabel = stringResource(Res.string.challenge_sheet_goal),
+                lifetimeLabel = null,
+                unitLabel = stringResource(Res.string.kalimat_times),
+                colors = creamChallengeSheet(
+                    accent = KalimatColors.Gold,
+                    cream = KalimatColors.Cream,
+                    muted = KalimatColors.Muted,
+                    stroke = KalimatColors.Stroke,
+                    track = KalimatColors.Track,
+                    progressStart = KalimatColors.LightGold,
+                    progressEnd = KalimatColors.Gold,
+                    primaryButton = KalimatColors.Ink,
+                ),
+                challengeId = ChallengeType.KALIMAT.id,
+                primaryAction = ChallengeSheetAction(
+                    label = stringResource(Res.string.kalimat_view_rewards),
+                    onClick = { showRewardsSheet = true },
+                ),
+                secondaryAction = if (manualEntryEnabled) {
+                    ChallengeSheetAction(
+                        label = stringResource(Res.string.kalimat_manual_entry_button),
+                        onClick = {
+                            analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_KALIMAT)
+                            viewModel.showManualSheet()
+                        },
+                    )
+                } else null,
+            )
+        }
 
         KalimatMilestoneOverlay(
             milestone = state.celebrationMilestone,
@@ -191,15 +227,6 @@ fun KalimatChallengeScreen(
             visible = showRewardsSheet,
             onDismiss = { showRewardsSheet = false },
         )
-        WeeklyGoalSection(
-            challengeId = ChallengeType.KALIMAT.id,
-            todayCountFlow = viewModel.todayCount,
-            accent = Color(0xFFE07A9E),
-            modifier = Modifier.align(Alignment.BottomCenter),
-            docked = true,
-            onDark = true,
-        )
-
     }
 
     if (state.showLeaderboard) {
@@ -234,9 +261,10 @@ private fun KalimatHeroZone(
     onViewRewards: () -> Unit,
     counter: @Composable () -> Unit,
     scale: @Composable ColumnScope.() -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             // Whole-screen tap: a tap anywhere records one dhikr. No ripple — the click only updates
             // the counter, never a full-screen ripple across the hero (see CLAUDE.md counter rule).

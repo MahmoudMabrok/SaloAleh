@@ -81,6 +81,7 @@ class QuranChallengeViewModel(
                 it.copy(
                     dateKey = today.toString(),
                     todayCount = store.todayCount(today),
+                    lifetimeCount = store.lifetimeCount(),
                     manualRemainingToday = store.manualRemainingToday(today),
                     currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.QURAN, today),
                     isLoading = false,
@@ -93,7 +94,8 @@ class QuranChallengeViewModel(
             val remoteCount = firebaseClient.fetchUserCount(today.toString(), uid).getOrNull()
             if (remoteCount != null) {
                 store.updateRemoteBaseline(today, remoteCount)
-                _state.update { it.copy(todayCount = store.todayCount(today)) }
+                _state.update { it.copy(todayCount = store.todayCount(today),
+                    lifetimeCount = store.lifetimeCount()) }
             }
             maybeRecordWin(today, store.todayCount(today))
 
@@ -111,6 +113,7 @@ class QuranChallengeViewModel(
             it.copy(
                 dateKey = today.toString(),
                 todayCount = updated,
+                lifetimeCount = store.lifetimeCount(),
                 errorMessage = null,
                 showCelebration = isMilestone || it.showCelebration,
                 celebrationMilestone = if (isMilestone) updated else it.celebrationMilestone,
@@ -143,6 +146,7 @@ class QuranChallengeViewModel(
             it.copy(
                 dateKey = today.toString(),
                 todayCount = updated,
+                lifetimeCount = store.lifetimeCount(),
                 manualRemainingToday = store.manualRemainingToday(today),
                 showManualQuranSheet = false,
                 isSubmittingManualQuran = true,
@@ -183,6 +187,7 @@ class QuranChallengeViewModel(
             it.copy(
                 dateKey = today.toString(),
                 todayCount = updated,
+                lifetimeCount = store.lifetimeCount(),
                 manualRemainingToday = store.manualRemainingToday(today),
                 showManualQuranSheet = false,
                 isSubmittingManualQuran = true,
@@ -219,6 +224,7 @@ class QuranChallengeViewModel(
             it.copy(
                 dateKey = today.toString(),
                 todayCount = updated,
+                lifetimeCount = store.lifetimeCount(),
                 rank = 0,
                 errorMessage = null,
             )
