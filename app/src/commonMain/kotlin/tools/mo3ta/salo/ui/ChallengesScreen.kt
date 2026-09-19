@@ -406,7 +406,7 @@ fun ChallengesScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     DayCountdownChip()
-                    WeekRemainingChip()
+//                    WeekRemainingChip()
                     if (heroesBoard != null) {
                         HeroOfYesterdayChip(onClick = { viewModel.openHeroesSheet() })
                     }
@@ -633,16 +633,16 @@ private fun ChallengeCard(
                     Spacer(Modifier.height(6.dp))
                     ChallengeStreakChip(streak = item.streak, color = item.accent)
                 }
-                if (weekly != null) {
-                    Spacer(Modifier.height(8.dp))
-                    WeeklyGoalBar(
-                        progress = weekly,
-                        accent = item.accent,
-                        compact = true,
-                        onDark = true,
-                        onClick = onSetWeeklyGoal,
-                    )
-                }
+//                if (weekly != null) {
+//                    Spacer(Modifier.height(8.dp))
+//                    WeeklyGoalBar(
+//                        progress = weekly,
+//                        accent = item.accent,
+//                        compact = true,
+//                        onDark = true,
+//                        onClick = onSetWeeklyGoal,
+//                    )
+//                }
             }
 
             if (item.overallTotal > 0 || item.total > 0) {
