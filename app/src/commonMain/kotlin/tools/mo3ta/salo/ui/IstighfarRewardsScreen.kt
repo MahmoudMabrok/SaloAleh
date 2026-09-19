@@ -80,7 +80,6 @@ import tools.mo3ta.salo.presentation.IstighfarChallengeViewModel
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.istighfar.IstighfarLeaderboardSheet
 import tools.mo3ta.salo.ui.istighfar.IstighfarMilestoneCelebration
-import tools.mo3ta.salo.ui.istighfar.IstighfarProgressRing
 import tools.mo3ta.salo.ui.istighfar.IstighfarRewardsSheet
 import tools.mo3ta.salo.ui.istighfar.IstighfarSpacing
 import tools.mo3ta.salo.ui.istighfar.ManualIstighfarSheet
@@ -274,13 +273,6 @@ private fun IstighfarImmersiveZone(
     onViewRewards: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // The ring lives inside the *current* cycle: the moment the goal is reached the ring returns
-    // to 0 and starts filling again, so the user can keep counting past the goal cycle after cycle.
-    // (The milestone celebration fires on reaching the goal to mark the completed cycle.)
-    val withinCycle = if (target > 0) count % target else 0
-    val fraction = if (target > 0) (withinCycle.toFloat() / target.toFloat()).coerceIn(0f, 1f) else 0f
-    val cyclesCompleted = if (target > 0) count / target else 0
-
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -370,45 +362,6 @@ private fun IstighfarImmersiveZone(
                     .padding(top = 2.dp, bottom = 16.dp),
             )
 
-            IstighfarProgressRing(
-                fraction = fraction,
-                modifier = Modifier.size(220.dp),
-                trackColor = Color.White.copy(alpha = 0.15f),
-                fillColor = IstighfarColors.LightAmber,
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = stringResource(Res.string.istighfar_today),
-                        color = Color.White.copy(alpha = 0.55f),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Text(
-                        text = count.toString(),
-                        color = Color.White,
-                        fontSize = 56.sp,
-                        fontWeight = FontWeight.Black,
-                        lineHeight = 60.sp,
-                    )
-                    Text(
-                        text = stringResource(Res.string.istighfar_times),
-                        color = Color.White.copy(alpha = 0.55f),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(12.dp))
-
-            IstighfarStatChips(
-                cyclesCompleted = cyclesCompleted,
-                // Show progress within the current cycle so the chip agrees with the ring;
-                // the cumulative day total stays prominent in the ring's centre.
-                todayCount = withinCycle,
-                target = target,
-            )
-
             Spacer(Modifier.height(8.dp))
             Text(
                 text = stringResource(Res.string.istighfar_tap_hint),
@@ -418,81 +371,7 @@ private fun IstighfarImmersiveZone(
             )
 
             Spacer(Modifier.weight(1f))
-
-            ViewRewardsButton(onClick = onViewRewards)
-
-            Spacer(Modifier.height(18.dp))
         }
-    }
-}
-
-@Composable
-private fun IstighfarStatChips(
-    cyclesCompleted: Int,
-    todayCount: Int,
-    target: Int,
-) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        HeroStatChip(
-            value = stringResource(Res.string.istighfar_progress_count, todayCount, target),
-            label = stringResource(Res.string.istighfar_daily_goal, target),
-        )
-        HeroStatChip(
-            value = cyclesCompleted.toString(),
-            label = stringResource(Res.string.istighfar_cycles_label),
-        )
-    }
-}
-
-/** Compact translucent stat pill on the dark hero — replaces the old cream stats panel. */
-@Composable
-private fun HeroStatChip(value: String, label: String) {
-    Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = Color.White.copy(alpha = 0.08f),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.14f)),
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = value,
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-            )
-            Spacer(Modifier.height(2.dp))
-            Text(
-                text = label,
-                color = Color.White.copy(alpha = 0.55f),
-                fontSize = 11.sp,
-                textAlign = TextAlign.Center,
-            )
-        }
-    }
-}
-
-/** "What do you gain" — opens the virtues sheet on demand. */
-@Composable
-private fun ViewRewardsButton(onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        shape = CircleShape,
-        color = IstighfarColors.LightAmber.copy(alpha = 0.16f),
-        border = BorderStroke(1.dp, IstighfarColors.LightAmber.copy(alpha = 0.55f)),
-    ) {
-        Text(
-            text = stringResource(Res.string.istighfar_view_rewards),
-            color = IstighfarColors.LightAmber,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 11.dp),
-        )
     }
 }
 

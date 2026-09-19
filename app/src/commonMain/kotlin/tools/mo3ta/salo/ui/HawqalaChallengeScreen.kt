@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -46,7 +45,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.flow.StateFlow
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -58,12 +56,10 @@ import tools.mo3ta.salo.generated.resources.challenge_sheet_lifetime
 import tools.mo3ta.salo.generated.resources.challenge_sheet_goal
 import tools.mo3ta.salo.generated.resources.hawqala_add
 import tools.mo3ta.salo.generated.resources.hawqala_back_cd
-import tools.mo3ta.salo.generated.resources.hawqala_daily_goal
 import tools.mo3ta.salo.generated.resources.hawqala_manual_entry_button
 import tools.mo3ta.salo.generated.resources.hawqala_milestone_subtitle
 import tools.mo3ta.salo.generated.resources.hawqala_milestone_title
 import tools.mo3ta.salo.generated.resources.hawqala_phrase
-import tools.mo3ta.salo.generated.resources.hawqala_progress_count
 import tools.mo3ta.salo.generated.resources.hawqala_rank_number
 import tools.mo3ta.salo.generated.resources.hawqala_rank_subtitle
 import tools.mo3ta.salo.generated.resources.hawqala_rank_unranked
@@ -75,7 +71,6 @@ import tools.mo3ta.salo.generated.resources.hawqala_rewards_close
 import tools.mo3ta.salo.generated.resources.hawqala_rewards_title
 import tools.mo3ta.salo.generated.resources.hawqala_tap_hint
 import tools.mo3ta.salo.generated.resources.hawqala_times
-import tools.mo3ta.salo.generated.resources.hawqala_today
 import tools.mo3ta.salo.generated.resources.hawqala_view_rewards
 import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.ui.components.ChallengeCountSheet
@@ -85,7 +80,6 @@ import tools.mo3ta.salo.presentation.HawqalaChallengeViewModel
 import tools.mo3ta.salo.ui.hawqala.HawqalaColors
 import tools.mo3ta.salo.ui.hawqala.HawqalaHeroBackground
 import tools.mo3ta.salo.ui.hawqala.HawqalaLeaderboardSheet
-import tools.mo3ta.salo.ui.hawqala.HawqalaProgressRing
 import tools.mo3ta.salo.ui.hawqala.HawqalaSpacing
 import tools.mo3ta.salo.ui.hawqala.ManualHawqalaSheet
 
@@ -129,8 +123,6 @@ fun HawqalaChallengeScreen(
     }
 
     var showRewardsSheet by remember { mutableStateOf(false) }
-    // Captured as a plain Int so the counter lambda never reads `state` from inside the hero zone.
-    val dailyGoalForCounter = state.dailyGoal
 
     Box(
         modifier = Modifier
@@ -150,9 +142,7 @@ fun HawqalaChallengeScreen(
                     analyticsManager.logAction(AppAnalytics.OPEN_MANUAL_HAWQALA)
                     viewModel.showManualSheet()
                 },
-                onViewRewards = { showRewardsSheet = true },
                 modifier = Modifier.fillMaxWidth().weight(1f),
-                counter = { HawqalaCounter(countFlow = viewModel.todayCount, target = dailyGoalForCounter) },
             )
             ChallengeCountSheet(
                 todayCountFlow = viewModel.todayCount,
@@ -231,8 +221,6 @@ private fun HawqalaHeroZone(
     onBack: () -> Unit,
     onRankClick: () -> Unit,
     onManualEntryClick: () -> Unit,
-    onViewRewards: () -> Unit,
-    counter: @Composable () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -332,10 +320,6 @@ private fun HawqalaHeroZone(
             )
 
             Spacer(Modifier.height(20.dp))
-
-            counter()
-
-            Spacer(Modifier.height(10.dp))
             Text(
                 text = stringResource(Res.string.hawqala_tap_hint),
                 color = Color.White.copy(alpha = 0.32f),
@@ -344,79 +328,6 @@ private fun HawqalaHeroZone(
             )
 
             Spacer(Modifier.weight(1f))
-
-            ViewRewardsButton(onClick = onViewRewards)
-
-            Spacer(Modifier.height(18.dp))
-        }
-    }
-}
-
-/**
- * The counter island: number + progress ring + progress chip. This is the ONLY composable that reads
- * the running count, so a tap recomposes just this subtree.
- */
-@Composable
-private fun HawqalaCounter(countFlow: StateFlow<Int>, target: Int) {
-    val count by countFlow.collectAsStateWithLifecycle()
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        HawqalaProgressRing(
-            fractionProvider = { if (target > 0) count.toFloat() / target.toFloat() else 0f },
-            modifier = Modifier.size(220.dp),
-            trackColor = Color.White.copy(alpha = 0.15f),
-            fillColor = HawqalaColors.LightAccent,
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = stringResource(Res.string.hawqala_today),
-                    color = Color.White.copy(alpha = 0.55f),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                )
-                Text(
-                    text = count.toString(),
-                    color = Color.White,
-                    fontSize = 56.sp,
-                    fontWeight = FontWeight.Black,
-                    lineHeight = 60.sp,
-                )
-                Text(
-                    text = stringResource(Res.string.hawqala_times),
-                    color = Color.White.copy(alpha = 0.55f),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                )
-            }
-        }
-
-        Spacer(Modifier.height(14.dp))
-
-        HawqalaStatChip(
-            value = stringResource(Res.string.hawqala_progress_count, count, target),
-            label = stringResource(Res.string.hawqala_daily_goal, target),
-        )
-    }
-}
-
-@Composable
-private fun HawqalaStatChip(value: String, label: String) {
-    Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = Color.White.copy(alpha = 0.08f),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.14f)),
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(text = value, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(2.dp))
-            Text(
-                text = label,
-                color = Color.White.copy(alpha = 0.55f),
-                fontSize = 11.sp,
-                textAlign = TextAlign.Center,
-            )
         }
     }
 }
@@ -439,25 +350,6 @@ private fun HawqalaManualEntryButton(onClick: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 14.dp, horizontal = 12.dp),
-        )
-    }
-}
-
-@Composable
-private fun ViewRewardsButton(onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        shape = CircleShape,
-        color = HawqalaColors.LightAccent.copy(alpha = 0.16f),
-        border = BorderStroke(1.dp, HawqalaColors.LightAccent.copy(alpha = 0.55f)),
-    ) {
-        Text(
-            text = stringResource(Res.string.hawqala_view_rewards),
-            color = HawqalaColors.LightAccent,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 11.dp),
         )
     }
 }
