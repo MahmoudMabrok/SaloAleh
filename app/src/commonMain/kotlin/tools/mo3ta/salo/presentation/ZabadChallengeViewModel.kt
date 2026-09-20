@@ -45,7 +45,6 @@ class ZabadChallengeViewModel(
             val uid = sessionStore.getOrCreateUid()
             _state.update { it.copy(currentUid = uid) }
             if (!firebaseClient.isConfigured()) return@launch
-
             val dateKey = today().toString()
             _state.update { it.copy(isLeaderboardLoading = true) }
             firebaseClient.fetchLeaderboard(dateKey)
@@ -69,8 +68,6 @@ class ZabadChallengeViewModel(
         sampleSea(today)
         viewModelScope.launch {
             val uid = sessionStore.getOrCreateUid()
-
-            // Flush any previous day's pending that wasn't synced before the day rolled over
             val prev = store.previousEntry(today)
             if (prev != null && firebaseClient.isConfigured()) {
                 val (prevDate, prevTotal) = prev
@@ -78,8 +75,6 @@ class ZabadChallengeViewModel(
                 val result = firebaseClient.writeUserDay(prevDate, uid, prevTotal, countryCode, sessionStore.getPublishedName())
                 if (result.isSuccess) store.clearPreviousPending()
             }
-
-            // Show local total immediately — tapping is never gated on network
             _state.update {
                 it.copy(
                     dateKey = today.toString(),
@@ -91,19 +86,13 @@ class ZabadChallengeViewModel(
                     errorMessage = null,
                 )
             }
-
             if (!firebaseClient.isConfigured()) return@launch
-
-            // Background: fetch remote baseline and advance local if remote is higher
-            // (e.g. user counted on another device or the previous session synced more)
             val remoteCount = firebaseClient.fetchUserCount(today.toString(), uid).getOrNull()
             if (remoteCount != null) {
                 store.updateRemoteBaseline(today, remoteCount)
-                _state.update { it.copy(todayCount = store.todayCount(today),
-                    lifetimeCount = store.lifetimeCount()) }
+                _state.update { it.copy(todayCount = store.todayCount(today), lifetimeCount = store.lifetimeCount()) }
             }
             maybeRecordWin(today, store.todayCount(today))
-
             refreshStats(today.toString(), uid)
         }
     }
@@ -112,19 +101,20 @@ class ZabadChallengeViewModel(
         val today = today()
         val updated = store.incrementToday(today)
         maybeRecordWin(today, updated)
-        val isMilestone = updated > 0 && updated % ZABAD_CHALLENGE_DAILY_GOAL == 0
-        if (isMilestone) store.recordWash(today, Clock.System.now().toEpochMilliseconds())
+        val completedRound = updated > 0 && updated % ZABAD_CHALLENGE_DAILY_GOAL == 0
+        val crossedGoal = updated == ZABAD_CHALLENGE_DAILY_GOAL
+        if (completedRound) store.recordWash(today, Clock.System.now().toEpochMilliseconds())
         _state.update {
             it.copy(
                 dateKey = today.toString(),
                 todayCount = updated,
                 lifetimeCount = store.lifetimeCount(),
                 errorMessage = null,
-                showCelebration = isMilestone || it.showCelebration,
-                celebrationMilestone = if (isMilestone) updated else it.celebrationMilestone,
-                elapsedSinceWashMillis = if (isMilestone) 0L else it.elapsedSinceWashMillis,
+                showCelebration = crossedGoal || it.showCelebration,
+                celebrationMilestone = if (crossedGoal) updated else it.celebrationMilestone,
+                elapsedSinceWashMillis = if (completedRound) 0L else it.elapsedSinceWashMillis,
                 roundsToday = store.roundsToday(today),
-                isWashing = isMilestone,
+                isWashing = completedRound,
             )
         }
         recalculateLocalLeaderboard()
@@ -142,16 +132,16 @@ class ZabadChallengeViewModel(
         _state.update { it.copy(showManualZabadSheet = false) }
     }
 
-    /** Record a batch of zabad counted outside the app (silently, on fingers, with a tasbih). */
     fun submitManualZabad(count: Int) {
         if (count <= 0) return
         val today = today()
         val before = store.todayCount(today)
         val updated = store.addToday(today, count)
         maybeRecordWin(today, updated)
-        val crossedMilestone = updated / ZABAD_CHALLENGE_DAILY_GOAL > before / ZABAD_CHALLENGE_DAILY_GOAL
-        val milestone = updated / ZABAD_CHALLENGE_DAILY_GOAL * ZABAD_CHALLENGE_DAILY_GOAL
-        if (crossedMilestone) store.recordWash(
+        val completedRound = updated / ZABAD_CHALLENGE_DAILY_GOAL > before / ZABAD_CHALLENGE_DAILY_GOAL
+        val crossedGoal = before < ZABAD_CHALLENGE_DAILY_GOAL && updated >= ZABAD_CHALLENGE_DAILY_GOAL
+        val milestone = ZABAD_CHALLENGE_DAILY_GOAL
+        if (completedRound) store.recordWash(
             today,
             Clock.System.now().toEpochMilliseconds(),
             updated / ZABAD_CHALLENGE_DAILY_GOAL - before / ZABAD_CHALLENGE_DAILY_GOAL,
@@ -165,11 +155,11 @@ class ZabadChallengeViewModel(
                 showManualZabadSheet = false,
                 isSubmittingManualZabad = true,
                 errorMessage = null,
-                showCelebration = (crossedMilestone && milestone > 0) || it.showCelebration,
-                celebrationMilestone = if (crossedMilestone && milestone > 0) milestone else it.celebrationMilestone,
-                elapsedSinceWashMillis = if (crossedMilestone) 0L else it.elapsedSinceWashMillis,
+                showCelebration = crossedGoal || it.showCelebration,
+                celebrationMilestone = if (crossedGoal) milestone else it.celebrationMilestone,
+                elapsedSinceWashMillis = if (completedRound) 0L else it.elapsedSinceWashMillis,
                 roundsToday = store.roundsToday(today),
-                isWashing = crossedMilestone,
+                isWashing = completedRound,
             )
         }
         recalculateLocalLeaderboard()
@@ -195,7 +185,6 @@ class ZabadChallengeViewModel(
         }
     }
 
-    /** Subtract a mistakenly-entered batch from today's count. Floored at 0; syncs the corrected total. */
     fun subtractManualZabad(count: Int) {
         if (count <= 0) return
         val today = today()
@@ -275,11 +264,9 @@ class ZabadChallengeViewModel(
         val current = _state.value
         val uid = current.currentUid
         if (uid.isEmpty()) return
-
         val localCount = current.todayCount
         val localStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.ZABAD, today())
         val entries = current.leaderboard.toMutableList()
-
         val existingIndex = entries.indexOfFirst { it.uid == uid }
         if (existingIndex >= 0) {
             entries[existingIndex] = entries[existingIndex].copy(count = localCount, streak = localStreak)
@@ -291,7 +278,6 @@ class ZabadChallengeViewModel(
                 )
             )
         }
-
         val ranked = entries.sortedByDescending { it.count }
             .mapIndexed { index, entry -> entry.copy(rank = index + 1) }
         val newRank = ranked.firstOrNull { it.uid == uid }?.rank ?: current.rank
@@ -314,11 +300,6 @@ class ZabadChallengeViewModel(
             }
     }
 
-    /**
-     * Read the silence behind the sea, once. Called on screen entry; a wash re-samples it by zeroing
-     * [ZabadChallengeUiState.elapsedSinceWashMillis] directly. Nothing else moves the water, so the
-     * level, foam and murk the user opens into are the ones they tap on.
-     */
     private fun sampleSea(today: LocalDate) {
         val lastWash = store.lastWashTimestamp()
         _state.update {
@@ -331,10 +312,6 @@ class ZabadChallengeViewModel(
         }
     }
 
-    /**
-     * Any activity (a single tap/count) keeps the daily streak alive; reaching the daily goal
-     * additionally wins the day, bumping the challenge badge count by 1 (once per day).
-     */
     private fun maybeRecordWin(today: LocalDate, total: Int) {
         if (total > 0) {
             challengeBadgeStore.recordActivity(ChallengeType.ZABAD, today)
@@ -345,11 +322,6 @@ class ZabadChallengeViewModel(
         _state.update { it.copy(currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.ZABAD, today)) }
     }
 
-    /**
-     * Publish the device's lifetime total for this challenge to the persistent DB user node
-     * ({root}/users/{uid}/totalCount). Fire-and-forget and batched on screen enter/leave rather
-     * than per-tap, so it never spams the network. A failure never affects the daily-count sync.
-     */
     private fun publishLifetimeTotal() {
         viewModelScope.launch {
             if (!firebaseClient.isConfigured()) return@launch

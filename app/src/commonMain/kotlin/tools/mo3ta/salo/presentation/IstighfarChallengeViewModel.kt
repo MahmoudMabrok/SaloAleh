@@ -69,7 +69,6 @@ class IstighfarChallengeViewModel(
         viewModelScope.launch {
             val uid = sessionStore.getOrCreateUid()
 
-            // Flush any previous day's pending that wasn't synced before the day rolled over
             val prev = store.previousEntry(today)
             if (prev != null && firebaseClient.isConfigured()) {
                 val (prevDate, prevTotal) = prev
@@ -78,7 +77,6 @@ class IstighfarChallengeViewModel(
                 if (result.isSuccess) store.clearPreviousPending()
             }
 
-            // Show local total immediately — tapping is never gated on network
             _state.update {
                 it.copy(
                     dateKey = today.toString(),
@@ -93,8 +91,6 @@ class IstighfarChallengeViewModel(
 
             if (!firebaseClient.isConfigured()) return@launch
 
-            // Background: fetch remote baseline and advance local if remote is higher
-            // (e.g. user counted on another device or the previous session synced more)
             val remoteCount = firebaseClient.fetchUserCount(today.toString(), uid).getOrNull()
             if (remoteCount != null) {
                 store.updateRemoteBaseline(today, remoteCount)
@@ -111,7 +107,7 @@ class IstighfarChallengeViewModel(
         val today = today()
         val updated = store.incrementToday(today)
         maybeRecordWin(today, updated)
-        val isMilestone = updated > 0 && updated % ISTIGHFAR_CHALLENGE_DAILY_GOAL == 0
+        val isMilestone = updated == ISTIGHFAR_CHALLENGE_DAILY_GOAL
         _state.update {
             it.copy(
                 dateKey = today.toString(),
@@ -137,15 +133,14 @@ class IstighfarChallengeViewModel(
         _state.update { it.copy(showManualIstighfarSheet = false) }
     }
 
-    /** Record a batch of istighfar counted outside the app (silently, on fingers, with a tasbih). */
     fun submitManualIstighfar(count: Int) {
         if (count <= 0) return
         val today = today()
         val before = store.todayCount(today)
         val updated = store.addToday(today, count)
         maybeRecordWin(today, updated)
-        val crossedMilestone = updated / ISTIGHFAR_CHALLENGE_DAILY_GOAL > before / ISTIGHFAR_CHALLENGE_DAILY_GOAL
-        val milestone = updated / ISTIGHFAR_CHALLENGE_DAILY_GOAL * ISTIGHFAR_CHALLENGE_DAILY_GOAL
+        val crossedGoal = before < ISTIGHFAR_CHALLENGE_DAILY_GOAL && updated >= ISTIGHFAR_CHALLENGE_DAILY_GOAL
+        val milestone = ISTIGHFAR_CHALLENGE_DAILY_GOAL
         _state.update {
             it.copy(
                 dateKey = today.toString(),
@@ -155,8 +150,8 @@ class IstighfarChallengeViewModel(
                 showManualIstighfarSheet = false,
                 isSubmittingManualIstighfar = true,
                 errorMessage = null,
-                showCelebration = (crossedMilestone && milestone > 0) || it.showCelebration,
-                celebrationMilestone = if (crossedMilestone && milestone > 0) milestone else it.celebrationMilestone,
+                showCelebration = crossedGoal || it.showCelebration,
+                celebrationMilestone = if (crossedGoal) milestone else it.celebrationMilestone,
             )
         }
         recalculateLocalLeaderboard()
@@ -182,7 +177,6 @@ class IstighfarChallengeViewModel(
         }
     }
 
-    /** Subtract a mistakenly-entered batch from today's count. Floored at 0; syncs the corrected total. */
     fun subtractManualIstighfar(count: Int) {
         if (count <= 0) return
         val today = today()
@@ -301,10 +295,6 @@ class IstighfarChallengeViewModel(
             }
     }
 
-    /**
-     * Any activity (a single tap/count) keeps the daily streak alive; reaching the daily goal
-     * additionally wins the day, bumping the challenge badge count by 1 (once per day).
-     */
     private fun maybeRecordWin(today: LocalDate, total: Int) {
         if (total > 0) {
             challengeBadgeStore.recordActivity(ChallengeType.ISTIGHFAR, today)
@@ -315,11 +305,6 @@ class IstighfarChallengeViewModel(
         _state.update { it.copy(currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.ISTIGHFAR, today)) }
     }
 
-    /**
-     * Publish the device's lifetime total for this challenge to the persistent DB user node
-     * ({root}/users/{uid}/totalCount). Fire-and-forget and batched on screen enter/leave rather
-     * than per-tap, so it never spams the network. A failure never affects the daily-count sync.
-     */
     private fun publishLifetimeTotal() {
         viewModelScope.launch {
             if (!firebaseClient.isConfigured()) return@launch
