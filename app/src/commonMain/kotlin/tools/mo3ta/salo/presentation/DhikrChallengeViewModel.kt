@@ -111,7 +111,8 @@ class DhikrChallengeViewModel(
         val today = today()
         val updated = store.incrementToday(today)
         maybeRecordWin(today, updated)
-        val isMilestone = updated > 0 && updated % 100 == 0
+        // Celebrate once when today's goal is first reached — not every extra hundred.
+        val isMilestone = updated == DHIKR_CHALLENGE_DAILY_GOAL
         _state.update {
             it.copy(
                 dateKey = today.toString(),
@@ -144,8 +145,8 @@ class DhikrChallengeViewModel(
         val before = store.todayCount(today)
         val updated = store.addToday(today, count)
         maybeRecordWin(today, updated)
-        val crossedMilestone = updated / 100 > before / 100
-        val milestone = updated / 100 * 100
+        val crossedGoal = before < DHIKR_CHALLENGE_DAILY_GOAL && updated >= DHIKR_CHALLENGE_DAILY_GOAL
+        val milestone = DHIKR_CHALLENGE_DAILY_GOAL
         _state.update {
             it.copy(
                 dateKey = today.toString(),
@@ -155,8 +156,8 @@ class DhikrChallengeViewModel(
                 showManualDhikrSheet = false,
                 isSubmittingManualDhikr = true,
                 errorMessage = null,
-                showCelebration = (crossedMilestone && milestone > 0) || it.showCelebration,
-                celebrationMilestone = if (crossedMilestone && milestone > 0) milestone else it.celebrationMilestone,
+                showCelebration = crossedGoal || it.showCelebration,
+                celebrationMilestone = if (crossedGoal) milestone else it.celebrationMilestone,
             )
         }
         recalculateLocalLeaderboard()
