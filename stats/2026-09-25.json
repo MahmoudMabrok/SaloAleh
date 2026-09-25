@@ -1,0 +1,108 @@
+{
+  "allTimeSalawat": 6767575,
+  "weekSalawat": 6828,
+  "todaySalawat": 6828,
+  "activePlayers": 41,
+  "countriesCount": 4,
+  "countries": [
+    "EG",
+    "IQ",
+    "PS",
+    "SD"
+  ],
+  "topScore": 3900,
+  "roundKey": "2026-10-02",
+  "leaderboard": [
+    {
+      "countryCode": "EG",
+      "dailyBadge": "crown",
+      "nickname": "وفاء محمود خلف",
+      "rank": 1,
+      "rankChange": "same",
+      "score": 1650,
+      "uid": "b9d860ce859d1d4475a6a4f70ed8c50a88f54dcfb24eb5e6d138fa01e2affb77"
+    },
+    {
+      "countryCode": "SD",
+      "nickname": "أمير",
+      "rank": 2,
+      "rankChange": "same",
+      "roundStreak": 3,
+      "score": 1000,
+      "uid": "5aa82e7c672fc4eb8de150498a07e1f32b7021eeb6ad84665574a2e5afe9bf00"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "heart",
+      "nickname": "مالك",
+      "rank": 3,
+      "rankChange": "new",
+      "score": 616,
+      "uid": "ebc5deb7f8f26460ea83262db56056b2a9df2dcc65e4d6296dab0394fbee2667"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "tasbih",
+      "nickname": "نورهان",
+      "rank": 4,
+      "rankChange": "down",
+      "roundStreak": 3,
+      "score": 535,
+      "uid": "6c724568060aeb96c0f0af4c79180bd5cceb373df09e4e5134cb7b1041d2ef84"
+    },
+    {
+      "countryCode": "EG",
+      "nickname": "نورهان أيمن🌷",
+      "rank": 5,
+      "rankChange": "down",
+      "score": 400,
+      "uid": "7312bb535d95264110d98bbe513b33bf7895da6e7245a6ce223ca0a9c4c1ded9"
+    },
+    {
+      "countryCode": "EG",
+      "nickname": "جنه",
+      "rank": 6,
+      "rankChange": "new",
+      "roundStreak": 1,
+      "score": 313,
+      "uid": "58cb36a13d2607fc5f91e6a7243c83a557789d0af2c30f382a4a8c5d0e097b6e"
+    },
+    {
+      "bronzeMedals": 1,
+      "countryCode": "EG",
+      "nickname": "عايدة المغربى",
+      "rank": 7,
+      "rankChange": "down",
+      "score": 301,
+      "uid": "379839d8c1d8da1cf2c7c259eeb6723923dc29e05b11b7d01fed282a911a4560"
+    },
+    {
+      "bronzeMedals": 1,
+      "countryCode": "EG",
+      "nickname": "ايه",
+      "rank": 8,
+      "rankChange": "down",
+      "score": 296,
+      "uid": "187fd58d0668670c2478e0337aa70a1873e3ead80e8c43c03ee1eebc359849a8"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "tasbih",
+      "nickname": "ام جنى",
+      "rank": 9,
+      "rankChange": "down",
+      "score": 279,
+      "uid": "93b3d1ab32e38253e374a9876029b5d2f669c95fd694f362763c861286be88bd"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "tasbih",
+      "nickname": "انجي",
+      "rank": 10,
+      "rankChange": "down",
+      "score": 263,
+      "uid": "67c3dbcb46c5c98a128c7da5ed221ce1b80c1de914d4221cabdc5afa1374856a"
+    }
+  ],
+  "updatedAt": "2026-09-25T20:58:05.457Z"
+}
