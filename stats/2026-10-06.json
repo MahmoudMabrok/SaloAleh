@@ -1,15 +1,16 @@
 {
-  "allTimeSalawat": 7644577,
-  "weekSalawat": 161232,
-  "todaySalawat": 161232,
-  "activePlayers": 160,
-  "countriesCount": 15,
+  "allTimeSalawat": 7697652,
+  "weekSalawat": 214307,
+  "todaySalawat": 214307,
+  "activePlayers": 192,
+  "countriesCount": 16,
   "countries": [
     "AE",
     "AF",
     "DZ",
     "EG",
     "ET",
+    "IL",
     "IQ",
     "LY",
     "MA",
@@ -21,7 +22,7 @@
     "SY",
     "TN"
   ],
-  "topScore": 47331,
+  "topScore": 61594,
   "roundKey": "2026-10-09",
   "leaderboard": [
     {
@@ -32,8 +33,8 @@
       "nickname": "يونس",
       "rank": 1,
       "rankChange": "same",
-      "roundStreak": 81,
-      "score": 46346,
+      "roundStreak": 82,
+      "score": 57335,
       "silverMedals": 5,
       "uid": "5a4b1d0ed314c539aefe3fedeb07054b2acf361dd98189761e80e047fbf80305"
     },
@@ -43,34 +44,45 @@
       "nickname": "وفاء محمود خلف",
       "rank": 2,
       "rankChange": "same",
-      "roundStreak": 46,
-      "score": 23310,
+      "roundStreak": 47,
+      "score": 34500,
       "uid": "b9d860ce859d1d4475a6a4f70ed8c50a88f54dcfb24eb5e6d138fa01e2affb77"
     },
     {
       "countryCode": "EG",
+      "dailyBadge": "tasbih",
       "nickname": "ماجده ابراهيم دسوقي",
       "rank": 3,
       "rankChange": "same",
-      "roundStreak": 32,
-      "score": 12825,
+      "roundStreak": 35,
+      "score": 15439,
       "uid": "5472bc710d53758f8681367b9a447e30b6e89833cf0970dd52cbdae297c84f24"
     },
     {
+      "bronzeMedals": 1,
       "countryCode": "EG",
-      "dailyBadge": "crescent",
-      "nickname": "ياسمين",
+      "dailyBadge": "crown",
+      "nickname": "ايه",
       "rank": 4,
       "rankChange": "same",
-      "roundStreak": 16,
-      "score": 11513,
+      "roundStreak": 20,
+      "score": 14472,
+      "uid": "187fd58d0668670c2478e0337aa70a1873e3ead80e8c43c03ee1eebc359849a8"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "spark",
+      "nickname": "ياسمين",
+      "rank": 5,
+      "rankChange": "same",
+      "roundStreak": 17,
+      "score": 11541,
       "uid": "6b4a83c051ba8e34f813ee2c75c916320c59fb165425366d28136f0bf1b146c9"
     },
     {
       "countryCode": "EG",
-      "dailyBadge": "dome",
       "nickname": "𝑬𝒔𝒓𝒂𝒂",
-      "rank": 5,
+      "rank": 6,
       "rankChange": "same",
       "roundStreak": 16,
       "score": 10212,
@@ -79,55 +91,44 @@
     {
       "bronzeMedals": 2,
       "countryCode": "EG",
-      "dailyBadge": "lantern",
+      "dailyBadge": "dome",
       "nickname": "خير @",
-      "rank": 6,
+      "rank": 7,
       "rankChange": "same",
-      "roundStreak": 17,
-      "score": 8500,
+      "roundStreak": 18,
+      "score": 9500,
       "uid": "63f7d4ac1c976db1124fa5f8e601be8d0af7568a9c67625a8ba4e12edb8cbdd5"
     },
     {
-      "bronzeMedals": 1,
       "countryCode": "EG",
       "dailyBadge": "crescent",
-      "nickname": "ايه",
-      "rank": 7,
-      "rankChange": "same",
-      "roundStreak": 19,
-      "score": 6507,
-      "uid": "187fd58d0668670c2478e0337aa70a1873e3ead80e8c43c03ee1eebc359849a8"
-    },
-    {
-      "countryCode": "EG",
-      "nickname": "ان الله وملائكته",
+      "nickname": "نورهان أيمن🌷",
       "rank": 8,
       "rankChange": "same",
-      "roundStreak": 2,
-      "score": 4710,
-      "uid": "165c2fd54ec8117a4ebe25e4b42d694de8a110c093d0abc8c9ab2e3489a42195"
-    },
-    {
-      "countryCode": "EG",
-      "dailyBadge": "dome",
-      "nickname": "نورهان أيمن🌷",
-      "rank": 9,
-      "rankChange": "same",
-      "roundStreak": 16,
-      "score": 4637,
+      "roundStreak": 17,
+      "score": 7352,
       "uid": "7312bb535d95264110d98bbe513b33bf7895da6e7245a6ce223ca0a9c4c1ded9"
     },
     {
       "countryCode": "EG",
       "dailyBadge": "dome",
       "nickname": "محب سيدنا محمد",
-      "rank": 10,
+      "rank": 9,
       "rankChange": "same",
       "roundStreak": 62,
-      "score": 3715,
+      "score": 5043,
       "silverMedals": 1,
       "uid": "76626e020a7d45932223ba5eeee768bb507287201287313a7110c1d34c9078c6"
+    },
+    {
+      "countryCode": "EG",
+      "nickname": "ان الله وملائكته",
+      "rank": 10,
+      "rankChange": "same",
+      "roundStreak": 2,
+      "score": 4710,
+      "uid": "165c2fd54ec8117a4ebe25e4b42d694de8a110c093d0abc8c9ab2e3489a42195"
     }
   ],
-  "updatedAt": "2026-10-05T21:03:20.471Z"
+  "updatedAt": "2026-10-06T20:58:13.149Z"
 }
