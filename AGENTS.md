@@ -1,5 +1,12 @@
 ## Agent skills
 
+### ChaosEngine
+
+Load the canonical ChaosEngine skill at the start of every task:
+`.chaos-engine/skills/chaos-engine/SKILL.md`
+
+This is the provider-neutral operating contract for research, planning, implementation, verification, and delivery.
+
 ### Issue tracker
 
 Issues live in GitHub Issues (`MahmoudMabrok/SaloAleh`). See `docs/agents/issue-tracker.md`.
