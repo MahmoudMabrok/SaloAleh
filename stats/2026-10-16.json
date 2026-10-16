@@ -1,0 +1,113 @@
+{
+  "allTimeSalawat": 8450307,
+  "weekSalawat": 5787,
+  "todaySalawat": 5787,
+  "activePlayers": 28,
+  "countriesCount": 4,
+  "countries": [
+    "AE",
+    "EG",
+    "SN",
+    "YE"
+  ],
+  "topScore": 2435,
+  "roundKey": "2026-10-23",
+  "leaderboard": [
+    {
+      "bronzeMedals": 1,
+      "countryCode": "EG",
+      "dailyBadge": "star",
+      "nickname": "وفاء محمود خلف",
+      "rank": 1,
+      "rankChange": "same",
+      "score": 2435,
+      "silverMedals": 1,
+      "uid": "b9d860ce859d1d4475a6a4f70ed8c50a88f54dcfb24eb5e6d138fa01e2affb77"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "nickname": "محمد مرغني",
+      "rank": 2,
+      "rankChange": "up",
+      "score": 1200,
+      "uid": "b300b673253b0fa95dddc29f371894159e52e93a1559a5d6f30ce6d5b55c3f13"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "goldMedals": 1,
+      "nickname": "ماجده ابراهيم دسوقي",
+      "rank": 3,
+      "rankChange": "up",
+      "score": 910,
+      "uid": "5472bc710d53758f8681367b9a447e30b6e89833cf0970dd52cbdae297c84f24"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "nickname": "هناء",
+      "rank": 4,
+      "rankChange": "down",
+      "score": 900,
+      "uid": "d78742b9f046f4fd51b5aa0e2399e634bf377130ddb4cf83e508d1f6c6968a85"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "spark",
+      "nickname": "Israa",
+      "rank": 5,
+      "rankChange": "same",
+      "roundStreak": 3,
+      "score": 133,
+      "uid": "1038c1e3a18ad925076d67738f423f7bf2614ce3e6dd57de168f32e97a14d069"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "sprout",
+      "nickname": "شيماء",
+      "rank": 6,
+      "rankChange": "same",
+      "roundStreak": 1,
+      "score": 100,
+      "uid": "40bbe997c21b4946e18365decf96c234679f8b8d7c1fd38ea6692d9f645cbff5"
+    },
+    {
+      "countryCode": "AE",
+      "nickname": "Mira",
+      "rank": 7,
+      "rankChange": "same",
+      "score": 30,
+      "uid": "d2c0b6dddcc2d3c9be69d26e7833e8f5e256b7bbe709e4fb88d4f47b7bd8abee"
+    },
+    {
+      "countryCode": "EG",
+      "goldMedals": 1,
+      "nickname": "محمود",
+      "rank": 8,
+      "rankChange": "same",
+      "score": 26,
+      "silverMedals": 1,
+      "uid": "cf0116cf9c1bf2ef2965b238768139059a0088bbb734739297ac650ede2fd00b"
+    },
+    {
+      "bronzeMedals": 1,
+      "countryCode": "EG",
+      "nickname": "عايدة المغربى",
+      "rank": 9,
+      "rankChange": "same",
+      "score": 15,
+      "uid": "379839d8c1d8da1cf2c7c259eeb6723923dc29e05b11b7d01fed282a911a4560"
+    },
+    {
+      "bronzeMedals": 1,
+      "countryCode": "YE",
+      "nickname": "محمدشمس الدين الهتار",
+      "rank": 10,
+      "rankChange": "same",
+      "score": 10,
+      "uid": "a0929b322dd8297792b3535019bad7ad1a575340da18ad4a85db88c27c54be4a"
+    }
+  ],
+  "updatedAt": "2026-10-16T20:58:06.504Z"
+}
