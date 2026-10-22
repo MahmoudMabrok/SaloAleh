@@ -206,6 +206,9 @@
     <string name="quran_today">آج</string>
     <string name="quran_pages_label">صفحات</string>
     <string name="quran_page_add">+ ایک صفحہ</string>
+    <string name="quran_open_mushaf">مصحف کھولیں</string>
+    <string name="quran_mushaf_hint">صفحہ ۱۵ سیکنڈ سے زیادہ کھلا رہے تو شمار ہوتا ہے، اور ایک صفحہ دوبارہ شمار نہیں ہوتا۔</string>
+    <string name="quran_mushaf_close">مصحف بند کریں</string>
     <string name="quran_daily_goal">روزانہ ہدف: %1$d صفحات</string>
     <string name="quran_progress_count">%1$d / %2$d</string>
     <string name="quran_rewards_title">قرآن پڑھنے کے فضائل</string>

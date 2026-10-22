@@ -62,6 +62,7 @@ kotlin {
             implementation(libs.gms.code.scanner)
             implementation(libs.billing)
             implementation(libs.install.referrer)
+            implementation(libs.mushaf.imad.ui)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)

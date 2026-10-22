@@ -231,6 +231,9 @@
     <string name="quran_today">اليوم</string>
     <string name="quran_pages_label">صفحة</string>
     <string name="quran_page_add">+ صفحة واحدة</string>
+    <string name="quran_open_mushaf">افتح المصحف</string>
+    <string name="quran_mushaf_hint">تُحتسب الصفحة إذا بقيت ظاهرة أكثر من ١٥ ثانية، ولا تُحتسب الصفحة مرتين</string>
+    <string name="quran_mushaf_close">إغلاق المصحف</string>
     <string name="quran_daily_goal">الهدف اليومي: %1$d صفحات</string>
     <string name="quran_progress_count">%1$d / %2$d</string>
     <string name="quran_rewards_title">فضائل قراءة القرآن</string>

@@ -106,6 +106,23 @@ class QuranChallengeViewModel(
     fun onQuranPageTap() {
         val today = today()
         val updated = store.incrementToday(today)
+        publishPageCount(today, updated)
+    }
+
+    /** Pages already credited from the Mushaf today, so a reopened reader does not count them again. */
+    fun countedPagesToday(): Set<Int> = store.countedPages(today())
+
+    /**
+     * A Mushaf page that stayed rendered for more than 15 seconds.
+     * Duplicates — the same page again today — are ignored.
+     */
+    fun onMushafPageQualified(page: Int) {
+        val today = today()
+        val updated = store.countRenderedPage(today, page) ?: return
+        publishPageCount(today, updated)
+    }
+
+    private fun publishPageCount(today: LocalDate, updated: Int) {
         maybeRecordWin(today, updated)
         // Celebrate once when today's goal is first reached, not on every extra page.
         val isMilestone = updated == QURAN_CHALLENGE_DAILY_GOAL

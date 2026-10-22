@@ -62,6 +62,8 @@ import tools.mo3ta.salo.generated.resources.challenge_sheet_goal
 import tools.mo3ta.salo.generated.resources.quran_back_cd
 import tools.mo3ta.salo.generated.resources.quran_daily_goal
 import tools.mo3ta.salo.generated.resources.quran_manual_entry_button
+import tools.mo3ta.salo.generated.resources.quran_open_mushaf
+import tools.mo3ta.salo.generated.resources.quran_mushaf_hint
 import tools.mo3ta.salo.generated.resources.quran_page_add
 import tools.mo3ta.salo.generated.resources.quran_pages_label
 import tools.mo3ta.salo.generated.resources.quran_pages_read
@@ -81,6 +83,8 @@ import tools.mo3ta.salo.ui.quran.QuranMilestoneCelebration
 import tools.mo3ta.salo.ui.quran.QuranRewardsSheet
 import tools.mo3ta.salo.ui.quran.QuranSpacing
 import tools.mo3ta.salo.ui.quran.ManualQuranSheet
+import tools.mo3ta.salo.ui.quran.QuranMushafReader
+import tools.mo3ta.salo.ui.quran.mushafReaderAvailable
 
 
 private val QuranHeroBackground = Brush.verticalGradient(
@@ -133,6 +137,8 @@ fun QuranChallengeScreen(
 
     // The virtues live behind a button now — the sheet opens on demand instead of filling the screen.
     var showRewardsSheet by remember { mutableStateOf(false) }
+    var showMushaf by remember { mutableStateOf(false) }
+    val openMushaf = mushafReaderAvailable
 
     Box(
         modifier = Modifier
@@ -146,12 +152,23 @@ fun QuranChallengeScreen(
                 rank = state.rank,
                 participantCount = state.participantCount,
                 canCount = !state.isLoading,
-                onPageTap = {
-                    viewModel.onQuranPageTap()
-                    analyticsManager.logAction(
-                        AppAnalytics.QURAN_TAP,
-                        mapOf(AppAnalytics.PARAM_COUNT to (state.todayCount + 1).toString()),
-                    )
+                primaryLabel = stringResource(
+                    if (openMushaf) Res.string.quran_open_mushaf else Res.string.quran_page_add,
+                ),
+                hint = stringResource(
+                    if (openMushaf) Res.string.quran_mushaf_hint else Res.string.quran_tap_hint,
+                ),
+                onPrimaryClick = {
+                    if (openMushaf) {
+                        analyticsManager.logAction(AppAnalytics.OPEN_MUSHAF)
+                        showMushaf = true
+                    } else {
+                        viewModel.onQuranPageTap()
+                        analyticsManager.logAction(
+                            AppAnalytics.QURAN_TAP,
+                            mapOf(AppAnalytics.PARAM_COUNT to (state.todayCount + 1).toString()),
+                        )
+                    }
                 },
                 onBack = onBack,
                 onRankClick = { viewModel.onLeaderboardOpened() },
@@ -195,6 +212,21 @@ fun QuranChallengeScreen(
                         },
                     )
                 } else null,
+            )
+        }
+
+        if (showMushaf) {
+            QuranMushafReader(
+                alreadyCounted = viewModel.countedPagesToday(),
+                onPageQualified = { page ->
+                    viewModel.onMushafPageQualified(page)
+                    analyticsManager.logAction(
+                        AppAnalytics.QURAN_PAGE_COUNTED,
+                        mapOf(AppAnalytics.PARAM_COUNT to page.toString()),
+                    )
+                },
+                onClose = { showMushaf = false },
+                modifier = Modifier.fillMaxSize(),
             )
         }
 
@@ -258,6 +290,7 @@ private fun QuranManualEntryButton(
 
 @Composable
 private fun QuranPageButton(
+    label: String,
     onClick: () -> Unit,
     enabled: Boolean,
     modifier: Modifier = Modifier,
@@ -271,7 +304,7 @@ private fun QuranPageButton(
         border = BorderStroke(1.dp, QuranColors.LightTeal.copy(alpha = if (enabled) 0.6f else 0.2f)),
     ) {
         Text(
-            text = stringResource(Res.string.quran_page_add),
+            text = label,
             color = Color.White.copy(alpha = if (enabled) 1f else 0.5f),
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
@@ -290,7 +323,9 @@ private fun QuranImmersiveZone(
     rank: Int,
     participantCount: Int,
     canCount: Boolean,
-    onPageTap: () -> Unit,
+    primaryLabel: String,
+    hint: String,
+    onPrimaryClick: () -> Unit,
     onBack: () -> Unit,
     onRankClick: () -> Unit,
     onManualEntryClick: () -> Unit,
@@ -378,7 +413,7 @@ private fun QuranImmersiveZone(
 
             Spacer(Modifier.height(8.dp))
             Text(
-                text = stringResource(Res.string.quran_tap_hint),
+                text = hint,
                 color = Color.White.copy(alpha = 0.3f),
                 fontSize = 12.sp,
                 textAlign = TextAlign.Center,
@@ -387,7 +422,8 @@ private fun QuranImmersiveZone(
             Spacer(Modifier.weight(1f))
 
             QuranPageButton(
-                onClick = onPageTap,
+                label = primaryLabel,
+                onClick = onPrimaryClick,
                 enabled = canCount,
                 modifier = Modifier.fillMaxWidth(),
             )

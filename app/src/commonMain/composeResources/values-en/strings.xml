@@ -231,6 +231,9 @@
     <string name="quran_today">Today</string>
     <string name="quran_pages_label">pages</string>
     <string name="quran_page_add">+ 1 page</string>
+    <string name="quran_open_mushaf">Open the Mushaf</string>
+    <string name="quran_mushaf_hint">A page counts after it stays open for more than 15 seconds. Each page counts once.</string>
+    <string name="quran_mushaf_close">Close the Mushaf</string>
     <string name="quran_daily_goal">Daily goal: %1$d pages</string>
     <string name="quran_progress_count">%1$d / %2$d</string>
     <string name="quran_rewards_title">Virtues of reciting the Quran</string>

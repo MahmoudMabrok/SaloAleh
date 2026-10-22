@@ -206,6 +206,9 @@
     <string name="quran_today">今天</string>
     <string name="quran_pages_label">页</string>
     <string name="quran_page_add">+ 1 页</string>
+    <string name="quran_open_mushaf">打开穆沙夫</string>
+    <string name="quran_mushaf_hint">页面停留超过 15 秒才会计入，同一页不会重复计入。</string>
+    <string name="quran_mushaf_close">关闭穆沙夫</string>
     <string name="quran_daily_goal">每日目标：%1$d 页</string>
     <string name="quran_progress_count">%1$d / %2$d</string>
     <string name="quran_rewards_title">诵读古兰经的美德</string>
