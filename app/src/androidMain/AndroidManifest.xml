@@ -10,6 +10,10 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- Mushaf Imad ships a reciter service we do not open. Leaving it merged
+         adds FOREGROUND_SERVICE_MEDIA_PLAYBACK, which Play rejects until a new
+         declaration is filed. The page reader does not need it. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" tools:node="remove" />
     <uses-permission android:name="com.android.vending.BILLING" />
 
     <application
@@ -55,6 +59,10 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
+        <service
+            android:name="com.mushafimad.core.data.audio.AudioPlaybackService"
+            tools:node="remove" />
 
         <service
             android:name=".ui.FloatingBubbleService"
