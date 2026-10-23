@@ -6,6 +6,9 @@ import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import com.google.android.play.core.splitcompat.SplitCompat
+import com.google.android.play.core.splitinstall.SplitInstallHelper
+import com.mushafimad.core.MushafLibrary
+import com.mushafimad.ui.di.uiModule
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -43,6 +46,7 @@ class MushafReaderActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        startMushafLibrary()
         val initialPage = intent.getIntExtra(EXTRA_PAGE, 0).takeIf { it in 1..604 }
         val alreadyCounted = intent.getIntArrayExtra(EXTRA_COUNTED)?.toSet().orEmpty()
         setContent {
@@ -51,6 +55,14 @@ class MushafReaderActivity : ComponentActivity() {
                 alreadyCounted = alreadyCounted,
                 onClose = { finish() },
             )
+        }
+    }
+
+    private fun startMushafLibrary() {
+        runCatching { SplitInstallHelper.loadLibrary(this, "realmc") }
+        if (!MushafLibrary.isInitialized()) {
+            MushafLibrary.initialize(this)
+            MushafLibrary.getKoin().loadModules(listOf(uiModule))
         }
     }
 

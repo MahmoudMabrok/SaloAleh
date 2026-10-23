@@ -27,6 +27,18 @@
         <service
             android:name="com.mushafimad.core.data.audio.AudioPlaybackService"
             tools:node="remove" />
+
+        <!-- These run before Application.onCreate. Play still lists them while
+             this module is not installed, so the process dies on launch with
+             ClassNotFoundException. The reader starts the library itself. -->
+        <provider
+            android:name="com.mushafimad.core.internal.MushafInitProvider"
+            android:authorities="${applicationId}.mushaf-initializer"
+            tools:node="remove" />
+        <provider
+            android:name="com.mushafimad.ui.internal.MushafUiInitProvider"
+            android:authorities="${applicationId}.mushaf-ui-initializer"
+            tools:node="remove" />
     </application>
 
 </manifest>

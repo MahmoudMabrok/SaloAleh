@@ -64,6 +64,18 @@
             android:name="com.mushafimad.core.data.audio.AudioPlaybackService"
             tools:node="remove" />
 
+        <!-- The on-demand module's library registers these. If they stay in the
+             base manifest, Android loads them before the module exists and the
+             process dies on launch. -->
+        <provider
+            android:name="com.mushafimad.core.internal.MushafInitProvider"
+            android:authorities="${applicationId}.mushaf-initializer"
+            tools:node="remove" />
+        <provider
+            android:name="com.mushafimad.ui.internal.MushafUiInitProvider"
+            android:authorities="${applicationId}.mushaf-ui-initializer"
+            tools:node="remove" />
+
         <service
             android:name=".ui.FloatingBubbleService"
             android:foregroundServiceType="specialUse"
