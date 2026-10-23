@@ -40,4 +40,11 @@ dependencies {
     implementation(libs.feature.delivery)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
+    // mushaf-ui publishes Compose as runtime scope, so our own composables
+    // need it on the compile classpath. Versions match the library BOM.
+    implementation(platform("androidx.compose:compose-bom:2024.12.01"))
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.foundation:foundation")
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-icons-core")
 }
