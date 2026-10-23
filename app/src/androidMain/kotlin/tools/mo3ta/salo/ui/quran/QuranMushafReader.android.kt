@@ -16,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import com.google.android.play.core.splitcompat.SplitCompat
 import com.google.android.play.core.splitinstall.SplitInstallManagerFactory
 import com.google.android.play.core.splitinstall.SplitInstallRequest
 import com.google.android.play.core.splitinstall.SplitInstallStateUpdatedListener
@@ -126,6 +127,7 @@ actual fun QuranMushafReader(
         val intent = Intent().setClassName(activity, "tools.mo3ta.salo.mushaf.MushafReaderActivity")
             .putExtra("tools.mo3ta.salo.mushaf.PAGE", initialPage ?: 0)
             .putExtra("tools.mo3ta.salo.mushaf.COUNTED", alreadyCounted.toIntArray())
+        runCatching { SplitCompat.install(activity) }
         try {
             launcher.launch(intent)
         } catch (_: ActivityNotFoundException) {
