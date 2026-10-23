@@ -113,6 +113,9 @@ android {
         implementation(libs.firebase.appcheck.playintegrity)
         implementation(libs.firebase.appcheck.debug)
         testImplementation(libs.robolectric)
+        androidTestImplementation(libs.androidx.junit)
+        androidTestImplementation(libs.androidx.espresso.core)
+        androidTestImplementation(libs.androidx.test.core)
     }
 
     compileOptions {
