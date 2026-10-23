@@ -30,6 +30,10 @@ kotlin {
     }
 }
 
+configurations.matching { it.name.contains("compileOnly", ignoreCase = true) }.configureEach {
+    exclude(group = "com.google.j2objc", module = "j2objc-annotations")
+}
+
 dependencies {
     implementation(project(":app"))
     implementation(libs.mushaf.imad.ui)

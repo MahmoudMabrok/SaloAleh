@@ -131,3 +131,9 @@ android {
         error += "HardcodedText"
     }
 }
+
+// On-demand modules cannot depend on a compileOnly library. This annotation
+// jar is pulled in that way by a transitive dependency and is not needed at runtime.
+configurations.matching { it.name.contains("compileOnly", ignoreCase = true) }.configureEach {
+    exclude(group = "com.google.j2objc", module = "j2objc-annotations")
+}
