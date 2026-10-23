@@ -34,7 +34,6 @@ jobs:
 
   deploy-android:
     name: Deploy Android → Google Play
-    needs: [checks]
     runs-on: ubuntu-latest
 
     steps:
