@@ -62,7 +62,7 @@ kotlin {
             implementation(libs.gms.code.scanner)
             implementation(libs.billing)
             implementation(libs.install.referrer)
-            implementation(libs.mushaf.imad.ui)
+            implementation(libs.feature.delivery)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
@@ -87,6 +87,7 @@ android {
     namespace = "tools.mo3ta.salo"
     buildFeatures { buildConfig = true }
     compileSdk = 36
+    dynamicFeatures += setOf(":mushaf")
 
     defaultConfig {
         applicationId = "tools.mo3ta.salo"

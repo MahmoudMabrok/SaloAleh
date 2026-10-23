@@ -2,6 +2,7 @@ package tools.mo3ta.salo
 
 import android.app.Application
 import android.content.Context
+import com.google.android.play.core.splitcompat.SplitCompat
 import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
 import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
@@ -17,6 +18,8 @@ import tools.mo3ta.salo.notification.NotificationChannels
 class SaloApplication : Application() {
     override fun attachBaseContext(base: Context) {
         super.attachBaseContext(base.withStoredAppLocale())
+        // Needed so a Mushaf module downloaded after install can load its pages.
+        SplitCompat.install(this)
     }
 
     override fun onCreate() {

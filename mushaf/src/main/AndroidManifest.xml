@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:dist="http://schemas.android.com/apk/distribution"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <dist:module
+        dist:instant="false"
+        dist:title="@string/mushaf_feature_title">
+        <dist:delivery>
+            <dist:on-demand />
+        </dist:delivery>
+        <dist:fusing dist:include="false" />
+    </dist:module>
+
+    <!-- The page reader does not play recitation. This permission is what made
+         Play reject the upload until a new foreground-service declaration. -->
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+        tools:node="remove" />
+
+    <application>
+        <activity
+            android:name=".MushafReaderActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MyApplication" />
+
+        <service
+            android:name="com.mushafimad.core.data.audio.AudioPlaybackService"
+            tools:node="remove" />
+    </application>
+
+</manifest>

@@ -21,3 +21,7 @@
 #-renamesourcefileattribute SourceFile
 
 -keep class com.android.vending.billing.** { *; }
+
+# The on-demand Mushaf module calls these. R8 only sees the base module.
+-keep class tools.mo3ta.salo.ui.quran.MushafPageBridge { *; }
+-keep class tools.mo3ta.salo.data.quran.PageDwellCounter { *; }

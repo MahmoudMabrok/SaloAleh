@@ -1,79 +1,141 @@
 package tools.mo3ta.salo.ui.quran
 
-import android.os.SystemClock
-import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import android.app.Activity
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import com.mushafimad.ui.mushaf.MushafView
-import kotlinx.coroutines.delay
-import org.jetbrains.compose.resources.stringResource
-import tools.mo3ta.salo.data.quran.PageDwellCounter
-import tools.mo3ta.salo.generated.resources.Res
-import tools.mo3ta.salo.generated.resources.quran_mushaf_close
+import androidx.compose.ui.platform.LocalContext
+import com.google.android.play.core.splitinstall.SplitInstallManagerFactory
+import com.google.android.play.core.splitinstall.SplitInstallRequest
+import com.google.android.play.core.splitinstall.SplitInstallStateUpdatedListener
+import com.google.android.play.core.splitinstall.model.SplitInstallSessionStatus as SessionStatus
 
 actual val mushafReaderAvailable: Boolean = true
 
+private const val MUSHAF_MODULE = "mushaf"
+
 @Composable
+actual fun rememberMushafAccess(): MushafAccess {
+    val context = LocalContext.current
+    val manager = remember { SplitInstallManagerFactory.create(context.applicationContext) }
+    var status by remember {
+        mutableStateOf(
+            if (manager.installedModules.contains(MUSHAF_MODULE)) MushafStatus.Ready
+            else MushafStatus.NeedsDownload,
+        )
+    }
+    var progress by remember { mutableStateOf<Float?>(null) }
+    val promptedSessions = remember { mutableSetOf<Int>() }
+    val confirmLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult(),
+    ) { /* The session listener reports the outcome. */ }
+
+    DisposableEffect(manager) {
+        val listener = SplitInstallStateUpdatedListener { state ->
+            if (!state.moduleNames().contains(MUSHAF_MODULE)) return@SplitInstallStateUpdatedListener
+            when (state.status()) {
+                SessionStatus.REQUIRES_USER_CONFIRMATION -> {
+                    status = MushafStatus.Downloading
+                    if (promptedSessions.add(state.sessionId())) {
+                        runCatching { manager.startConfirmationDialogForResult(state, confirmLauncher) }
+                    }
+                }
+                SessionStatus.PENDING,
+                SessionStatus.DOWNLOADING,
+                SessionStatus.DOWNLOADED,
+                SessionStatus.INSTALLING,
+                SessionStatus.CANCELING,
+                -> {
+                    status = MushafStatus.Downloading
+                    val total = state.totalBytesToDownload()
+                    progress = if (total > 0L) state.bytesDownloaded().toFloat() / total else null
+                }
+                SessionStatus.INSTALLED -> {
+                    status = MushafStatus.Ready
+                    progress = null
+                }
+                SessionStatus.FAILED,
+                SessionStatus.CANCELED,
+                -> {
+                    status = if (manager.installedModules.contains(MUSHAF_MODULE)) {
+                        MushafStatus.Ready
+                    } else {
+                        MushafStatus.Failed
+                    }
+                    progress = null
+                }
+            }
+        }
+        manager.registerListener(listener)
+        onDispose { manager.unregisterListener(listener) }
+    }
+
+    return MushafAccess(
+        status = status,
+        progress = progress,
+        startDownload = {
+            if (manager.installedModules.contains(MUSHAF_MODULE)) {
+                status = MushafStatus.Ready
+            } else if (status != MushafStatus.Downloading) {
+                status = MushafStatus.Downloading
+                progress = null
+                manager.startInstall(
+                    SplitInstallRequest.newBuilder().addModule(MUSHAF_MODULE).build(),
+                ).addOnFailureListener {
+                    status = MushafStatus.Failed
+                }
+            }
+        },
+    )
+}
+
+@Composable
+@Suppress("UNUSED_PARAMETER")
 actual fun QuranMushafReader(
+    initialPage: Int?,
     alreadyCounted: Set<Int>,
     onPageQualified: (Int) -> Unit,
     onClose: () -> Unit,
     modifier: Modifier,
 ) {
-    val counter = remember { PageDwellCounter(alreadyCounted) }
-    var page by remember { mutableIntStateOf(0) }
-    BackHandler(onBack = onClose)
-    DisposableEffect(counter) {
-        onDispose {
-            counter.flush(SystemClock.elapsedRealtime())?.let(onPageQualified)
+    val context = LocalContext.current
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        onClose()
+    }
+    DisposableEffect(onPageQualified) {
+        MushafPageBridge.onPageQualified = onPageQualified
+        onDispose { MushafPageBridge.onPageQualified = null }
+    }
+    LaunchedEffect(initialPage) {
+        val activity = context.findActivity()
+        if (activity == null) {
+            onClose()
+            return@LaunchedEffect
+        }
+        val intent = Intent().setClassName(activity, "tools.mo3ta.salo.mushaf.MushafReaderActivity")
+            .putExtra("tools.mo3ta.salo.mushaf.PAGE", initialPage ?: 0)
+            .putExtra("tools.mo3ta.salo.mushaf.COUNTED", alreadyCounted.toIntArray())
+        try {
+            launcher.launch(intent)
+        } catch (_: ActivityNotFoundException) {
+            onClose()
         }
     }
-    LaunchedEffect(counter) {
-        while (true) {
-            delay(1_000)
-            val current = page
-            if (current in 1..604) {
-                counter.onPageRendered(current, SystemClock.elapsedRealtime())?.let(onPageQualified)
-            }
-        }
-    }
-    Box(modifier.fillMaxSize()) {
-        MushafView(
-            onPageChanged = { next ->
-                page = next
-                counter.onPageRendered(next, SystemClock.elapsedRealtime())?.let(onPageQualified)
-            },
-            modifier = Modifier.fillMaxSize(),
-        )
-        IconButton(
-            onClick = onClose,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .statusBarsPadding()
-                .padding(4.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Close,
-                contentDescription = stringResource(Res.string.quran_mushaf_close),
-                tint = Color(0xFF1A4035),
-            )
-        }
-    }
+}
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }
