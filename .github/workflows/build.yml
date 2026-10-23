@@ -24,7 +24,9 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Decode google-services.json
         env:
@@ -83,46 +85,3 @@ jobs:
             adb install -r -t app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
             adb logcat -c
             adb shell am instrument -w -r -e class tools.mo3ta.salo.LaunchSmokeTest tools.mo3ta.salo.test/androidx.test.runner.AndroidJUnitRunner || { adb logcat -d -t 250; exit 1; }
-
-  # ios:
-  #   name: iOS
-  #   runs-on: macos-latest
-
-  #   steps:
-  #     - uses: actions/checkout@v4
-
-  #     - name: Set up JDK 17
-  #       uses: actions/setup-java@v4
-  #       with:
-  #         java-version: '17'
-  #         distribution: 'temurin'
-  #         cache: gradle
-
-  #     - name: Decode GoogleService-Info.plist
-  #       run: echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" > iosApp/iosApp/GoogleService-Info.plist
-
-  #     - name: Grant execute permission for gradlew
-  #       run: chmod +x gradlew
-
-  #     - name: Install CocoaPods dependencies
-  #       run: |
-  #         cd iosApp
-  #         pod install --repo-update
-
-  #     - name: Build iOS app (simulator)
-  #       run: |
-  #         xcodebuild \
-  #           -workspace iosApp/iosApp.xcworkspace \
-  #           -scheme SaloAleh \
-  #           -configuration Debug \
-  #           -destination "generic/platform=iOS Simulator" \
-  #           -derivedDataPath build/ios-derived \
-  #           build \
-  #           CODE_SIGNING_ALLOWED=NO
-
-  #     - name: Upload simulator app
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: ios-simulator-app
-  #         path: build/ios-derived/Build/Products/Debug-iphonesimulator/SaloAleh.app
-  #         retention-days: 7
