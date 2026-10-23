@@ -116,6 +116,8 @@ android {
         androidTestImplementation(libs.androidx.junit)
         androidTestImplementation(libs.androidx.espresso.core)
         androidTestImplementation(libs.androidx.test.core)
+        // GitLive's androidTest variant omits Firebase versions and expects this BOM.
+        androidTestImplementation(platform("com.google.firebase:firebase-bom:33.2.0"))
     }
 
     compileOptions {
