@@ -18,6 +18,9 @@ import tools.mo3ta.salo.notification.NotificationChannels
 class SaloApplication : Application() {
     override fun attachBaseContext(base: Context) {
         super.attachBaseContext(base.withStoredAppLocale())
+        // SplitCompat.install() here throws an Error on some phones (not an
+        // Exception), so a try/catch does not stop the app from closing.
+        // The Mushaf screen loads the split only after the user opens it.
     }
 
     override fun onCreate() {
@@ -31,8 +34,8 @@ class SaloApplication : Application() {
             } else {
                 appCheck.installAppCheckProviderFactory(PlayIntegrityAppCheckProviderFactory.getInstance())
             }
-        } catch (e: Exception) {
-            // App Check / Firebase init failure must not crash the app on launch.
+        } catch (_: Throwable) {
+            // App Check can fail with Error, not Exception. Either one was closing the app.
         }
         AndroidAppContext.init(this)
         if (GlobalContext.getOrNull() == null) {

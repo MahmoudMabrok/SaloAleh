@@ -25,3 +25,8 @@
 # The on-demand Mushaf module calls these. R8 only sees the base module.
 -keep class tools.mo3ta.salo.ui.quran.MushafPageBridge { *; }
 -keep class tools.mo3ta.salo.data.quran.PageDwellCounter { *; }
+
+# feature-delivery 2.1.0 has no consumer rules. Keep the classes SplitCompat
+# loads by reflection, or the release build crashes when the Mushaf opens.
+-keep class com.google.android.play.core.** { *; }
+-dontwarn com.google.android.play.core.**
