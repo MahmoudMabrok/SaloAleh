@@ -41,12 +41,17 @@ import tools.mo3ta.salo.ui.quran.MushafPageBridge
 class MushafReaderActivity : ComponentActivity() {
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(newBase)
-        SplitCompat.installActivity(this)
+        // Only this screen, after the user opens it. Both calls can throw Error.
+        runCatching { SplitCompat.install(this) }
+        runCatching { SplitCompat.installActivity(this) }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        startMushafLibrary()
+        if (!startMushafLibrary()) {
+            finish()
+            return
+        }
         val initialPage = intent.getIntExtra(EXTRA_PAGE, 0).takeIf { it in 1..604 }
         val alreadyCounted = intent.getIntArrayExtra(EXTRA_COUNTED)?.toSet().orEmpty()
         setContent {
@@ -58,13 +63,13 @@ class MushafReaderActivity : ComponentActivity() {
         }
     }
 
-    private fun startMushafLibrary() {
-        runCatching { SplitInstallHelper.loadLibrary(this, "realmc") }
+    private fun startMushafLibrary(): Boolean = runCatching {
+        SplitInstallHelper.loadLibrary(this, "realmc")
         if (!MushafLibrary.isInitialized()) {
             MushafLibrary.initialize(this)
             MushafLibrary.getKoin().loadModules(listOf(uiModule))
         }
-    }
+    }.isSuccess
 
     companion object {
         const val EXTRA_PAGE = "tools.mo3ta.salo.mushaf.PAGE"

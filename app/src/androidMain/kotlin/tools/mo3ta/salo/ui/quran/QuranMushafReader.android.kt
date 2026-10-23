@@ -1,7 +1,6 @@
 package tools.mo3ta.salo.ui.quran
 
 import android.app.Activity
-import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
@@ -29,11 +28,18 @@ private const val MUSHAF_MODULE = "mushaf"
 @Composable
 actual fun rememberMushafAccess(): MushafAccess {
     val context = LocalContext.current
-    val manager = remember { SplitInstallManagerFactory.create(context.applicationContext) }
+    val manager = remember {
+        runCatching { SplitInstallManagerFactory.create(context.applicationContext) }.getOrNull()
+    }
+    if (manager == null) {
+        return MushafAccess(MushafStatus.Unavailable, null) {}
+    }
     var status by remember {
         mutableStateOf(
-            if (manager.installedModules.contains(MUSHAF_MODULE)) MushafStatus.Ready
-            else MushafStatus.NeedsDownload,
+            runCatching {
+                if (manager.installedModules.contains(MUSHAF_MODULE)) MushafStatus.Ready
+                else MushafStatus.NeedsDownload
+            }.getOrDefault(MushafStatus.Unavailable),
         )
     }
     var progress by remember { mutableStateOf<Float?>(null) }
@@ -69,11 +75,10 @@ actual fun rememberMushafAccess(): MushafAccess {
                 SessionStatus.FAILED,
                 SessionStatus.CANCELED,
                 -> {
-                    status = if (manager.installedModules.contains(MUSHAF_MODULE)) {
-                        MushafStatus.Ready
-                    } else {
-                        MushafStatus.Failed
-                    }
+                    status = runCatching {
+                        if (manager.installedModules.contains(MUSHAF_MODULE)) MushafStatus.Ready
+                        else MushafStatus.Failed
+                    }.getOrDefault(MushafStatus.Failed)
                     progress = null
                 }
             }
@@ -86,16 +91,20 @@ actual fun rememberMushafAccess(): MushafAccess {
         status = status,
         progress = progress,
         startDownload = {
-            if (manager.installedModules.contains(MUSHAF_MODULE)) {
+            val installed = runCatching { manager.installedModules.contains(MUSHAF_MODULE) }.getOrDefault(false)
+            if (installed) {
                 status = MushafStatus.Ready
             } else if (status != MushafStatus.Downloading) {
                 status = MushafStatus.Downloading
                 progress = null
-                manager.startInstall(
-                    SplitInstallRequest.newBuilder().addModule(MUSHAF_MODULE).build(),
-                ).addOnFailureListener {
-                    status = MushafStatus.Failed
-                }
+                runCatching {
+                    manager.startInstall(
+                        SplitInstallRequest.newBuilder().addModule(MUSHAF_MODULE).build(),
+                    )
+                }.onFailure { status = MushafStatus.Failed }
+                    .onSuccess { task ->
+                        task.addOnFailureListener { status = MushafStatus.Failed }
+                    }
             }
         },
     )
@@ -128,11 +137,7 @@ actual fun QuranMushafReader(
             .putExtra("tools.mo3ta.salo.mushaf.PAGE", initialPage ?: 0)
             .putExtra("tools.mo3ta.salo.mushaf.COUNTED", alreadyCounted.toIntArray())
         runCatching { SplitCompat.install(activity) }
-        try {
-            launcher.launch(intent)
-        } catch (_: ActivityNotFoundException) {
-            onClose()
-        }
+        if (runCatching { launcher.launch(intent) }.isFailure) onClose()
     }
 }
 
