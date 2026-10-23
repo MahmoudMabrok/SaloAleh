@@ -39,7 +39,9 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Bump versionCode and versionName
         run: |
@@ -294,13 +296,13 @@ jobs:
           ANDROID="${{ needs.deploy-android.result }}"
           IOS="${{ needs.deploy-ios.result }}"
 
-          NOTES="## v${VERSION}"$'\n'
-          NOTES+="- **Version name:** ${VERSION}"$'\n'
-          [ -n "$ANDROID_VERSION_CODE" ] && NOTES+="- **Version code:** ${ANDROID_VERSION_CODE}"$'\n'
-          [ "$ANDROID" = "success" ] && NOTES+="- ✅ Android published to Google Play (${{ github.event.inputs.track }})"$'\n'
-          [ "$ANDROID" != "success" ] && NOTES+="- ❌ Android deploy failed"$'\n'
-          [ "$IOS" = "success" ] && NOTES+="- ✅ iOS published to App Store Connect"$'\n'
-          [ "$IOS" != "success" ] && NOTES+="- ❌ iOS deploy failed"$'\n'
+          NOTES="## v${VERSION}"$ '\n'
+          NOTES+="- **Version name:** ${VERSION}"$ '\n'
+          [ -n "$ANDROID_VERSION_CODE" ] && NOTES+="- **Version code:** ${ANDROID_VERSION_CODE}"$ '\n'
+          [ "$ANDROID" = "success" ] && NOTES+="- ✅ Android published to Google Play (${{ github.event.inputs.track }})"$ '\n'
+          [ "$ANDROID" != "success" ] && NOTES+="- ❌ Android deploy failed"$ '\n'
+          [ "$IOS" = "success" ] && NOTES+="- ✅ iOS published to App Store Connect"$ '\n'
+          [ "$IOS" != "success" ] && NOTES+="- ❌ iOS deploy failed"$ '\n'
 
           gh release create "v${VERSION}" \
             --title "v${VERSION}" \
