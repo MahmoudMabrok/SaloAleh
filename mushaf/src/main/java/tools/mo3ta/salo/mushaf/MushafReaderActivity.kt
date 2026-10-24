@@ -5,18 +5,13 @@ import android.os.Bundle
 import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import com.google.android.play.core.splitcompat.SplitCompat
-import com.google.android.play.core.splitinstall.SplitInstallHelper
-import com.mushafimad.core.MushafLibrary
-import com.mushafimad.ui.di.uiModule
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -24,10 +19,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
+import com.google.android.play.core.splitcompat.SplitCompat
+import com.google.android.play.core.splitinstall.SplitInstallHelper
+import com.mushafimad.core.MushafLibrary
+import com.mushafimad.ui.di.uiModule
 import com.mushafimad.ui.mushaf.MushafView
 import kotlinx.coroutines.delay
 import tools.mo3ta.salo.data.quran.PageDwellCounter
@@ -52,13 +49,13 @@ class MushafReaderActivity : ComponentActivity() {
             finish()
             return
         }
+        enableEdgeToEdge()
         val initialPage = intent.getIntExtra(EXTRA_PAGE, 0).takeIf { it in 1..604 }
         val alreadyCounted = intent.getIntArrayExtra(EXTRA_COUNTED)?.toSet().orEmpty()
         setContent {
             MushafReader(
                 initialPage = initialPage,
                 alreadyCounted = alreadyCounted,
-                onClose = { finish() },
             )
         }
     }
@@ -92,7 +89,6 @@ class MushafReaderActivity : ComponentActivity() {
 private fun MushafReader(
     initialPage: Int?,
     alreadyCounted: Set<Int>,
-    onClose: () -> Unit,
 ) {
     val counter = remember { PageDwellCounter(alreadyCounted) }
     var page by remember { mutableIntStateOf(initialPage ?: 0) }
@@ -114,7 +110,12 @@ private fun MushafReader(
             }
         }
     }
-    Box(Modifier.fillMaxSize()) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(Color(0xFFE6EFDC))
+            .windowInsetsPadding(WindowInsets.safeDrawing),
+    ) {
         MushafView(
             initialPage = initialPage,
             showNavigationControls = false,
@@ -126,18 +127,5 @@ private fun MushafReader(
             },
             modifier = Modifier.fillMaxSize(),
         )
-        IconButton(
-            onClick = onClose,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .statusBarsPadding()
-                .padding(4.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Close,
-                contentDescription = "إغلاق المصحف",
-                tint = Color(0xFF1A4035),
-            )
-        }
     }
 }

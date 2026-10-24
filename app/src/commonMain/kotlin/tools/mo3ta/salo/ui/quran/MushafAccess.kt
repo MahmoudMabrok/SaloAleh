@@ -10,6 +10,9 @@ enum class MushafStatus {
     /** Installed app does not contain the pages yet. */
     NeedsDownload,
     Downloading,
+
+    /** Just installed. The new code loads only after the process starts again. */
+    NeedsRestart,
     Ready,
     Failed,
 }
@@ -18,6 +21,7 @@ data class MushafAccess(
     val status: MushafStatus,
     val progress: Float?,
     val startDownload: () -> Unit,
+    val restartApp: () -> Unit = {},
 )
 
 @Composable

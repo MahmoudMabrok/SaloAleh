@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
+import android.os.Process
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -33,6 +34,9 @@ actual fun rememberMushafAccess(): MushafAccess {
     }
     if (manager == null) {
         return MushafAccess(MushafStatus.Unavailable, null) {}
+    }
+    val installedAtStart = remember {
+        runCatching { manager.installedModules.contains(MUSHAF_MODULE) }.getOrDefault(false)
     }
     var status by remember {
         mutableStateOf(
@@ -69,15 +73,20 @@ actual fun rememberMushafAccess(): MushafAccess {
                     progress = if (total > 0L) state.bytesDownloaded().toFloat() / total else null
                 }
                 SessionStatus.INSTALLED -> {
-                    status = MushafStatus.Ready
+                    // Opening the new split in this same process crashes once.
+                    // A fresh process loads it cleanly.
+                    status = if (installedAtStart) MushafStatus.Ready else MushafStatus.NeedsRestart
                     progress = null
                 }
                 SessionStatus.FAILED,
                 SessionStatus.CANCELED,
                 -> {
                     status = runCatching {
-                        if (manager.installedModules.contains(MUSHAF_MODULE)) MushafStatus.Ready
-                        else MushafStatus.Failed
+                        when {
+                            !manager.installedModules.contains(MUSHAF_MODULE) -> MushafStatus.Failed
+                            installedAtStart -> MushafStatus.Ready
+                            else -> MushafStatus.NeedsRestart
+                        }
                     }.getOrDefault(MushafStatus.Failed)
                     progress = null
                 }
@@ -93,7 +102,7 @@ actual fun rememberMushafAccess(): MushafAccess {
         startDownload = {
             val installed = runCatching { manager.installedModules.contains(MUSHAF_MODULE) }.getOrDefault(false)
             if (installed) {
-                status = MushafStatus.Ready
+                status = if (installedAtStart) MushafStatus.Ready else MushafStatus.NeedsRestart
             } else if (status != MushafStatus.Downloading) {
                 status = MushafStatus.Downloading
                 progress = null
@@ -107,6 +116,7 @@ actual fun rememberMushafAccess(): MushafAccess {
                     }
             }
         },
+        restartApp = { restartProcess(context) },
     )
 }
 
@@ -139,6 +149,15 @@ actual fun QuranMushafReader(
         runCatching { SplitCompat.install(activity) }
         if (runCatching { launcher.launch(intent) }.isFailure) onClose()
     }
+}
+
+private fun restartProcess(context: Context) {
+    val activity = context.findActivity() ?: return
+    val launch = activity.packageManager.getLaunchIntentForPackage(activity.packageName) ?: return
+    launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+    activity.startActivity(launch)
+    activity.finishAffinity()
+    Process.killProcess(Process.myPid())
 }
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {
