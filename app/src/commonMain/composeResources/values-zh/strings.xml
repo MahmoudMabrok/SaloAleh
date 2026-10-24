@@ -211,7 +211,7 @@
     <string name="quran_mushaf_downloading">正在下载穆沙夫</string>
     <string name="quran_mushaf_download_hint">穆沙夫不在应用里。下载一次后就会留在手机上。</string>
     <string name="quran_mushaf_failed">下载没有完成。点按重试。</string>
-    <string name="quran_mushaf_hint">选择页码。停留超过 15 秒才计入，每天一次。</string>
+    <string name="quran_mushaf_hint">选择页码。每天计入一次。</string>
     <string name="quran_page_prompt_title">要去哪一页？</string>
     <string name="quran_page_prompt_hint">1 到 604</string>
     <string name="quran_page_prompt_open">打开</string>

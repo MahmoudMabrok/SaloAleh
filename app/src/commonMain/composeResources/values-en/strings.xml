@@ -236,7 +236,7 @@
     <string name="quran_mushaf_downloading">Downloading the Mushaf</string>
     <string name="quran_mushaf_download_hint">The Mushaf is not inside the app. Download it once, then it stays on the phone.</string>
     <string name="quran_mushaf_failed">The download did not finish. Tap to try again.</string>
-    <string name="quran_mushaf_hint">Pick a page. It counts after 15 seconds, once a day.</string>
+    <string name="quran_mushaf_hint">Pick a page. It counts once a day.</string>
     <string name="quran_page_prompt_title">Which page?</string>
     <string name="quran_page_prompt_hint">From 1 to 604</string>
     <string name="quran_page_prompt_open">Open</string>

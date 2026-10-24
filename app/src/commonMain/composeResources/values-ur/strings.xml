@@ -211,7 +211,7 @@
     <string name="quran_mushaf_downloading">مصحف ڈاؤن لوڈ ہو رہا ہے</string>
     <string name="quran_mushaf_download_hint">مصحف ایپ کے اندر نہیں ہے۔ ایک بار ڈاؤن لوڈ کریں، پھر فون پر رہتا ہے۔</string>
     <string name="quran_mushaf_failed">ڈاؤن لوڈ مکمل نہیں ہوا۔ دوبارہ دبائیں۔</string>
-    <string name="quran_mushaf_hint">صفحہ منتخب کریں۔ ۱۵ سیکنڈ بعد شمار ہوتا ہے، دن میں ایک بار۔</string>
+    <string name="quran_mushaf_hint">صفحہ منتخب کریں۔ دن میں ایک بار شمار ہوتا ہے۔</string>
     <string name="quran_page_prompt_title">کس صفحے پر جائیں؟</string>
     <string name="quran_page_prompt_hint">۱ سے ۶۰۴</string>
     <string name="quran_page_prompt_open">کھولیں</string>

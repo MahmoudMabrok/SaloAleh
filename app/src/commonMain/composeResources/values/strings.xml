@@ -236,7 +236,7 @@
     <string name="quran_mushaf_downloading">بيتحمّل المصحف</string>
     <string name="quran_mushaf_download_hint">المصحف مش جوّه التطبيق. دوس مرة وهينزل، وبعدين يفضل عندك.</string>
     <string name="quran_mushaf_failed">التحميل ما اكتملش. دوس تاني.</string>
-    <string name="quran_mushaf_hint">اختَر الصفحة. تتسجل بعد ١٥ ثانية، ومرة واحدة في اليوم.</string>
+    <string name="quran_mushaf_hint">اختَر الصفحة. بتتسجل مرة واحدة في اليوم.</string>
     <string name="quran_page_prompt_title">تروح لأنهي صفحة؟</string>
     <string name="quran_page_prompt_hint">من ١ إلى ٦٠٤</string>
     <string name="quran_page_prompt_open">افتح</string>
