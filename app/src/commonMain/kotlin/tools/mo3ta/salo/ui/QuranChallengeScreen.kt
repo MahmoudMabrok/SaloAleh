@@ -24,6 +24,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -71,6 +72,7 @@ import tools.mo3ta.salo.generated.resources.quran_daily_goal
 import tools.mo3ta.salo.generated.resources.quran_manual_entry_button
 import tools.mo3ta.salo.generated.resources.quran_open_mushaf
 import tools.mo3ta.salo.generated.resources.quran_download_mushaf
+import tools.mo3ta.salo.generated.resources.quran_mushaf_download_wait
 import tools.mo3ta.salo.generated.resources.quran_mushaf_downloading
 import tools.mo3ta.salo.generated.resources.quran_mushaf_download_hint
 import tools.mo3ta.salo.generated.resources.quran_mushaf_failed
@@ -305,6 +307,30 @@ fun QuranChallengeScreen(
                     showMushaf = true
                 },
                 onDismiss = { askPage = false },
+            )
+        }
+
+        if (mushaf.status == MushafStatus.Downloading) {
+            AlertDialog(
+                onDismissRequest = {},
+                title = { Text(stringResource(Res.string.quran_mushaf_downloading)) },
+                text = {
+                    Column {
+                        Text(stringResource(Res.string.quran_mushaf_download_wait))
+                        Spacer(Modifier.height(12.dp))
+                        val fraction = mushaf.progress
+                        if (fraction != null) {
+                            LinearProgressIndicator(progress = { fraction.coerceIn(0f, 1f) })
+                            Text(
+                                text = "${(fraction * 100).toInt().coerceIn(0, 100)}%",
+                                modifier = Modifier.padding(top = 8.dp),
+                            )
+                        } else {
+                            LinearProgressIndicator()
+                        }
+                    }
+                },
+                confirmButton = {},
             )
         }
 
