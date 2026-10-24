@@ -1,0 +1,126 @@
+{
+  "allTimeSalawat": 9438801,
+  "weekSalawat": 65813,
+  "todaySalawat": 47221,
+  "activePlayers": 71,
+  "countriesCount": 8,
+  "countries": [
+    "DZ",
+    "EG",
+    "MA",
+    "PS",
+    "SA",
+    "SD",
+    "SY",
+    "YE"
+  ],
+  "topScore": 24361,
+  "roundKey": "2026-10-30",
+  "leaderboard": [
+    {
+      "bronzeMedals": 1,
+      "countryCode": "EG",
+      "dailyBadge": "mihrab",
+      "goldMedals": 13,
+      "nickname": "يونس",
+      "rank": 1,
+      "rankChange": "same",
+      "roundStreak": 100,
+      "score": 23861,
+      "silverMedals": 7,
+      "uid": "5a4b1d0ed314c539aefe3fedeb07054b2acf361dd98189761e80e047fbf80305"
+    },
+    {
+      "bronzeMedals": 2,
+      "countryCode": "EG",
+      "dailyBadge": "mihrab",
+      "nickname": "وفاء محمود خلف",
+      "rank": 2,
+      "rankChange": "same",
+      "roundStreak": 65,
+      "score": 9000,
+      "silverMedals": 1,
+      "uid": "b9d860ce859d1d4475a6a4f70ed8c50a88f54dcfb24eb5e6d138fa01e2affb77"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "crown",
+      "nickname": "سهير",
+      "rank": 3,
+      "rankChange": "same",
+      "roundStreak": 87,
+      "score": 8279,
+      "uid": "c2f47956533f0de3c7d40a970fb8d0694187ed56f46c7b29e248d1b7b3f9240c"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "nickname": "سلفيه وأفتخر",
+      "rank": 4,
+      "rankChange": "same",
+      "score": 7500,
+      "uid": "6953924bb18814696044088057ec192b00316eccba34934905164d71d7c6dfc9"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "crescent",
+      "nickname": "Israa",
+      "rank": 5,
+      "rankChange": "same",
+      "roundStreak": 10,
+      "score": 4088,
+      "uid": "1038c1e3a18ad925076d67738f423f7bf2614ce3e6dd57de168f32e97a14d069"
+    },
+    {
+      "bronzeMedals": 1,
+      "countryCode": "EG",
+      "dailyBadge": "crescent",
+      "nickname": "ايه",
+      "rank": 6,
+      "rankChange": "same",
+      "roundStreak": 38,
+      "score": 2256,
+      "uid": "187fd58d0668670c2478e0337aa70a1873e3ead80e8c43c03ee1eebc359849a8"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "nickname": "أم چويرية",
+      "rank": 7,
+      "rankChange": "same",
+      "roundStreak": 4,
+      "score": 2119,
+      "uid": "e4b3eb6c1d4e964eb7d8e1195e9532c96729c02e54b898ed3b1cb7ccb212540d"
+    },
+    {
+      "countryCode": "EG",
+      "goldMedals": 1,
+      "nickname": "ماجده ابراهيم دسوقي",
+      "rank": 8,
+      "rankChange": "same",
+      "score": 1200,
+      "uid": "5472bc710d53758f8681367b9a447e30b6e89833cf0970dd52cbdae297c84f24"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "tasbih",
+      "nickname": "محب سيدنا محمد",
+      "rank": 9,
+      "rankChange": "same",
+      "score": 1020,
+      "silverMedals": 1,
+      "uid": "76626e020a7d45932223ba5eeee768bb507287201287313a7110c1d34c9078c6"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "nickname": "ᨰׁׅɑׁׅܻ⨍ɑׁׅɑׁׅ",
+      "rank": 10,
+      "rankChange": "same",
+      "roundStreak": 5,
+      "score": 1001,
+      "uid": "db74612a4f0eef9dd8a62402e0b6ffcaacaf311b771504800a1fa92b410e2bc3"
+    }
+  ],
+  "updatedAt": "2026-10-24T20:58:08.074Z"
+}
