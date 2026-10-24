@@ -33,7 +33,7 @@ actual fun rememberMushafAccess(): MushafAccess {
         runCatching { SplitInstallManagerFactory.create(context.applicationContext) }.getOrNull()
     }
     if (manager == null) {
-        return MushafAccess(MushafStatus.Unavailable, null) {}
+        return MushafAccess(MushafStatus.Unavailable, null, startDownload = {})
     }
     val installedAtStart = remember {
         runCatching { manager.installedModules.contains(MUSHAF_MODULE) }.getOrDefault(false)
