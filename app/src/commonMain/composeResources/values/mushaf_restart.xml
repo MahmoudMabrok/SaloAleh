@@ -3,4 +3,5 @@
     <string name="quran_mushaf_restart_title">المصحف نزل</string>
     <string name="quran_mushaf_restart_body">عشان يفتح من أول مرة، اقفل التطبيق الأول وافتحه تاني.</string>
     <string name="quran_mushaf_restart_action">اقفل التطبيق</string>
+    <string name="quran_mushaf_download_wait">متقفلش التطبيق لحد ما التحميل يخلّص.</string>
 </resources>

@@ -39,7 +39,18 @@ class QuranChallengeStoreCountedPagesTest {
         store.countRenderedPage(day, 9)
         assertEquals(emptySet(), store.countedPages(nextDay))
         assertEquals(1, store.countRenderedPage(nextDay, 9))
+        assertEquals(setOf(9), store.pagesOn(day))
+        assertEquals(setOf(9), store.pagesOn(nextDay))
         assertEquals(0, store.todayCount(day))
         assertEquals(1, store.todayCount(nextDay))
+    }
+
+    @Test fun eachDayKeepsItsOwnPageNumbers() {
+        val store = QuranChallengeStore(MapSettings())
+        store.countRenderedPage(day, 9)
+        store.countRenderedPage(day, 10)
+        store.countRenderedPage(nextDay, 3)
+        assertEquals(setOf(9, 10), store.pagesOn(day))
+        assertEquals(setOf(3), store.pagesOn(nextDay))
     }
 }

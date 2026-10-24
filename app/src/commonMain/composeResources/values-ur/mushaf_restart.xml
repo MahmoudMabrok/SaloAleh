@@ -3,4 +3,5 @@
     <string name="quran_mushaf_restart_title">مصحف ڈاؤن لوڈ ہو گیا</string>
     <string name="quran_mushaf_restart_body">پہلی بار کھلنے کے لیے ایپ بند کر کے دوبارہ کھولیں۔</string>
     <string name="quran_mushaf_restart_action">دوبارہ چلائیں</string>
+    <string name="quran_mushaf_download_wait">ڈاؤن لوڈ مکمل ہونے تک ایپ بند نہ کریں۔</string>
 </resources>

@@ -42,10 +42,17 @@ class QuranChallengeStore(private val settings: Settings) {
         return incrementToday(today)
     }
 
-    /** Pages already credited from the Mushaf today. Empty after the day rolls over. */
-    fun countedPages(today: LocalDate): Set<Int> {
-        if (settings.getStringOrNull(KEY_DATE) != today.toString()) return emptySet()
-        return decodePages(settings.getStringOrNull(KEY_COUNTED_PAGES))
+    /** Pages already credited from the Mushaf on [today]. */
+    fun countedPages(today: LocalDate): Set<Int> = pagesOn(today)
+
+    /** Mushaf page numbers stored for [day]. Kept after the day rolls over. */
+    fun pagesOn(day: LocalDate): Set<Int> {
+        val dated = decodePages(settings.getStringOrNull(pagesKey(day)))
+        if (dated.isNotEmpty()) return dated
+        if (settings.getStringOrNull(KEY_DATE) == day.toString()) {
+            return decodePages(settings.getStringOrNull(KEY_COUNTED_PAGES))
+        }
+        return emptySet()
     }
 
     /**
@@ -55,9 +62,11 @@ class QuranChallengeStore(private val settings: Settings) {
     fun rememberCountedPage(today: LocalDate, page: Int): Boolean {
         if (page !in 1..604) return false
         ensureToday(today)
-        val pages = decodePages(settings.getStringOrNull(KEY_COUNTED_PAGES)).toMutableSet()
+        val pages = pagesOn(today).toMutableSet()
         if (!pages.add(page)) return false
-        settings.putString(KEY_COUNTED_PAGES, pages.sorted().joinToString(","))
+        val encoded = pages.sorted().joinToString(",")
+        settings.putString(pagesKey(today), encoded)
+        settings.putString(KEY_COUNTED_PAGES, encoded)
         return true
     }
 
@@ -96,7 +105,6 @@ class QuranChallengeStore(private val settings: Settings) {
             val current = remote + settings.getInt(KEY_PENDING, 0)
             val newTotal = (current - count).coerceAtLeast(0)
             settings.putInt(KEY_PENDING, newTotal - remote)
-            val removed = current - newTotal
             val usedManual = settings.getInt(KEY_MANUAL, 0)
             settings.putInt(KEY_MANUAL, (usedManual - removed).coerceAtLeast(0))
         }
@@ -134,6 +142,7 @@ class QuranChallengeStore(private val settings: Settings) {
         settings.putInt(KEY_PENDING, 0)
         settings.putInt(KEY_MANUAL, 0)
         settings.remove(KEY_COUNTED_PAGES)
+        settings.remove(pagesKey(today))
         return 0
     }
 
@@ -161,13 +170,23 @@ class QuranChallengeStore(private val settings: Settings) {
 
     private fun ensureToday(today: LocalDate) {
         val date = today.toString()
-        if (settings.getStringOrNull(KEY_DATE) == date) return
+        val stored = settings.getStringOrNull(KEY_DATE)
+        if (stored == date) return
+        if (stored != null) {
+            val legacy = settings.getStringOrNull(KEY_COUNTED_PAGES)
+            val archivedKey = "quran_challenge_pages_$stored"
+            if (!legacy.isNullOrBlank() && settings.getStringOrNull(archivedKey) == null) {
+                settings.putString(archivedKey, legacy)
+            }
+        }
         settings.putString(KEY_DATE, date)
         settings.putInt(KEY_REMOTE, 0)
         settings.putInt(KEY_PENDING, 0)
         settings.putInt(KEY_MANUAL, 0)
         settings.remove(KEY_COUNTED_PAGES)
     }
+
+    private fun pagesKey(day: LocalDate) = "quran_challenge_pages_$day"
 
     private fun publishWeekly(today: LocalDate, total: Int): Int =
         settings.syncWeeklyGoal("quran", today, total)
@@ -180,7 +199,7 @@ class QuranChallengeStore(private val settings: Settings) {
         const val KEY_MANUAL = "quran_challenge_manual"
         // Lifetime accumulator — survives day rollover; total counted across all days.
         const val KEY_LIFETIME = "quran_challenge_lifetime"
-        // Mushaf pages already credited today. Cleared on day rollover.
+        // Legacy mirror of today's pages. Each day is kept in quran_challenge_pages_<date>.
         const val KEY_COUNTED_PAGES = "quran_challenge_counted_pages"
     }
 }

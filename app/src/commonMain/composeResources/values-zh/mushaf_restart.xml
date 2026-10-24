@@ -3,4 +3,5 @@
     <string name="quran_mushaf_restart_title">穆沙夫已下载</string>
     <string name="quran_mushaf_restart_body">请先关闭应用再打开，第一次才能正常进入。</string>
     <string name="quran_mushaf_restart_action">重新启动</string>
+    <string name="quran_mushaf_download_wait">下载完成前请不要关闭应用。</string>
 </resources>
