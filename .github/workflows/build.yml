@@ -86,4 +86,4 @@ jobs:
             adb install -r -t app/build/outputs/apk/debug/app-debug.apk
             adb install -r -t app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
             adb logcat -c
-            adb shell am instrument -w -r -e class tools.mo3ta.salo.LaunchSmokeTest tools.mo3ta.salo.test/androidx.test.runner.AndroidJUnitRunner || { adb logcat -d -t 250; exit 1; }
+            adb shell am instrument -w -r -e class tools.mo3ta.salo.LaunchSmokeTest tools.mo3ta.salo.test/androidx.test.runner.AndroidJUnitRunner > /tmp/instrument.txt; cat /tmp/instrument.txt; grep -q "OK (1 test)" /tmp/instrument.txt || { adb logcat -d -t 250; exit 1; }

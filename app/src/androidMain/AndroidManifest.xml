@@ -76,6 +76,19 @@
             android:authorities="${applicationId}.mushaf-ui-initializer"
             tools:node="remove" />
 
+        <!-- Realm ships inside the on-demand module, but its startup hook was
+             merged into the base. Android then dies on launch looking for a
+             class that is not installed yet. The reader starts Realm itself. -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="io.realm.kotlin.internal.RealmInitializer"
+                tools:node="remove" />
+        </provider>
+
         <service
             android:name=".ui.FloatingBubbleService"
             android:foregroundServiceType="specialUse"

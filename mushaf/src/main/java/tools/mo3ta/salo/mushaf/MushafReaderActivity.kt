@@ -65,11 +65,21 @@ class MushafReaderActivity : ComponentActivity() {
 
     private fun startMushafLibrary(): Boolean = runCatching {
         SplitInstallHelper.loadLibrary(this, "realmc")
+        startRealm()
         if (!MushafLibrary.isInitialized()) {
             MushafLibrary.initialize(this)
             MushafLibrary.getKoin().loadModules(listOf(uiModule))
         }
     }.isSuccess
+
+    // The startup initializer is removed from the manifest so the base app can
+    // open. Realm's native library is only in this module.
+    private fun startRealm() {
+        val initializer = Class.forName("io.realm.kotlin.internal.RealmInitializer")
+            .getDeclaredConstructor()
+            .newInstance()
+        initializer.javaClass.getMethod("create", Context::class.java).invoke(initializer, this)
+    }
 
     companion object {
         const val EXTRA_PAGE = "tools.mo3ta.salo.mushaf.PAGE"

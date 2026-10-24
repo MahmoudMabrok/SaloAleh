@@ -39,6 +39,19 @@
             android:name="com.mushafimad.ui.internal.MushafUiInitProvider"
             android:authorities="${applicationId}.mushaf-ui-initializer"
             tools:node="remove" />
+
+        <!-- Do not register Realm on process start. Its native library is in
+             this split, so the base app crashes with ClassNotFoundException
+             before the user downloads the Mushaf. -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="io.realm.kotlin.internal.RealmInitializer"
+                tools:node="remove" />
+        </provider>
     </application>
 
 </manifest>
