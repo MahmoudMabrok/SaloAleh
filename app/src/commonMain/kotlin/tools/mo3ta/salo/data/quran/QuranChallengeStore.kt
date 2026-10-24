@@ -105,6 +105,7 @@ class QuranChallengeStore(private val settings: Settings) {
             val current = remote + settings.getInt(KEY_PENDING, 0)
             val newTotal = (current - count).coerceAtLeast(0)
             settings.putInt(KEY_PENDING, newTotal - remote)
+            val removed = current - newTotal
             val usedManual = settings.getInt(KEY_MANUAL, 0)
             settings.putInt(KEY_MANUAL, (usedManual - removed).coerceAtLeast(0))
         }
