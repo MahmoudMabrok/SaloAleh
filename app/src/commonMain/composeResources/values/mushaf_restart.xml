@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="quran_mushaf_restart_title">المصحف نزل</string>
-    <string name="quran_mushaf_restart_body">عشان يفتح من أول مرة، اقفل التطبيق وافتحه تاني.</string>
-    <string name="quran_mushaf_restart_action">إعادة التشغيل</string>
+    <string name="quran_mushaf_restart_body">عشان يفتح من أول مرة، اقفل التطبيق الأول وافتحه تاني.</string>
+    <string name="quran_mushaf_restart_action">اقفل التطبيق</string>
 </resources>
