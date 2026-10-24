@@ -62,6 +62,7 @@ kotlin {
             implementation(libs.gms.code.scanner)
             implementation(libs.billing)
             implementation(libs.install.referrer)
+            implementation(libs.feature.delivery)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
@@ -86,13 +87,14 @@ android {
     namespace = "tools.mo3ta.salo"
     buildFeatures { buildConfig = true }
     compileSdk = 36
+    dynamicFeatures += setOf(":mushaf")
 
     defaultConfig {
         applicationId = "tools.mo3ta.salo"
         minSdk = 24
         targetSdk = 36
-        versionCode = 149
-        versionName = "4.10.2"
+        versionCode = 155
+        versionName = "2.0.08"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -111,6 +113,11 @@ android {
         implementation(libs.firebase.appcheck.playintegrity)
         implementation(libs.firebase.appcheck.debug)
         testImplementation(libs.robolectric)
+        androidTestImplementation(libs.androidx.junit)
+        androidTestImplementation(libs.androidx.espresso.core)
+        androidTestImplementation(libs.androidx.test.core)
+        // GitLive's androidTest variant omits Firebase versions and expects this BOM.
+        androidTestImplementation(platform("com.google.firebase:firebase-bom:33.2.0"))
     }
 
     compileOptions {
@@ -128,4 +135,10 @@ android {
     lint {
         error += "HardcodedText"
     }
+}
+
+// On-demand modules cannot depend on a compileOnly library. This annotation
+// jar is pulled in that way by a transitive dependency and is not needed at runtime.
+configurations.matching { it.name.contains("compileOnly", ignoreCase = true) }.configureEach {
+    exclude(group = "com.google.j2objc", module = "j2objc-annotations")
 }

@@ -19,10 +19,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -41,6 +47,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,6 +58,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.ui.components.ChallengeCountSheet
 import tools.mo3ta.salo.ui.components.ChallengeSheetAction
 import tools.mo3ta.salo.ui.components.creamChallengeSheet
+import tools.mo3ta.salo.data.quran.parseMushafPage
 import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.AppAnalytics
@@ -62,6 +70,21 @@ import tools.mo3ta.salo.generated.resources.challenge_sheet_goal
 import tools.mo3ta.salo.generated.resources.quran_back_cd
 import tools.mo3ta.salo.generated.resources.quran_daily_goal
 import tools.mo3ta.salo.generated.resources.quran_manual_entry_button
+import tools.mo3ta.salo.generated.resources.quran_open_mushaf
+import tools.mo3ta.salo.generated.resources.quran_download_mushaf
+import tools.mo3ta.salo.generated.resources.quran_mushaf_download_wait
+import tools.mo3ta.salo.generated.resources.quran_mushaf_downloading
+import tools.mo3ta.salo.generated.resources.quran_mushaf_download_hint
+import tools.mo3ta.salo.generated.resources.quran_mushaf_failed
+import tools.mo3ta.salo.generated.resources.quran_mushaf_hint
+import tools.mo3ta.salo.generated.resources.quran_mushaf_restart_action
+import tools.mo3ta.salo.generated.resources.quran_mushaf_restart_body
+import tools.mo3ta.salo.generated.resources.quran_mushaf_restart_title
+import tools.mo3ta.salo.generated.resources.quran_page_prompt_title
+import tools.mo3ta.salo.generated.resources.quran_page_prompt_hint
+import tools.mo3ta.salo.generated.resources.quran_page_prompt_open
+import tools.mo3ta.salo.generated.resources.quran_page_prompt_resume
+import tools.mo3ta.salo.generated.resources.quran_page_prompt_invalid
 import tools.mo3ta.salo.generated.resources.quran_page_add
 import tools.mo3ta.salo.generated.resources.quran_pages_label
 import tools.mo3ta.salo.generated.resources.quran_pages_read
@@ -81,6 +104,10 @@ import tools.mo3ta.salo.ui.quran.QuranMilestoneCelebration
 import tools.mo3ta.salo.ui.quran.QuranRewardsSheet
 import tools.mo3ta.salo.ui.quran.QuranSpacing
 import tools.mo3ta.salo.ui.quran.ManualQuranSheet
+import tools.mo3ta.salo.ui.quran.MushafStatus
+import tools.mo3ta.salo.ui.quran.QuranMushafReader
+import tools.mo3ta.salo.ui.quran.mushafReaderAvailable
+import tools.mo3ta.salo.ui.quran.rememberMushafAccess
 
 
 private val QuranHeroBackground = Brush.verticalGradient(
@@ -133,6 +160,31 @@ fun QuranChallengeScreen(
 
     // The virtues live behind a button now — the sheet opens on demand instead of filling the screen.
     var showRewardsSheet by remember { mutableStateOf(false) }
+    var showMushaf by remember { mutableStateOf(false) }
+    var askPage by remember { mutableStateOf(false) }
+    var pageDraft by remember { mutableStateOf("") }
+    var pageError by remember { mutableStateOf(false) }
+    var initialPage by remember { mutableStateOf<Int?>(null) }
+    val mushaf = rememberMushafAccess()
+    val mushafReady = mushaf.status == MushafStatus.Ready
+    val mushafDownloading = mushaf.status == MushafStatus.Downloading
+    val offerMushaf = mushafReaderAvailable && mushaf.status != MushafStatus.Unavailable
+    val primaryLabel = when {
+        !offerMushaf -> stringResource(Res.string.quran_page_add)
+        mushafDownloading -> stringResource(Res.string.quran_mushaf_downloading)
+        mushaf.status == MushafStatus.NeedsRestart -> stringResource(Res.string.quran_mushaf_restart_action)
+        mushafReady -> stringResource(Res.string.quran_open_mushaf)
+        else -> stringResource(Res.string.quran_download_mushaf)
+    }
+    val hint = when {
+        !offerMushaf -> stringResource(Res.string.quran_tap_hint)
+        mushaf.status == MushafStatus.Failed -> stringResource(Res.string.quran_mushaf_failed)
+        mushaf.status == MushafStatus.NeedsRestart -> stringResource(Res.string.quran_mushaf_restart_body)
+        mushafReady -> stringResource(Res.string.quran_mushaf_hint)
+        mushafDownloading && mushaf.progress != null ->
+            stringResource(Res.string.quran_mushaf_downloading) + " " + ((mushaf.progress * 100).toInt()) + "%"
+        else -> stringResource(Res.string.quran_mushaf_download_hint)
+    }
 
     Box(
         modifier = Modifier
@@ -145,13 +197,28 @@ fun QuranChallengeScreen(
                 target = state.dailyGoal,
                 rank = state.rank,
                 participantCount = state.participantCount,
-                canCount = !state.isLoading,
-                onPageTap = {
-                    viewModel.onQuranPageTap()
-                    analyticsManager.logAction(
-                        AppAnalytics.QURAN_TAP,
-                        mapOf(AppAnalytics.PARAM_COUNT to (state.todayCount + 1).toString()),
-                    )
+                canCount = !state.isLoading && !mushafDownloading,
+                primaryLabel = primaryLabel,
+                hint = hint,
+                compactButton = offerMushaf,
+                onPrimaryClick = {
+                    when {
+                        mushafDownloading -> Unit
+                        mushaf.status == MushafStatus.NeedsRestart -> mushaf.restartApp()
+                        offerMushaf && !mushafReady -> mushaf.startDownload()
+                        offerMushaf -> {
+                            pageDraft = ""
+                            pageError = false
+                            askPage = true
+                        }
+                        else -> {
+                            viewModel.onQuranPageTap()
+                            analyticsManager.logAction(
+                                AppAnalytics.QURAN_TAP,
+                                mapOf(AppAnalytics.PARAM_COUNT to (state.todayCount + 1).toString()),
+                            )
+                        }
+                    }
                 },
                 onBack = onBack,
                 onRankClick = { viewModel.onLeaderboardOpened() },
@@ -198,6 +265,88 @@ fun QuranChallengeScreen(
             )
         }
 
+        if (showMushaf) {
+            QuranMushafReader(
+                initialPage = initialPage,
+                alreadyCounted = viewModel.countedPagesToday(),
+                onPageQualified = { page ->
+                    viewModel.onMushafPageQualified(page)
+                    analyticsManager.logAction(
+                        AppAnalytics.QURAN_PAGE_COUNTED,
+                        mapOf(AppAnalytics.PARAM_COUNT to page.toString()),
+                    )
+                },
+                onClose = { showMushaf = false },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+
+        if (askPage) {
+            MushafPageDialog(
+                draft = pageDraft,
+                showError = pageError,
+                onDraftChange = {
+                    pageDraft = it
+                    pageError = false
+                },
+                onOpen = {
+                    val page = parseMushafPage(pageDraft)
+                    if (page == null) {
+                        pageError = true
+                    } else {
+                        initialPage = page
+                        askPage = false
+                        analyticsManager.logAction(AppAnalytics.OPEN_MUSHAF)
+                        showMushaf = true
+                    }
+                },
+                onResume = {
+                    initialPage = null
+                    askPage = false
+                    analyticsManager.logAction(AppAnalytics.OPEN_MUSHAF)
+                    showMushaf = true
+                },
+                onDismiss = { askPage = false },
+            )
+        }
+
+        if (mushaf.status == MushafStatus.Downloading) {
+            AlertDialog(
+                onDismissRequest = {},
+                title = { Text(stringResource(Res.string.quran_mushaf_downloading)) },
+                text = {
+                    Column {
+                        Text(stringResource(Res.string.quran_mushaf_download_wait))
+                        Spacer(Modifier.height(12.dp))
+                        val fraction = mushaf.progress
+                        if (fraction != null) {
+                            LinearProgressIndicator(progress = { fraction.coerceIn(0f, 1f) })
+                            Text(
+                                text = "${(fraction * 100).toInt().coerceIn(0, 100)}%",
+                                modifier = Modifier.padding(top = 8.dp),
+                            )
+                        } else {
+                            LinearProgressIndicator()
+                        }
+                    }
+                },
+                confirmButton = {},
+            )
+        }
+
+        if (mushaf.status == MushafStatus.NeedsRestart) {
+            AlertDialog(
+                onDismissRequest = {},
+                title = { Text(stringResource(Res.string.quran_mushaf_restart_title)) },
+                text = { Text(stringResource(Res.string.quran_mushaf_restart_body)) },
+                confirmButton = {
+                    TextButton(onClick = mushaf.restartApp) {
+                        Text(stringResource(Res.string.quran_mushaf_restart_action))
+                    }
+                },
+            )
+        }
+
         QuranMilestoneCelebration(
             milestone = state.celebrationMilestone,
             visible = state.showCelebration,
@@ -232,6 +381,51 @@ fun QuranChallengeScreen(
 }
 
 @Composable
+private fun MushafPageDialog(
+    draft: String,
+    showError: Boolean,
+    onDraftChange: (String) -> Unit,
+    onOpen: () -> Unit,
+    onResume: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(Res.string.quran_page_prompt_title)) },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = draft,
+                    onValueChange = onDraftChange,
+                    label = { Text(stringResource(Res.string.quran_page_prompt_hint)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    isError = showError,
+                )
+                if (showError) {
+                    Text(
+                        text = stringResource(Res.string.quran_page_prompt_invalid),
+                        color = Color(0xFF8C3A3A),
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onOpen) {
+                Text(stringResource(Res.string.quran_page_prompt_open))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onResume) {
+                Text(stringResource(Res.string.quran_page_prompt_resume))
+            }
+        },
+    )
+}
+
+@Composable
 private fun QuranManualEntryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier.fillMaxWidth(),
@@ -258,27 +452,31 @@ private fun QuranManualEntryButton(
 
 @Composable
 private fun QuranPageButton(
+    label: String,
     onClick: () -> Unit,
     enabled: Boolean,
+    compact: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Surface(
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifier.then(
+            if (compact) Modifier.widthIn(min = 148.dp, max = 220.dp) else Modifier.fillMaxWidth(),
+        ),
         enabled = enabled,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(if (compact) 24.dp else 16.dp),
         color = QuranColors.Teal.copy(alpha = if (enabled) 0.85f else 0.3f),
         border = BorderStroke(1.dp, QuranColors.LightTeal.copy(alpha = if (enabled) 0.6f else 0.2f)),
     ) {
         Text(
-            text = stringResource(Res.string.quran_page_add),
+            text = label,
             color = Color.White.copy(alpha = if (enabled) 1f else 0.5f),
-            fontSize = 16.sp,
+            fontSize = if (compact) 15.sp else 16.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 14.dp),
+                .then(if (compact) Modifier else Modifier.fillMaxWidth())
+                .padding(horizontal = if (compact) 18.dp else 0.dp, vertical = if (compact) 10.dp else 14.dp),
         )
     }
 }
@@ -290,7 +488,10 @@ private fun QuranImmersiveZone(
     rank: Int,
     participantCount: Int,
     canCount: Boolean,
-    onPageTap: () -> Unit,
+    primaryLabel: String,
+    hint: String,
+    compactButton: Boolean,
+    onPrimaryClick: () -> Unit,
     onBack: () -> Unit,
     onRankClick: () -> Unit,
     onManualEntryClick: () -> Unit,
@@ -378,7 +579,7 @@ private fun QuranImmersiveZone(
 
             Spacer(Modifier.height(8.dp))
             Text(
-                text = stringResource(Res.string.quran_tap_hint),
+                text = hint,
                 color = Color.White.copy(alpha = 0.3f),
                 fontSize = 12.sp,
                 textAlign = TextAlign.Center,
@@ -387,9 +588,11 @@ private fun QuranImmersiveZone(
             Spacer(Modifier.weight(1f))
 
             QuranPageButton(
-                onClick = onPageTap,
+                label = primaryLabel,
+                onClick = onPrimaryClick,
                 enabled = canCount,
-                modifier = Modifier.fillMaxWidth(),
+                compact = compactButton,
+                modifier = Modifier,
             )
 
             Spacer(Modifier.height(18.dp))

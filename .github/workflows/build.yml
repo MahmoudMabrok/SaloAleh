@@ -6,6 +6,7 @@ on:
     paths-ignore:
       - '.github/**'
   workflow_dispatch:
+  workflow_call:
 
 jobs:
   android:
@@ -45,45 +46,44 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           retention-days: 7
 
-  # ios:
-  #   name: iOS
-  #   runs-on: macos-latest
+  launch:
+    name: App opens
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'hold') }}
 
-  #   steps:
-  #     - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - name: Set up JDK 17
-  #       uses: actions/setup-java@v4
-  #       with:
-  #         java-version: '17'
-  #         distribution: 'temurin'
-  #         cache: gradle
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
-  #     - name: Decode GoogleService-Info.plist
-  #       run: echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" > iosApp/iosApp/GoogleService-Info.plist
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
 
-  #     - name: Grant execute permission for gradlew
-  #       run: chmod +x gradlew
+      - name: Decode google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: printf '%s' "$GOOGLE_SERVICES_JSON" > app/google-services.json
 
-  #     - name: Install CocoaPods dependencies
-  #       run: |
-  #         cd iosApp
-  #         pod install --repo-update
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
 
-  #     - name: Build iOS app (simulator)
-  #       run: |
-  #         xcodebuild \
-  #           -workspace iosApp/iosApp.xcworkspace \
-  #           -scheme SaloAleh \
-  #           -configuration Debug \
-  #           -destination "generic/platform=iOS Simulator" \
-  #           -derivedDataPath build/ios-derived \
-  #           build \
-  #           CODE_SIGNING_ALLOWED=NO
+      - name: Build the base app and the launch test
+        run: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --no-daemon
 
-  #     - name: Upload simulator app
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: ios-simulator-app
-  #         path: build/ios-derived/Build/Products/Debug-iphonesimulator/SaloAleh.app
-  #         retention-days: 7
+      - name: Open the app without the Mushaf module
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: |
+            adb install -r -t app/build/outputs/apk/debug/app-debug.apk
+            adb install -r -t app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+            adb logcat -c
+            adb shell am instrument -w -r -e class tools.mo3ta.salo.LaunchSmokeTest tools.mo3ta.salo.test/androidx.test.runner.AndroidJUnitRunner > /tmp/instrument.txt; cat /tmp/instrument.txt; grep -q "OK (1 test)" /tmp/instrument.txt || { adb logcat -d -t 250; exit 1; }

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="quran_mushaf_restart_title">Mushaf downloaded</string>
+    <string name="quran_mushaf_restart_body">Close the app and open it again so it opens the first time.</string>
+    <string name="quran_mushaf_restart_action">Restart</string>
+    <string name="quran_mushaf_download_wait">Don't close the app until the download finishes.</string>
+</resources>
