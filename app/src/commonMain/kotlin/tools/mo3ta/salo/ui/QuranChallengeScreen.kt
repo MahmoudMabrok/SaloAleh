@@ -75,6 +75,9 @@ import tools.mo3ta.salo.generated.resources.quran_mushaf_downloading
 import tools.mo3ta.salo.generated.resources.quran_mushaf_download_hint
 import tools.mo3ta.salo.generated.resources.quran_mushaf_failed
 import tools.mo3ta.salo.generated.resources.quran_mushaf_hint
+import tools.mo3ta.salo.generated.resources.quran_mushaf_restart_action
+import tools.mo3ta.salo.generated.resources.quran_mushaf_restart_body
+import tools.mo3ta.salo.generated.resources.quran_mushaf_restart_title
 import tools.mo3ta.salo.generated.resources.quran_page_prompt_title
 import tools.mo3ta.salo.generated.resources.quran_page_prompt_hint
 import tools.mo3ta.salo.generated.resources.quran_page_prompt_open
@@ -153,7 +156,6 @@ fun QuranChallengeScreen(
         }
     }
 
-    // The virtues live behind a button now — the sheet opens on demand instead of filling the screen.
     var showRewardsSheet by remember { mutableStateOf(false) }
     var showMushaf by remember { mutableStateOf(false) }
     var askPage by remember { mutableStateOf(false) }
@@ -167,12 +169,14 @@ fun QuranChallengeScreen(
     val primaryLabel = when {
         !offerMushaf -> stringResource(Res.string.quran_page_add)
         mushafDownloading -> stringResource(Res.string.quran_mushaf_downloading)
+        mushaf.status == MushafStatus.NeedsRestart -> stringResource(Res.string.quran_mushaf_restart_action)
         mushafReady -> stringResource(Res.string.quran_open_mushaf)
         else -> stringResource(Res.string.quran_download_mushaf)
     }
     val hint = when {
         !offerMushaf -> stringResource(Res.string.quran_tap_hint)
         mushaf.status == MushafStatus.Failed -> stringResource(Res.string.quran_mushaf_failed)
+        mushaf.status == MushafStatus.NeedsRestart -> stringResource(Res.string.quran_mushaf_restart_body)
         mushafReady -> stringResource(Res.string.quran_mushaf_hint)
         mushafDownloading && mushaf.progress != null ->
             stringResource(Res.string.quran_mushaf_downloading) + " " + ((mushaf.progress * 100).toInt()) + "%"
@@ -197,6 +201,7 @@ fun QuranChallengeScreen(
                 onPrimaryClick = {
                     when {
                         mushafDownloading -> Unit
+                        mushaf.status == MushafStatus.NeedsRestart -> mushaf.restartApp()
                         offerMushaf && !mushafReady -> mushaf.startDownload()
                         offerMushaf -> {
                             pageDraft = ""
@@ -299,6 +304,19 @@ fun QuranChallengeScreen(
                     showMushaf = true
                 },
                 onDismiss = { askPage = false },
+            )
+        }
+
+        if (mushaf.status == MushafStatus.NeedsRestart) {
+            AlertDialog(
+                onDismissRequest = {},
+                title = { Text(stringResource(Res.string.quran_mushaf_restart_title)) },
+                text = { Text(stringResource(Res.string.quran_mushaf_restart_body)) },
+                confirmButton = {
+                    TextButton(onClick = mushaf.restartApp) {
+                        Text(stringResource(Res.string.quran_mushaf_restart_action))
+                    }
+                },
             )
         }
 
