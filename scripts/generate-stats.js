@@ -279,6 +279,28 @@ async function main() {
   fs.writeFileSync(outPath, JSON.stringify(stats, null, 2));
   console.log(`stats/${dateStr}.json written:`, stats);
 
+  // Delete daily stats files older than 7 days.
+  const KEEP_DAYS = 7;
+  const cutoff = new Date();
+  cutoff.setUTCDate(cutoff.getUTCDate() - KEEP_DAYS);
+  const cutoffStr = cutoff.toISOString().slice(0, 10); // YYYY-MM-DD
+  try {
+    const files = fs.readdirSync(statsDir);
+    let deleted = 0;
+    for (const file of files) {
+      if (!file.endsWith('.json')) continue;
+      const fileDate = file.replace('.json', '');
+      if (/^\d{4}-\d{2}-\d{2}$/.test(fileDate) && fileDate < cutoffStr) {
+        fs.unlinkSync(path.join(statsDir, file));
+        deleted++;
+        console.log(`Deleted old stats file: ${file}`);
+      }
+    }
+    if (deleted > 0) console.log(`Cleaned up ${deleted} stats file(s) older than ${KEEP_DAYS} days.`);
+  } catch (e) {
+    console.error('Failed to clean old stats files:', e.message);
+  }
+
   await sendDailyTop3Notifications(db, dailyLeaderboardSnap);
   await sendDhikrChallengeRank1Notification(db);
   await sendBaqiyatChallengeRank1Notification(db);
