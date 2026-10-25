@@ -95,6 +95,7 @@ async function main() {
   const countries   = new Set();
   const yesterdayTotalScoreUpdates = {};
   const playerSnapshots = [];
+  const streakCandidates = [];
 
   if (playersSnap.exists()) {
     playersSnap.forEach(child => {
@@ -116,6 +117,16 @@ async function main() {
           yesterdayTotalScore: data?.yesterdayTotalScore || 0,
           countryCode: typeof data?.countryCode === 'string' ? data.countryCode : 'NA',
         });
+        const streak = typeof data?.roundStreak === 'number' && data.roundStreak > 0 ? data.roundStreak : 0;
+        if (streak > 0) {
+          streakCandidates.push({
+            uid: child.key,
+            nickname: typeof data?.nickname === 'string' ? data.nickname : '',
+            score: score,
+            roundStreak: streak,
+            countryCode: typeof data?.countryCode === 'string' ? data.countryCode : 'NA',
+          });
+        }
       }
     });
   }
@@ -129,6 +140,14 @@ async function main() {
     }
   }
 
+  // Top 10 players by current roundStreak (highest first; score as tiebreaker).
+  // Includes their round total (score) so the landing page can show both.
+  streakCandidates.sort((a, b) => b.roundStreak - a.roundStreak || b.score - a.score);
+  const topStreaks = streakCandidates.slice(0, 10).map((p, i) => ({
+    rank: i + 1,
+    ...p,
+  }));
+
   const stats = {
     allTimeSalawat,
     weekSalawat,
@@ -139,6 +158,7 @@ async function main() {
     topScore,
     roundKey,
     leaderboard,
+    topStreaks,
     updatedAt: new Date().toISOString(),
   };
 
@@ -987,3 +1007,4 @@ async function aggregateAndCleanHawqalaChallenge(db) {
 }
 
 main().catch(err => { console.error(err); process.exit(1); });
+
