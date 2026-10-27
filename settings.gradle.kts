@@ -34,3 +34,4 @@ rootProject.name = "SaloAleh"
 include(":app")
 include(":dhikr-model")
 include(":mushaf")
+include(":mushaf-assets")
