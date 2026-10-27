@@ -22,6 +22,10 @@ dependencyResolutionManagement {
             content {
                 includeGroup("com.github.YahiaRagae")
             }
+            credentials {
+                username = System.getenv("GITHUB_ACTOR") ?: "MahmoudMabrok"
+                password = System.getenv("GITHUB_TOKEN") ?: ""
+            }
         }
     }
 }
