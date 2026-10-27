@@ -16,12 +16,11 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        // Only the Mushaf Imad artifacts. Every other coordinate is excluded, so
-        // JitPack cannot satisfy a dependency it was not added for.
-        maven("https://jitpack.io") {
+        // Mushaf Imad from GitHub Packages (fork with dynamic feature + asset pack)
+        maven {
+            url = uri("https://maven.pkg.github.com/MahmoudMabrok/mushaf-imad-android")
             content {
-                includeModule("com.github.YahiaRagae.mushaf-imad-android", "mushaf-ui")
-                includeModule("com.github.YahiaRagae.mushaf-imad-android", "mushaf-core")
+                includeGroup("com.github.YahiaRagae")
             }
         }
     }
