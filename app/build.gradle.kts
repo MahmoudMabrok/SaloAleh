@@ -88,6 +88,7 @@ android {
     buildFeatures { buildConfig = true }
     compileSdk = 36
     dynamicFeatures += setOf(":mushaf")
+    assetPacks += setOf(":mushaf-assets")
 
     defaultConfig {
         applicationId = "tools.mo3ta.salo"
