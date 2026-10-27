@@ -12,6 +12,9 @@ jobs:
   android:
     name: Android
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     # Skip the Android build when the PR is on hold (labeled "hold").
     # workflow_dispatch runs have no pull_request payload, so the job still runs there.
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'hold') }}
@@ -40,6 +43,9 @@ jobs:
 
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --no-daemon
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -52,6 +58,9 @@ jobs:
     name: App opens
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: read
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'hold') }}
 
     steps:
@@ -78,6 +87,9 @@ jobs:
 
       - name: Build the base app and the launch test
         run: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --no-daemon
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
 
       - name: Open the app without the Mushaf module
         uses: reactivecircus/android-emulator-runner@v2
