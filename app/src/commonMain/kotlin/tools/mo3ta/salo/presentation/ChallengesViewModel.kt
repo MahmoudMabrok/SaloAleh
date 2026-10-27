@@ -28,6 +28,7 @@ import tools.mo3ta.salo.data.quran.QuranChallengeStore
 import tools.mo3ta.salo.data.zabad.ZabadChallengeStore
 import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.domain.HeroesBoard
+import tools.mo3ta.salo.domain.RoundStreakSnapshot
 import tools.mo3ta.salo.domain.parseHeroesBoard
 
 data class ChallengesTotals(
@@ -82,9 +83,6 @@ class ChallengesViewModel(
     private val _overallTotals = MutableStateFlow(ChallengesOverallTotals())
     val overallTotals: StateFlow<ChallengesOverallTotals> = _overallTotals.asStateFlow()
 
-    // "Hero of yesterday" — the day's champions across every challenge, read-only from
-    // RTDB `mohamed_lovers/heroes` (server-written, overwritten daily). Prefetched on screen
-    // entry so the sheet opens instantly; null when there are no champions yet.
     private val _heroesBoard = MutableStateFlow<HeroesBoard?>(null)
     val heroesBoard: StateFlow<HeroesBoard?> = _heroesBoard.asStateFlow()
 
@@ -102,11 +100,9 @@ class ChallengesViewModel(
         _showHeroesSheet.value = false
     }
 
-    // Per-challenge live daily streaks (local, synchronous) shown as a pill on each card.
     private val _streaks = MutableStateFlow(challengeBadgeStore.getCurrentStreaks(Clock.System.todayIn(cairoZone)))
     val streaks: StateFlow<Map<ChallengeType, Int>> = _streaks.asStateFlow()
 
-    // Challenges the user already participated in today (Cairo), for the card border highlight.
     private val _participatedToday = MutableStateFlow(challengeBadgeStore.getActiveChallenges(Clock.System.todayIn(cairoZone)))
     val participatedToday: StateFlow<Set<ChallengeType>> = _participatedToday.asStateFlow()
 
@@ -143,7 +139,6 @@ class ChallengesViewModel(
             val kalimat = async { readTotal(db, "kalimat_challenge/$dateKey/totalTodayKalimat") }
             val hawqala = async { readTotal(db, "hawqala_challenge/$dateKey/totalTodayHawqala") }
 
-            // All-time community totals (challenge root, not per-day).
             val dhikrAll = async { readTotal(db, "100_challenge/totalDhkr") }
             val baqiyatAll = async { readTotal(db, "baqiyat_saliha/totalBaqiyat") }
             val istighfarAll = async { readTotal(db, "istighfar_challenge/totalIstighfar") }
@@ -188,6 +183,19 @@ class ChallengesViewModel(
             _heroesBoard.value = heroes.await()
             _heroesLoading.value = false
         }
+    }
+
+    /** Snapshot of a challenge's streak freeze state (for the freeze dialog). */
+    fun streakSnapshot(challenge: ChallengeType): RoundStreakSnapshot {
+        val today = Clock.System.todayIn(cairoZone)
+        return challengeBadgeStore.snapshot(challenge, today)
+    }
+
+    /** Freeze a challenge streak for [days] and refresh the live streaks. */
+    fun freezeChallengeStreak(challenge: ChallengeType, days: Int) {
+        val today = Clock.System.todayIn(cairoZone)
+        challengeBadgeStore.activateFreeze(challenge, days, today)
+        _streaks.value = challengeBadgeStore.getCurrentStreaks(today)
     }
 
     private fun hydrateWeekly(today: kotlinx.datetime.LocalDate) {

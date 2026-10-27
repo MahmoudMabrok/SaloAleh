@@ -1,6 +1,7 @@
 package tools.mo3ta.salo.ui.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
@@ -19,16 +20,19 @@ import tools.mo3ta.salo.generated.resources.achievements_challenge_streak_days
  * Small "🔥 N days in a row" pill surfacing a single challenge's live daily streak, shown on that
  * challenge's own screen. Renders nothing when [streak] is 0 (no active streak). Each challenge
  * passes its own accent [color] so the pill sits inside the screen's palette.
+ *
+ * Optional [onClick] opens the freeze dialog for that challenge's streak.
  */
 @Composable
 fun ChallengeStreakChip(
     streak: Int,
     modifier: Modifier = Modifier,
     color: Color = Color(0xFFF5D97A),
+    onClick: (() -> Unit)? = null,
 ) {
     if (streak <= 0) return
     Surface(
-        modifier = modifier,
+        modifier = modifier.then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         shape = RoundedCornerShape(14.dp),
         color = color.copy(alpha = 0.14f),
         border = BorderStroke(1.dp, color.copy(alpha = 0.45f)),
