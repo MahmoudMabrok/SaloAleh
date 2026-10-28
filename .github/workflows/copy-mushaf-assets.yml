@@ -1,0 +1,74 @@
+name: Copy Mushaf Assets
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: 'SaloAleh branch to copy assets into'
+        required: true
+        default: 'add-mushaf-asset-pack'
+      mushaf_ref:
+        description: 'mushaf-imad-android ref that has quran-images in the asset pack'
+        required: true
+        default: 'feature/asset-pack-support'
+
+permissions:
+  contents: write
+
+jobs:
+  copy-assets:
+    name: Copy quran-images into mushaf-assets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout SaloAleh
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_branch }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Checkout mushaf-imad-android (sparse quran-images)
+        uses: actions/checkout@v4
+        with:
+          repository: MahmoudMabrok/mushaf-imad-android
+          ref: ${{ inputs.mushaf_ref }}
+          path: _mushaf_src
+          sparse-checkout: |
+            mushaf-assets/src/main/assets/quran-images
+          sparse-checkout-cone-mode: true
+
+      - name: Copy into asset pack module
+        run: |
+          set -euo pipefail
+          SRC=_mushaf_src/mushaf-assets/src/main/assets/quran-images
+          DEST=mushaf-assets/src/main/assets/quran-images
+          if [ ! -d "$SRC" ]; then
+            echo "Source missing: $SRC" >&2
+            ls -la _mushaf_src || true
+            ls -la _mushaf_src/mushaf-assets/src/main/assets || true
+            exit 1
+          fi
+          mkdir -p mushaf-assets/src/main/assets
+          rm -rf "$DEST"
+          cp -a "$SRC" "$DEST"
+          rm -rf _mushaf_src
+          FILE_COUNT=$(find "$DEST" -type f | wc -l)
+          echo "Copied $FILE_COUNT files into $DEST"
+          du -sh "$DEST"
+          if [ "$FILE_COUNT" -lt 100 ]; then
+            echo "ERROR: expected hundreds of quran image files, got $FILE_COUNT" >&2
+            exit 1
+          fi
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A mushaf-assets/src/main/assets
+          if git diff --cached --quiet; then
+            echo "No asset changes to commit"
+          else
+            git commit -m "Copy quran-images into mushaf-assets from mushaf-imad-android@${{ inputs.mushaf_ref }}"
+            git push origin "HEAD:${{ inputs.target_branch }}"
+          fi
