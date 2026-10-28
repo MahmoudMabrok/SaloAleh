@@ -10,10 +10,9 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
-    <!-- Mushaf Imad ships a reciter service we do not open. Leaving it merged
-         adds FOREGROUND_SERVICE_MEDIA_PLAYBACK, which Play rejects until a new
-         declaration is filed. The page reader does not need it. -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" tools:node="remove" />
+    <!-- Required by mushaf-ui AudioPlaybackService (Media3). Play Console must
+         declare mediaPlayback FGS for this package when shipping audio. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="com.android.vending.BILLING" />
 
     <application
@@ -60,9 +59,8 @@
             </intent-filter>
         </service>
 
-        <service
-            android:name="com.mushafimad.core.data.audio.AudioPlaybackService"
-            tools:node="remove" />
+        <!-- AudioPlaybackService lives in the :mushaf dynamic feature (mushaf-ui).
+             Do not tools:node=remove here — player needs it after the split installs. -->
 
         <!-- The on-demand module's library registers these. If they stay in the
              base manifest, Android loads them before the module exists and the

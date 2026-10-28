@@ -12,21 +12,14 @@
         <dist:fusing dist:include="false" />
     </dist:module>
 
-    <!-- The page reader does not play recitation. This permission is what made
-         Play reject the upload until a new foreground-service declaration. -->
-    <uses-permission
-        android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
-        tools:node="remove" />
+    <!-- AudioPlaybackService needs mediaPlayback FGS; mushaf-ui merges the
+         permission + service from mushaf-core. Do not strip them or play fails. -->
 
     <application>
         <activity
             android:name=".MushafReaderActivity"
             android:exported="false"
             android:theme="@style/Theme.MyApplication" />
-
-        <service
-            android:name="com.mushafimad.core.data.audio.AudioPlaybackService"
-            tools:node="remove" />
 
         <!-- These run before Application.onCreate. Play still lists them while
              this module is not installed, so the process dies on launch with

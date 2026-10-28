@@ -25,7 +25,7 @@ import com.google.android.play.core.splitcompat.SplitCompat
 import com.google.android.play.core.splitinstall.SplitInstallHelper
 import com.mushafimad.core.MushafLibrary
 import com.mushafimad.ui.di.uiModule
-import com.mushafimad.ui.mushaf.MushafView
+import com.mushafimad.ui.mushaf.MushafWithPlayerView
 import kotlinx.coroutines.delay
 import tools.mo3ta.salo.data.quran.PageDwellCounter
 import tools.mo3ta.salo.ui.quran.MushafPageBridge
@@ -34,6 +34,9 @@ import tools.mo3ta.salo.ui.quran.MushafPageBridge
  * On-demand reader. The Mushaf Imad pages and its Realm file ship in this
  * module, not in the base app, and the library copies that Realm into its own
  * files the first time this screen opens.
+ *
+ * Audio: uses [MushafWithPlayerView] (mushaf-ui README) so playback, reciter
+ * pick, verse highlight, and streamed/cached download work in-process.
  */
 class MushafReaderActivity : ComponentActivity() {
     override fun attachBaseContext(newBase: Context) {
@@ -116,9 +119,10 @@ private fun MushafReader(
             .background(Color(0xFFE6EFDC))
             .windowInsetsPadding(WindowInsets.safeDrawing),
     ) {
-        MushafView(
+        MushafWithPlayerView(
             initialPage = initialPage,
             showNavigationControls = false,
+            showAudioPlayer = true,
             onPageChanged = { next ->
                 page = next
                 counter.onPageRendered(next, SystemClock.elapsedRealtime())?.let { credited ->
