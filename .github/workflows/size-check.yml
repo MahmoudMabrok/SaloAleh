@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: read
 
     steps:
       - uses: actions/checkout@v4
@@ -47,6 +48,9 @@ jobs:
 
       - name: Build release AAB (unsigned is fine for size analysis)
         run: ./gradlew :app:bundleRelease --no-daemon
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
 
       - name: Analyze AAB module sizes
         id: analyze

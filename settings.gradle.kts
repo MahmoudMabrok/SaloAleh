@@ -16,15 +16,14 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        // Mushaf Imad from GitHub Packages (fork with dynamic feature + asset pack)
-        maven {
-            url = uri("https://maven.pkg.github.com/MahmoudMabrok/mushaf-imad-android")
+        // Only the Mushaf Imad artifacts. Every other coordinate is excluded, so
+        // JitPack cannot satisfy a dependency it was not added for.
+        // 0.3.0 from JitPack is the last artifact that passed release R8 with
+        // this app's Koin 4.0.0 (GH Packages 0.2.0 references removed Koin 3 APIs).
+        maven("https://jitpack.io") {
             content {
-                includeGroup("com.github.YahiaRagae")
-            }
-            credentials {
-                username = System.getenv("GITHUB_ACTOR") ?: "MahmoudMabrok"
-                password = System.getenv("GITHUB_TOKEN") ?: ""
+                includeModule("com.github.YahiaRagae.mushaf-imad-android", "mushaf-ui")
+                includeModule("com.github.YahiaRagae.mushaf-imad-android", "mushaf-core")
             }
         }
     }
