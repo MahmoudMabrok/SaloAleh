@@ -2,6 +2,7 @@ name: Deploy
 
 permissions:
   contents: write
+  packages: read
 
 on:
   workflow_dispatch:
@@ -100,6 +101,8 @@ jobs:
       - name: Build release AAB
         run: ./gradlew :app:bundleRelease --no-daemon
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
           KEYSTORE_PATH: ${{ github.workspace }}/release.keystore
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
