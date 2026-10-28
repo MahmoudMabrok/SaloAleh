@@ -301,18 +301,21 @@ jobs:
           VERSION="${{ github.event.inputs.version_name }}"
           ANDROID="${{ needs.deploy-android.result }}"
           IOS="${{ needs.deploy-ios.result }}"
+          NOTES_FILE="$RUNNER_TEMP/release-notes.md"
 
-          NOTES="## v${VERSION}"$ '\n'
-          NOTES+="- **Version name:** ${VERSION}"$ '\n'
-          [ -n "$ANDROID_VERSION_CODE" ] && NOTES+="- **Version code:** ${ANDROID_VERSION_CODE}"$ '\n'
-          [ "$ANDROID" = "success" ] && NOTES+="- ✅ Android published to Google Play (${{ github.event.inputs.track }})"$ '\n'
-          [ "$ANDROID" != "success" ] && NOTES+="- ❌ Android deploy failed"$ '\n'
-          [ "$IOS" = "success" ] && NOTES+="- ✅ iOS published to App Store Connect"$ '\n'
-          [ "$IOS" != "success" ] && NOTES+="- ❌ iOS deploy failed"$ '\n'
+          {
+            echo "## v${VERSION}"
+            echo "- **Version name:** ${VERSION}"
+            [ -n "$ANDROID_VERSION_CODE" ] && echo "- **Version code:** ${ANDROID_VERSION_CODE}"
+            [ "$ANDROID" = "success" ] && echo "- ✅ Android published to Google Play (${{ github.event.inputs.track }})"
+            [ "$ANDROID" != "success" ] && echo "- ❌ Android deploy failed"
+            [ "$IOS" = "success" ] && echo "- ✅ iOS published to App Store Connect"
+            [ "$IOS" != "success" ] && echo "- ❌ iOS deploy failed"
+          } > "$NOTES_FILE"
 
           gh release create "v${VERSION}" \
             --title "v${VERSION}" \
-            --notes "$NOTES" \
+            --notes-file "$NOTES_FILE" \
             --target "${{ github.ref_name }}"
 
   schedule-build-notification:
