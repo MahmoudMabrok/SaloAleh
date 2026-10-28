@@ -88,7 +88,9 @@ android {
     buildFeatures { buildConfig = true }
     compileSdk = 36
     dynamicFeatures += setOf(":mushaf")
-    assetPacks += setOf(":mushaf-assets")
+    // assetPacks intentionally omitted: mushaf-ui 0.3.0 cannot read PAD packs,
+    // and declaring :mushaf-assets alongside AAR quran-images duplicates paths.
+    // Re-enable when mushaf-ui gains LineImageSource + Koin 4, then strip AAR images.
 
     defaultConfig {
         applicationId = "tools.mo3ta.salo"

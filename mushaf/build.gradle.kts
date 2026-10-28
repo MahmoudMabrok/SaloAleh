@@ -1,5 +1,4 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import java.io.File
 
 plugins {
     id("com.android.dynamic-feature")
@@ -50,21 +49,8 @@ dependencies {
     implementation("androidx.compose.material:material-icons-core")
 }
 
-// mushaf-ui AARs still ship assets/quran-images. Those pages belong in the
-// on-demand :mushaf-assets pack; BundleTool rejects the same path in both.
-afterEvaluate {
-    tasks.matching { task ->
-        val n = task.name
-        n.contains("merge", ignoreCase = true) && n.contains("Assets", ignoreCase = true)
-    }.configureEach {
-        doLast {
-            outputs.files.forEach { root ->
-                val qi = File(root, "quran-images")
-                if (qi.isDirectory) {
-                    logger.lifecycle("Stripping ${qi.absolutePath} from :mushaf (owned by :mushaf-assets)")
-                    qi.deleteRecursively()
-                }
-            }
-        }
-    }
-}
+// NOTE: mushaf-ui 0.3.0 loads quran line PNGs only via AssetManager
+// (assets/quran-images/...). It has no AssetPackManager path. Do NOT strip
+// those AAR assets or pages render blank (markers only). The :mushaf-assets
+// pack stays in the repo but must stay out of app.assetPacks until a
+// Koin-4-compatible mushaf-ui ships LineImageSource (see feature/asset-pack-support).
