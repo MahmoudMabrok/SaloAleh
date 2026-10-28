@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.io.File
 
 plugins {
     id("com.android.dynamic-feature")
@@ -47,4 +48,23 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-core")
+}
+
+// mushaf-ui AARs still ship assets/quran-images. Those pages belong in the
+// on-demand :mushaf-assets pack; BundleTool rejects the same path in both.
+afterEvaluate {
+    tasks.matching { task ->
+        val n = task.name
+        n.contains("merge", ignoreCase = true) && n.contains("Assets", ignoreCase = true)
+    }.configureEach {
+        doLast {
+            outputs.files.forEach { root ->
+                val qi = File(root, "quran-images")
+                if (qi.isDirectory) {
+                    logger.lifecycle("Stripping ${qi.absolutePath} from :mushaf (owned by :mushaf-assets)")
+                    qi.deleteRecursively()
+                }
+            }
+        }
+    }
 }
