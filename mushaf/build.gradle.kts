@@ -38,6 +38,7 @@ dependencies {
     implementation(project(":app"))
     implementation(libs.mushaf.imad.ui)
     implementation(libs.feature.delivery)
+    implementation(libs.asset.delivery)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
     // mushaf-ui publishes Compose as runtime scope, so our own composables
@@ -52,8 +53,8 @@ dependencies {
 }
 
 // NOTE: since mushaf-ui 0.4.0 the page line PNGs are not in the AAR. They ship in
-// the install-time :mushaf-assets pack (app.assetPacks) and are read through
-// MushafLineImages.source = AssetLineImageSource() (see MushafReaderActivity).
+// the on-demand :mushaf-assets pack (app.assetPacks). MushafPackController
+// downloads it and sets MushafLineImages.source = FileLineImageSource(pack dir).
 // Do not add the mushaf-images artifact here: it would put the images back into
 // this module and duplicate asset paths with the pack.
 
@@ -61,5 +62,9 @@ tasks.withType<Test>().configureEach {
     systemProperty(
         "mushaf.assets.dir",
         rootProject.file("mushaf-assets/src/main/assets/quran-images").absolutePath,
+    )
+    systemProperty(
+        "mushaf.assets.gradle",
+        rootProject.file("mushaf-assets/build.gradle.kts").absolutePath,
     )
 }
