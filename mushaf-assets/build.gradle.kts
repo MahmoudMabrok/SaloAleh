@@ -5,9 +5,10 @@ plugins {
 assetPack {
     packName.set("mushaf_assets")
     dynamicDelivery {
-        // install-time packs are merged into the app's AssetManager, which is
-        // what mushaf-ui's default AssetLineImageSource reads.
-        deliveryType.set("install-time")
+        // on-demand: not part of the install/update size. Downloaded by the
+        // reader on first open (MushafPackController) and read from
+        // AssetPackLocation.assetsPath()/quran-images (not context.assets).
+        deliveryType.set("on-demand")
     }
 }
 

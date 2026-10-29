@@ -39,22 +39,23 @@ import com.google.android.play.core.splitcompat.SplitCompat
 import com.google.android.play.core.splitinstall.SplitInstallHelper
 import com.mushafimad.core.MushafLibrary
 import com.mushafimad.ui.di.uiModule
-import com.mushafimad.ui.mushaf.AssetLineImageSource
-import com.mushafimad.ui.mushaf.MushafLineImages
 import com.mushafimad.ui.mushaf.MushafWithPlayerView
 import kotlinx.coroutines.delay
 import tools.mo3ta.salo.data.quran.PageDwellCounter
 import tools.mo3ta.salo.ui.quran.MushafPageBridge
 
 /**
- * On-demand reader. The Mushaf Imad pages and its Realm file ship in this
+ * On-demand reader. The Mushaf Imad code and its Realm file ship in this
  * module, not in the base app, and the library copies that Realm into its own
- * files the first time this screen opens.
+ * files the first time this screen opens. The page images are in the
+ * on-demand mushaf_assets asset pack ([MushafPackController]).
  *
  * Audio: uses [MushafWithPlayerView] (mushaf-ui README) so playback, reciter
  * pick, verse highlight, and streamed/cached download work in-process.
  */
 class MushafReaderActivity : ComponentActivity() {
+    private var pack: MushafPackController? = null
+
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(newBase)
         // Only this screen, after the user opens it. Both calls can throw Error.
@@ -71,20 +72,37 @@ class MushafReaderActivity : ComponentActivity() {
         enableEdgeToEdge()
         val initialPage = intent.getIntExtra(EXTRA_PAGE, 0).takeIf { it in 1..604 }
         val alreadyCounted = intent.getIntArrayExtra(EXTRA_COUNTED)?.toSet().orEmpty()
+        // Page images are in the on-demand mushaf_assets pack: download it on
+        // first open, then read it from the pack's folder.
+        val controller = MushafPackController(this)
+        pack = controller
+        controller.start()
         setContent {
-            MushafReader(
-                initialPage = initialPage,
-                alreadyCounted = alreadyCounted,
-            )
+            if (controller.ui == PackUi.Ready) {
+                MushafReader(
+                    initialPage = initialPage,
+                    alreadyCounted = alreadyCounted,
+                )
+            } else {
+                MushafPackScreen(
+                    ui = controller.ui,
+                    onRetry = controller::retry,
+                    onConfirm = controller::confirm,
+                    onCancel = controller::cancel,
+                    onBack = ::finish,
+                )
+            }
         }
+    }
+
+    override fun onDestroy() {
+        pack?.release()
+        super.onDestroy()
     }
 
     private fun startMushafLibrary(): Boolean = runCatching {
         SplitInstallHelper.loadLibrary(this, "realmc")
         startRealm()
-        // Page images come from the install-time :mushaf-assets pack, which Play
-        // merges into the app's AssetManager (mushaf-ui 0.4.0 no longer bundles them).
-        MushafLineImages.source = AssetLineImageSource()
         if (!MushafLibrary.isInitialized()) {
             MushafLibrary.initialize(this)
             MushafLibrary.getKoin().loadModules(listOf(uiModule))
