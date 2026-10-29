@@ -18,7 +18,7 @@ dependencyResolutionManagement {
         mavenCentral()
         // Only the Mushaf Imad artifacts. Every other coordinate is excluded, so
         // JitPack cannot satisfy a dependency it was not added for.
-        // 0.4.0 is MahmoudMabrok/mushaf-imad-android (based on upstream 0.3.0):
+        // 0.4.x is MahmoudMabrok/mushaf-imad-android (based on upstream 0.3.0):
         // built on Koin 4.0.0 like this app, pluggable LineImageSource, and the page
         // images are NOT inside the AAR any more - they ship in :mushaf-assets.
         maven("https://jitpack.io") {

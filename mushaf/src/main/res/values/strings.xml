@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mushaf_switch_to_reading">التبديل إلى مصحف القراءة</string>
+    <string name="mushaf_switch_to_listening">التبديل إلى مصحف الاستماع</string>
+    <string name="mushaf_mode_reading">وضع القراءة</string>
+    <string name="mushaf_mode_listening">وضع الاستماع</string>
+</resources>

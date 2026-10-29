@@ -27,7 +27,7 @@ billing = "9.1.0"
 installReferrer = "2.2"
 featureDelivery = "2.1.0"
 liteRt = "1.4.2"
-mushafImad = "0.4.0"
+mushafImad = "0.4.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
