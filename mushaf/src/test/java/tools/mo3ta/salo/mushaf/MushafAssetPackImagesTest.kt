@@ -7,10 +7,12 @@ import java.io.File
 import java.io.RandomAccessFile
 
 /**
- * mushaf-ui 0.4.0 does not bundle the page images: they must all be in the
- * install-time :mushaf-assets pack, at quran-images/{page}/{line}.png, or the
- * reader shows verse markers with no script. This checks every page line exists
- * and is a 1440x232 PNG.
+ * mushaf-ui 0.4.x does not bundle the page images: they must all be in the
+ * on-demand :mushaf-assets pack (pack "mushaf_assets"), at
+ * quran-images/{page}/{line}.png, which MushafPackController reads from
+ * AssetPackLocation.assetsPath()/quran-images. Otherwise the reader shows verse
+ * markers with no script. This checks every page line exists and is a 1440x232
+ * PNG, and that the pack is on-demand so it stays out of the install size.
  */
 class MushafAssetPackImagesTest {
 
@@ -18,6 +20,26 @@ class MushafAssetPackImagesTest {
         System.getProperty("mushaf.assets.dir")
             ?: "../mushaf-assets/src/main/assets/quran-images",
     )
+
+    private val packGradle = File(
+        System.getProperty("mushaf.assets.gradle") ?: "../mushaf-assets/build.gradle.kts",
+    )
+
+    @Test
+    fun assetPackIsOnDemandAndNamedAsTheReaderExpects() {
+        assertTrue("missing $packGradle", packGradle.isFile)
+        val text = packGradle.readText()
+        assertTrue(
+            "mushaf-assets must be on-demand (not in install size)",
+            Regex("""deliveryType\.set\("on-demand"\)""").containsMatchIn(text),
+        )
+        assertTrue(
+            "pack name must match MUSHAF_PACK",
+            text.contains("packName.set(\"$MUSHAF_PACK\")"),
+        )
+        assertEquals("quran-images", MUSHAF_IMAGES_DIR)
+        assertEquals("quran-images", dir.name)
+    }
 
     @Test
     fun everyPageHasAllLineImagesInTheAssetPack() {
