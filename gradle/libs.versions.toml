@@ -26,8 +26,9 @@ gmsCodeScanner = "16.1.0"
 billing = "9.1.0"
 installReferrer = "2.2"
 featureDelivery = "2.1.0"
+assetDelivery = "2.3.0"
 liteRt = "1.4.2"
-mushafImad = "0.3.0"
+mushafImad = "0.4.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -67,8 +68,9 @@ gms-code-scanner = { group = "com.google.android.gms", name = "play-services-cod
 billing = { group = "com.android.billingclient", name = "billing", version.ref = "billing" }
 install-referrer = { group = "com.android.installreferrer", name = "installreferrer", version.ref = "installReferrer" }
 feature-delivery = { group = "com.google.android.play", name = "feature-delivery", version.ref = "featureDelivery" }
+asset-delivery = { group = "com.google.android.play", name = "asset-delivery", version.ref = "assetDelivery" }
 litert = { group = "com.google.ai.edge.litert", name = "litert", version.ref = "liteRt" }
-mushaf-imad-ui = { group = "com.github.YahiaRagae.mushaf-imad-android", name = "mushaf-ui", version.ref = "mushafImad" }
+mushaf-imad-ui = { group = "com.github.MahmoudMabrok.mushaf-imad-android", name = "mushaf-ui", version.ref = "mushafImad" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

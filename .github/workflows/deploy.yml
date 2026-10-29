@@ -306,17 +306,30 @@ jobs:
           {
             echo "## v${VERSION}"
             echo "- **Version name:** ${VERSION}"
-            [ -n "$ANDROID_VERSION_CODE" ] && echo "- **Version code:** ${ANDROID_VERSION_CODE}"
-            [ "$ANDROID" = "success" ] && echo "- ✅ Android published to Google Play (${{ github.event.inputs.track }})"
-            [ "$ANDROID" != "success" ] && echo "- ❌ Android deploy failed"
-            [ "$IOS" = "success" ] && echo "- ✅ iOS published to App Store Connect"
-            [ "$IOS" != "success" ] && echo "- ❌ iOS deploy failed"
+            if [ -n "${ANDROID_VERSION_CODE:-}" ]; then echo "- **Version code:** ${ANDROID_VERSION_CODE}"; fi
+            if [ "$ANDROID" = "success" ]; then
+              echo "- ✅ Android published to Google Play (${{ github.event.inputs.track }})"
+            else
+              echo "- ❌ Android deploy failed"
+            fi
+            if [ "$IOS" = "success" ]; then
+              echo "- ✅ iOS published to App Store Connect"
+            else
+              echo "- ℹ️ iOS: ${IOS:-skipped}"
+            fi
           } > "$NOTES_FILE"
 
-          gh release create "v${VERSION}" \
-            --title "v${VERSION}" \
-            --notes-file "$NOTES_FILE" \
-            --target "${{ github.ref_name }}"
+          # Re-running a version (or deploying the same version from another branch)
+          # must not fail the job on "Release.tag_name already exists".
+          if gh release view "v${VERSION}" >/dev/null 2>&1; then
+            echo "Release v${VERSION} already exists - updating its notes"
+            gh release edit "v${VERSION}" --notes-file "$NOTES_FILE"
+          else
+            gh release create "v${VERSION}" \
+              --title "v${VERSION}" \
+              --notes-file "$NOTES_FILE" \
+              --target "${{ github.ref_name }}"
+          fi
 
   schedule-build-notification:
     name: Schedule delayed build notification
