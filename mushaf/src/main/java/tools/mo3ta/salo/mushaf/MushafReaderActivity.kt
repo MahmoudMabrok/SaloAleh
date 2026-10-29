@@ -25,6 +25,8 @@ import com.google.android.play.core.splitcompat.SplitCompat
 import com.google.android.play.core.splitinstall.SplitInstallHelper
 import com.mushafimad.core.MushafLibrary
 import com.mushafimad.ui.di.uiModule
+import com.mushafimad.ui.mushaf.AssetLineImageSource
+import com.mushafimad.ui.mushaf.MushafLineImages
 import com.mushafimad.ui.mushaf.MushafWithPlayerView
 import kotlinx.coroutines.delay
 import tools.mo3ta.salo.data.quran.PageDwellCounter
@@ -66,6 +68,9 @@ class MushafReaderActivity : ComponentActivity() {
     private fun startMushafLibrary(): Boolean = runCatching {
         SplitInstallHelper.loadLibrary(this, "realmc")
         startRealm()
+        // Page images come from the install-time :mushaf-assets pack, which Play
+        // merges into the app's AssetManager (mushaf-ui 0.4.0 no longer bundles them).
+        MushafLineImages.source = AssetLineImageSource()
         if (!MushafLibrary.isInitialized()) {
             MushafLibrary.initialize(this)
             MushafLibrary.getKoin().loadModules(listOf(uiModule))

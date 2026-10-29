@@ -88,9 +88,11 @@ android {
     buildFeatures { buildConfig = true }
     compileSdk = 36
     dynamicFeatures += setOf(":mushaf")
-    // assetPacks intentionally omitted: mushaf-ui 0.3.0 cannot read PAD packs,
-    // and declaring :mushaf-assets alongside AAR quran-images duplicates paths.
-    // Re-enable when mushaf-ui gains LineImageSource + Koin 4, then strip AAR images.
+    // Mushaf page images (~100 MB) live in an install-time asset pack, not in the
+    // base or :mushaf. mushaf-ui 0.4.0 no longer bundles them and reads them through
+    // AssetManager, which install-time packs are merged into. Play only re-downloads
+    // the pack when its contents change, so code updates stay small.
+    assetPacks += setOf(":mushaf-assets")
 
     defaultConfig {
         applicationId = "tools.mo3ta.salo"
