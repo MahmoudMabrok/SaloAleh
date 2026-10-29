@@ -47,10 +47,19 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-core")
+
+    testImplementation(libs.junit)
 }
 
-// NOTE: mushaf-ui 0.3.0 loads quran line PNGs only via AssetManager
-// (assets/quran-images/...). It has no AssetPackManager path. Do NOT strip
-// those AAR assets or pages render blank (markers only). The :mushaf-assets
-// pack stays in the repo but must stay out of app.assetPacks until a
-// Koin-4-compatible mushaf-ui ships LineImageSource (see feature/asset-pack-support).
+// NOTE: since mushaf-ui 0.4.0 the page line PNGs are not in the AAR. They ship in
+// the install-time :mushaf-assets pack (app.assetPacks) and are read through
+// MushafLineImages.source = AssetLineImageSource() (see MushafReaderActivity).
+// Do not add the mushaf-images artifact here: it would put the images back into
+// this module and duplicate asset paths with the pack.
+
+tasks.withType<Test>().configureEach {
+    systemProperty(
+        "mushaf.assets.dir",
+        rootProject.file("mushaf-assets/src/main/assets/quran-images").absolutePath,
+    )
+}
