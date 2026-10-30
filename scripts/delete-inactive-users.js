@@ -52,6 +52,10 @@ const databaseURL = process.env.FIREBASE_DATABASE_URL;
 
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount), databaseURL });
 
+// Friday round close, Africa/Cairo local time. Mirrors ROUND_BOUNDARY_HOUR in
+// CompetitionWindowUtils.kt and ROUND_CLOSE_HOUR_CAIRO in deno-scheduler/schedule.ts.
+const ROUND_CLOSE_HOUR_CAIRO = 17;
+
 /**
  * Returns today's date in Cairo timezone as an ISO date string (YYYY-MM-DD).
  * @returns {string}
@@ -63,7 +67,7 @@ function cairoToday() {
 }
 
 /**
- * Returns the round key (YYYY-MM-DD) for the upcoming Friday at 19:00 Cairo time.
+ * Returns the round key (YYYY-MM-DD) for the upcoming Friday at 17:00 Cairo time.
  * Mirrors cairoRoundKey() in the other cron scripts.
  * @returns {string}
  */
@@ -76,7 +80,7 @@ function cairoRoundKey() {
   const hourStr = new Intl.DateTimeFormat('en-US', { timeZone: zone, hour: 'numeric', hour12: false }).format(now);
   const cairoHour = parseInt(hourStr, 10);
   let daysToFriday = (5 - jsDow + 7) % 7;
-  if (daysToFriday === 0 && cairoHour >= 19) daysToFriday = 7;
+  if (daysToFriday === 0 && cairoHour >= ROUND_CLOSE_HOUR_CAIRO) daysToFriday = 7;
   const fridayDate = new Date(now.getTime() + daysToFriday * 86400000);
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit',
