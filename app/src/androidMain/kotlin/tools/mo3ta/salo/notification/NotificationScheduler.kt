@@ -34,6 +34,9 @@ actual object NotificationScheduler {
     private const val REQUEST_FRIDAY_EXACT = 2002
     private const val REQUEST_EVENING_EXACT = 2003
     private const val EVENING_HOUR = 22
+    // Friday hourly reminders run 09:00–16:00 Cairo; the round closes at 17:00 Cairo.
+    private const val FRIDAY_FIRST_HOUR = 9
+    private const val FRIDAY_LAST_HOUR = 16
     // Mirrors RoundStreakStore.KEY_LAST_ACTIVE — the Cairo LocalDate (ISO) of the last
     // day the user sent salawat. Read directly here to gate the evening reminder.
     private const val KEY_ROUND_STREAK_LAST_ACTIVE = "round_streak_last_active"
@@ -371,7 +374,7 @@ actual object NotificationScheduler {
 
     private fun nextFridayTrigger(now: ZonedDateTime): ZonedDateTime {
         if (now.dayOfWeek == DayOfWeek.FRIDAY) {
-            for (hour in 9..17) {
+            for (hour in FRIDAY_FIRST_HOUR..FRIDAY_LAST_HOUR) {
                 val candidate = now
                     .withHour(hour)
                     .withMinute(0)
@@ -386,7 +389,7 @@ actual object NotificationScheduler {
         }
         return now
             .plusDays(daysUntilFriday.toLong())
-            .withHour(9)
+            .withHour(FRIDAY_FIRST_HOUR)
             .withMinute(0)
             .withSecond(0)
             .withNano(0)
