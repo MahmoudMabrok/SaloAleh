@@ -1,0 +1,26 @@
+name: Deno Scheduler Tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'deno-scheduler/**'
+      - '.github/workflows/deno-scheduler-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: deno check + test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check
+        run: deno check deno-scheduler/main.ts deno-scheduler/schedule.ts
+      - name: Test
+        run: deno test deno-scheduler/schedule_test.ts
