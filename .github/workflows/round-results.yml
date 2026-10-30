@@ -1,0 +1,64 @@
+name: Write Round Results
+
+# Read-only on Firebase: rebuilds round-results/<round>.json, latest.json and latest.md
+# for an already-closed round (scripts/write-round-results.js only reads RTDB).
+# Safe to re-run — unlike aggregate-all-time.yml it never touches allTimeTotal,
+# medals, achievements, winner codes or the leaderboard.
+on:
+  workflow_dispatch:
+    inputs:
+      closed_round:
+        description: 'Round key to write results for (YYYY-MM-DD). Defaults to today Cairo date.'
+        required: false
+        type: string
+
+# contents: write lets the job commit the round-results/ summary back to the repo.
+permissions:
+  contents: write
+
+jobs:
+  write:
+    name: Write round-results summary
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install firebase-admin
+        run: npm install firebase-admin
+        working-directory: scripts
+
+      - name: Write round results (read-only on Firebase)
+        run: node scripts/write-round-results.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          CLOSED_ROUND: ${{ inputs.closed_round }}
+
+      # [skip ci] keeps push-triggered workflows (e.g. Pages) from firing on this bot commit.
+      - name: Commit round results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add round-results/
+          if git diff --staged --quiet; then
+            echo "No round-results changes to commit."
+            exit 0
+          fi
+          ROUND=$(node -e "console.log(require('./round-results/latest.json').round)" 2>/dev/null || echo "${CLOSED_ROUND:-unknown}")
+          git commit -m "chore: round results ${ROUND} [skip ci]"
+          for attempt in 1 2 3; do
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              exit 0
+            fi
+            echo "Push failed (attempt ${attempt}); rebasing on latest ${GITHUB_REF_NAME}..."
+            sleep $((attempt * 5))
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+          done
+          echo "Could not push round results after 3 attempts." >&2
+          exit 1
+        env:
+          CLOSED_ROUND: ${{ inputs.closed_round }}

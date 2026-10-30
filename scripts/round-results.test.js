@@ -7,6 +7,7 @@ const {
   ANONYMOUS_NAME,
   cairoIsoTimestamp,
   buildRoundResults,
+  extractRoundPlayers,
   renderRoundResultsMarkdown,
   writeRoundResults,
 } = require('./round-results-utils');
@@ -110,6 +111,26 @@ describe('buildRoundResults', () => {
     assert.equal(r.top10[0].countryCode, 'EG');
     assert.equal('countryCode' in r.top10[1], false);
     assert.equal('countryCode' in r.top10[2], false);
+  });
+});
+
+describe('extractRoundPlayers', () => {
+  it('keeps players with a uid and totalCount > 0, with public display fields only', () => {
+    const { players, roundTotal } = extractRoundPlayers({
+      k1: { uid: 'u1', totalCount: 30, updatedAt: 5, nickname: 'a', countryCode: 'EG', scoreMasked: true, winnerCode: 'X' },
+      k2: { uid: 'u2', totalCount: 0 },
+      k3: { totalCount: 10 },
+      k4: { uid: 'u4', totalCount: 12 },
+    });
+    assert.equal(roundTotal, 42);
+    assert.deepEqual(players, [
+      { uid: 'u1', score: 30, updatedAt: 5, nickname: 'a', countryCode: 'EG', scoreMasked: true },
+      { uid: 'u4', score: 12, updatedAt: 0, nickname: '', countryCode: '', scoreMasked: false },
+    ]);
+  });
+
+  it('handles a missing players node', () => {
+    assert.deepEqual(extractRoundPlayers(null), { players: [], roundTotal: 0 });
   });
 });
 
