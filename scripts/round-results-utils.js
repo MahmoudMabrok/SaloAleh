@@ -86,6 +86,32 @@ function buildRoundResults({ round, players, roundTotal, playerCount, closedAt, 
   return results;
 }
 
+// Turns the raw value of mohamed_lovers/<round>/players (an object keyed by player id)
+// into the `players` list used by aggregate-all-time.js and write-round-results.js:
+// only players with a uid and totalCount > 0, plus the public-safe display fields.
+// Returns { players, roundTotal } (roundTotal = sum of those players' scores).
+function extractRoundPlayers(playersVal) {
+  const players = [];
+  let roundTotal = 0;
+  for (const data of Object.values(playersVal || {})) {
+    const uid = data?.uid;
+    const totalCount = typeof data?.totalCount === 'number' ? data.totalCount : 0;
+    if (typeof uid === 'string' && totalCount > 0) {
+      players.push({
+        uid,
+        score: totalCount,
+        updatedAt: data.updatedAt || 0,
+        // Public-safe display fields, used only for round-results/.
+        nickname: typeof data.nickname === 'string' ? data.nickname : '',
+        countryCode: typeof data.countryCode === 'string' ? data.countryCode : '',
+        scoreMasked: data.scoreMasked === true,
+      });
+      roundTotal += totalCount;
+    }
+  }
+  return { players, roundTotal };
+}
+
 function formatNumber(n) {
   return typeof n === 'number' ? n.toLocaleString('en-US') : String(n);
 }
@@ -148,6 +174,7 @@ module.exports = {
   DEFAULT_RESULTS_DIR,
   cairoIsoTimestamp,
   buildRoundResults,
+  extractRoundPlayers,
   renderRoundResultsMarkdown,
   writeRoundResults,
 };

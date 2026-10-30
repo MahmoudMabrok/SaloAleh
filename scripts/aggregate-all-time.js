@@ -12,7 +12,7 @@
 const admin = require('firebase-admin');
 const { addDaysToDateKey, populateMohamedLoversRound } = require('./leaderboard-utils');
 const { MIRROR_ENABLED, mirrorAllTimeTotal, mirrorAchievements, mirrorUserAllTimeTotals } = require('./firestore-utils');
-const { buildRoundResults, writeRoundResults } = require('./round-results-utils');
+const { buildRoundResults, extractRoundPlayers, writeRoundResults } = require('./round-results-utils');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 const databaseURL = process.env.FIREBASE_DATABASE_URL;
@@ -57,27 +57,8 @@ async function main() {
     console.log('No data found under mohamed_lovers.');
   } else {
     const playersSnap = await db.ref(`mohamed_lovers/${closedRound}/players`).get();
-    const players = [];
-    let roundTotal = 0;
-
+    const { players, roundTotal } = extractRoundPlayers(playersSnap.exists() ? playersSnap.val() : null);
     if (playersSnap.exists()) {
-      playersSnap.forEach(child => {
-        const data = child.val();
-        const uid = data?.uid;
-        const totalCount = typeof data?.totalCount === 'number' ? data.totalCount : 0;
-        if (typeof uid === 'string' && totalCount > 0) {
-          players.push({
-            uid,
-            score: totalCount,
-            updatedAt: data.updatedAt || 0,
-            // Public-safe display fields, used only for round-results/.
-            nickname: typeof data.nickname === 'string' ? data.nickname : '',
-            countryCode: typeof data.countryCode === 'string' ? data.countryCode : '',
-            scoreMasked: data.scoreMasked === true,
-          });
-          roundTotal += totalCount;
-        }
-      });
       console.log(`Closed round total: ${roundTotal}`);
     }
 
