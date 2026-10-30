@@ -1,11 +1,27 @@
-// Read-only on Firebase: rebuilds the public round-results/ summary for a round that
+// Read-only on Firebase: rebuilds the public round-results summary for a round that
 // was already closed by aggregate-all-time.js (e.g. a round that closed before
 // round-results existed). It only READS mohamed_lovers/<round>/players, roundTotal and
-// roundPlayerCount, then writes round-results/<round>.json (+ latest.json / latest.md)
-// to the repo checkout. It never writes to RTDB or Firestore, so it is safe to re-run:
-// no allTimeTotal, medal, achievement, winner-code or leaderboard changes.
-const admin = require('firebase-admin');
-const { buildRoundResults, extractRoundPlayers, writeRoundResults } = require('./round-results-utils');
+// roundPlayerCount. It never writes to RTDB or Firestore and never writes into
+// round-results/, so it is safe to re-run: no allTimeTotal, medal, achievement,
+// winner-code, leaderboard or repo changes.
+//
+// Output:
+//   - $GITHUB_STEP_SUMMARY (when set): the Arabic markdown table + the JSON in a ```json block
+//   - stdout: the JSON between JSON_BEGIN / JSON_END markers (readable via job logs)
+const fs = require('fs');
+const { buildRoundResults, extractRoundPlayers, renderRoundResultsMarkdown } = require('./round-results-utils');
+
+const JSON_BEGIN = '=== ROUND_RESULTS_JSON_BEGIN ===';
+const JSON_END = '=== ROUND_RESULTS_JSON_END ===';
+
+// Pure: the job-summary markdown and the marked log block for a results object.
+function formatRoundResultsOutput(results) {
+  const json = JSON.stringify(results, null, 2);
+  return {
+    summary: `${renderRoundResultsMarkdown(results)}\n\`\`\`json\n${json}\n\`\`\`\n`,
+    log: `${JSON_BEGIN}\n${json}\n${JSON_END}`,
+  };
+}
 
 function roundKey() {
   const override = process.env.CLOSED_ROUND || process.argv[2];
@@ -26,6 +42,7 @@ async function main() {
   const round = roundKey();
   console.log(`Round: ${round}`);
 
+  const admin = require('firebase-admin'); // lazy, so tests can require this file
   admin.initializeApp({
     credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)),
     databaseURL: process.env.FIREBASE_DATABASE_URL,
@@ -55,9 +72,17 @@ async function main() {
     roundTotal: typeof storedTotal === 'number' ? storedTotal : roundTotal,
     playerCount: typeof storedCount === 'number' ? storedCount : players.length,
   });
-  const written = writeRoundResults(results);
-  console.log(`Round results written: ${written.join(', ')}`);
+  const { summary, log } = formatRoundResultsOutput(results);
+  console.log(log);
+  if (process.env.GITHUB_STEP_SUMMARY) {
+    fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
+    console.log('Round results written to the job summary.');
+  }
   process.exit(0);
 }
 
-main().catch(err => { console.error(err); process.exit(1); });
+module.exports = { JSON_BEGIN, JSON_END, formatRoundResultsOutput };
+
+if (require.main === module) {
+  main().catch(err => { console.error(err); process.exit(1); });
+}
