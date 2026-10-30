@@ -9,6 +9,10 @@ on:
         required: false
         type: string
 
+# contents: write lets the job commit the round-results/ summary back to the repo.
+permissions:
+  contents: write
+
 jobs:
   aggregate:
     name: Sum past rounds into allTimeTotal
@@ -29,4 +33,30 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          CLOSED_ROUND: ${{ inputs.closed_round }}
+
+      # Publishes the closed round's public top-10 summary (round-results/*.json, latest.md).
+      # [skip ci] keeps push-triggered workflows (e.g. Pages) from firing on this bot commit.
+      - name: Commit round results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add round-results/
+          if git diff --staged --quiet; then
+            echo "No round-results changes to commit."
+            exit 0
+          fi
+          ROUND=$(node -e "console.log(require('./round-results/latest.json').round)" 2>/dev/null || echo "${CLOSED_ROUND:-unknown}")
+          git commit -m "chore: round results ${ROUND} [skip ci]"
+          for attempt in 1 2 3; do
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              exit 0
+            fi
+            echo "Push failed (attempt ${attempt}); rebasing on latest ${GITHUB_REF_NAME}..."
+            sleep $((attempt * 5))
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+          done
+          echo "Could not push round results after 3 attempts." >&2
+          exit 1
+        env:
           CLOSED_ROUND: ${{ inputs.closed_round }}

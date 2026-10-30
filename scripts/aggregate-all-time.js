@@ -6,9 +6,13 @@
 // leaderboard (final ranks) and seeds the brand-new round's leaderboard, so the
 // whole round-boundary handoff happens from this single cron slot instead of a
 // separate leaderboard-populate dispatch.
+//
+// Finally writes the public top-10 summary of the closed round to round-results/
+// (see scripts/round-results-utils.js); the workflow commits that folder back to main.
 const admin = require('firebase-admin');
 const { addDaysToDateKey, populateMohamedLoversRound } = require('./leaderboard-utils');
 const { MIRROR_ENABLED, mirrorAllTimeTotal, mirrorAchievements, mirrorUserAllTimeTotals } = require('./firestore-utils');
+const { buildRoundResults, writeRoundResults } = require('./round-results-utils');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 const databaseURL = process.env.FIREBASE_DATABASE_URL;
@@ -62,7 +66,15 @@ async function main() {
         const uid = data?.uid;
         const totalCount = typeof data?.totalCount === 'number' ? data.totalCount : 0;
         if (typeof uid === 'string' && totalCount > 0) {
-          players.push({ uid, score: totalCount, updatedAt: data.updatedAt || 0 });
+          players.push({
+            uid,
+            score: totalCount,
+            updatedAt: data.updatedAt || 0,
+            // Public-safe display fields, used only for round-results/.
+            nickname: typeof data.nickname === 'string' ? data.nickname : '',
+            countryCode: typeof data.countryCode === 'string' ? data.countryCode : '',
+            scoreMasked: data.scoreMasked === true,
+          });
           roundTotal += totalCount;
         }
       });
@@ -160,8 +172,22 @@ async function main() {
 
       // Close the round: write final per-player ranks + leaderboard + dailyLeaderboard
       // (isFinal: true) via the same builder used for the periodic in-round runs.
-      await populateMohamedLoversRound(db, admin, closedRound, true);
+      const finalRound = await populateMohamedLoversRound(db, admin, closedRound, true);
       console.log(`Round ${closedRound} closed.`);
+
+      // Public top-10 summary for the poster. Never blocks the round close.
+      try {
+        const results = buildRoundResults({
+          round: closedRound,
+          players,
+          roundTotal: finalRound?.roundTotal ?? roundTotal,
+          playerCount: finalRound?.roundPlayerCount ?? players.length,
+        });
+        const written = writeRoundResults(results);
+        console.log(`Round results written: ${written.join(', ')}`);
+      } catch (err) {
+        console.warn('Writing round-results failed (non-blocking):', err.message);
+      }
     }
   }
 
