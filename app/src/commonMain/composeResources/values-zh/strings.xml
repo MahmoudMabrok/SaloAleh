@@ -796,7 +796,6 @@
     <string name="challenge_medals_info_title">挑战奖牌</string>
     <string name="challenge_medals_info_desc">奖牌每天颁发给该挑战当日前三名，并随时间累积。</string>
     <string name="leaderboard_score_label">次祈祷</string>
-    <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">查看竞赛</string>
     <string name="notif_message_cta_none">好的</string>
     <string name="settings_referral_header">分享回赐</string>

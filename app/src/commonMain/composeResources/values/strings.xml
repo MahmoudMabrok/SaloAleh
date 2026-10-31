@@ -846,7 +846,6 @@
     <string name="challenge_medals_info_title">أوسمة التحدي</string>
     <string name="challenge_medals_info_desc">تُمنح الأوسمة كل يوم للمتصدرين الثلاثة الأوائل في هذا التحدي، وتتراكم مع مرور الأيام.</string>
     <string name="leaderboard_score_label">صلاة</string>
-    <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">عرض المسابقة</string>
     <string name="notif_message_cta_none">حسناً</string>
     <string name="settings_referral_header">شارك الأجر</string>

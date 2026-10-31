@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -104,7 +105,6 @@ import tools.mo3ta.salo.generated.resources.info_sheet_notif_disabled
 import tools.mo3ta.salo.generated.resources.leaderboard_join_supporters
 import tools.mo3ta.salo.generated.resources.leaderboard_live_button
 import tools.mo3ta.salo.generated.resources.leaderboard_score_label
-import tools.mo3ta.salo.generated.resources.leaderboard_separator_label
 import tools.mo3ta.salo.generated.resources.notif_rationale_title
 import tools.mo3ta.salo.generated.resources.notif_rationale_description
 import tools.mo3ta.salo.generated.resources.notif_rationale_open_settings
@@ -562,7 +562,7 @@ private fun TotalsCard(roundTotal: Int, allTimeTotal: Long) {
 }
 
 @Composable
-private fun LeaderboardCard(
+internal fun LeaderboardCard(
     topPlayers: List<MohamedLoversLeaderboardEntry>,
     selfEntry: MohamedLoversLeaderboardEntry?,
     selfInTop: Boolean,
@@ -642,21 +642,6 @@ private fun LeaderboardCard(
                         }
                     }
                     if (selfEntry != null && !selfInTop) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Box(modifier = Modifier.weight(1f).height(1.dp).background(MohamedLoversPalette.GoldBase.copy(alpha = 0.18f)))
-                            Text(
-                                text = stringResource(Res.string.leaderboard_separator_label),
-                                fontSize = 10.sp,
-                                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.3f),
-                                modifier = Modifier.padding(horizontal = 8.dp),
-                            )
-                            Box(modifier = Modifier.weight(1f).height(1.dp).background(MohamedLoversPalette.GoldBase.copy(alpha = 0.18f)))
-                        }
                         LeaderboardRow(
                             entry = selfEntry,
                             isPremium = isPremium,
@@ -747,13 +732,14 @@ private fun LeaderboardRow(
             .background(backgroundColor)
             .border(1.dp, borderColor, RoundedCornerShape(12.dp))
             .clickable(enabled = entry.uid.isNotBlank()) { onUserClick(entry.uid, entry.displayTag) }
-            .padding(horizontal = 10.dp, vertical = 9.dp),
+            // Tight start (the right edge in RTL) so the name gets the room, not the rank gutter.
+            .padding(start = 4.dp, end = 10.dp, top = 9.dp, bottom = 9.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // Rank column
+        // Rank column: just wide enough for two digits; grows for a far-down self rank.
         Column(
-            modifier = Modifier.width(36.dp),
+            modifier = Modifier.widthIn(min = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
