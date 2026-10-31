@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -731,13 +732,14 @@ private fun LeaderboardRow(
             .background(backgroundColor)
             .border(1.dp, borderColor, RoundedCornerShape(12.dp))
             .clickable(enabled = entry.uid.isNotBlank()) { onUserClick(entry.uid, entry.displayTag) }
-            .padding(horizontal = 10.dp, vertical = 9.dp),
+            // Tight start (the right edge in RTL) so the name gets the room, not the rank gutter.
+            .padding(start = 4.dp, end = 10.dp, top = 9.dp, bottom = 9.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // Rank column
+        // Rank column: just wide enough for two digits; grows for a far-down self rank.
         Column(
-            modifier = Modifier.width(36.dp),
+            modifier = Modifier.widthIn(min = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
