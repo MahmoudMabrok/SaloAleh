@@ -37,6 +37,7 @@
     <string name="mohamed_lovers_round_total_label">本回合为先知祝福数</string>
     <string name="mohamed_lovers_round_player_count_label">本回合参与者: %1$d</string>
     <string name="mohamed_lovers_all_time_total_label">历史祝福总数</string>
+    <string name="mohamed_lovers_self_all_time_label">你为先知祝福的历史总数 ﷺ</string>
     <string name="mohamed_lovers_leaderboard_title">排行榜</string>
     <string name="mohamed_lovers_leaderboard_refresh_note">每30分钟更新</string>
     <string name="mohamed_lovers_leaderboard_weekly">每周</string>

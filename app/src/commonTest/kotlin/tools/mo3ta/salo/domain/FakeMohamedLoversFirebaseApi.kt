@@ -33,6 +33,9 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
 
     override suspend fun fetchAllTimeTotal(): Result<Long> = Result.success(0L)
 
+    var userAllTimeTotalResult: Result<Long> = Result.success(0L)
+    override suspend fun fetchUserAllTimeTotal(uid: String): Result<Long> = userAllTimeTotalResult
+
     var heroesResult: Result<HeroesBoard?> = Result.success(null)
     override suspend fun fetchHeroes(): Result<HeroesBoard?> = heroesResult
 

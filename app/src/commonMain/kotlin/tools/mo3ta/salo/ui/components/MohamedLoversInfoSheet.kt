@@ -88,6 +88,7 @@ import tools.mo3ta.salo.generated.resources.mohamed_lovers_info_sheet_title
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_ornament_divider
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_rank_number
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_all_time_total_label
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_self_all_time_label
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_daily
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_empty
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_refresh_note
@@ -202,7 +203,11 @@ internal fun MohamedLoversInfoSheet(
                 roundPlayerCount = state.roundPlayerCount,
                 roundEndInstant = state.roundEndInstant,
             )
-            TotalsCard(roundTotal = state.roundTotal, allTimeTotal = state.allTimeTotal)
+            TotalsCard(
+                roundTotal = state.roundTotal,
+                allTimeTotal = state.allTimeTotal,
+                selfAllTimeTotal = state.selfAllTimeTotal,
+            )
             ShareButton(state = state)
             LeaderboardCard(
                 topPlayers = state.topPlayers,
@@ -456,7 +461,7 @@ private fun CountdownUnit(value: Int, label: String, glowAlpha: Float = 0f) {
 }
 
 @Composable
-private fun TotalsCard(roundTotal: Int, allTimeTotal: Long) {
+internal fun TotalsCard(roundTotal: Int, allTimeTotal: Long, selfAllTimeTotal: Long? = null) {
     val easeOutExpo = remember { CubicBezierEasing(0.16f, 1f, 0.3f, 1f) }
     val combinedTotal = allTimeTotal + roundTotal
     val animatedCombined = remember { Animatable(0f) }
@@ -557,6 +562,10 @@ private fun TotalsCard(roundTotal: Int, allTimeTotal: Long) {
                 ),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.35f),
             )
+            if (selfAllTimeTotal != null) {
+                Spacer(Modifier.height(14.dp))
+                SelfAllTimeTotalRow(selfAllTimeTotal)
+            }
         }
     }
 }
@@ -1012,6 +1021,31 @@ private fun WinnerCard(winnerCode: String, onCopyWinnerCode: (String) -> Unit) {
                 Icon(imageVector = Icons.Default.ContentCopy, contentDescription = null, tint = MohamedLoversPalette.GoldBase)
             }
         }
+    }
+}
+
+/** The player's own lifetime total, shown as a third tier of [TotalsCard]. */
+@Composable
+private fun SelfAllTimeTotalRow(total: Long) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(MohamedLoversPalette.GoldBase.copy(alpha = 0.1f))
+            .border(1.dp, MohamedLoversPalette.GoldBase.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text(
+            text = stringResource(Res.string.mohamed_lovers_self_all_time_label),
+            style = TextStyle(fontFamily = MohamedLoversFonts.arabic, fontWeight = FontWeight.W500, fontSize = 12.sp),
+            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.75f),
+        )
+        Text(
+            text = total.formatCount(),
+            style = TextStyle(fontFamily = MohamedLoversFonts.display, fontWeight = FontWeight.W700, fontSize = 22.sp),
+            color = MohamedLoversPalette.GoldHighlight,
+        )
     }
 }
 
