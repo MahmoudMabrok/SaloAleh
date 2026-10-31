@@ -25,12 +25,10 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import tools.mo3ta.salo.TestApplication
-import tools.mo3ta.salo.presentation.MohamedLoversLeaderboardEntry
-import tools.mo3ta.salo.ui.components.LeaderboardCard
 import tools.mo3ta.salo.ui.components.MohamedLoversPalette
 import tools.mo3ta.salo.ui.components.TotalsCard
 
-/** Renders both proposed placements of the player's own all-time total (see the PR for the PNGs). */
+/** Renders the player's own all-time total in [TotalsCard] (snapshot: app/build/screenshots/total-option-a.png). */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], application = TestApplication::class, qualifiers = "ar-w411dp-h1400dp-xhdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -40,44 +38,13 @@ class MohamedLoversSelfTotalMockupTest {
     private val selfTotal = 123_456L
 
     @Test
-    fun optionA_totalsCardShowsSelfAllTimeTotal() = runAndroidComposeUiTest<ComponentActivity> {
+    fun totalsCardShowsSelfAllTimeTotal() = runAndroidComposeUiTest<ComponentActivity> {
         setContent {
             Frame { TotalsCard(roundTotal = 2_345_678, allTimeTotal = 98_765_432L, selfAllTimeTotal = selfTotal) }
         }
         settle()
         onNodeWithText("123,456").assertIsDisplayed()
         snapshot("total-option-a.png")
-    }
-
-    @Test
-    fun optionB_leaderboardChipShowsSelfAllTimeTotal() = runAndroidComposeUiTest<ComponentActivity> {
-        val top10 = (1..10).map { rank ->
-            MohamedLoversLeaderboardEntry(
-                rank = rank,
-                displayTag = "EG • لاعب $rank",
-                totalCount = 20_000 - rank * 1_000,
-                isCurrentUser = false,
-                uid = "uid$rank",
-            )
-        }
-        val self = MohamedLoversLeaderboardEntry(rank = 37, displayTag = "EG • أنا", totalCount = 1_234, isCurrentUser = true, uid = "me")
-        setContent {
-            Frame {
-                LeaderboardCard(
-                    topPlayers = top10,
-                    selfEntry = self,
-                    selfInTop = false,
-                    isDaily = false,
-                    isSwitching = false,
-                    onToggleLeaderboardType = {},
-                    isPremium = true,
-                    selfAllTimeTotal = selfTotal,
-                )
-            }
-        }
-        settle()
-        onNodeWithText("123,456", substring = true).assertIsDisplayed()
-        snapshot("total-option-b.png")
     }
 
     @Composable

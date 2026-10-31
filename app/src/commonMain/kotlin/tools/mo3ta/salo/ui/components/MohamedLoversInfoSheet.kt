@@ -88,7 +88,6 @@ import tools.mo3ta.salo.generated.resources.mohamed_lovers_info_sheet_title
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_ornament_divider
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_rank_number
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_all_time_total_label
-import tools.mo3ta.salo.generated.resources.mohamed_lovers_self_all_time_chip
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_self_all_time_label
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_daily
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_empty
@@ -589,7 +588,6 @@ internal fun LeaderboardCard(
     onBadgeClick: (String) -> Unit = {},
     onStreakClick: (Int, Boolean) -> Unit = { _, _ -> },
     onMedalClick: () -> Unit = {},
-    selfAllTimeTotal: Long? = null,
 ) {
     SheetCard {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -668,9 +666,6 @@ internal fun LeaderboardCard(
                             style = bodyStyle().copy(fontSize = 11.sp),
                             color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.5f),
                         )
-                    }
-                    if (selfAllTimeTotal != null) {
-                        SelfAllTimeTotalChip(selfAllTimeTotal)
                     }
                 }
             }
@@ -1029,7 +1024,7 @@ private fun WinnerCard(winnerCode: String, onCopyWinnerCode: (String) -> Unit) {
     }
 }
 
-/** Option A: the player's own lifetime total as a third tier of [TotalsCard]. */
+/** The player's own lifetime total, shown as a third tier of [TotalsCard]. */
 @Composable
 private fun SelfAllTimeTotalRow(total: Long) {
     Row(
@@ -1050,23 +1045,6 @@ private fun SelfAllTimeTotalRow(total: Long) {
             text = total.formatCount(),
             style = TextStyle(fontFamily = MohamedLoversFonts.display, fontWeight = FontWeight.W700, fontSize = 22.sp),
             color = MohamedLoversPalette.GoldHighlight,
-        )
-    }
-}
-
-/** Option B: a compact chip under the leaderboard with the player's own lifetime total. */
-@Composable
-private fun SelfAllTimeTotalChip(total: Long) {
-    Box(modifier = Modifier.fillMaxWidth().padding(top = 4.dp), contentAlignment = Alignment.Center) {
-        Text(
-            text = stringResource(Res.string.mohamed_lovers_self_all_time_chip, total.formatCount()),
-            style = TextStyle(fontFamily = MohamedLoversFonts.display, fontWeight = FontWeight.W600, fontSize = 13.sp),
-            color = MohamedLoversPalette.GoldHighlight,
-            modifier = Modifier
-                .clip(RoundedCornerShape(999.dp))
-                .background(MohamedLoversPalette.GoldBase.copy(alpha = 0.14f))
-                .border(1.dp, MohamedLoversPalette.GoldBase.copy(alpha = 0.4f), RoundedCornerShape(999.dp))
-                .padding(horizontal = 14.dp, vertical = 6.dp),
         )
     }
 }
