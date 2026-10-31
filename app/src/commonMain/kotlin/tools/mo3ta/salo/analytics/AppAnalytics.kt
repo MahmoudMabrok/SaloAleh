@@ -63,6 +63,8 @@ object AppAnalytics {
     const val SET_WEEKLY_GOAL = "set_weekly_goal"
     const val WEEKLY_GOAL_REACHED = "weekly_goal_reached"
 
+    const val DAILY_CAP_REACHED = "mohamed_lovers_daily_cap_reached"
+
     const val PARAM_COUNT = "count"
     const val PARAM_CHALLENGE = "challenge"
     const val PARAM_GOAL = "goal"
