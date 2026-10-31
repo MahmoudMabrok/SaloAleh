@@ -99,4 +99,6 @@ object AppAnalytics {
     const val PARAM_PEOPLE = "people"
     const val PARAM_ROUND = "round"
     const val PARAM_ROUNDS_COMPLETED = "rounds_completed"
+
+    const val DAILY_CAP_REACHED = "mohamed_lovers_daily_cap_reached"
 }
