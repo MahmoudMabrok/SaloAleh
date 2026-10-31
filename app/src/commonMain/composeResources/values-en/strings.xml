@@ -37,6 +37,8 @@
     <string name="mohamed_lovers_round_total_label">Prayers upon the Prophet this round</string>
     <string name="mohamed_lovers_round_player_count_label">Players this round: %1$d</string>
     <string name="mohamed_lovers_all_time_total_label">Total prayers upon the Prophet all time</string>
+    <string name="mohamed_lovers_self_all_time_label">Your all-time prayers upon the Prophet ﷺ</string>
+    <string name="mohamed_lovers_self_all_time_chip">Your total: %1$s</string>
     <string name="mohamed_lovers_leaderboard_title">Leaderboard</string>
     <string name="mohamed_lovers_leaderboard_refresh_note">Updated every 30 minutes</string>
     <string name="mohamed_lovers_leaderboard_weekly">Weekly</string>

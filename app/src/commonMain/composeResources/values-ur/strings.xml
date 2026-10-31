@@ -37,6 +37,8 @@
     <string name="mohamed_lovers_round_total_label">اس راؤنڈ میں نبی پر درود کی تعداد</string>
     <string name="mohamed_lovers_round_player_count_label">راؤنڈ کے شرکاء: %1$d</string>
     <string name="mohamed_lovers_all_time_total_label">کل درود کی مجموعی تعداد</string>
+    <string name="mohamed_lovers_self_all_time_label">آپ کا کل درود ﷺ</string>
+    <string name="mohamed_lovers_self_all_time_chip">آپ کا مجموعہ: %1$s</string>
     <string name="mohamed_lovers_leaderboard_title">صدر فہرست</string>
     <string name="mohamed_lovers_leaderboard_refresh_note">ہر 30 منٹ میں اپڈیٹ ہوتا ہے</string>
     <string name="mohamed_lovers_leaderboard_weekly">ہفتہ وار</string>
