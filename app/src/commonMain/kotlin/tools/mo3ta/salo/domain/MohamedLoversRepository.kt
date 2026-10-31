@@ -46,6 +46,9 @@ class MohamedLoversRepository(
     suspend fun fetchAllTimeTotal(): Result<Long> =
         firebaseClient.fetchAllTimeTotal()
 
+    suspend fun fetchUserAllTimeTotal(uid: String): Result<Long> =
+        firebaseClient.fetchUserAllTimeTotal(uid)
+
     suspend fun fetchHeroes(): Result<HeroesBoard?> =
         firebaseClient.fetchHeroes()
 

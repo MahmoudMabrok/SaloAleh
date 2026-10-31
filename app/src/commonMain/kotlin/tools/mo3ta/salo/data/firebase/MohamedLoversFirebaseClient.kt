@@ -150,6 +150,23 @@ class MohamedLoversFirebaseClient(
         }
     }
 
+    override suspend fun fetchUserAllTimeTotal(uid: String): Result<Long> {
+        log.d { "fetchUserAllTimeTotal[$uid]" }
+        return runCatching {
+            val snapshot = Firebase.database.reference("$ROOT_PATH/$USERS_PATH/$uid/$ALL_TIME_TOTAL_PATH")
+                .valueEvents.first()
+            (snapshot.value as? Number)?.toLong() ?: 0L
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "fetchUserAllTimeTotal[$uid]=$it" } },
+                onFailure = { error ->
+                    log.e(error) { "fetchUserAllTimeTotal[$uid] failed" }
+                    trackReadFailure("fetch_user_all_time_total", error)
+                },
+            )
+        }
+    }
+
     override suspend fun fetchHeroes(): Result<HeroesBoard?> {
         log.d { "fetchHeroes" }
         return runCatching {
