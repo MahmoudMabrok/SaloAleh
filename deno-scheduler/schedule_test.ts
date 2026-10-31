@@ -1,4 +1,14 @@
-import { cairoClock, isDueInCairo, SLOTS, utcCandidateHours } from "./schedule.ts";
+// main.ts is a single self-contained file (Deno Deploy playground) whose top level registers
+// Deno.cron jobs and starts Deno.serve. Stub both before importing it so the tests stay
+// side-effect free and need no --unstable-cron flag or open port.
+for (const name of ["cron", "serve"]) {
+  Object.defineProperty(Deno, name, {
+    value: () => ({ finished: Promise.resolve(), shutdown: () => Promise.resolve() }),
+    configurable: true,
+    writable: true,
+  });
+}
+const { cairoClock, isDueInCairo, SLOTS, utcCandidateHours } = await import("./main.ts");
 
 function assertEquals<T>(actual: T, expected: T, msg = "") {
   const a = JSON.stringify(actual);

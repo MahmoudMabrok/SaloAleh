@@ -21,6 +21,6 @@ jobs:
         with:
           deno-version: v2.x
       - name: Type-check
-        run: deno check deno-scheduler/main.ts deno-scheduler/schedule.ts
+        run: deno check deno-scheduler/main.ts deno-scheduler/schedule_test.ts
       - name: Test
         run: deno test deno-scheduler/schedule_test.ts

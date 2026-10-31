@@ -12,7 +12,7 @@ import kotlinx.datetime.toLocalDateTime
 import tools.mo3ta.salo.domain.MohamedLoversCompetitionWindow
 
 // Friday round close, Africa/Cairo local time (DST handled by the zone).
-// Keep in sync with ROUND_CLOSE_HOUR_CAIRO in deno-scheduler/schedule.ts and the scripts.
+// Keep in sync with ROUND_CLOSE_HOUR_CAIRO in deno-scheduler/main.ts and the scripts.
 internal const val ROUND_BOUNDARY_HOUR = 17
 private val cairoZone = TimeZone.of("Africa/Cairo")
 
