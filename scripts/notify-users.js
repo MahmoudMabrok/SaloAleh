@@ -93,7 +93,7 @@ const databaseURL = process.env.FIREBASE_DATABASE_URL;
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount), databaseURL });
 
 // Friday round close, Africa/Cairo local time. Mirrors ROUND_BOUNDARY_HOUR in
-// CompetitionWindowUtils.kt and ROUND_CLOSE_HOUR_CAIRO in deno-scheduler/schedule.ts.
+// CompetitionWindowUtils.kt and ROUND_CLOSE_HOUR_CAIRO in deno-scheduler/main.ts.
 const ROUND_CLOSE_HOUR_CAIRO = 17;
 
 /**
