@@ -21,6 +21,8 @@ interface MohamedLoversFirebaseApi {
     suspend fun fetchRoundPlayerCount(roundKey: String): Result<Int>
     suspend fun fetchRoundTotal(roundKey: String): Result<Int>
     suspend fun fetchAllTimeTotal(): Result<Long>
+    /** The player's own total over every closed round (`users/{uid}/allTimeTotal`); 0 when absent. */
+    suspend fun fetchUserAllTimeTotal(uid: String): Result<Long>
     suspend fun fetchHeroes(): Result<HeroesBoard?>
     fun observeLeaderboard(roundKey: String, daily: Boolean = false): Flow<Result<FirebaseLeaderboard>>
     suspend fun fetchLiveLeaderboard(roundKey: String): Result<FirebaseLeaderboard>
