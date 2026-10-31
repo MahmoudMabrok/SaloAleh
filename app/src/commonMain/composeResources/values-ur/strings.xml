@@ -796,7 +796,6 @@
     <string name="challenge_medals_info_title">چیلنج کے تمغے</string>
     <string name="challenge_medals_info_desc">تمغے ہر روز اس چیلنج کے پہلے تین سرفہرست شرکاء کو دیے جاتے ہیں اور وقت کے ساتھ جمع ہوتے رہتے ہیں۔</string>
     <string name="leaderboard_score_label">درود</string>
-    <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">مقابلہ دیکھیں</string>
     <string name="notif_message_cta_none">ٹھیک ہے</string>
     <string name="settings_referral_header">اجر بانٹیں</string>
