@@ -834,7 +834,6 @@
     <string name="challenge_medals_info_title">Challenge medals</string>
     <string name="challenge_medals_info_desc">Medals are awarded every day to the challenge\'s top three finishers, and accumulate over time.</string>
     <string name="leaderboard_score_label">prayers</string>
-    <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">View competition</string>
     <string name="notif_message_cta_none">OK</string>
     <string name="settings_referral_header">Share the Reward</string>
