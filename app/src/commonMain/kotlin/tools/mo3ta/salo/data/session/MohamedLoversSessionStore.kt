@@ -2,6 +2,9 @@ package tools.mo3ta.salo.data.session
 
 import com.russhwolf.settings.Settings
 import kotlinx.datetime.LocalDate
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import tools.mo3ta.salo.data.crypto.sha256hex
 import tools.mo3ta.salo.domain.MOHAMED_LOVERS_DAILY_PUSH_CAP
 import tools.mo3ta.salo.domain.MOHAMED_LOVERS_MANUAL_DAILY_CAP
@@ -9,6 +12,43 @@ import tools.mo3ta.salo.domain.MohamedLoversPendingSession
 import tools.mo3ta.salo.domain.SalawatDailyCap
 
 class MohamedLoversSessionStore(private val settings: Settings) {
+
+    @Serializable
+    data class PendingFlush(
+        val uid: String,
+        val token: String,
+        val count: Int,
+        val applied: Int,
+        val todayCount: Int,
+        val countryCode: String,
+    )
+
+    @Serializable
+    private data class PendingState(val count: Int, val flush: PendingFlush? = null)
+
+    private fun pendingState(roundKey: String): PendingState =
+        settings.getStringOrNull(pendingStateKey(roundKey))?.let { Json.decodeFromString<PendingState>(it) }
+            ?: PendingState(settings.getInt(pendingCountKey(roundKey), 0))
+
+    private fun savePendingState(roundKey: String, state: PendingState) {
+        // Count and retry identity move together in one settings value, including on acknowledgement.
+        settings.putString(pendingStateKey(roundKey), Json.encodeToString(state))
+        settings.remove(pendingCountKey(roundKey))
+        if (state.count > 0 || state.flush != null) addToPendingIndex(roundKey)
+        else settings.putString(KEY_PENDING_ROUNDS_INDEX, (getPendingRoundKeys() - roundKey).joinToString(","))
+    }
+
+    fun getPendingFlush(roundKey: String, uid: String): PendingFlush? =
+        pendingState(roundKey).flush?.takeIf { it.uid == uid }
+
+    fun savePendingFlush(roundKey: String, flush: PendingFlush) =
+        savePendingState(roundKey, pendingState(roundKey).copy(flush = flush))
+
+    fun completePendingFlush(roundKey: String, token: String) {
+        val state = pendingState(roundKey)
+        val flush = state.flush?.takeIf { it.token == token } ?: return
+        savePendingState(roundKey, PendingState((state.count - flush.count).coerceAtLeast(0)))
+    }
 
     fun getOrCreateAlias(): String {
         settings.getStringOrNull(KEY_ALIAS)?.takeIf { it.isNotBlank() }?.let { return it }
@@ -22,40 +62,33 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         migrateIfNeeded()
         return MohamedLoversPendingSession(
             roundKey = roundKey,
-            clickCount = settings.getInt(pendingCountKey(roundKey), 0),
+            clickCount = pendingState(roundKey).count,
         )
     }
 
     fun incrementPendingClick(roundKey: String, delta: Int = 1): MohamedLoversPendingSession {
         migrateIfNeeded()
-        val key = pendingCountKey(roundKey)
-        val updated = settings.getInt(key, 0) + delta.coerceAtLeast(1)
-        settings.putInt(key, updated)
-        addToPendingIndex(roundKey)
+        val state = pendingState(roundKey)
+        val updated = state.count + delta.coerceAtLeast(1)
+        savePendingState(roundKey, state.copy(count = updated))
         return MohamedLoversPendingSession(roundKey = roundKey, clickCount = updated)
     }
 
     fun getAllPendingRounds(): Map<String, Int> {
         migrateIfNeeded()
         return getPendingRoundKeys()
-            .associateWith { settings.getInt(pendingCountKey(it), 0) }
-            .filter { it.value > 0 }
+            .associateWith { pendingState(it) }
+            .filterValues { it.count > 0 || it.flush != null }
+            .mapValues { it.value.count }
     }
 
     fun decrementPendingClick(roundKey: String, delta: Int) {
-        val key = pendingCountKey(roundKey)
-        val current = settings.getInt(key, 0)
-        val remaining = (current - delta).coerceAtLeast(0)
-        if (remaining == 0) {
-            settings.remove(key)
-            val updated = getPendingRoundKeys() - roundKey
-            settings.putString(KEY_PENDING_ROUNDS_INDEX, updated.joinToString(","))
-        } else {
-            settings.putInt(key, remaining)
-        }
+        val state = pendingState(roundKey)
+        savePendingState(roundKey, state.copy(count = (state.count - delta).coerceAtLeast(0)))
     }
 
     fun clearPendingRound(roundKey: String) {
+        settings.remove(pendingStateKey(roundKey))
         settings.remove(pendingCountKey(roundKey))
         val updated = getPendingRoundKeys() - roundKey
         settings.putString(KEY_PENDING_ROUNDS_INDEX, updated.joinToString(","))
@@ -63,6 +96,7 @@ class MohamedLoversSessionStore(private val settings: Settings) {
 
     fun clearAllPendingRounds() {
         for (roundKey in getPendingRoundKeys()) {
+            settings.remove(pendingStateKey(roundKey))
             settings.remove(pendingCountKey(roundKey))
         }
         settings.putString(KEY_PENDING_ROUNDS_INDEX, "")
@@ -91,6 +125,8 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         rounds.add(roundKey)
         settings.putString(KEY_PENDING_ROUNDS_INDEX, rounds.joinToString(","))
     }
+
+    private fun pendingStateKey(roundKey: String) = "pending_state_$roundKey"
 
     private fun pendingCountKey(roundKey: String) = "pending_count_$roundKey"
 

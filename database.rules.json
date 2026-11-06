@@ -880,6 +880,11 @@
             "todayCount": {
               ".validate": "newData.isNumber() && newData.val() >= 0"
             },
+            "processedFlushTokens": {
+              "$token": {
+                ".validate": "newData.val() === true"
+              }
+            },
             "updatedAt": {
               ".validate": "newData.val() === now"
             },

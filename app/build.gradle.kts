@@ -36,6 +36,7 @@ kotlin {
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.gitlive.firebase.database)
+            implementation("dev.gitlive:firebase-common-internal:${libs.versions.gitliveFirebase.get()}")
             implementation(libs.gitlive.firebase.firestore)
             implementation(libs.multiplatform.settings)
             implementation(libs.kotlinx.datetime)
@@ -62,6 +63,11 @@ kotlin {
             implementation(libs.gms.code.scanner)
             implementation(libs.billing)
             implementation(libs.install.referrer)
+            implementation(libs.feature.delivery)
+            // Play Asset Delivery client. In the base (not :mushaf) because its
+            // manifest services/receiver merge into the base manifest and must
+            // resolve even before the :mushaf split is installed.
+            implementation(libs.asset.delivery)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
@@ -86,13 +92,19 @@ android {
     namespace = "tools.mo3ta.salo"
     buildFeatures { buildConfig = true }
     compileSdk = 36
+    dynamicFeatures += setOf(":mushaf")
+    // Mushaf page images (~100 MB) live in an ON-DEMAND asset pack, not in the
+    // base or :mushaf, so they are not part of the install/update size. The
+    // reader (:mushaf, MushafPackController) fetches the pack the first time it
+    // opens and reads the PNGs from the pack's file-system path.
+    assetPacks += setOf(":mushaf-assets")
 
     defaultConfig {
         applicationId = "tools.mo3ta.salo"
         minSdk = 24
         targetSdk = 36
-        versionCode = 149
-        versionName = "4.10.2"
+        versionCode = 166
+        versionName = "4.2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -111,6 +123,11 @@ android {
         implementation(libs.firebase.appcheck.playintegrity)
         implementation(libs.firebase.appcheck.debug)
         testImplementation(libs.robolectric)
+        androidTestImplementation(libs.androidx.junit)
+        androidTestImplementation(libs.androidx.espresso.core)
+        androidTestImplementation(libs.androidx.test.core)
+        // GitLive's androidTest variant omits Firebase versions and expects this BOM.
+        androidTestImplementation(platform("com.google.firebase:firebase-bom:33.2.0"))
     }
 
     compileOptions {
@@ -128,4 +145,10 @@ android {
     lint {
         error += "HardcodedText"
     }
+}
+
+// On-demand modules cannot depend on a compileOnly library. This annotation
+// jar is pulled in that way by a transitive dependency and is not needed at runtime.
+configurations.matching { it.name.contains("compileOnly", ignoreCase = true) }.configureEach {
+    exclude(group = "com.google.j2objc", module = "j2objc-annotations")
 }
