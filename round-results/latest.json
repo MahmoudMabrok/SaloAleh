@@ -1,0 +1,69 @@
+{
+  "round": "2026-11-06",
+  "closedAt": "2026-11-06T18:29:49+02:00",
+  "roundTotal": 780275,
+  "playerCount": 162,
+  "top10Sum": 694064,
+  "top10": [
+    {
+      "rank": 1,
+      "name": "ماجده ابراهيم دسوقي",
+      "countryCode": "EG",
+      "total": 275273
+    },
+    {
+      "rank": 2,
+      "name": "اسماء",
+      "countryCode": "EG",
+      "total": 127301
+    },
+    {
+      "rank": 3,
+      "name": "سهير",
+      "countryCode": "EG",
+      "total": 89354
+    },
+    {
+      "rank": 4,
+      "name": "يونس",
+      "countryCode": "EG",
+      "total": 80188
+    },
+    {
+      "rank": 5,
+      "name": "ايه",
+      "countryCode": "EG",
+      "total": 33000
+    },
+    {
+      "rank": 6,
+      "name": "شهد رضا أحمد",
+      "countryCode": "EG",
+      "total": 29572
+    },
+    {
+      "rank": 7,
+      "name": "توتو",
+      "countryCode": "EG",
+      "total": 21750
+    },
+    {
+      "rank": 8,
+      "name": "اسماء 🍓",
+      "countryCode": "EG",
+      "total": 15550
+    },
+    {
+      "rank": 9,
+      "name": "عايدة المغربى",
+      "countryCode": "EG",
+      "total": 13880
+    },
+    {
+      "rank": 10,
+      "name": "Israa",
+      "countryCode": "EG",
+      "total": 8196
+    }
+  ]
+}
