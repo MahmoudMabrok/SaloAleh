@@ -23,7 +23,8 @@ class FridayNotificationWorker(
         val now = Clock.System.now().toLocalDateTime(cairoTz)
 
         if (now.dayOfWeek != DayOfWeek.FRIDAY) return Result.success()
-        if (now.hour !in 9..18) return Result.success()
+        // Round closes Friday 17:00 Cairo — last reminder hour is 16:00.
+        if (now.hour !in 9..16) return Result.success()
 
         AndroidReminderNotifier.postFriday(applicationContext)
 

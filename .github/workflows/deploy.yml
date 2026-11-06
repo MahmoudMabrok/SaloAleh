@@ -2,6 +2,7 @@ name: Deploy
 
 permissions:
   contents: write
+  packages: read
 
 on:
   workflow_dispatch:
@@ -27,6 +28,7 @@ on:
         default: true
 
 jobs:
+
   deploy-android:
     name: Deploy Android → Google Play
     runs-on: ubuntu-latest
@@ -39,7 +41,11 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: false
 
       - name: Bump versionCode and versionName
         run: |
@@ -80,7 +86,7 @@ jobs:
           node-version: '20'
 
       - name: Install Firebase CLI
-        run: npm install -g firebase-tools
+        run: npm install -g firebase-tools@15.30.2
 
       - name: Deploy database rules
         env:
@@ -95,6 +101,8 @@ jobs:
       - name: Build release AAB
         run: ./gradlew :app:bundleRelease --no-daemon
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
           KEYSTORE_PATH: ${{ github.workspace }}/release.keystore
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
@@ -293,19 +301,35 @@ jobs:
           VERSION="${{ github.event.inputs.version_name }}"
           ANDROID="${{ needs.deploy-android.result }}"
           IOS="${{ needs.deploy-ios.result }}"
+          NOTES_FILE="$RUNNER_TEMP/release-notes.md"
 
-          NOTES="## v${VERSION}"$'\n'
-          NOTES+="- **Version name:** ${VERSION}"$'\n'
-          [ -n "$ANDROID_VERSION_CODE" ] && NOTES+="- **Version code:** ${ANDROID_VERSION_CODE}"$'\n'
-          [ "$ANDROID" = "success" ] && NOTES+="- ✅ Android published to Google Play (${{ github.event.inputs.track }})"$'\n'
-          [ "$ANDROID" != "success" ] && NOTES+="- ❌ Android deploy failed"$'\n'
-          [ "$IOS" = "success" ] && NOTES+="- ✅ iOS published to App Store Connect"$'\n'
-          [ "$IOS" != "success" ] && NOTES+="- ❌ iOS deploy failed"$'\n'
+          {
+            echo "## v${VERSION}"
+            echo "- **Version name:** ${VERSION}"
+            if [ -n "${ANDROID_VERSION_CODE:-}" ]; then echo "- **Version code:** ${ANDROID_VERSION_CODE}"; fi
+            if [ "$ANDROID" = "success" ]; then
+              echo "- ✅ Android published to Google Play (${{ github.event.inputs.track }})"
+            else
+              echo "- ❌ Android deploy failed"
+            fi
+            if [ "$IOS" = "success" ]; then
+              echo "- ✅ iOS published to App Store Connect"
+            else
+              echo "- ℹ️ iOS: ${IOS:-skipped}"
+            fi
+          } > "$NOTES_FILE"
 
-          gh release create "v${VERSION}" \
-            --title "v${VERSION}" \
-            --notes "$NOTES" \
-            --target "${{ github.ref_name }}"
+          # Re-running a version (or deploying the same version from another branch)
+          # must not fail the job on "Release.tag_name already exists".
+          if gh release view "v${VERSION}" >/dev/null 2>&1; then
+            echo "Release v${VERSION} already exists - updating its notes"
+            gh release edit "v${VERSION}" --notes-file "$NOTES_FILE"
+          else
+            gh release create "v${VERSION}" \
+              --title "v${VERSION}" \
+              --notes-file "$NOTES_FILE" \
+              --target "${{ github.ref_name }}"
+          fi
 
   schedule-build-notification:
     name: Schedule delayed build notification

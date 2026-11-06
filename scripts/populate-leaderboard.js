@@ -1,3 +1,4 @@
+
 // Reads top players for the active round from Firebase RTDB and writes
 // them to the leaderboard node. Dispatched every ~30 min; detects isFinal automatically.
 const admin = require('firebase-admin');
@@ -49,7 +50,11 @@ const LEADERBOARD_LIMIT = Math.max(1, parseInt(process.env.LEADERBOARD_LIMIT || 
 
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount), databaseURL });
 
-// Mirrors CompetitionWindowUtils.kt: roundKey = date of next Friday 19:00 Cairo.
+// Round boundary hour in Cairo local time (DST-aware via Intl). Must match
+// CompetitionWindowUtils.ROUND_BOUNDARY_HOUR in the app.
+const ROUND_CLOSE_HOUR_CAIRO = 17;
+
+// Mirrors CompetitionWindowUtils.kt: roundKey = date of next Friday 17:00 Cairo.
 // If now IS past that boundary, round already closed — advance to following Friday.
 function cairoRoundKey() {
   const now = new Date();
@@ -63,8 +68,8 @@ function cairoRoundKey() {
   const cairoHour = parseInt(hourStr, 10);
 
   let daysToFriday = (5 - jsDow + 7) % 7;
-  // If today is Friday and round has already closed (>= 19:00 Cairo), next round is 7 days away
-  if (daysToFriday === 0 && cairoHour >= 19) daysToFriday = 7;
+  // If today is Friday and round has already closed (>= 17:00 Cairo), next round is 7 days away
+  if (daysToFriday === 0 && cairoHour >= ROUND_CLOSE_HOUR_CAIRO) daysToFriday = 7;
 
   const fridayDate = new Date(now.getTime() + daysToFriday * 86400000);
   return new Intl.DateTimeFormat('en-CA', {
@@ -73,7 +78,7 @@ function cairoRoundKey() {
   }).format(fridayDate);
 }
 
-// Round is final when we are at or past Friday 19:00 Cairo for that roundKey date.
+// Round is final when we are at or past Friday 17:00 Cairo for that roundKey date.
 function isRoundFinal(roundKey) {
   const now = new Date();
   const zone = 'Africa/Cairo';
@@ -86,7 +91,7 @@ function isRoundFinal(roundKey) {
   const cairoDate = `${parts.year}-${parts.month}-${parts.day}`;
   const cairoHour = parseInt(parts.hour, 10);
   if (cairoDate > roundKey) return true;
-  if (cairoDate === roundKey && cairoHour >= 19) return true;
+  if (cairoDate === roundKey && cairoHour >= ROUND_CLOSE_HOUR_CAIRO) return true;
   return false;
 }
 

@@ -11,6 +11,9 @@ jobs:
   android:
     name: Android
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     # Skip the Android build when the PR is on hold (labeled "hold").
     # workflow_dispatch runs have no pull_request payload, so the job still runs there.
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'hold') }}
@@ -23,7 +26,11 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: false
 
       - name: Decode google-services.json
         env:
@@ -35,53 +42,6 @@ jobs:
 
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --no-daemon
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: debug-apk
-          path: app/build/outputs/apk/debug/*.apk
-          retention-days: 7
-
-  # ios:
-  #   name: iOS
-  #   runs-on: macos-latest
-
-  #   steps:
-  #     - uses: actions/checkout@v4
-
-  #     - name: Set up JDK 17
-  #       uses: actions/setup-java@v4
-  #       with:
-  #         java-version: '17'
-  #         distribution: 'temurin'
-  #         cache: gradle
-
-  #     - name: Decode GoogleService-Info.plist
-  #       run: echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" > iosApp/iosApp/GoogleService-Info.plist
-
-  #     - name: Grant execute permission for gradlew
-  #       run: chmod +x gradlew
-
-  #     - name: Install CocoaPods dependencies
-  #       run: |
-  #         cd iosApp
-  #         pod install --repo-update
-
-  #     - name: Build iOS app (simulator)
-  #       run: |
-  #         xcodebuild \
-  #           -workspace iosApp/iosApp.xcworkspace \
-  #           -scheme SaloAleh \
-  #           -configuration Debug \
-  #           -destination "generic/platform=iOS Simulator" \
-  #           -derivedDataPath build/ios-derived \
-  #           build \
-  #           CODE_SIGNING_ALLOWED=NO
-
-  #     - name: Upload simulator app
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: ios-simulator-app
-  #         path: build/ios-derived/Build/Products/Debug-iphonesimulator/SaloAleh.app
-  #         retention-days: 7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}

@@ -4,6 +4,8 @@ name: Deploy GitHub Pages
 #
 # Runs only when JSON files change:
 #   * push to main touching any *.json  (manual edits to stats/, stats.json, …)
+#     — except round-results/**, which the weekly round close commits and which is
+#     not part of the site.
 #   * workflow_run after "Update Landing Page Stats" — the stats bot commits
 #     with [skip ci], so the push-paths trigger above never fires for those
 #     automated commits; this catches them.
@@ -15,6 +17,7 @@ on:
       - '**.json'
       # The voice-recording page is built from these sources into _site/voice.html.
       - 'SpeechCollector/**'
+      - '!round-results/**'
   workflow_run:
     workflows: ["Update Landing Page Stats"]
     types: [completed]

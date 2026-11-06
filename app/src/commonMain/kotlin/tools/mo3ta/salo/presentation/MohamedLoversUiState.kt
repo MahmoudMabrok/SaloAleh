@@ -60,6 +60,8 @@ data class MohamedLoversUiState(
     val roundTotal: Int = 0,
     val roundPlayerCount: Int = 0,
     val allTimeTotal: Long = 0L,
+    /** The player's own total over every *closed* round (`users/{uid}/allTimeTotal`); null until fetched. */
+    val selfClosedRoundsTotal: Long? = null,
     val showHadithDialog: Boolean = false,
 
     // Round end results (banner + full-screen, shown once per completed round)
@@ -130,4 +132,12 @@ data class MohamedLoversUiState(
     val heroesBoard: HeroesBoard? = null,
     val showHeroesSheet: Boolean = false,
     val heroesLoading: Boolean = false,
-)
+) {
+    /**
+     * The player's lifetime salawat: every closed round (stamped by the Friday aggregate) plus what
+     * they have in the current round, synced or still pending. Null until the closed-round total is
+     * fetched, so the UI never shows a partial lifetime figure.
+     */
+    val selfAllTimeTotal: Long?
+        get() = selfClosedRoundsTotal?.let { it + syncedTotal + sessionClicks }
+}

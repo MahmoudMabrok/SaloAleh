@@ -37,6 +37,7 @@
     <string name="mohamed_lovers_round_total_label"> عدد الصلوات علي النبي  هذه الجولة</string>
     <string name="mohamed_lovers_round_player_count_label">المشاركون في الجولة: %1$d</string>
     <string name="mohamed_lovers_all_time_total_label">مجموع الصلوات علي النبي اجمالا</string>
+    <string name="mohamed_lovers_self_all_time_label">إجمالي صلاتك على النبي ﷺ</string>
     <string name="mohamed_lovers_leaderboard_title">المتصدرون</string>
     <string name="mohamed_lovers_leaderboard_refresh_note">يُحدَّث كل 30 دقائق</string>
     <string name="mohamed_lovers_leaderboard_weekly">أسبوعي</string>
@@ -231,6 +232,18 @@
     <string name="quran_today">اليوم</string>
     <string name="quran_pages_label">صفحة</string>
     <string name="quran_page_add">+ صفحة واحدة</string>
+    <string name="quran_open_mushaf">اقرأ في المصحف</string>
+    <string name="quran_download_mushaf">حمّل المصحف</string>
+    <string name="quran_mushaf_downloading">بيتحمّل المصحف</string>
+    <string name="quran_mushaf_download_hint">المصحف مش جوّه التطبيق. دوس مرة وهينزل، وبعدين يفضل عندك.</string>
+    <string name="quran_mushaf_failed">التحميل ما اكتملش. دوس تاني.</string>
+    <string name="quran_mushaf_hint">اختَر الصفحة. بتتسجل مرة واحدة في اليوم.</string>
+    <string name="quran_page_prompt_title">تروح لأنهي صفحة؟</string>
+    <string name="quran_page_prompt_hint">من ١ إلى ٦٠٤</string>
+    <string name="quran_page_prompt_open">افتح</string>
+    <string name="quran_page_prompt_resume">كمّل من آخر صفحة</string>
+    <string name="quran_page_prompt_invalid">اكتب رقم صفحة من ١ إلى ٦٠٤</string>
+    <string name="quran_mushaf_close">إغلاق المصحف</string>
     <string name="quran_daily_goal">الهدف اليومي: %1$d صفحات</string>
     <string name="quran_progress_count">%1$d / %2$d</string>
     <string name="quran_rewards_title">فضائل قراءة القرآن</string>
@@ -834,7 +847,6 @@
     <string name="challenge_medals_info_title">أوسمة التحدي</string>
     <string name="challenge_medals_info_desc">تُمنح الأوسمة كل يوم للمتصدرين الثلاثة الأوائل في هذا التحدي، وتتراكم مع مرور الأيام.</string>
     <string name="leaderboard_score_label">صلاة</string>
-    <string name="leaderboard_separator_label">• • •</string>
     <string name="notif_message_cta">عرض المسابقة</string>
     <string name="notif_message_cta_none">حسناً</string>
     <string name="settings_referral_header">شارك الأجر</string>

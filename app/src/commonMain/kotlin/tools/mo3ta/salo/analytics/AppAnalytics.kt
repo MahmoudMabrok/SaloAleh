@@ -30,7 +30,9 @@ object AppAnalytics {
 
     const val OPEN_QURAN_CHALLENGE = "open_quran_challenge"
     const val OPEN_MANUAL_QURAN = "open_manual_quran"
+    const val OPEN_MUSHAF = "open_mushaf"
     const val QURAN_TAP = "quran_tap"
+    const val QURAN_PAGE_COUNTED = "quran_page_counted"
     const val QURAN_SCREEN_VIEW = "quran_screen_view"
 
     const val OPEN_ALBAQARA_CHALLENGE = "open_albaqara_challenge"
@@ -60,6 +62,8 @@ object AppAnalytics {
     const val OPEN_WEEKLY_GOAL = "open_weekly_goal"
     const val SET_WEEKLY_GOAL = "set_weekly_goal"
     const val WEEKLY_GOAL_REACHED = "weekly_goal_reached"
+
+    const val DAILY_CAP_REACHED = "mohamed_lovers_daily_cap_reached"
 
     const val PARAM_COUNT = "count"
     const val PARAM_CHALLENGE = "challenge"

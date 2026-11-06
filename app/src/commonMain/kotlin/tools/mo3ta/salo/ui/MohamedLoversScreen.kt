@@ -192,7 +192,20 @@ fun MohamedLoversScreen(
 
     // Daily competition push cap: the flush dropped salawat that no longer fit under today's cap.
     LaunchedEffect(state.dailyCapDiscarded) {
-        if (state.dailyCapDiscarded != null) {
+        val discarded = state.dailyCapDiscarded
+        if (discarded != null) {
+            analyticsManager.logAction(
+                AppAnalytics.DAILY_CAP_REACHED,
+                mapOf(
+                    "discarded" to discarded.toString(),
+                    "daily_goal_progress" to state.dailyGoalProgress.toString(),
+                    "today_count" to state.todayCount.toString(),
+                    "synced_total" to state.syncedTotal.toString(),
+                    "session_clicks" to state.sessionClicks.toString(),
+                    "heart_score" to state.heartScore.toString(),
+                    "cap" to MOHAMED_LOVERS_DAILY_PUSH_CAP.toString(),
+                ),
+            )
             showPlatformToast(dailyCapReachedLabel)
             viewModel.dismissDailyCapNotice()
         }

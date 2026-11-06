@@ -911,6 +911,11 @@ class MohamedLoversViewModel(
             launch { repository.writeUserActivity(uid, today, getAppVersion(), getAppVersionCode()) }
             launch { repository.setSupporter(premiumStore.hasFeature(PremiumFeature.SUPPORTER_BADGE)) }
             launch { syncExternalAllowance(roundKey) }
+            launch {
+                repository.fetchUserAllTimeTotal(uid).onSuccess { total ->
+                    _state.update { it.copy(selfClosedRoundsTotal = total) }
+                }
+            }
 
             if (!achievementsFetchedFromRtdb) {
                 achievementsFetchedFromRtdb = true

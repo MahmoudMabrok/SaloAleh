@@ -1021,40 +1021,8 @@
           <span class="lb-head-title" data-i18n="lbCardTitle">قادة هذا الأسبوع</span>
           <span class="live-pill"><span class="live-dot"></span><span data-i18n="lbLive">مباشر</span></span>
         </div>
-        <div class="lb-row">
-          <span class="lb-rank r1">1</span>
-          <span class="lb-name">🇪🇬 EG • A7B3F2</span>
-          <span class="lb-score">3,181</span>
-        </div>
-        <div class="lb-row">
-          <span class="lb-rank r2">2</span>
-          <span class="lb-name">🇸🇦 SA • C9D1E4</span>
-          <span class="lb-score">2,847</span>
-        </div>
-        <div class="lb-row">
-          <span class="lb-rank r3">3</span>
-          <span class="lb-name">🇺🇸 US • F2A8B1</span>
-          <span class="lb-score">2,234</span>
-        </div>
-        <div class="lb-row">
-          <span class="lb-rank">4</span>
-          <span class="lb-name">🇪🇬 EG • 3C9F7A</span>
-          <span class="lb-score">1,892</span>
-        </div>
-        <div class="lb-row">
-          <span class="lb-rank">5</span>
-          <span class="lb-name">🇸🇩 SD • B4E2C1</span>
-          <span class="lb-score">1,456</span>
-        </div>
-        <div class="lb-row">
-          <span class="lb-rank">6</span>
-          <span class="lb-name">🇩🇿 DZ • 91FA30</span>
-          <span class="lb-score">1,203</span>
-        </div>
-        <div class="lb-row">
-          <span class="lb-rank">7</span>
-          <span class="lb-name">🇮🇳 IN • 7C5B2D</span>
-          <span class="lb-score">987</span>
+        <div id="lb-rows">
+          <!-- filled by JS from stats.leaderboard -->
         </div>
       </div>
     </div>
@@ -1064,6 +1032,28 @@
       <h2 class="sec-title" data-i18n-html="lbTitle">مجهول بالتصميم.<br><em>مجد بالجدارة.</em></h2>
       <p class="sec-body" data-i18n="lbBody1">علامتك في المتصدرين هي فقط رمز بلدك وآخر ٦ أحرف من كود مشفر. لا اسم مستخدم. لا ملف شخصي. عدد الصلوات هو كل ما يهم.</p>
       <p class="sec-body" style="margin-top:.75rem;" data-i18n="lbBody2">يتجدد الترتيب كل ٣٠ دقيقة. في منتصف ليلة الجمعة بتوقيت القاهرة، يُكافأ أفضل ١٠ بشارات دائمة وتبدأ جولة جديدة.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TOP STREAKS -->
+<section id="top-streaks" style="background: var(--deep);">
+  <div class="lb-section">
+    <div class="lb-text reveal">
+      <p class="eyebrow" data-i18n="streakEyebrow">أعلى السلاسل</p>
+      <h2 class="sec-title" data-i18n-html="streakTitle">أكثر <em>المواظبين</em></h2>
+      <p class="sec-body" data-i18n="streakBody">أعلى ١٠ لاعبين حسب سلسلة الأيام المتتالية في الجولة الحالية، مع مجموع صلواتهم.</p>
+    </div>
+    <div class="lb-card-wrap reveal reveal-delay-1">
+      <div class="lb-card">
+        <div class="lb-head">
+          <span class="lb-head-title" data-i18n="streakCardTitle">أعلى الستريك</span>
+          <span class="live-pill"><span class="live-dot"></span><span data-i18n="lbLive">مباشر</span></span>
+        </div>
+        <div id="streak-rows">
+          <!-- filled by JS from stats.topStreaks -->
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -1203,6 +1193,7 @@ const STRINGS = {
     lbBody1: 'علامتك في المتصدرين هي فقط رمز بلدك وآخر ٦ أحرف من كود مشفر. لا اسم مستخدم. لا ملف شخصي. عدد الصلوات هو كل ما يهم.',
     lbBody2: 'يتجدد الترتيب كل ٣٠ دقيقة. في منتصف ليلة الجمعة بتوقيت القاهرة، يُكافأ أفضل ١٠ بشارات دائمة وتبدأ جولة جديدة.',
     lbCardTitle: 'قادة هذا الأسبوع', lbLive: 'مباشر',
+    streakEyebrow: 'أعلى السلاسل', streakTitle: 'أكثر <em>المواظبين</em>', streakBody: 'أعلى ١٠ لاعبين حسب سلسلة الأيام المتتالية في الجولة الحالية، مع مجموع صلواتهم.', streakCardTitle: 'أعلى الستريك',
     achEyebrow: 'الإنجازات', achTitle: 'اكسب شارات <em>لكل إنجاز</em>',
     achBody: 'من سلاسل ٧ أيام إلى أفضل ١٠ — كل إنجاز سجل دائم لتفانيك.',
     badge1: 'المركز الأول', badge2: 'المركز الثاني', badge3: 'المركز الثالث', badge4: 'أفضل ١٠',
@@ -1246,6 +1237,7 @@ const STRINGS = {
     lbBody1: 'Your leaderboard tag is just your country flag and the last 6 characters of a secure hash. No username. No profile. The salawat count is all that matters.',
     lbBody2: 'Leaderboard refreshes every 30 minutes. At Friday midnight Cairo time, the top 10 are awarded permanent rank badges and a new round opens.',
     lbCardTitle: "This Week's Leaders", lbLive: 'Live',
+    streakEyebrow: 'Top Streaks', streakTitle: 'Most <em>consistent</em>', streakBody: 'Top 10 players by current round streak, with their round totals.', streakCardTitle: 'Highest Streaks',
     achEyebrow: 'Achievements', achTitle: 'Earn badges for every <em>milestone</em>',
     achBody: 'From 7-day streaks to top-10 finishes — each achievement is a permanent record of your dedication.',
     badge1: '1st Place', badge2: '2nd Place', badge3: '3rd Place', badge4: 'Top 10 Finish',
@@ -1341,6 +1333,34 @@ document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
   const today = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit',
   }).format(new Date());
+  function flagEmoji(code) {
+    if (!code || code.length !== 2) return '';
+    return String.fromCodePoint(...code.toUpperCase().split('').map(c => 0x1F1E6 - 65 + c.charCodeAt(0)));
+  }
+  function shortUid(uid) {
+    return uid ? uid.slice(-6).toUpperCase() : '??????';
+  }
+  function displayName(entry) {
+    if (entry.nickname && entry.nickname.trim()) return entry.nickname.trim();
+    const flag = flagEmoji(entry.countryCode);
+    return (flag ? flag + ' ' : '') + (entry.countryCode || '') + ' • ' + shortUid(entry.uid);
+  }
+  function renderRows(containerId, entries, scoreKey, scoreLabel) {
+    const el = document.getElementById(containerId);
+    if (!el || !entries || !entries.length) return;
+    el.innerHTML = entries.slice(0, 10).map((e, i) => {
+      const rank = e.rank || (i + 1);
+      const rankClass = rank <= 3 ? ' r' + rank : '';
+      const name = displayName(e);
+      const score = (e[scoreKey] || 0).toLocaleString();
+      return `<div class="lb-row">
+          <span class="lb-rank${rankClass}">${rank}</span>
+          <span class="lb-name">${name}</span>
+          <span class="lb-score">${score}</span>
+        </div>`;
+    }).join('');
+  }
+
   fetch(`stats/${today}.json`)
     .then(r => r.ok ? r.json() : null)
     .then(stats => {
@@ -1350,6 +1370,8 @@ document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
         const val = map[el.dataset.stat];
         if (val != null) el.dataset.target = val;
       });
+      renderRows('lb-rows', stats.leaderboard, 'score');
+      renderRows('streak-rows', stats.topStreaks, 'roundStreak');
     })
     .catch(() => {});
 })();

@@ -1,0 +1,31 @@
+name: Scripts Tests
+
+# Unit tests for the Node cron scripts (scripts/*.test.js, node:test).
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - '.github/workflows/scripts-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: node --test scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install firebase-admin
+        run: npm install firebase-admin --no-save
+        working-directory: scripts
+
+      - name: Run tests
+        run: node --test scripts/*.test.js

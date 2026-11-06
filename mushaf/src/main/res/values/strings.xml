@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mushaf_switch_to_reading">التبديل إلى مصحف القراءة</string>
+    <string name="mushaf_switch_to_listening">التبديل إلى مصحف الاستماع</string>
+    <string name="mushaf_mode_reading">وضع القراءة</string>
+    <string name="mushaf_mode_listening">وضع الاستماع</string>
+    <string name="mushaf_pack_title">صفحات المصحف</string>
+    <string name="mushaf_pack_note">تُحمَّل صفحات المصحف مرة واحدة فقط، ثم تعمل بدون إنترنت.</string>
+    <string name="mushaf_pack_checking">جارٍ التحقق من صفحات المصحف…</string>
+    <string name="mushaf_pack_pending">جارٍ بدء التحميل…</string>
+    <string name="mushaf_pack_downloading">جارٍ تحميل صفحات المصحف… %1$d٪</string>
+    <string name="mushaf_pack_progress_bytes">%1$s من %2$s</string>
+    <string name="mushaf_pack_transferring">جارٍ تجهيز الصفحات… %1$d٪</string>
+    <string name="mushaf_pack_wifi">حجم التحميل كبير، لذا ينتظر متجر Google Play شبكة Wi-Fi. يمكنك الاتصال بشبكة Wi-Fi أو الموافقة على التحميل باستخدام بيانات الجوال.</string>
+    <string name="mushaf_pack_wifi_button">التحميل باستخدام بيانات الجوال</string>
+    <string name="mushaf_pack_confirm">يحتاج متجر Google Play إلى تأكيدك لتحميل صفحات المصحف.</string>
+    <string name="mushaf_pack_confirm_button">تأكيد التحميل</string>
+    <string name="mushaf_pack_failed">تعذّر تحميل صفحات المصحف (رمز الخطأ %1$d).</string>
+    <string name="mushaf_pack_failed_network">تعذّر تحميل صفحات المصحف. تحقّق من اتصال الإنترنت ثم أعد المحاولة.</string>
+    <string name="mushaf_pack_failed_storage">لا توجد مساحة كافية على الجهاز لتحميل صفحات المصحف.</string>
+    <string name="mushaf_pack_failed_play">التحميل غير متاح. تأكّد من تثبيت التطبيق من متجر Google Play.</string>
+    <string name="mushaf_pack_canceled">تم إلغاء التحميل.</string>
+    <string name="mushaf_pack_retry">إعادة المحاولة</string>
+    <string name="mushaf_pack_cancel">إلغاء التحميل</string>
+    <string name="mushaf_pack_back">رجوع</string>
+</resources>

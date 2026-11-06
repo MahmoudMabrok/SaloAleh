@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -87,6 +88,7 @@ import tools.mo3ta.salo.generated.resources.mohamed_lovers_info_sheet_title
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_ornament_divider
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_rank_number
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_all_time_total_label
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_self_all_time_label
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_daily
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_empty
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_leaderboard_refresh_note
@@ -104,7 +106,6 @@ import tools.mo3ta.salo.generated.resources.info_sheet_notif_disabled
 import tools.mo3ta.salo.generated.resources.leaderboard_join_supporters
 import tools.mo3ta.salo.generated.resources.leaderboard_live_button
 import tools.mo3ta.salo.generated.resources.leaderboard_score_label
-import tools.mo3ta.salo.generated.resources.leaderboard_separator_label
 import tools.mo3ta.salo.generated.resources.notif_rationale_title
 import tools.mo3ta.salo.generated.resources.notif_rationale_description
 import tools.mo3ta.salo.generated.resources.notif_rationale_open_settings
@@ -202,7 +203,11 @@ internal fun MohamedLoversInfoSheet(
                 roundPlayerCount = state.roundPlayerCount,
                 roundEndInstant = state.roundEndInstant,
             )
-            TotalsCard(roundTotal = state.roundTotal, allTimeTotal = state.allTimeTotal)
+            TotalsCard(
+                roundTotal = state.roundTotal,
+                allTimeTotal = state.allTimeTotal,
+                selfAllTimeTotal = state.selfAllTimeTotal,
+            )
             ShareButton(state = state)
             LeaderboardCard(
                 topPlayers = state.topPlayers,
@@ -456,7 +461,7 @@ private fun CountdownUnit(value: Int, label: String, glowAlpha: Float = 0f) {
 }
 
 @Composable
-private fun TotalsCard(roundTotal: Int, allTimeTotal: Long) {
+internal fun TotalsCard(roundTotal: Int, allTimeTotal: Long, selfAllTimeTotal: Long? = null) {
     val easeOutExpo = remember { CubicBezierEasing(0.16f, 1f, 0.3f, 1f) }
     val combinedTotal = allTimeTotal + roundTotal
     val animatedCombined = remember { Animatable(0f) }
@@ -557,12 +562,16 @@ private fun TotalsCard(roundTotal: Int, allTimeTotal: Long) {
                 ),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.35f),
             )
+            if (selfAllTimeTotal != null) {
+                Spacer(Modifier.height(14.dp))
+                SelfAllTimeTotalRow(selfAllTimeTotal)
+            }
         }
     }
 }
 
 @Composable
-private fun LeaderboardCard(
+internal fun LeaderboardCard(
     topPlayers: List<MohamedLoversLeaderboardEntry>,
     selfEntry: MohamedLoversLeaderboardEntry?,
     selfInTop: Boolean,
@@ -642,21 +651,6 @@ private fun LeaderboardCard(
                         }
                     }
                     if (selfEntry != null && !selfInTop) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Box(modifier = Modifier.weight(1f).height(1.dp).background(MohamedLoversPalette.GoldBase.copy(alpha = 0.18f)))
-                            Text(
-                                text = stringResource(Res.string.leaderboard_separator_label),
-                                fontSize = 10.sp,
-                                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.3f),
-                                modifier = Modifier.padding(horizontal = 8.dp),
-                            )
-                            Box(modifier = Modifier.weight(1f).height(1.dp).background(MohamedLoversPalette.GoldBase.copy(alpha = 0.18f)))
-                        }
                         LeaderboardRow(
                             entry = selfEntry,
                             isPremium = isPremium,
@@ -747,13 +741,14 @@ private fun LeaderboardRow(
             .background(backgroundColor)
             .border(1.dp, borderColor, RoundedCornerShape(12.dp))
             .clickable(enabled = entry.uid.isNotBlank()) { onUserClick(entry.uid, entry.displayTag) }
-            .padding(horizontal = 10.dp, vertical = 9.dp),
+            // Tight start (the right edge in RTL) so the name gets the room, not the rank gutter.
+            .padding(start = 4.dp, end = 10.dp, top = 9.dp, bottom = 9.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // Rank column
+        // Rank column: just wide enough for two digits; grows for a far-down self rank.
         Column(
-            modifier = Modifier.width(36.dp),
+            modifier = Modifier.widthIn(min = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
@@ -1026,6 +1021,31 @@ private fun WinnerCard(winnerCode: String, onCopyWinnerCode: (String) -> Unit) {
                 Icon(imageVector = Icons.Default.ContentCopy, contentDescription = null, tint = MohamedLoversPalette.GoldBase)
             }
         }
+    }
+}
+
+/** The player's own lifetime total, shown as a third tier of [TotalsCard]. */
+@Composable
+private fun SelfAllTimeTotalRow(total: Long) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(MohamedLoversPalette.GoldBase.copy(alpha = 0.1f))
+            .border(1.dp, MohamedLoversPalette.GoldBase.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text(
+            text = stringResource(Res.string.mohamed_lovers_self_all_time_label),
+            style = TextStyle(fontFamily = MohamedLoversFonts.arabic, fontWeight = FontWeight.W500, fontSize = 12.sp),
+            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.75f),
+        )
+        Text(
+            text = total.formatCount(),
+            style = TextStyle(fontFamily = MohamedLoversFonts.display, fontWeight = FontWeight.W700, fontSize = 22.sp),
+            color = MohamedLoversPalette.GoldHighlight,
+        )
     }
 }
 

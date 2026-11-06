@@ -3,6 +3,7 @@ package tools.mo3ta.salo.data.engagement
 import com.russhwolf.settings.MapSettings
 import kotlinx.datetime.LocalDate
 import tools.mo3ta.salo.domain.ChallengeType
+import tools.mo3ta.salo.domain.STREAK_FREEZE_MAX_DAYS
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -75,8 +76,7 @@ class ChallengeBadgeStoreTest {
         assertEquals(0, counts[ChallengeType.DHIKR])
     }
 
-    // ── streaks ──────────────────────────────────────────────────────────────────
-    // Streaks are driven by any activity (recordActivity), not by reaching the goal (recordWin).
+    // ── streaks (with freeze window) ──────────────────────────────────────────────────
 
     @Test
     fun firstActivity_streakIsOne() {
@@ -96,13 +96,22 @@ class ChallengeBadgeStoreTest {
     }
 
     @Test
-    fun missedDay_streakRestartsAtOne() {
+    fun oneMissedDay_keepsStreakInsideFreezeWindow() {
         val s = store()
         s.recordActivity(ChallengeType.DHIKR, LocalDate(2026, 7, 10))
         s.recordActivity(ChallengeType.DHIKR, LocalDate(2026, 7, 11))
-        // Skips the 12th — the 13th restarts the streak.
+        // Skips the 12th — still inside freeze window, streak continues on the 13th.
         s.recordActivity(ChallengeType.DHIKR, LocalDate(2026, 7, 13))
-        assertEquals(1, s.getCurrentStreak(ChallengeType.DHIKR, LocalDate(2026, 7, 13)))
+        assertEquals(3, s.getCurrentStreak(ChallengeType.DHIKR, LocalDate(2026, 7, 13)))
+    }
+
+    @Test
+    fun threeMissedDays_resetsStreak() {
+        val s = store()
+        s.recordActivity(ChallengeType.DHIKR, LocalDate(2026, 7, 10))
+        // Skip 11,12,13 — 3 missed days → reset.
+        s.recordActivity(ChallengeType.DHIKR, LocalDate(2026, 7, 14))
+        assertEquals(1, s.getCurrentStreak(ChallengeType.DHIKR, LocalDate(2026, 7, 14)))
     }
 
     @Test
@@ -115,34 +124,34 @@ class ChallengeBadgeStoreTest {
     }
 
     @Test
-    fun streakStillCountedTheDayAfterLastActiveDay() {
+    fun streakAliveTheDayAfterAndOnMissedDaysInsideWindow() {
         val s = store()
         s.recordActivity(ChallengeType.DHIKR, LocalDate(2026, 7, 10))
         s.recordActivity(ChallengeType.DHIKR, LocalDate(2026, 7, 11))
-        // No activity yet on the 12th, but the streak is still alive.
+        // No activity yet on the 12th, but the streak is still alive (0 missed so far).
         assertEquals(2, s.getCurrentStreak(ChallengeType.DHIKR, LocalDate(2026, 7, 12)))
+        // One full missed day later still alive.
+        assertEquals(2, s.getCurrentStreak(ChallengeType.DHIKR, LocalDate(2026, 7, 13)))
     }
 
     @Test
-    fun streakLapsesWhenLastActiveDayOlderThanYesterday() {
+    fun streakLapsesAfterThreeMissedDays() {
         val s = store()
         s.recordActivity(ChallengeType.DHIKR, LocalDate(2026, 7, 10))
-        s.recordActivity(ChallengeType.DHIKR, LocalDate(2026, 7, 11))
-        // Two days later with no activity — the streak has lapsed.
-        assertEquals(0, s.getCurrentStreak(ChallengeType.DHIKR, LocalDate(2026, 7, 13)))
+        // 3+ missed days → broken.
+        assertEquals(0, s.getCurrentStreak(ChallengeType.DHIKR, LocalDate(2026, 7, 14)))
     }
 
     @Test
     fun bestStreak_keepsLongestRun() {
         val s = store()
-        // Run of 3.
         s.recordActivity(ChallengeType.DHIKR, LocalDate(2026, 7, 10))
         s.recordActivity(ChallengeType.DHIKR, LocalDate(2026, 7, 11))
         s.recordActivity(ChallengeType.DHIKR, LocalDate(2026, 7, 12))
-        // Break, then a shorter run of 2.
-        s.recordActivity(ChallengeType.DHIKR, LocalDate(2026, 7, 15))
+        // Break with 3+ missed, then shorter run.
         s.recordActivity(ChallengeType.DHIKR, LocalDate(2026, 7, 16))
-        assertEquals(2, s.getCurrentStreak(ChallengeType.DHIKR, LocalDate(2026, 7, 16)))
+        s.recordActivity(ChallengeType.DHIKR, LocalDate(2026, 7, 17))
+        assertEquals(2, s.getCurrentStreak(ChallengeType.DHIKR, LocalDate(2026, 7, 17)))
         assertEquals(3, s.getBestStreak(ChallengeType.DHIKR))
     }
 
@@ -173,7 +182,6 @@ class ChallengeBadgeStoreTest {
     fun activityDrivesStreakWithoutWinning() {
         val s = store()
         val day = LocalDate(2026, 7, 10)
-        // Activity but no win: streak advances, badge count stays 0.
         s.recordActivity(ChallengeType.DHIKR, day)
         assertEquals(1, s.getCurrentStreak(ChallengeType.DHIKR, day))
         assertEquals(0, s.getWinCount(ChallengeType.DHIKR))
@@ -183,14 +191,26 @@ class ChallengeBadgeStoreTest {
     fun winningDoesNotByItselfAdvanceStreak() {
         val s = store()
         val day = LocalDate(2026, 7, 10)
-        // recordWin only touches the badge count, never the streak.
         s.recordWin(ChallengeType.DHIKR, day)
         assertEquals(1, s.getWinCount(ChallengeType.DHIKR))
         assertEquals(0, s.getCurrentStreak(ChallengeType.DHIKR, day))
     }
 
-    // ── today's participation ────────────────────────────────────────────────────
-    // Card border highlight: a challenge counts as participated only on its last active day.
+    @Test
+    fun activateFreeze_coversUpcomingDays() {
+        val s = store()
+        val day = LocalDate(2026, 7, 10)
+        s.recordActivity(ChallengeType.DHIKR, day)
+        val snap = s.activateFreeze(ChallengeType.DHIKR, 2, day)
+        assertEquals(1, snap.currentStreak)
+        assertEquals(STREAK_FREEZE_MAX_DAYS - 0, snap.freezeRemaining) // remaining before freeze; freeze consumes from remaining
+        // After freeze, at-risk should be false while covered.
+        val after = s.snapshot(ChallengeType.DHIKR, day.plusDays(1))
+        assertTrue(after.freezeUntil != null)
+        assertFalse(after.isAtRisk)
+    }
+
+    // ── today's participation ───────────────────────────────────────────────────────
 
     @Test
     fun activityToday_marksChallengeActiveToday() {
@@ -208,7 +228,6 @@ class ChallengeBadgeStoreTest {
         val today = LocalDate(2026, 7, 11)
         assertFalse(s.wasActiveOn(ChallengeType.DHIKR, today))
         assertEquals(emptySet(), s.getActiveChallenges(today))
-        // The streak is still alive even though today has no activity yet.
         assertEquals(1, s.getCurrentStreak(ChallengeType.DHIKR, today))
     }
 
@@ -228,4 +247,7 @@ class ChallengeBadgeStoreTest {
         s.recordActivity(ChallengeType.BAQIYAT, LocalDate(2026, 7, 9))
         assertEquals(setOf(ChallengeType.DHIKR, ChallengeType.ZABAD), s.getActiveChallenges(day))
     }
+
+    private fun LocalDate.plusDays(n: Int): LocalDate =
+        LocalDate.fromEpochDays(toEpochDays() + n)
 }

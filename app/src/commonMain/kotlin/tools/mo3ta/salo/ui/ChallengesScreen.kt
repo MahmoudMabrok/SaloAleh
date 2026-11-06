@@ -101,6 +101,7 @@ import tools.mo3ta.salo.generated.resources.tendays_title
 import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.presentation.ChallengesViewModel
 import tools.mo3ta.salo.ui.components.ChallengeStreakChip
+import tools.mo3ta.salo.ui.components.RoundStreakInfoDialog
 import tools.mo3ta.salo.ui.components.SetWeeklyGoalSheet
 import tools.mo3ta.salo.ui.components.WeeklyGoalBar
 import tools.mo3ta.salo.data.engagement.WEEKLY_GOAL_UNSET
@@ -163,6 +164,7 @@ fun ChallengesScreen(
     val weekly by viewModel.weekly.collectAsState()
     val weeklyGoalStore: WeeklyGoalStore = koinInject()
     var goalChallenge by remember { mutableStateOf<ChallengeType?>(null) }
+    var freezeChallenge by remember { mutableStateOf<ChallengeType?>(null) }
 
     LaunchedEffect(Unit) {
         analyticsManager.logView("ChallengesScreen")
@@ -420,6 +422,9 @@ fun ChallengesScreen(
                 item = item,
                 weekly = item.type?.let { weekly[it] },
                 onSetWeeklyGoal = { goalChallenge = item.type },
+                onStreakClick = {
+                    if (item.type != null && item.streak > 0) freezeChallenge = item.type
+                },
             )
         }
     }
@@ -456,6 +461,23 @@ fun ChallengesScreen(
                 weeklyGoalStore.setGoal(editing, WEEKLY_GOAL_UNSET)
                 viewModel.refreshWeeklyGoals()
                 goalChallenge = null
+            },
+        )
+    }
+
+    val freezing = freezeChallenge
+    if (freezing != null) {
+        val snap = viewModel.streakSnapshot(freezing)
+        RoundStreakInfoDialog(
+            streak = snap.currentStreak,
+            onDismiss = { freezeChallenge = null },
+            isSelf = true,
+            freezeRemaining = snap.freezeRemaining,
+            missedDays = snap.missedDays,
+            freezeUntil = snap.freezeUntil?.toString(),
+            onFreeze = { days ->
+                viewModel.freezeChallengeStreak(freezing, days)
+                freezeChallenge = null
             },
         )
     }
@@ -581,6 +603,7 @@ private fun ChallengeCard(
     item: ChallengeItem,
     weekly: tools.mo3ta.salo.data.engagement.WeeklyGoalProgress? = null,
     onSetWeeklyGoal: () -> Unit = {},
+    onStreakClick: () -> Unit = {},
 ) {
     Surface(
         onClick = item.onClick,
@@ -631,7 +654,7 @@ private fun ChallengeCard(
                 )
                 if (item.streak > 0) {
                     Spacer(Modifier.height(6.dp))
-                    ChallengeStreakChip(streak = item.streak, color = item.accent)
+                    ChallengeStreakChip(streak = item.streak, color = item.accent, onClick = onStreakClick)
                 }
 //                if (weekly != null) {
 //                    Spacer(Modifier.height(8.dp))
