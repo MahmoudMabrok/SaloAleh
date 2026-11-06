@@ -6,6 +6,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import tools.mo3ta.salo.data.billing.PremiumStore
+import tools.mo3ta.salo.data.firebase.applySessionFlush
 import tools.mo3ta.salo.data.country.CountryCodeProvider
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.data.time.NetworkTimeProvider
@@ -106,9 +107,9 @@ class MohamedLoversRepositoryFlushTest {
         val originalIncrement = fake.incrementResult
 
         val fakeWithPartialFailure = object : FakeMohamedLoversFirebaseApi() {
-            override suspend fun incrementSession(roundKey: String, uid: String, delta: Int, countryCode: String, todayCount: Int): Result<Unit> {
+            override suspend fun incrementSession(roundKey: String, uid: String, delta: Int, countryCode: String, todayCount: Int, flushToken: String): Result<Unit> {
                 callCount++
-                incrementCalls.add(IncrementCall(roundKey, uid, delta, countryCode, todayCount))
+                incrementCalls.add(IncrementCall(roundKey, uid, delta, countryCode, todayCount, flushToken))
                 return if (roundKey == "R1") Result.success(Unit)
                 else Result.failure(RuntimeException("fail R2"))
             }
@@ -191,4 +192,94 @@ class MohamedLoversRepositoryFlushTest {
         assertTrue(result.isFailure)
         assertEquals(5, store.getPendingSession("R1").clickCount)
     }
+    @Test
+    fun retry_after_lost_ack_reuses_token_and_does_not_double_count_even_after_restart() = runTest {
+        val settings = MapSettings()
+        val store = MohamedLoversSessionStore(settings)
+        val processed = mutableSetOf<String>()
+        var remoteTotal = 0
+        var loseAck = true
+        val fake = object : FakeMohamedLoversFirebaseApi() {
+            override suspend fun incrementSession(
+                roundKey: String, uid: String, delta: Int, countryCode: String,
+                todayCount: Int, flushToken: String,
+            ): Result<Unit> {
+                incrementCalls.add(IncrementCall(roundKey, uid, delta, countryCode, todayCount, flushToken))
+                if (processed.add(flushToken)) remoteTotal += delta
+                if (loseAck) {
+                    loseAck = false
+                    return Result.failure(RuntimeException("server committed, response lost"))
+                }
+                return Result.success(Unit)
+            }
+        }
+        store.incrementPendingClick("R1", 5)
+        val (firstRepo, _) = buildRepo(store, fake)
+        assertTrue(firstRepo.flushPendingSession("EG", todayCount = 5).isFailure)
+        assertEquals(5, remoteTotal)
+        assertEquals(5, store.getPendingSession("R1").clickCount)
+
+        // A process restart plus additional taps must not change the original retry payload.
+        val restartedStore = MohamedLoversSessionStore(settings)
+        restartedStore.incrementPendingClick("R1", 3)
+        val (restartedRepo, _) = buildRepo(restartedStore, fake)
+        assertTrue(restartedRepo.flushPendingSession("US", todayCount = 8, allowance = 2).isSuccess)
+        assertEquals(fake.incrementCalls[0], fake.incrementCalls[1])
+        assertTrue(fake.incrementCalls[0].flushToken.isNotBlank())
+        assertEquals(5, remoteTotal)
+        assertEquals(3, restartedStore.getPendingSession("R1").clickCount)
+
+        assertTrue(restartedRepo.flushPendingSession("EG", todayCount = 8).isSuccess)
+        assertTrue(fake.incrementCalls[2].flushToken != fake.incrementCalls[0].flushToken)
+        assertEquals(8, remoteTotal)
+        assertEquals(0, restartedStore.getPendingSession("R1").clickCount)
+    }
+
+    @Test
+    fun concurrent_flushes_do_not_send_the_same_pending_twice() = runTest {
+        val store = MohamedLoversSessionStore(MapSettings())
+        store.incrementPendingClick("R1", 5)
+        val gate = CompletableDeferred<Unit>()
+        val fake = FakeMohamedLoversFirebaseApi().apply { incrementGate = gate }
+        val (repo, _) = buildRepo(store, fake)
+        val first = launch { repo.flushPendingSession("EG") }
+        val second = launch { repo.flushPendingSession("EG") }
+        testScheduler.runCurrent()
+        gate.complete(Unit)
+        first.join()
+        second.join()
+        assertEquals(1, fake.incrementCalls.size)
+        assertEquals(0, store.getPendingSession("R1").clickCount)
+    }
+
+    @Test
+    fun persisted_pending_counts_from_previous_version_are_preserved() = runTest {
+        val settings = MapSettings().apply {
+            putString("pending_rounds_index", "R1")
+            putInt("pending_count_R1", 5)
+        }
+        val store = MohamedLoversSessionStore(settings)
+        val (repo, fake) = buildRepo(store)
+        assertTrue(repo.flushPendingSession("EG").isSuccess)
+        assertEquals(5, fake.incrementCalls.single().delta)
+        assertEquals(0, store.getPendingSession("R1").clickCount)
+        assertTrue(store.getAllPendingRounds().isEmpty())
+    }
+
+    @Test
+    fun transaction_update_skips_old_tokens_and_preserves_other_player_fields() {
+        val original = mapOf<String, Any?>("totalCount" to 10L, "rank" to 7, "isWinner" to true)
+        val (first, applied) = applySessionFlush(original, "token-a", 5, mapOf("todayCount" to 5))
+        assertTrue(applied)
+        assertEquals(15L, first["totalCount"])
+        assertEquals(7, first["rank"])
+        assertEquals(true, first["isWinner"])
+        val (second, _) = applySessionFlush(first, "token-b", 3, mapOf("todayCount" to 8))
+        val (retry, appliedAgain) = applySessionFlush(second, "token-a", 5, mapOf("todayCount" to 5))
+        assertEquals(false, appliedAgain)
+        assertEquals(second, retry)
+        assertEquals(18L, retry["totalCount"])
+        assertEquals(8, retry["todayCount"])
+    }
+
 }

@@ -4,6 +4,8 @@ import co.touchlab.kermit.Logger
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.database.ServerValue
 import dev.gitlive.firebase.database.database
+import dev.gitlive.firebase.internal.SpecialValueSerializer
+import kotlinx.serialization.builtins.nullable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
@@ -219,28 +221,48 @@ class MohamedLoversFirebaseClient(
         delta: Int,
         countryCode: String,
         todayCount: Int,
+        flushToken: String,
     ): Result<Unit> {
-        log.d { "incrementSession[$roundKey/$uid] delta=$delta country=$countryCode todayCount=$todayCount" }
+        if (flushToken.isBlank()) return Result.failure(IllegalArgumentException("flushToken must not be blank"))
         val safeCode = countryCode.takeIf { it.length >= 2 } ?: MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE
         val publishedName = sessionStore.getPublishedName()
-        val fields = mutableMapOf<String, Any>(
-            UID_KEY to uid,
-            SCHEMA_VERSION_KEY to CLIENT_SCHEMA_VERSION,
-            COUNTRY_CODE_KEY to safeCode,
-            TOTAL_COUNT_KEY to ServerValue.increment(delta.toDouble()),
-            // Absolute running day total (not an increment) so the daily leaderboard can rank on it
-            // directly instead of diffing against yesterday's server snapshot.
-            TODAY_COUNT_KEY to todayCount.coerceAtLeast(0),
-            UPDATED_AT_KEY to ServerValue.TIMESTAMP,
-            NICKNAME_KEY to publishedName,
-        )
+        var applied = false
         return runCatching {
-            Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(fields)
+            // Keep every existing player field, including server-owned fields and other devices' tokens.
+            val serializer = SpecialValueSerializer<Map<String, Any?>>(
+                "PlayerFlushState",
+                toNativeValue = { it },
+                fromNativeValue = { value ->
+                    @Suppress("UNCHECKED_CAST")
+                    (value as Map<String, Any?>)
+                },
+            ).nullable
+            Firebase.database.reference(playersPath(roundKey)).child(uid).runTransaction(serializer) { current ->
+                val (updated, didApply) = applySessionFlush(
+                    current = current.orEmpty(),
+                    flushToken = flushToken,
+                    delta = delta,
+                    metadata = mapOf(
+                        UID_KEY to uid,
+                        SCHEMA_VERSION_KEY to CLIENT_SCHEMA_VERSION,
+                        COUNTRY_CODE_KEY to safeCode,
+                        TODAY_COUNT_KEY to todayCount.coerceAtLeast(0),
+                        NICKNAME_KEY to publishedName,
+                    ),
+                )
+                // The callback can run repeatedly after a conflict: only its final attempt counts.
+                applied = didApply
+                val fields = updated.toMutableMap()
+                // The rules require a fresh server timestamp, even when acknowledging a retry.
+                fields[UPDATED_AT_KEY] = ServerValue.TIMESTAMP
+                fields
+            }
+            Unit
         }.also { result ->
             result.fold(
                 onSuccess = {
-                    log.d { "incrementSession[$roundKey/$uid] ok" }
-                    mirror.mirrorPlayerIncrement(roundKey, uid, delta, safeCode, publishedName)
+                    log.d { "incrementSession[$roundKey/$uid] ok applied=$applied" }
+                    if (applied) mirror.mirrorPlayerIncrement(roundKey, uid, delta, safeCode, publishedName)
                 },
                 onFailure = { error ->
                     log.e(error) { "incrementSession[$roundKey/$uid] failed" }
@@ -997,4 +1019,19 @@ class MohamedLoversFirebaseClient(
         const val PRODUCT_TYPE_KEY = "productType"
         const val PURCHASE_DATE_KEY = "purchaseDate"
     }
+}
+
+/** Pure transaction update: the score and its receipt must always be committed together. */
+internal fun applySessionFlush(
+    current: Map<String, Any?>,
+    flushToken: String,
+    delta: Int,
+    metadata: Map<String, Any?>,
+): Pair<Map<String, Any?>, Boolean> {
+    val tokens = (current["processedFlushTokens"] as? Map<*, *>).orEmpty()
+    if (tokens[flushToken] == true) return current to false
+    return (current + metadata + mapOf(
+        "totalCount" to (((current["totalCount"] as? Number)?.toLong() ?: 0L) + delta),
+        "processedFlushTokens" to (tokens + (flushToken to true)),
+    )) to true
 }

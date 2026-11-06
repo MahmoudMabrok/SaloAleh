@@ -1,6 +1,8 @@
 package tools.mo3ta.salo.domain
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -11,6 +13,8 @@ import tools.mo3ta.salo.data.country.CountryCodeProvider
 import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseApi
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.data.time.NetworkTimeProvider
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 class MohamedLoversRepository(
     private val firebaseClient: MohamedLoversFirebaseApi,
@@ -19,6 +23,8 @@ class MohamedLoversRepository(
     private val countryCodeProvider: CountryCodeProvider,
     private val premiumStore: PremiumStore,
 ) {
+    private val flushMutex = Mutex()
+
     suspend fun bootstrap(): MohamedLoversBootstrap {
         val window = networkTimeProvider.getCompetitionWindow()
         return MohamedLoversBootstrap(
@@ -201,44 +207,56 @@ class MohamedLoversRepository(
      * [todayCount] is the absolute Cairo-day count published for the daily leaderboard; the caller
      * clamps it to the same cap before passing it in.
      */
+    @OptIn(ExperimentalUuidApi::class)
     suspend fun flushPendingSession(
         countryCode: String,
         todayCount: Int = 0,
         allowance: Int = MOHAMED_LOVERS_DAILY_PUSH_CAP,
-    ): Result<MohamedLoversFlushResult> {
+    ): Result<MohamedLoversFlushResult> = flushMutex.withLock {
         val allPending = sessionStore.getAllPendingRounds()
-        if (allPending.isEmpty()) return Result.success(MohamedLoversFlushResult())
+        if (allPending.isEmpty()) return@withLock Result.success(MohamedLoversFlushResult())
 
-        val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
+        val uid = ensureAnonymousUser().getOrElse { return@withLock Result.failure(it) }
 
         var remaining = allowance.coerceAtLeast(0)
         var pushed = 0
         var discarded = 0
         var lastError: Throwable? = null
         for ((roundKey, count) in allPending) {
-            val applied = SalawatDailyCap.allowedPush(requested = count, pushedToday = 0, cap = remaining)
-            if (applied <= 0) {
+            val flush = sessionStore.getPendingFlush(roundKey, uid) ?: MohamedLoversSessionStore.PendingFlush(
+                uid = uid,
+                token = Uuid.random().toString(),
+                count = count,
+                applied = SalawatDailyCap.allowedPush(requested = count, pushedToday = 0, cap = remaining),
+                todayCount = todayCount,
+                countryCode = countryCode,
+            )
+            if (flush.applied <= 0) {
                 // The day's allowance is spent: this pending score can never be scored, so drop it
                 // rather than leave it queued to inflate tomorrow's first flush.
                 sessionStore.decrementPendingClick(roundKey, count)
                 discarded += count
                 continue
             }
+            // Freeze the payload as well as the token until acknowledged. New taps belong to
+            // the next flush, not a retry whose delta may already have reached the server.
+            sessionStore.savePendingFlush(roundKey, flush)
             val result = firebaseClient.incrementSession(
                 roundKey = roundKey,
                 uid = uid,
-                delta = applied,
-                countryCode = countryCode,
-                todayCount = todayCount,
+                delta = flush.applied,
+                countryCode = flush.countryCode,
+                todayCount = flush.todayCount,
+                flushToken = flush.token,
             )
             result.onSuccess {
-                sessionStore.decrementPendingClick(roundKey, count)
-                remaining -= applied
-                pushed += applied
-                discarded += count - applied
+                sessionStore.completePendingFlush(roundKey, flush.token)
+                remaining = (remaining - flush.applied).coerceAtLeast(0)
+                pushed += flush.applied
+                discarded += flush.count - flush.applied
             }.onFailure { lastError = it }
         }
-        return if (lastError != null) Result.failure(lastError!!)
+        if (lastError != null) Result.failure(lastError!!)
         else Result.success(MohamedLoversFlushResult(pushed = pushed, discarded = discarded))
     }
 

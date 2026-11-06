@@ -15,7 +15,7 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
     var incrementGate: CompletableDeferred<Unit>? = null
     var selfPlayerFlow: MutableSharedFlow<Result<MohamedLoversPlayer?>>? = null
 
-    data class IncrementCall(val roundKey: String, val uid: String, val delta: Int, val countryCode: String, val todayCount: Int = 0)
+    data class IncrementCall(val roundKey: String, val uid: String, val delta: Int, val countryCode: String, val todayCount: Int = 0, val flushToken: String = "")
 
     override fun isConfigured(): Boolean = true
 
@@ -42,9 +42,9 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
     override fun observeLeaderboard(roundKey: String, daily: Boolean): Flow<Result<FirebaseLeaderboard>> =
         flowOf(Result.success(FirebaseLeaderboard(emptyList(), false)))
 
-    override suspend fun incrementSession(roundKey: String, uid: String, delta: Int, countryCode: String, todayCount: Int): Result<Unit> {
+    override suspend fun incrementSession(roundKey: String, uid: String, delta: Int, countryCode: String, todayCount: Int, flushToken: String): Result<Unit> {
         incrementGate?.await()
-        incrementCalls.add(IncrementCall(roundKey, uid, delta, countryCode, todayCount))
+        incrementCalls.add(IncrementCall(roundKey, uid, delta, countryCode, todayCount, flushToken))
         return incrementResult
     }
 
