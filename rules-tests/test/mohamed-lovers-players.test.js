@@ -148,11 +148,20 @@ describe('mohamed_lovers players: whole-node writes (transaction shape)', () => 
     await assertFails(asUser().ref(playerPath()).set(wholeNode({ rank: 1 })));
   });
 
-  // KNOWN GAP: ".write": false on a child cannot revoke the parent's write, and the child has no
-  // .validate, so a whole-node client write can change or drop yesterdayTotalScore. Un-skip
-  // once it validates like rank (newData.val() === data.val()).
-  it.skip('rejects a client changing yesterdayTotalScore', async () => {
+  // A child ".write": false cannot revoke the parent's write grant, so yesterdayTotalScore is
+  // protected by a .validate (like rank) instead: server-owned, the client may only echo it.
+  it('accepts the node with yesterdayTotalScore unchanged', async () => {
+    await seedPlayer();
+    await assertSucceeds(asUser().ref(playerPath()).set(wholeNode({ yesterdayTotalScore: 60 })));
+  });
+
+  it('rejects a client changing yesterdayTotalScore', async () => {
     await seedPlayer();
     await assertFails(asUser().ref(playerPath()).set(wholeNode({ yesterdayTotalScore: 0 })));
+  });
+
+  it('rejects a client changing yesterdayTotalScore in a partial update', async () => {
+    await seedPlayer();
+    await assertFails(asUser().ref(playerPath()).update(flushFields(5, { yesterdayTotalScore: 999 })));
   });
 });
