@@ -40,7 +40,6 @@ class MohamedLoversFlushEmulatorTest {
             delta = 5,
             countryCode = "EG",
             todayCount = 45,
-            flushToken = "instrumented-1",
         )
         assertTrue("flush failed: ${result.exceptionOrNull()}", result.isSuccess)
 
@@ -61,7 +60,6 @@ class MohamedLoversFlushEmulatorTest {
             delta = 3,
             countryCode = "EG",
             todayCount = 3,
-            flushToken = "instrumented-new-1",
         )
         assertTrue("flush failed: ${result.exceptionOrNull()}", result.isSuccess)
 
