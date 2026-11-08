@@ -26,7 +26,7 @@ interface MohamedLoversFirebaseApi {
     suspend fun fetchHeroes(): Result<HeroesBoard?>
     fun observeLeaderboard(roundKey: String, daily: Boolean = false): Flow<Result<FirebaseLeaderboard>>
     suspend fun fetchLiveLeaderboard(roundKey: String): Result<FirebaseLeaderboard>
-    suspend fun incrementSession(roundKey: String, uid: String, delta: Int, countryCode: String, todayCount: Int, flushToken: String): Result<Unit>
+    suspend fun incrementSession(roundKey: String, uid: String, delta: Int, countryCode: String, todayCount: Int): Result<Unit>
     /**
      * Stamps the user node with the open dates and the build the user is running.
      * [appVersion] is the versionName (skipped when blank) and [appVersionCode] the integer
