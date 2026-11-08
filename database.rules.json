@@ -874,8 +874,7 @@
               ".validate": "newData.isNumber() && newData.val() >= 0"
             },
             "yesterdayTotalScore": {
-              ".read": true,
-              ".write": false
+              ".validate": "newData.val() === data.val()"
             },
             "todayCount": {
               ".validate": "newData.isNumber() && newData.val() >= 0"
