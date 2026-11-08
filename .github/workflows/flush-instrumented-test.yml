@@ -92,7 +92,8 @@ jobs:
 
       - name: Dump the player nodes
         if: always()
-        run: curl -s "$RTDB/mohamed_lovers/2099-01-02/players.json?ns=$RTDB_NS&print=pretty" -H 'Authorization: Bearer owner' || true
+        run: |
+          curl -s "$RTDB/mohamed_lovers/2099-01-02/players.json?ns=$RTDB_NS&print=pretty" -H 'Authorization: Bearer owner' || true
 
       - name: Upload reports
         if: always()
