@@ -1,0 +1,120 @@
+name: Flush Instrumented Test
+
+# Runs the app's real Mohamed Lovers flush (gitlive on Android) against the
+# Realtime Database emulator with database.rules.json. No production access.
+on:
+  pull_request:
+    paths:
+      - 'database.rules.json'
+      - 'app/src/commonMain/kotlin/tools/mo3ta/salo/data/firebase/**'
+      - 'app/src/commonMain/kotlin/tools/mo3ta/salo/domain/MohamedLovers*'
+      - 'app/src/androidTest/java/tools/mo3ta/salo/data/firebase/**'
+      - 'gradle/libs.versions.toml'
+      - '.github/workflows/flush-instrumented-test.yml'
+  workflow_dispatch:
+
+jobs:
+  flush-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: read
+    env:
+      # The namespace the app's google-services.json points at; the emulator serves it locally.
+      RTDB_NS: kamapp-3b3ac-default-rtdb
+      RTDB: http://127.0.0.1:9000
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (emulators) and 17 (Gradle)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: |
+            21
+            17
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: rules-tests/package-lock.json
+
+      - name: Install firebase-tools
+        working-directory: rules-tests
+        run: npm ci
+
+      - name: Start Database and Firestore emulators
+        run: |
+          JAVA_HOME="$JAVA_HOME_21_X64" PATH="$JAVA_HOME_21_X64/bin:$PATH" \
+            nohup rules-tests/node_modules/.bin/firebase emulators:start \
+              --only database,firestore --project demo-saloaleh > emulators.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -sf "$RTDB/.json?ns=$RTDB_NS" -H 'Authorization: Bearer owner' >/dev/null && break
+            sleep 2
+          done
+          curl -sf "$RTDB/.json?ns=$RTDB_NS" -H 'Authorization: Bearer owner' >/dev/null
+
+      - name: Load rules and seed the test player
+        run: |
+          curl -sf -X PUT "$RTDB/.settings/rules.json?ns=$RTDB_NS" \
+            -H 'Authorization: Bearer owner' --data-binary @database.rules.json
+          curl -sf -X PUT "$RTDB/mohamed_lovers/2099-01-02/players/instrumented-seeded.json?ns=$RTDB_NS" \
+            -H 'Authorization: Bearer owner' \
+            -d '{"uid":"instrumented-seeded","schemaVersion":1,"countryCode":"EG","totalCount":100,"todayCount":40,"updatedAt":1,"nickname":"tester","rank":7,"yesterdayTotalScore":60}'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Decode google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: printf '%s' "$GOOGLE_SERVICES_JSON" > app/google-services.json
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run flush test on an Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: ./gradlew :app:connectedDebugAndroidTest --no-daemon -Pandroid.testInstrumentationRunnerArguments.class=tools.mo3ta.salo.data.firebase.MohamedLoversFlushEmulatorTest
+
+      - name: Verify the written nodes over REST
+        run: |
+          now=$(date +%s%3N)
+          node() { curl -sf "$RTDB/mohamed_lovers/2099-01-02/players/$1.json?ns=$RTDB_NS" -H 'Authorization: Bearer owner'; }
+          check() { # uid, jq filter that must be true
+            json=$(node "$1"); echo "$1: $json"
+            echo "$json" | jq -e --argjson now "$now" "$2" >/dev/null || { echo "::error::$1 failed: $2"; exit 1; }
+          }
+          recent='(.updatedAt > ($now - 600000)) and (.updatedAt < ($now + 600000))'
+          check instrumented-seeded ".totalCount == 105 and .todayCount == 45 and .rank == 7 and .yesterdayTotalScore == 60 and $recent"
+          check instrumented-new ".totalCount == 3 and .todayCount == 3 and $recent"
+
+      - name: Dump the player nodes
+        if: always()
+        run: |
+          curl -s "$RTDB/mohamed_lovers/2099-01-02/players.json?ns=$RTDB_NS&print=pretty" -H 'Authorization: Bearer owner' || true
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flush-test-reports
+          path: |
+            app/build/reports/androidTests/
+            app/build/outputs/androidTest-results/
+            emulators.log
+            *-debug.log
+          if-no-files-found: ignore
