@@ -1,10 +1,12 @@
 package tools.mo3ta.salo.data.firebase
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.android.gms.tasks.Tasks
 import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import com.google.firebase.firestore.FirebaseFirestore
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 import kotlinx.coroutines.runBlocking
@@ -68,8 +70,29 @@ class MohamedLoversFlushEmulatorTest {
         assertServerTimestamp(node)
     }
 
-    private fun read(path: String): DataSnapshot =
-        Tasks.await(FirebaseDatabase.getInstance().getReference(path).get(), 30, TimeUnit.SECONDS)
+    // DatabaseReference.get() hangs against the emulator here, so read through a one-shot
+    // listener (the same listen protocol the app's flows use) and wait on a latch.
+    private fun read(path: String): DataSnapshot {
+        val latch = CountDownLatch(1)
+        var snapshot: DataSnapshot? = null
+        var failure: DatabaseError? = null
+        FirebaseDatabase.getInstance().getReference(path).addListenerForSingleValueEvent(
+            object : ValueEventListener {
+                override fun onDataChange(data: DataSnapshot) {
+                    snapshot = data
+                    latch.countDown()
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    failure = error
+                    latch.countDown()
+                }
+            },
+        )
+        assertTrue("timed out reading $path", latch.await(30, TimeUnit.SECONDS))
+        failure?.let { throw it.toException() }
+        return snapshot!!
+    }
 
     private fun DataSnapshot.long(key: String): Long =
         (child(key).value as? Number)?.toLong() ?: error("$key missing in ${value}")
