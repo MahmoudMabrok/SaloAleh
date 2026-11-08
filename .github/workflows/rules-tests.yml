@@ -1,0 +1,29 @@
+name: Database Rules Tests
+
+on:
+  pull_request:
+    paths:
+      - 'database.rules.json'
+      - 'rules-tests/**'
+      - '.github/workflows/rules-tests.yml'
+  workflow_dispatch:
+
+jobs:
+  rules-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rules-tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: rules-tests/package-lock.json
+      - run: npm ci
+      - run: npm test
