@@ -90,6 +90,18 @@ jobs:
           disable-animations: true
           script: ./gradlew :app:connectedDebugAndroidTest --no-daemon -Pandroid.testInstrumentationRunnerArguments.class=tools.mo3ta.salo.data.firebase.MohamedLoversFlushEmulatorTest
 
+      - name: Verify the written nodes over REST
+        run: |
+          now=$(date +%s%3N)
+          node() { curl -sf "$RTDB/mohamed_lovers/2099-01-02/players/$1.json?ns=$RTDB_NS" -H 'Authorization: Bearer owner'; }
+          check() { # uid, jq filter that must be true
+            json=$(node "$1"); echo "$1: $json"
+            echo "$json" | jq -e --argjson now "$now" "$2" >/dev/null || { echo "::error::$1 failed: $2"; exit 1; }
+          }
+          recent='(.updatedAt > ($now - 600000)) and (.updatedAt < ($now + 600000))'
+          check instrumented-seeded ".totalCount == 105 and .todayCount == 45 and .rank == 7 and .yesterdayTotalScore == 60 and $recent"
+          check instrumented-new ".totalCount == 3 and .todayCount == 3 and $recent"
+
       - name: Dump the player nodes
         if: always()
         run: |
