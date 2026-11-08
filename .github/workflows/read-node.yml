@@ -1,0 +1,42 @@
+name: Read Database Node
+
+# Manual debugging read of one Realtime Database node with the service account (no App Check).
+# The repo is public, so the printed node is public in the run log: read only what you need.
+on:
+  workflow_dispatch:
+    inputs:
+      path:
+        description: 'Node path under mohamed_lovers/ (e.g. mohamed_lovers/2026-11-06/players/<uid>)'
+        required: true
+        type: string
+      shallow:
+        description: 'Replace nested objects with {…}'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  read:
+    name: Read node
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install firebase-admin
+        run: npm install firebase-admin
+        working-directory: scripts
+
+      - name: Read node
+        run: node scripts/read-node.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          NODE_PATH_INPUT: ${{ inputs.path }}
+          SHALLOW: ${{ inputs.shallow }}
