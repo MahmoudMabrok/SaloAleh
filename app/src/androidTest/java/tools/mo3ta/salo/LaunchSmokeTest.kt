@@ -11,7 +11,6 @@ import org.junit.runner.RunWith
 /**
  * Opens the real [MainActivity]. A startup crash (a ContentProvider whose class
  * is missing, or an exception in [SaloApplication]) fails this test.
- * The pipeline installs the base APK only, so the on-demand Mushaf module is absent.
  */
 @RunWith(AndroidJUnit4::class)
 class LaunchSmokeTest {
