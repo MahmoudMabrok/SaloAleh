@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
@@ -86,6 +87,33 @@ compose.resources {
     generateResClass = always
 }
 
+// Community experiences API (Deno Deploy). Empty until the service is deployed.
+// Set -PexperiencesApiBaseUrl=https://your-project.deno.dev or the same key in
+// local.properties (gitignored) or gradle.properties. No path, no trailing slash.
+// See community-api/README.md. The value is not a secret.
+val experiencesApiBaseUrl: String = run {
+    val fromProject = (findProperty("experiencesApiBaseUrl") as String?)?.trim()?.trimEnd('/').orEmpty()
+    val raw = if (fromProject.isNotEmpty()) {
+        fromProject
+    } else {
+        val localFile = rootProject.file("local.properties")
+        if (!localFile.exists()) {
+            ""
+        } else {
+            val properties = Properties()
+            localFile.inputStream().use { properties.load(it) }
+            properties.getProperty("experiencesApiBaseUrl").orEmpty().trim().trimEnd('/')
+        }
+    }
+    if (raw.isNotEmpty() && !raw.matches(Regex("""https?://[A-Za-z0-9.-]+(?::\d+)?"""))) {
+        error(
+            "experiencesApiBaseUrl must be an http(s) origin with no path, or unset. " +
+                "See community-api/README.md.",
+        )
+    }
+    raw
+}
+
 android {
     testOptions.unitTests.isIncludeAndroidResources = true
     namespace = "tools.mo3ta.salo"
@@ -105,6 +133,7 @@ android {
         versionCode = 169
         versionName = "4.2.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "EXPERIENCES_API_BASE_URL", "\"$experiencesApiBaseUrl\"")
     }
 
     buildTypes {
