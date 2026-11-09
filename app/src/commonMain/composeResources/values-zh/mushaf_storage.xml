@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_mushaf_delete_row">从设备删除古兰经</string>
+    <string name="settings_mushaf_delete_size">占用 %1$d MB。打开古兰经时会重新下载。</string>
+    <string name="settings_mushaf_delete_empty">未下载古兰经页面。</string>
+    <string name="settings_mushaf_delete_title">删除古兰经？</string>
+    <string name="settings_mushaf_delete_body">将从此设备删除页面图片和古兰经文本。你的最后一页会保留，下次打开时会重新下载。</string>
+    <string name="settings_mushaf_delete_confirm">删除</string>
+    <string name="settings_mushaf_delete_cancel">取消</string>
+    <string name="settings_mushaf_delete_done">已从此设备删除古兰经</string>
+    <string name="settings_mushaf_delete_failed">部分文件未能删除，请重试</string>
+</resources>

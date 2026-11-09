@@ -22,12 +22,14 @@ import com.mushafimad.ui.mushaf.FileLineImageSource
 import com.mushafimad.ui.mushaf.LineImageSource
 import com.mushafimad.ui.mushaf.MushafLineImages
 import java.io.File
+import java.util.concurrent.atomic.AtomicBoolean
+import tools.mo3ta.salo.ui.quran.MushafLocalImages
 
 /** Name of the on-demand asset pack in :mushaf-assets. */
-internal const val MUSHAF_PACK = "mushaf_assets"
+internal const val MUSHAF_PACK = MushafLocalImages.PACK
 
 /** Folder inside the pack's assets with `{page}/{line}.png`. */
-internal const val MUSHAF_IMAGES_DIR = "quran-images"
+internal const val MUSHAF_IMAGES_DIR = MushafLocalImages.IMAGES_DIR
 
 /** What the pack screen shows. Pure, so it is unit tested (MushafPackUiTest). */
 internal sealed interface PackUi {
@@ -79,7 +81,10 @@ internal fun packUiFor(
  * `context.assets`: Play extracts them to [AssetPackManager.getPackLocation]
  * `.assetsPath()`. This checks for the pack, fetches it with progress, asks
  * for confirmation when Play needs it, and points [MushafLineImages] at the
- * files once it is there. Nothing here throws: without Play or the pack the
+ * files once it is there. After the first download the images are copied
+ * into the app's own storage ([MushafLocalImages]) and the pack is dropped,
+ * because Play invalidates on-demand packs on every app update. Later opens,
+ * including after updates, read the local copy. Nothing here throws: without Play or the pack the
  * screen shows an error with a retry button and the rest of the app is fine.
  *
  * Create in `onCreate` (it registers an activity result launcher), call
@@ -109,6 +114,11 @@ internal class MushafPackController(private val activity: ComponentActivity) {
     }
 
     fun start() {
+        if (useLocalCopy()) {
+            ui = PackUi.Ready
+            dropPackIfPresent()
+            return
+        }
         if (useImagesIfPresent()) {
             ui = PackUi.Ready
             return
@@ -213,7 +223,53 @@ internal class MushafPackController(private val activity: ComponentActivity) {
         sources += AssetLineImageSource()
         val source = FallbackLineImageSource(sources)
         val ok = runCatching { source.open(context, 1, 1)?.use { true } ?: false }.getOrDefault(false)
+        if (ok) {
+            MushafLineImages.source = source
+            if (dir != null) copyToLocalInBackground(dir)
+        }
+        return ok
+    }
+
+    /** Points [MushafLineImages] at the copy in the app's storage when it is complete and readable. */
+    private fun useLocalCopy(): Boolean {
+        if (!MushafLocalImages.isReady(context)) return false
+        val source = FallbackLineImageSource(
+            listOf(FileLineImageSource(MushafLocalImages.imagesDir(context)), AssetLineImageSource()),
+        )
+        val ok = runCatching { source.open(context, 1, 1)?.use { true } ?: false }.getOrDefault(false)
         if (ok) MushafLineImages.source = source
         return ok
+    }
+
+    /**
+     * Copies the pack's images into the app's storage once. The reader keeps
+     * using the pack for this session, and the next [start] switches to the
+     * copy and removes the pack, so no page is read from a folder being deleted.
+     */
+    private fun copyToLocalInBackground(packImages: File) {
+        if (MushafLocalImages.isReady(context) || !copying.compareAndSet(false, true)) return
+        val root = MushafLocalImages.root(context)
+        Thread({
+            try {
+                MushafLocalImages.copyImages(packImages, root)
+            } finally {
+                copying.set(false)
+            }
+        }, "mushaf-images-copy").apply {
+            priority = Thread.MIN_PRIORITY
+            start()
+        }
+    }
+
+    /** The local copy is in use: free the pack's space. */
+    private fun dropPackIfPresent() {
+        val m = manager ?: return
+        runCatching {
+            if (m.getPackLocation(MUSHAF_PACK) != null) m.removePack(MUSHAF_PACK)
+        }
+    }
+
+    private companion object {
+        val copying = AtomicBoolean(false)
     }
 }

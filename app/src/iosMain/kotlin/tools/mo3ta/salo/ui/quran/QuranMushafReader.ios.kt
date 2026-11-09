@@ -24,3 +24,7 @@ actual fun QuranMushafReader(
 ) {
     LaunchedEffect(Unit) { onClose() }
 }
+
+actual suspend fun mushafStoredBytes(): Long = 0L
+
+actual suspend fun deleteMushafContent(): Boolean = true

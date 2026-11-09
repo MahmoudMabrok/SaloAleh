@@ -31,3 +31,13 @@ expect fun rememberMushafAccess(): MushafAccess
 object MushafPageBridge {
     var onPageQualified: ((Int) -> Unit)? = null
 }
+
+/** Bytes the downloaded Mushaf (page images, text database, reader module) uses; 0 when nothing is stored. */
+expect suspend fun mushafStoredBytes(): Long
+
+/**
+ * Deletes the downloaded Mushaf page images, its text database, and the
+ * reader module. The reader's own user data (last page, bookmarks) is kept.
+ * Opening the Mushaf again downloads it again.
+ */
+expect suspend fun deleteMushafContent(): Boolean

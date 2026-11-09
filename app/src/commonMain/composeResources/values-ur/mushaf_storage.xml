@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_mushaf_delete_row">مصحف کو ڈیوائس سے ہٹائیں</string>
+    <string name="settings_mushaf_delete_size">%1$d MB جگہ لیتا ہے۔ مصحف کھولنے پر دوبارہ ڈاؤن لوڈ ہوگا۔</string>
+    <string name="settings_mushaf_delete_empty">مصحف کے صفحات ڈاؤن لوڈ نہیں ہیں۔</string>
+    <string name="settings_mushaf_delete_title">مصحف ہٹا دیں؟</string>
+    <string name="settings_mushaf_delete_body">صفحات کی تصاویر اور مصحف کا متن اس ڈیوائس سے حذف ہو جائیں گے۔ آپ کا آخری صفحہ محفوظ رہے گا، اور اگلی بار کھولنے پر مصحف دوبارہ ڈاؤن لوڈ ہوگا۔</string>
+    <string name="settings_mushaf_delete_confirm">ہٹائیں</string>
+    <string name="settings_mushaf_delete_cancel">منسوخ</string>
+    <string name="settings_mushaf_delete_done">مصحف ڈیوائس سے ہٹا دیا گیا</string>
+    <string name="settings_mushaf_delete_failed">کچھ فائلیں نہیں ہٹ سکیں، دوبارہ کوشش کریں</string>
+</resources>
