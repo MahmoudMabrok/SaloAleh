@@ -9,6 +9,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import tools.mo3ta.salo.TestApplication
 import tools.mo3ta.salo.domain.Achievement
+import tools.mo3ta.salo.ui.community.ExperiencesIntroDialog
 import tools.mo3ta.salo.domain.BadgeType
 import tools.mo3ta.salo.presentation.MohamedLoversUiState
 import tools.mo3ta.salo.ui.components.MohamedLoversInfoSheet
@@ -82,6 +83,17 @@ class ScreenSmokeTest {
                 onDismiss = {},
                 onCopyWinnerCode = {},
                 onToggleLeaderboardType = {},
+            )
+        }
+        waitForIdle()
+    }
+
+    @Test
+    fun experiencesIntroDialog_renders() = runComposeUiTest {
+        setContent {
+            ExperiencesIntroDialog(
+                onOpen = {},
+                onDismiss = {},
             )
         }
         waitForIdle()

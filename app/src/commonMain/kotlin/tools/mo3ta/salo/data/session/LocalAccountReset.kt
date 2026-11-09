@@ -2,6 +2,7 @@ package tools.mo3ta.salo.data.session
 
 import com.russhwolf.settings.Settings
 import tools.mo3ta.salo.data.billing.ProductRegistry
+import tools.mo3ta.salo.data.community.ExperiencesIntroStore
 
 /**
  * Wipes the identity-scoped half of local storage when an account is restored onto this device.
@@ -61,6 +62,7 @@ class LocalAccountReset(private val settings: Settings) {
             "daily_lb_promo_shown",
             "top_bar_tooltips_shown",
             "takbeer_announcement_shown",
+            ExperiencesIntroStore.KEY_SHOWN,
             "salawat_variant_announcement_shown",
             "nickname_announcement_shown",
             "auto_click_warning_shown",

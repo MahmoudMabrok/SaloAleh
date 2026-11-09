@@ -41,6 +41,7 @@ import tools.mo3ta.salo.data.language.LanguageStore
 import tools.mo3ta.salo.data.salawat.SalawatVariantStore
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
 import tools.mo3ta.salo.data.community.CommunityExperiences
+import tools.mo3ta.salo.data.community.ExperiencesIntroStore
 import tools.mo3ta.salo.data.community.ExperiencesApiOrigin
 import tools.mo3ta.salo.data.community.ExperiencesRemote
 import tools.mo3ta.salo.data.community.ExperiencesRemoteDataSource
@@ -89,6 +90,7 @@ val appModule = module {
     single { UpdatePromptStore(get()) }
     single { AutoClickGuardStore(get()) }
     single { AlKahfReminderStore(get()) }
+    single { ExperiencesIntroStore(get()) }
     single { UpdateChecker(get(), get()) }
     single { EngagementStore(get()) }
     single { DailyGoalStore(get()) }
