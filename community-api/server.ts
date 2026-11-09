@@ -7,6 +7,7 @@ import {
   PUBLISHED_CACHE_SECONDS,
   readPublished,
 } from "./store.ts";
+import { newExperienceId } from "./ids.ts";
 import { prepareSubmission } from "./validate.ts";
 
 export interface CommunityDeps {
@@ -63,7 +64,7 @@ async function postExperience(req: Request, deps: CommunityDeps): Promise<Respon
   }
 
   const now = (deps.now ?? (() => new Date()))();
-  const id = (deps.newId ?? (() => crypto.randomUUID()))();
+  const id = (deps.newId ?? newExperienceId)();
   const prepared = prepareSubmission(parsed, id, now.toISOString());
   if (!prepared.ok) return json(400, { error: "invalid", reason: prepared.reason });
 

@@ -64,6 +64,9 @@ export function prepareSubmission(
   if (!input || typeof input !== "object" || Array.isArray(input)) {
     return { ok: false, reason: "bad_json" };
   }
+  if (typeof id !== "string" || id.length === 0 || id.length > 80 || RAW_HTML.test(id)) {
+    return { ok: false, reason: "bad_json" };
+  }
   const record = input as Record<string, unknown>;
   if (typeof record.body !== "string") return { ok: false, reason: "bad_json" };
 

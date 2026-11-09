@@ -136,30 +136,55 @@ call GitHub.
 
 ## 5. Approve a pending experience
 
-1. Open `community/pending.json` on the branch the API writes (default `main`).
-2. Copy the object you want to publish into the array in `community/experiences.json`.
-   Keep `id`, `displayName`, `body`, `category`, and `createdAt` as they are.
-   `category` must stay `app` or `dhikr`. The same length and HTML rules apply; the API
-   drops a row that fails them, so it will not show up in the app.
-3. Remove that object from `community/pending.json`.
-4. Commit both files to that branch.
+New submissions receive a server id: 12 lowercase hex characters, for example
+`0001020a0b0c`. The client cannot choose it. An item that is already in either JSON
+file keeps the id it has, including an older UUID. The published list and the queue
+both store that `id` on every object. The app only shows rows that have one.
 
-The app shows the row on the next fetch, after the 60 second cache. It does not show
-the row at the moment of sending.
+The review page reads the public queue and does not publish anything:
 
-Template, not a real story:
+[https://mahmoudmabrok.github.io/SaloAleh/experiences-review.html](https://mahmoudmabrok.github.io/SaloAleh/experiences-review.html)
 
-```json
-{
-  "id": "paste-the-id",
-  "displayName": "paste-the-name",
-  "body": "paste-the-text",
-  "category": "app",
-  "createdAt": "paste-the-timestamp"
-}
+The page is `community/review.html`. GitHub Pages copies it to that URL when this
+change is on `main`. It loads
+`https://raw.githubusercontent.com/MahmoudMabrok/SaloAleh/main/community/pending.json`.
+
+On the page, select the stories to approve and press **نسخ المعرّفات المحددة**.
+The copied text is one id per line:
+
+```
+0001020a0b0c
+a1b2c3d4e5f6
 ```
 
-Newest published rows are returned first.
+Spaces, commas, and semicolons are also accepted.
+
+Then open
+[Publish community experiences](https://github.com/MahmoudMabrok/SaloAleh/actions/workflows/publish-experiences.yml),
+choose **Run workflow** on branch `main`, paste the ids into `ids`, and run it.
+
+The workflow is `publish-experiences.yml`. GitHub offers **Run workflow** after the
+file is on the default branch, which happens when this pull request is merged.
+Before that, GitHub may list it on the feature branch once the file is on that
+branch. Run it against `main`. The Deno API reads `main`, so a commit on another
+branch does not show up in the app.
+
+The job uses the repository `GITHUB_TOKEN` with `contents: write` only. That is the
+smallest permission that can commit. It does not use a personal access token, and
+the token is not in the app, Firebase, or the HTML page. The job adds only
+`community/pending.json` and `community/experiences.json`.
+
+For each id it:
+
+- moves the row from the queue onto the end of the published list when the id is pending
+- skips an id that is already published, and leaves both files as they are for that id
+- reports an id that is in neither file, and does not invent a row
+
+Other rows stay in place, including a second pending row that happens to reuse an id.
+The Actions log prints the three groups in Arabic: تم النقل، منشورة مسبقًا، غير معروفة.
+
+The app shows a newly published row on the next fetch, after the 60 second cache.
+It does not show the row at the moment it was submitted.
 
 ## Public queue
 
