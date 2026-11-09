@@ -2,7 +2,7 @@ package tools.mo3ta.salo.ui.quran
 
 import androidx.compose.runtime.Composable
 
-/** Where the on-demand Mushaf module is, from the challenge screen's point of view. */
+/** Whether the Mushaf reader can open, from the challenge screen's point of view. */
 enum class MushafStatus {
     /** This platform has no Mushaf reader. */
     Unavailable,
@@ -26,18 +26,3 @@ data class MushafAccess(
 
 @Composable
 expect fun rememberMushafAccess(): MushafAccess
-
-/** The on-demand reader reports a credited page through this. The base module owns the callback. */
-object MushafPageBridge {
-    var onPageQualified: ((Int) -> Unit)? = null
-}
-
-/** Bytes the downloaded Mushaf (page images, text database, reader module) uses; 0 when nothing is stored. */
-expect suspend fun mushafStoredBytes(): Long
-
-/**
- * Deletes the downloaded Mushaf page images, its text database, and the
- * reader module. The reader's own user data (last page, bookmarks) is kept.
- * Opening the Mushaf again downloads it again.
- */
-expect suspend fun deleteMushafContent(): Boolean
