@@ -3,16 +3,24 @@ package tools.mo3ta.salo.ui.quran
 import android.content.Context
 import android.os.SystemClock
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.produceState
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.sp
+import io.github.sherifshabans.mushaf.Ayah
+import io.github.sherifshabans.mushaf.MushafFont
+import io.github.sherifshabans.mushaf.MushafPage
+import io.github.sherifshabans.mushaf.toArabicDigits
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -20,23 +28,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import io.github.sherifshabans.mushaf.MushafColors
 import io.github.sherifshabans.mushaf.MushafDecoration
-import io.github.sherifshabans.mushaf.MushafPager
 import io.github.sherifshabans.mushaf.Quran
 import io.github.sherifshabans.mushaf.rememberMushafPagerState
 import kotlinx.coroutines.delay
-import org.jetbrains.compose.resources.stringResource
 import tools.mo3ta.salo.data.quran.PageDwellCounter
-import tools.mo3ta.salo.generated.resources.Res
-import tools.mo3ta.salo.generated.resources.quran_back_cd
 
 actual val mushafReaderAvailable: Boolean = true
 
@@ -78,33 +80,59 @@ actual fun QuranMushafReader(
         onDispose { counter.flush(SystemClock.elapsedRealtime())?.let(credit) }
     }
 
+    // Closes with the system back button; no on-screen close button. The dialog
+    // window already sits between the status and navigation bars, so no extra insets.
     Dialog(
         onDismissRequest = onClose,
-        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+        properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
-        Box(
-            modifier
-                .fillMaxSize()
-                .background(MushafColors.Light.paper)
-                .windowInsetsPadding(WindowInsets.safeDrawing),
-        ) {
-            MushafPager(
-                modifier = Modifier.fillMaxSize(),
+        // The next page comes in from the left, like a printed Mushaf, whatever the app language.
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+            HorizontalPager(
                 state = state,
-                colors = MushafColors.Light,
-                decoration = MushafDecoration.Classic,
-            )
-            IconButton(
-                onClick = onClose,
-                modifier = Modifier.align(Alignment.TopStart).padding(4.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Close,
-                    contentDescription = stringResource(Res.string.quran_back_cd),
-                    tint = Color(0xFF5B4A2E),
-                )
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(MushafColors.Light.paper),
+                beyondViewportPageCount = 1,
+                key = { it },
+            ) { index ->
+                ReaderPage(page = index + 1)
             }
         }
+    }
+}
+
+/**
+ * One page: surah and juz on top, then the framed page. No footer: the Classic
+ * frame already shows the page number in its medallion.
+ */
+@Composable
+private fun ReaderPage(page: Int) {
+    val context = LocalContext.current
+    val ayahs by produceState<List<Ayah>?>(null, page) {
+        value = Quran.load(context).filter { it.page == page }
+    }
+    Column(Modifier.fillMaxSize().padding(horizontal = 4.dp, vertical = 2.dp)) {
+        val first = ayahs?.firstOrNull()
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            BasicText(
+                text = first?.let { "سُورَةُ " + Quran.surah(it.surah).nameArabic } ?: "",
+                style = TextStyle(fontFamily = MushafFont, fontSize = 15.sp, color = MushafColors.Light.marker),
+            )
+            BasicText(
+                text = first?.let { "الجزء " + toArabicDigits(it.juz) } ?: "",
+                style = TextStyle(fontSize = 15.sp, color = MushafColors.Light.marker),
+            )
+        }
+        MushafPage(
+            ayahs = ayahs ?: emptyList(),
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            colors = MushafColors.Light,
+            decoration = MushafDecoration.Classic,
+        )
     }
 }
 
