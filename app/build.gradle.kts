@@ -38,6 +38,7 @@ kotlin {
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.gitlive.firebase.database)
             implementation(libs.gitlive.firebase.firestore)
+            implementation(libs.gitlive.firebase.config)
             implementation(libs.multiplatform.settings)
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.coroutines.core)
@@ -87,10 +88,8 @@ compose.resources {
     generateResClass = always
 }
 
-// Community experiences API (Deno Deploy). Empty until the service is deployed.
-// Set -PexperiencesApiBaseUrl=https://your-project.deno.dev or the same key in
-// local.properties (gitignored) or gradle.properties. No path, no trailing slash.
-// See community-api/README.md. The value is not a secret.
+// Debug-only override for the Deno experiences API origin. Release builds ignore it
+// and read Firebase Remote Config key experiences_api_base_url. See community-api/README.md.
 val experiencesApiBaseUrl: String = run {
     val fromProject = (findProperty("experiencesApiBaseUrl") as String?)?.trim()?.trimEnd('/').orEmpty()
     val raw = if (fromProject.isNotEmpty()) {
@@ -133,11 +132,14 @@ android {
         versionCode = 169
         versionName = "4.2.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "EXPERIENCES_API_BASE_URL", "\"$experiencesApiBaseUrl\"")
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "EXPERIENCES_API_BASE_URL", "\"$experiencesApiBaseUrl\"")
+        }
         release {
+            buildConfigField("String", "EXPERIENCES_API_BASE_URL", "\"\"")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -148,6 +150,8 @@ android {
     }
 
     dependencies {
+        // Remote Config (firebase-config 22, via GitLive) uses java.time.
+        coreLibraryDesugaring(libs.desugar.jdk.libs)
         implementation(libs.firebase.appcheck.playintegrity)
         implementation(libs.firebase.appcheck.debug)
         testImplementation(libs.robolectric)
@@ -159,6 +163,7 @@ android {
     }
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }

@@ -5,4 +5,5 @@ target 'SaloAleh' do
   pod 'Firebase/Database', '~> 11.0'
   pod 'Firebase/AppCheck', '~> 11.0'
   pod 'Firebase/Messaging', '~> 11.0'
+  pod 'Firebase/RemoteConfig', '~> 11.0'
 end

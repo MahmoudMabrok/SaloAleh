@@ -41,9 +41,13 @@ import tools.mo3ta.salo.data.language.LanguageStore
 import tools.mo3ta.salo.data.salawat.SalawatVariantStore
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
 import tools.mo3ta.salo.data.community.CommunityExperiences
+import tools.mo3ta.salo.data.community.ExperiencesApiOrigin
 import tools.mo3ta.salo.data.community.ExperiencesRemote
 import tools.mo3ta.salo.data.community.ExperiencesRemoteDataSource
 import tools.mo3ta.salo.data.community.ExperiencesRepository
+import tools.mo3ta.salo.data.community.FirebaseExperiencesApiOrigin
+import tools.mo3ta.salo.data.community.GitLiveExperiencesRemoteConfigReader
+import tools.mo3ta.salo.data.community.experiencesApiLocalConfig
 import tools.mo3ta.salo.data.remote.HadithRemoteDataSource
 import tools.mo3ta.salo.data.remote.createHttpClient
 import tools.mo3ta.salo.data.reminder.AlKahfReminderStore
@@ -140,7 +144,14 @@ val appModule = module {
     single { createHttpClient() }
     single { HadithRemoteDataSource(get()) }
     single<ExperiencesRemote> { ExperiencesRemoteDataSource(get()) }
-    single<CommunityExperiences> { ExperiencesRepository(get()) }
+    single<ExperiencesApiOrigin> {
+        val local = experiencesApiLocalConfig()
+        FirebaseExperiencesApiOrigin(
+            remoteConfig = GitLiveExperiencesRemoteConfigReader(fetchImmediately = local.fetchImmediately),
+            debugOverride = local.debugOverride,
+        )
+    }
+    single<CommunityExperiences> { ExperiencesRepository(get(), get()) }
     single { HadithListRepository(get()) }
     viewModel { MohamedLoversViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { DhikrChallengeViewModel(get(), get(), get(), get(), get()) }

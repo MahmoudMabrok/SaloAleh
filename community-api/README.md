@@ -5,9 +5,10 @@ talks only to this service. This service is the only piece that talks to GitHub,
 writes new submissions into the moderation queue. Nothing is published until you move it
 by hand.
 
-There is no Firebase in this path.
+The app learns this service's origin from Firebase Remote Config (`experiences_api_base_url` on project `kamapp-3b3ac`). Stories are not stored in Firebase. Realtime Database, Firestore, and Auth are not used here, and `GITHUB_TOKEN` stays on Deno Deploy.
 
 ```
+app  --Remote Config-->  experiences_api_base_url
 app  --GET /experiences-->  Deno Deploy  --read-->  community/experiences.json
 app  --POST /experiences->  Deno Deploy  --write->  community/pending.json
 ```
@@ -95,21 +96,40 @@ Limits, per isolate (Deno Deploy may run more than one): 5 posts per IP per hour
 
 ## 4. Point the app at the base URL
 
-The app ships with an empty base URL. The experiences screen then explains that the
-service is not enabled, and the rest of the app keeps working.
+The app reads the Deno origin from **Firebase Remote Config** on the existing project
+`kamapp-3b3ac`. This is not Realtime Database, Firestore, or Auth. The parameter holds
+only the public origin. Do not put `GITHUB_TOKEN` in Remote Config.
 
-After deploy, set the origin with no path and no trailing slash, for example
-`https://saloaleh-community.deno.dev`.
+| | |
+| --- | --- |
+| Parameter key | `experiences_api_base_url` |
+| Type | String |
+| Value | the Deno origin, no path and no trailing slash, for example `https://saloaleh-community.deno.dev` |
 
-Android, either of these, then rebuild:
+In the Firebase console:
+
+1. Open [Remote Config for kamapp-3b3ac](https://console.firebase.google.com/project/kamapp-3b3ac/config).
+2. Add parameter `experiences_api_base_url`.
+3. Set the value to the Deno Deploy origin.
+4. Publish the template.
+
+The app fetches that parameter when the experiences screen opens. A debug build checks
+again on every open. A release build caches the fetch for one hour, and still uses the
+last published value if a later fetch fails.
+
+If the parameter is missing, empty, illegal, or the fetch fails and nothing is cached,
+the experiences screen shows an error. The rest of the app keeps working.
+
+Android debug builds can skip Remote Config. Set one of these and rebuild the debug APK:
 
 - `local.properties` (gitignored): `experiencesApiBaseUrl=https://your-project.deno.dev`
 - or `./gradlew -PexperiencesApiBaseUrl=https://your-project.deno.dev assembleDebug`
 
-That value is baked into `BuildConfig.EXPERIENCES_API_BASE_URL`. It is not a secret.
+Release builds ignore that property.
 
-iOS: set the same origin in
-`app/src/iosMain/kotlin/tools/mo3ta/salo/data/community/ExperiencesApiConfig.ios.kt`.
+iOS uses the same Remote Config parameter. The Podfile includes
+`Firebase/RemoteConfig`. Run `pod install` in `iosApp/` before an iOS build so the
+native SDK is linked.
 
 The app calls `GET {origin}/experiences` and `POST {origin}/experiences`. It does not
 call GitHub.

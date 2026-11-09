@@ -9,8 +9,8 @@ import tools.mo3ta.salo.domain.normalizeExperienceDraft
 import tools.mo3ta.salo.domain.validateExperienceDraft
 
 interface ExperiencesRemote {
-    suspend fun fetchPublished(): List<CommunityExperience>
-    suspend fun submit(draft: ExperienceDraft)
+    suspend fun fetchPublished(baseUrl: String): List<CommunityExperience>
+    suspend fun submit(baseUrl: String, draft: ExperienceDraft)
 }
 
 interface CommunityExperiences {
@@ -20,25 +20,25 @@ interface CommunityExperiences {
 
 class ExperiencesRepository(
     private val remote: ExperiencesRemote,
-    private val configured: Boolean = experiencesEndpoint(experiencesApiBaseUrl()) != null,
+    private val origin: ExperiencesApiOrigin,
 ) : CommunityExperiences {
 
-    override suspend fun loadPublished(): Result<List<CommunityExperience>> {
-        if (!configured) {
-            return Result.failure(ExperiencesException(ExperiencesFailure.NotConfigured))
-        }
-        return guard { remote.fetchPublished() }
+    override suspend fun loadPublished(): Result<List<CommunityExperience>> = guard {
+        remote.fetchPublished(requireOrigin())
     }
 
     override suspend fun submit(draft: ExperienceDraft): Result<Unit> {
         if (validateExperienceDraft(draft) != null) {
             return Result.failure(ExperiencesException(ExperiencesFailure.Rejected))
         }
-        if (!configured) {
-            return Result.failure(ExperiencesException(ExperiencesFailure.NotConfigured))
-        }
         val normalized = normalizeExperienceDraft(draft)
-        return guard { remote.submit(normalized) }
+        return guard { remote.submit(requireOrigin(), normalized) }
+    }
+
+    private suspend fun requireOrigin(): String {
+        val resolved = sanitizeOrigin(origin.current())
+        if (resolved.isEmpty()) throw ExperiencesException(ExperiencesFailure.NotConfigured)
+        return resolved
     }
 
     private suspend fun <T> guard(block: suspend () -> T): Result<T> = try {

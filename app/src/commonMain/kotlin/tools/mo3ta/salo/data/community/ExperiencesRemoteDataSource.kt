@@ -22,17 +22,16 @@ import tools.mo3ta.salo.domain.communityExperienceOrNull
  */
 class ExperiencesRemoteDataSource(
     private val client: HttpClient,
-    private val baseUrl: String = experiencesApiBaseUrl(),
 ) : ExperiencesRemote {
 
-    override suspend fun fetchPublished(): List<CommunityExperience> {
-        val response = client.get(endpoint())
+    override suspend fun fetchPublished(baseUrl: String): List<CommunityExperience> {
+        val response = client.get(endpoint(baseUrl))
         ensureAccepted(response)
         return response.body<ExperiencesListDto>().experiences.mapNotNull { it.toDomain() }
     }
 
-    override suspend fun submit(draft: ExperienceDraft) {
-        val response = client.post(endpoint()) {
+    override suspend fun submit(baseUrl: String, draft: ExperienceDraft) {
+        val response = client.post(endpoint(baseUrl)) {
             contentType(ContentType.Application.Json)
             setBody(
                 ExperienceSubmitDto(
@@ -46,7 +45,7 @@ class ExperiencesRemoteDataSource(
         response.bodyAsText()
     }
 
-    private fun endpoint(): String =
+    private fun endpoint(baseUrl: String): String =
         experiencesEndpoint(baseUrl) ?: throw ExperiencesException(ExperiencesFailure.NotConfigured)
 
     private suspend fun ensureAccepted(response: HttpResponse) {
