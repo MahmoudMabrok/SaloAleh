@@ -1104,4 +1104,8 @@
     <string name="experiences_share">مشاركة</string>
     <string name="experiences_share_text">%1$s — %2$s\n%3$s</string>
     <string name="experiences_meta">%1$s · %2$s</string>
+    <string name="experiences_intro_overlay_title">جديد: تجارب مع التطبيق والذكر</string>
+    <string name="experiences_intro_overlay_body">اقرأ تجارب قصيرة مع التطبيق ومع الذكر، وشارك تجربتك. لا تظهر التجربة في القائمة إلا بعد مراجعتها.</string>
+    <string name="experiences_intro_overlay_cta">افتح التجارب</string>
+    <string name="experiences_intro_overlay_dismiss">ليس الآن</string>
 </resources>

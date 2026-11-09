@@ -1054,4 +1054,8 @@
     <string name="experiences_share">分享</string>
     <string name="experiences_share_text">%1$s — %2$s\n%3$s</string>
     <string name="experiences_meta">%1$s · %2$s</string>
+    <string name="experiences_intro_overlay_title">新功能：应用与赞念体验</string>
+    <string name="experiences_intro_overlay_body">阅读并分享关于应用和赞念的简短故事。内容经审核后才会出现在列表中。</string>
+    <string name="experiences_intro_overlay_cta">打开体验</string>
+    <string name="experiences_intro_overlay_dismiss">暂不</string>
 </resources>

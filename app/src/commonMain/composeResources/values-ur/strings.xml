@@ -1054,4 +1054,8 @@
     <string name="experiences_share">شیئر</string>
     <string name="experiences_share_text">%1$s — %2$s\n%3$s</string>
     <string name="experiences_meta">%1$s · %2$s</string>
+    <string name="experiences_intro_overlay_title">نیا: ایپ اور ذکر کے تجربات</string>
+    <string name="experiences_intro_overlay_body">ایپ اور ذکر کے مختصر تجربات پڑھیں اور اپنا تجربہ شیئر کریں۔ تجربہ فہرست میں جائزے کے بعد ہی نظر آتا ہے۔</string>
+    <string name="experiences_intro_overlay_cta">تجربات کھولیں</string>
+    <string name="experiences_intro_overlay_dismiss">ابھی نہیں</string>
 </resources>

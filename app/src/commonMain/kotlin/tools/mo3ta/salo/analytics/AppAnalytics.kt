@@ -84,6 +84,8 @@ object AppAnalytics {
     const val STREAK_BADGE_ANNOUNCEMENT_DISMISSED = "streak_badge_announcement_dismissed"
     const val OPEN_VOICE_DHIKR = "open_voice_dhikr"
     const val OPEN_EXPERIENCES = "open_experiences"
+    const val EXPERIENCES_INTRO_OPENED = "experiences_intro_opened"
+    const val EXPERIENCES_INTRO_DISMISSED = "experiences_intro_dismissed"
     const val EXPERIENCE_SUBMITTED = "experience_submitted"
     const val EXPERIENCE_SHARED = "experience_shared"
     const val VOICE_DHIKR_FORM_OPENED = "voice_dhikr_form_opened"

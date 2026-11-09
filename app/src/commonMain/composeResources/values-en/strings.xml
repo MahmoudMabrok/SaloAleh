@@ -1092,4 +1092,8 @@
     <string name="experiences_share">Share</string>
     <string name="experiences_share_text">%1$s — %2$s\n%3$s</string>
     <string name="experiences_meta">%1$s · %2$s</string>
+    <string name="experiences_intro_overlay_title">New: experiences with the app and dhikr</string>
+    <string name="experiences_intro_overlay_body">Read and share short stories about the app and about dhikr. A story appears in the list only after it is reviewed.</string>
+    <string name="experiences_intro_overlay_cta">Open experiences</string>
+    <string name="experiences_intro_overlay_dismiss">Not now</string>
 </resources>
