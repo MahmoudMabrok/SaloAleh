@@ -20,9 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -44,8 +42,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -88,9 +84,6 @@ import tools.mo3ta.salo.ui.requestExactAlarmPermission
 import tools.mo3ta.salo.ui.setAppLocale
 import tools.mo3ta.salo.ui.shareText
 import tools.mo3ta.salo.ui.showPlatformToast
-import tools.mo3ta.salo.ui.quran.deleteMushafContent
-import tools.mo3ta.salo.ui.quran.mushafReaderAvailable
-import tools.mo3ta.salo.ui.quran.mushafStoredBytes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -404,10 +397,6 @@ fun SettingsScreen(
                     store.showRankChip = checked
                 },
             )
-
-            if (mushafReaderAvailable) {
-                MushafStorageRow()
-            }
 
             Text(
                 text = stringResource(Res.string.settings_nickname_header),
@@ -823,76 +812,6 @@ private fun SettingToggleRow(
         Switch(
             checked = checked,
             onCheckedChange = onToggle,
-        )
-    }
-}
-
-/** Shows how much space the downloaded Mushaf takes and removes it after a confirmation. */
-@Composable
-private fun MushafStorageRow() {
-    val scope = rememberCoroutineScope()
-    var bytes by remember { mutableStateOf<Long?>(null) }
-    var confirming by remember { mutableStateOf(false) }
-    var deleting by remember { mutableStateOf(false) }
-    val doneMessage = stringResource(Res.string.settings_mushaf_delete_done)
-    val failedMessage = stringResource(Res.string.settings_mushaf_delete_failed)
-
-    LaunchedEffect(Unit) { bytes = mushafStoredBytes() }
-
-    val stored = bytes ?: 0L
-    val megabytes = ((stored + 512 * 1024) / (1024 * 1024)).toInt().coerceAtLeast(1)
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(enabled = stored > 0 && !deleting) { confirming = true }
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = stringResource(Res.string.settings_mushaf_delete_row),
-                color = if (stored > 0) Color(0xFFFF6B6B) else Color.White.copy(alpha = 0.5f),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium,
-            )
-            if (bytes != null) {
-                Text(
-                    text = if (stored > 0) {
-                        stringResource(Res.string.settings_mushaf_delete_size, megabytes)
-                    } else {
-                        stringResource(Res.string.settings_mushaf_delete_empty)
-                    },
-                    color = Color.White.copy(alpha = 0.5f),
-                    fontSize = 12.sp,
-                )
-            }
-        }
-    }
-
-    if (confirming) {
-        AlertDialog(
-            onDismissRequest = { confirming = false },
-            title = { Text(stringResource(Res.string.settings_mushaf_delete_title)) },
-            text = { Text(stringResource(Res.string.settings_mushaf_delete_body)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirming = false
-                    deleting = true
-                    scope.launch {
-                        val ok = deleteMushafContent()
-                        bytes = mushafStoredBytes()
-                        deleting = false
-                        showPlatformToast(if (ok) doneMessage else failedMessage)
-                    }
-                }) {
-                    Text(stringResource(Res.string.settings_mushaf_delete_confirm), color = Color(0xFFFF6B6B))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirming = false }) {
-                    Text(stringResource(Res.string.settings_mushaf_delete_cancel))
-                }
-            },
         )
     }
 }
