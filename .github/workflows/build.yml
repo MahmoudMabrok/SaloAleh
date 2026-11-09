@@ -3,8 +3,13 @@ name: Build
 on:
   pull_request:
     branches: [main]
-    paths-ignore:
-      - '.github/**'
+    # Keep ignoring other workflow-only edits, but re-include this file so a
+    # change to the size comparison still runs the build. `paths-ignore` cannot
+    # re-include a file; a later positive `paths` pattern can.
+    paths:
+      - '**'
+      - '!.github/**'
+      - '.github/workflows/build.yml'
   workflow_dispatch:
 
 jobs:
@@ -14,12 +19,21 @@ jobs:
     permissions:
       contents: read
       packages: read
+      # Conversation comments on a pull request use the issues API, and
+      # GITHUB_TOKEN still requires pull-requests: write for that PR resource.
+      pull-requests: write
     # Skip the Android build when the PR is on hold (labeled "hold").
     # workflow_dispatch runs have no pull_request payload, so the job still runs there.
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'hold') }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # On a pull request the first build is the base branch. A manual run
+          # has no base, so this checkout is the only one.
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.sha }}
+          fetch-depth: 1
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -41,7 +55,154 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build debug APK
-        run: ./gradlew :app:assembleDebug --no-daemon
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          ./gradlew :app:assembleDebug --no-daemon
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            prefix=base
+          else
+            prefix=head
+          fi
+          bash -s "$prefix" <<'EOF'
+          set -euo pipefail
+          prefix="$1"
+          copy_one() {
+            local pattern="$1"
+            local dest="$2"
+            local found=()
+            while IFS= read -r apk; do
+              [ -n "$apk" ] || continue
+              found+=("$apk")
+            done < <(find . -type f -path "$pattern" | sort)
+            if [ "${#found[@]}" -gt 1 ]; then
+              echo "Expected at most one APK matching $pattern, found ${#found[@]}:" >&2
+              printf '%s\n' "${found[@]}" >&2
+              exit 1
+            fi
+            if [ "${#found[@]}" -eq 1 ]; then
+              cp "${found[0]}" "$dest"
+              echo "Saved $(basename "$dest") ($(wc -c < "$dest") bytes)"
+            fi
+          }
+          copy_one '*/app/build/outputs/apk/debug/app-debug.apk' "$RUNNER_TEMP/${prefix}-app-debug.apk"
+          if [ ! -f "$RUNNER_TEMP/${prefix}-app-debug.apk" ]; then
+            echo "app-debug.apk was not produced." >&2
+            find . -path '*/build/outputs/apk/*.apk' -type f >&2 || true
+            exit 1
+          fi
+          copy_one '*/mushaf/build/outputs/apk/debug/mushaf-debug.apk' "$RUNNER_TEMP/${prefix}-mushaf-debug.apk"
+          EOF
+
+      - name: Checkout pull request head
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          clean: true
+          fetch-depth: 1
+
+      - name: Decode google-services.json for pull request head
+        if: github.event_name == 'pull_request'
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: printf '%s' "$GOOGLE_SERVICES_JSON" > app/google-services.json
+
+      - name: Build pull request head debug APK
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug --no-daemon
+          bash -s head <<'EOF'
+          set -euo pipefail
+          prefix="$1"
+          copy_one() {
+            local pattern="$1"
+            local dest="$2"
+            local found=()
+            while IFS= read -r apk; do
+              [ -n "$apk" ] || continue
+              found+=("$apk")
+            done < <(find . -path "$pattern" -type f | sort)
+            if [ "${#found[@]}" -gt 1 ]; then
+              echo "Expected at most one APK matching $pattern, found ${#found[@]}:" >&2
+              printf '%s\n' "${found[@]}" >&2
+              exit 1
+            fi
+            if [ "${#found[@]}" -eq 1 ]; then
+              cp "${found[0]}" "$dest"
+              echo "Saved $(basename "$dest") ($(wc -c < "$dest") bytes)"
+            fi
+          }
+          copy_one '*/app/build/outputs/apk/debug/app-debug.apk' "$RUNNER_TEMP/${prefix}-app-debug.apk"
+          if [ ! -f "$RUNNER_TEMP/${prefix}-app-debug.apk" ]; then
+            echo "app-debug.apk was not produced." >&2
+            find . -path '*/build/outputs/apk/*.apk' -type f >&2 || true
+            exit 1
+          fi
+          copy_one '*/mushaf/build/outputs/apk/debug/mushaf-debug.apk' "$RUNNER_TEMP/${prefix}-mushaf-debug.apk"
+          EOF
+
+      - name: Record debug APK sizes
+        env:
+          MODE: ${{ github.event_name == 'pull_request' && 'pr' || 'dispatch' }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          args=(
+            --mode "$MODE"
+            --head "$RUNNER_TEMP/head-app-debug.apk"
+            --head-feature "$RUNNER_TEMP/head-mushaf-debug.apk"
+            --head-label "\`${HEAD_REF}\` @ \`${HEAD_SHA}\`"
+          )
+          if [ "$MODE" = "pr" ]; then
+            args+=(
+              --base "$RUNNER_TEMP/base-app-debug.apk"
+              --base-feature "$RUNNER_TEMP/base-mushaf-debug.apk"
+              --base-label "\`${BASE_REF}\` @ \`${BASE_SHA}\`"
+              --comment "$RUNNER_TEMP/apk-size-comment.md"
+            )
+          fi
+          node scripts/apk-size-report.js "${args[@]}"
+
+      - name: Post or update the size comment
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          marker='<!-- android-debug-apk-size -->'
+          body_file="$RUNNER_TEMP/apk-size-comment.md"
+          if [ ! -f "$body_file" ]; then
+            echo "Size comment file is missing." >&2
+            exit 1
+          fi
+          mapfile -t ids < <(gh api --paginate "/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
+            --jq ".[] | select(.body | contains(\"${marker}\")) | .id" | sed '/^$/d')
+          if [ "${#ids[@]}" -eq 0 ]; then
+            gh api --method POST "/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
+              -f body="$(cat "$body_file")" >/dev/null
+            echo "Posted a new size comment."
+          else
+            latest="${ids[-1]}"
+            gh api --method PATCH "/repos/${GITHUB_REPOSITORY}/issues/comments/${latest}" \
+              -f body="$(cat "$body_file")" >/dev/null
+            echo "Updated size comment ${latest}."
+            if [ "${#ids[@]}" -gt 1 ]; then
+              for id in "${ids[@]:0:${#ids[@]}-1}"; do
+                gh api --method DELETE "/repos/${GITHUB_REPOSITORY}/issues/comments/${id}" \
+                  || echo "Could not delete duplicate size comment ${id}."
+              done
+            fi
+          fi

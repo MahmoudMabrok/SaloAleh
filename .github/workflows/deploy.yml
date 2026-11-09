@@ -33,8 +33,28 @@ jobs:
     name: Deploy Android → Google Play
     runs-on: ubuntu-latest
 
+    outputs:
+      version_code: ${{ steps.bump.outputs.version_code }}
+      play_latest_version_code: ${{ steps.bump.outputs.play_latest_version_code }}
+      gradle_version_code: ${{ steps.bump.outputs.gradle_version_code }}
+
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Fail here, before the version bump, the release build, and the Play
+      # upload. A Gradle versionCode that is behind another track is not a
+      # fallback: Play is the source of truth.
+      - name: Read latest versionCode from Google Play
+        id: play
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          PLAY_PACKAGE_NAME: tools.mo3ta.salo
+        run: node scripts/play-version-code.js
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -48,24 +68,62 @@ jobs:
           cache-read-only: false
 
       - name: Bump versionCode and versionName
+        id: bump
         run: |
+          set -euo pipefail
           VERSION_NAME="${{ github.event.inputs.version_name }}"
-          CURRENT_CODE=$(grep 'versionCode = ' app/build.gradle.kts | grep -o '[0-9]*')
-          NEW_CODE=$((CURRENT_CODE + 1))
-          echo "versionCode: $CURRENT_CODE → $NEW_CODE"
-          echo "versionName: $VERSION_NAME"
-          sed -i "s/versionCode = $CURRENT_CODE/versionCode = $NEW_CODE/" app/build.gradle.kts
+          NEW_CODE="${{ steps.play.outputs.next_version_code }}"
+          PLAY_LATEST="${{ steps.play.outputs.latest_version_code }}"
+          PLAY_TRACK="${{ steps.play.outputs.max_track_version_code }}"
+          PLAY_BUNDLE="${{ steps.play.outputs.max_bundle_version_code }}"
+          if ! [[ "$NEW_CODE" =~ ^[0-9]+$ ]]; then
+            echo "Google Play did not yield a numeric next versionCode (got '${NEW_CODE}'). Not falling back to Gradle." >&2
+            exit 1
+          fi
+          if ! [[ "$PLAY_LATEST" =~ ^[0-9]+$ ]]; then
+            echo "Google Play did not yield a numeric latest versionCode (got '${PLAY_LATEST}'). Not falling back to Gradle." >&2
+            exit 1
+          fi
+          if [ "$NEW_CODE" -le "$PLAY_LATEST" ]; then
+            echo "Refusing versionCode ${NEW_CODE}: it is not greater than Play's latest ${PLAY_LATEST}." >&2
+            exit 1
+          fi
+          CURRENT_CODE=$(grep -E '^[[:space:]]*versionCode = [0-9]+' app/build.gradle.kts | head -1 | grep -oE '[0-9]+')
+          if [ -z "$CURRENT_CODE" ]; then
+            echo "Could not read versionCode from app/build.gradle.kts" >&2
+            exit 1
+          fi
+          sed -i -E "s/^([[:space:]]*versionCode = )[0-9]+/\\1${NEW_CODE}/" app/build.gradle.kts
           sed -i "s/versionName = \"[^\"]*\"/versionName = \"$VERSION_NAME\"/" app/build.gradle.kts
+          GOT=$(grep -E '^[[:space:]]*versionCode = [0-9]+' app/build.gradle.kts | head -1 | grep -oE '[0-9]+')
+          if [ "$GOT" != "$NEW_CODE" ]; then
+            echo "Failed to write versionCode ${NEW_CODE} (file has ${GOT})." >&2
+            exit 1
+          fi
+          echo "Gradle versionCode: $CURRENT_CODE"
+          echo "Play latest versionCode: $PLAY_LATEST (tracks: $PLAY_TRACK, bundles: $PLAY_BUNDLE)"
+          echo "Uploading versionCode: $NEW_CODE"
+          echo "versionName: $VERSION_NAME"
+          {
+            echo "version_code=${NEW_CODE}"
+            echo "play_latest_version_code=${PLAY_LATEST}"
+            echo "gradle_version_code=${CURRENT_CODE}"
+          } >> "$GITHUB_OUTPUT"
 
           {
             echo "## 📦 Android version dump"
             echo ""
             echo "| Field | Old | New |"
             echo "|-------|-----|-----|"
-            echo "| versionCode | \`$CURRENT_CODE\` | \`$NEW_CODE\` |"
+            echo "| Gradle versionCode | \`$CURRENT_CODE\` | \`$NEW_CODE\` |"
+            echo "| Play latest versionCode | \`$PLAY_LATEST\` | uploaded \`$NEW_CODE\` |"
+            echo "| Play highest on a track | \`$PLAY_TRACK\` | |"
+            echo "| Play highest uploaded bundle | \`$PLAY_BUNDLE\` | |"
             echo "| versionName | — | \`$VERSION_NAME\` |"
             echo ""
             echo "**Track:** \`${{ github.event.inputs.track }}\`"
+            echo ""
+            echo "versionCode comes from Google Play (highest code on any track or uploaded bundle, plus one), not from Gradle + 1."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Decode google-services.json
@@ -245,6 +303,7 @@ jobs:
 
       - name: Apply version bumps for succeeded jobs
         run: |
+          set -euo pipefail
           VERSION_NAME="${{ github.event.inputs.version_name }}"
 
           {
@@ -257,13 +316,26 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
           if [ "${{ needs.deploy-android.result }}" = "success" ]; then
-            CURRENT_CODE=$(grep 'versionCode = ' app/build.gradle.kts | grep -o '[0-9]*')
-            NEW_CODE=$((CURRENT_CODE + 1))
-            sed -i "s/versionCode = $CURRENT_CODE/versionCode = $NEW_CODE/" app/build.gradle.kts
+            # Same code the deploy job uploaded. Do not increment the checked-out
+            # Gradle file again: that file can disagree with Play and with the AAB.
+            NEW_CODE="${{ needs.deploy-android.outputs.version_code }}"
+            PLAY_LATEST="${{ needs.deploy-android.outputs.play_latest_version_code }}"
+            GRADLE_OLD="${{ needs.deploy-android.outputs.gradle_version_code }}"
+            if ! [[ "$NEW_CODE" =~ ^[0-9]+$ ]]; then
+              echo "Deploy job did not provide the versionCode it uploaded (got '${NEW_CODE}')." >&2
+              exit 1
+            fi
+            sed -i -E "s/^([[:space:]]*versionCode = )[0-9]+/\\1${NEW_CODE}/" app/build.gradle.kts
             sed -i "s/versionName = \"[^\"]*\"/versionName = \"$VERSION_NAME\"/" app/build.gradle.kts
-            echo "Android versionCode: $CURRENT_CODE → $NEW_CODE"
+            GOT=$(grep -E '^[[:space:]]*versionCode = [0-9]+' app/build.gradle.kts | head -1 | grep -oE '[0-9]+')
+            if [ "$GOT" != "$NEW_CODE" ]; then
+              echo "Failed to commit versionCode ${NEW_CODE} (file has ${GOT})." >&2
+              exit 1
+            fi
+            echo "Android versionCode: Gradle had ${GRADLE_OLD}, Play latest ${PLAY_LATEST}, committed ${NEW_CODE}"
             echo "ANDROID_VERSION_CODE=$NEW_CODE" >> "$GITHUB_ENV"
-            echo "| Android | versionCode | \`$CURRENT_CODE\` | \`$NEW_CODE\` |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Android | versionCode | \`${GRADLE_OLD}\` | \`${NEW_CODE}\` |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Android | Play latest | \`${PLAY_LATEST}\` | uploaded \`${NEW_CODE}\` |" >> "$GITHUB_STEP_SUMMARY"
             echo "| Android | versionName | — | \`$VERSION_NAME\` |" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "Android deploy failed — skipping Android version bump"
