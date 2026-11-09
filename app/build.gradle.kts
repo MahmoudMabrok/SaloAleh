@@ -62,11 +62,8 @@ kotlin {
             implementation(libs.gms.code.scanner)
             implementation(libs.billing)
             implementation(libs.install.referrer)
-            implementation(libs.feature.delivery)
-            // Play Asset Delivery client. In the base (not :mushaf) because its
-            // manifest services/receiver merge into the base manifest and must
-            // resolve even before the :mushaf split is installed.
-            implementation(libs.asset.delivery)
+            // Madinah Mushaf drawn as text (about 1.7 MB, offline, no download).
+            implementation(libs.mushaf.text)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
@@ -91,12 +88,6 @@ android {
     namespace = "tools.mo3ta.salo"
     buildFeatures { buildConfig = true }
     compileSdk = 36
-    dynamicFeatures += setOf(":mushaf")
-    // Mushaf page images (~100 MB) live in an ON-DEMAND asset pack, not in the
-    // base or :mushaf, so they are not part of the install/update size. The
-    // reader (:mushaf, MushafPackController) fetches the pack the first time it
-    // opens and reads the PNGs from the pack's file-system path.
-    assetPacks += setOf(":mushaf-assets")
 
     defaultConfig {
         applicationId = "tools.mo3ta.salo"
