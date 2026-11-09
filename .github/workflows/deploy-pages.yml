@@ -17,6 +17,8 @@ on:
       - '**.json'
       # The voice-recording page is built from these sources into _site/voice.html.
       - 'SpeechCollector/**'
+      # Community review page, served at /experiences-review.html.
+      - 'community/review.html'
       - '!round-results/**'
   workflow_run:
     workflows: ["Update Landing Page Stats"]
@@ -49,6 +51,7 @@ jobs:
           cp landing.html _site/index.html
           cp landing.html _site/landing.html
           cp support.html _site/support.html
+          cp community/review.html _site/experiences-review.html
           cp stats.json _site/stats.json
           cp -r stats _site/stats
 

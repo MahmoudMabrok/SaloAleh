@@ -1,0 +1,47 @@
+name: Publish community experiences
+
+# Moves selected rows from community/pending.json into community/experiences.json.
+# Run it from the Actions tab after this file is on the default branch.
+# Choose branch main so the Deno API, which reads main, sees the published list.
+#
+# contents: write is the smallest GITHUB_TOKEN permission that can commit.
+# The job adds only the two queue files. It does not receive a personal access token.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ids:
+        description: 'معرّفات التجارب، سطر لكل معرّف أو مفصولة بمسافة أو فاصلة'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-community-experiences
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Move selected experiences
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Move selected ids
+        env:
+          EXPERIENCE_IDS: ${{ inputs.ids }}
+        run: node community-api/publish_queue.mjs
+
+      - name: Commit the two queue files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- community/pending.json community/experiences.json
+          if git diff --cached --quiet; then
+            echo "No queue files changed."
+            exit 0
+          fi
+          git commit -m "Publish community experiences"
+          git push

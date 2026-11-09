@@ -1,0 +1,6 @@
+{
+  "tasks": {
+    "dev": "deno run --allow-net --allow-env=GITHUB_TOKEN,GITHUB_REPO,GITHUB_BRANCH main.ts",
+    "test": "deno test"
+  }
+}

@@ -78,6 +78,7 @@ import tools.mo3ta.salo.data.billing.SupportTier
 import tools.mo3ta.salo.ui.settings.PaywallScreen
 import tools.mo3ta.salo.ui.settings.ReferralScreen
 import tools.mo3ta.salo.ui.settings.AccountBackupScreen
+import tools.mo3ta.salo.ui.community.ExperiencesScreen
 import tools.mo3ta.salo.ui.settings.VoiceDhikrScreen
 import tools.mo3ta.salo.ui.settings.DhikrModelTestScreen
 import tools.mo3ta.salo.ui.settings.PremiumPromoDialog
@@ -193,6 +194,7 @@ fun App(
         var showExtensionQr by remember { mutableStateOf(false) }
         var showReferral by remember { mutableStateOf(false) }
         var showVoiceDhikr by remember { mutableStateOf(false) }
+        var showExperiences by remember { mutableStateOf(false) }
         var showDhikrModelTest by remember { mutableStateOf(false) }
         var showAccountBackup by remember { mutableStateOf(false) }
         var showPaywall by remember { mutableStateOf(false) }
@@ -203,6 +205,7 @@ fun App(
             enabled = showPaywall ||
                 showReferral ||
                 showVoiceDhikr ||
+                showExperiences ||
                 showDhikrModelTest ||
                 showAccountBackup ||
                 showDhikrRewards ||
@@ -225,6 +228,7 @@ fun App(
                 showPaywall -> showPaywall = false
                 showReferral -> showReferral = false
                 showVoiceDhikr -> showVoiceDhikr = false
+                showExperiences -> showExperiences = false
                 showDhikrModelTest -> showDhikrModelTest = false
                 showAccountBackup -> showAccountBackup = false
                 showDhikrRewards -> showDhikrRewards = false
@@ -295,6 +299,7 @@ fun App(
         val nicknamePromptBlocked = showPaywall ||
             showReferral ||
             showVoiceDhikr ||
+            showExperiences ||
             showDhikrModelTest ||
             showAccountBackup ||
             showDhikrRewards ||
@@ -325,6 +330,7 @@ fun App(
             showPaywall -> PaywallScreen(onBack = { showPaywall = false })
             showReferral -> ReferralScreen(onBack = { showReferral = false })
             showVoiceDhikr -> VoiceDhikrScreen(onBack = { showVoiceDhikr = false })
+            showExperiences -> ExperiencesScreen(onBack = { showExperiences = false })
             showDhikrModelTest -> DhikrModelTestScreen(onBack = { showDhikrModelTest = false })
             showAccountBackup -> AccountBackupScreen(onBack = { showAccountBackup = false })
             showExtensionQr -> ExtensionQrScreen(onBack = { showExtensionQr = false })
@@ -447,6 +453,7 @@ fun App(
                                 onOpenPaywall = { showPaywall = true },
                                 onOpenReferral = { showReferral = true },
                                 onOpenVoiceDhikr = { showVoiceDhikr = true },
+                                onOpenExperiences = { showExperiences = true },
                                 onOpenDhikrModelTest = { showDhikrModelTest = true },
                                 onOpenAccountBackup = { showAccountBackup = true },
                             )

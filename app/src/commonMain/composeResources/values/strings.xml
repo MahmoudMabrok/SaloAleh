@@ -1075,4 +1075,33 @@
     <string name="dhikr_model_confirmed_count">مرات مؤكدة</string>
     <string name="dhikr_model_score">درجة النموذج: %1$.3f</string>
     <string name="dhikr_model_runtime_state">التشغيل: %1$s · الكاشف: %2$s</string>
+
+    <!-- Community experiences -->
+    <string name="settings_experiences">تجارب مع التطبيق والذكر</string>
+    <string name="experiences_title">تجارب</string>
+    <string name="experiences_intro">اقرأ تجارب قصيرة مع التطبيق ومع الذكر، وشارك تجربتك. لا تظهر التجربة في القائمة إلا بعد مراجعتها.</string>
+    <string name="experiences_form_header">شارك تجربتك</string>
+    <string name="experiences_name_label">الاسم (اختياري)</string>
+    <string name="experiences_name_hint">أخ/أخت</string>
+    <string name="experiences_body_label">التجربة</string>
+    <string name="experiences_body_count">%1$d/%2$d</string>
+    <string name="experiences_category_app">تجربة مع التطبيق</string>
+    <string name="experiences_category_dhikr">تجربة مع الذكر</string>
+    <string name="experiences_submit">إرسال</string>
+    <string name="experiences_list_header">التجارب المنشورة</string>
+    <string name="experiences_empty">لا توجد تجارب منشورة بعد. أرسل تجربتك، وتظهر هنا بعد المراجعة.</string>
+    <string name="experiences_error">تعذّر تحميل التجارب. بقية التطبيق تعمل، ويمكنك المحاولة مرة أخرى.</string>
+    <string name="experiences_not_configured">خدمة التجارب غير مفعّلة على هذا الإصدار بعد.</string>
+    <string name="experiences_retry">إعادة المحاولة</string>
+    <string name="experiences_sent">وصلت تجربتك. ستظهر في القائمة بعد المراجعة.</string>
+    <string name="experiences_sent_dismiss">حسنًا</string>
+    <string name="experiences_submit_error">تعذّر الإرسال. حاول مرة أخرى.</string>
+    <string name="experiences_rate_limited">وصلت إلى حد الإرسال. حاول لاحقًا.</string>
+    <string name="experiences_rejected">تعذّر قبول النص. راجع التجربة ثم أعد الإرسال.</string>
+    <string name="experiences_validation_empty">اكتب تجربتك أولًا.</string>
+    <string name="experiences_validation_unsafe">لا يُقبل النص الذي يحتوي على رموز HTML.</string>
+    <string name="experiences_validation_too_long">النص أطول من المسموح.</string>
+    <string name="experiences_share">مشاركة</string>
+    <string name="experiences_share_text">%1$s — %2$s\n%3$s</string>
+    <string name="experiences_meta">%1$s · %2$s</string>
 </resources>
