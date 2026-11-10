@@ -18,6 +18,7 @@ import tools.mo3ta.salo.data.zabad.ZabadChallengeFirebaseClient
 import tools.mo3ta.salo.data.zabad.ZabadChallengeStore
 import tools.mo3ta.salo.data.ghars.GharsChallengeFirebaseClient
 import tools.mo3ta.salo.data.ghars.GharsChallengeStore
+import tools.mo3ta.salo.data.quran.MushafReaderPreferences
 import tools.mo3ta.salo.data.quran.QuranChallengeFirebaseClient
 import tools.mo3ta.salo.data.quran.QuranChallengeStore
 import tools.mo3ta.salo.data.alfhasana.AlfHasanaChallengeFirebaseClient
@@ -109,6 +110,7 @@ val appModule = module {
     single { GharsChallengeStore(get()) }
     single { GharsChallengeFirebaseClient(get(), get()) }
     single { QuranChallengeStore(get()) }
+    single { MushafReaderPreferences(get()) }
     single { QuranChallengeFirebaseClient(get(), get()) }
     single { AlfHasanaChallengeStore(get()) }
     single { AlfHasanaChallengeFirebaseClient(get()) }

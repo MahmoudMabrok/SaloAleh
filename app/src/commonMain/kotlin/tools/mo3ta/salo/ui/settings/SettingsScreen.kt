@@ -37,6 +37,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -69,6 +70,11 @@ import tools.mo3ta.salo.data.billing.PremiumStore
 import tools.mo3ta.salo.data.billing.SupportTier
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
+import tools.mo3ta.salo.data.quran.MushafFrameSpacing
+import tools.mo3ta.salo.data.quran.MushafPageNumberSize
+import tools.mo3ta.salo.data.quran.MushafReaderPreferences
+import tools.mo3ta.salo.data.quran.MushafStyle
+import tools.mo3ta.salo.ui.quran.mushafReaderAvailable
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.notification.NotificationScheduler
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
@@ -119,6 +125,14 @@ fun SettingsScreen(
 
     val languageStore: LanguageStore = koinInject()
     var selectedLanguage by remember { mutableStateOf(languageStore.language) }
+    val mushafPrefs: MushafReaderPreferences = koinInject()
+    var mushafStyle by remember { mutableStateOf(mushafPrefs.style) }
+    var mushafDark by remember { mutableStateOf(mushafPrefs.darkPaper) }
+    val mushafCurl by mushafPrefs.pageCurlFlow.collectAsState()
+    var mushafSpread by remember { mutableStateOf(mushafPrefs.twoPageSpread) }
+    var mushafMarks by remember { mutableStateOf(mushafPrefs.divisionMarks) }
+    var mushafPageNumber by remember { mutableStateOf(mushafPrefs.pageNumberSize) }
+    var mushafFrameSpacing by remember { mutableStateOf(mushafPrefs.frameSpacing) }
     val salawatVariantStore: SalawatVariantStore = koinInject()
     var selectedSalawatVariant by remember { mutableStateOf(salawatVariantStore.variantIndex) }
     var showSalawatVariantSheet by remember { mutableStateOf(false) }
@@ -408,6 +422,48 @@ fun SettingsScreen(
                 },
             )
 
+            if (mushafReaderAvailable) {
+                MushafSettingsSection(
+                    style = mushafStyle,
+                    onStyle = { style ->
+                        mushafStyle = style
+                        mushafPrefs.style = style
+                        val marks = style.divisionMarksByDefault
+                        mushafMarks = marks
+                        mushafPrefs.divisionMarks = marks
+                    },
+                    darkPaper = mushafDark,
+                    onDarkPaper = { checked ->
+                        mushafDark = checked
+                        mushafPrefs.darkPaper = checked
+                    },
+                    pageCurl = mushafCurl,
+                    onPageCurl = { checked ->
+                        mushafPrefs.pageCurl = checked
+                    },
+                    twoPageSpread = mushafSpread,
+                    onTwoPageSpread = { checked ->
+                        mushafSpread = checked
+                        mushafPrefs.twoPageSpread = checked
+                    },
+                    divisionMarks = mushafMarks,
+                    onDivisionMarks = { checked ->
+                        mushafMarks = checked
+                        mushafPrefs.divisionMarks = checked
+                    },
+                    pageNumberSize = mushafPageNumber,
+                    onPageNumberSize = { size ->
+                        mushafPageNumber = size
+                        mushafPrefs.pageNumberSize = size
+                    },
+                    frameSpacing = mushafFrameSpacing,
+                    onFrameSpacing = { spacing ->
+                        mushafFrameSpacing = spacing
+                        mushafPrefs.frameSpacing = spacing
+                    },
+                )
+            }
+
             Text(
                 text = stringResource(Res.string.settings_nickname_header),
                 color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
@@ -564,6 +620,159 @@ fun SettingsScreen(
                     fontSize = 14.sp,
                 )
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun MushafSettingsSection(
+    style: MushafStyle,
+    onStyle: (MushafStyle) -> Unit,
+    darkPaper: Boolean,
+    onDarkPaper: (Boolean) -> Unit,
+    pageCurl: Boolean,
+    onPageCurl: (Boolean) -> Unit,
+    twoPageSpread: Boolean,
+    onTwoPageSpread: (Boolean) -> Unit,
+    divisionMarks: Boolean,
+    onDivisionMarks: (Boolean) -> Unit,
+    pageNumberSize: MushafPageNumberSize,
+    onPageNumberSize: (MushafPageNumberSize) -> Unit,
+    frameSpacing: MushafFrameSpacing,
+    onFrameSpacing: (MushafFrameSpacing) -> Unit,
+) {
+    Text(
+        text = stringResource(Res.string.settings_mushaf_header),
+        color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.7f),
+        fontSize = 12.sp,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier.padding(top = 24.dp, bottom = 8.dp),
+    )
+    Text(
+        text = stringResource(Res.string.settings_mushaf_style),
+        color = Color.White.copy(alpha = 0.7f),
+        fontSize = 13.sp,
+    )
+    SettingsChoiceChips(
+        options = MushafStyle.entries,
+        selected = style,
+        label = { mushafStyleLabel(it) },
+        onSelected = onStyle,
+    )
+    SettingToggleRow(
+        label = stringResource(Res.string.settings_mushaf_dark),
+        subtitle = stringResource(Res.string.settings_mushaf_dark_subtitle),
+        checked = darkPaper,
+        onToggle = onDarkPaper,
+    )
+    SettingToggleRow(
+        label = stringResource(Res.string.settings_mushaf_curl),
+        subtitle = stringResource(Res.string.settings_mushaf_curl_subtitle),
+        checked = pageCurl,
+        onToggle = onPageCurl,
+    )
+    SettingToggleRow(
+        label = stringResource(Res.string.settings_mushaf_spread),
+        subtitle = stringResource(Res.string.settings_mushaf_spread_subtitle),
+        checked = twoPageSpread,
+        onToggle = onTwoPageSpread,
+    )
+    SettingToggleRow(
+        label = stringResource(Res.string.settings_mushaf_marks),
+        subtitle = stringResource(Res.string.settings_mushaf_marks_subtitle),
+        checked = divisionMarks,
+        onToggle = onDivisionMarks,
+    )
+    Text(
+        text = stringResource(Res.string.settings_mushaf_page_number),
+        color = Color.White.copy(alpha = 0.7f),
+        fontSize = 13.sp,
+        modifier = Modifier.padding(top = 8.dp),
+    )
+    Text(
+        text = stringResource(Res.string.settings_mushaf_page_number_subtitle),
+        color = Color.White.copy(alpha = 0.5f),
+        fontSize = 12.sp,
+    )
+    SettingsChoiceChips(
+        options = MushafPageNumberSize.entries,
+        selected = pageNumberSize,
+        label = { mushafPageNumberLabel(it) },
+        onSelected = onPageNumberSize,
+    )
+    Text(
+        text = stringResource(Res.string.settings_mushaf_frame_spacing),
+        color = Color.White.copy(alpha = 0.7f),
+        fontSize = 13.sp,
+        modifier = Modifier.padding(top = 4.dp),
+    )
+    Text(
+        text = stringResource(Res.string.settings_mushaf_frame_spacing_subtitle),
+        color = Color.White.copy(alpha = 0.5f),
+        fontSize = 12.sp,
+    )
+    SettingsChoiceChips(
+        options = MushafFrameSpacing.entries,
+        selected = frameSpacing,
+        label = { mushafFrameSpacingLabel(it) },
+        onSelected = onFrameSpacing,
+    )
+}
+
+@Composable
+private fun mushafStyleLabel(style: MushafStyle): String = when (style) {
+    MushafStyle.Classic -> stringResource(Res.string.settings_mushaf_style_classic)
+    MushafStyle.Modern -> stringResource(Res.string.settings_mushaf_style_modern)
+    MushafStyle.Madinah -> stringResource(Res.string.settings_mushaf_style_madinah)
+    MushafStyle.Cairo -> stringResource(Res.string.settings_mushaf_style_cairo)
+    MushafStyle.Diyanet -> stringResource(Res.string.settings_mushaf_style_diyanet)
+    MushafStyle.IndoPak -> stringResource(Res.string.settings_mushaf_style_indopak)
+}
+
+@Composable
+private fun mushafPageNumberLabel(size: MushafPageNumberSize): String = when (size) {
+    MushafPageNumberSize.Compact -> stringResource(Res.string.settings_mushaf_page_number_compact)
+    MushafPageNumberSize.Default -> stringResource(Res.string.settings_mushaf_page_number_default)
+    MushafPageNumberSize.Large -> stringResource(Res.string.settings_mushaf_page_number_large)
+}
+
+@Composable
+private fun mushafFrameSpacingLabel(spacing: MushafFrameSpacing): String = when (spacing) {
+    MushafFrameSpacing.Default -> stringResource(Res.string.settings_mushaf_frame_spacing_default)
+    MushafFrameSpacing.Wide -> stringResource(Res.string.settings_mushaf_frame_spacing_wide)
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun <T> SettingsChoiceChips(
+    options: List<T>,
+    selected: T,
+    label: @Composable (T) -> String,
+    onSelected: (T) -> Unit,
+) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 8.dp),
+    ) {
+        options.forEach { option ->
+            val isSelected = option == selected
+            FilterChip(
+                selected = isSelected,
+                onClick = { onSelected(option) },
+                label = { Text(label(option), fontSize = 14.sp) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MohamedLoversPalette.GoldGlow.copy(alpha = 0.2f),
+                    selectedLabelColor = MohamedLoversPalette.GoldGlow,
+                    labelColor = Color.White.copy(alpha = 0.7f),
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    borderColor = Color.White.copy(alpha = 0.2f),
+                    selectedBorderColor = MohamedLoversPalette.GoldGlow.copy(alpha = 0.5f),
+                    enabled = true,
+                    selected = isSelected,
+                ),
+            )
         }
     }
 }

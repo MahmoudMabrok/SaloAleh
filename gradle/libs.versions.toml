@@ -27,7 +27,7 @@ gmsCodeScanner = "16.1.0"
 billing = "9.1.0"
 installReferrer = "2.2"
 liteRt = "1.4.2"
-mushafText = "1.5.0"
+mushafText = "1.6.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

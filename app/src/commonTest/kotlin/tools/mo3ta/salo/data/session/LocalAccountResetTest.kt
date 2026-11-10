@@ -35,6 +35,8 @@ class LocalAccountResetTest {
     fun devicePreferences_survive() {
         val settings = MapSettings()
         settings.putString("app_language", "en")
+        settings.putString("mushaf_style", "cairo")
+        settings.putBoolean("mushaf_page_curl", true)
         settings.putInt("salawat_variant_index", 3)
         settings.putBoolean("notif_daily_enabled", false)
         settings.putBoolean("show_rank_chip", false)
@@ -45,6 +47,8 @@ class LocalAccountResetTest {
         LocalAccountReset(settings).wipeAccountData()
 
         assertEquals("en", settings.getStringOrNull("app_language"))
+        assertEquals("cairo", settings.getStringOrNull("mushaf_style"))
+        assertTrue(settings.getBoolean("mushaf_page_curl", false))
         assertEquals(3, settings.getIntOrNull("salawat_variant_index"))
         assertFalse(settings.getBoolean("notif_daily_enabled", true))
         assertFalse(settings.getBoolean("show_rank_chip", true))
