@@ -2,15 +2,16 @@ name: Flush Instrumented Test
 
 # Runs the app's real Mohamed Lovers flush (gitlive on Android) against the
 # Realtime Database emulator with database.rules.json. No production access.
+# Disabled: the automatic pull_request trigger is commented out. To re-enable, uncomment the pull_request block below.
 on:
-  pull_request:
-    paths:
-      - 'database.rules.json'
-      - 'app/src/commonMain/kotlin/tools/mo3ta/salo/data/firebase/**'
-      - 'app/src/commonMain/kotlin/tools/mo3ta/salo/domain/MohamedLovers*'
-      - 'app/src/androidTest/java/tools/mo3ta/salo/data/firebase/**'
-      - 'gradle/libs.versions.toml'
-      - '.github/workflows/flush-instrumented-test.yml'
+  # pull_request:
+  #   paths:
+  #     - 'database.rules.json'
+  #     - 'app/src/commonMain/kotlin/tools/mo3ta/salo/data/firebase/**'
+  #     - 'app/src/commonMain/kotlin/tools/mo3ta/salo/domain/MohamedLovers*'
+  #     - 'app/src/androidTest/java/tools/mo3ta/salo/data/firebase/**'
+  #     - 'gradle/libs.versions.toml'
+  #     - '.github/workflows/flush-instrumented-test.yml'
   workflow_dispatch:
 
 jobs:
