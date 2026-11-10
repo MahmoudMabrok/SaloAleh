@@ -366,42 +366,28 @@ jobs:
           git commit -m "chore: bump version to ${{ github.event.inputs.version_name }} [skip ci]"
           git push origin HEAD:${{ github.ref_name }}
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Changelog base is the previous GitHub Release by publish time (see
+      # scripts/release-notes.js). A re-run updates generated notes and leaves
+      # notes that were edited by hand unchanged. Re-running a version must
+      # not fail on "Release.tag_name already exists".
       - name: Create GitHub release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          VERSION="${{ github.event.inputs.version_name }}"
-          ANDROID="${{ needs.deploy-android.result }}"
-          IOS="${{ needs.deploy-ios.result }}"
-          NOTES_FILE="$RUNNER_TEMP/release-notes.md"
-
-          {
-            echo "## v${VERSION}"
-            echo "- **Version name:** ${VERSION}"
-            if [ -n "${ANDROID_VERSION_CODE:-}" ]; then echo "- **Version code:** ${ANDROID_VERSION_CODE}"; fi
-            if [ "$ANDROID" = "success" ]; then
-              echo "- ✅ Android published to Google Play (${{ github.event.inputs.track }})"
-            else
-              echo "- ❌ Android deploy failed"
-            fi
-            if [ "$IOS" = "success" ]; then
-              echo "- ✅ iOS published to App Store Connect"
-            else
-              echo "- ℹ️ iOS: ${IOS:-skipped}"
-            fi
-          } > "$NOTES_FILE"
-
-          # Re-running a version (or deploying the same version from another branch)
-          # must not fail the job on "Release.tag_name already exists".
-          if gh release view "v${VERSION}" >/dev/null 2>&1; then
-            echo "Release v${VERSION} already exists - updating its notes"
-            gh release edit "v${VERSION}" --notes-file "$NOTES_FILE"
-          else
-            gh release create "v${VERSION}" \
-              --title "v${VERSION}" \
-              --notes-file "$NOTES_FILE" \
-              --target "${{ github.ref_name }}"
-          fi
+          RELEASE_VERSION: ${{ github.event.inputs.version_name }}
+          RELEASE_VERSION_CODE: ${{ env.ANDROID_VERSION_CODE }}
+          RELEASE_ANDROID_RESULT: ${{ needs.deploy-android.result }}
+          # iOS deploy is commented out, so the notes record it as skipped.
+          # When that job is restored, also set RELEASE_IOS_RESULT to
+          # needs.deploy-ios.result.
+          RELEASE_TRACK: ${{ github.event.inputs.track }}
+          RELEASE_TARGET: ${{ github.ref_name }}
+          RELEASE_REPO: ${{ github.repository }}
+        run: node scripts/release-notes.js
 
   schedule-build-notification:
     name: Schedule delayed build notification
