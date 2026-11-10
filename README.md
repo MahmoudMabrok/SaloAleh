@@ -5,6 +5,15 @@ Weekly salawat tap competition — Android & iOS, built with Kotlin Multiplatfor
 [![Build](https://github.com/MahmoudMabrok/SaloAleh/actions/workflows/build.yml/badge.svg)](https://github.com/MahmoudMabrok/SaloAleh/actions/workflows/build.yml)
 ![Platform](https://img.shields.io/badge/platform-Android%20%7C%20iOS-brightgreen)
 ![KMP](https://img.shields.io/badge/Kotlin-Multiplatform-7F52FF?logo=kotlin)
+[![Google Play](https://img.shields.io/badge/Google_Play-download-414141?logo=googleplay&logoColor=white)](https://play.google.com/store/apps/details?id=tools.mo3ta.salo)
+
+---
+
+## Links
+
+- [Landing page](https://mahmoudmabrok.github.io/SaloAleh/) — the public site for the weekly competition.
+- [Google Play](https://play.google.com/store/apps/details?id=tools.mo3ta.salo) — Android store listing (`tools.mo3ta.salo`).
+- [Pending reviews](https://mahmoudmabrok.github.io/SaloAleh/experiences-review.html) — review and approve pending community experiences before they are published.
 
 ---
 
