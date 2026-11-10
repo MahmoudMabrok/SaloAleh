@@ -8,17 +8,23 @@ Weekly salawat tap competition — Android & iOS, built with Kotlin Multiplatfor
 
 ---
 
+## Links
+
+- **Landing page:** https://mahmoudmabrok.github.io/SaloAleh/
+- **Google Play:** https://play.google.com/store/apps/details?id=tools.mo3ta.salo
+- **Pending reviews:** https://mahmoudmabrok.github.io/SaloAleh/experiences-review.html — review and approve community experiences waiting in the queue.
+
+<a href="https://play.google.com/store/apps/details?id=tools.mo3ta.salo"><img alt="Get it on Google Play" src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" height="80"></a>
+
+---
+
 ## Screenshots
 
-<!-- Replace each placeholder with the actual screenshot once captured.
-     Recommended tool: Android Studio (Android) / Xcode simulator (iOS).
-     Save files to docs/screenshots/ at the paths shown below. -->
+Phone screenshots from the Google Play listing, in store order.
 
-| Screen | Android | iOS |
-|--------|---------|-----|
-| Main counter | <!-- Replace --> `docs/screenshots/android-main.png` | <!-- Replace --> `docs/screenshots/ios-main.png` |
-| Leaderboard sheet | <!-- Replace --> `docs/screenshots/android-leaderboard.png` | <!-- Replace --> `docs/screenshots/ios-leaderboard.png` |
-| Achievements | <!-- Replace --> `docs/screenshots/android-achievements.png` | <!-- Replace --> `docs/screenshots/ios-achievements.png` |
+| Weekly leaderboard | Daily challenges | Plant a palm | Palm leaderboard | Kalimat scale |
+| --- | --- | --- | --- | --- |
+| <img src="docs/screenshots/play-01-leaderboard.webp" width="200" alt="Weekly salawat totals and leaderboard"> | <img src="docs/screenshots/play-02-challenges.webp" width="200" alt="Daily challenges"> | <img src="docs/screenshots/play-03-ghars.webp" width="200" alt="Ghars palm-planting challenge"> | <img src="docs/screenshots/play-04-ghars-leaderboard.webp" width="200" alt="Ghars leaderboard"> | <img src="docs/screenshots/play-05-kalimat.webp" width="200" alt="Kalimat scale counter"> |
 
 ---
 
@@ -305,7 +311,7 @@ SaloAleh/
 │       └── iosMain/kotlin/         # iOS impls: IosNetworkTimeProvider, IosCountryCodeProvider
 ├── iosApp/                         # Native Swift iOS shell (AppDelegate, CocoaPods workspace)
 ├── docs/
-│   ├── screenshots/                # Drop screenshot files here (see Screenshots section)
+│   ├── screenshots/                # Play Store phone screenshots (see Screenshots section)
 │   └── superpowers/                # Design specs and implementation plans
 ├── scripts/                        # CI and leaderboard scripts
 └── .github/workflows/
