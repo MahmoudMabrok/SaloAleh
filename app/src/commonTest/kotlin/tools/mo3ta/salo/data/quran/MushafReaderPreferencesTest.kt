@@ -4,6 +4,7 @@ import com.russhwolf.settings.MapSettings
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class MushafReaderPreferencesTest {
 
@@ -13,7 +14,8 @@ class MushafReaderPreferencesTest {
 
         assertEquals(MushafStyle.Classic, prefs.style)
         assertFalse(prefs.darkPaper)
-        assertFalse(prefs.pageCurl)
+        assertTrue(prefs.pageCurl)
+        assertTrue(prefs.pageCurlFlow.value)
         assertFalse(prefs.twoPageSpread)
         assertFalse(prefs.divisionMarks)
         assertEquals(MushafPageNumberSize.Default, prefs.pageNumberSize)
@@ -58,6 +60,24 @@ class MushafReaderPreferencesTest {
         assertEquals(MushafStyle.Classic, prefs.style)
         assertEquals(MushafPageNumberSize.Default, prefs.pageNumberSize)
         assertEquals(MushafFrameSpacing.Default, prefs.frameSpacing)
+    }
+
+    @Test
+    fun storedCurlOffStaysOffAndTheFlowFollowsWrites() {
+        val settings = MapSettings()
+        settings.putBoolean("mushaf_page_curl", false)
+        val prefs = MushafReaderPreferences(settings)
+
+        assertFalse(prefs.pageCurl)
+        assertFalse(prefs.pageCurlFlow.value)
+
+        prefs.pageCurl = true
+        assertTrue(prefs.pageCurlFlow.value)
+        assertTrue(settings.getBoolean("mushaf_page_curl", false))
+
+        prefs.pageCurl = false
+        assertFalse(prefs.pageCurlFlow.value)
+        assertFalse(settings.getBoolean("mushaf_page_curl", true))
     }
 
     @Test

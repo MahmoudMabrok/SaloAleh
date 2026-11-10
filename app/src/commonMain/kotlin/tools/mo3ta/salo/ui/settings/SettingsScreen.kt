@@ -37,6 +37,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -127,7 +128,7 @@ fun SettingsScreen(
     val mushafPrefs: MushafReaderPreferences = koinInject()
     var mushafStyle by remember { mutableStateOf(mushafPrefs.style) }
     var mushafDark by remember { mutableStateOf(mushafPrefs.darkPaper) }
-    var mushafCurl by remember { mutableStateOf(mushafPrefs.pageCurl) }
+    val mushafCurl by mushafPrefs.pageCurlFlow.collectAsState()
     var mushafSpread by remember { mutableStateOf(mushafPrefs.twoPageSpread) }
     var mushafMarks by remember { mutableStateOf(mushafPrefs.divisionMarks) }
     var mushafPageNumber by remember { mutableStateOf(mushafPrefs.pageNumberSize) }
@@ -438,7 +439,6 @@ fun SettingsScreen(
                     },
                     pageCurl = mushafCurl,
                     onPageCurl = { checked ->
-                        mushafCurl = checked
                         mushafPrefs.pageCurl = checked
                     },
                     twoPageSpread = mushafSpread,

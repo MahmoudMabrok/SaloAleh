@@ -1,16 +1,22 @@
 package tools.mo3ta.salo.data.quran
 
 import com.russhwolf.settings.Settings
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Reader options for the text Mushaf. Stored on the device (not the account):
  * [tools.mo3ta.salo.data.session.LocalAccountReset] keeps these keys.
  *
- * Defaults match mushaf-text 1.6.0 and the look the
- * reader already shipped: Classic frame, light paper, slide, one page,
- * division marks off, page-number scale 0.72, library frame margins.
+ * Defaults match mushaf-text 1.6.0 except the page turn: the library's own
+ * default is a slide, and this app turns the leaf ([pageCurl] on) so a page
+ * peels like a bound mushaf. Classic frame, light paper, one page, division
+ * marks off, page-number scale 0.72, library frame margins.
  */
 class MushafReaderPreferences(private val settings: Settings) {
+    private val pageCurlState = MutableStateFlow(settings.getBoolean(KEY_CURL, true))
+
     var style: MushafStyle
         get() = MushafStyle.fromKey(settings.getString(KEY_STYLE, MushafStyle.Classic.key))
         set(value) = settings.putString(KEY_STYLE, value.key)
@@ -19,9 +25,20 @@ class MushafReaderPreferences(private val settings: Settings) {
         get() = settings.getBoolean(KEY_DARK, false)
         set(value) = settings.putBoolean(KEY_DARK, value)
 
+    /**
+     * Leaf turn. Absent key means on, so an install that never opened the
+     * toggle still peels the page. A stored false stays off.
+     * [pageCurlFlow] is the value the reader collects; writing [pageCurl]
+     * updates the flow and the store together.
+     */
     var pageCurl: Boolean
-        get() = settings.getBoolean(KEY_CURL, false)
-        set(value) = settings.putBoolean(KEY_CURL, value)
+        get() = pageCurlState.value
+        set(value) {
+            pageCurlState.value = value
+            settings.putBoolean(KEY_CURL, value)
+        }
+
+    val pageCurlFlow: StateFlow<Boolean> = pageCurlState.asStateFlow()
 
     var twoPageSpread: Boolean
         get() = settings.getBoolean(KEY_SPREAD, false)

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -65,7 +66,9 @@ actual fun QuranMushafReader(
         mushafDecoration(prefs.style, prefs.divisionMarks, prefs.pageNumberSize, prefs.frameSpacing)
     }
     val colors = mushafColors(prefs.darkPaper)
-    val pageTurn = mushafPageTurn(prefs.pageCurl)
+    // Collected, so a change in Settings reaches an open reader. Absent key is curl.
+    val pageCurl by prefs.pageCurlFlow.collectAsState()
+    val pageTurn = mushafPageTurn(pageCurl)
     val spread = mushafSpread(prefs.twoPageSpread)
     val state = rememberMushafPagerState(initialPage = startPage)
     val counter = remember { PageDwellCounter(alreadyCounted) }
