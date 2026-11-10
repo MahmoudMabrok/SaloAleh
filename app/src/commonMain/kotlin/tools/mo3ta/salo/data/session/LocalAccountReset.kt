@@ -54,6 +54,10 @@ class LocalAccountReset(private val settings: Settings) {
             "show_rank_chip",
             "use_daily_leaderboard",
             "hadith_show_startup",
+            "mushaf_dark",
+            "mushaf_page_curl",
+            "mushaf_spread",
+            "mushaf_division_marks",
             "tenDays_autoPlayTakbeer",
             // One-shot "already seen" flags — kept so a restore does not replay every promo,
             // tooltip and announcement the user has already dismissed on this device.
@@ -73,6 +77,9 @@ class LocalAccountReset(private val settings: Settings) {
 
         val DEVICE_STRING_KEYS = listOf(
             "app_language",
+            "mushaf_style",
+            "mushaf_page_number",
+            "mushaf_frame_spacing",
             "update_prompt_dismissed_version",
             "eng_review_last_shown",
         )
