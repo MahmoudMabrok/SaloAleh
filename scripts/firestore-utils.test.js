@@ -11,7 +11,16 @@ describe('timeBoxMirror', () => {
   it('resolves promptly when the mirror op hangs (the bug this fixes)', async () => {
     const started = process.hrtime.bigint();
     const neverSettles = new Promise(() => {}); // models a stalled batch.commit()
-    await timeBoxMirror(neverSettles, 'hanging-mirror', 50);
+    // The mirror timer is unref'd so a cron is free to exit. With no other
+    // handle, node:test sees an idle loop and cancels this await
+    // ("Promise resolution is still pending but the event loop has already
+    // resolved"). A ref'd handle lets the unref'd timer fire.
+    const keepAlive = setTimeout(() => {}, 5000);
+    try {
+      await timeBoxMirror(neverSettles, 'hanging-mirror', 50);
+    } finally {
+      clearTimeout(keepAlive);
+    }
     const elapsedMs = Number(process.hrtime.bigint() - started) / 1e6;
     // Without the box this would block for ~600000ms.
     assert.ok(elapsedMs < 1000, `expected fast return, took ${elapsedMs}ms`);
