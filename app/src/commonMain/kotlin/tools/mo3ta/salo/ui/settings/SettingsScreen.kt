@@ -95,6 +95,7 @@ fun SettingsScreen(
     onOpenPaywall: () -> Unit = {},
     onOpenReferral: () -> Unit = {},
     onOpenVoiceDhikr: () -> Unit = {},
+    onOpenExperiences: () -> Unit = {},
     onOpenDhikrModelTest: () -> Unit = {},
     onOpenAccountBackup: () -> Unit = {},
 ) {
@@ -217,6 +218,15 @@ fun SettingsScreen(
             SettingLinkRow(
                 label = stringResource(Res.string.settings_contact_us),
                 onClick = { uriHandler.openUri("mailto:mahmoudmabrok3579@gmail.com") },
+            )
+
+            SettingLinkRow(
+                label = stringResource(Res.string.settings_experiences),
+                labelColor = MohamedLoversPalette.GoldGlow,
+                onClick = {
+                    analyticsManager.logAction(AppAnalytics.OPEN_EXPERIENCES)
+                    onOpenExperiences()
+                },
             )
 
             SettingLinkRow(

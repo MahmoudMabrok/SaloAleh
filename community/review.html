@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>مراجعة التجارب</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f0f1a;
+      --card: #16213e;
+      --gold: #f5d97a;
+      --text: #f7f4ea;
+      --muted: rgba(247, 244, 234, 0.68);
+      --line: rgba(245, 217, 122, 0.35);
+      --danger: #ff8a80;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      line-height: 1.6;
+    }
+    main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+    h1 { color: var(--gold); font-size: 1.6rem; margin: 0 0 8px; }
+    p { margin: 0 0 12px; }
+    a { color: var(--gold); }
+    button, textarea {
+      font: inherit;
+      color: inherit;
+    }
+    button {
+      background: var(--gold);
+      color: #0f0f1a;
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: transparent;
+      color: var(--gold);
+      border: 1px solid var(--line);
+    }
+    button:disabled { opacity: 0.45; cursor: default; }
+    .toolbar, .actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      margin: 10px 0;
+    }
+    .card label { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; }
+    input[type="checkbox"] { width: 1.2rem; height: 1.2rem; margin-top: 4px; }
+    .name { color: var(--gold); font-weight: 700; }
+    .meta { color: var(--muted); font-size: 0.92rem; }
+    .id { font-family: ui-monospace, monospace; direction: ltr; unicode-bidi: embed; }
+    .body { white-space: pre-wrap; margin-top: 8px; }
+    textarea {
+      width: 100%;
+      min-height: 88px;
+      background: #0b1020;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      direction: ltr;
+      text-align: left;
+    }
+    .error { color: var(--danger); }
+    .steps { color: var(--muted); font-size: 0.95rem; }
+    .steps li { margin: 6px 0; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>مراجعة التجارب</h1>
+    <p>اختر التجارب التي توافق عليها، ثم انسخ معرّفاتها والصقها في مسار النشر. هذه الصفحة لا تنشر شيئًا بنفسها.</p>
+    <ol class="steps">
+      <li>حدّد التجارب.</li>
+      <li>انسخ المعرّفات. كل معرّف في سطر.</li>
+      <li>من صفحة المسار اختر Run workflow، والصق المعرّفات في الحقل <span class="id">ids</span>، ثم شغّله على فرع <span class="id">main</span>.</li>
+    </ol>
+    <p>
+      <a href="https://github.com/MahmoudMabrok/SaloAleh/actions/workflows/publish-experiences.yml">فتح مسار «Publish community experiences»</a>
+    </p>
+    <p class="steps">زر التشغيل يظهر في صفحة المسار بعد دمج هذا التغيير في <span class="id">main</span>. قبل الدمج قد يظهر المسار ضمن الفرع الذي يحوي ملفه، إن أظهرته GitHub في القائمة.</p>
+
+    <div class="toolbar">
+      <button type="button" id="reload" class="secondary">تحديث القائمة</button>
+      <button type="button" id="all" class="secondary">تحديد الكل</button>
+      <button type="button" id="none" class="secondary">إلغاء التحديد</button>
+    </div>
+    <p id="status">جارٍ تحميل التجارب المنتظرة…</p>
+    <div id="list"></div>
+
+    <div class="actions">
+      <button type="button" id="copy" disabled>نسخ المعرّفات المحددة</button>
+    </div>
+    <textarea id="ids" readonly placeholder="المعرّفات المحددة تظهر هنا"></textarea>
+  </main>
+  <script>
+    const PENDING_URL = "https://raw.githubusercontent.com/MahmoudMabrok/SaloAleh/main/community/pending.json";
+    const categoryLabel = {
+      app: "تجربة مع التطبيق",
+      dhikr: "تجربة مع الذكر",
+    };
+
+    const list = document.getElementById("list");
+    const status = document.getElementById("status");
+    const idsBox = document.getElementById("ids");
+    const copyButton = document.getElementById("copy");
+    let items = [];
+
+    function text(value) {
+      return value == null ? "" : String(value);
+    }
+
+    function formatDate(iso) {
+      const date = new Date(iso);
+      if (Number.isNaN(date.getTime())) return text(iso);
+      return new Intl.DateTimeFormat("ar-EG", {
+        timeZone: "Africa/Cairo",
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }).format(date);
+    }
+
+    function selectedIds() {
+      return [...list.querySelectorAll("input[type=checkbox]:checked")].map((box) => box.value);
+    }
+
+    function refreshSelection() {
+      const ids = selectedIds();
+      idsBox.value = ids.join("\n");
+      copyButton.disabled = ids.length === 0;
+      status.textContent = items.length
+        ? "بانتظار المراجعة: " + items.length + " — المحدد: " + ids.length
+        : "لا توجد تجارب بانتظار المراجعة.";
+    }
+
+    function render() {
+      list.replaceChildren();
+      if (!items.length) {
+        refreshSelection();
+        return;
+      }
+      for (const item of items) {
+        const id = text(item.id).trim();
+        const card = document.createElement("article");
+        card.className = "card";
+        const label = document.createElement("label");
+        const box = document.createElement("input");
+        box.type = "checkbox";
+        box.value = id;
+        box.disabled = !id;
+        box.addEventListener("change", refreshSelection);
+        const content = document.createElement("div");
+        const name = document.createElement("div");
+        name.className = "name";
+        name.textContent = text(item.displayName) || "بدون اسم";
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        const category = categoryLabel[item.category] || text(item.category) || "بدون تصنيف";
+        meta.textContent = category + " · " + formatDate(item.createdAt);
+        const idLine = document.createElement("div");
+        idLine.className = "meta";
+        const idCode = document.createElement("span");
+        idCode.className = "id";
+        idCode.textContent = id || "بدون معرّف";
+        idLine.append("المعرّف: ", idCode);
+        const body = document.createElement("div");
+        body.className = "body";
+        body.textContent = text(item.body);
+        content.append(name, meta, idLine, body);
+        label.append(box, content);
+        card.append(label);
+        list.append(card);
+      }
+      refreshSelection();
+    }
+
+    async function load() {
+      status.textContent = "جارٍ تحميل التجارب المنتظرة…";
+      status.className = "";
+      list.replaceChildren();
+      try {
+        const response = await fetch(PENDING_URL + "?t=" + Date.now(), { cache: "no-store" });
+        if (!response.ok) throw new Error(String(response.status));
+        const data = await response.json();
+        if (!Array.isArray(data)) throw new Error("not_array");
+        items = data;
+        render();
+      } catch (_error) {
+        items = [];
+        status.className = "error";
+        status.textContent = "تعذّر تحميل قائمة الانتظار. بقية الموقع لا تتأثر، ويمكنك المحاولة مرة أخرى.";
+      }
+    }
+
+    document.getElementById("reload").addEventListener("click", load);
+    document.getElementById("all").addEventListener("click", () => {
+      list.querySelectorAll("input[type=checkbox]:not(:disabled)").forEach((box) => { box.checked = true; });
+      refreshSelection();
+    });
+    document.getElementById("none").addEventListener("click", () => {
+      list.querySelectorAll("input[type=checkbox]").forEach((box) => { box.checked = false; });
+      refreshSelection();
+    });
+    copyButton.addEventListener("click", async () => {
+      const value = idsBox.value;
+      try {
+        await navigator.clipboard.writeText(value);
+        status.textContent = "تم نسخ " + selectedIds().length + " معرّف. الصقها في حقل ids ثم شغّل المسار.";
+      } catch (_error) {
+        idsBox.focus();
+        idsBox.select();
+        status.textContent = "حدّد النص في المربع وانسخه، ثم الصقه في حقل ids.";
+      }
+    });
+
+    load();
+  </script>
+</body>
+</html>

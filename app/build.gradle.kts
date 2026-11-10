@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
@@ -37,6 +38,7 @@ kotlin {
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.gitlive.firebase.database)
             implementation(libs.gitlive.firebase.firestore)
+            implementation(libs.gitlive.firebase.config)
             implementation(libs.multiplatform.settings)
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.coroutines.core)
@@ -83,6 +85,31 @@ compose.resources {
     generateResClass = always
 }
 
+// Debug-only override for the Deno experiences API origin. Release builds ignore it
+// and read Firebase Remote Config key experiences_api_base_url. See community-api/README.md.
+val experiencesApiBaseUrl: String = run {
+    val fromProject = (findProperty("experiencesApiBaseUrl") as String?)?.trim()?.trimEnd('/').orEmpty()
+    val raw = if (fromProject.isNotEmpty()) {
+        fromProject
+    } else {
+        val localFile = rootProject.file("local.properties")
+        if (!localFile.exists()) {
+            ""
+        } else {
+            val properties = Properties()
+            localFile.inputStream().use { properties.load(it) }
+            properties.getProperty("experiencesApiBaseUrl").orEmpty().trim().trimEnd('/')
+        }
+    }
+    if (raw.isNotEmpty() && !raw.matches(Regex("""https?://[A-Za-z0-9.-]+(?::\d+)?"""))) {
+        error(
+            "experiencesApiBaseUrl must be an http(s) origin with no path, or unset. " +
+                "See community-api/README.md.",
+        )
+    }
+    raw
+}
+
 android {
     testOptions.unitTests.isIncludeAndroidResources = true
     namespace = "tools.mo3ta.salo"
@@ -93,13 +120,17 @@ android {
         applicationId = "tools.mo3ta.salo"
         minSdk = 24
         targetSdk = 36
-        versionCode = 171
-        versionName = "4.2.2"
+        versionCode = 179
+        versionName = "4.2.3"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "EXPERIENCES_API_BASE_URL", "\"$experiencesApiBaseUrl\"")
+        }
         release {
+            buildConfigField("String", "EXPERIENCES_API_BASE_URL", "\"\"")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -110,6 +141,8 @@ android {
     }
 
     dependencies {
+        // Remote Config (firebase-config 22, via GitLive) uses java.time.
+        coreLibraryDesugaring(libs.desugar.jdk.libs)
         implementation(libs.firebase.appcheck.playintegrity)
         implementation(libs.firebase.appcheck.debug)
         testImplementation(libs.robolectric)
@@ -121,6 +154,7 @@ android {
     }
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }

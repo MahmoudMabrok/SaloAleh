@@ -1025,4 +1025,37 @@
     <string name="dhikr_model_confirmed_count">تصدیق شدہ تکرار</string>
     <string name="dhikr_model_score">ماڈل اسکور: %1$.3f</string>
     <string name="dhikr_model_runtime_state">رن ٹائم: %1$s · ڈیٹیکٹر: %2$s</string>
+
+    <!-- Community experiences -->
+    <string name="settings_experiences">ایپ اور ذکر کے تجربات</string>
+    <string name="experiences_title">تجربات</string>
+    <string name="experiences_intro">ایپ اور ذکر کے مختصر تجربات پڑھیں، اور اپنا تجربہ بھیجیں۔ تجربہ فہرست میں جائزے کے بعد ہی نظر آتا ہے۔</string>
+    <string name="experiences_form_header">اپنا تجربہ بھیجیں</string>
+    <string name="experiences_name_label">نام (اختیاری)</string>
+    <string name="experiences_name_hint">أخ/أخت</string>
+    <string name="experiences_body_label">تجربہ</string>
+    <string name="experiences_body_count">%1$d/%2$d</string>
+    <string name="experiences_category_app">ایپ کے ساتھ تجربہ</string>
+    <string name="experiences_category_dhikr">ذکر کے ساتھ تجربہ</string>
+    <string name="experiences_submit">بھیجیں</string>
+    <string name="experiences_list_header">شائع شدہ تجربات</string>
+    <string name="experiences_empty">ابھی کوئی شائع شدہ تجربہ نہیں۔ اپنا تجربہ بھیجیں، جائزے کے بعد یہاں نظر آئے گا۔</string>
+    <string name="experiences_error">تجربات لوڈ نہیں ہو سکے۔ باقی ایپ کام کرتی ہے، دوبارہ کوشش کریں۔</string>
+    <string name="experiences_not_configured">اس ورژن میں تجربات کی سروس ابھی فعال نہیں۔</string>
+    <string name="experiences_retry">دوبارہ کوشش</string>
+    <string name="experiences_sent">آپ کا تجربہ پہنچ گیا۔ جائزے کے بعد فہرست میں نظر آئے گا۔</string>
+    <string name="experiences_sent_dismiss">ٹھیک ہے</string>
+    <string name="experiences_submit_error">بھیجا نہیں جا سکا۔ دوبارہ کوشش کریں۔</string>
+    <string name="experiences_rate_limited">بھیجنے کی حد پوری ہو گئی۔ بعد میں کوشش کریں۔</string>
+    <string name="experiences_rejected">متن قبول نہیں ہوا۔ تجربہ دیکھ کر دوبارہ بھیجیں۔</string>
+    <string name="experiences_validation_empty">پہلے اپنا تجربہ لکھیں۔</string>
+    <string name="experiences_validation_unsafe">HTML علامات والا متن قبول نہیں ہوتا۔</string>
+    <string name="experiences_validation_too_long">متن حد سے لمبا ہے۔</string>
+    <string name="experiences_share">شیئر</string>
+    <string name="experiences_share_text">%1$s — %2$s\n%3$s</string>
+    <string name="experiences_meta">%1$s · %2$s</string>
+    <string name="experiences_intro_overlay_title">نیا: ایپ اور ذکر کے تجربات</string>
+    <string name="experiences_intro_overlay_body">ایپ اور ذکر کے مختصر تجربات پڑھیں اور اپنا تجربہ شیئر کریں۔ تجربہ فہرست میں جائزے کے بعد ہی نظر آتا ہے۔</string>
+    <string name="experiences_intro_overlay_cta">تجربات کھولیں</string>
+    <string name="experiences_intro_overlay_dismiss">ابھی نہیں</string>
 </resources>

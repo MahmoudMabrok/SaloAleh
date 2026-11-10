@@ -1025,4 +1025,37 @@
     <string name="dhikr_model_confirmed_count">次已确认</string>
     <string name="dhikr_model_score">模型分数：%1$.3f</string>
     <string name="dhikr_model_runtime_state">运行状态：%1$s · 检测器：%2$s</string>
+
+    <!-- Community experiences -->
+    <string name="settings_experiences">应用与赞念体验</string>
+    <string name="experiences_title">体验</string>
+    <string name="experiences_intro">阅读他人使用应用和赞念的简短体验，并分享你自己的。内容经审核后才会出现在列表中。</string>
+    <string name="experiences_form_header">分享你的体验</string>
+    <string name="experiences_name_label">名字（可选）</string>
+    <string name="experiences_name_hint">أخ/أخت</string>
+    <string name="experiences_body_label">体验</string>
+    <string name="experiences_body_count">%1$d/%2$d</string>
+    <string name="experiences_category_app">使用应用的体验</string>
+    <string name="experiences_category_dhikr">赞念的体验</string>
+    <string name="experiences_submit">发送</string>
+    <string name="experiences_list_header">已发布的体验</string>
+    <string name="experiences_empty">还没有已发布的体验。发送你的体验，审核通过后会显示在这里。</string>
+    <string name="experiences_error">暂时无法加载体验。应用的其他部分仍可使用，请重试。</string>
+    <string name="experiences_not_configured">此版本尚未启用体验服务。</string>
+    <string name="experiences_retry">重试</string>
+    <string name="experiences_sent">已收到你的体验。审核通过后会出现在列表中。</string>
+    <string name="experiences_sent_dismiss">好的</string>
+    <string name="experiences_submit_error">发送失败，请重试。</string>
+    <string name="experiences_rate_limited">已达到发送上限，请稍后再试。</string>
+    <string name="experiences_rejected">文本未被接受。请检查后再发送。</string>
+    <string name="experiences_validation_empty">请先写下你的体验。</string>
+    <string name="experiences_validation_unsafe">不能包含 HTML 标记。</string>
+    <string name="experiences_validation_too_long">文本超过长度限制。</string>
+    <string name="experiences_share">分享</string>
+    <string name="experiences_share_text">%1$s — %2$s\n%3$s</string>
+    <string name="experiences_meta">%1$s · %2$s</string>
+    <string name="experiences_intro_overlay_title">新功能：应用与赞念体验</string>
+    <string name="experiences_intro_overlay_body">阅读并分享关于应用和赞念的简短故事。内容经审核后才会出现在列表中。</string>
+    <string name="experiences_intro_overlay_cta">打开体验</string>
+    <string name="experiences_intro_overlay_dismiss">暂不</string>
 </resources>

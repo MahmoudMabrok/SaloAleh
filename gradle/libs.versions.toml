@@ -22,6 +22,7 @@ kotlinxSerialization = "1.7.3"
 firebaseAnalytics = "21.5.0"
 firebaseAppCheck = "18.0.0"
 firebaseMessaging = "24.1.0"
+desugarJdkLibs = "2.1.5"
 gmsCodeScanner = "16.1.0"
 billing = "9.1.0"
 installReferrer = "2.2"
@@ -37,6 +38,7 @@ koin-compose = { group = "io.insert-koin", name = "koin-compose", version.ref = 
 koin-compose-viewmodel = { group = "io.insert-koin", name = "koin-compose-viewmodel", version.ref = "koin" }
 gitlive-firebase-database = { group = "dev.gitlive", name = "firebase-database", version.ref = "gitliveFirebase" }
 gitlive-firebase-firestore = { group = "dev.gitlive", name = "firebase-firestore", version.ref = "gitliveFirebase" }
+gitlive-firebase-config = { group = "dev.gitlive", name = "firebase-config", version.ref = "gitliveFirebase" }
 multiplatform-settings = { group = "com.russhwolf", name = "multiplatform-settings", version.ref = "multiplatformSettings" }
 multiplatform-settings-test = { group = "com.russhwolf", name = "multiplatform-settings-test", version.ref = "multiplatformSettings" }
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinxDatetime" }
@@ -62,6 +64,7 @@ firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics
 firebase-appcheck-playintegrity = { group = "com.google.firebase", name = "firebase-appcheck-playintegrity", version.ref = "firebaseAppCheck" }
 firebase-appcheck-debug = { group = "com.google.firebase", name = "firebase-appcheck-debug", version.ref = "firebaseAppCheck" }
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging", version.ref = "firebaseMessaging" }
+desugar-jdk-libs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugarJdkLibs" }
 gms-code-scanner = { group = "com.google.android.gms", name = "play-services-code-scanner", version.ref = "gmsCodeScanner" }
 billing = { group = "com.android.billingclient", name = "billing", version.ref = "billing" }
 install-referrer = { group = "com.android.installreferrer", name = "installreferrer", version.ref = "installReferrer" }

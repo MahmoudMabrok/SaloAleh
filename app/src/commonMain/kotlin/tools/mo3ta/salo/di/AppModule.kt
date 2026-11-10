@@ -40,6 +40,15 @@ import tools.mo3ta.salo.data.heart.HeartStore
 import tools.mo3ta.salo.data.language.LanguageStore
 import tools.mo3ta.salo.data.salawat.SalawatVariantStore
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
+import tools.mo3ta.salo.data.community.CommunityExperiences
+import tools.mo3ta.salo.data.community.ExperiencesIntroStore
+import tools.mo3ta.salo.data.community.ExperiencesApiOrigin
+import tools.mo3ta.salo.data.community.ExperiencesRemote
+import tools.mo3ta.salo.data.community.ExperiencesRemoteDataSource
+import tools.mo3ta.salo.data.community.ExperiencesRepository
+import tools.mo3ta.salo.data.community.FirebaseExperiencesApiOrigin
+import tools.mo3ta.salo.data.community.GitLiveExperiencesRemoteConfigReader
+import tools.mo3ta.salo.data.community.experiencesApiLocalConfig
 import tools.mo3ta.salo.data.remote.HadithRemoteDataSource
 import tools.mo3ta.salo.data.remote.createHttpClient
 import tools.mo3ta.salo.data.reminder.AlKahfReminderStore
@@ -68,6 +77,7 @@ import tools.mo3ta.salo.presentation.QuranChallengeViewModel
 import tools.mo3ta.salo.presentation.AlfHasanaChallengeViewModel
 import tools.mo3ta.salo.presentation.KalimatChallengeViewModel
 import tools.mo3ta.salo.presentation.HawqalaChallengeViewModel
+import tools.mo3ta.salo.presentation.ExperiencesViewModel
 import tools.mo3ta.salo.presentation.HadithListViewModel
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
 import tools.mo3ta.salo.presentation.TakbeerSessionViewModel
@@ -80,6 +90,7 @@ val appModule = module {
     single { UpdatePromptStore(get()) }
     single { AutoClickGuardStore(get()) }
     single { AlKahfReminderStore(get()) }
+    single { ExperiencesIntroStore(get()) }
     single { UpdateChecker(get(), get()) }
     single { EngagementStore(get()) }
     single { DailyGoalStore(get()) }
@@ -134,6 +145,15 @@ val appModule = module {
     single { AccountRestoreManager(get(), get(), get(), get(), get(), get(), get(), get()) }
     single { createHttpClient() }
     single { HadithRemoteDataSource(get()) }
+    single<ExperiencesRemote> { ExperiencesRemoteDataSource(get()) }
+    single<ExperiencesApiOrigin> {
+        val local = experiencesApiLocalConfig()
+        FirebaseExperiencesApiOrigin(
+            remoteConfig = GitLiveExperiencesRemoteConfigReader(fetchImmediately = local.fetchImmediately),
+            debugOverride = local.debugOverride,
+        )
+    }
+    single<CommunityExperiences> { ExperiencesRepository(get(), get()) }
     single { HadithListRepository(get()) }
     viewModel { MohamedLoversViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { DhikrChallengeViewModel(get(), get(), get(), get(), get()) }
@@ -154,6 +174,7 @@ val appModule = module {
         )
     }
     viewModel { HadithListViewModel(get()) }
+    viewModel { ExperiencesViewModel(get()) }
     single { TenDaysStore(get()) }
     single { TenDaysFirebaseClient(get(), get(), get()) }
     viewModel { TenDaysViewModel(get(), get(), get(), get()) }

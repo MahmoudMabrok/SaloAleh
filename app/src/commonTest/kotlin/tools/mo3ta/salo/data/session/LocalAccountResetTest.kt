@@ -39,6 +39,7 @@ class LocalAccountResetTest {
         settings.putBoolean("notif_daily_enabled", false)
         settings.putBoolean("show_rank_chip", false)
         settings.putBoolean("top_bar_tooltips_shown", true)
+        settings.putBoolean("experiences_intro_shown", true)
         settings.putString("user_uid", "old-uid")
 
         LocalAccountReset(settings).wipeAccountData()
@@ -48,6 +49,7 @@ class LocalAccountResetTest {
         assertFalse(settings.getBoolean("notif_daily_enabled", true))
         assertFalse(settings.getBoolean("show_rank_chip", true))
         assertTrue(settings.getBoolean("top_bar_tooltips_shown", false))
+        assertTrue(settings.getBoolean("experiences_intro_shown", false))
         assertNull(settings.getStringOrNull("user_uid"))
     }
 

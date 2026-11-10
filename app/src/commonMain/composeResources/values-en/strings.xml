@@ -1063,4 +1063,37 @@
     <string name="dhikr_model_confirmed_count">confirmed repetitions</string>
     <string name="dhikr_model_score">Model score: %1$.3f</string>
     <string name="dhikr_model_runtime_state">Runtime: %1$s · detector: %2$s</string>
+
+    <!-- Community experiences -->
+    <string name="settings_experiences">Experiences with the app and dhikr</string>
+    <string name="experiences_title">Experiences</string>
+    <string name="experiences_intro">Read short experiences with the app and with dhikr, and share your own. A story appears in the list only after it is reviewed.</string>
+    <string name="experiences_form_header">Share your experience</string>
+    <string name="experiences_name_label">Name (optional)</string>
+    <string name="experiences_name_hint">أخ/أخت</string>
+    <string name="experiences_body_label">Your experience</string>
+    <string name="experiences_body_count">%1$d/%2$d</string>
+    <string name="experiences_category_app">Experience with the app</string>
+    <string name="experiences_category_dhikr">Experience with dhikr</string>
+    <string name="experiences_submit">Send</string>
+    <string name="experiences_list_header">Published experiences</string>
+    <string name="experiences_empty">No experiences are published yet. Send yours, and it will show here after review.</string>
+    <string name="experiences_error">Experiences could not be loaded. The rest of the app still works. Try again.</string>
+    <string name="experiences_not_configured">The experiences service is not enabled on this build yet.</string>
+    <string name="experiences_retry">Try again</string>
+    <string name="experiences_sent">Your experience was received. It will appear in the list after review.</string>
+    <string name="experiences_sent_dismiss">OK</string>
+    <string name="experiences_submit_error">Could not send. Try again.</string>
+    <string name="experiences_rate_limited">You have reached the sending limit. Try again later.</string>
+    <string name="experiences_rejected">The text was not accepted. Review it and send it again.</string>
+    <string name="experiences_validation_empty">Write your experience first.</string>
+    <string name="experiences_validation_unsafe">Text that contains HTML marks is not accepted.</string>
+    <string name="experiences_validation_too_long">The text is longer than allowed.</string>
+    <string name="experiences_share">Share</string>
+    <string name="experiences_share_text">%1$s — %2$s\n%3$s</string>
+    <string name="experiences_meta">%1$s · %2$s</string>
+    <string name="experiences_intro_overlay_title">New: experiences with the app and dhikr</string>
+    <string name="experiences_intro_overlay_body">Read and share short stories about the app and about dhikr. A story appears in the list only after it is reviewed.</string>
+    <string name="experiences_intro_overlay_cta">Open experiences</string>
+    <string name="experiences_intro_overlay_dismiss">Not now</string>
 </resources>

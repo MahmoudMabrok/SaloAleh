@@ -78,6 +78,10 @@ import tools.mo3ta.salo.data.billing.SupportTier
 import tools.mo3ta.salo.ui.settings.PaywallScreen
 import tools.mo3ta.salo.ui.settings.ReferralScreen
 import tools.mo3ta.salo.ui.settings.AccountBackupScreen
+import tools.mo3ta.salo.data.community.ExperiencesIntroStore
+import tools.mo3ta.salo.data.community.shouldPresentExperiencesIntro
+import tools.mo3ta.salo.ui.community.ExperiencesIntroDialog
+import tools.mo3ta.salo.ui.community.ExperiencesScreen
 import tools.mo3ta.salo.ui.settings.VoiceDhikrScreen
 import tools.mo3ta.salo.ui.settings.DhikrModelTestScreen
 import tools.mo3ta.salo.ui.settings.PremiumPromoDialog
@@ -123,6 +127,10 @@ private const val APP_ANNOUNCEMENTS_ENABLED = false
 // The per-round streak badge announcement ships independently of the global suppression
 // above so the new feature is surfaced once. Flip to false to hide it.
 private const val STREAK_BADGE_ANNOUNCEMENT_ENABLED = true
+
+// The experiences intro is a one-shot guide to the in-app Experiences screen. It ships
+// independently of the global suppression above. Flip to false to hide it.
+private const val EXPERIENCES_INTRO_ENABLED = true
 
 // The remote-config-driven "update available" prompt is independent of the global
 // announcement suppression above: it must reach every user when a newer release ships.
@@ -193,6 +201,15 @@ fun App(
         var showExtensionQr by remember { mutableStateOf(false) }
         var showReferral by remember { mutableStateOf(false) }
         var showVoiceDhikr by remember { mutableStateOf(false) }
+        var showExperiences by remember { mutableStateOf(false) }
+        val experiencesIntroStore = koinInject<ExperiencesIntroStore>()
+        var experiencesIntroShown by remember { mutableStateOf(experiencesIntroStore.isShown()) }
+        val acknowledgeExperiencesIntro: () -> Unit = {
+            if (!experiencesIntroShown) {
+                experiencesIntroStore.markShown()
+                experiencesIntroShown = true
+            }
+        }
         var showDhikrModelTest by remember { mutableStateOf(false) }
         var showAccountBackup by remember { mutableStateOf(false) }
         var showPaywall by remember { mutableStateOf(false) }
@@ -203,6 +220,7 @@ fun App(
             enabled = showPaywall ||
                 showReferral ||
                 showVoiceDhikr ||
+                showExperiences ||
                 showDhikrModelTest ||
                 showAccountBackup ||
                 showDhikrRewards ||
@@ -225,6 +243,7 @@ fun App(
                 showPaywall -> showPaywall = false
                 showReferral -> showReferral = false
                 showVoiceDhikr -> showVoiceDhikr = false
+                showExperiences -> showExperiences = false
                 showDhikrModelTest -> showDhikrModelTest = false
                 showAccountBackup -> showAccountBackup = false
                 showDhikrRewards -> showDhikrRewards = false
@@ -295,6 +314,7 @@ fun App(
         val nicknamePromptBlocked = showPaywall ||
             showReferral ||
             showVoiceDhikr ||
+            showExperiences ||
             showDhikrModelTest ||
             showAccountBackup ||
             showDhikrRewards ||
@@ -325,6 +345,7 @@ fun App(
             showPaywall -> PaywallScreen(onBack = { showPaywall = false })
             showReferral -> ReferralScreen(onBack = { showReferral = false })
             showVoiceDhikr -> VoiceDhikrScreen(onBack = { showVoiceDhikr = false })
+            showExperiences -> ExperiencesScreen(onBack = { showExperiences = false })
             showDhikrModelTest -> DhikrModelTestScreen(onBack = { showDhikrModelTest = false })
             showAccountBackup -> AccountBackupScreen(onBack = { showAccountBackup = false })
             showExtensionQr -> ExtensionQrScreen(onBack = { showExtensionQr = false })
@@ -447,6 +468,10 @@ fun App(
                                 onOpenPaywall = { showPaywall = true },
                                 onOpenReferral = { showReferral = true },
                                 onOpenVoiceDhikr = { showVoiceDhikr = true },
+                                onOpenExperiences = {
+                                    acknowledgeExperiencesIntro()
+                                    showExperiences = true
+                                },
                                 onOpenDhikrModelTest = { showDhikrModelTest = true },
                                 onOpenAccountBackup = { showAccountBackup = true },
                             )
@@ -569,12 +594,12 @@ fun App(
         var streakBadgeAnnouncementDone by remember {
             mutableStateOf(settings.getBoolean("streak_badge_announcement_shown", false))
         }
-        if (
+        val streakAnnouncementVisible =
             STREAK_BADGE_ANNOUNCEMENT_ENABLED &&
-            !showOnboarding &&
-            !shouldShowNicknamePrompt &&
-            !streakBadgeAnnouncementDone
-        ) {
+                !showOnboarding &&
+                !shouldShowNicknamePrompt &&
+                !streakBadgeAnnouncementDone
+        if (streakAnnouncementVisible) {
             StreakBadgeAnnouncementDialog(
                 onOpenAchievements = {
                     settings.putBoolean("streak_badge_announcement_shown", true)
@@ -586,6 +611,30 @@ fun App(
                     settings.putBoolean("streak_badge_announcement_shown", true)
                     streakBadgeAnnouncementDone = true
                     analyticsManager.logAction(AppAnalytics.STREAK_BADGE_ANNOUNCEMENT_DISMISSED)
+                },
+            )
+        }
+
+        if (
+            shouldPresentExperiencesIntro(
+                enabled = EXPERIENCES_INTRO_ENABLED,
+                alreadyShown = experiencesIntroShown,
+                onboardingVisible = showOnboarding,
+                nicknamePromptVisible = shouldShowNicknamePrompt,
+                experiencesScreenVisible = showExperiences,
+                streakAnnouncementVisible = streakAnnouncementVisible,
+            )
+        ) {
+            ExperiencesIntroDialog(
+                onOpen = {
+                    acknowledgeExperiencesIntro()
+                    showExperiences = true
+                    analyticsManager.logAction(AppAnalytics.EXPERIENCES_INTRO_OPENED)
+                    analyticsManager.logAction(AppAnalytics.OPEN_EXPERIENCES)
+                },
+                onDismiss = {
+                    acknowledgeExperiencesIntro()
+                    analyticsManager.logAction(AppAnalytics.EXPERIENCES_INTRO_DISMISSED)
                 },
             )
         }
