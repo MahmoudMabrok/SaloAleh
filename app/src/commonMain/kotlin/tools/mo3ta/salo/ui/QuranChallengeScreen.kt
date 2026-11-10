@@ -276,7 +276,12 @@ fun QuranChallengeScreen(
                         mapOf(AppAnalytics.PARAM_COUNT to page.toString()),
                     )
                 },
-                onClose = { showMushaf = false },
+                onClose = {
+                    showMushaf = false
+                    // The reader is a dialog now, so the screen does not stop and resume
+                    // around it. Sync the counted pages and refresh, as leaving the screen did.
+                    viewModel.onScreenLeft()
+                },
                 modifier = Modifier.fillMaxSize(),
             )
         }

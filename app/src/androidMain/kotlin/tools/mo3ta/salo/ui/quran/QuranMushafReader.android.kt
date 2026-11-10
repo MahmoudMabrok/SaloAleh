@@ -1,127 +1,53 @@
 package tools.mo3ta.salo.ui.quran
 
-import android.app.Activity
 import android.content.Context
-import android.content.ContextWrapper
-import android.content.Intent
-import android.os.Process
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import android.os.SystemClock
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.produceState
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.sp
+import io.github.sherifshabans.mushaf.Ayah
+import io.github.sherifshabans.mushaf.MushafFont
+import io.github.sherifshabans.mushaf.MushafPage
+import io.github.sherifshabans.mushaf.toArabicDigits
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import com.google.android.play.core.splitcompat.SplitCompat
-import com.google.android.play.core.splitinstall.SplitInstallManagerFactory
-import com.google.android.play.core.splitinstall.SplitInstallRequest
-import com.google.android.play.core.splitinstall.SplitInstallStateUpdatedListener
-import com.google.android.play.core.splitinstall.model.SplitInstallSessionStatus as SessionStatus
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import io.github.sherifshabans.mushaf.MushafColors
+import io.github.sherifshabans.mushaf.MushafDecoration
+import io.github.sherifshabans.mushaf.Quran
+import io.github.sherifshabans.mushaf.rememberMushafPagerState
+import kotlinx.coroutines.delay
+import tools.mo3ta.salo.data.quran.PageDwellCounter
 
 actual val mushafReaderAvailable: Boolean = true
 
-private const val MUSHAF_MODULE = "mushaf"
+/** The Mushaf is drawn from text inside the app, so it is always ready: nothing to download. */
+@Composable
+actual fun rememberMushafAccess(): MushafAccess =
+    remember { MushafAccess(MushafStatus.Ready, null, startDownload = {}) }
 
 @Composable
-actual fun rememberMushafAccess(): MushafAccess {
-    val context = LocalContext.current
-    val manager = remember {
-        runCatching { SplitInstallManagerFactory.create(context.applicationContext) }.getOrNull()
-    }
-    if (manager == null) {
-        return MushafAccess(MushafStatus.Unavailable, null, startDownload = {})
-    }
-    val installedAtStart = remember {
-        runCatching { manager.installedModules.contains(MUSHAF_MODULE) }.getOrDefault(false)
-    }
-    var status by remember {
-        mutableStateOf(
-            runCatching {
-                if (manager.installedModules.contains(MUSHAF_MODULE)) MushafStatus.Ready
-                else MushafStatus.NeedsDownload
-            }.getOrDefault(MushafStatus.Unavailable),
-        )
-    }
-    var progress by remember { mutableStateOf<Float?>(null) }
-    val promptedSessions = remember { mutableSetOf<Int>() }
-    val confirmLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartIntentSenderForResult(),
-    ) { /* The session listener reports the outcome. */ }
-
-    DisposableEffect(manager) {
-        val listener = SplitInstallStateUpdatedListener { state ->
-            if (!state.moduleNames().contains(MUSHAF_MODULE)) return@SplitInstallStateUpdatedListener
-            when (state.status()) {
-                SessionStatus.REQUIRES_USER_CONFIRMATION -> {
-                    status = MushafStatus.Downloading
-                    if (promptedSessions.add(state.sessionId())) {
-                        runCatching { manager.startConfirmationDialogForResult(state, confirmLauncher) }
-                    }
-                }
-                SessionStatus.PENDING,
-                SessionStatus.DOWNLOADING,
-                SessionStatus.DOWNLOADED,
-                SessionStatus.INSTALLING,
-                SessionStatus.CANCELING,
-                -> {
-                    status = MushafStatus.Downloading
-                    val total = state.totalBytesToDownload()
-                    progress = if (total > 0L) state.bytesDownloaded().toFloat() / total else null
-                }
-                SessionStatus.INSTALLED -> {
-                    // Opening the new split in this same process crashes once.
-                    // A fresh process loads it cleanly.
-                    status = if (installedAtStart) MushafStatus.Ready else MushafStatus.NeedsRestart
-                    progress = null
-                }
-                SessionStatus.FAILED,
-                SessionStatus.CANCELED,
-                -> {
-                    status = runCatching {
-                        when {
-                            !manager.installedModules.contains(MUSHAF_MODULE) -> MushafStatus.Failed
-                            installedAtStart -> MushafStatus.Ready
-                            else -> MushafStatus.NeedsRestart
-                        }
-                    }.getOrDefault(MushafStatus.Failed)
-                    progress = null
-                }
-            }
-        }
-        manager.registerListener(listener)
-        onDispose { manager.unregisterListener(listener) }
-    }
-
-    return MushafAccess(
-        status = status,
-        progress = progress,
-        startDownload = {
-            val installed = runCatching { manager.installedModules.contains(MUSHAF_MODULE) }.getOrDefault(false)
-            if (installed) {
-                status = if (installedAtStart) MushafStatus.Ready else MushafStatus.NeedsRestart
-            } else if (status != MushafStatus.Downloading) {
-                status = MushafStatus.Downloading
-                progress = null
-                runCatching {
-                    manager.startInstall(
-                        SplitInstallRequest.newBuilder().addModule(MUSHAF_MODULE).build(),
-                    )
-                }.onFailure { status = MushafStatus.Failed }
-                    .onSuccess { task ->
-                        task.addOnFailureListener { status = MushafStatus.Failed }
-                    }
-            }
-        },
-        restartApp = { restartProcess(context) },
-    )
-}
-
-@Composable
-@Suppress("UNUSED_PARAMETER")
 actual fun QuranMushafReader(
     initialPage: Int?,
     alreadyCounted: Set<Int>,
@@ -130,38 +56,95 @@ actual fun QuranMushafReader(
     modifier: Modifier,
 ) {
     val context = LocalContext.current
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        onClose()
+    val startPage = remember(initialPage) {
+        (initialPage ?: MushafReaderPrefs.lastPage(context)).coerceIn(1, Quran.PAGE_COUNT)
     }
-    DisposableEffect(onPageQualified) {
-        MushafPageBridge.onPageQualified = onPageQualified
-        onDispose { MushafPageBridge.onPageQualified = null }
-    }
-    LaunchedEffect(initialPage) {
-        val activity = context.findActivity()
-        if (activity == null) {
-            onClose()
-            return@LaunchedEffect
+    val state = rememberMushafPagerState(initialPage = startPage)
+    val counter = remember { PageDwellCounter(alreadyCounted) }
+    val credit by rememberUpdatedState(onPageQualified)
+
+    // A page counts after it has been on screen for a while (PageDwellCounter).
+    LaunchedEffect(state, counter) {
+        snapshotFlow { state.currentPage + 1 }.collect { page ->
+            MushafReaderPrefs.setLastPage(context, page)
+            counter.onPageRendered(page, SystemClock.elapsedRealtime())?.let(credit)
         }
-        val intent = Intent().setClassName(activity, "tools.mo3ta.salo.mushaf.MushafReaderActivity")
-            .putExtra("tools.mo3ta.salo.mushaf.PAGE", initialPage ?: 0)
-            .putExtra("tools.mo3ta.salo.mushaf.COUNTED", alreadyCounted.toIntArray())
-        runCatching { SplitCompat.install(activity) }
-        if (runCatching { launcher.launch(intent) }.isFailure) onClose()
+    }
+    LaunchedEffect(state, counter) {
+        while (true) {
+            delay(1_000)
+            counter.onPageRendered(state.currentPage + 1, SystemClock.elapsedRealtime())?.let(credit)
+        }
+    }
+    DisposableEffect(counter) {
+        onDispose { counter.flush(SystemClock.elapsedRealtime())?.let(credit) }
+    }
+
+    // Closes with the system back button; no on-screen close button. The dialog
+    // window already sits between the status and navigation bars, so no extra insets.
+    Dialog(
+        onDismissRequest = onClose,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        // The next page comes in from the left, like a printed Mushaf, whatever the app language.
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+            HorizontalPager(
+                state = state,
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(MushafColors.Light.paper),
+                beyondViewportPageCount = 1,
+                key = { it },
+            ) { index ->
+                ReaderPage(page = index + 1)
+            }
+        }
     }
 }
 
-private fun restartProcess(context: Context) {
-    val activity = context.findActivity() ?: return
-    val launch = activity.packageManager.getLaunchIntentForPackage(activity.packageName) ?: return
-    launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-    activity.startActivity(launch)
-    activity.finishAffinity()
-    Process.killProcess(Process.myPid())
+/**
+ * One page: surah and juz on top, then the framed page. No footer: the Classic
+ * frame already shows the page number in its medallion.
+ */
+@Composable
+private fun ReaderPage(page: Int) {
+    val context = LocalContext.current
+    val ayahs by produceState<List<Ayah>?>(null, page) {
+        value = Quran.load(context).filter { it.page == page }
+    }
+    Column(Modifier.fillMaxSize().padding(horizontal = 4.dp, vertical = 2.dp)) {
+        val first = ayahs?.firstOrNull()
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            BasicText(
+                text = first?.let { "سُورَةُ " + Quran.surah(it.surah).nameArabic } ?: "",
+                style = TextStyle(fontFamily = MushafFont, fontSize = 15.sp, color = MushafColors.Light.marker),
+            )
+            BasicText(
+                text = first?.let { "الجزء " + toArabicDigits(it.juz) } ?: "",
+                style = TextStyle(fontSize = 15.sp, color = MushafColors.Light.marker),
+            )
+        }
+        MushafPage(
+            ayahs = ayahs ?: emptyList(),
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            colors = MushafColors.Light,
+            decoration = MushafDecoration.Classic,
+        )
+    }
 }
 
-private tailrec fun Context.findActivity(): Activity? = when (this) {
-    is Activity -> this
-    is ContextWrapper -> baseContext.findActivity()
-    else -> null
+/** Remembers the last page read so "continue" opens it again. */
+private object MushafReaderPrefs {
+    private const val FILE = "mushaf_text_reader"
+    private const val KEY_LAST_PAGE = "last_page"
+
+    fun lastPage(context: Context): Int =
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE).getInt(KEY_LAST_PAGE, 1)
+
+    fun setLastPage(context: Context, page: Int) {
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE).edit().putInt(KEY_LAST_PAGE, page).apply()
+    }
 }

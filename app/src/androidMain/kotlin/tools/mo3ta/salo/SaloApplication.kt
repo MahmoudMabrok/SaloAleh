@@ -14,13 +14,11 @@ import tools.mo3ta.salo.billing.SaloBillingClient
 import tools.mo3ta.salo.di.androidModule
 import tools.mo3ta.salo.di.appModule
 import tools.mo3ta.salo.notification.NotificationChannels
+import tools.mo3ta.salo.ui.quran.LegacyMushafCleanup
 
 class SaloApplication : Application() {
     override fun attachBaseContext(base: Context) {
         super.attachBaseContext(base.withStoredAppLocale())
-        // SplitCompat.install() here throws an Error on some phones (not an
-        // Exception), so a try/catch does not stop the app from closing.
-        // The Mushaf screen loads the split only after the user opens it.
     }
 
     override fun onCreate() {
@@ -47,5 +45,9 @@ class SaloApplication : Application() {
         NotificationChannels.createAll(this)
         val billing: SaloBillingClient by inject()
         billing.connect()
+        // One time: delete the old image Mushaf's files (images, database) from the phone.
+        Thread {
+            runCatching { LegacyMushafCleanup.runOnce(this) }
+        }.apply { priority = Thread.MIN_PRIORITY }.start()
     }
 }
