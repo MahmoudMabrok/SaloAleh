@@ -276,7 +276,11 @@ async function main() {
 
   if (!fs.existsSync(statsDir)) fs.mkdirSync(statsDir);
   const outPath = path.join(statsDir, `${dateStr}.json`);
-  fs.writeFileSync(outPath, JSON.stringify(stats, null, 2));
+  const payload = JSON.stringify(stats, null, 2);
+  fs.writeFileSync(outPath, payload);
+  // Pointer the landing page fetches first: always yesterday-or-today fresh,
+  // so the page never depends on guessing the Cairo date filename.
+  fs.writeFileSync(path.join(statsDir, 'latest.json'), payload);
   console.log(`stats/${dateStr}.json written:`, stats);
 
   // Delete daily stats files older than 7 days.
