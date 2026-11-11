@@ -697,6 +697,12 @@
         ".read": false,
         ".write": false
       },
+      "strictMode": {
+        "$uid": {
+          ".read": true,
+          ".write": false
+        }
+      },
       "referral_codes": {
         "$code": {
           ".read": true,
@@ -871,7 +877,7 @@
               ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 3"
             },
             "totalCount": {
-              ".validate": "newData.isNumber() && newData.val() >= 0"
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() - (newData.parent().child('yesterdayTotalScore').exists() ? newData.parent().child('yesterdayTotalScore').val() : 0) <= 25000"
             },
             "yesterdayTotalScore": {
               ".validate": "newData.val() === data.val()"
@@ -909,7 +915,7 @@
             },
             "externalDaily": {
               "$dayKey": {
-                ".validate": "newData.isNumber()"
+                ".validate": "newData.isNumber() && newData.val() <= 15000 && newData.val() >= -15000"
               }
             },
             "dailyBadge": {
