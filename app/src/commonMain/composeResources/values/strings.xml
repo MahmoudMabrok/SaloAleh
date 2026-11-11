@@ -652,6 +652,12 @@
     <string name="manual_subtract_hint">لتصحيح عدد أُضيف بالخطأ — سيُخصم من رصيدك الحالي ولن ينزل تحت الصفر</string>
     <string name="mohamed_lovers_daily_cap_reached">بلغت الحد الأقصى اليومي للمسابقة (%1$d)، ولن تُحتسب الصلوات الزائدة اليوم.</string>
     <string name="mohamed_lovers_badge_score_adjusted">تم ضبط عدد اليوم على %1$d وفق الوسام المسجَّل لك على الخادم.</string>
+    <string name="mohamed_lovers_strict_mode_alarm_title">تنبيه مراجعة الحساب</string>
+    <string name="mohamed_lovers_strict_mode_alarm_body">رصدنا نشاط عدّ غير طبيعي على حسابك قد يكون ناتجًا عن أدوات غش. تم تقييد العدّ مؤقتًا: يُحتسب فقط ما تضيفه أثناء الاتصال بالإنترنت، والضغط العادي معطّل الآن. إن لم تستخدم أي أدوات غش فتواصل معنا.</string>
+    <string name="mohamed_lovers_strict_mode_contact">تواصل معنا</string>
+    <string name="mohamed_lovers_strict_mode_banner">حسابك تحت المراجعة: العدّ يعمل عبر الإنترنت فقط (البث، المشاركة اليدوية، الإضافة الخارجية).</string>
+    <string name="mohamed_lovers_strict_mode_tap_blocked">الضغط معطّل مؤقتًا لأن حسابك تحت المراجعة. استخدم البث أو المشاركة اليدوية أو الإضافة الخارجية.</string>
+    <string name="mohamed_lovers_strict_mode_needs_internet">يتطلب وضع المراجعة اتصالًا بالإنترنت. تحقق من الشبكة وأعد المحاولة.</string>
 
     <!-- Share Card -->
     <string name="share_card_out_of_participants">من أصل %1$d مشارك</string>

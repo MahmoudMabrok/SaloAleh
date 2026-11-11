@@ -49,7 +49,12 @@ import tools.mo3ta.salo.data.hawqala.HawqalaChallengeStore
 import tools.mo3ta.salo.input.isSyntheticTap
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.domain.ChallengeType
+import tools.mo3ta.salo.domain.MohamedLoversRepository
+import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_strict_mode_needs_internet
 import tools.mo3ta.salo.notification.NotificationChannels
+import org.jetbrains.compose.resources.getString
+import android.widget.Toast
 
 class FloatingBubbleService : Service() {
 
@@ -104,6 +109,7 @@ class FloatingBubbleService : Service() {
     }
 
     private val sessionStore: MohamedLoversSessionStore by inject()
+    private val repository: MohamedLoversRepository by inject()
     private val dailyGoalStore: DailyGoalStore by inject()
     private val dhikrStore: DhikrChallengeStore by inject()
     private val istighfarStore: IstighfarChallengeStore by inject()
@@ -141,6 +147,9 @@ class FloatingBubbleService : Service() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var roundKey: String = ""
+    // Strict-mode (quarantined) taps credited by this bubble while it is alive. Purely in-memory:
+    // nothing is queued for a later flush while the account is under review.
+    private var strictTapCount = 0
     private lateinit var prefs: SharedPreferences
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -173,7 +182,9 @@ class FloatingBubbleService : Service() {
 
     // The number shown inside the bubble for the current type.
     private fun currentCount(): Int = when (bubbleType) {
-        BubbleType.SALAWAT -> prefs.getInt("pending_count_$roundKey", 0)
+        BubbleType.SALAWAT ->
+            if (sessionStore.isStrictModeLatched) strictTapCount
+            else prefs.getInt("pending_count_$roundKey", 0)
         BubbleType.DHIKR -> dhikrStore.todayCount(cairoToday())
         BubbleType.ISTIGHFAR -> istighfarStore.todayCount(cairoToday())
         BubbleType.ZABAD -> zabadStore.todayCount(cairoToday())
@@ -800,6 +811,10 @@ class FloatingBubbleService : Service() {
         when (bubbleType) {
             BubbleType.SALAWAT -> {
                 if (roundKey.isBlank()) return
+                if (sessionStore.isStrictModeLatched) {
+                    pushStrictTap()
+                    return
+                }
                 val pending = sessionStore.incrementPendingClick(roundKey, 1)
                 dailyGoalStore.recordTap(today, 1)
                 bubbleView.updateCount(pending.clickCount)
@@ -823,6 +838,30 @@ class FloatingBubbleService : Service() {
                 recordChallengeTap(kalimatStore.incrementToday(today), ChallengeType.KALIMAT, today)
             BubbleType.HAWQALA ->
                 recordChallengeTap(hawqalaStore.incrementToday(today), ChallengeType.HAWQALA, today)
+        }
+    }
+
+    /**
+     * Strict-mode salawat tap: one live increment per tap, online-only. A failed push is dropped
+     * with a toast instead of being banked, so nothing locally stored can ever be scored.
+     */
+    private fun pushStrictTap() {
+        scope.launch {
+            val result = repository.pushImmediate(roundKey, 1)
+            if (result.isSuccess) {
+                strictTapCount++
+                bubbleView.updateCount(strictTapCount)
+                bubbleView.animateTap()
+                analyticsManager.logAction(
+                    "bubble_tap",
+                    mapOf("count" to strictTapCount.toString(), "type" to bubbleType.id, "strict" to "1"),
+                )
+            } else {
+                val message = runCatching {
+                    getString(Res.string.mohamed_lovers_strict_mode_needs_internet)
+                }.getOrDefault("Review mode requires an internet connection")
+                Toast.makeText(this@FloatingBubbleService, message, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 

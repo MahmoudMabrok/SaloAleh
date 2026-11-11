@@ -23,6 +23,7 @@ import tools.mo3ta.salo.domain.MOHAMED_LOVERS_TOP_LIMIT
 import tools.mo3ta.salo.domain.MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE
 import tools.mo3ta.salo.domain.MohamedLoversMedals
 import tools.mo3ta.salo.domain.MohamedLoversPlayer
+import tools.mo3ta.salo.domain.StrictModeInfo
 import tools.mo3ta.salo.domain.UserAchievement
 
 class MohamedLoversFirebaseClient(
@@ -338,6 +339,30 @@ class MohamedLoversFirebaseClient(
                 onFailure = { error ->
                     log.e(error) { "appendBadgeAdjustmentLog[$uid] failed" }
                     trackWriteFailure("append_badge_adjustment_log", error)
+                },
+            )
+        }
+    }
+
+    override suspend fun fetchStrictMode(uid: String): Result<StrictModeInfo?> {
+        log.d { "fetchStrictMode[$uid]" }
+        return runCatching {
+            val snapshot = Firebase.database.reference("$ROOT_PATH/$STRICT_MODE_PATH/$uid")
+                .valueEvents.first()
+            if (!snapshot.exists) return@runCatching null
+            val map = snapshot.value as? Map<*, *> ?: return@runCatching null
+            StrictModeInfo(
+                since = (map[STRICT_SINCE_KEY] as? Number)?.toLong() ?: 0L,
+                reason = map[STRICT_REASON_KEY] as? String ?: "",
+                dateKey = map[STRICT_DATE_KEY] as? String ?: "",
+                cleanDays = (map[STRICT_CLEAN_DAYS_KEY] as? Number)?.toInt() ?: 0,
+            )
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "fetchStrictMode[$uid]=$it" } },
+                onFailure = { error ->
+                    log.e(error) { "fetchStrictMode[$uid] failed" }
+                    trackReadFailure("fetch_strict_mode", error)
                 },
             )
         }
@@ -932,9 +957,10 @@ class MohamedLoversFirebaseClient(
         const val UID_KEY = "uid"
         const val SCHEMA_VERSION_KEY = "schemaVersion"
         // Schema version stamped on every player write. The RTDB rule requires this field
-        // (`hasChildren(['uid','schemaVersion'])`), so builds that predate it are denied and
-        // forced to update. Bump only when the player-write contract changes.
-        const val CLIENT_SCHEMA_VERSION = 1
+        // (`hasChildren(['uid','schemaVersion'])`) and a minimum value of 2, so builds that
+        // predate the strict-mode counting contract are denied and forced to update. Bump only
+        // when the player-write contract changes.
+        const val CLIENT_SCHEMA_VERSION = 2
         const val SCORE_KEY = "score"
         const val RANK_KEY = "rank"
         const val TOTAL_COUNT_KEY = "totalCount"
@@ -961,6 +987,13 @@ class MohamedLoversFirebaseClient(
         const val ROUND_TOTAL_PATH = "roundTotal"
         const val ROUND_PLAYER_COUNT_PATH = "roundPlayerCount"
         const val ALL_TIME_TOTAL_PATH = "allTimeTotal"
+        // Server-owned anti-cheat quarantine, one entry per flagged uid. Clients may read
+        // (rules allow read, deny write); only the admin scripts write it.
+        const val STRICT_MODE_PATH = "strictMode"
+        const val STRICT_SINCE_KEY = "since"
+        const val STRICT_REASON_KEY = "reason"
+        const val STRICT_DATE_KEY = "dateKey"
+        const val STRICT_CLEAN_DAYS_KEY = "cleanDays"
         const val APP_CONFIG_PATH = "app_config"
         const val LATEST_VERSION_KEY = "latestVersion"
         const val MIN_SUPPORTED_VERSION_CODE_KEY = "minSupportedVersionCode"

@@ -30,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -68,6 +69,12 @@ import tools.mo3ta.salo.generated.resources.grace_warning_cta
 import tools.mo3ta.salo.generated.resources.grace_warning_title
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_badge_score_adjusted
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_daily_cap_reached
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_strict_mode_alarm_body
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_strict_mode_alarm_title
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_strict_mode_banner
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_strict_mode_contact
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_strict_mode_needs_internet
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_strict_mode_tap_blocked
 import tools.mo3ta.salo.generated.resources.streak_freeze_at_risk
 import tools.mo3ta.salo.generated.resources.streak_freeze_at_risk_title
 import tools.mo3ta.salo.generated.resources.streak_freeze_reset
@@ -219,6 +226,22 @@ fun MohamedLoversScreen(
         }
     }
 
+    // Anti-cheat quarantine: tap blocked, or a quarantined count could not be pushed offline.
+    val strictBlockedLabel = stringResource(Res.string.mohamed_lovers_strict_mode_tap_blocked)
+    val strictInternetLabel = stringResource(Res.string.mohamed_lovers_strict_mode_needs_internet)
+    LaunchedEffect(state.strictModeBlocked) {
+        if (state.strictModeBlocked) {
+            showPlatformToast(strictBlockedLabel)
+            viewModel.dismissStrictModeBlocked()
+        }
+    }
+    LaunchedEffect(state.strictModeNeedsInternet) {
+        if (state.strictModeNeedsInternet) {
+            showPlatformToast(strictInternetLabel)
+            viewModel.dismissStrictModeInternetNotice()
+        }
+    }
+
     LaunchedEffect(Unit){
         analyticsManager.logView("Mohamed_lovers")
     }
@@ -308,6 +331,10 @@ fun MohamedLoversScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 MohamedLoversHadithBanner()
+                if (state.isStrictMode) {
+                    Spacer(Modifier.height(8.dp))
+                    StrictModeBanner()
+                }
                 if (state.showRoundEndBanner && !state.showRoundEndResults) {
                     Spacer(Modifier.height(8.dp))
                     RoundEndBanner(onClick = { viewModel.onRoundEndBannerClick() })
@@ -629,6 +656,82 @@ fun MohamedLoversScreen(
             onDismiss = viewModel::dismissRoundStreakCelebration,
         )
     }
+
+    if (state.showStrictModeAlarm) {
+        val uriHandler = LocalUriHandler.current
+        StrictModeAlarmDialog(
+            onDismiss = viewModel::dismissStrictModeAlarm,
+            onContact = {
+                runCatching { uriHandler.openUri(STRICT_MODE_CONTACT_URI) }
+                viewModel.dismissStrictModeAlarm()
+            },
+        )
+    }
+}
+
+private const val STRICT_MODE_CONTACT_URI = "mailto:mahmoudmabrok3579@gmail.com?subject=SaloAleh%20-%20account%20review"
+
+@Composable
+private fun StrictModeBanner() {
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = MohamedLoversPalette.GoldHighlight.copy(alpha = 0.12f),
+        modifier = Modifier
+            .padding(horizontal = 16.dp)
+            .fillMaxWidth(),
+    ) {
+        Text(
+            text = stringResource(Res.string.mohamed_lovers_strict_mode_banner),
+            color = MohamedLoversPalette.GoldGlow,
+            fontSize = 12.sp,
+            lineHeight = 18.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+        )
+    }
+}
+
+@Composable
+private fun StrictModeAlarmDialog(onDismiss: () -> Unit, onContact: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = MohamedLoversPalette.DeepBlue,
+        shape = RoundedCornerShape(20.dp),
+        title = {
+            Text(
+                text = stringResource(Res.string.mohamed_lovers_strict_mode_alarm_title),
+                color = MohamedLoversPalette.GoldHighlight,
+                fontSize = 18.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        text = {
+            Text(
+                text = stringResource(Res.string.mohamed_lovers_strict_mode_alarm_body),
+                color = MohamedLoversPalette.GoldGlow,
+                fontSize = 14.sp,
+                lineHeight = 22.sp,
+                textAlign = TextAlign.Center,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onContact) {
+                Text(
+                    text = stringResource(Res.string.mohamed_lovers_strict_mode_contact),
+                    color = MohamedLoversPalette.GoldHighlight,
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(
+                    text = stringResource(Res.string.grace_warning_cta),
+                    color = MohamedLoversPalette.GoldGlow,
+                )
+            }
+        },
+    )
 }
 
 @Composable

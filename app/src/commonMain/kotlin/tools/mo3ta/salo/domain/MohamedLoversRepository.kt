@@ -58,6 +58,23 @@ class MohamedLoversRepository(
     fun registerLocalTap(roundKey: String, delta: Int = 1): MohamedLoversPendingSession =
         sessionStore.incrementPendingClick(roundKey, delta)
 
+    /**
+     * Pushes a live count straight to the competition score: one bounded increment per accepted
+     * interaction, with no locally stored total involved. Used by strict-mode (quarantined)
+     * clients, whose score may only move through interactions performed while online.
+     */
+    suspend fun pushImmediate(roundKey: String, delta: Int, todayCount: Int = 0): Result<Unit> {
+        if (delta <= 0) return Result.success(Unit)
+        val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
+        return firebaseClient.incrementSession(roundKey, uid, delta, countryCodeProvider.get(), todayCount)
+    }
+
+    /** Reads the server-owned anti-cheat quarantine flag for the current user; null when clear. */
+    suspend fun fetchStrictMode(): Result<StrictModeInfo?> {
+        val uid = ensureAnonymousUser().getOrElse { return Result.failure(it) }
+        return firebaseClient.fetchStrictMode(uid)
+    }
+
     fun getPendingSession(roundKey: String): MohamedLoversPendingSession =
         sessionStore.getPendingSession(roundKey)
 
