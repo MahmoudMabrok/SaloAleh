@@ -35,6 +35,14 @@ describe('computeTodayScore', () => {
     assert.equal(computeTodayScore({ total: 3000, today: null, yesterday: 4000 }), 0);
     assert.equal(computeTodayScore({ total: 3000, today: -5, yesterday: 4000 }), 0);
   });
+
+  it('defaults a missing/undefined yesterday baseline to 0', () => {
+    // Friday 19:00 rollover: the fresh round node has no yesterdayTotalScore until the
+    // 23:45 Cairo close stamps it. The whole round total is that day's count.
+    assert.equal(computeTodayScore({ total: 5000, today: 800, yesterday: undefined }), 5000);
+    assert.equal(computeTodayScore({ total: 5000, today: 800, yesterday: null }), 5000);
+    assert.equal(computeTodayScore({ total: 0, today: 0, yesterday: undefined }), 0);
+  });
 });
 
 describe('buildDailyScoreSnapshots', () => {
@@ -62,6 +70,19 @@ describe('buildDailyScoreSnapshots', () => {
       roundKey,
     });
     assert.equal(scoreHistoryUpdates[`mohamed_lovers/users/legacy/scoreHistory/${dateKey}`], 800);
+  });
+
+  it('treats a missing yesterdayTotalScore as 0 (Friday rollover node)', () => {
+    const { scoreHistoryUpdates, paceFlagUpdates } = buildDailyScoreSnapshots({
+      players: [{ uid: 'fresh', totalCount: 5000, todayCount: 800 }],
+      dateKey,
+      roundKey,
+      roundDay: 1,
+    });
+    // No baseline ⇒ the whole (fresh) round total is today's count, not 800.
+    assert.equal(scoreHistoryUpdates[`mohamed_lovers/users/fresh/scoreHistory/${dateKey}`], 5000);
+    // …and it stays under the day-1 pace ceiling (11k), so no false pace flag.
+    assert.deepEqual(paceFlagUpdates, {});
   });
 
   it('omits users with a zero day total from the history', () => {
