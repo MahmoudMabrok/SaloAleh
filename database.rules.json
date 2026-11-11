@@ -871,7 +871,7 @@
               ".validate": "newData.isString() && newData.val() === $uid"
             },
             "schemaVersion": {
-              ".validate": "newData.isNumber() && newData.val() >= 1"
+              ".validate": "newData.isNumber() && newData.val() >= 2"
             },
             "countryCode": {
               ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 3"

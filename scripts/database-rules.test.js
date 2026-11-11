@@ -47,10 +47,10 @@ async function clientGet(path) {
 describe('totalCount day ceiling (vs server-stamped yesterdayTotalScore)', () => {
   before(async () => {
     await db.ref(`mohamed_lovers/${ROUND}/players/baselineUser`).set({
-      uid: 'baselineUser', schemaVersion: 1, yesterdayTotalScore: 1000, totalCount: 1000,
+      uid: 'baselineUser', schemaVersion: 2, yesterdayTotalScore: 1000, totalCount: 1000,
     });
     await db.ref(`mohamed_lovers/${ROUND}/players/freshUser`).set({
-      uid: 'freshUser', schemaVersion: 1, totalCount: 0,
+      uid: 'freshUser', schemaVersion: 2, totalCount: 0,
     });
   });
 
@@ -79,7 +79,7 @@ describe('totalCount day ceiling (vs server-stamped yesterdayTotalScore)', () =>
 describe('externalDaily bounds', () => {
   before(async () => {
     await db.ref(`mohamed_lovers/${ROUND}/players/extUser`).set({
-      uid: 'extUser', schemaVersion: 1,
+      uid: 'extUser', schemaVersion: 2,
     });
   });
 
@@ -113,6 +113,48 @@ describe('strictMode is server-owned', () => {
     const { status, body } = await clientGet('mohamed_lovers/strictMode/flaggedUser');
     assert.equal(status, 200);
     assert.equal(body.reason, 'pace');
+  });
+});
+
+describe('totalCount ceiling with server-side increments', () => {
+  before(async () => {
+    await db.ref(`mohamed_lovers/${ROUND}/players/incUser`).set({
+      uid: 'incUser', schemaVersion: 2, yesterdayTotalScore: 5000, totalCount: 5000,
+    });
+  });
+
+  it('accepts an increment that stays within the day cap', async () => {
+    assert.equal(await clientPatch(`mohamed_lovers/${ROUND}/players/incUser`, {
+      totalCount: { '.sv': { increment: 25000 } },
+    }), 200);
+  });
+
+  it('rejects an increment that would push past the day cap', async () => {
+    assert.equal(await clientPatch(`mohamed_lovers/${ROUND}/players/incUser`, {
+      totalCount: { '.sv': { increment: 1 } },
+    }), 401);
+  });
+});
+
+describe('schemaVersion gate (force update)', () => {
+  before(async () => {
+    await db.ref(`mohamed_lovers/${ROUND}/players/currentClient`).set({
+      uid: 'currentClient', schemaVersion: 2, totalCount: 100,
+    });
+  });
+
+  it('rejects a downgrade to the old schema', async () => {
+    assert.equal(await clientPatch(`mohamed_lovers/${ROUND}/players/currentClient`, { schemaVersion: 1 }), 401);
+  });
+
+  it('rejects a new node created by a pre-schema-2 client', async () => {
+    assert.equal(await clientPut(`mohamed_lovers/${ROUND}/players/oldNew`, {
+      uid: 'oldNew', schemaVersion: 1, totalCount: 1,
+    }), 401);
+  });
+
+  it('accepts schemaVersion 2', async () => {
+    assert.equal(await clientPatch(`mohamed_lovers/${ROUND}/players/currentClient`, { totalCount: 200 }), 200);
   });
 });
 
