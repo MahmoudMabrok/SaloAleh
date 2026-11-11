@@ -21,7 +21,7 @@ on:
 jobs:
   populate:
     name: Write leaderboard to Firebase
-    runs-on: [self-hosted, kube-labs, ubuntu-latest]
+    runs-on: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v4
 
