@@ -31,7 +31,7 @@ jobs:
 
   deploy-android:
     name: Deploy Android → Google Play
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, kube-labs, ubuntu-latest]
 
     outputs:
       version_code: ${{ steps.bump.outputs.version_code }}
