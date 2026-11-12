@@ -15,7 +15,7 @@ on:
 jobs:
   android:
     name: Android
-    runs-on: [self-hosted, kube-labs, ubuntu-latest]
+    runs-on: [ubuntu-latest]
     permissions:
       contents: read
       packages: read
