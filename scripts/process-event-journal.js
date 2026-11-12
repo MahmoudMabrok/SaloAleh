@@ -93,6 +93,17 @@ async function main() {
   console.log(`Event journal: round=${roundKey} day=${today} updated=${changed} field(s)`);
 }
 
-if (require.main === module) main().catch(error => { console.error(error); process.exit(1); });
+if (require.main === module) {
+  let exitCode = 0;
+  main()
+    .catch(error => {
+      console.error(error);
+      exitCode = 1;
+    })
+    .finally(async () => {
+      if (admin.apps.length) await admin.app().delete();
+      process.exit(exitCode);
+    });
+}
 
 module.exports = { badgeForCount, derivePlayerFields, cairoDateFromMs };

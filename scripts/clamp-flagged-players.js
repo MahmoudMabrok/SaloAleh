@@ -127,7 +127,13 @@ async function main() {
   console.log(`Applied ${Object.keys(updates).length} update(s). Re-run without --apply to verify.`);
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+let exitCode = 0;
+main()
+  .catch((error) => {
+    console.error(error);
+    exitCode = 1;
+  })
+  .finally(async () => {
+    if (admin.apps.length) await admin.app().delete();
+    process.exit(exitCode);
+  });
