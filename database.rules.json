@@ -883,6 +883,7 @@
               ".validate": "newData.val() === data.val()"
             },
             "todayCount": {
+              ".write": false,
               ".validate": "newData.isNumber() && newData.val() >= 0"
             },
             "rank": {
@@ -895,6 +896,22 @@
             },
             "updatedAt": {
               ".validate": "newData.val() === now"
+            },
+            "events": {
+              "$eventId": {
+                ".write": "newData.child('uid').val() === $uid",
+                ".validate": "newData.hasChildren(['uid', 'delta', 'at'])",
+                "uid": {
+                  ".validate": "newData.isString() && newData.val() === $uid"
+                },
+                "delta": {
+                  ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= 25000"
+                },
+                "at": {
+                  ".validate": "newData.val() === now"
+                },
+                "$other": { ".validate": false }
+              }
             },
             "isWinner": {
               ".validate": "newData.val() === (data.exists() ? data.val() : false)"
@@ -919,6 +936,7 @@
               }
             },
             "dailyBadge": {
+              ".write": false,
               ".validate": "newData.isString()"
             },
             "roundStreak": {

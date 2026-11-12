@@ -1,0 +1,39 @@
+name: Clamp Flagged Players
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: 'Write the evidence-based clamps (leave unchecked for dry run)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  clamp:
+    name: Clamp reviewed player scores
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install firebase-admin
+        run: npm install firebase-admin@^12.0.0
+        working-directory: scripts
+
+      - name: Run clamp script
+        run: |
+          if [ "${{ inputs.apply }}" = "true" ]; then
+            node scripts/clamp-flagged-players.js --apply
+          else
+            node scripts/clamp-flagged-players.js
+          fi
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}

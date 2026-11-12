@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.logFirebaseError
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
@@ -224,16 +226,18 @@ class MohamedLoversFirebaseClient(
         log.d { "incrementSession[$roundKey/$uid] delta=$delta country=$countryCode todayCount=$todayCount" }
         val safeCode = countryCode.takeIf { it.length >= 2 } ?: MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE
         val publishedName = sessionStore.getPublishedName()
+        @OptIn(ExperimentalUuidApi::class)
+        val eventId = Uuid.random().toString().replace("-", "")
         val fields = mutableMapOf<String, Any>(
             UID_KEY to uid,
             SCHEMA_VERSION_KEY to CLIENT_SCHEMA_VERSION,
             COUNTRY_CODE_KEY to safeCode,
             TOTAL_COUNT_KEY to ServerValue.increment(delta.toDouble()),
-            // Absolute running day total (not an increment) so the daily leaderboard can rank on it
-            // directly instead of diffing against yesterday's server snapshot.
-            TODAY_COUNT_KEY to todayCount.coerceAtLeast(0),
             UPDATED_AT_KEY to ServerValue.TIMESTAMP,
             NICKNAME_KEY to publishedName,
+            "$EVENTS_PATH/$eventId/uid" to uid,
+            "$EVENTS_PATH/$eventId/delta" to delta.coerceAtLeast(0),
+            "$EVENTS_PATH/$eventId/at" to ServerValue.TIMESTAMP,
         )
         return runCatching {
             Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(fields)
@@ -648,23 +652,10 @@ class MohamedLoversFirebaseClient(
     }
 
     override suspend fun writeDailyBadge(roundKey: String, uid: String, badgeKey: String?): Result<Unit> {
-        log.d { "writeDailyBadge[$roundKey/$uid] badge=$badgeKey" }
-        return runCatching {
-            Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(
-                playerPatch(uid, DAILY_BADGE_KEY to badgeKey)
-            )
-        }.also { result ->
-            result.fold(
-                onSuccess = {
-                    log.d { "writeDailyBadge[$roundKey/$uid] ok" }
-                    mirror.mirrorPlayerField(roundKey, uid, DAILY_BADGE_KEY, badgeKey)
-                },
-                onFailure = { error ->
-                    log.e(error) { "writeDailyBadge[$roundKey/$uid] failed" }
-                    trackWriteFailure("write_daily_badge", error)
-                },
-            )
-        }
+        // Daily badges are derived from the server-side event journal. Keep this API as a
+        // compatibility no-op for older call sites; clients must not publish badge claims.
+        log.d { "writeDailyBadge[$roundKey/$uid] ignored; server derives badge=$badgeKey" }
+        return Result.success(Unit)
     }
 
     override suspend fun writeRoundStreak(roundKey: String, uid: String, streak: Int): Result<Unit> {
@@ -984,6 +975,7 @@ class MohamedLoversFirebaseClient(
         const val NICKNAME_KEY = "nickname"
         const val YESTERDAY_TOTAL_SCORE_KEY = "yesterdayTotalScore"
         const val TODAY_COUNT_KEY = "todayCount"
+        const val EVENTS_PATH = "events"
         const val ROUND_TOTAL_PATH = "roundTotal"
         const val ROUND_PLAYER_COUNT_PATH = "roundPlayerCount"
         const val ALL_TIME_TOTAL_PATH = "allTimeTotal"
