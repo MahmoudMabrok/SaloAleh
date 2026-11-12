@@ -42,7 +42,7 @@ async function seedPlayer(extra = {}) {
   await env.withSecurityRulesDisabled(async (ctx) => {
     await ctx.database().ref(playerPath()).set({
       uid: UID,
-      schemaVersion: 1,
+      schemaVersion: 2,
       countryCode: 'EG',
       totalCount: 100,
       todayCount: 40,
@@ -59,7 +59,7 @@ async function seedPlayer(extra = {}) {
 // ServerValue.increment and ServerValue.TIMESTAMP.
 const flushFields = (delta = 5, extra = {}) => ({
   uid: UID,
-  schemaVersion: 1,
+  schemaVersion: 2,
   countryCode: 'EG',
   totalCount: increment(delta),
   todayCount: 45,
@@ -127,7 +127,7 @@ describe('mohamed_lovers players: whole-node writes (transaction shape)', () => 
   // A transaction rewrites the full node, so every existing child is validated again.
   const wholeNode = (overrides = {}) => ({
     uid: UID,
-    schemaVersion: 1,
+    schemaVersion: 2,
     countryCode: 'EG',
     totalCount: 105,
     todayCount: 45,

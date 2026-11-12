@@ -645,6 +645,12 @@
     <string name="manual_subtract_hint">To fix a count added by mistake — it is subtracted from your current total and never goes below zero</string>
     <string name="mohamed_lovers_daily_cap_reached">You reached today’s competition limit (%1$d); extra salawat are not counted today.</string>
     <string name="mohamed_lovers_badge_score_adjusted">Today’s count was set to %1$d to match the badge saved on the server.</string>
+    <string name="mohamed_lovers_strict_mode_alarm_title">Account review notice</string>
+    <string name="mohamed_lovers_strict_mode_alarm_body">We detected abnormal counting activity on your account that may come from a cheating tool. Counting has been temporarily restricted: only what you add while online is counted, and regular tapping is disabled. If you did not use any cheating tools, please contact us.</string>
+    <string name="mohamed_lovers_strict_mode_contact">Contact us</string>
+    <string name="mohamed_lovers_strict_mode_banner">Your account is under review: counting works online only (bubble, manual entry, external add).</string>
+    <string name="mohamed_lovers_strict_mode_tap_blocked">Tapping is disabled while your account is under review. Use the bubble, manual entry, or external add.</string>
+    <string name="mohamed_lovers_strict_mode_needs_internet">Review mode requires an internet connection. Check your network and try again.</string>
 
     <!-- Share Card -->
     <string name="share_card_out_of_participants">out of %1$d participants</string>

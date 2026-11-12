@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 import tools.mo3ta.salo.analytics.AnalyticsManager
 import tools.mo3ta.salo.analytics.logFirebaseError
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
@@ -23,6 +25,7 @@ import tools.mo3ta.salo.domain.MOHAMED_LOVERS_TOP_LIMIT
 import tools.mo3ta.salo.domain.MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE
 import tools.mo3ta.salo.domain.MohamedLoversMedals
 import tools.mo3ta.salo.domain.MohamedLoversPlayer
+import tools.mo3ta.salo.domain.StrictModeInfo
 import tools.mo3ta.salo.domain.UserAchievement
 
 class MohamedLoversFirebaseClient(
@@ -223,16 +226,18 @@ class MohamedLoversFirebaseClient(
         log.d { "incrementSession[$roundKey/$uid] delta=$delta country=$countryCode todayCount=$todayCount" }
         val safeCode = countryCode.takeIf { it.length >= 2 } ?: MOHAMED_LOVERS_UNKNOWN_COUNTRY_CODE
         val publishedName = sessionStore.getPublishedName()
+        @OptIn(ExperimentalUuidApi::class)
+        val eventId = Uuid.random().toString().replace("-", "")
         val fields = mutableMapOf<String, Any>(
             UID_KEY to uid,
             SCHEMA_VERSION_KEY to CLIENT_SCHEMA_VERSION,
             COUNTRY_CODE_KEY to safeCode,
             TOTAL_COUNT_KEY to ServerValue.increment(delta.toDouble()),
-            // Absolute running day total (not an increment) so the daily leaderboard can rank on it
-            // directly instead of diffing against yesterday's server snapshot.
-            TODAY_COUNT_KEY to todayCount.coerceAtLeast(0),
             UPDATED_AT_KEY to ServerValue.TIMESTAMP,
             NICKNAME_KEY to publishedName,
+            "$EVENTS_PATH/$eventId/uid" to uid,
+            "$EVENTS_PATH/$eventId/delta" to delta.coerceAtLeast(0),
+            "$EVENTS_PATH/$eventId/at" to ServerValue.TIMESTAMP,
         )
         return runCatching {
             Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(fields)
@@ -338,6 +343,30 @@ class MohamedLoversFirebaseClient(
                 onFailure = { error ->
                     log.e(error) { "appendBadgeAdjustmentLog[$uid] failed" }
                     trackWriteFailure("append_badge_adjustment_log", error)
+                },
+            )
+        }
+    }
+
+    override suspend fun fetchStrictMode(uid: String): Result<StrictModeInfo?> {
+        log.d { "fetchStrictMode[$uid]" }
+        return runCatching {
+            val snapshot = Firebase.database.reference("$ROOT_PATH/$STRICT_MODE_PATH/$uid")
+                .valueEvents.first()
+            if (!snapshot.exists) return@runCatching null
+            val map = snapshot.value as? Map<*, *> ?: return@runCatching null
+            StrictModeInfo(
+                since = (map[STRICT_SINCE_KEY] as? Number)?.toLong() ?: 0L,
+                reason = map[STRICT_REASON_KEY] as? String ?: "",
+                dateKey = map[STRICT_DATE_KEY] as? String ?: "",
+                cleanDays = (map[STRICT_CLEAN_DAYS_KEY] as? Number)?.toInt() ?: 0,
+            )
+        }.also { result ->
+            result.fold(
+                onSuccess = { log.d { "fetchStrictMode[$uid]=$it" } },
+                onFailure = { error ->
+                    log.e(error) { "fetchStrictMode[$uid] failed" }
+                    trackReadFailure("fetch_strict_mode", error)
                 },
             )
         }
@@ -623,23 +652,10 @@ class MohamedLoversFirebaseClient(
     }
 
     override suspend fun writeDailyBadge(roundKey: String, uid: String, badgeKey: String?): Result<Unit> {
-        log.d { "writeDailyBadge[$roundKey/$uid] badge=$badgeKey" }
-        return runCatching {
-            Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(
-                playerPatch(uid, DAILY_BADGE_KEY to badgeKey)
-            )
-        }.also { result ->
-            result.fold(
-                onSuccess = {
-                    log.d { "writeDailyBadge[$roundKey/$uid] ok" }
-                    mirror.mirrorPlayerField(roundKey, uid, DAILY_BADGE_KEY, badgeKey)
-                },
-                onFailure = { error ->
-                    log.e(error) { "writeDailyBadge[$roundKey/$uid] failed" }
-                    trackWriteFailure("write_daily_badge", error)
-                },
-            )
-        }
+        // Daily badges are derived from the server-side event journal. Keep this API as a
+        // compatibility no-op for older call sites; clients must not publish badge claims.
+        log.d { "writeDailyBadge[$roundKey/$uid] ignored; server derives badge=$badgeKey" }
+        return Result.success(Unit)
     }
 
     override suspend fun writeRoundStreak(roundKey: String, uid: String, streak: Int): Result<Unit> {
@@ -932,9 +948,10 @@ class MohamedLoversFirebaseClient(
         const val UID_KEY = "uid"
         const val SCHEMA_VERSION_KEY = "schemaVersion"
         // Schema version stamped on every player write. The RTDB rule requires this field
-        // (`hasChildren(['uid','schemaVersion'])`), so builds that predate it are denied and
-        // forced to update. Bump only when the player-write contract changes.
-        const val CLIENT_SCHEMA_VERSION = 1
+        // (`hasChildren(['uid','schemaVersion'])`) and a minimum value of 2, so builds that
+        // predate the strict-mode counting contract are denied and forced to update. Bump only
+        // when the player-write contract changes.
+        const val CLIENT_SCHEMA_VERSION = 2
         const val SCORE_KEY = "score"
         const val RANK_KEY = "rank"
         const val TOTAL_COUNT_KEY = "totalCount"
@@ -958,9 +975,17 @@ class MohamedLoversFirebaseClient(
         const val NICKNAME_KEY = "nickname"
         const val YESTERDAY_TOTAL_SCORE_KEY = "yesterdayTotalScore"
         const val TODAY_COUNT_KEY = "todayCount"
+        const val EVENTS_PATH = "events"
         const val ROUND_TOTAL_PATH = "roundTotal"
         const val ROUND_PLAYER_COUNT_PATH = "roundPlayerCount"
         const val ALL_TIME_TOTAL_PATH = "allTimeTotal"
+        // Server-owned anti-cheat quarantine, one entry per flagged uid. Clients may read
+        // (rules allow read, deny write); only the admin scripts write it.
+        const val STRICT_MODE_PATH = "strictMode"
+        const val STRICT_SINCE_KEY = "since"
+        const val STRICT_REASON_KEY = "reason"
+        const val STRICT_DATE_KEY = "dateKey"
+        const val STRICT_CLEAN_DAYS_KEY = "cleanDays"
         const val APP_CONFIG_PATH = "app_config"
         const val LATEST_VERSION_KEY = "latestVersion"
         const val MIN_SUPPORTED_VERSION_CODE_KEY = "minSupportedVersionCode"

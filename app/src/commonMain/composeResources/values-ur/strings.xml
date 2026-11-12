@@ -616,6 +616,12 @@
     <string name="manual_subtract_hint">غلطی سے شامل کیے گئے عدد کو درست کرنے کے لیے — یہ آپ کے موجودہ مجموعے سے کم ہوگا اور کبھی صفر سے نیچے نہیں جائے گا</string>
     <string name="mohamed_lovers_daily_cap_reached">آپ آج کی مقابلے کی حد (%1$d) تک پہنچ گئے؛ اضافی درود آج شمار نہیں ہوں گے۔</string>
     <string name="mohamed_lovers_badge_score_adjusted">سرور پر محفوظ تمغے کے مطابق آج کی تعداد %1$d مقرر کر دی گئی۔</string>
+    <string name="mohamed_lovers_strict_mode_alarm_title">اکاؤنٹ جائزے کی اطلاع</string>
+    <string name="mohamed_lovers_strict_mode_alarm_body">ہمیں آپ کے اکاؤنٹ پر غیر معمولی گنتی کی سرگرمی ملی ہے جو کسی چیٹنگ ٹول سے ہو سکتی ہے۔ گنتی عارضی طور پر محدود کر دی گئی ہے: صرف آن لائن شامل کردہ درود شمار ہوں گے اور عام ٹیپنگ بند ہے۔ اگر آپ نے کوئی چیٹنگ ٹول استعمال نہیں کیا تو ہم سے رابطہ کریں۔</string>
+    <string name="mohamed_lovers_strict_mode_contact">ہم سے رابطہ کریں</string>
+    <string name="mohamed_lovers_strict_mode_banner">آپ کا اکاؤنٹ زیرِ جائزہ ہے: گنتی صرف آن لائن (بلبلہ، دستی اندراج، بیرونی اضافہ) کام کرتی ہے۔</string>
+    <string name="mohamed_lovers_strict_mode_tap_blocked">زیرِ جائزہ اکاؤنٹ پر ٹیپنگ بند ہے۔ بلبلہ، دستی اندراج یا بیرونی اضافہ استعمال کریں۔</string>
+    <string name="mohamed_lovers_strict_mode_needs_internet">جائزہ موڈ کے لیے انٹرنیٹ کنکشن ضروری ہے۔ نیٹ ورک چیک کر کے دوبارہ کوشش کریں۔</string>
 
     <!-- Share Card -->
     <string name="share_card_out_of_participants">%1$d شرکاء میں سے</string>

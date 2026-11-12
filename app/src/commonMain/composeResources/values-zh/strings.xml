@@ -616,6 +616,12 @@
     <string name="manual_subtract_hint">用于修正误加的数目 — 将从当前总数中扣除，且不会低于零</string>
     <string name="mohamed_lovers_daily_cap_reached">您已达到今日竞赛上限（%1$d），超出部分今天不计入。</string>
     <string name="mohamed_lovers_badge_score_adjusted">已根据服务器保存的徽章将今日数量设为 %1$d。</string>
+    <string name="mohamed_lovers_strict_mode_alarm_title">账户审核通知</string>
+    <string name="mohamed_lovers_strict_mode_alarm_body">我们检测到您的账户存在异常的计数活动，可能来自作弊工具。计数已被暂时限制：仅统计在线期间的添加，普通点击已停用。如果您没有使用任何作弊工具，请联系我们。</string>
+    <string name="mohamed_lovers_strict_mode_contact">联系我们</string>
+    <string name="mohamed_lovers_strict_mode_banner">您的账户正在审核中：计数仅在线可用（悬浮球、手动录入、外部添加）。</string>
+    <string name="mohamed_lovers_strict_mode_tap_blocked">账户审核期间点击已停用。请使用悬浮球、手动录入或外部添加。</string>
+    <string name="mohamed_lovers_strict_mode_needs_internet">审核模式需要网络连接，请检查网络后重试。</string>
 
     <!-- Share Card -->
     <string name="share_card_out_of_participants">共 %1$d 位参与者</string>

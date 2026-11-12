@@ -9,16 +9,21 @@ const {
 } = require('./leaderboard-utils');
 
 describe('computeTodayScore', () => {
-  it('prefers the client-published todayCount when present', () => {
-    assert.equal(computeTodayScore({ total: 5000, today: 800, yesterday: 4000 }), 800);
+  it('takes the larger of todayCount and the yesterday-diff', () => {
+    // Diff (1000) outruns the masked todayCount (800) — the diff wins.
+    assert.equal(computeTodayScore({ total: 5000, today: 800, yesterday: 4000 }), 1000);
+    // todayCount (1200) is ahead of the flushed diff (500) — todayCount wins.
+    assert.equal(computeTodayScore({ total: 5000, today: 1200, yesterday: 4500 }), 1200);
   });
 
   it('floors a fractional todayCount', () => {
     assert.equal(computeTodayScore({ total: 0, today: 12.9, yesterday: 0 }), 12);
   });
 
-  it('treats an explicit 0 todayCount as zero (does not fall back)', () => {
-    assert.equal(computeTodayScore({ total: 5000, today: 0, yesterday: 4000 }), 0);
+  it('uncovers totalCount inflation hidden behind a zero todayCount', () => {
+    // The masking cheat pattern: totalCount jumps while todayCount stays tiny.
+    assert.equal(computeTodayScore({ total: 5000, today: 0, yesterday: 4000 }), 1000);
+    assert.equal(computeTodayScore({ total: 30000, today: 5, yesterday: 0 }), 30000);
   });
 
   it('falls back to the yesterday-diff when todayCount is absent', () => {
@@ -28,6 +33,15 @@ describe('computeTodayScore', () => {
 
   it('never returns a negative fallback', () => {
     assert.equal(computeTodayScore({ total: 3000, today: null, yesterday: 4000 }), 0);
+    assert.equal(computeTodayScore({ total: 3000, today: -5, yesterday: 4000 }), 0);
+  });
+
+  it('defaults a missing/undefined yesterday baseline to 0', () => {
+    // Friday 19:00 rollover: the fresh round node has no yesterdayTotalScore until the
+    // 23:45 Cairo close stamps it. The whole round total is that day's count.
+    assert.equal(computeTodayScore({ total: 5000, today: 800, yesterday: undefined }), 5000);
+    assert.equal(computeTodayScore({ total: 5000, today: 800, yesterday: null }), 5000);
+    assert.equal(computeTodayScore({ total: 0, today: 0, yesterday: undefined }), 0);
   });
 });
 
@@ -35,16 +49,17 @@ describe('buildDailyScoreSnapshots', () => {
   const dateKey = '2026-07-26';
   const roundKey = '2026-07-31';
 
-  it('writes a history snapshot per active user using todayCount', () => {
+  it('writes a history snapshot per active user using the max of todayCount and diff', () => {
     const { scoreHistoryUpdates } = buildDailyScoreSnapshots({
       players: [
+        // day total = max(800, 5000-4000) = 1000
         { uid: 'a', totalCount: 5000, todayCount: 800, yesterdayTotalScore: 4000 },
         { uid: 'b', totalCount: 200, todayCount: 200, yesterdayTotalScore: 0 },
       ],
       dateKey,
       roundKey,
     });
-    assert.equal(scoreHistoryUpdates[`mohamed_lovers/users/a/scoreHistory/${dateKey}`], 800);
+    assert.equal(scoreHistoryUpdates[`mohamed_lovers/users/a/scoreHistory/${dateKey}`], 1000);
     assert.equal(scoreHistoryUpdates[`mohamed_lovers/users/b/scoreHistory/${dateKey}`], 200);
   });
 
@@ -55,6 +70,19 @@ describe('buildDailyScoreSnapshots', () => {
       roundKey,
     });
     assert.equal(scoreHistoryUpdates[`mohamed_lovers/users/legacy/scoreHistory/${dateKey}`], 800);
+  });
+
+  it('treats a missing yesterdayTotalScore as 0 (Friday rollover node)', () => {
+    const { scoreHistoryUpdates, paceFlagUpdates } = buildDailyScoreSnapshots({
+      players: [{ uid: 'fresh', totalCount: 5000, todayCount: 800 }],
+      dateKey,
+      roundKey,
+      roundDay: 1,
+    });
+    // No baseline ⇒ the whole (fresh) round total is today's count, not 800.
+    assert.equal(scoreHistoryUpdates[`mohamed_lovers/users/fresh/scoreHistory/${dateKey}`], 5000);
+    // …and it stays under the day-1 pace ceiling (11k), so no false pace flag.
+    assert.deepEqual(paceFlagUpdates, {});
   });
 
   it('omits users with a zero day total from the history', () => {
@@ -69,6 +97,7 @@ describe('buildDailyScoreSnapshots', () => {
   it('flags users above the abnormal threshold with count + metadata', () => {
     const { abnormalUpdates } = buildDailyScoreSnapshots({
       players: [
+        // day total = max(12001, 20000-0) = 20000 — the diff uncovers the masked inflation.
         { uid: 'bot', totalCount: 20000, todayCount: ABNORMAL_DAILY_THRESHOLD + 1, yesterdayTotalScore: 0, countryCode: 'eg' },
         { uid: 'human', totalCount: 500, todayCount: 500, yesterdayTotalScore: 0, countryCode: 'sa' },
       ],
@@ -77,11 +106,30 @@ describe('buildDailyScoreSnapshots', () => {
     });
     assert.deepEqual(abnormalUpdates, {
       [`mohamed_lovers/abnormal_users/${dateKey}/bot`]: {
-        count: ABNORMAL_DAILY_THRESHOLD + 1,
+        count: 20000,
         totalCount: 20000,
         countryCode: 'eg',
       },
     });
+  });
+
+  it('flags totalCount inflation hidden behind a tiny todayCount as abnormal', () => {
+    const { abnormalUpdates, strictModeFlags } = buildDailyScoreSnapshots({
+      players: [
+        { uid: 'masker', totalCount: 30000, todayCount: 5, yesterdayTotalScore: 0 },
+      ],
+      dateKey,
+      roundKey,
+      roundDay: 1,
+    });
+    assert.deepEqual(abnormalUpdates, {
+      [`mohamed_lovers/abnormal_users/${dateKey}/masker`]: {
+        count: 30000,
+        totalCount: 30000,
+        countryCode: 'NA',
+      },
+    });
+    assert.equal(strictModeFlags.masker.reason, 'both');
   });
 
   it('does not flag a user exactly at the threshold', () => {
@@ -172,6 +220,47 @@ describe('buildDailyScoreSnapshots', () => {
       roundDay: 3,
     });
     assert.equal(paceFlagUpdates[`mohamed_lovers/users/nocc/paceFlags/${dateKey}`].countryCode, 'NA');
+  });
+});
+
+describe('buildDailyScoreSnapshots strictModeFlags', () => {
+  const dateKey = '2026-07-26';
+  const roundKey = '2026-07-31';
+
+  it('flags an abnormal-only day as reason abnormal', () => {
+    const { strictModeFlags } = buildDailyScoreSnapshots({
+      players: [{ uid: 'spike', totalCount: 13000, todayCount: 13000, yesterdayTotalScore: 0 }],
+      dateKey,
+      roundKey,
+    });
+    assert.deepEqual(strictModeFlags, {
+      spike: { reason: 'abnormal', dateKey },
+    });
+  });
+
+  it('flags a pace-only overrun as reason pace', () => {
+    // Day 2 → ceiling 22k; total 23k overruns pace but day growth (23k vs 0) …
+    // keeps day total 23k > 12k, so use a low-growth case: yesterday ≈ total.
+    const { strictModeFlags, abnormalUpdates } = buildDailyScoreSnapshots({
+      players: [{ uid: 'steady', totalCount: 23000, todayCount: 100, yesterdayTotalScore: 22950 }],
+      dateKey,
+      roundKey,
+      roundDay: 2,
+    });
+    assert.deepEqual(abnormalUpdates, {});
+    assert.deepEqual(strictModeFlags, {
+      steady: { reason: 'pace', dateKey },
+    });
+  });
+
+  it('does not flag clean players', () => {
+    const { strictModeFlags } = buildDailyScoreSnapshots({
+      players: [{ uid: 'clean', totalCount: 5000, todayCount: 800, yesterdayTotalScore: 4500 }],
+      dateKey,
+      roundKey,
+      roundDay: 2,
+    });
+    assert.deepEqual(strictModeFlags, {});
   });
 });
 

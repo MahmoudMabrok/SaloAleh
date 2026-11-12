@@ -8,6 +8,7 @@ import tools.mo3ta.salo.domain.FirebaseLeaderboard
 import tools.mo3ta.salo.domain.HeroesBoard
 import tools.mo3ta.salo.domain.MohamedLoversMedals
 import tools.mo3ta.salo.domain.MohamedLoversPlayer
+import tools.mo3ta.salo.domain.StrictModeInfo
 import tools.mo3ta.salo.domain.UserAchievement
 
 data class ReferralStats(val referralCount: Int, val salawatTotal: Long)
@@ -53,6 +54,11 @@ interface MohamedLoversFirebaseApi {
     suspend fun fetchUserAchievements(uid: String): Result<Map<String, UserAchievement>>
     /** Reads the current user's cumulative podium medals from `users/{uid}/medals`. */
     suspend fun fetchSelfMedals(uid: String): Result<MohamedLoversMedals>
+    /**
+     * Reads the server-owned anti-cheat quarantine flag for [uid] from
+     * `mohamed_lovers/strictMode/{uid}`; null when the player is not flagged.
+     */
+    suspend fun fetchStrictMode(uid: String): Result<StrictModeInfo?>
     suspend fun incrementExternalCount(roundKey: String, uid: String, count: Int): Result<Unit>
     /**
      * Append one audit entry for an external/manual batch at `players/{uid}/externalLog/{timeKey}`.

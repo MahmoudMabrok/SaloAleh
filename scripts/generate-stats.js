@@ -175,7 +175,7 @@ async function main() {
   // and reset todayCount so the next Cairo day starts fresh (the daily leaderboard ranks on the
   // client-pushed todayCount).
   const roundDay = roundDayNumber(roundKey, dateStr);
-  const { scoreHistoryUpdates, abnormalUpdates, todayCountResets, paceFlagUpdates } =
+  const { scoreHistoryUpdates, abnormalUpdates, todayCountResets, paceFlagUpdates, strictModeFlags } =
     buildDailyScoreSnapshots({ players: playerSnapshots, dateKey: dateStr, roundKey, roundDay });
   const dailyCloseUpdates = { ...scoreHistoryUpdates, ...abnormalUpdates, ...todayCountResets, ...paceFlagUpdates };
   if (Object.keys(dailyCloseUpdates).length > 0) {
@@ -186,6 +186,39 @@ async function main() {
       `${Object.keys(paceFlagUpdates).length} pace flag(s) (> day ${roundDay} × ${PACE_DAILY_INCREMENT} = ${roundDay * PACE_DAILY_INCREMENT}), ` +
       `${Object.keys(todayCountResets).length} todayCount reset(s).`
     );
+  }
+
+  // Strict mode (anti-cheat quarantine): anyone caught by the abnormal or pace checks is put
+  // under strict mode — the client switches to online-only, prefs-free counting and shows a
+  // cheating alarm. Auto-lifts after STRICT_MODE_CLEAN_DAYS_TO_CLEAR consecutive clean days
+  // (a day with no new abnormal/pace flag). `since` keeps the earliest flag time on re-flags.
+  // Stored at mohamed_lovers/strictMode/{uid} (server-owned; clients read their own entry only).
+  const STRICT_MODE_CLEAN_DAYS_TO_CLEAR = 7;
+  const strictModeSnap = await db.ref('mohamed_lovers/strictMode').get();
+  const strictModeState = strictModeSnap.val() || {};
+  const strictModeUpdates = {};
+  for (const [uid, flag] of Object.entries(strictModeFlags)) {
+    const prev = strictModeState[uid];
+    strictModeUpdates[`mohamed_lovers/strictMode/${uid}`] = {
+      since: prev?.since || Date.now(),
+      reason: flag.reason,
+      dateKey: flag.dateKey,
+      cleanDays: 0,
+    };
+  }
+  for (const [uid, prev] of Object.entries(strictModeState)) {
+    if (strictModeFlags[uid]) continue;
+    const cleanDays = (prev?.cleanDays || 0) + 1;
+    if (cleanDays >= STRICT_MODE_CLEAN_DAYS_TO_CLEAR) {
+      strictModeUpdates[`mohamed_lovers/strictMode/${uid}`] = null;
+      console.log(`Strict mode lifted for ${uid} after ${cleanDays} clean days.`);
+    } else {
+      strictModeUpdates[`mohamed_lovers/strictMode/${uid}/cleanDays`] = cleanDays;
+    }
+  }
+  if (Object.keys(strictModeUpdates).length > 0) {
+    await db.ref('/').update(strictModeUpdates);
+    console.log(`Strict mode: ${Object.keys(strictModeFlags).length} flagged, ${Object.keys(strictModeState).length} under quarantine.`);
   }
 
   // Clear dailyBadge for all players (midnight reset)

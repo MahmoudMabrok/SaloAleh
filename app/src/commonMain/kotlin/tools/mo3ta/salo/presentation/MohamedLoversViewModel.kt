@@ -44,6 +44,7 @@ import tools.mo3ta.salo.domain.MohamedLoversRepository
 import tools.mo3ta.salo.domain.MOHAMED_LOVERS_DAILY_PUSH_CAP
 import tools.mo3ta.salo.domain.SalawatDailyCap
 import tools.mo3ta.salo.domain.SalawatManualCap
+import tools.mo3ta.salo.domain.StrictModeInfo
 import tools.mo3ta.salo.domain.buildMohamedLoversDisplayTag
 import tools.mo3ta.salo.ui.getAppVersion
 import tools.mo3ta.salo.ui.getAppVersionCode
@@ -225,6 +226,11 @@ class MohamedLoversViewModel(
         val current = state.value
         val roundKey = current.roundKey ?: return
         if (!current.canCount) return
+        if (current.isStrictMode) {
+            // Quarantined: taps are not counted at all (see StrictModeInfo).
+            _state.update { it.copy(strictModeBlocked = true) }
+            return
+        }
 
         val nowMs = Clock.System.now().toEpochMilliseconds()
         sessionStore.saveLastSalawatTimestamp(nowMs)
@@ -326,6 +332,13 @@ class MohamedLoversViewModel(
                     applyLeaderboard()
                     return@withLock
                 }
+                if (state.value.isStrictMode) {
+                    // Quarantined: locally stored totals are never pushed. The score only moves
+                    // through live per-interaction pushes (pushStrictCount / strict manual & ext).
+                    _state.update { it.copy(isSavingSession = false) }
+                    applyLeaderboard()
+                    return@withLock
+                }
 
                 inFlightFlush = state.value.sessionClicks
                 _state.update { it.copy(isSavingSession = true, error = null) }
@@ -406,6 +419,9 @@ class MohamedLoversViewModel(
      */
     private fun publishDailyBadgeIfChanged(roundKey: String) {
         if (!state.value.firebaseConfigured) return
+        // Quarantined devices publish no badge: it is derived from locally accumulated counts,
+        // which are exactly what strict mode refuses to trust.
+        if (state.value.isStrictMode) return
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
         val todayStr = today.toString()
         val badge = DailyBadge.fromTapCount(dailyGoalStore.todayProgress(today)) ?: return
@@ -441,6 +457,10 @@ class MohamedLoversViewModel(
     }
 
     fun applyExtensionScore(round: String, count: Int) {
+        if (state.value.isStrictMode) {
+            extendScoreInStrictMode(round, count)
+            return
+        }
         val nowMs = Clock.System.now().toEpochMilliseconds()
         val heart = addHeartTap(nowMs, count)
         repository.registerLocalTap(round, count)
@@ -485,6 +505,20 @@ class MohamedLoversViewModel(
 
     fun showManualSalawatSheet() {
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
+        if (state.value.isStrictMode) {
+            _state.update { it.copy(showManualSalawatSheet = true) }
+            val roundKey = state.value.roundKey ?: return
+            viewModelScope.launch {
+                // Quarantined: the allowance comes from the server ledger, never the local one.
+                val used = repository.fetchExternalUsedToday(roundKey, Clock.System.now()).getOrNull()
+                if (used != null) {
+                    _state.update {
+                        it.copy(manualRemaining = (manualDailyCap(today) - used).coerceAtLeast(0))
+                    }
+                }
+            }
+            return
+        }
         _state.update {
             it.copy(
                 showManualSalawatSheet = true,
@@ -520,6 +554,10 @@ class MohamedLoversViewModel(
     )
 
     fun submitManualSalawat(count: Int) {
+        if (state.value.isStrictMode) {
+            submitStrictManualSalawat(count)
+            return
+        }
         val roundKey = state.value.roundKey ?: return
         if (count <= 0) return
         val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
@@ -589,6 +627,61 @@ class MohamedLoversViewModel(
             )
         }
         sessionStore.saveLastSalawatTimestamp(nowMs)
+    }
+
+    /**
+     * Quarantined manual entry: the allowance is read from the server's daily ledger (the local
+     * ledger is not trusted), and the accepted amount is credited with one live push. Offline
+     * means no entry — nothing is banked for a later flush.
+     */
+    private fun submitStrictManualSalawat(count: Int) {
+        if (count <= 0) return
+        val roundKey = state.value.roundKey ?: return
+        val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
+        _state.update { it.copy(isSubmittingManualSalawat = true) }
+        viewModelScope.launch {
+            val now = Clock.System.now()
+            val used = repository.fetchExternalUsedToday(roundKey, now).getOrElse {
+                _state.update {
+                    it.copy(isSubmittingManualSalawat = false, strictModeNeedsInternet = true)
+                }
+                return@launch
+            }
+            val remaining = (manualDailyCap(today) - used).coerceAtLeast(0)
+            val applied = count.coerceAtMost(remaining)
+            if (applied <= 0) {
+                _state.update {
+                    it.copy(
+                        showManualSalawatSheet = false,
+                        isSubmittingManualSalawat = false,
+                        manualRemaining = 0,
+                    )
+                }
+                return@launch
+            }
+            val push = repository.pushImmediate(roundKey, applied)
+            if (push.isFailure) {
+                _state.update {
+                    it.copy(isSubmittingManualSalawat = false, strictModeNeedsInternet = true)
+                }
+                return@launch
+            }
+            repository.incrementExternalCount(roundKey, applied)
+            repository.appendExternalLog(
+                roundKey = roundKey,
+                count = applied,
+                at = now,
+                countsTowardDailyCap = true,
+            )
+            _state.update {
+                it.copy(
+                    showManualSalawatSheet = false,
+                    isSubmittingManualSalawat = false,
+                    manualRemaining = remaining - applied,
+                )
+            }
+            applyLeaderboard()
+        }
     }
 
     /**
@@ -903,6 +996,7 @@ class MohamedLoversViewModel(
             }
 
             authUid = uid
+            launch { repository.fetchStrictMode().onSuccess { info -> applyStrictMode(info) } }
             val selfPublishedName = sessionStore.getPublishedName()
             _state.update { it.copy(selfDisplayTag = buildMohamedLoversDisplayTag(uid, it.countryCode, selfPublishedName)) }
             val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
@@ -1039,6 +1133,83 @@ class MohamedLoversViewModel(
     }
 
     /**
+     * Applies the server-owned anti-cheat quarantine flag.
+     *
+     * While set, the client counts online-only and per interaction (bubble taps, manual entries,
+     * extension batches), never publishes locally stored totals, and shows a warning. The flag is
+     * latched locally so the restriction survives an offline cold start, and cleared the moment
+     * the server removes it. Also drops any score queued from local ledgers, since those are not
+     * trusted for this account.
+     */
+    private fun applyStrictMode(info: StrictModeInfo?) {
+        val active = info != null
+        sessionStore.isStrictModeLatched = active
+        if (active) repository.clearAllPendingRounds()
+        val todayKey = Clock.System.todayIn(TimeZone.of("Africa/Cairo")).toString()
+        val showAlarm = active && !sessionStore.strictModeAlarmShownOn(todayKey)
+        if (showAlarm) sessionStore.markStrictModeAlarmShown(todayKey)
+        _state.update {
+            it.copy(
+                isStrictMode = active,
+                showStrictModeAlarm = it.showStrictModeAlarm || showAlarm,
+                todayCount = if (active) 0 else it.todayCount,
+                dailyGoalProgress = if (active) 0 else it.dailyGoalProgress,
+            )
+        }
+        applyLeaderboard()
+    }
+
+    fun dismissStrictModeAlarm() = _state.update { it.copy(showStrictModeAlarm = false) }
+
+    fun dismissStrictModeBlocked() = _state.update { it.copy(strictModeBlocked = false) }
+
+    fun dismissStrictModeInternetNotice() = _state.update { it.copy(strictModeNeedsInternet = false) }
+
+    /**
+     * Credits a quarantined interaction: a live increment per accepted interaction, online-only.
+     * Nothing is buffered locally — a failed push is surfaced instead of banked for later.
+     */
+    private fun pushStrictCount(roundKey: String, delta: Int, onSuccess: (() -> Unit)? = null) {
+        if (delta <= 0) return
+        viewModelScope.launch {
+            val result = repository.pushImmediate(roundKey, delta)
+            if (result.isSuccess) {
+                onSuccess?.invoke()
+                applyLeaderboard()
+            } else {
+                _state.update { it.copy(strictModeNeedsInternet = true) }
+            }
+        }
+    }
+
+    private fun extendScoreInStrictMode(roundKey: String, count: Int) {
+        val now = Clock.System.now()
+        val heart = addHeartTap(now.toEpochMilliseconds(), count)
+        val today = Clock.System.todayIn(TimeZone.of("Africa/Cairo"))
+        val prevStreak = state.value.roundStreak
+        val streakResult = roundStreakStore.recordActivity(roundKey, today)
+        val streakSnap = roundStreakStore.snapshot(today)
+        _state.update {
+            it.copy(
+                heartScore = heart.first,
+                showHeartRefillNudge = shouldShowHeartRefillNudge(heart.first, heart.second),
+                roundStreak = streakResult.currentStreak,
+                roundStreakCelebration = streakResult.newlyEarnedBadge ?: it.roundStreakCelebration,
+                streakFreezeRemaining = streakSnap.freezeRemaining,
+                streakMissedDays = streakSnap.missedDays,
+                streakAtRisk = streakSnap.isAtRisk,
+                streakFreezeUntil = streakSnap.freezeUntil?.toString(),
+                showStreakResetWarning = false,
+            )
+        }
+        publishRoundStreak(roundKey, streakResult.currentStreak, prevStreak)
+        pushStrictCount(roundKey, count) {
+            // Audit entry only; the score already moved through the live push above.
+            viewModelScope.launch { repository.appendExternalLog(roundKey, count, now) }
+        }
+    }
+
+    /**
      * Reconciles the two pieces of server-side truth on every self-player snapshot:
      *
      * 1. **The day's push baseline.** `yesterdayTotalScore` is re-stamped nightly at 23:45 Cairo, so
@@ -1083,6 +1254,12 @@ class MohamedLoversViewModel(
         val badge = DailyBadge.fromKey(player.dailyBadge) ?: return
         val local = dailyGoalStore.todayProgress(today)
         if (badge.threshold <= local) return
+        if (state.value.isStrictMode) {
+            // Quarantined devices never adopt a client-writable badge into their progress; a
+            // forged badge would otherwise mint local counts. Log it for review instead.
+            logBadgeAdjustment(badge, local)
+            return
+        }
         val adjusted = dailyGoalStore.raiseTodayProgress(today, badge.threshold)
         _state.update {
             it.copy(
@@ -1092,12 +1269,16 @@ class MohamedLoversViewModel(
                 badgeAdjustedTo = adjusted,
             )
         }
+        logBadgeAdjustment(badge, local)
+    }
+
+    private fun logBadgeAdjustment(badge: DailyBadge, progress: Int) {
         if (!state.value.firebaseConfigured) return
         viewModelScope.launch {
             repository.logDailyBadgeAdjustment(
                 case = DailyBadgeAdjustmentLog.CASE_BADGE_ABOVE_PROGRESS,
                 at = Clock.System.now(),
-                progress = local,
+                progress = progress,
                 badge = badge,
             )
         }
@@ -1120,9 +1301,16 @@ class MohamedLoversViewModel(
         val selfProjectedTotal = selfRemoteTotal + pendingNet
         // Daily score is now the locally-tracked running day total (which already includes taps not
         // yet flushed to the server); fall back to the server-published todayCount when local is
-        // behind (e.g. right after a reinstall).
-        // behind (e.g. right after a reinstall).
-        val selfProjectedDaily = maxOf(state.value.todayCount, remoteSelfPlayer?.todayCount ?: 0)
+        // behind (e.g. right after a reinstall). Quarantined accounts use only the server-derived
+        // growth (totalCount − baseline) — locally stored counters are never trusted for them.
+        val selfProjectedDaily = if (state.value.isStrictMode) {
+            SalawatDailyCap.serverDayTotal(
+                totalCount = selfRemoteTotal,
+                yesterdayTotalScore = remoteSelfPlayer?.yesterdayTotalScore ?: 0,
+            )
+        } else {
+            maxOf(state.value.todayCount, remoteSelfPlayer?.todayCount ?: 0)
+        }
         val selfDisplayScore = if (isDaily) selfProjectedDaily else selfProjectedTotal
 
         val selfPublishedName = sessionStore.getPublishedName()

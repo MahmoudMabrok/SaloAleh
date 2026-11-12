@@ -697,6 +697,12 @@
         ".read": false,
         ".write": false
       },
+      "strictMode": {
+        "$uid": {
+          ".read": true,
+          ".write": false
+        }
+      },
       "referral_codes": {
         "$code": {
           ".read": true,
@@ -865,18 +871,19 @@
               ".validate": "newData.isString() && newData.val() === $uid"
             },
             "schemaVersion": {
-              ".validate": "newData.isNumber() && newData.val() >= 1"
+              ".validate": "newData.isNumber() && newData.val() >= 2"
             },
             "countryCode": {
               ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 3"
             },
             "totalCount": {
-              ".validate": "newData.isNumber() && newData.val() >= 0"
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() - (newData.parent().child('yesterdayTotalScore').exists() ? newData.parent().child('yesterdayTotalScore').val() : 0) <= 25000"
             },
             "yesterdayTotalScore": {
               ".validate": "newData.val() === data.val()"
             },
             "todayCount": {
+              ".write": false,
               ".validate": "newData.isNumber() && newData.val() >= 0"
             },
             "rank": {
@@ -889,6 +896,22 @@
             },
             "updatedAt": {
               ".validate": "newData.val() === now"
+            },
+            "events": {
+              "$eventId": {
+                ".write": "!data.exists() && newData.child('uid').val() === $uid",
+                ".validate": "newData.hasChildren(['uid', 'delta', 'at'])",
+                "uid": {
+                  ".validate": "newData.isString() && newData.val() === $uid"
+                },
+                "delta": {
+                  ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= 25000"
+                },
+                "at": {
+                  ".validate": "newData.val() === now"
+                },
+                "$other": { ".validate": false }
+              }
             },
             "isWinner": {
               ".validate": "newData.val() === (data.exists() ? data.val() : false)"
@@ -909,10 +932,11 @@
             },
             "externalDaily": {
               "$dayKey": {
-                ".validate": "newData.isNumber()"
+                ".validate": "newData.isNumber() && newData.val() <= 15000 && newData.val() >= -15000"
               }
             },
             "dailyBadge": {
+              ".write": false,
               ".validate": "newData.isString()"
             },
             "roundStreak": {

@@ -116,6 +116,16 @@ data class MohamedLoversUiState(
     // behind the badge the server already recorded). One-shot, shown as a toast.
     val badgeAdjustedTo: Int? = null,
 
+    // Anti-cheat quarantine (server-owned strictMode flag): the main tap is disabled, counting
+    // is online-only and per-interaction, nothing stored locally is published, and the user
+    // sees a warning until the flag is lifted. See StrictModeInfo.
+    val isStrictMode: Boolean = false,
+    val showStrictModeAlarm: Boolean = false,
+    // One-shot: user tried the disabled tap while quarantined.
+    val strictModeBlocked: Boolean = false,
+    // One-shot: a quarantined count could not be pushed because the device is offline.
+    val strictModeNeedsInternet: Boolean = false,
+
     // Motivation: rank movement summary
     val rankMovementDelta: Int? = null,
     val rankMovementOldRank: Int = 0,

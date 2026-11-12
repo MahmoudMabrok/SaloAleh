@@ -1,0 +1,36 @@
+name: Process Score Event Journal
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    inputs:
+      round_key:
+        description: 'Round key (yyyy-MM-dd); leave blank for the active Cairo round'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  process:
+    name: Derive todayCount and dailyBadge
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install firebase-admin
+        run: npm install firebase-admin@^12.0.0
+        working-directory: scripts
+
+      - name: Process event journal
+        run: node scripts/process-event-journal.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          ROUND_KEY: ${{ inputs.round_key || github.event.inputs.round_key }}

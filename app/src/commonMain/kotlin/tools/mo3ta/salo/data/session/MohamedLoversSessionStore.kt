@@ -331,6 +331,24 @@ class MohamedLoversSessionStore(private val settings: Settings) {
     fun getSavedFcmToken(): String? = settings.getStringOrNull(KEY_FCM_TOKEN)
     fun saveLocalFcmToken(token: String) = settings.putString(KEY_FCM_TOKEN, token)
 
+    /**
+     * Latched anti-cheat quarantine state. The authoritative flag is the server's
+     * `mohamed_lovers/strictMode/{uid}`; it is mirrored here so a cold start while offline still
+     * keeps the restriction on. Only the server can clear it (by removing the flag), never a
+     * local write. Tampering it can only weaken the device-side restriction — the server-side
+     * ceilings in the RTDB rules still bound the score.
+     */
+    var isStrictModeLatched: Boolean
+        get() = settings.getBoolean(KEY_STRICT_MODE_ACTIVE, false)
+        set(value) = settings.putBoolean(KEY_STRICT_MODE_ACTIVE, value)
+
+    /** Whether the quarantine warning was already shown on [dayKey] (once per Cairo day). */
+    fun strictModeAlarmShownOn(dayKey: String): Boolean =
+        settings.getStringOrNull(KEY_STRICT_ALARM_DATE) == dayKey
+
+    fun markStrictModeAlarmShown(dayKey: String) =
+        settings.putString(KEY_STRICT_ALARM_DATE, dayKey)
+
     fun isFcmTokenSynced(): Boolean = settings.getBoolean(KEY_FCM_TOKEN_SYNCED, false)
     fun setFcmTokenSynced(synced: Boolean) = settings.putBoolean(KEY_FCM_TOKEN_SYNCED, synced)
 
@@ -395,6 +413,9 @@ class MohamedLoversSessionStore(private val settings: Settings) {
         const val KEY_NICKNAME = "user_nickname"
         const val KEY_NICKNAME_ENABLED = "nickname_enabled"
         const val KEY_NICKNAME_ANNOUNCEMENT_SHOWN = "nickname_announcement_shown"
+        // Server-owned anti-cheat quarantine latch + once-per-day warning dedup.
+        const val KEY_STRICT_MODE_ACTIVE = "strict_mode_active"
+        const val KEY_STRICT_ALARM_DATE = "strict_mode_alarm_date"
         const val MAX_NICKNAME_LENGTH = 20
     }
 }

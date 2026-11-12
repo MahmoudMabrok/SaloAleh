@@ -22,18 +22,22 @@ const ABNORMAL_DAILY_THRESHOLD = 12000;
 // increment (11k), Sunday (day 2) is 22k, and so on.
 const PACE_DAILY_INCREMENT = 11000;
 
-// A player's competition score for the current Cairo day. Prefers the client-published absolute
-// `todayCount`; falls back to the yesterday-diff (`totalCount - yesterdayTotalScore`) for clients
-// that predate todayCount, so the daily leaderboard never zeroes out an un-updated user.
+// A player's competition score for the current Cairo day. Takes the larger of the
+// client-published absolute `todayCount` and the yesterday-diff (`totalCount - yesterdayTotalScore`):
+// the diff catches clients that inflate `totalCount` while masking it behind a tiny `todayCount`
+// (a cheating pattern seen in the wild), while `todayCount` keeps users whose local state is ahead
+// of the flushed total visible. Neither half is trusted alone.
 function computeTodayScore({ total, today, yesterday }) {
-  if (typeof today === 'number' && today >= 0) return Math.floor(today);
-  return Math.max(0, (total || 0) - (yesterday || 0));
+  const todayPart = typeof today === 'number' && today >= 0 ? Math.floor(today) : 0;
+  const diffPart = Math.max(0, (total || 0) - (yesterday || 0));
+  return Math.max(todayPart, diffPart);
 }
 
 // Builds the per-user daily snapshots written at the daily close (generate-stats.js): a score
 // history entry per active user, an abnormal-user flag for anyone above the daily threshold, a
-// pace flag for anyone whose cumulative round total outruns the day-of-round ceiling, and a
-// todayCount reset so the next Cairo day starts from zero. Pure so it can be unit-tested.
+// pace flag for anyone whose cumulative round total outruns the day-of-round ceiling, a strict-mode
+// quarantine flag for anyone caught by either check, and a todayCount reset so the next Cairo day
+// starts from zero. Pure so it can be unit-tested.
 // `players` items: { uid, totalCount, todayCount, yesterdayTotalScore, countryCode }.
 // `roundDay` (1-based competition day; see roundDayNumber) gates the pace flag; pass null to skip it.
 function buildDailyScoreSnapshots({
@@ -48,6 +52,7 @@ function buildDailyScoreSnapshots({
   const abnormalUpdates = {};
   const todayCountResets = {};
   const paceFlagUpdates = {};
+  const strictModeFlags = {};
   const paceCeiling = typeof roundDay === 'number' && roundDay > 0 ? roundDay * paceIncrement : null;
   for (const p of players || []) {
     if (!p || !p.uid) continue;
@@ -67,9 +72,11 @@ function buildDailyScoreSnapshots({
       };
     }
     // Pace flag: cumulative round total outrunning the day-of-round ceiling (day N * increment).
+    let paceFlagged = false;
     if (paceCeiling != null) {
       const total = typeof p.totalCount === 'number' ? p.totalCount : 0;
       if (total > paceCeiling) {
+        paceFlagged = true;
         paceFlagUpdates[`${MOHAMED_LOVERS_ROOT}/users/${p.uid}/paceFlags/${dateKey}`] = {
           totalCount: total,
           dayOfRound: roundDay,
@@ -78,12 +85,22 @@ function buildDailyScoreSnapshots({
         };
       }
     }
+    // Strict mode: anyone caught by either check is quarantined (online-only, prefs-free
+    // counting on the client) until they accrue enough clean days. generate-stats.js merges
+    // this against the existing strictMode node, keeping the earliest `since`.
+    const abnormalFlagged = dayTotal > threshold;
+    if (abnormalFlagged || paceFlagged) {
+      strictModeFlags[p.uid] = {
+        reason: abnormalFlagged && paceFlagged ? 'both' : abnormalFlagged ? 'abnormal' : 'pace',
+        dateKey,
+      };
+    }
     // Only reset players who actually carry a non-zero client-pushed todayCount.
     if (typeof p.todayCount === 'number' && p.todayCount !== 0) {
       todayCountResets[`${MOHAMED_LOVERS_ROOT}/${roundKey}/players/${p.uid}/todayCount`] = 0;
     }
   }
-  return { scoreHistoryUpdates, abnormalUpdates, todayCountResets, paceFlagUpdates };
+  return { scoreHistoryUpdates, abnormalUpdates, todayCountResets, paceFlagUpdates, strictModeFlags };
 }
 
 function buildOldRankMap(source) {
