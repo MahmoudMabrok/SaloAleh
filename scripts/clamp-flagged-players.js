@@ -11,9 +11,10 @@
 // Evidence for each account lives in the DB export under docs/ and in the nightly
 // abnormal_users / paceFlags / badgeAdjustments nodes; re-check before applying.
 const admin = require('firebase-admin');
-const { PACE_DAILY_INCREMENT, addDaysToDateKey, cairoToday, roundDayNumber } = require('./leaderboard-utils');
+const { addDaysToDateKey, cairoToday, roundDayNumber } = require('./leaderboard-utils');
 
 const APPLY = process.argv.includes('--apply');
+const PACE_DAILY_INCREMENT = 20_000;
 const CLOSED_ROUND_DAYS = 7; // a finished round may legitimately reach 7 × the daily pace
 const ROUNDS_BACK = 26;      // how many past round keys to inspect
 
