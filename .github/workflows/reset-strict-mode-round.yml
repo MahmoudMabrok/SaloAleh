@@ -1,0 +1,52 @@
+name: Reset Restricted Mode at Round Close
+
+on:
+  # 16:20 UTC = 19:20 Cairo in the current round-close schedule.
+  # The small delay lets the round aggregation workflow finish first.
+  schedule:
+    - cron: '20 16 * * 5'
+  workflow_dispatch:
+    inputs:
+      closed_round:
+        description: 'Closed round key (YYYY-MM-DD); defaults to today in Cairo'
+        required: false
+        type: string
+      dry_run:
+        description: 'Preview restricted accounts without clearing them'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reset-strict-mode-round
+  cancel-in-progress: false
+
+jobs:
+  reset:
+    name: Hard reset restricted mode
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install firebase-admin
+        run: npm install firebase-admin
+        working-directory: scripts
+
+      - name: Reset restricted mode
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            node scripts/reset-strict-mode-round.js
+          else
+            node scripts/reset-strict-mode-round.js --apply
+          fi
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          CLOSED_ROUND: ${{ inputs.closed_round }}
