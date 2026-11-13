@@ -13,7 +13,8 @@ const HAWQALA_CHALLENGE_ROOT = 'hawqala_challenge';
 const MOHAMED_LOVERS_ROOT = 'mohamed_lovers';
 
 // A day's salawat above this is treated as abnormal and recorded for admin review.
-const ABNORMAL_DAILY_THRESHOLD = 12000;
+// 20k is considered a natural daily total for this competition.
+const ABNORMAL_DAILY_THRESHOLD = 20000;
 
 // Salawat pace ceiling: a player's cumulative round total is expected to grow by at
 // most this per competition day. On day N of the round a total above N * this is
