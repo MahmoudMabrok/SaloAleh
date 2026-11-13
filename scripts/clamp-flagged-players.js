@@ -16,6 +16,9 @@ const { PACE_DAILY_INCREMENT, addDaysToDateKey, cairoToday, roundDayNumber } = r
 const APPLY = process.argv.includes('--apply');
 const CLOSED_ROUND_DAYS = 7; // a finished round may legitimately reach 7 × the daily pace
 const ROUNDS_BACK = 26;      // how many past round keys to inspect
+const MAGDA_UID = '5472bc710d53758f8681367b9a447e30b6e89833cf0970dd52cbdae297c84f24';
+const magdaTargetArg = process.argv.find((arg) => arg.startsWith('--magda-target-total='));
+const MAGDA_TARGET_TOTAL = magdaTargetArg ? Number(magdaTargetArg.split('=')[1]) : null;
 
 const REVIEWED_USERS = [
   {
@@ -25,11 +28,8 @@ const REVIEWED_USERS = [
   },
   {
     uid: '498e706ae7dcb9e2875c518d995bb1f7c80e03d727db3f32d9f0478bfca84b07',
-    note: 'اسماء — 12,427 on 2026-11-10 (abnormal), forged star badge with zero progress',
-    maxTotal: {
-      // 30,863 − (12,427 − 12,000) abnormal excess on 2026-11-10.
-      '2026-11-13': 30436,
-    },
+    note: 'اسماء — 12,427 on 2026-11-10, now within the normal 20k daily range; no special clamp override',
+    maxTotal: {},
   },
   {
     uid: '17ce92d704c1ec31092304af7633f1306481c22b11db23d29ce1c2561b08e153',
@@ -111,6 +111,28 @@ async function main() {
         updates[`mohamed_lovers/${roundKey}/players/${user.uid}/yesterdayTotalScore`] = effectiveMax;
       }
     }
+  }
+
+  if (MAGDA_TARGET_TOTAL !== null) {
+    if (!APPLY) {
+      throw new Error('--magda-target-total requires --apply');
+    }
+    if (!Number.isInteger(MAGDA_TARGET_TOTAL) || MAGDA_TARGET_TOTAL < 0) {
+      throw new Error('--magda-target-total must be a non-negative integer');
+    }
+    const magdaRef = db.ref(`mohamed_lovers/${currentRoundKey}/players/${MAGDA_UID}`);
+    const magdaSnapshot = await magdaRef.get();
+    const currentTotal = Number(magdaSnapshot.val()?.totalCount || 0);
+    updates[`mohamed_lovers/${currentRoundKey}/players/${MAGDA_UID}/totalCount`] = MAGDA_TARGET_TOTAL;
+    updates[`mohamed_lovers/users/${MAGDA_UID}/badgeAdjustments/${new Date().toISOString().slice(0, 16).replace('T', ' ').replace(':', ';')}`] = {
+      case: 'manual_score_override',
+      at: Date.now(),
+      progress: currentTotal,
+      badge: 'manual_override',
+      badgeValue: MAGDA_TARGET_TOTAL,
+    };
+    changed++;
+    console.log(`\nManual Magda override: ${currentRoundKey}: ${currentTotal} -> ${MAGDA_TARGET_TOTAL}`);
   }
 
   if (changed === 0) {

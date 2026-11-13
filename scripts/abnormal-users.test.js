@@ -81,7 +81,7 @@ describe('buildDailyScoreSnapshots', () => {
     });
     // No baseline ⇒ the whole (fresh) round total is today's count, not 800.
     assert.equal(scoreHistoryUpdates[`mohamed_lovers/users/fresh/scoreHistory/${dateKey}`], 5000);
-    // …and it stays under the day-1 pace ceiling (11k), so no false pace flag.
+    // …and it stays under the day-1 pace ceiling (20k), so no false pace flag.
     assert.deepEqual(paceFlagUpdates, {});
   });
 
@@ -97,8 +97,8 @@ describe('buildDailyScoreSnapshots', () => {
   it('flags users above the abnormal threshold with count + metadata', () => {
     const { abnormalUpdates } = buildDailyScoreSnapshots({
       players: [
-        // day total = max(12001, 20000-0) = 20000 — the diff uncovers the masked inflation.
-        { uid: 'bot', totalCount: 20000, todayCount: ABNORMAL_DAILY_THRESHOLD + 1, yesterdayTotalScore: 0, countryCode: 'eg' },
+        // day total = max(20001, 20001-0) = 20001 — the diff uncovers the masked inflation.
+        { uid: 'bot', totalCount: 20001, todayCount: ABNORMAL_DAILY_THRESHOLD + 1, yesterdayTotalScore: 0, countryCode: 'eg' },
         { uid: 'human', totalCount: 500, todayCount: 500, yesterdayTotalScore: 0, countryCode: 'sa' },
       ],
       dateKey,
@@ -106,8 +106,8 @@ describe('buildDailyScoreSnapshots', () => {
     });
     assert.deepEqual(abnormalUpdates, {
       [`mohamed_lovers/abnormal_users/${dateKey}/bot`]: {
-        count: 20000,
-        totalCount: 20000,
+        count: 20001,
+        totalCount: 20001,
         countryCode: 'eg',
       },
     });
@@ -198,7 +198,7 @@ describe('buildDailyScoreSnapshots', () => {
     });
   });
 
-  it('uses an 11k ceiling on day 1 (Saturday)', () => {
+  it('uses a 20k ceiling on day 1 (Saturday)', () => {
     const { paceFlagUpdates } = buildDailyScoreSnapshots({
       players: [
         { uid: 'over', totalCount: PACE_DAILY_INCREMENT + 1, todayCount: 100, yesterdayTotalScore: 0, countryCode: 'eg' },
@@ -229,7 +229,7 @@ describe('buildDailyScoreSnapshots strictModeFlags', () => {
 
   it('flags an abnormal-only day as reason abnormal', () => {
     const { strictModeFlags } = buildDailyScoreSnapshots({
-      players: [{ uid: 'spike', totalCount: 13000, todayCount: 13000, yesterdayTotalScore: 0 }],
+      players: [{ uid: 'spike', totalCount: 21000, todayCount: 21000, yesterdayTotalScore: 0 }],
       dateKey,
       roundKey,
     });
@@ -239,10 +239,10 @@ describe('buildDailyScoreSnapshots strictModeFlags', () => {
   });
 
   it('flags a pace-only overrun as reason pace', () => {
-    // Day 2 → ceiling 22k; total 23k overruns pace but day growth (23k vs 0) …
-    // keeps day total 23k > 12k, so use a low-growth case: yesterday ≈ total.
+    // Day 2 → ceiling 40k; total 43k overruns pace but day growth (43k vs 0) …
+    // would also be above the 20k abnormal threshold, so use a low-growth case: yesterday ≈ total.
     const { strictModeFlags, abnormalUpdates } = buildDailyScoreSnapshots({
-      players: [{ uid: 'steady', totalCount: 23000, todayCount: 100, yesterdayTotalScore: 22950 }],
+      players: [{ uid: 'steady', totalCount: 43000, todayCount: 100, yesterdayTotalScore: 42950 }],
       dateKey,
       roundKey,
       roundDay: 2,
