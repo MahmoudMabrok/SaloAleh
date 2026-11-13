@@ -135,6 +135,7 @@ async function main() {
       badge: 'manual_override',
       badgeValue: MAGDA_TARGET_TOTAL,
     };
+    changed++;
     console.log(`\nManual Magda override: ${currentRoundKey}: ${currentTotal} -> ${MAGDA_TARGET_TOTAL}`);
   }
 
