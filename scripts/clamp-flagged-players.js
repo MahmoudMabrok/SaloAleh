@@ -28,11 +28,8 @@ const REVIEWED_USERS = [
   },
   {
     uid: '498e706ae7dcb9e2875c518d995bb1f7c80e03d727db3f32d9f0478bfca84b07',
-    note: 'اسماء — 12,427 on 2026-11-10 (abnormal), forged star badge with zero progress',
-    maxTotal: {
-      // 30,863 − (12,427 − 12,000) abnormal excess on 2026-11-10.
-      '2026-11-13': 30436,
-    },
+    note: 'اسماء — 12,427 on 2026-11-10, now within the normal 20k daily range; no special clamp override',
+    maxTotal: {},
   },
   {
     uid: '17ce92d704c1ec31092304af7633f1306481c22b11db23d29ce1c2561b08e153',
