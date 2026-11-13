@@ -81,7 +81,7 @@ describe('buildDailyScoreSnapshots', () => {
     });
     // No baseline ⇒ the whole (fresh) round total is today's count, not 800.
     assert.equal(scoreHistoryUpdates[`mohamed_lovers/users/fresh/scoreHistory/${dateKey}`], 5000);
-    // …and it stays under the day-1 pace ceiling (11k), so no false pace flag.
+    // …and it stays under the day-1 pace ceiling (20k), so no false pace flag.
     assert.deepEqual(paceFlagUpdates, {});
   });
 
@@ -198,7 +198,7 @@ describe('buildDailyScoreSnapshots', () => {
     });
   });
 
-  it('uses an 11k ceiling on day 1 (Saturday)', () => {
+  it('uses a 20k ceiling on day 1 (Saturday)', () => {
     const { paceFlagUpdates } = buildDailyScoreSnapshots({
       players: [
         { uid: 'over', totalCount: PACE_DAILY_INCREMENT + 1, todayCount: 100, yesterdayTotalScore: 0, countryCode: 'eg' },
@@ -239,10 +239,10 @@ describe('buildDailyScoreSnapshots strictModeFlags', () => {
   });
 
   it('flags a pace-only overrun as reason pace', () => {
-    // Day 2 → ceiling 22k; total 23k overruns pace but day growth (23k vs 0) …
+    // Day 2 → ceiling 40k; total 43k overruns pace but day growth (43k vs 0) …
     // would also be above the 20k abnormal threshold, so use a low-growth case: yesterday ≈ total.
     const { strictModeFlags, abnormalUpdates } = buildDailyScoreSnapshots({
-      players: [{ uid: 'steady', totalCount: 23000, todayCount: 100, yesterdayTotalScore: 22950 }],
+      players: [{ uid: 'steady', totalCount: 43000, todayCount: 100, yesterdayTotalScore: 42950 }],
       dateKey,
       roundKey,
       roundDay: 2,

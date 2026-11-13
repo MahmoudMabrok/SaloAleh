@@ -20,8 +20,8 @@ const ABNORMAL_DAILY_THRESHOLD = 20000;
 // most this per competition day. On day N of the round a total above N * this is
 // treated as abnormal pace and recorded (per-user, for later analysis). Saturday —
 // the first day after the Friday 19:00 reset — is day 1, so its ceiling is one
-// increment (11k), Sunday (day 2) is 22k, and so on.
-const PACE_DAILY_INCREMENT = 11000;
+// increment (20k), Sunday (day 2) is 40k, and so on.
+const PACE_DAILY_INCREMENT = 20000;
 
 // A player's competition score for the current Cairo day. Takes the larger of the
 // client-published absolute `todayCount` and the yesterday-diff (`totalCount - yesterdayTotalScore`):
