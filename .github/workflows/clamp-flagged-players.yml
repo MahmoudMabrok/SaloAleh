@@ -8,6 +8,11 @@ on:
         required: false
         type: boolean
         default: false
+      magda_target_total:
+        description: 'Optional current-round total for Magda; requires apply=true'
+        required: false
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -30,7 +35,11 @@ jobs:
       - name: Run clamp script
         run: |
           if [ "${{ inputs.apply }}" = "true" ]; then
-            node scripts/clamp-flagged-players.js --apply
+            if [ -n "${{ inputs.magda_target_total }}" ]; then
+              node scripts/clamp-flagged-players.js --apply --magda-target-total="${{ inputs.magda_target_total }}"
+            else
+              node scripts/clamp-flagged-players.js --apply
+            fi
           else
             node scripts/clamp-flagged-players.js
           fi
