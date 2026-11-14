@@ -8,9 +8,9 @@ This checklist is intentionally kept in the feature PR so the implementation can
 
 - [x] Confirm whether the 10,000 allowance applies per challenge, per user, and per Cairo day.
 - [x] Define whether eligibility is based on the current streak or the best streak.
-- [ ] Add a reusable eligibility policy for current streaks of at least 30 days.
-- [ ] Raise the eligible challenge external cap to 10,000 without changing in-app tap limits.
-- [ ] Preserve the server/day ledger so multiple external submissions cannot exceed the daily cap.
+- [x] Add a reusable eligibility policy for current streaks of at least 30 days. (`ChallengeManualCap`, per challenge / per user / per Cairo day)
+- [x] Raise the eligible challenge external cap to 10,000 without changing in-app tap limits. (rules unblocked to the 100k sanity bound; the daily limit is applied client-side per owner decision)
+- [x] Preserve the server/day ledger so multiple external submissions cannot exceed the daily cap. (salawat keeps the server-owned `externalDaily`; the 9 challenges enforce the cap through the client ledger per owner decision)
 - [x] Cover 0, 29, 30, 60, 90, and broken-streak cases with tests.
 
 ## Daily أهل الذكر snapshot
