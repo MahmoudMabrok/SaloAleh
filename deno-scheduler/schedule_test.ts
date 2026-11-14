@@ -25,7 +25,6 @@ Deno.test("cron expressions", () => {
   // Weekday stays out of the expression. Deno.cron's 5 is Thursday (Quartz),
   // which is why the Friday aggregate never dispatched on 2026-11-13.
   assertEquals(SLOTS.aggregate.cron, "10 14,15 * * *");
-  assertEquals(SLOTS["ahl-adhikr"].cron, "30 19,20 * * *");
   assertEquals(SLOTS["update-stats"].cron, "45 20,21 * * *");
   assertEquals(SLOTS["notify-morning"].cron, "0 6,7 * * *");
   assertEquals(SLOTS["notify-evening"].cron, "0 16,17 * * *");

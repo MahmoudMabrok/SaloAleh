@@ -142,10 +142,9 @@ function slot(
 export const SLOTS = {
   // Friday 17:10 Cairo — 10 min after the 17:00 Cairo round close.
   aggregate: slot(10, [ROUND_CLOSE_HOUR_CAIRO], "Friday 17:10 Cairo (10 min after the 17:00 round close)", [FRIDAY]),
-  // Ahl Adhikr snapshot 22:30 Cairo — must precede the 23:45 stats run that deletes
-  // the per-challenge day nodes the snapshot reads from.
-  "ahl-adhikr": slot(30, [22], "daily 22:30 Cairo"),
-  // Daily close 23:45 Cairo.
+  // Daily close 23:45 Cairo — dispatches update-stats.yml, whose first step now
+  // also generates the أهل الذكر snapshot (before generate-stats deletes the
+  // per-challenge day nodes).
   "update-stats": slot(45, [23], "daily 23:45 Cairo"),
   // Retention notifications.
   "notify-morning": slot(0, [9], "daily 09:00 Cairo"),
@@ -170,7 +169,6 @@ const REF = "main";
 const cronStatus: Record<string, { lastRunAt: string | null; lastResult: string | null }> = {
   leaderboard: { lastRunAt: null, lastResult: null },
   aggregate: { lastRunAt: null, lastResult: null },
-  "ahl-adhikr": { lastRunAt: null, lastResult: null },
   "update-stats": { lastRunAt: null, lastResult: null },
   "notify-morning": { lastRunAt: null, lastResult: null },
   "notify-evening": { lastRunAt: null, lastResult: null },
@@ -234,14 +232,6 @@ Deno.cron(
   () => dispatchIfDueInCairo(SLOTS.aggregate, "aggregate-all-time.yml", "aggregate"),
 );
 
-// Ahl Adhikr snapshot — daily 22:30 Cairo.
-Deno.cron(
-  "ahl-adhikr",
-  SLOTS["ahl-adhikr"].cron,
-  BACKOFF,
-  () => dispatchIfDueInCairo(SLOTS["ahl-adhikr"], "ahl-adhikr.yml", "ahl-adhikr"),
-);
-
 // Daily close 23:45 Cairo.
 Deno.cron(
   "update-stats",
@@ -293,7 +283,6 @@ Deno.serve(async (req) => {
           ...cronStatus.leaderboard,
         },
         aggregate: entry("aggregate", "aggregate-all-time.yml"),
-        "ahl-adhikr": entry("ahl-adhikr", "ahl-adhikr.yml"),
         "update-stats": entry("update-stats", "update-stats.yml"),
         "notify-morning": entry("notify-morning", "notify-users.yml"),
         "notify-evening": entry("notify-evening", "notify-users.yml"),
