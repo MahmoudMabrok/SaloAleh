@@ -26,7 +26,6 @@ desugarJdkLibs = "2.1.5"
 gmsCodeScanner = "16.1.0"
 billing = "9.1.0"
 installReferrer = "2.2"
-liteRt = "1.4.2"
 mushafText = "1.6.0"
 
 [libraries]
@@ -68,7 +67,6 @@ desugar-jdk-libs = { group = "com.android.tools", name = "desugar_jdk_libs", ver
 gms-code-scanner = { group = "com.google.android.gms", name = "play-services-code-scanner", version.ref = "gmsCodeScanner" }
 billing = { group = "com.android.billingclient", name = "billing", version.ref = "billing" }
 install-referrer = { group = "com.android.installreferrer", name = "installreferrer", version.ref = "installReferrer" }
-litert = { group = "com.google.ai.edge.litert", name = "litert", version.ref = "liteRt" }
 mushaf-text = { group = "com.github.MahmoudMabrok", name = "mushaf-text-customizable", version.ref = "mushafText" }
 
 [plugins]
