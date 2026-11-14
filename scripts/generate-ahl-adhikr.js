@@ -173,19 +173,6 @@ async function main() {
     process.exit(0);
   }
 
-  // The workflow's cron fires at both UTC hours that can be 22:30 Cairo (DST).
-  // Without an explicit --date, only the firing whose Cairo clock says 22 proceeds;
-  // an explicit --date (manual dispatch) is deliberate and bypasses the gate.
-  if (!args.date) {
-    const hourStr = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'Africa/Cairo', hour: 'numeric', hour12: false,
-    }).format(new Date());
-    if (parseInt(hourStr, 10) % 24 !== 22) {
-      console.log(`Cairo hour is ${hourStr} — not 22. Skipping this firing (DST double-schedule).`);
-      return;
-    }
-  }
-
   const dateStr = args.date || cairoToday();
   console.log(`Ahl Adhikr snapshot for ${dateStr}${args.dryRun ? ' (dry-run)' : ''}`);
 
