@@ -1139,4 +1139,21 @@
     <string name="experiences_intro_overlay_body">اقرأ تجارب قصيرة مع التطبيق ومع الذكر، وشارك تجربتك. لا تظهر التجربة في القائمة إلا بعد مراجعتها.</string>
     <string name="experiences_intro_overlay_cta">افتح التجارب</string>
     <string name="experiences_intro_overlay_dismiss">ليس الآن</string>
+
+    <string name="ahl_adhikr_title">أهل الذكر</string>
+    <string name="ahl_adhikr_empty">لا يوجد أهل ذكر في هذا المستوى بعد. واصل الذكر لتكون أولهم.</string>
+    <string name="ahl_adhikr_stale">يُعرض آخر ملف صالح (%1$s). تعذّر جلب التحديث الآن.</string>
+    <string name="ahl_adhikr_stale_undated">يُعرض آخر ملف صالح. تعذّر جلب التحديث الآن.</string>
+    <string name="ahl_adhikr_milestone_days">%1$d يومًا</string>
+    <string name="ahl_adhikr_entry_streak">%1$d يوم متواصل</string>
+    <string name="ahl_adhikr_challenge_salawat">الصلاة على النبي ﷺ</string>
+    <string name="ahl_adhikr_challenge_dhikr">الذكر</string>
+    <string name="ahl_adhikr_challenge_baqiyat">باقيات صالحات</string>
+    <string name="ahl_adhikr_challenge_istighfar">الاستغفار</string>
+    <string name="ahl_adhikr_challenge_zabad">زباد</string>
+    <string name="ahl_adhikr_challenge_quran">القرآن</string>
+    <string name="ahl_adhikr_challenge_ghars">غرس</string>
+    <string name="ahl_adhikr_challenge_alf_hasana">ألف حسنة</string>
+    <string name="ahl_adhikr_challenge_kalimat">كلمات</string>
+    <string name="ahl_adhikr_challenge_hawqala">حوقلة</string>
 </resources>

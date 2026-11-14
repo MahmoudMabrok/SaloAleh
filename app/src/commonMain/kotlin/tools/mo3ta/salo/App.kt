@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoStories
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Settings
@@ -44,6 +45,7 @@ import tools.mo3ta.salo.data.engagement.EngagementStore
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.ui.AchievementCelebrationDialog
 import tools.mo3ta.salo.ui.AchievementsScreen
+import tools.mo3ta.salo.ui.AhlAdhikrScreen
 import tools.mo3ta.salo.ui.AlKahfReminderDialog
 import tools.mo3ta.salo.ui.AutoClickDetectedDialog
 import tools.mo3ta.salo.ui.baqiyat.BaqiyatScreen
@@ -111,6 +113,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.notification.NotificationAction
 import tools.mo3ta.salo.notification.NotificationMessage
 import tools.mo3ta.salo.generated.resources.Res
+import tools.mo3ta.salo.generated.resources.ahl_adhikr_title
 import tools.mo3ta.salo.generated.resources.bottom_nav_achievements
 import tools.mo3ta.salo.generated.resources.bottom_nav_articles
 import tools.mo3ta.salo.generated.resources.bottom_nav_challenges
@@ -452,6 +455,9 @@ fun App(
                             SaloTab.Achievements -> AchievementsScreen(
                                 onBack = { selectedTab = SaloTab.MohamedLovers },
                                 showBackButton = false,
+                            )
+                            SaloTab.AhlAdhikr -> AhlAdhikrScreen(
+                                onBack = { selectedTab = SaloTab.MohamedLovers },
                             )
                             SaloTab.Articles -> HadithListScreen(
                                 onBack = { selectedTab = SaloTab.MohamedLovers },
@@ -889,6 +895,7 @@ private enum class SaloTab {
     MohamedLovers,
     Challenges,
     Achievements,
+    AhlAdhikr,
     Articles,
     Settings,
 }
@@ -938,6 +945,11 @@ private fun SaloBottomNavigationBar(
             tab = SaloTab.Achievements,
             label = stringResource(Res.string.bottom_nav_achievements),
             icon = Icons.Default.EmojiEvents,
+        ),
+        SaloTabItem(
+            tab = SaloTab.AhlAdhikr,
+            label = stringResource(Res.string.ahl_adhikr_title),
+            icon = Icons.Default.Groups,
         ),
         SaloTabItem(
             tab = SaloTab.Articles,

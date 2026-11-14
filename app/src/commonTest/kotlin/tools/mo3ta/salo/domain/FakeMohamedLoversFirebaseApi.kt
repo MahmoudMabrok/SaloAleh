@@ -161,6 +161,9 @@ open class FakeMohamedLoversFirebaseApi : MohamedLoversFirebaseApi {
         dayKey: String,
     ): Result<Int> = Result.success(externalDailyUsed[dayKey] ?: 0)
 
+    /** Strict mode is out of scope for the flush/repo tests; no flag is reported. */
+    override suspend fun fetchStrictMode(uid: String): Result<StrictModeInfo?> = Result.success(null)
+
     data class DecrementScoreCall(val roundKey: String, val uid: String, val amount: Int)
 
     val decrementScoreCalls = mutableListOf<DecrementScoreCall>()
