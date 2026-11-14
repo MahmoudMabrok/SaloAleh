@@ -1,0 +1,128 @@
+name: Fetch Round Results
+
+# Read-only on Firebase. Pushing round-data/** (or a manual workflow_dispatch on any
+# branch other than main) runs scripts/write-round-results.js, which only reads
+# mohamed_lovers/<round>/{players,roundTotal,roundPlayerCount}. The JSON and the
+# Arabic markdown are committed back to the triggering branch. This workflow never
+# pushes to main and never writes allTimeTotal, medals, the leaderboard, or any
+# other Firebase node.
+on:
+  push:
+    branches:
+      - 'round-data/**'
+    # The results commit only touches round-results/, so it does not re-trigger.
+    paths:
+      - 'round-data/**'
+      - '.github/workflows/fetch-round-results.yml'
+  workflow_dispatch:
+    inputs:
+      closed_round:
+        description: 'Round key (YYYY-MM-DD). Defaults to round-data/round.txt, then a round-data/YYYY-MM-DD branch name.'
+        required: false
+        type: string
+
+# contents: write is what lets the job push the summary back to the triggering branch.
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    name: Read round results and commit to this branch
+    # Push events are already limited to round-data/**. workflow_dispatch can target
+    # any ref; never read or write when that ref is the default branch.
+    if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install firebase-admin
+        run: npm install firebase-admin
+        working-directory: scripts
+
+      - name: Resolve round key
+        id: round
+        env:
+          CLOSED_ROUND_INPUT: ${{ inputs.closed_round }}
+        run: |
+          set -euo pipefail
+          ROUND="${CLOSED_ROUND_INPUT:-}"
+          if [ -z "$ROUND" ] && [ -f round-data/round.txt ]; then
+            ROUND=$(tr -d '[:space:]' < round-data/round.txt)
+          fi
+          if [ -z "$ROUND" ]; then
+            case "$GITHUB_REF_NAME" in
+              round-data/*) ROUND="${GITHUB_REF_NAME#round-data/}" ;;
+            esac
+          fi
+          if ! printf '%s' "$ROUND" | grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'; then
+            echo "Could not resolve a YYYY-MM-DD round key (got '${ROUND:-}')." >&2
+            echo "Put it in round-data/round.txt, name the branch round-data/YYYY-MM-DD, or pass closed_round." >&2
+            exit 1
+          fi
+          echo "round=$ROUND" >> "$GITHUB_OUTPUT"
+          echo "Resolved round ${ROUND} on ${GITHUB_REF_NAME}"
+
+      - name: Write round results (read-only on Firebase)
+        run: |
+          set -euo pipefail
+          node scripts/write-round-results.js | tee "$RUNNER_TEMP/round-results.log"
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          CLOSED_ROUND: ${{ steps.round.outputs.round }}
+
+      - name: Commit results onto this branch
+        env:
+          LOG: ${{ runner.temp }}/round-results.log
+          ROUND: ${{ steps.round.outputs.round }}
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_REF_NAME" = "main" ] || [ "$GITHUB_REF_NAME" = "master" ]; then
+            echo "Refusing to commit round results onto ${GITHUB_REF_NAME}." >&2
+            exit 1
+          fi
+          node << 'JS'
+          const fs = require('fs');
+          const { writeRoundResults, renderRoundResultsMarkdown } = require('./scripts/round-results-utils');
+          const log = fs.readFileSync(process.env.LOG, 'utf8');
+          const begin = '=== ROUND_RESULTS_JSON_BEGIN ===';
+          const end = '=== ROUND_RESULTS_JSON_END ===';
+          const start = log.indexOf(begin);
+          const stop = log.indexOf(end);
+          if (start < 0 || stop < 0 || stop <= start) {
+            console.error('Round results JSON markers not found in the script output.');
+            process.exit(1);
+          }
+          const results = JSON.parse(log.slice(start + begin.length, stop).trim());
+          if (results.round !== process.env.ROUND) {
+            console.error(`Results round ${results.round} does not match requested ${process.env.ROUND}.`);
+            process.exit(1);
+          }
+          const written = writeRoundResults(results);
+          const mdPath = `round-results/${results.round}.md`;
+          fs.writeFileSync(mdPath, renderRoundResultsMarkdown(results));
+          written.push(mdPath);
+          console.log(written.join('\n'));
+          JS
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add round-results/
+          if git diff --staged --quiet; then
+            echo "No round-results changes to commit."
+            exit 0
+          fi
+          git commit -m "chore: round results ${ROUND} [skip ci]"
+          for attempt in 1 2 3; do
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              exit 0
+            fi
+            echo "Push failed (attempt ${attempt}); rebasing on latest ${GITHUB_REF_NAME}..."
+            sleep $((attempt * 5))
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+          done
+          echo "Could not push round results after 3 attempts." >&2
+          exit 1
