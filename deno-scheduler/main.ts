@@ -17,11 +17,19 @@
  *   keep their Cairo times across DST changes with no manual edit.
  *
  * Deploy:
- *   1. Create a project on https://dash.deno.com with this file
- *      (deno-scheduler/main.ts) as the entrypoint.
- *   2. Add an environment variable GITHUB_TOKEN — a fine-grained PAT with the
- *      repository's "Actions" permission set to Read and write (or a classic
- *      PAT with the `workflow` scope).
+ *   Automatic via CI: .github/workflows/deno-scheduler-deploy.yml runs
+ *   deno check + deno test, then `deno deploy --prod` (the new-platform CLI
+ *   built into the Deno runtime) on every push to main touching
+ *   deno-scheduler/**, with manual dispatch. Target comes from repo settings:
+ *   secret DENO_DEPLOY_TOKEN (access token from console.deno.com) and
+ *   variable DENO_DEPLOY_PROJECT (app name or *.deno.net URL), currently the
+ *   app ready-clownfish-28 in org mahmoudmabrok. The app needs env var
+ *   GITHUB_TOKEN — a fine-grained PAT with the repository's "Actions"
+ *   permission set to Read and write (or a classic PAT with the `workflow`
+ *   scope); env vars persist across deploys.
+ *   Note: this repo is also git-linked to a Deno Deploy project "saloaleh"
+ *   (console.deno.com/mahmoudmabrok/saloaleh) that builds on every push —
+ *   keep exactly one of the two as the scheduler's production home.
  *   Deno Deploy auto-detects the Deno.cron job and lists it under the
  *   project's "Cron" tab after the first production deploy.
  *
