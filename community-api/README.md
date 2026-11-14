@@ -58,12 +58,18 @@ The process reads the token from the environment and sends it only as a GitHub
 
 ## 3. Deploy
 
-This task does not deploy the service. From [Deno Deploy](https://dash.deno.com):
+Automatic: `.github/workflows/community-api-deploy.yml` runs `deno check` +
+`deno test`, then `deno deploy --prod` on every push to `main` that changes
+`community-api/` code (README-only edits do not deploy), plus manual dispatch.
+Target comes from repo settings: secret `DENO_DEPLOY_TOKEN` (access token from
+[console.deno.com](https://console.deno.com)) and variable
+`DENO_DEPLOY_PROJECT_COMMUNITY` — the app name or its `*.deno.net` URL,
+currently the app `saloaleh` (`https://saloaleh.mahmoudmabrok.deno.net`).
+The §2 environment variables live in the app's Deno Deploy settings and
+persist across deploys.
 
-1. Create a project from this Git repository.
-2. Set the entrypoint to `community-api/main.ts`.
-3. Add the environment variables above.
-4. Deploy.
+One-time app creation (already done) was from [Deno Deploy](https://console.deno.com):
+entrypoint `community-api/main.ts`.
 
 Local check, without deploying:
 
