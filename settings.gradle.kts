@@ -29,4 +29,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "SaloAleh"
 include(":app")
-include(":dhikr-model")
