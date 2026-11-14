@@ -15,6 +15,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import tools.mo3ta.salo.data.country.CountryCodeProvider
 import tools.mo3ta.salo.data.engagement.ChallengeBadgeStore
+import tools.mo3ta.salo.domain.ChallengeManualCap
 import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.domain.IstighfarLeaderboardEntry
 import tools.mo3ta.salo.data.istighfar.IstighfarChallengeFirebaseClient
@@ -82,7 +83,7 @@ class IstighfarChallengeViewModel(
                     dateKey = today.toString(),
                     todayCount = store.todayCount(today),
                     lifetimeCount = store.lifetimeCount(),
-                    manualRemainingToday = store.manualRemainingToday(today),
+                    manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
                     currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.ISTIGHFAR, today),
                     isLoading = false,
                     errorMessage = null,
@@ -137,7 +138,7 @@ class IstighfarChallengeViewModel(
         if (count <= 0) return
         val today = today()
         val before = store.todayCount(today)
-        val updated = store.addToday(today, count)
+        val updated = store.addToday(today, count, manualCapToday(today))
         maybeRecordWin(today, updated)
         val crossedGoal = before < ISTIGHFAR_CHALLENGE_DAILY_GOAL && updated >= ISTIGHFAR_CHALLENGE_DAILY_GOAL
         val milestone = ISTIGHFAR_CHALLENGE_DAILY_GOAL
@@ -146,7 +147,7 @@ class IstighfarChallengeViewModel(
                 dateKey = today.toString(),
                 todayCount = updated,
                 lifetimeCount = store.lifetimeCount(),
-                manualRemainingToday = store.manualRemainingToday(today),
+                manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
                 showManualIstighfarSheet = false,
                 isSubmittingManualIstighfar = true,
                 errorMessage = null,
@@ -186,7 +187,7 @@ class IstighfarChallengeViewModel(
                 dateKey = today.toString(),
                 todayCount = updated,
                 lifetimeCount = store.lifetimeCount(),
-                manualRemainingToday = store.manualRemainingToday(today),
+                manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
                 showManualIstighfarSheet = false,
                 isSubmittingManualIstighfar = true,
                 errorMessage = null,
@@ -302,7 +303,12 @@ class IstighfarChallengeViewModel(
         if (total >= ISTIGHFAR_CHALLENGE_DAILY_GOAL) {
             challengeBadgeStore.recordWin(ChallengeType.ISTIGHFAR, today)
         }
-        _state.update { it.copy(currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.ISTIGHFAR, today)) }
+        _state.update {
+            it.copy(
+                currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.ISTIGHFAR, today),
+                manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
+            )
+        }
     }
 
     private fun publishLifetimeTotal() {
@@ -311,6 +317,9 @@ class IstighfarChallengeViewModel(
             firebaseClient.writeUserTotal(sessionStore.getOrCreateUid(), store.lifetimeCount())
         }
     }
+
+    private fun manualCapToday(today: LocalDate): Int =
+        ChallengeManualCap.dailyCap(ChallengeType.ISTIGHFAR, challengeBadgeStore.getCurrentStreak(ChallengeType.ISTIGHFAR, today))
 
     private fun today(): LocalDate = Clock.System.todayIn(cairoZone)
 }

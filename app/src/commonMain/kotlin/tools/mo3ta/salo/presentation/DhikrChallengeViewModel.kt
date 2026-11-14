@@ -15,6 +15,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import tools.mo3ta.salo.data.country.CountryCodeProvider
 import tools.mo3ta.salo.data.engagement.ChallengeBadgeStore
+import tools.mo3ta.salo.domain.ChallengeManualCap
 import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.domain.DHIKR_CHALLENGE_DAILY_GOAL
 import tools.mo3ta.salo.domain.DhikrLeaderboardEntry
@@ -84,7 +85,7 @@ class DhikrChallengeViewModel(
                     dateKey = today.toString(),
                     todayCount = store.todayCount(today),
                     lifetimeCount = store.lifetimeCount(),
-                    manualRemainingToday = store.manualRemainingToday(today),
+                    manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
                     currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.DHIKR, today),
                     isLoading = false,
                     errorMessage = null,
@@ -143,7 +144,7 @@ class DhikrChallengeViewModel(
         if (count <= 0) return
         val today = today()
         val before = store.todayCount(today)
-        val updated = store.addToday(today, count)
+        val updated = store.addToday(today, count, manualCapToday(today))
         maybeRecordWin(today, updated)
         val crossedGoal = before < DHIKR_CHALLENGE_DAILY_GOAL && updated >= DHIKR_CHALLENGE_DAILY_GOAL
         val milestone = DHIKR_CHALLENGE_DAILY_GOAL
@@ -152,7 +153,7 @@ class DhikrChallengeViewModel(
                 dateKey = today.toString(),
                 todayCount = updated,
                 lifetimeCount = store.lifetimeCount(),
-                manualRemainingToday = store.manualRemainingToday(today),
+                manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
                 showManualDhikrSheet = false,
                 isSubmittingManualDhikr = true,
                 errorMessage = null,
@@ -193,7 +194,7 @@ class DhikrChallengeViewModel(
                 dateKey = today.toString(),
                 todayCount = updated,
                 lifetimeCount = store.lifetimeCount(),
-                manualRemainingToday = store.manualRemainingToday(today),
+                manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
                 showManualDhikrSheet = false,
                 isSubmittingManualDhikr = true,
                 errorMessage = null,
@@ -313,7 +314,12 @@ class DhikrChallengeViewModel(
         if (total >= DHIKR_CHALLENGE_DAILY_GOAL) {
             challengeBadgeStore.recordWin(ChallengeType.DHIKR, today)
         }
-        _state.update { it.copy(currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.DHIKR, today)) }
+        _state.update {
+            it.copy(
+                currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.DHIKR, today),
+                manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
+            )
+        }
     }
 
     /**
@@ -327,6 +333,9 @@ class DhikrChallengeViewModel(
             firebaseClient.writeUserTotal(sessionStore.getOrCreateUid(), store.lifetimeCount())
         }
     }
+
+    private fun manualCapToday(today: LocalDate): Int =
+        ChallengeManualCap.dailyCap(ChallengeType.DHIKR, challengeBadgeStore.getCurrentStreak(ChallengeType.DHIKR, today))
 
     private fun today(): LocalDate = Clock.System.todayIn(cairoZone)
 }

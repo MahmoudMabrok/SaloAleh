@@ -15,6 +15,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import tools.mo3ta.salo.data.country.CountryCodeProvider
 import tools.mo3ta.salo.data.engagement.ChallengeBadgeStore
+import tools.mo3ta.salo.domain.ChallengeManualCap
 import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.domain.ZabadLeaderboardEntry
 import tools.mo3ta.salo.data.zabad.ZabadChallengeFirebaseClient
@@ -80,7 +81,7 @@ class ZabadChallengeViewModel(
                     dateKey = today.toString(),
                     todayCount = store.todayCount(today),
                     lifetimeCount = store.lifetimeCount(),
-                    manualRemainingToday = store.manualRemainingToday(today),
+                    manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
                     currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.ZABAD, today),
                     isLoading = false,
                     errorMessage = null,
@@ -136,7 +137,7 @@ class ZabadChallengeViewModel(
         if (count <= 0) return
         val today = today()
         val before = store.todayCount(today)
-        val updated = store.addToday(today, count)
+        val updated = store.addToday(today, count, manualCapToday(today))
         maybeRecordWin(today, updated)
         val completedRound = updated / ZABAD_CHALLENGE_DAILY_GOAL > before / ZABAD_CHALLENGE_DAILY_GOAL
         val crossedGoal = before < ZABAD_CHALLENGE_DAILY_GOAL && updated >= ZABAD_CHALLENGE_DAILY_GOAL
@@ -151,7 +152,7 @@ class ZabadChallengeViewModel(
                 dateKey = today.toString(),
                 todayCount = updated,
                 lifetimeCount = store.lifetimeCount(),
-                manualRemainingToday = store.manualRemainingToday(today),
+                manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
                 showManualZabadSheet = false,
                 isSubmittingManualZabad = true,
                 errorMessage = null,
@@ -194,7 +195,7 @@ class ZabadChallengeViewModel(
                 dateKey = today.toString(),
                 todayCount = updated,
                 lifetimeCount = store.lifetimeCount(),
-                manualRemainingToday = store.manualRemainingToday(today),
+                manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
                 showManualZabadSheet = false,
                 isSubmittingManualZabad = true,
                 errorMessage = null,
@@ -319,7 +320,12 @@ class ZabadChallengeViewModel(
         if (total >= ZABAD_CHALLENGE_DAILY_GOAL) {
             challengeBadgeStore.recordWin(ChallengeType.ZABAD, today)
         }
-        _state.update { it.copy(currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.ZABAD, today)) }
+        _state.update {
+            it.copy(
+                currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.ZABAD, today),
+                manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
+            )
+        }
     }
 
     private fun publishLifetimeTotal() {
@@ -328,6 +334,9 @@ class ZabadChallengeViewModel(
             firebaseClient.writeUserTotal(sessionStore.getOrCreateUid(), store.lifetimeCount())
         }
     }
+
+    private fun manualCapToday(today: LocalDate): Int =
+        ChallengeManualCap.dailyCap(ChallengeType.ZABAD, challengeBadgeStore.getCurrentStreak(ChallengeType.ZABAD, today))
 
     private fun today(): LocalDate = Clock.System.todayIn(cairoZone)
 }

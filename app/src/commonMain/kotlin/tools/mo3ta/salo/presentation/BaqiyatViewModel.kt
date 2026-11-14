@@ -24,6 +24,7 @@ import tools.mo3ta.salo.data.engagement.ChallengeBadgeStore
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
 import tools.mo3ta.salo.domain.BAQIYAT_CHALLENGE_DAILY_GOAL
 import tools.mo3ta.salo.domain.BaqiyatLeaderboardEntry
+import tools.mo3ta.salo.domain.ChallengeManualCap
 import tools.mo3ta.salo.domain.ChallengeType
 
 class BaqiyatViewModel(
@@ -88,7 +89,7 @@ class BaqiyatViewModel(
                     dateKey = today.toString(),
                     cyclesCompleted = store.todayCount(today),
                     lifetimeCount = store.lifetimeCount(),
-                    manualRemainingToday = store.manualRemainingToday(today),
+                    manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
                     currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.BAQIYAT, today),
                     isLoading = false,
                     errorMessage = null,
@@ -138,7 +139,7 @@ class BaqiyatViewModel(
         if (count <= 0) return
         val today = today()
         val before = store.todayCount(today)
-        val updated = store.addToday(today, count)
+        val updated = store.addToday(today, count, manualCapToday(today))
         maybeRecordWin(today, updated)
         _cycleSerial.update { it + 1 }
         val crossedGoal = before < BAQIYAT_CHALLENGE_DAILY_GOAL && updated >= BAQIYAT_CHALLENGE_DAILY_GOAL
@@ -147,7 +148,7 @@ class BaqiyatViewModel(
                 dateKey = today.toString(),
                 cyclesCompleted = updated,
                 lifetimeCount = store.lifetimeCount(),
-                manualRemainingToday = store.manualRemainingToday(today),
+                manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
                 showManualBaqiyatSheet = false,
                 isSubmittingManualBaqiyat = true,
                 errorMessage = null,
@@ -168,7 +169,7 @@ class BaqiyatViewModel(
                 dateKey = today.toString(),
                 cyclesCompleted = updated,
                 lifetimeCount = store.lifetimeCount(),
-                manualRemainingToday = store.manualRemainingToday(today),
+                manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
                 showManualBaqiyatSheet = false,
                 isSubmittingManualBaqiyat = true,
                 errorMessage = null,
@@ -281,7 +282,12 @@ class BaqiyatViewModel(
         if (cycles >= BAQIYAT_CHALLENGE_DAILY_GOAL) {
             challengeBadgeStore.recordWin(ChallengeType.BAQIYAT, today)
         }
-        _state.update { it.copy(currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.BAQIYAT, today)) }
+        _state.update {
+            it.copy(
+                currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.BAQIYAT, today),
+                manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
+            )
+        }
     }
 
     private fun publishLifetimeTotal() {
@@ -290,6 +296,9 @@ class BaqiyatViewModel(
             firebaseClient.writeUserTotal(sessionStore.getOrCreateUid(), store.lifetimeCount())
         }
     }
+
+    private fun manualCapToday(today: LocalDate): Int =
+        ChallengeManualCap.dailyCap(ChallengeType.BAQIYAT, challengeBadgeStore.getCurrentStreak(ChallengeType.BAQIYAT, today))
 
     private fun today(): LocalDate = Clock.System.todayIn(cairoZone)
 }

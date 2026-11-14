@@ -18,6 +18,7 @@ import tools.mo3ta.salo.data.engagement.ChallengeBadgeStore
 import tools.mo3ta.salo.data.hawqala.HawqalaChallengeFirebaseClient
 import tools.mo3ta.salo.data.hawqala.HawqalaChallengeStore
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
+import tools.mo3ta.salo.domain.ChallengeManualCap
 import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.domain.HAWQALA_CHALLENGE_DAILY_GOAL
 import tools.mo3ta.salo.domain.HawqalaLeaderboardEntry
@@ -99,7 +100,7 @@ class HawqalaChallengeViewModel(
             _state.update {
                 it.copy(
                     dateKey = today.toString(),
-                    manualRemainingToday = store.manualRemainingToday(today),
+                    manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
                     currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.HAWQALA, today),
                     isLoading = false,
                     errorMessage = null,
@@ -153,7 +154,7 @@ class HawqalaChallengeViewModel(
         if (count <= 0) return
         val today = today()
         val before = store.todayCount(today)
-        val updated = store.addToday(today, count)
+        val updated = store.addToday(today, count, manualCapToday(today))
         _todayCount.value = updated
         _lifetimeCount.value = store.lifetimeCount()
         maybeRecordWin(today, updated)
@@ -162,7 +163,7 @@ class HawqalaChallengeViewModel(
         _state.update {
             it.copy(
                 dateKey = today.toString(),
-                manualRemainingToday = store.manualRemainingToday(today),
+                manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
                 showManualSheet = false,
                 isSubmittingManual = true,
                 errorMessage = null,
@@ -183,7 +184,7 @@ class HawqalaChallengeViewModel(
         _state.update {
             it.copy(
                 dateKey = today.toString(),
-                manualRemainingToday = store.manualRemainingToday(today),
+                manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
                 showManualSheet = false,
                 isSubmittingManual = true,
                 errorMessage = null,
@@ -305,7 +306,12 @@ class HawqalaChallengeViewModel(
         }
         val streak = challengeBadgeStore.getCurrentStreak(ChallengeType.HAWQALA, today)
         if (streak != _state.value.currentStreak) {
-            _state.update { it.copy(currentStreak = streak) }
+            _state.update {
+                it.copy(
+                    currentStreak = streak,
+                    manualRemainingToday = store.manualRemainingToday(today, ChallengeManualCap.dailyCap(ChallengeType.HAWQALA, streak)),
+                )
+            }
         }
     }
 
@@ -320,6 +326,9 @@ class HawqalaChallengeViewModel(
             firebaseClient.writeUserTotal(sessionStore.getOrCreateUid(), store.lifetimeCount())
         }
     }
+
+    private fun manualCapToday(today: LocalDate): Int =
+        ChallengeManualCap.dailyCap(ChallengeType.HAWQALA, challengeBadgeStore.getCurrentStreak(ChallengeType.HAWQALA, today))
 
     private fun today(): LocalDate = Clock.System.todayIn(cairoZone)
 }
