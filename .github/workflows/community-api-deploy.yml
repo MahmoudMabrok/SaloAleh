@@ -61,13 +61,14 @@ jobs:
           fi
 
       - name: Deploy
-        working-directory: community-api
         env:
           DENO_DEPLOY_TOKEN: ${{ secrets.DENO_DEPLOY_TOKEN }}
           DENO_DEPLOY_PROJECT_COMMUNITY: ${{ vars.DENO_DEPLOY_PROJECT_COMMUNITY }}
-        # Same CLI/CI mode as deno-scheduler-deploy.yml. The whole directory
-        # is uploaded (main.ts imports github.ts, rate_limit.ts, server.ts);
-        # *_test.ts files in the bundle are never executed by the service.
+        # Same CLI/CI mode as deno-scheduler-deploy.yml. The saloaleh app's
+        # entrypoint is configured repo-relative ("community-api/main.ts" —
+        # same path its git-integration builds use), so stage a minimal
+        # upload tree that keeps that path instead of uploading the whole
+        # repo. *_test.ts files ride along inert; the service never runs them.
         run: |
           # Accept a plain app name or the full *.deno.net URL.
           if [[ "$DENO_DEPLOY_PROJECT_COMMUNITY" == http* ]]; then
@@ -78,5 +79,8 @@ jobs:
             APP=$DENO_DEPLOY_PROJECT_COMMUNITY
             ORG=mahmoudmabrok
           fi
+          mkdir -p "$RUNNER_TEMP/upload/community-api"
+          cp -R community-api/. "$RUNNER_TEMP/upload/community-api/"
+          cd "$RUNNER_TEMP/upload"
           echo "Deploying community-api to app '$APP' in org '$ORG'"
           deno deploy --json --non-interactive --org "$ORG" --app "$APP" --prod .
