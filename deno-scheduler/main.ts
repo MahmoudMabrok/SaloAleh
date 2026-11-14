@@ -116,11 +116,14 @@ function slot(
   description: string,
   weekdays?: number[],
 ): CairoSlot {
-  // Every Cairo hour used here is >= 3, so UTC = Cairo-2/-3 stays on the same
-  // calendar day and the cron weekday field matches the Cairo weekday.
-  const dow = weekdays ? weekdays.join(",") : "*";
+  // Do not put the weekday in the cron expression. Deno.cron uses Quartz
+  // numbering (Sunday = 1 … Saturday = 7), so JS/POSIX Friday (5) is Thursday
+  // and the job never runs on Friday (denoland/deno#21555). Day names are not
+  // used either: the daily jobs that actually fire on Deno Deploy are the ones
+  // registered with `*`. isDueInCairo is the weekday gate, and it reads the
+  // Africa/Cairo clock (Intl, Sunday = 0).
   return {
-    cron: `${minute} ${utcCandidateHours(cairoHours).join(",")} * * ${dow}`,
+    cron: `${minute} ${utcCandidateHours(cairoHours).join(",")} * * *`,
     cairoHours,
     weekdays,
     description,
