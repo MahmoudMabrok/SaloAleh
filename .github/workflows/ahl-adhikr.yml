@@ -1,0 +1,87 @@
+name: Ahl Adhikr Snapshot
+
+# Builds the daily أهل الذكر snapshot from Firebase RTDB and commits it to main:
+#   ahl-adhikr/{date}.json + ahl-adhikr/latest.json
+# The push triggers "Deploy GitHub Pages" (paths: '**.json'), which serves it at
+# https://mahmoudmabrok.github.io/SaloAleh/ahl-adhikr/latest.json for the app.
+#
+# Scheduled at both UTC hours that can be 22:30 Cairo (DST) — the script gates on
+# the real Cairo clock and skips the wrong firing. It must run before generate-stats
+# (23:45 Cairo) deletes the per-challenge day nodes it reads from.
+#
+# Read-only on RTDB except the small server-owned salawat streak ledger
+# (ahl_adhikr_state/salawat), which only this script maintains.
+on:
+  schedule:
+    - cron: '30 19,20 * * *'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Cairo date to snapshot (YYYY-MM-DD). Defaults to today. Bypasses the 22:30 gate.'
+        required: false
+        type: string
+      dry_run:
+        description: 'Build and validate only — no files, no ledger update, no commit.'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ahl-adhikr
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    name: Generate snapshot
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install firebase-admin
+        run: npm install firebase-admin
+        working-directory: scripts
+
+      - name: Generate snapshot
+        id: generate
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          ARGS=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          if [ -n "${{ inputs.date }}" ]; then ARGS="$ARGS --date ${{ inputs.date }}"; fi
+          node scripts/generate-ahl-adhikr.js $ARGS | tee "$RUNNER_TEMP/ahl-adhikr.log"
+
+      - name: Commit snapshot to main
+        if: inputs.dry_run != true
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- ahl-adhikr
+          if git diff --cached --quiet; then
+            echo "No snapshot changes."
+            exit 0
+          fi
+          git commit -m "chore: ahl-adhikr snapshot $(date -u +%F)"
+          # The stats bot and other scheduled jobs also commit to main, so rebase and
+          # retry the push instead of failing on a non-fast-forward.
+          for attempt in 1 2 3; do
+            git pull --rebase --autostash origin main
+            if git push origin HEAD:main; then
+              echo "Pushed snapshot (attempt $attempt)."
+              exit 0
+            fi
+            echo "Push failed (attempt $attempt/3); retrying."
+            sleep $((attempt * 5))
+          done
+          echo "Failed to push the snapshot after 3 attempts." >&2
+          exit 1
