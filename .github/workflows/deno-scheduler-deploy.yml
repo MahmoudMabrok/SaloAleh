@@ -1,7 +1,9 @@
 name: Deploy Deno Scheduler
 
 # Auto-deploys deno-scheduler/ to Deno Deploy (new platform, console.deno.com)
-# on every push to main that touches the scheduler. Tests gate the deploy.
+# on every push to main that changes deno-scheduler/main.ts — the scheduler is
+# a single-file service (see its header), so main.ts is its whole surface.
+# Tests gate the deploy.
 # Owner setup (already done):
 #   - Secret DENO_DEPLOY_TOKEN — access token from console.deno.com
 #   - Variable DENO_DEPLOY_PROJECT — the app name or its *.deno.net URL,
@@ -13,8 +15,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'deno-scheduler/**'
-      - '.github/workflows/deno-scheduler-deploy.yml'
+      - 'deno-scheduler/main.ts'
   workflow_dispatch:
 
 permissions:
