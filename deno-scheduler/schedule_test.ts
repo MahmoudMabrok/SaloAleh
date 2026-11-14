@@ -22,12 +22,17 @@ Deno.test("cairoClock uses +2 in winter and +3 in summer", () => {
 });
 
 Deno.test("cron expressions", () => {
-  assertEquals(SLOTS.aggregate.cron, "10 14,15 * * 5");
+  // Weekday stays out of the expression. Deno.cron's 5 is Thursday (Quartz),
+  // which is why the Friday aggregate never dispatched on 2026-11-13.
+  assertEquals(SLOTS.aggregate.cron, "10 14,15 * * *");
   assertEquals(SLOTS["update-stats"].cron, "45 20,21 * * *");
   assertEquals(SLOTS["notify-morning"].cron, "0 6,7 * * *");
   assertEquals(SLOTS["notify-evening"].cron, "0 16,17 * * *");
-  assertEquals(SLOTS["notify-friday"].cron, "0 6,7,8,9,10,11,12,13,14,15 * * 5");
+  assertEquals(SLOTS["notify-friday"].cron, "0 6,7,8,9,10,11,12,13,14,15 * * *");
   assertEquals(utcCandidateHours([1]), [22, 23]);
+  for (const slot of Object.values(SLOTS)) {
+    assertEquals(slot.cron.endsWith("* * *"), true, slot.cron);
+  }
 });
 
 Deno.test("aggregate dispatches exactly once per Friday, winter and summer", () => {
