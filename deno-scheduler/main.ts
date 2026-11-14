@@ -19,17 +19,18 @@
  * Deploy:
  *   Automatic via CI: .github/workflows/deno-scheduler-deploy.yml runs
  *   deno check + deno test, then `deno deploy --prod` (the new-platform CLI
- *   built into the Deno runtime) on every push to main touching
- *   deno-scheduler/**, with manual dispatch. Target comes from repo settings:
+ *   built into the Deno runtime) on every push to main that changes
+ *   deno-scheduler/main.ts, with manual dispatch. Target comes from repo settings:
  *   secret DENO_DEPLOY_TOKEN (access token from console.deno.com) and
  *   variable DENO_DEPLOY_PROJECT (app name or *.deno.net URL), currently the
  *   app ready-clownfish-28 in org mahmoudmabrok. The app needs env var
  *   GITHUB_TOKEN — a fine-grained PAT with the repository's "Actions"
  *   permission set to Read and write (or a classic PAT with the `workflow`
  *   scope); env vars persist across deploys.
- *   Note: this repo is also git-linked to a Deno Deploy project "saloaleh"
- *   (console.deno.com/mahmoudmabrok/saloaleh) that builds on every push —
- *   keep exactly one of the two as the scheduler's production home.
+ *   Note: the repo's other Deno Deploy app "saloaleh" serves the community
+ *   API (community-api/main.ts, deployed by community-api-deploy.yml) — it
+ *   never deploys the scheduler, so the app above is the scheduler's only
+ *   production home.
  *   Deno Deploy auto-detects the Deno.cron job and lists it under the
  *   project's "Cron" tab after the first production deploy.
  *
