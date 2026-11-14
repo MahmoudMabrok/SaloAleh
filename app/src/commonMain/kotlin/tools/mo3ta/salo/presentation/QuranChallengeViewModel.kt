@@ -15,6 +15,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import tools.mo3ta.salo.data.country.CountryCodeProvider
 import tools.mo3ta.salo.data.engagement.ChallengeBadgeStore
+import tools.mo3ta.salo.domain.ChallengeManualCap
 import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.domain.QuranLeaderboardEntry
 import tools.mo3ta.salo.data.quran.QuranChallengeFirebaseClient
@@ -82,7 +83,7 @@ class QuranChallengeViewModel(
                     dateKey = today.toString(),
                     todayCount = store.todayCount(today),
                     lifetimeCount = store.lifetimeCount(),
-                    manualRemainingToday = store.manualRemainingToday(today),
+                    manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
                     currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.QURAN, today),
                     isLoading = false,
                     errorMessage = null,
@@ -155,7 +156,7 @@ class QuranChallengeViewModel(
         if (count <= 0) return
         val today = today()
         val before = store.todayCount(today)
-        val updated = store.addToday(today, count)
+        val updated = store.addToday(today, count, manualCapToday(today))
         maybeRecordWin(today, updated)
         val crossedMilestone = before < QURAN_CHALLENGE_DAILY_GOAL && updated >= QURAN_CHALLENGE_DAILY_GOAL
         val milestone = QURAN_CHALLENGE_DAILY_GOAL
@@ -164,7 +165,7 @@ class QuranChallengeViewModel(
                 dateKey = today.toString(),
                 todayCount = updated,
                 lifetimeCount = store.lifetimeCount(),
-                manualRemainingToday = store.manualRemainingToday(today),
+                manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
                 showManualQuranSheet = false,
                 isSubmittingManualQuran = true,
                 errorMessage = null,
@@ -205,7 +206,7 @@ class QuranChallengeViewModel(
                 dateKey = today.toString(),
                 todayCount = updated,
                 lifetimeCount = store.lifetimeCount(),
-                manualRemainingToday = store.manualRemainingToday(today),
+                manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
                 showManualQuranSheet = false,
                 isSubmittingManualQuran = true,
                 errorMessage = null,
@@ -321,7 +322,12 @@ class QuranChallengeViewModel(
         if (total >= QURAN_CHALLENGE_DAILY_GOAL) {
             challengeBadgeStore.recordWin(ChallengeType.QURAN, today)
         }
-        _state.update { it.copy(currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.QURAN, today)) }
+        _state.update {
+            it.copy(
+                currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.QURAN, today),
+                manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
+            )
+        }
     }
 
     /**
@@ -335,6 +341,9 @@ class QuranChallengeViewModel(
             firebaseClient.writeUserTotal(sessionStore.getOrCreateUid(), store.lifetimeCount())
         }
     }
+
+    private fun manualCapToday(today: LocalDate): Int =
+        ChallengeManualCap.dailyCap(ChallengeType.QURAN, challengeBadgeStore.getCurrentStreak(ChallengeType.QURAN, today))
 
     private fun today(): LocalDate = Clock.System.todayIn(cairoZone)
 }

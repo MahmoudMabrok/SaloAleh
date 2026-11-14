@@ -54,6 +54,9 @@ jobs:
           cp community/review.html _site/experiences-review.html
           cp stats.json _site/stats.json
           cp -r stats _site/stats
+          # Daily أهل الذكر snapshot, written by "Ahl Adhikr Snapshot" and served
+          # at /ahl-adhikr/latest.json for the app.
+          if [ -d ahl-adhikr ]; then cp -r ahl-adhikr _site/ahl-adhikr; fi
 
       # Recording needs a top-level page: the Apps Script web app is always
       # rendered inside a sandbox iframe that withholds the microphone

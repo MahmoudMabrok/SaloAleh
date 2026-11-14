@@ -51,7 +51,7 @@
               ".validate": "newData.isString() && newData.val() === $uid"
             },
             "count": {
-              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2000"
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
             },
             "streak": {
               ".read": true,
@@ -469,7 +469,7 @@
 
             "count": {
               ".read": true,
-              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
             },
             "streak": {
               ".read": true,

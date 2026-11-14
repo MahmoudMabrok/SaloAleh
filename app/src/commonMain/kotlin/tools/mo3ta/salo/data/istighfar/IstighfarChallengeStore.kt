@@ -47,11 +47,11 @@ class IstighfarChallengeStore(private val settings: Settings) {
      * [CHALLENGE_MANUAL_DAILY_CAP] for the day. Regular taps ([incrementToday]) are not counted
      * against this cap.
      */
-    fun addToday(today: LocalDate, count: Int): Int {
+    fun addToday(today: LocalDate, count: Int, dailyCap: Int = CHALLENGE_MANUAL_DAILY_CAP): Int {
         ensureToday(today)
         if (count > 0) {
             val usedManual = settings.getInt(KEY_MANUAL, 0)
-            val applied = count.coerceAtMost((CHALLENGE_MANUAL_DAILY_CAP - usedManual).coerceAtLeast(0))
+            val applied = count.coerceAtMost((dailyCap - usedManual).coerceAtLeast(0))
             if (applied > 0) {
                 settings.putInt(KEY_PENDING, settings.getInt(KEY_PENDING, 0) + applied)
                 settings.putInt(KEY_MANUAL, usedManual + applied)
@@ -86,9 +86,9 @@ class IstighfarChallengeStore(private val settings: Settings) {
     }
 
     /** How much more may still be added via manual entry today (cap minus what's used). */
-    fun manualRemainingToday(today: LocalDate): Int {
-        if (settings.getStringOrNull(KEY_DATE) != today.toString()) return CHALLENGE_MANUAL_DAILY_CAP
-        return (CHALLENGE_MANUAL_DAILY_CAP - settings.getInt(KEY_MANUAL, 0)).coerceAtLeast(0)
+    fun manualRemainingToday(today: LocalDate, dailyCap: Int = CHALLENGE_MANUAL_DAILY_CAP): Int {
+        if (settings.getStringOrNull(KEY_DATE) != today.toString()) return dailyCap
+        return (dailyCap - settings.getInt(KEY_MANUAL, 0)).coerceAtLeast(0)
     }
 
     /**

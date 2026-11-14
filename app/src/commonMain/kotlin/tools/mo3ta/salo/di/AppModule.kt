@@ -41,6 +41,9 @@ import tools.mo3ta.salo.data.heart.HeartStore
 import tools.mo3ta.salo.data.language.LanguageStore
 import tools.mo3ta.salo.data.salawat.SalawatVariantStore
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
+import tools.mo3ta.salo.data.ahladhikr.AhlAdhikrRemoteDataSource
+import tools.mo3ta.salo.data.ahladhikr.AhlAdhikrRepository
+import tools.mo3ta.salo.data.ahladhikr.AhlAdhikrStore
 import tools.mo3ta.salo.data.community.CommunityExperiences
 import tools.mo3ta.salo.data.community.ExperiencesIntroStore
 import tools.mo3ta.salo.data.community.ExperiencesApiOrigin
@@ -79,6 +82,7 @@ import tools.mo3ta.salo.presentation.AlfHasanaChallengeViewModel
 import tools.mo3ta.salo.presentation.KalimatChallengeViewModel
 import tools.mo3ta.salo.presentation.HawqalaChallengeViewModel
 import tools.mo3ta.salo.presentation.ExperiencesViewModel
+import tools.mo3ta.salo.presentation.AhlAdhikrViewModel
 import tools.mo3ta.salo.presentation.HadithListViewModel
 import tools.mo3ta.salo.presentation.MohamedLoversViewModel
 import tools.mo3ta.salo.presentation.TakbeerSessionViewModel
@@ -157,6 +161,9 @@ val appModule = module {
     }
     single<CommunityExperiences> { ExperiencesRepository(get(), get()) }
     single { HadithListRepository(get()) }
+    single { AhlAdhikrStore(get()) }
+    single { AhlAdhikrRemoteDataSource(get()) }
+    single { AhlAdhikrRepository(get(), get()) }
     viewModel { MohamedLoversViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { DhikrChallengeViewModel(get(), get(), get(), get(), get()) }
     viewModel { IstighfarChallengeViewModel(get(), get(), get(), get(), get()) }
@@ -176,6 +183,7 @@ val appModule = module {
         )
     }
     viewModel { HadithListViewModel(get()) }
+    viewModel { AhlAdhikrViewModel(get()) }
     viewModel { ExperiencesViewModel(get()) }
     single { TenDaysStore(get()) }
     single { TenDaysFirebaseClient(get(), get(), get()) }

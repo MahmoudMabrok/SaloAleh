@@ -18,6 +18,7 @@ import tools.mo3ta.salo.data.engagement.ChallengeBadgeStore
 import tools.mo3ta.salo.data.ghars.GharsChallengeFirebaseClient
 import tools.mo3ta.salo.data.ghars.GharsChallengeStore
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
+import tools.mo3ta.salo.domain.ChallengeManualCap
 import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.domain.GHARS_CHALLENGE_DAILY_GOAL
 import tools.mo3ta.salo.domain.GHARS_GROVE_SIZE
@@ -87,7 +88,7 @@ class GharsChallengeViewModel(
                     todayCount = local,
                     completedGroves = local / GHARS_GROVE_SIZE,
                     lifetimePalms = store.lifetimeCount(),
-                    manualRemainingToday = store.manualRemainingToday(today),
+                    manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
                     isLoading = false,
                     errorMessage = null,
                 )
@@ -164,7 +165,7 @@ class GharsChallengeViewModel(
         if (count <= 0) return
         val today = today()
         val before = store.todayCount(today)
-        val updated = store.addToday(today, count)
+        val updated = store.addToday(today, count, manualCapToday(today))
         maybeRecordWin(today, updated)
         val crossedGrove = updated / GHARS_GROVE_SIZE > before / GHARS_GROVE_SIZE
         _state.update {
@@ -173,7 +174,7 @@ class GharsChallengeViewModel(
                 todayCount = updated,
                 completedGroves = updated / GHARS_GROVE_SIZE,
                 lifetimePalms = store.lifetimeCount(),
-                manualRemainingToday = store.manualRemainingToday(today),
+                manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
                 showManualGharsSheet = false,
                 isSubmittingManualGhars = true,
                 errorMessage = null,
@@ -214,7 +215,7 @@ class GharsChallengeViewModel(
                 dateKey = today.toString(),
                 todayCount = updated,
                 completedGroves = updated / GHARS_GROVE_SIZE,
-                manualRemainingToday = store.manualRemainingToday(today),
+                manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
                 showManualGharsSheet = false,
                 isSubmittingManualGhars = true,
                 errorMessage = null,
@@ -320,6 +321,10 @@ class GharsChallengeViewModel(
         if (total >= GHARS_CHALLENGE_DAILY_GOAL) {
             challengeBadgeStore.recordWin(ChallengeType.GHARS, today)
         }
+        val remaining = store.manualRemainingToday(today, manualCapToday(today))
+        if (remaining != _state.value.manualRemainingToday) {
+            _state.update { it.copy(manualRemainingToday = remaining) }
+        }
     }
 
     /**
@@ -333,6 +338,9 @@ class GharsChallengeViewModel(
             firebaseClient.writeUserTotal(sessionStore.getOrCreateUid(), store.lifetimeCount())
         }
     }
+
+    private fun manualCapToday(today: LocalDate): Int =
+        ChallengeManualCap.dailyCap(ChallengeType.GHARS, challengeBadgeStore.getCurrentStreak(ChallengeType.GHARS, today))
 
     private fun today(): LocalDate = Clock.System.todayIn(cairoZone)
 }

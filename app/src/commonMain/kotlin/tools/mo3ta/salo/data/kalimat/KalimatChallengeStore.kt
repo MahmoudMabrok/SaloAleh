@@ -39,11 +39,11 @@ class KalimatChallengeStore(private val settings: Settings) {
     }
 
     /** Add [count] pending taps at once (manual entry), clamped to the daily manual cap. */
-    fun addToday(today: LocalDate, count: Int): Int {
+    fun addToday(today: LocalDate, count: Int, dailyCap: Int = CHALLENGE_MANUAL_DAILY_CAP): Int {
         ensureToday(today)
         if (count > 0) {
             val usedManual = settings.getInt(KEY_MANUAL, 0)
-            val applied = count.coerceAtMost((CHALLENGE_MANUAL_DAILY_CAP - usedManual).coerceAtLeast(0))
+            val applied = count.coerceAtMost((dailyCap - usedManual).coerceAtLeast(0))
             if (applied > 0) {
                 settings.putInt(KEY_PENDING, settings.getInt(KEY_PENDING, 0) + applied)
                 settings.putInt(KEY_MANUAL, usedManual + applied)
@@ -67,9 +67,9 @@ class KalimatChallengeStore(private val settings: Settings) {
         return publishWeekly(today, settings.getInt(KEY_REMOTE, 0) + settings.getInt(KEY_PENDING, 0))
     }
 
-    fun manualRemainingToday(today: LocalDate): Int {
-        if (settings.getStringOrNull(KEY_DATE) != today.toString()) return CHALLENGE_MANUAL_DAILY_CAP
-        return (CHALLENGE_MANUAL_DAILY_CAP - settings.getInt(KEY_MANUAL, 0)).coerceAtLeast(0)
+    fun manualRemainingToday(today: LocalDate, dailyCap: Int = CHALLENGE_MANUAL_DAILY_CAP): Int {
+        if (settings.getStringOrNull(KEY_DATE) != today.toString()) return dailyCap
+        return (dailyCap - settings.getInt(KEY_MANUAL, 0)).coerceAtLeast(0)
     }
 
     /** Advance the remote baseline after a Firebase read. Only advances — never reduces. */

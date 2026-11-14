@@ -528,6 +528,9 @@ async function readChallengeRankedUsers(db, rootPath, dateKey) {
         count: data.count,
         countryCode: typeof metadata.countryCode === 'string' ? metadata.countryCode.toUpperCase() : '',
         nickname: typeof metadata.nickname === 'string' ? metadata.nickname.trim() : '',
+        // The client writes the continuous daily streak as a sibling of `count` on the day
+        // node (nested challenges keep identity under `data`, but the streak is top-level).
+        streak: typeof data.streak === 'number' && data.streak > 0 ? data.streak : 0,
       });
     });
   }

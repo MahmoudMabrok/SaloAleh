@@ -18,6 +18,7 @@ import tools.mo3ta.salo.data.engagement.ChallengeBadgeStore
 import tools.mo3ta.salo.data.kalimat.KalimatChallengeFirebaseClient
 import tools.mo3ta.salo.data.kalimat.KalimatChallengeStore
 import tools.mo3ta.salo.data.session.MohamedLoversSessionStore
+import tools.mo3ta.salo.domain.ChallengeManualCap
 import tools.mo3ta.salo.domain.ChallengeType
 import tools.mo3ta.salo.domain.KALIMAT_CHALLENGE_DAILY_GOAL
 import tools.mo3ta.salo.domain.KalimatLeaderboardEntry
@@ -103,7 +104,7 @@ class KalimatChallengeViewModel(
             _state.update {
                 it.copy(
                     dateKey = today.toString(),
-                    manualRemainingToday = store.manualRemainingToday(today),
+                    manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
                     currentStreak = challengeBadgeStore.getCurrentStreak(ChallengeType.KALIMAT, today),
                     isLoading = false,
                     errorMessage = null,
@@ -156,7 +157,7 @@ class KalimatChallengeViewModel(
         if (count <= 0) return
         val today = today()
         val before = store.todayCount(today)
-        val updated = store.addToday(today, count)
+        val updated = store.addToday(today, count, manualCapToday(today))
         _todayCount.value = updated
         _tasbihSerial.update { it + 1 }
         maybeRecordWin(today, updated)
@@ -165,7 +166,7 @@ class KalimatChallengeViewModel(
         _state.update {
             it.copy(
                 dateKey = today.toString(),
-                manualRemainingToday = store.manualRemainingToday(today),
+                manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
                 showManualSheet = false,
                 isSubmittingManual = true,
                 errorMessage = null,
@@ -185,7 +186,7 @@ class KalimatChallengeViewModel(
         _state.update {
             it.copy(
                 dateKey = today.toString(),
-                manualRemainingToday = store.manualRemainingToday(today),
+                manualRemainingToday = store.manualRemainingToday(today, manualCapToday(today)),
                 showManualSheet = false,
                 isSubmittingManual = true,
                 errorMessage = null,
@@ -306,9 +307,17 @@ class KalimatChallengeViewModel(
         }
         val streak = challengeBadgeStore.getCurrentStreak(ChallengeType.KALIMAT, today)
         if (streak != _state.value.currentStreak) {
-            _state.update { it.copy(currentStreak = streak) }
+            _state.update {
+                it.copy(
+                    currentStreak = streak,
+                    manualRemainingToday = store.manualRemainingToday(today, ChallengeManualCap.dailyCap(ChallengeType.KALIMAT, streak)),
+                )
+            }
         }
     }
+
+    private fun manualCapToday(today: LocalDate): Int =
+        ChallengeManualCap.dailyCap(ChallengeType.KALIMAT, challengeBadgeStore.getCurrentStreak(ChallengeType.KALIMAT, today))
 
     private fun today(): LocalDate = Clock.System.todayIn(cairoZone)
 }

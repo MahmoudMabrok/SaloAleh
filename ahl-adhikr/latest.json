@@ -1,0 +1,57 @@
+{
+  "generatedAt": "1970-01-01T12:00:00Z",
+  "date": "1970-01-01",
+  "source": "firebase-rtdb",
+  "challenges": {
+    "dhikr": {
+      "30_days": [],
+      "60_days": [],
+      "90_days": []
+    },
+    "baqiyat": {
+      "30_days": [],
+      "60_days": [],
+      "90_days": []
+    },
+    "istighfar": {
+      "30_days": [],
+      "60_days": [],
+      "90_days": []
+    },
+    "zabad": {
+      "30_days": [],
+      "60_days": [],
+      "90_days": []
+    },
+    "quran": {
+      "30_days": [],
+      "60_days": [],
+      "90_days": []
+    },
+    "ghars": {
+      "30_days": [],
+      "60_days": [],
+      "90_days": []
+    },
+    "alf_hasana": {
+      "30_days": [],
+      "60_days": [],
+      "90_days": []
+    },
+    "kalimat": {
+      "30_days": [],
+      "60_days": [],
+      "90_days": []
+    },
+    "hawqala": {
+      "30_days": [],
+      "60_days": [],
+      "90_days": []
+    },
+    "salawat": {
+      "30_days": [],
+      "60_days": [],
+      "90_days": []
+    }
+  }
+}
