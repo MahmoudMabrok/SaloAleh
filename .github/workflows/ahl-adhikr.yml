@@ -5,11 +5,10 @@ name: Ahl Adhikr Snapshot
 # The push triggers "Deploy GitHub Pages" (paths: '**.json'), which serves it at
 # https://mahmoudmabrok.github.io/SaloAleh/ahl-adhikr/latest.json for the app.
 #
-# Dispatched daily at 22:30 Cairo by the Deno Deploy cron in deno-scheduler/
-# (GitHub's own schedule: cron is intentionally not used — Deno fires on time,
-# and it must run before generate-stats at 23:45 Cairo deletes the per-challenge
-# day nodes it reads from). The script still gates on the Cairo hour, so manual
-# dispatch at another hour needs an explicit --date input.
+# Runs daily as the FIRST step of "Update Landing Page Stats" (23:45 Cairo),
+# before generate-stats.js re-stamps yesterdayTotalScore and deletes the
+# per-challenge day nodes the snapshot reads from. The standalone dispatch here
+# exists for backfills and dry-runs only.
 #
 # Read-only on RTDB except the small server-owned salawat streak ledger
 # (ahl_adhikr_state/salawat), which only this script maintains.

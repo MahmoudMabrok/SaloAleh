@@ -21,6 +21,17 @@ jobs:
         run: npm install firebase-admin
         working-directory: scripts
 
+      # The أهل الذكر snapshot MUST run before generate-stats.js: it reads the
+      # per-challenge day nodes at their freshest (end of Cairo day), and that
+      # script deletes them afterwards. Also before it re-stamps
+      # yesterdayTotalScore — the salawat streak ledger derives today's activity
+      # from totalCount - yesterdayTotalScore.
+      - name: Generate ahl-adhikr snapshot
+        run: node scripts/generate-ahl-adhikr.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+
       - name: Generate daily stats
         run: node scripts/generate-stats.js
         env:
@@ -31,6 +42,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add stats/
+          git add stats/ ahl-adhikr/
           git diff --staged --quiet || git commit -m "chore: update landing page stats [skip ci]"
           git push
