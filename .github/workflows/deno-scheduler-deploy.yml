@@ -1,0 +1,79 @@
+name: Deploy Deno Scheduler
+
+# Auto-deploys deno-scheduler/ to Deno Deploy (new platform, console.deno.com)
+# on every push to main that touches the scheduler. Tests gate the deploy.
+# Owner setup (already done):
+#   - Secret DENO_DEPLOY_TOKEN — access token from console.deno.com
+#   - Variable DENO_DEPLOY_PROJECT — the app name or its *.deno.net URL,
+#     e.g. https://ready-clownfish-28.mahmoudmabrok.deno.net/
+# The deployed app needs env var GITHUB_TOKEN (fine-grained PAT, Actions:
+# read and write) set in its Deno Deploy settings; it persists across deploys.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'deno-scheduler/**'
+      - '.github/workflows/deno-scheduler-deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: deno check + test (deploy gate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check
+        run: deno check deno-scheduler/main.ts deno-scheduler/schedule_test.ts
+      - name: Test
+        run: deno test deno-scheduler/schedule_test.ts
+
+  deploy:
+    name: Deploy to Deno Deploy
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Guard — Deno Deploy setup must be complete
+        env:
+          DENO_DEPLOY_PROJECT: ${{ vars.DENO_DEPLOY_PROJECT }}
+          DENO_DEPLOY_TOKEN: ${{ secrets.DENO_DEPLOY_TOKEN }}
+        run: |
+          if [ -z "$DENO_DEPLOY_PROJECT" ]; then
+            echo "::error::Repo variable DENO_DEPLOY_PROJECT is not set. Set it to the app name or its *.deno.net URL: gh variable set DENO_DEPLOY_PROJECT -R MahmoudMabrok/SaloAleh --body \"<app-name-or-url>\""
+            exit 1
+          fi
+          if [ -z "$DENO_DEPLOY_TOKEN" ]; then
+            echo "::error::Secret DENO_DEPLOY_TOKEN is not set. Create an access token at https://console.deno.com, then: gh secret set DENO_DEPLOY_TOKEN -R MahmoudMabrok/SaloAleh"
+            exit 1
+          fi
+
+      - name: Deploy
+        working-directory: deno-scheduler
+        env:
+          DENO_DEPLOY_TOKEN: ${{ secrets.DENO_DEPLOY_TOKEN }}
+          DENO_DEPLOY_PROJECT: ${{ vars.DENO_DEPLOY_PROJECT }}
+        # The new-platform CLI built into the Deno runtime. CI mode emits a
+        # single JSON object and stable exit codes (3=auth, 4=not found).
+        run: |
+          # Accept a plain app name or the full *.deno.net URL.
+          if [[ "$DENO_DEPLOY_PROJECT" == http* ]]; then
+            host=$(echo "$DENO_DEPLOY_PROJECT" | sed -E 's#https?://##; s#/.*$##')
+            APP=${host%%.*}
+            ORG=$(echo "$host" | cut -d. -f2)
+          else
+            APP=$DENO_DEPLOY_PROJECT
+            ORG=mahmoudmabrok
+          fi
+          echo "Deploying deno-scheduler to app '$APP' in org '$ORG'"
+          deno deploy --json --non-interactive --org "$ORG" --app "$APP" --prod --ignore schedule_test.ts .
