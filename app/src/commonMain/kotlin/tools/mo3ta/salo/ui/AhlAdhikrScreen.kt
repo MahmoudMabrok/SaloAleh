@@ -2,6 +2,7 @@ package tools.mo3ta.salo.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -111,6 +113,14 @@ fun AhlAdhikrScreen(
                     StaleBanner(state.snapshotDate)
                 }
 
+                Text(
+                    stringResource(Res.string.ahl_adhikr_filter_hint),
+                    color = AAMuted,
+                    fontSize = 12.sp,
+                    style = LocalTextStyle.current.copy(textDirection = TextDirection.Content),
+                    modifier = Modifier.padding(top = 10.dp, bottom = 6.dp),
+                )
+
                 MilestoneSelector(
                     selected = state.selectedMilestone,
                     onSelect = viewModel::selectMilestone,
@@ -177,7 +187,13 @@ private fun MilestoneSelector(
     selected: AhlAdhikrMilestone,
     onSelect: (AhlAdhikrMilestone) -> Unit,
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 10.dp)) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(bottom = 10.dp),
+    ) {
         AhlAdhikrMilestone.entries.forEach { milestone ->
             ChallengeChip(
                 label = stringResource(Res.string.ahl_adhikr_milestone_days, milestone.minDays),

@@ -36,17 +36,24 @@ describe('bucketByMilestone — thresholds', () => {
   const buckets = bucketByMilestone([
     user('u-zero', 0),
     user('u-29', 29),
+    user('u-7', 7),
     user('u-30', 30),
     user('u-60', 60),
     user('u-90', 90),
     user('u-31', 31),
   ]);
 
-  it('excludes 0 and 29 from every list', () => {
+  it('excludes zero from every list and keeps 29 in the weekly tier', () => {
     for (const { key } of MILESTONES) {
       assert.equal(buckets[key].some(e => e.id === publicId('u-zero')), false, key);
-      assert.equal(buckets[key].some(e => e.id === publicId('u-29')), false, key);
     }
+    assert.equal(buckets['7_days'].some(e => e.id === publicId('u-29')), true);
+    assert.equal(buckets['30_days'].some(e => e.id === publicId('u-29')), false);
+  });
+
+  it('includes a 7-day user in the weekly tier only', () => {
+    assert.equal(buckets['7_days'].some(e => e.id === publicId('u-7')), true);
+    assert.equal(buckets['30_days'].some(e => e.id === publicId('u-7')), false);
   });
 
   it('includes 30 in 30_days only', () => {
@@ -138,7 +145,7 @@ describe('buildSnapshot + validateSnapshot', () => {
   it('contains all 10 challenges even with no data (empty lists)', () => {
     const snap = buildSnapshot({ dateStr, challenges: {}, salawatStreaks: {} });
     assert.deepEqual(Object.keys(snap.challenges), CHALLENGE_KEYS);
-    assert.deepEqual(snap.challenges.dhikr, { '30_days': [], '60_days': [], '90_days': [] });
+    assert.deepEqual(snap.challenges.dhikr, { '7_days': [], '30_days': [], '60_days': [], '90_days': [] });
     const counts = validateSnapshot(snap);
     assert.equal(counts.salawat['30_days'], 0);
   });
