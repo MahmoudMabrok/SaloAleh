@@ -4,6 +4,28 @@
   "source": "firebase-rtdb",
   "challenges": {
     "dhikr": {
+      "7_days": [
+        {
+          "id": "2FD00B",
+          "name": "محمود",
+          "streak": 18
+        },
+        {
+          "id": "F9240C",
+          "name": "سهير",
+          "streak": 17
+        },
+        {
+          "id": "710C42",
+          "name": "710c42",
+          "streak": 14
+        },
+        {
+          "id": "9849A8",
+          "name": "ايه",
+          "streak": 7
+        }
+      ],
       "30_days": [],
       "60_days": [],
       "90_days": [
@@ -15,6 +37,18 @@
       ]
     },
     "baqiyat": {
+      "7_days": [
+        {
+          "id": "F9240C",
+          "name": "سهير",
+          "streak": 15
+        },
+        {
+          "id": "710C42",
+          "name": "710c42",
+          "streak": 14
+        }
+      ],
       "30_days": [],
       "60_days": [
         {
@@ -26,6 +60,23 @@
       "90_days": []
     },
     "istighfar": {
+      "7_days": [
+        {
+          "id": "C1DED9",
+          "name": "نور\") 🌷",
+          "streak": 16
+        },
+        {
+          "id": "710C42",
+          "name": "710c42",
+          "streak": 15
+        },
+        {
+          "id": "9849A8",
+          "name": "ايه",
+          "streak": 7
+        }
+      ],
       "30_days": [
         {
           "id": "F9240C",
@@ -43,6 +94,23 @@
       "90_days": []
     },
     "zabad": {
+      "7_days": [
+        {
+          "id": "710C42",
+          "name": "710c42",
+          "streak": 14
+        },
+        {
+          "id": "C1DED9",
+          "name": "نور\") 🌷",
+          "streak": 10
+        },
+        {
+          "id": "9849A8",
+          "name": "ايه",
+          "streak": 7
+        }
+      ],
       "30_days": [],
       "60_days": [
         {
@@ -59,6 +127,18 @@
       "90_days": []
     },
     "quran": {
+      "7_days": [
+        {
+          "id": "2FD00B",
+          "name": "محمود",
+          "streak": 18
+        },
+        {
+          "id": "9849A8",
+          "name": "ايه",
+          "streak": 7
+        }
+      ],
       "30_days": [
         {
           "id": "4184C9",
@@ -70,6 +150,28 @@
       "90_days": []
     },
     "ghars": {
+      "7_days": [
+        {
+          "id": "2FD00B",
+          "name": "محمود",
+          "streak": 18
+        },
+        {
+          "id": "710C42",
+          "name": "710c42",
+          "streak": 15
+        },
+        {
+          "id": "9849A8",
+          "name": "ايه",
+          "streak": 7
+        },
+        {
+          "id": "A84B07",
+          "name": "اسماء",
+          "streak": 7
+        }
+      ],
       "30_days": [
         {
           "id": "F9240C",
@@ -91,6 +193,13 @@
       "90_days": []
     },
     "alf_hasana": {
+      "7_days": [
+        {
+          "id": "710C42",
+          "name": "710c42",
+          "streak": 14
+        }
+      ],
       "30_days": [],
       "60_days": [
         {
@@ -108,6 +217,13 @@
       ]
     },
     "kalimat": {
+      "7_days": [
+        {
+          "id": "710C42",
+          "name": "710c42",
+          "streak": 14
+        }
+      ],
       "30_days": [],
       "60_days": [
         {
@@ -124,6 +240,18 @@
       "90_days": []
     },
     "hawqala": {
+      "7_days": [
+        {
+          "id": "710C42",
+          "name": "710c42",
+          "streak": 14
+        },
+        {
+          "id": "9849A8",
+          "name": "ايه",
+          "streak": 7
+        }
+      ],
       "30_days": [
         {
           "id": "F9240C",
@@ -141,6 +269,28 @@
       "90_days": []
     },
     "salawat": {
+      "7_days": [
+        {
+          "id": "E091EC",
+          "name": "E091EC",
+          "streak": 21
+        },
+        {
+          "id": "87333B",
+          "name": "87333B",
+          "streak": 18
+        },
+        {
+          "id": "9849A8",
+          "name": "9849A8",
+          "streak": 8
+        },
+        {
+          "id": "A84B07",
+          "name": "A84B07",
+          "streak": 8
+        }
+      ],
       "30_days": [
         {
           "id": "C1DED9",
