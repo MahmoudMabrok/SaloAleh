@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -131,7 +130,7 @@ fun AhlAdhikrScreen(
                         if (entries.isEmpty()) {
                             EmptyState()
                         } else {
-                            EntriesList(entries)
+                            EntriesList(entries, Modifier.weight(1f))
                         }
                     }
                 }
@@ -217,12 +216,15 @@ private fun ChallengeChip(label: String, selected: Boolean, onClick: () -> Unit)
 }
 
 @Composable
-private fun EntriesList(entries: List<tools.mo3ta.salo.domain.AhlAdhikrEntry>) {
+private fun EntriesList(
+    entries: List<tools.mo3ta.salo.domain.AhlAdhikrEntry>,
+    modifier: Modifier = Modifier,
+) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .weight(1f),
+            .then(modifier),
     ) {
         itemsIndexed(entries) { index, entry ->
             EntryRow(rank = index + 1, entry = entry)
