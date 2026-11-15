@@ -450,6 +450,7 @@ fun App(
                                 onOpenAlfHasanaChallenge = { showAlfHasanaChallenge = true },
                                 onOpenKalimatChallenge = { showKalimatChallenge = true },
                                 onOpenHawqalaChallenge = { showHawqalaChallenge = true },
+                                onOpenAhlAdhikr = { showAhlAdhikr = true },
                             )
                             SaloTab.Achievements -> AchievementsScreen(
                                 onBack = { selectedTab = SaloTab.MohamedLovers },

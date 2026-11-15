@@ -96,6 +96,7 @@ import tools.mo3ta.salo.generated.resources.challenges_day_countdown_label
 import tools.mo3ta.salo.generated.resources.challenges_subtitle
 import tools.mo3ta.salo.generated.resources.challenges_title
 import tools.mo3ta.salo.generated.resources.heroes_chip_label
+import tools.mo3ta.salo.generated.resources.ahl_adhikr_title
 import tools.mo3ta.salo.generated.resources.takbeer_session_title
 import tools.mo3ta.salo.generated.resources.tendays_title
 import tools.mo3ta.salo.domain.ChallengeType
@@ -151,6 +152,7 @@ fun ChallengesScreen(
     onOpenAlfHasanaChallenge: () -> Unit,
     onOpenKalimatChallenge: () -> Unit,
     onOpenHawqalaChallenge: () -> Unit,
+    onOpenAhlAdhikr: () -> Unit,
 ) {
     val analyticsManager: AnalyticsManager = koinInject()
     val viewModel: ChallengesViewModel = koinViewModel()
@@ -412,6 +414,7 @@ fun ChallengesScreen(
                     if (heroesBoard != null) {
                         HeroOfYesterdayChip(onClick = { viewModel.openHeroesSheet() })
                     }
+                    AhlAdhikrChip(onClick = onOpenAhlAdhikr)
                 }
                 Spacer(Modifier.height(8.dp))
             }
@@ -509,6 +512,38 @@ private fun HeroOfYesterdayChip(onClick: () -> Unit) {
                 text = stringResource(Res.string.heroes_chip_label),
                 color = accent,
                 fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+    }
+}
+
+/** Compact shortcut to the daily 30/60/90-day أهل الذكر lists. */
+@Composable
+private fun AhlAdhikrChip(onClick: () -> Unit) {
+    val accent = Color(0xFF7DD3FC)
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(999.dp),
+        color = accent.copy(alpha = 0.12f),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.3f)),
+        tonalElevation = 0.dp,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Default.Groups,
+                contentDescription = null,
+                tint = accent,
+                modifier = Modifier.size(14.dp),
+            )
+            Text(
+                text = stringResource(Res.string.ahl_adhikr_title),
+                color = accent,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
             )
         }
