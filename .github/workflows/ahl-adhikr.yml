@@ -6,10 +6,11 @@ name: Ahl Adhikr Snapshot
 # The push triggers "Deploy GitHub Pages" (paths: '**.json'), which serves it at
 # https://mahmoudmabrok.github.io/SaloAleh/ahl-adhikr/latest.json for the app.
 #
-# Runs daily as the FIRST step of "Update Landing Page Stats" (23:45 Cairo),
-# before generate-stats.js re-stamps yesterdayTotalScore and deletes the
-# per-challenge day nodes the snapshot reads from. The standalone dispatch here
-# exists for backfills and dry-runs only.
+# Manual dispatch only (no schedule — Actions minutes are limited). Dispatch it
+# near the end of the Cairo day, before "Update Landing Page Stats": that job's
+# generate-stats.js re-stamps yesterdayTotalScore and deletes the per-challenge
+# day nodes the snapshot reads from. The snapshot step also runs inside
+# "Update Landing Page Stats" for the same reason.
 #
 # Read-only on RTDB except the small server-owned salawat streak ledger
 # (ahl_adhikr_state/salawat), which only this script maintains.

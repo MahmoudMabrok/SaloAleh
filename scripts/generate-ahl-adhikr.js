@@ -4,7 +4,8 @@
 //   * the 9 daily challenges — readChallengeRankedUsers() over today's day node
 //     (same source the leaderboards rank from; each user's continuous streak is
 //     written by their own client). Day nodes are deleted by generate-stats.js at
-//     23:45 Cairo, so this must run before that (the workflow fires at 22:30 Cairo).
+//     23:45 Cairo, so this must run before that. There is no cron schedule —
+//     both workflows are dispatched manually (Actions minutes are limited).
 //   * salawat — RTDB has no cross-round streak (roundStreak is round-scoped), so a
 //     small server-owned ledger at ahl_adhikr_state/salawat/{uid} is maintained here,
 //     idempotently, from today's activity (totalCount - yesterdayTotalScore > 0).
