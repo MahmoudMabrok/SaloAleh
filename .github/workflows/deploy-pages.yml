@@ -2,10 +2,8 @@ name: Deploy GitHub Pages
 
 # Publishes the landing page + live stats to GitHub Pages.
 #
-# Runs only when JSON files change:
-#   * push to main touching any *.json  (manual edits to stats/, stats.json, …)
-#     — except round-results/**, which the weekly round close commits and which is
-#     not part of the site.
+# Runs when JSON files change, so updates to root-level and nested JSON data
+# files both republish the Pages artifact.
 #   * workflow_run after "Update Landing Page Stats" — the stats bot commits
 #     with [skip ci], so the push-paths trigger above never fires for those
 #     automated commits; this catches them.
@@ -14,12 +12,12 @@ on:
   push:
     branches: [main]
     paths:
-      - '**.json'
+      - '*.json'
+      - '**/*.json'
       # The voice-recording page is built from these sources into _site/voice.html.
       - 'SpeechCollector/**'
       # Community review page, served at /experiences-review.html.
       - 'community/review.html'
-      - '!round-results/**'
   workflow_run:
     workflows: ["Update Landing Page Stats"]
     types: [completed]
