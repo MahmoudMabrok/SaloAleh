@@ -41,13 +41,6 @@ function cairoDateStr(date = new Date()) {
   }).format(date);
 }
 
-// Days between two YYYY-MM-DD strings (b - a), via UTC epoch — date keys carry no
-// zone, and both are Cairo days, so plain day arithmetic is exact.
-function daysBetween(a, b) {
-  return Math.round(Date.UTC(...b.split('-').map(Number)) / 86400000)
-    - Math.round(Date.UTC(...a.split('-').map(Number)) / 86400000);
-}
-
 function publicId(uid) {
   const tail = String(uid || '').slice(-6);
   return tail ? tail.toUpperCase() : '';
@@ -73,55 +66,21 @@ function bucketByMilestone(users) {
   return buckets;
 }
 
-// Salawat streak ledger — the one challenge without a per-user continuous streak in
-// RTDB (roundStreak is round-scoped, max ~7). The generator keeps
-// ahl_adhikr_state/salawat/{uid} = {streak, lastActive} and updates it per run.
-//
-// Semantics mirror the app's RoundStreakStore: activity extends the streak (a gap of
-// 1–2 frozen days still counts — 3 consecutive inactive days reset it, so a user
-// returning after ≤2 missed days adds the whole gap).
-//
-// Idempotent: the new state is computed from (prevState, activeToday, date) only —
-// re-running the same day with the same inputs yields the same state, never double-
-// increments, because activeToday members are keyed by lastActive === date.
-function nextSalawatStreaks(prevState, activeUids, dateStr) {
-  const prev = prevState || {};
-  const active = new Set(activeUids);
-  const state = {};
+// Salawat streaks — read exactly what the mohamed_lovers leaderboard shows: the
+// continuous day streak each client publishes to its own player node
+// (mohamed_lovers/{roundKey}/players/{uid}/roundStreak, written by the app's
+// writeRoundStreak from RoundStreakStore). No server-side recomputation, no ledger —
+// the published value and the leaderboard can never disagree.
+function salawatStreaksFromPlayers(players) {
   const streaks = {};
-
-  const uids = new Set([...Object.keys(prev), ...active]);
-  for (const uid of uids) {
-    const entry = prev[uid] || null;
-    const prevStreak = entry && typeof entry.streak === 'number' && entry.streak > 0 ? entry.streak : 0;
-    const lastActive = entry && typeof entry.lastActive === 'string' ? entry.lastActive : null;
-
-    if (active.has(uid)) {
-      // Already updated by an earlier run today → keep (idempotency).
-      if (lastActive === dateStr) {
-        state[uid] = { streak: prevStreak, lastActive };
-        streaks[uid] = prevStreak;
-        continue;
-      }
-      const gap = lastActive ? daysBetween(lastActive, dateStr) : null;
-      // gap 1 = consecutive, gap 2..3 = frozen days absorbed, gap > 3 = reset.
-      const grown = gap != null && gap >= 1 && gap <= 3
-        ? prevStreak + gap
-        : (gap != null && gap === 0 ? prevStreak : 1);
-      state[uid] = { streak: grown, lastActive: dateStr };
-      streaks[uid] = grown;
-    } else {
-      const gap = lastActive ? daysBetween(lastActive, dateStr) : null;
-      if (prevStreak > 0 && gap != null && gap < 3) {
-        // Still within the freeze window — keep the streak, not yet reset.
-        state[uid] = { streak: prevStreak, lastActive };
-        streaks[uid] = prevStreak;
-      }
-      // else: reset (or never active) — omit from state entirely.
+  if (!players || typeof players !== 'object') return streaks;
+  for (const [uid, p] of Object.entries(players)) {
+    const streak = p && typeof p === 'object' ? p.roundStreak : null;
+    if (typeof uid === 'string' && uid && typeof streak === 'number' && streak > 0) {
+      streaks[uid] = streak;
     }
   }
-
-  return { state, streaks };
+  return streaks;
 }
 
 // Full snapshot object. generatedAt is derived from the Cairo date (not the wall
@@ -203,10 +162,9 @@ module.exports = {
   ALLOWED_ENTRY_FIELDS,
   FORBIDDEN_KEYS,
   cairoDateStr,
-  daysBetween,
   publicId,
   bucketByMilestone,
-  nextSalawatStreaks,
+  salawatStreaksFromPlayers,
   buildSnapshot,
   validateSnapshot,
 };

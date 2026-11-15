@@ -12,8 +12,8 @@ name: Ahl Adhikr Snapshot
 # day nodes the snapshot reads from. The snapshot step also runs inside
 # "Update Landing Page Stats" for the same reason.
 #
-# Read-only on RTDB except the small server-owned salawat streak ledger
-# (ahl_adhikr_state/salawat), which only this script maintains.
+# Read-only on RTDB: salawat streaks come straight from the client-published
+# roundStreak field on the current round's players (what the leaderboard shows).
 on:
   workflow_dispatch:
     inputs:
