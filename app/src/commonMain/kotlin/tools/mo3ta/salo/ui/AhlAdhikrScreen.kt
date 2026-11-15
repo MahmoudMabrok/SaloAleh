@@ -12,9 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -44,7 +42,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.domain.AhlAdhikrChallenge
+import tools.mo3ta.salo.domain.AhlAdhikrEntry
 import tools.mo3ta.salo.domain.AhlAdhikrMilestone
+import tools.mo3ta.salo.domain.AhlAdhikrSnapshot
 import tools.mo3ta.salo.generated.resources.Res
 import tools.mo3ta.salo.generated.resources.*
 import tools.mo3ta.salo.presentation.AhlAdhikrViewModel
@@ -111,11 +111,6 @@ fun AhlAdhikrScreen(
                     StaleBanner(state.snapshotDate)
                 }
 
-                ChallengeSelector(
-                    selected = state.selectedChallenge,
-                    onSelect = viewModel::selectChallenge,
-                )
-
                 MilestoneSelector(
                     selected = state.selectedMilestone,
                     onSelect = viewModel::selectMilestone,
@@ -125,12 +120,28 @@ fun AhlAdhikrScreen(
                     state.isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = AAGold)
                     }
+                    state.snapshot == null -> EmptyState()
                     else -> {
-                        val entries = state.snapshot?.listFor(state.selectedChallenge, state.selectedMilestone).orEmpty()
-                        if (entries.isEmpty()) {
+                        val snapshot = state.snapshot!!
+                        val visible = AhlAdhikrChallenge.entries.sumOf { snapshot.listFor(it, state.selectedMilestone).size }
+                        if (visible == 0) {
                             EmptyState()
                         } else {
-                            EntriesList(entries, Modifier.weight(1f))
+                            Text(
+                                stringResource(Res.string.ahl_adhikr_summary, visible, state.snapshotDate),
+                                color = AAMuted,
+                                fontSize = 12.sp,
+                                textAlign = TextAlign.Center,
+                                style = LocalTextStyle.current.copy(textDirection = TextDirection.Content),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 8.dp),
+                            )
+                            ChallengeSections(
+                                snapshot = snapshot,
+                                milestone = state.selectedMilestone,
+                                modifier = Modifier.weight(1f),
+                            )
                         }
                     }
                 }
@@ -158,25 +169,6 @@ private fun StaleBanner(snapshotDate: String) {
             style = LocalTextStyle.current.copy(textDirection = TextDirection.Content),
             modifier = Modifier.fillMaxWidth(),
         )
-    }
-}
-
-@Composable
-private fun ChallengeSelector(
-    selected: AhlAdhikrChallenge,
-    onSelect: (AhlAdhikrChallenge) -> Unit,
-) {
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.padding(vertical = 10.dp),
-    ) {
-        items(AhlAdhikrChallenge.entries) { challenge ->
-            ChallengeChip(
-                label = stringResource(challengeLabel(challenge)),
-                selected = challenge == selected,
-                onClick = { onSelect(challenge) },
-            )
-        }
     }
 }
 
@@ -215,26 +207,103 @@ private fun ChallengeChip(label: String, selected: Boolean, onClick: () -> Unit)
     }
 }
 
+/** One section per challenge — every challenge is always shown, filtered to `milestone`. */
 @Composable
-private fun EntriesList(
-    entries: List<tools.mo3ta.salo.domain.AhlAdhikrEntry>,
+private fun ChallengeSections(
+    snapshot: AhlAdhikrSnapshot,
+    milestone: AhlAdhikrMilestone,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier
             .fillMaxWidth()
             .then(modifier),
     ) {
-        itemsIndexed(entries) { index, entry ->
-            EntryRow(rank = index + 1, entry = entry)
+        items(AhlAdhikrChallenge.entries) { challenge ->
+            val entries = snapshot.listFor(challenge, milestone)
+            if (entries.isEmpty()) {
+                EmptySectionRow(challenge)
+            } else {
+                ChallengeSection(challenge = challenge, entries = entries)
+            }
         }
         item { Spacer(Modifier.height(24.dp)) }
     }
 }
 
+/** Challenges with nobody in this tier collapse into one quiet row. */
 @Composable
-private fun EntryRow(rank: Int, entry: tools.mo3ta.salo.domain.AhlAdhikrEntry) {
+private fun EmptySectionRow(challenge: AhlAdhikrChallenge) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(AANavy)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+    ) {
+        Text(
+            stringResource(challengeLabel(challenge)),
+            color = AAMuted,
+            fontSize = 14.sp,
+            style = LocalTextStyle.current.copy(textDirection = TextDirection.Content),
+            modifier = Modifier.weight(1f),
+        )
+        Text("0", color = Color(0x559FAFC9), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+private fun ChallengeSection(
+    challenge: AhlAdhikrChallenge,
+    entries: List<AhlAdhikrEntry>,
+) {
+    Column(Modifier.fillMaxWidth()) {
+        // Header: challenge name on one side, how many reached this tier on the other.
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(AAMidNavy)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+        ) {
+            Text(
+                stringResource(challengeLabel(challenge)),
+                color = AACream,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                style = LocalTextStyle.current.copy(textDirection = TextDirection.Content),
+                modifier = Modifier.weight(1f),
+            )
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(AANavy)
+                    .padding(horizontal = 10.dp, vertical = 4.dp),
+            ) {
+                Text(
+                    "${entries.size}",
+                    color = AAGold,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
+
+        Spacer(Modifier.height(4.dp))
+        entries
+            .sortedByDescending { it.streak }
+            .forEachIndexed { index, entry ->
+                EntryRow(rank = index + 1, entry = entry)
+                Spacer(Modifier.height(6.dp))
+            }
+    }
+}
+
+@Composable
+private fun EntryRow(rank: Int, entry: AhlAdhikrEntry) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -249,7 +318,18 @@ private fun EntryRow(rank: Int, entry: tools.mo3ta.salo.domain.AhlAdhikrEntry) {
                 .background(AAMidNavy)
                 .padding(horizontal = 10.dp, vertical = 6.dp),
         ) {
-            Text("$rank", color = AAGold, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            // Podium colors for the top three; muted beyond that.
+            Text(
+                "$rank",
+                color = when (rank) {
+                    1 -> AAGold
+                    2 -> Color(0xFFC8D1E0)
+                    3 -> Color(0xFFCE8A54)
+                    else -> AAMuted
+                },
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+            )
         }
         Spacer(Modifier.padding(6.dp))
         Column(Modifier.weight(1f)) {
@@ -285,15 +365,18 @@ private fun EmptyState() {
     }
 }
 
+// Same names as the challenge cards on the Challenges screen (challenge_*_title),
+// so أهل الذكر and the challenges screen can't drift apart. Salawat has no card
+// there — it keeps its own name.
 private fun challengeLabel(challenge: AhlAdhikrChallenge) = when (challenge) {
     AhlAdhikrChallenge.SALAWAT -> Res.string.ahl_adhikr_challenge_salawat
-    AhlAdhikrChallenge.DHIKR -> Res.string.ahl_adhikr_challenge_dhikr
-    AhlAdhikrChallenge.BAQIYAT -> Res.string.ahl_adhikr_challenge_baqiyat
-    AhlAdhikrChallenge.ISTIGHFAR -> Res.string.ahl_adhikr_challenge_istighfar
-    AhlAdhikrChallenge.ZABAD -> Res.string.ahl_adhikr_challenge_zabad
-    AhlAdhikrChallenge.QURAN -> Res.string.ahl_adhikr_challenge_quran
-    AhlAdhikrChallenge.GHARS -> Res.string.ahl_adhikr_challenge_ghars
-    AhlAdhikrChallenge.ALF_HASANA -> Res.string.ahl_adhikr_challenge_alf_hasana
-    AhlAdhikrChallenge.KALIMAT -> Res.string.ahl_adhikr_challenge_kalimat
-    AhlAdhikrChallenge.HAWQALA -> Res.string.ahl_adhikr_challenge_hawqala
+    AhlAdhikrChallenge.DHIKR -> Res.string.challenge_dhikr_title
+    AhlAdhikrChallenge.BAQIYAT -> Res.string.challenge_baqiyat_title
+    AhlAdhikrChallenge.ISTIGHFAR -> Res.string.challenge_istighfar_title
+    AhlAdhikrChallenge.ZABAD -> Res.string.challenge_zabad_title
+    AhlAdhikrChallenge.QURAN -> Res.string.challenge_quran_title
+    AhlAdhikrChallenge.GHARS -> Res.string.challenge_ghars_title
+    AhlAdhikrChallenge.ALF_HASANA -> Res.string.challenge_alf_hasana_title
+    AhlAdhikrChallenge.KALIMAT -> Res.string.challenge_kalimat_title
+    AhlAdhikrChallenge.HAWQALA -> Res.string.challenge_hawqala_title
 }

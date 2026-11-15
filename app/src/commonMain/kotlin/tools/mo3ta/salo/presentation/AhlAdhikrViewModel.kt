@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import tools.mo3ta.salo.data.ahladhikr.AhlAdhikrRepository
 import tools.mo3ta.salo.data.ahladhikr.AhlAdhikrResult
-import tools.mo3ta.salo.domain.AhlAdhikrChallenge
 import tools.mo3ta.salo.domain.AhlAdhikrMilestone
 import tools.mo3ta.salo.domain.AhlAdhikrSnapshot
 import tools.mo3ta.salo.domain.AhlAdhikrSource
@@ -20,7 +19,7 @@ data class AhlAdhikrUiState(
     val isRefreshing: Boolean = false,
     val snapshotDate: String = "",
     val source: AhlAdhikrSource = AhlAdhikrSource.EMPTY,
-    val selectedChallenge: AhlAdhikrChallenge = AhlAdhikrChallenge.SALAWAT,
+    /** Days-range filter — every challenge's list is shown, filtered to this tier. */
     val selectedMilestone: AhlAdhikrMilestone = AhlAdhikrMilestone.D30,
     val snapshot: AhlAdhikrSnapshot? = null,
 ) {
@@ -59,10 +58,6 @@ class AhlAdhikrViewModel(
                 )
             }
         }
-    }
-
-    fun selectChallenge(challenge: AhlAdhikrChallenge) {
-        _uiState.update { it.copy(selectedChallenge = challenge) }
     }
 
     fun selectMilestone(milestone: AhlAdhikrMilestone) {
