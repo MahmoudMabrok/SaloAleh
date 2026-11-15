@@ -7,10 +7,9 @@ const {
   CHALLENGE_KEYS,
   MILESTONES,
   cairoDateStr,
-  daysBetween,
   publicId,
   bucketByMilestone,
-  nextSalawatStreaks,
+  salawatStreaksFromPlayers,
   buildSnapshot,
   validateSnapshot,
 } = require('./ahl-adhikr-utils');
@@ -24,14 +23,6 @@ describe('cairoDateStr', () => {
     // 21:30 UTC = 23:30 Cairo (winter) — same day. 22:30 UTC = 00:30 Cairo — next day.
     assert.equal(cairoDateStr(new Date('2026-11-14T21:30:00Z')), '2026-11-14');
     assert.equal(cairoDateStr(new Date('2026-11-14T22:30:00Z')), '2026-11-15');
-  });
-});
-
-describe('daysBetween', () => {
-  it('is positive forward, negative backward, zero same-day', () => {
-    assert.equal(daysBetween('2026-11-01', '2026-11-04'), 3);
-    assert.equal(daysBetween('2026-11-04', '2026-11-01'), -3);
-    assert.equal(daysBetween('2026-11-01', '2026-11-01'), 0);
   });
 });
 
@@ -105,59 +96,39 @@ describe('bucketByMilestone — thresholds', () => {
   });
 });
 
-describe('nextSalawatStreaks', () => {
-  const D = (n) => `2026-11-${String(n).padStart(2, '0')}`;
-
-  it('starts a streak of 1 on first activity', () => {
-    const { state, streaks } = nextSalawatStreaks({}, ['a'], D(10));
-    assert.equal(streaks.a, 1);
-    assert.deepEqual(state.a, { streak: 1, lastActive: D(10) });
-  });
-
-  it('extends a consecutive streak', () => {
-    const prev = { a: { streak: 29, lastActive: D(9) } };
-    const { streaks } = nextSalawatStreaks(prev, ['a'], D(10));
-    assert.equal(streaks.a, 30);
-  });
-
-  it('absorbs a 2-day freeze (activity resumes after 2 missed days)', () => {
-    const prev = { a: { streak: 40, lastActive: D(1) } };
-    const { streaks } = nextSalawatStreaks(prev, ['a'], D(4));
-    assert.equal(streaks.a, 43);
-  });
-
-  it('resets after 3+ consecutive inactive days, then restarts at 1', () => {
-    const prev = { a: { streak: 40, lastActive: D(1) } };
-    const reset = nextSalawatStreaks(prev, [], D(4)); // 3 inactive days
-    assert.equal(reset.streaks.a, undefined);
-    const restart = nextSalawatStreaks(reset.state, ['a'], D(5));
-    assert.equal(restart.streaks.a, 1);
-  });
-
-  it('keeps the streak through the 2-day freeze window while inactive', () => {
-    const prev = { a: { streak: 40, lastActive: D(1) } };
-    const { streaks } = nextSalawatStreaks(prev, [], D(2));
-    assert.equal(streaks.a, 40);
-  });
-
-  it('is idempotent for the same day (re-run does not double-increment)', () => {
-    const prev = { a: { streak: 29, lastActive: D(9) } };
-    const first = nextSalawatStreaks(prev, ['a', 'b'], D(10));
-    const second = nextSalawatStreaks(first.state, ['a', 'b'], D(10));
-    assert.deepEqual(second.streaks, first.streaks);
-    assert.deepEqual(second.state, first.state);
-  });
-
-  it('tolerates a malformed previous state without throwing', () => {
-    const prev = {
-      a: { streak: 'garbage', lastActive: null },
-      b: null,
-      c: { streak: -5, lastActive: 'not-a-date' },
+describe('salawatStreaksFromPlayers', () => {
+  it('takes the client-published roundStreak, exactly what the leaderboard shows', () => {
+    const players = {
+      a100: { roundStreak: 112, totalCount: 5000 },
+      a45: { roundStreak: 45, totalCount: 12, nickname: 'سهير' },
     };
-    const { streaks } = nextSalawatStreaks(prev, ['a', 'b', 'c'], D(10));
-    assert.equal(streaks.a, 1);
-    assert.equal(streaks.b, 1);
-    assert.equal(streaks.c, 1);
+    assert.deepEqual(salawatStreaksFromPlayers(players), { a100: 112, a45: 45 });
+  });
+
+  it('omits players without a positive numeric roundStreak (old clients, fresh joins)', () => {
+    const players = {
+      noField: { totalCount: 42 },
+      zero: { roundStreak: 0 },
+      negative: { roundStreak: -3 },
+      garbage: { roundStreak: '7' },
+      nullPlayer: null,
+    };
+    assert.deepEqual(salawatStreaksFromPlayers(players), {});
+  });
+
+  it('tolerates a missing or non-object players node without throwing', () => {
+    assert.deepEqual(salawatStreaksFromPlayers(null), {});
+    assert.deepEqual(salawatStreaksFromPlayers(undefined), {});
+    assert.deepEqual(salawatStreaksFromPlayers('garbage'), {});
+    assert.deepEqual(salawatStreaksFromPlayers({}), {});
+  });
+
+  it('feeds bucketByMilestone through buildSnapshot — 100+ day users are published', () => {
+    const streaks = salawatStreaksFromPlayers({ 'abcdef112233': { roundStreak: 112 } });
+    const snap = buildSnapshot({ dateStr: '2026-11-15', challenges: {}, salawatStreaks: streaks });
+    const counts = validateSnapshot(snap);
+    assert.equal(counts.salawat['90_days'], 1);
+    assert.equal(snap.challenges.salawat['90_days'][0].streak, 112);
   });
 });
 

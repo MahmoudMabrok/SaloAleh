@@ -6,9 +6,11 @@
 //     written by their own client). Day nodes are deleted by generate-stats.js at
 //     23:45 Cairo, so this must run before that. There is no cron schedule —
 //     both workflows are dispatched manually (Actions minutes are limited).
-//   * salawat — RTDB has no cross-round streak (roundStreak is round-scoped), so a
-//     small server-owned ledger at ahl_adhikr_state/salawat/{uid} is maintained here,
-//     idempotently, from today's activity (totalCount - yesterdayTotalScore > 0).
+//   * salawat — read exactly what the mohamed_lovers leaderboard shows: the
+//     continuous day streak each client publishes to its own player node
+//     (mohamed_lovers/{roundKey}/players/{uid}/roundStreak). No server-side
+//     recomputation and no ledger — the snapshot and the leaderboard can never
+//     disagree about a user's streak.
 //
 // Output: ahl-adhikr/latest.json (the only file the app fetches), written
 // atomically
@@ -26,7 +28,7 @@ const {
   CHALLENGE_KEYS,
   cairoDateStr,
   buildSnapshot,
-  nextSalawatStreaks,
+  salawatStreaksFromPlayers,
   validateSnapshot,
 } = require('./ahl-adhikr-utils');
 const {
@@ -58,7 +60,6 @@ const CHALLENGE_ROOTS = {
   hawqala: HAWQALA_CHALLENGE_ROOT,
 };
 
-const SALAWAT_STATE_ROOT = 'ahl_adhikr_state/salawat';
 const OUTPUT_DIR = path.join(__dirname, '..', 'ahl-adhikr');
 
 const RETRY_ATTEMPTS = 3;
@@ -124,29 +125,21 @@ async function readChallengeStreaks(db, dateStr) {
   return result;
 }
 
-// Salawat: reads today's active uids (positive server-derived day total) plus the
-// ledger, then computes the new streaks. Returns { streaks, state }.
-async function computeSalawatStreaks(db, dateStr) {
+// Salawat: reads the current round's players and takes the client-published
+// continuous streak (roundStreak) — the same value populateMohamedLoversRound
+// shows on the leaderboard. Returns a uid → streak map.
+async function readSalawatStreaks(db, dateStr) {
   const roundKey = roundKeyForDate(dateStr);
   const playersSnap = await withRetry(
     'read salawat players',
     () => db.ref(`${MOHAMED_LOVERS_ROOT}/${roundKey}/players`).get(),
   );
-  const activeUids = [];
-  if (playersSnap.exists()) {
-    playersSnap.forEach(child => {
-      const p = child.val() || {};
-      const baseline = typeof p.yesterdayTotalScore === 'number' ? p.yesterdayTotalScore : 0;
-      const total = typeof p.totalCount === 'number' ? p.totalCount : 0;
-      if (total - baseline > 0) activeUids.push(child.key);
-    });
-  }
-  console.log(`[salawat] round=${roundKey} activeToday=${activeUids.length}`);
-
-  const stateSnap = await withRetry('read salawat ledger', () => db.ref(SALAWAT_STATE_ROOT).get());
-  const prevState = stateSnap.exists() ? stateSnap.val() : {};
-  const { state, streaks } = nextSalawatStreaks(prevState, activeUids, dateStr);
-  return { streaks, state };
+  const players = playersSnap.exists() ? playersSnap.val() : null;
+  const streaks = salawatStreaksFromPlayers(players);
+  console.log(
+    `[salawat] round=${roundKey} players=${players ? Object.keys(players).length : 0} withStreak=${Object.keys(streaks).length}`,
+  );
+  return streaks;
 }
 
 // Atomic write: latest.json is staged in a sibling tmp dir and renamed into
@@ -185,9 +178,9 @@ async function main() {
 
   // Reads first — any failure here exits before a single file is touched.
   const challenges = await readChallengeStreaks(db, dateStr);
-  const salawat = await computeSalawatStreaks(db, dateStr);
+  const salawatStreaks = await readSalawatStreaks(db, dateStr);
 
-  const snapshot = buildSnapshot({ dateStr, challenges, salawatStreaks: salawat.streaks });
+  const snapshot = buildSnapshot({ dateStr, challenges, salawatStreaks });
   const counts = validateSnapshot(snapshot);
 
   const total = Object.values(counts)
@@ -200,18 +193,12 @@ async function main() {
   }
 
   if (args.dryRun) {
-    console.log('Dry-run: not writing files, not updating the salawat ledger.');
+    console.log('Dry-run: not writing files.');
     console.log('--- SNAPSHOT BEGIN ---');
     console.log(JSON.stringify(snapshot, null, 2));
     console.log('--- SNAPSHOT END ---');
     return;
   }
-
-  // Ledger update after validation, before the files — a crash between the two is
-  // recoverable (the ledger write is idempotent for the same day), while the
-  // reverse order would drift the ledger ahead of the published snapshot.
-  await withRetry('write salawat ledger', () => db.ref(SALAWAT_STATE_ROOT).set(salawat.state));
-  console.log(`Salawat ledger updated (${Object.keys(salawat.state).length} streaks kept)`);
 
   const json = writeSnapshotFiles(snapshot);
   console.log(`Wrote ahl-adhikr/latest.json (${json.length} bytes, covering ${dateStr})`);
