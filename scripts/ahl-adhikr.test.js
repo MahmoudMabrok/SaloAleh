@@ -248,14 +248,14 @@ describe('parseArgs', () => {
 });
 
 describe('writeSnapshotFiles — atomicity', () => {
-  it('writes latest.json and the dated file, leaves no tmp dir behind', () => {
+  it('writes only latest.json, leaves no tmp dir behind', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ahl-adhikr-out-'));
     const snap = buildSnapshot({ dateStr: '2026-11-14', challenges: {}, salawatStreaks: {} });
-    writeSnapshotFiles(snap, '2026-11-14', dir);
+    writeSnapshotFiles(snap, dir);
     const latest = JSON.parse(fs.readFileSync(path.join(dir, 'latest.json'), 'utf8'));
-    const dated = JSON.parse(fs.readFileSync(path.join(dir, '2026-11-14.json'), 'utf8'));
     assert.deepEqual(latest, snap);
-    assert.deepEqual(dated, snap);
+    const dated = fs.readdirSync(dir).filter(n => n !== 'latest.json');
+    assert.deepEqual(dated, []);
     const leftovers = fs.readdirSync(path.dirname(dir)).filter(n => n.startsWith('.ahl-adhikr-tmp-'));
     assert.deepEqual(leftovers, []);
     fs.rmSync(dir, { recursive: true, force: true });
@@ -264,9 +264,9 @@ describe('writeSnapshotFiles — atomicity', () => {
   it('overwrites a previous latest.json with identical bytes on a re-run', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ahl-adhikr-out-'));
     const snap = buildSnapshot({ dateStr: '2026-11-14', challenges: {}, salawatStreaks: {} });
-    writeSnapshotFiles(snap, '2026-11-14', dir);
+    writeSnapshotFiles(snap, dir);
     const first = fs.readFileSync(path.join(dir, 'latest.json'), 'utf8');
-    writeSnapshotFiles(snap, '2026-11-14', dir);
+    writeSnapshotFiles(snap, dir);
     const second = fs.readFileSync(path.join(dir, 'latest.json'), 'utf8');
     assert.equal(first, second);
     fs.rmSync(dir, { recursive: true, force: true });

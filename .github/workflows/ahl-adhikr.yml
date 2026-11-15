@@ -1,7 +1,8 @@
 name: Ahl Adhikr Snapshot
 
 # Builds the daily أهل الذكر snapshot from Firebase RTDB and commits it to main:
-#   ahl-adhikr/{date}.json + ahl-adhikr/latest.json
+#   ahl-adhikr/latest.json (the only file the app fetches; its `date` field says
+#   which Cairo day it covers)
 # The push triggers "Deploy GitHub Pages" (paths: '**.json'), which serves it at
 # https://mahmoudmabrok.github.io/SaloAleh/ahl-adhikr/latest.json for the app.
 #

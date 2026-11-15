@@ -9,7 +9,8 @@
 //     small server-owned ledger at ahl_adhikr_state/salawat/{uid} is maintained here,
 //     idempotently, from today's activity (totalCount - yesterdayTotalScore > 0).
 //
-// Output: ahl-adhikr/{date}.json + ahl-adhikr/latest.json, written atomically
+// Output: ahl-adhikr/latest.json (the only file the app fetches), written
+// atomically
 // (tmp + rename) and only after validateSnapshot passes — on any failure the last
 // valid snapshot stays untouched. Same day + same data = same bytes (idempotent).
 //
@@ -147,19 +148,17 @@ async function computeSalawatStreaks(db, dateStr) {
   return { streaks, state };
 }
 
-// Atomic multi-file write: both files are staged in a sibling tmp dir and renamed
-// into place only after validation, so a reader never sees a partial file.
-function writeSnapshotFiles(snapshot, dateStr, outDir = OUTPUT_DIR) {
+// Atomic write: latest.json is staged in a sibling tmp dir and renamed into
+// place only after validation, so a reader never sees a partial file. The app
+// fetches only latest.json — the Cairo date it covers travels inside the file
+// (`date` field), so no dated archive copies are written.
+function writeSnapshotFiles(snapshot, outDir = OUTPUT_DIR) {
   const json = JSON.stringify(snapshot, null, 2);
   const stage = fs.mkdtempSync(path.join(path.dirname(outDir), '.ahl-adhikr-tmp-'));
   try {
-    const latestPath = path.join(stage, 'latest.json');
-    const datedPath = path.join(stage, `${dateStr}.json`);
-    fs.writeFileSync(latestPath, json);
-    fs.writeFileSync(datedPath, json);
+    fs.writeFileSync(path.join(stage, 'latest.json'), json);
     fs.mkdirSync(outDir, { recursive: true });
-    fs.renameSync(latestPath, path.join(outDir, 'latest.json'));
-    fs.renameSync(datedPath, path.join(outDir, `${dateStr}.json`));
+    fs.renameSync(path.join(stage, 'latest.json'), path.join(outDir, 'latest.json'));
   } finally {
     fs.rmSync(stage, { recursive: true, force: true });
   }
@@ -213,8 +212,8 @@ async function main() {
   await withRetry('write salawat ledger', () => db.ref(SALAWAT_STATE_ROOT).set(salawat.state));
   console.log(`Salawat ledger updated (${Object.keys(salawat.state).length} streaks kept)`);
 
-  const json = writeSnapshotFiles(snapshot, dateStr);
-  console.log(`Wrote ahl-adhikr/latest.json and ahl-adhikr/${dateStr}.json (${json.length} bytes)`);
+  const json = writeSnapshotFiles(snapshot);
+  console.log(`Wrote ahl-adhikr/latest.json (${json.length} bytes, covering ${dateStr})`);
   // The RTDB connection would keep this process alive forever — the workflow's
   // next steps and commit never run. Exit like generate-stats.js does.
   process.exit(0);
