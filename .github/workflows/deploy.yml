@@ -31,6 +31,11 @@ on:
         required: false
         type: boolean
         default: true
+      publish_new_update:
+        description: 'Publish new update (schedule in-app update notification)'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
 
@@ -406,7 +411,7 @@ jobs:
     name: Schedule delayed build notification
     runs-on: ubuntu-latest
     needs: [deploy-android]
-    if: needs.deploy-android.result == 'success' && github.event.inputs.track == 'production'
+    if: needs.deploy-android.result == 'success' && github.event.inputs.track == 'production' && github.event.inputs.publish_new_update == 'true'
 
     steps:
       - uses: actions/checkout@v4
