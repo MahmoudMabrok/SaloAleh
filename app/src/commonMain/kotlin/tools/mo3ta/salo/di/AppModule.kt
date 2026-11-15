@@ -41,6 +41,7 @@ import tools.mo3ta.salo.data.heart.HeartStore
 import tools.mo3ta.salo.data.language.LanguageStore
 import tools.mo3ta.salo.data.salawat.SalawatVariantStore
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
+import tools.mo3ta.salo.data.ahladhikr.AhlAdhikrRemote
 import tools.mo3ta.salo.data.ahladhikr.AhlAdhikrRemoteDataSource
 import tools.mo3ta.salo.data.ahladhikr.AhlAdhikrRepository
 import tools.mo3ta.salo.data.ahladhikr.AhlAdhikrStore
@@ -162,7 +163,7 @@ val appModule = module {
     single<CommunityExperiences> { ExperiencesRepository(get(), get()) }
     single { HadithListRepository(get()) }
     single { AhlAdhikrStore(get()) }
-    single { AhlAdhikrRemoteDataSource(get()) }
+    single<AhlAdhikrRemote> { AhlAdhikrRemoteDataSource(get()) }
     single { AhlAdhikrRepository(get(), get()) }
     viewModel { MohamedLoversViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { DhikrChallengeViewModel(get(), get(), get(), get(), get()) }
