@@ -106,10 +106,22 @@ describe('bucketByMilestone — thresholds', () => {
 describe('salawatStreaksFromPlayers', () => {
   it('takes the client-published roundStreak, exactly what the leaderboard shows', () => {
     const players = {
-      a100: { roundStreak: 112, totalCount: 5000 },
+      a100: { roundStreak: 112, totalCount: 5000, nickname: '  صاحب الهمة  ' },
       a45: { roundStreak: 45, totalCount: 12, nickname: 'سهير' },
     };
-    assert.deepEqual(salawatStreaksFromPlayers(players), { a100: 112, a45: 45 });
+    assert.deepEqual(salawatStreaksFromPlayers(players), {
+      a100: { streak: 112, nickname: 'صاحب الهمة' },
+      a45: { streak: 45, nickname: 'سهير' },
+    });
+  });
+
+  it('publishes a salawat nickname instead of the public id when available', () => {
+    const snap = buildSnapshot({
+      dateStr: '2026-11-15',
+      challenges: {},
+      salawatStreaks: salawatStreaksFromPlayers({ named: { roundStreak: 35, nickname: 'أبو الذكر' } }),
+    });
+    assert.equal(snap.challenges.salawat['30_days'][0].name, 'أبو الذكر');
   });
 
   it('omits players without a positive numeric roundStreak (old clients, fresh joins)', () => {

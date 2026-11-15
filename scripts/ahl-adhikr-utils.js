@@ -68,7 +68,7 @@ function bucketByMilestone(users) {
 }
 
 // Salawat streaks — read exactly what the mohamed_lovers leaderboard shows: the
-// continuous day streak each client publishes to its own player node
+// continuous day streak and nickname each client publishes to its own player node
 // (mohamed_lovers/{roundKey}/players/{uid}/roundStreak, written by the app's
 // writeRoundStreak from RoundStreakStore). No server-side recomputation, no ledger —
 // the published value and the leaderboard can never disagree.
@@ -78,7 +78,8 @@ function salawatStreaksFromPlayers(players) {
   for (const [uid, p] of Object.entries(players)) {
     const streak = p && typeof p === 'object' ? p.roundStreak : null;
     if (typeof uid === 'string' && uid && typeof streak === 'number' && streak > 0) {
-      streaks[uid] = streak;
+      const nickname = typeof p.nickname === 'string' ? p.nickname.trim().slice(0, 20) : '';
+      streaks[uid] = { streak, nickname };
     }
   }
   return streaks;
@@ -98,8 +99,15 @@ function buildSnapshot({ dateStr, challenges, salawatStreaks, source = 'firebase
 
 function toUsers(streakMap) {
   return Object.entries(streakMap || {})
-    .filter(([, s]) => typeof s === 'number' && s > 0)
-    .map(([uid, streak]) => ({ uid, streak }));
+    .map(([uid, value]) => {
+      if (typeof value === 'number') return { uid, streak: value, nickname: '' };
+      return {
+        uid,
+        streak: value && value.streak,
+        nickname: value && typeof value.nickname === 'string' ? value.nickname : '',
+      };
+    })
+    .filter(user => typeof user.streak === 'number' && user.streak > 0);
 }
 
 // Hard validation gate before anything is written. Throws on structural problems,
