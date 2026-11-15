@@ -204,7 +204,8 @@ async function main() {
     console.log('--- SNAPSHOT BEGIN ---');
     console.log(JSON.stringify(snapshot, null, 2));
     console.log('--- SNAPSHOT END ---');
-    return;
+    // Same as the write path: the RTDB connection would keep the process alive.
+    process.exit(0);
   }
 
   // Ledger update after validation, before the files — a crash between the two is
