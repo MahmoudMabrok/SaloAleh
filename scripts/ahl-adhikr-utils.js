@@ -16,8 +16,9 @@ const CHALLENGE_KEYS = [
 ];
 
 // Milestone buckets. Each user appears exactly once, in the highest milestone reached.
-// This keeps the published أهل الذكر list free of repeated names across 30/60/90 days.
+// The first tier starts at one week, then continues through the monthly milestones.
 const MILESTONES = [
+  { key: '7_days', min: 7 },
   { key: '30_days', min: 30 },
   { key: '60_days', min: 60 },
   { key: '90_days', min: 90 },

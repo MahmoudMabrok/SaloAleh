@@ -1133,6 +1133,7 @@
     <string name="ahl_adhikr_summary">%1$d أهل ذكر · بيانات %2$s</string>
     <string name="ahl_adhikr_stale">يُعرض آخر ملف صالح (%1$s). تعذّر جلب التحديث الآن.</string>
     <string name="ahl_adhikr_stale_undated">يُعرض آخر ملف صالح. تعذّر جلب التحديث الآن.</string>
+    <string name="ahl_adhikr_filter_hint">اختر مدة الثبات لعرض أهل الذكر في هذا المستوى</string>
     <string name="ahl_adhikr_milestone_days">%1$d يومًا</string>
     <string name="ahl_adhikr_entry_streak">%1$d يوم متواصل</string>
     <string name="ahl_adhikr_challenge_salawat">الصلاة على النبي ﷺ</string>

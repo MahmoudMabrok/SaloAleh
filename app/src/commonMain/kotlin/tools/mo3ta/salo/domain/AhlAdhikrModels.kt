@@ -1,14 +1,15 @@
 package tools.mo3ta.salo.domain
 
 /**
- * أهل الذكر — the daily public milestone lists (30/60/90-day current streaks) per
+ * أهل الذكر — the daily public milestone lists (7/30/60/90-day current streaks) per
  * challenge, published as a JSON snapshot by the "Ahl Adhikr Snapshot" workflow and
  * served from GitHub Pages. Identity is limited to a short public id and nickname;
  * the snapshot never carries tokens, backup codes, or private profile data.
  */
 
-/** The three milestone tiers the snapshot publishes; higher tiers include lower ones. */
+/** The milestone tiers the snapshot publishes; each user appears in the highest tier reached. */
 enum class AhlAdhikrMilestone(val key: String, val minDays: Int) {
+    D7("7_days", 7),
     D30("30_days", 30),
     D60("60_days", 60),
     D90("90_days", 90);
