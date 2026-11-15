@@ -130,7 +130,7 @@ fun AhlAdhikrScreen(
                         if (entries.isEmpty()) {
                             EmptyState()
                         } else {
-                            EntriesList(entries)
+                            EntriesList(entries, Modifier.weight(1f))
                         }
                     }
                 }
@@ -216,10 +216,15 @@ private fun ChallengeChip(label: String, selected: Boolean, onClick: () -> Unit)
 }
 
 @Composable
-private fun EntriesList(entries: List<tools.mo3ta.salo.domain.AhlAdhikrEntry>) {
+private fun EntriesList(
+    entries: List<tools.mo3ta.salo.domain.AhlAdhikrEntry>,
+    modifier: Modifier = Modifier,
+) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(modifier),
     ) {
         itemsIndexed(entries) { index, entry ->
             EntryRow(rank = index + 1, entry = entry)
