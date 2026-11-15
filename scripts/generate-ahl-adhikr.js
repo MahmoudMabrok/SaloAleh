@@ -215,6 +215,9 @@ async function main() {
 
   const json = writeSnapshotFiles(snapshot, dateStr);
   console.log(`Wrote ahl-adhikr/latest.json and ahl-adhikr/${dateStr}.json (${json.length} bytes)`);
+  // The RTDB connection would keep this process alive forever — the workflow's
+  // next steps and commit never run. Exit like generate-stats.js does.
+  process.exit(0);
 }
 
 if (require.main === module) {

@@ -1,6 +1,9 @@
 name: Update Landing Page Stats
 
 on:
+  schedule:
+    # 23:45 Cairo — before generate-stats.js deletes the per-challenge day nodes.
+    - cron: '45 21 * * *'
   workflow_dispatch:
 
 permissions:
