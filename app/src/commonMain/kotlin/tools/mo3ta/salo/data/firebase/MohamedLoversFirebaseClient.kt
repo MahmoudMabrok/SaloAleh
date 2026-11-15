@@ -660,17 +660,33 @@ class MohamedLoversFirebaseClient(
 
     override suspend fun writeRoundStreak(roundKey: String, uid: String, streak: Int): Result<Unit> {
         // Publish positive streaks; clear the field (null) when the streak is not active
-        // so the leaderboard badge disappears for this user.
+        // so the leaderboard badge disappears for this user. Before clearing it, preserve
+        // the largest value ever reached in the account-level node so a round reset cannot
+        // erase the player's personal best.
         val value: Int? = streak.takeIf { it > 0 }
         log.d { "writeRoundStreak[$roundKey/$uid] streak=$value" }
         return runCatching {
-            Firebase.database.reference(playersPath(roundKey)).child(uid).updateChildren(
-                playerPatch(uid, ROUND_STREAK_KEY to value)
-            )
+            val playerRef = Firebase.database.reference(playersPath(roundKey)).child(uid)
+            val currentRoundStreak = (playerRef.child(ROUND_STREAK_KEY).valueEvents.first().value as? Number)
+                ?.toInt()
+                ?.coerceAtLeast(0)
+                ?: 0
+            val userRef = Firebase.database.reference("$ROOT_PATH/$USERS_PATH/$uid")
+            val personalBestRef = userRef.child(HIGHEST_ROUND_STREAK_KEY)
+            val personalBestSnapshot = personalBestRef.valueEvents.first()
+            val recordedBest = (personalBestSnapshot.value as? Number)?.toInt()?.coerceAtLeast(0) ?: 0
+            val highest = maxOf(recordedBest, currentRoundStreak, streak.coerceAtLeast(0))
+
+            // Write the best before clearing the current round value. This ordering makes a
+            // reset safe even if the following player update is interrupted.
+            if (!personalBestSnapshot.exists || highest > recordedBest) {
+                userRef.updateChildren(mapOf(HIGHEST_ROUND_STREAK_KEY to highest))
+            }
+            playerRef.updateChildren(playerPatch(uid, ROUND_STREAK_KEY to value))
         }.also { result ->
             result.fold(
                 onSuccess = {
-                    log.d { "writeRoundStreak[$roundKey/$uid] ok" }
+                    log.d { "writeRoundStreak[$roundKey/$uid] ok highest preserved" }
                     mirror.mirrorPlayerField(roundKey, uid, ROUND_STREAK_KEY, value)
                 },
                 onFailure = { error ->
@@ -969,6 +985,7 @@ class MohamedLoversFirebaseClient(
         const val IS_SUPPORTER_KEY = "isSupporter"
         const val DAILY_BADGE_KEY = "dailyBadge"
         const val ROUND_STREAK_KEY = "roundStreak"
+        const val HIGHEST_ROUND_STREAK_KEY = "highestRoundStreak"
         const val GOLD_MEDALS_KEY = "goldMedals"
         const val SILVER_MEDALS_KEY = "silverMedals"
         const val BRONZE_MEDALS_KEY = "bronzeMedals"
