@@ -958,7 +958,6 @@ class MohamedLoversFirebaseClient(
     private companion object {
         const val ROOT_PATH = "mohamed_lovers"
         const val PLAYERS_PATH = "players"
-        const val USERS_PATH = "users"
         const val LEADERBOARD_PATH = "leaderboard"
         const val DAILY_LEADERBOARD_PATH = "dailyLeaderboard"
         const val IS_FINAL_KEY = "isFinal"
