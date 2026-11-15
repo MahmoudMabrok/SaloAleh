@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -219,7 +220,9 @@ private fun ChallengeChip(label: String, selected: Boolean, onClick: () -> Unit)
 private fun EntriesList(entries: List<tools.mo3ta.salo.domain.AhlAdhikrEntry>) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .weight(1f),
     ) {
         itemsIndexed(entries) { index, entry ->
             EntryRow(rank = index + 1, entry = entry)

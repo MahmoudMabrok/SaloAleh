@@ -63,21 +63,29 @@ describe('bucketByMilestone — thresholds', () => {
     assert.equal(buckets['60_days'].some(e => e.id === publicId('u-30')), false);
   });
 
-  it('includes 60 in 30_days and 60_days, not 90_days', () => {
-    assert.equal(buckets['30_days'].some(e => e.id === publicId('u-60')), true);
+  it('places 60 in 60_days only', () => {
+    assert.equal(buckets['30_days'].some(e => e.id === publicId('u-60')), false);
     assert.equal(buckets['60_days'].some(e => e.id === publicId('u-60')), true);
     assert.equal(buckets['90_days'].some(e => e.id === publicId('u-60')), false);
   });
 
-  it('includes 90 in all three lists', () => {
-    for (const { key } of MILESTONES) {
-      assert.equal(buckets[key].some(e => e.id === publicId('u-90')), true, key);
-    }
+  it('places 90 in 90_days only', () => {
+    assert.equal(buckets['30_days'].some(e => e.id === publicId('u-90')), false);
+    assert.equal(buckets['60_days'].some(e => e.id === publicId('u-90')), false);
+    assert.equal(buckets['90_days'].some(e => e.id === publicId('u-90')), true);
+  });
+
+  it('places a 91-day user once in 90_days, never in 30_days or 60_days', () => {
+    const ninetyOne = publicId('u-91');
+    const exclusive = bucketByMilestone([user('u-91', 91)]);
+    assert.equal(exclusive['30_days'].some(e => e.id === ninetyOne), false);
+    assert.equal(exclusive['60_days'].some(e => e.id === ninetyOne), false);
+    assert.equal(exclusive['90_days'].filter(e => e.id === ninetyOne).length, 1);
   });
 
   it('sorts by streak descending with id tiebreaker', () => {
     const ids = buckets['30_days'].map(e => e.id);
-    assert.deepEqual(ids, [publicId('u-90'), publicId('u-60'), publicId('u-31'), publicId('u-30')].map(String));
+    assert.deepEqual(ids, [publicId('u-31'), publicId('u-30')].map(String));
   });
 
   it('publishes only id, name, streak', () => {

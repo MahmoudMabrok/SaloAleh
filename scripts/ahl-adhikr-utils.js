@@ -15,8 +15,8 @@ const CHALLENGE_KEYS = [
   'salawat',
 ];
 
-// Milestone buckets. A user with a higher streak appears in every lower bucket too
-// (30_days is "current streak at least 30"), matching issue #250's semantics.
+// Milestone buckets. Each user appears exactly once, in the highest milestone reached.
+// This keeps the published أهل الذكر list free of repeated names across 30/60/90 days.
 const MILESTONES = [
   { key: '30_days', min: 30 },
   { key: '60_days', min: 60 },
@@ -65,9 +65,10 @@ function bucketByMilestone(users) {
     .map(u => ({ id: publicId(u.uid), name: entryName(u), streak: u.streak }))
     .sort((a, b) => b.streak - a.streak || a.id.localeCompare(b.id));
 
-  const buckets = {};
-  for (const { key, min } of MILESTONES) {
-    buckets[key] = entries.filter(e => e.streak >= min).map(e => ({ id: e.id, name: e.name, streak: e.streak }));
+  const buckets = Object.fromEntries(MILESTONES.map(({ key }) => [key, []]));
+  for (const entry of entries) {
+    const milestone = [...MILESTONES].reverse().find(({ min }) => entry.streak >= min);
+    if (milestone) buckets[milestone.key].push(entry);
   }
   return buckets;
 }

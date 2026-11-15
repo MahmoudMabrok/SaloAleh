@@ -112,7 +112,6 @@ import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.notification.NotificationAction
 import tools.mo3ta.salo.notification.NotificationMessage
 import tools.mo3ta.salo.generated.resources.Res
-import tools.mo3ta.salo.generated.resources.ahl_adhikr_title
 import tools.mo3ta.salo.generated.resources.bottom_nav_achievements
 import tools.mo3ta.salo.generated.resources.bottom_nav_articles
 import tools.mo3ta.salo.generated.resources.bottom_nav_challenges
@@ -197,6 +196,7 @@ fun App(
         var showAlfHasanaChallenge by remember { mutableStateOf(false) }
         var showKalimatChallenge by remember { mutableStateOf(false) }
         var showHawqalaChallenge by remember { mutableStateOf(false) }
+        var showAhlAdhikr by remember { mutableStateOf(false) }
         // Set when a challenge push is tapped: the just-opened challenge screen auto-opens
         // its leaderboard sheet once, then clears the flag.
         var openChallengeLeaderboard by remember { mutableStateOf(false) }
@@ -233,6 +233,7 @@ fun App(
                 showAlfHasanaChallenge ||
                 showKalimatChallenge ||
                 showHawqalaChallenge ||
+                showAhlAdhikr ||
                 showTakbeerSession ||
                 showTenDays ||
                 showExtensionQr ||
@@ -255,6 +256,7 @@ fun App(
                 showAlfHasanaChallenge -> showAlfHasanaChallenge = false
                 showKalimatChallenge -> showKalimatChallenge = false
                 showHawqalaChallenge -> showHawqalaChallenge = false
+                showAhlAdhikr -> showAhlAdhikr = false
                 showTakbeerSession -> showTakbeerSession = false
                 showTenDays -> showTenDays = false
                 showExtensionQr -> showExtensionQr = false
@@ -415,6 +417,9 @@ fun App(
                 onLeaderboardAutoOpened = { openChallengeLeaderboard = false },
                 manualEntryEnabled = manualEntryEnabled,
             )
+            showAhlAdhikr -> AhlAdhikrScreen(
+                onBack = { showAhlAdhikr = false },
+            )
             else -> SaloTabScaffold(
                 selectedTab = selectedTab,
                 onTabSelected = { selectedTab = it },
@@ -445,13 +450,11 @@ fun App(
                                 onOpenAlfHasanaChallenge = { showAlfHasanaChallenge = true },
                                 onOpenKalimatChallenge = { showKalimatChallenge = true },
                                 onOpenHawqalaChallenge = { showHawqalaChallenge = true },
+                                onOpenAhlAdhikr = { showAhlAdhikr = true },
                             )
                             SaloTab.Achievements -> AchievementsScreen(
                                 onBack = { selectedTab = SaloTab.MohamedLovers },
                                 showBackButton = false,
-                            )
-                            SaloTab.AhlAdhikr -> AhlAdhikrScreen(
-                                onBack = { selectedTab = SaloTab.MohamedLovers },
                             )
                             SaloTab.Articles -> HadithListScreen(
                                 onBack = { selectedTab = SaloTab.MohamedLovers },
@@ -888,7 +891,6 @@ private enum class SaloTab {
     MohamedLovers,
     Challenges,
     Achievements,
-    AhlAdhikr,
     Articles,
     Settings,
 }
@@ -938,11 +940,6 @@ private fun SaloBottomNavigationBar(
             tab = SaloTab.Achievements,
             label = stringResource(Res.string.bottom_nav_achievements),
             icon = Icons.Default.EmojiEvents,
-        ),
-        SaloTabItem(
-            tab = SaloTab.AhlAdhikr,
-            label = stringResource(Res.string.ahl_adhikr_title),
-            icon = Icons.Default.Groups,
         ),
         SaloTabItem(
             tab = SaloTab.Articles,
