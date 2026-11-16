@@ -25,3 +25,4 @@ GoogleService-Info.plist
 .worktrees/
 
 **node_modules**
+/docs/kamapp-3b3ac-default-rtdb-mohamed_lovers-export.json
