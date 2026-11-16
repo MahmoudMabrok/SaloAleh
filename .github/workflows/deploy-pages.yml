@@ -7,6 +7,11 @@ name: Deploy GitHub Pages
 #   * workflow_run after "Update Landing Page Stats" — the stats bot commits
 #     with [skip ci], so the push-paths trigger above never fires for those
 #     automated commits; this catches them.
+#   * workflow_run after "Ahl Adhikr Snapshot" — that bot pushes with the
+#     default GITHUB_TOKEN, and GitHub never fires `push` triggers for those
+#     pushes (regardless of [skip ci]). Without this the app keeps reading a
+#     stale ahl-adhikr/latest.json: salawat rows fall back to the public id
+#     instead of the nickname and countryCode is missing, so no flag renders.
 #   * workflow_dispatch for manual redeploys.
 on:
   push:
@@ -19,7 +24,7 @@ on:
       # Community review page, served at /experiences-review.html.
       - 'community/review.html'
   workflow_run:
-    workflows: ["Update Landing Page Stats"]
+    workflows: ["Update Landing Page Stats", "Ahl Adhikr Snapshot"]
     types: [completed]
   workflow_dispatch:
 
