@@ -3,6 +3,7 @@ package tools.mo3ta.salo.data.ghars
 import com.russhwolf.settings.MapSettings
 import kotlinx.datetime.LocalDate
 import tools.mo3ta.salo.domain.CHALLENGE_MANUAL_DAILY_CAP
+import tools.mo3ta.salo.domain.MILESTONE_MANUAL_DAILY_CAP
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -62,12 +63,13 @@ class GharsChallengeStoreTest {
     @Test fun manualAddCapAccumulatesAcrossBatches() {
         val store = GharsChallengeStore(MapSettings())
         val day = LocalDate(2026, 7, 12)
-        store.addToday(day, 6000)
-        assertEquals(4000, store.manualRemainingToday(day))
+        // A milestone-eligible user gets the 10,000 allowance; batches share the same ledger.
+        store.addToday(day, 6000, MILESTONE_MANUAL_DAILY_CAP)
+        assertEquals(4000, store.manualRemainingToday(day, MILESTONE_MANUAL_DAILY_CAP))
         // The second batch is clamped to the remaining 4000.
-        store.addToday(day, 9000)
-        assertEquals(CHALLENGE_MANUAL_DAILY_CAP, store.todayCount(day))
-        assertEquals(0, store.manualRemainingToday(day))
+        store.addToday(day, 9000, MILESTONE_MANUAL_DAILY_CAP)
+        assertEquals(MILESTONE_MANUAL_DAILY_CAP, store.todayCount(day))
+        assertEquals(0, store.manualRemainingToday(day, MILESTONE_MANUAL_DAILY_CAP))
     }
 
     @Test fun tapsAreNotCountedAgainstManualCap() {

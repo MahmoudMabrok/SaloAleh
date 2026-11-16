@@ -12,9 +12,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -266,7 +269,6 @@ private fun EmptySectionRow(challenge: AhlAdhikrChallenge) {
             style = LocalTextStyle.current.copy(textDirection = TextDirection.Content),
             modifier = Modifier.weight(1f),
         )
-        Text("0", color = Color(0x559FAFC9), fontSize = 13.sp, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -276,37 +278,20 @@ private fun ChallengeSection(
     entries: List<AhlAdhikrEntry>,
 ) {
     Column(Modifier.fillMaxWidth()) {
-        // Header: challenge name on one side, how many reached this tier on the other.
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
+        // Header: just the challenge name — the per-tier participant count is
+        // noise here, every row already carries its own rank.
+        Text(
+            stringResource(challengeLabel(challenge)),
+            color = AACream,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+            style = LocalTextStyle.current.copy(textDirection = TextDirection.Content),
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
                 .background(AAMidNavy)
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-        ) {
-            Text(
-                stringResource(challengeLabel(challenge)),
-                color = AACream,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                style = LocalTextStyle.current.copy(textDirection = TextDirection.Content),
-                modifier = Modifier.weight(1f),
-            )
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(AANavy)
-                    .padding(horizontal = 10.dp, vertical = 4.dp),
-            ) {
-                Text(
-                    "${entries.size}",
-                    color = AAGold,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-        }
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+        )
 
         Spacer(Modifier.height(4.dp))
         entries
@@ -320,6 +305,9 @@ private fun ChallengeSection(
 
 @Composable
 private fun EntryRow(rank: Int, entry: AhlAdhikrEntry) {
+    // One quiet line under the name: the public id and/or country code, only
+    // when they add something the name does not already say.
+    val meta = ahlAdhikrMetaLine(entry.name, entry.id, entry.countryCode)
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -347,7 +335,13 @@ private fun EntryRow(rank: Int, entry: AhlAdhikrEntry) {
                 fontWeight = FontWeight.Bold,
             )
         }
-        Spacer(Modifier.padding(6.dp))
+
+        // Country flag at the head of the row, the way every leaderboard row
+        // leads with it, so the row reads rank → country → name → streak.
+        Spacer(Modifier.width(8.dp))
+        FlagAvatar(entry.countryCode)
+        Spacer(Modifier.width(10.dp))
+
         Column(Modifier.weight(1f)) {
             Text(
                 entry.name,
@@ -357,12 +351,9 @@ private fun EntryRow(rank: Int, entry: AhlAdhikrEntry) {
                 maxLines = 1,
                 style = LocalTextStyle.current.copy(textDirection = TextDirection.Content),
             )
-            Text(entry.id, color = AAMuted, fontSize = 11.sp)
-            Text(
-                "${countryCodeToFlag(entry.countryCode)} ${entry.countryCode.ifBlank { "—" }}",
-                color = AAMuted,
-                fontSize = 10.sp,
-            )
+            if (meta != null) {
+                Text(meta, color = AAMuted, fontSize = 11.sp, maxLines = 1)
+            }
         }
         Text(
             stringResource(Res.string.ahl_adhikr_entry_streak, entry.streak),
@@ -373,7 +364,39 @@ private fun EntryRow(rank: Int, entry: AhlAdhikrEntry) {
     }
 }
 
-private fun countryCodeToFlag(code: String): String {
+/** Small round flag chip; a missing/short code shows the globe instead. */
+@Composable
+private fun FlagAvatar(countryCode: String) {
+    Box(
+        modifier = Modifier
+            .size(30.dp)
+            .clip(CircleShape)
+            .background(AAMidNavy),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = countryCodeToFlag(countryCode),
+            fontSize = 15.sp,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+/**
+ * The secondary line of a row: `id · CODE`, or just whichever of the two is
+ * meaningful. Empty (null) when the name already is the public id and there is
+ * no country — never a duplicated code under the name.
+ */
+internal fun ahlAdhikrMetaLine(name: String, id: String, countryCode: String): String? {
+    val showsId = id.isNotBlank() && !name.equals(id, ignoreCase = true)
+    val code = countryCode.trim()
+    return listOf(if (showsId) id else null, code.ifBlank { null })
+        .filterNotNull()
+        .joinToString(" · ")
+        .ifBlank { null }
+}
+
+internal fun countryCodeToFlag(code: String): String {
     if (code.length < 2) return "🌍"
     val base = 0x1F1E6 - 'A'.code
     return buildString {
