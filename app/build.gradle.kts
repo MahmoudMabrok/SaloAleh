@@ -109,6 +109,31 @@ val experiencesApiBaseUrl: String = run {
     raw
 }
 
+// Fixed App Check debug secret for debug builds, read from the system env
+// (FIREBASE_APPCHECK_DEBUG_TOKEN) with local.properties (appCheckDebugToken) as a
+// persistent fallback for shells that do not export it. Without this the debug
+// provider mints a random secret on every install, so each new device or reinstall
+// has to be allow-listed again in the Firebase Console. Baked into the debug APK
+// only — release builds get an empty string and never ship a debug secret.
+val appCheckDebugToken: String = run {
+    val fromEnv = System.getenv("FIREBASE_APPCHECK_DEBUG_TOKEN").orEmpty().trim()
+    if (fromEnv.isNotEmpty()) {
+        fromEnv
+    } else {
+        val localFile = rootProject.file("local.properties")
+        if (!localFile.exists()) {
+            ""
+        } else {
+            val properties = Properties()
+            localFile.inputStream().use { properties.load(it) }
+            properties.getProperty("appCheckDebugToken").orEmpty().trim()
+        }
+    }
+}
+
+/** Escapes a Kotlin string for embedding in a generated `BuildConfig` field. */
+fun String.asBuildConfigString(): String = replace("\\", "\\\\").replace("\"", "\\\"")
+
 android {
     testOptions.unitTests.isIncludeAndroidResources = true
     namespace = "tools.mo3ta.salo"
@@ -127,9 +152,12 @@ android {
     buildTypes {
         debug {
             buildConfigField("String", "EXPERIENCES_API_BASE_URL", "\"$experiencesApiBaseUrl\"")
+            buildConfigField("String", "APP_CHECK_DEBUG_TOKEN", "\"${appCheckDebugToken.asBuildConfigString()}\"")
         }
         release {
             buildConfigField("String", "EXPERIENCES_API_BASE_URL", "\"\"")
+            // Never a debug secret in a release build, whatever the env held at build time.
+            buildConfigField("String", "APP_CHECK_DEBUG_TOKEN", "\"\"")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

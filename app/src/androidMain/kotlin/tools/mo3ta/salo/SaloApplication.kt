@@ -11,6 +11,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import tools.mo3ta.salo.billing.SaloBillingClient
+import tools.mo3ta.salo.appcheck.seedFixedDebugSecret
 import tools.mo3ta.salo.di.androidModule
 import tools.mo3ta.salo.di.appModule
 import tools.mo3ta.salo.notification.NotificationChannels
@@ -28,6 +29,10 @@ class SaloApplication : Application() {
             FirebaseApp.initializeApp(this)
             val appCheck = FirebaseAppCheck.getInstance()
             if (BuildConfig.DEBUG) {
+                // Seed the fixed env-provided secret first: the factory below reads it
+                // from storage when it builds the provider, so every debug install
+                // exchanges the same registered token.
+                seedFixedDebugSecret(FirebaseApp.getInstance(), BuildConfig.APP_CHECK_DEBUG_TOKEN)
                 appCheck.installAppCheckProviderFactory(DebugAppCheckProviderFactory.getInstance())
             } else {
                 appCheck.installAppCheckProviderFactory(PlayIntegrityAppCheckProviderFactory.getInstance())

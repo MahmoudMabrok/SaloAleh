@@ -179,6 +179,8 @@ Scores are competitive, so writes need to be trustworthy. There is **no Firebase
 | Release | `PlayIntegrityAppCheckProviderFactory` |
 | Debug (`BuildConfig.DEBUG`) | `DebugAppCheckProviderFactory` |
 
+Debug builds present a **fixed** debug secret rather than a fresh random one per install: `app/build.gradle.kts` reads `FIREBASE_APPCHECK_DEBUG_TOKEN` from the system env (`appCheckDebugToken` in `local.properties` is the persistent fallback) into `BuildConfig.APP_CHECK_DEBUG_TOKEN` — debug build type only, hard-coded to `""` in release — and `appcheck/FixedDebugAppCheck.kt` seeds it into the SDK's own `StorageHelper` before the factory builds the provider, which is where `DebugAppCheckProvider` reads its secret from. Register that one value in the Firebase Console once and it keeps working across reinstalls and new devices. With no env var set the seeded value is blank, nothing is written, and the SDK generates its random secret exactly as before.
+
 Play Integrity attests that the request comes from a genuine, unmodified, Play-installed build of `tools.mo3ta.salo` on a device that passes integrity checks. This closes the **off-device abuse vectors**: raw REST/curl writes to RTDB, scripted clients, and modded/repackaged APKs cannot obtain a valid App Check token, so their writes are rejected regardless of what the security rules allow.
 
 Two things this depends on, both outside the codebase:
