@@ -36,6 +36,7 @@ class HeroesModelsTest {
                 HeroChallengeType.Quran,
                 HeroChallengeType.Zabad,
                 HeroChallengeType.Ghars,
+                HeroChallengeType.AlBaqara,
             ),
             board.challenges.map { it.type },
         )
