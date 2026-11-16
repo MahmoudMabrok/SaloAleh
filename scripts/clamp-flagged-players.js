@@ -15,7 +15,7 @@ const { PACE_DAILY_INCREMENT, addDaysToDateKey, cairoToday, roundDayNumber } = r
 
 const APPLY = process.argv.includes('--apply');
 const CLOSED_ROUND_DAYS = 7; // a finished round may legitimately reach 7 × the daily pace
-const ROUNDS_BACK = 26;      // how many past round keys to inspect
+const ROUNDS_BACK = 2;      // how many past round keys to inspect
 const MAGDA_UID = '5472bc710d53758f8681367b9a447e30b6e89833cf0970dd52cbdae297c84f24';
 const magdaTargetArg = process.argv.find((arg) => arg.startsWith('--magda-target-total='));
 const MAGDA_TARGET_TOTAL = magdaTargetArg ? Number(magdaTargetArg.split('=')[1]) : null;
