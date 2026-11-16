@@ -26,8 +26,8 @@ const MILESTONES = [
 
 // Identity fields published for each user — the public uid suffix the app already
 // shows when no nickname exists (generate-stats.js uses uid.slice(-6) too), plus the
-// optional nickname. Nothing else (no tokens, codes, country, email, totals) leaves.
-const ALLOWED_ENTRY_FIELDS = new Set(['id', 'name', 'streak']);
+// optional nickname and coarse country code. Nothing else (no tokens, codes, email, totals) leaves.
+const ALLOWED_ENTRY_FIELDS = new Set(['id', 'name', 'streak', 'countryCode']);
 
 // Forbidden anywhere in the snapshot — a hard stop in validateSnapshot so a future
 // schema change can never silently leak credentials.
@@ -51,12 +51,22 @@ function entryName(user) {
   return (user.nickname || '').trim().slice(0, 20) || publicId(user.uid);
 }
 
+function publicCountryCode(value) {
+  const code = typeof value === 'string' ? value.trim().toUpperCase() : '';
+  return /^[A-Z]{2,3}$/.test(code) ? code : '';
+}
+
 // Challenge users → milestone buckets. `users` come straight from
 // readChallengeRankedUsers (uid, count, nickname, streak); only the streak matters here.
 function bucketByMilestone(users) {
   const entries = users
     .filter(u => typeof u.streak === 'number' && u.streak >= MILESTONES[0].min)
-    .map(u => ({ id: publicId(u.uid), name: entryName(u), streak: u.streak }))
+    .map(u => ({
+      id: publicId(u.uid),
+      name: entryName(u),
+      streak: u.streak,
+      countryCode: publicCountryCode(u.countryCode),
+    }))
     .sort((a, b) => b.streak - a.streak || a.id.localeCompare(b.id));
 
   const buckets = Object.fromEntries(MILESTONES.map(({ key }) => [key, []]));
@@ -79,7 +89,7 @@ function salawatStreaksFromPlayers(players) {
     const streak = p && typeof p === 'object' ? p.roundStreak : null;
     if (typeof uid === 'string' && uid && typeof streak === 'number' && streak > 0) {
       const nickname = typeof p.nickname === 'string' ? p.nickname.trim().slice(0, 20) : '';
-      streaks[uid] = { streak, nickname };
+      streaks[uid] = { streak, nickname, countryCode: publicCountryCode(p.countryCode) };
     }
   }
   return streaks;
@@ -100,11 +110,12 @@ function buildSnapshot({ dateStr, challenges, salawatStreaks, source = 'firebase
 function toUsers(streakMap) {
   return Object.entries(streakMap || {})
     .map(([uid, value]) => {
-      if (typeof value === 'number') return { uid, streak: value, nickname: '' };
+      if (typeof value === 'number') return { uid, streak: value, nickname: '', countryCode: '' };
       return {
         uid,
         streak: value && value.streak,
         nickname: value && typeof value.nickname === 'string' ? value.nickname : '',
+        countryCode: value && typeof value.countryCode === 'string' ? value.countryCode : '',
       };
     })
     .filter(user => typeof user.streak === 'number' && user.streak > 0);
@@ -144,6 +155,9 @@ function validateSnapshot(snap) {
         if (entry.name !== undefined && typeof entry.name !== 'string') {
           throw new Error(`${key}.${mKey} entry name is not a string`);
         }
+        if (entry.countryCode !== undefined && (typeof entry.countryCode !== 'string' || (entry.countryCode !== '' && !/^[A-Z]{2,3}$/.test(entry.countryCode)))) {
+          throw new Error(`${key}.${mKey} entry countryCode is invalid`);
+        }
       }
       counts[key][mKey] = list.length;
     }
@@ -172,6 +186,7 @@ module.exports = {
   FORBIDDEN_KEYS,
   cairoDateStr,
   publicId,
+  publicCountryCode,
   bucketByMilestone,
   salawatStreaksFromPlayers,
   buildSnapshot,

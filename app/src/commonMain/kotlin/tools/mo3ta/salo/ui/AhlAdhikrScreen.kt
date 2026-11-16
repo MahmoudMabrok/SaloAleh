@@ -358,6 +358,11 @@ private fun EntryRow(rank: Int, entry: AhlAdhikrEntry) {
                 style = LocalTextStyle.current.copy(textDirection = TextDirection.Content),
             )
             Text(entry.id, color = AAMuted, fontSize = 11.sp)
+            Text(
+                "${countryCodeToFlag(entry.countryCode)} ${entry.countryCode.ifBlank { "—" }}",
+                color = AAMuted,
+                fontSize = 10.sp,
+            )
         }
         Text(
             stringResource(Res.string.ahl_adhikr_entry_streak, entry.streak),
@@ -365,6 +370,20 @@ private fun EntryRow(rank: Int, entry: AhlAdhikrEntry) {
             fontSize = 13.sp,
             fontWeight = FontWeight.Bold,
         )
+    }
+}
+
+private fun countryCodeToFlag(code: String): String {
+    if (code.length < 2) return "🌍"
+    val base = 0x1F1E6 - 'A'.code
+    return buildString {
+        for (char in code.uppercase().take(2)) {
+            val cp = base + char.code
+            val high = ((cp - 0x10000) ushr 10) + 0xD800
+            val low = ((cp - 0x10000) and 0x3FF) + 0xDC00
+            append(high.toChar())
+            append(low.toChar())
+        }
     }
 }
 
