@@ -6,83 +6,289 @@
     "dhikr": {
       "7_days": [
         {
+          "id": "710C42",
+          "name": "710c42",
+          "streak": 15,
+          "countryCode": "DZ"
+        },
+        {
           "id": "9849A8",
           "name": "ايه",
           "streak": 8,
+          "countryCode": "EG"
+        },
+        {
+          "id": "2D8012",
+          "name": "جمال",
+          "streak": 7,
           "countryCode": "EG"
         }
       ],
       "30_days": [],
       "60_days": [],
-      "90_days": []
+      "90_days": [
+        {
+          "id": "4184C9",
+          "name": "الحمد لله ❤️",
+          "streak": 107,
+          "countryCode": "EG"
+        }
+      ]
     },
     "baqiyat": {
-      "7_days": [],
+      "7_days": [
+        {
+          "id": "710C42",
+          "name": "710c42",
+          "streak": 15,
+          "countryCode": "DZ"
+        },
+        {
+          "id": "2D8012",
+          "name": "جمال",
+          "streak": 7,
+          "countryCode": "EG"
+        }
+      ],
       "30_days": [],
-      "60_days": [],
+      "60_days": [
+        {
+          "id": "4184C9",
+          "name": "الحمد لله ❤️",
+          "streak": 63,
+          "countryCode": "EG"
+        }
+      ],
       "90_days": []
     },
     "istighfar": {
       "7_days": [
         {
+          "id": "C1DED9",
+          "name": "نور\") 🌷",
+          "streak": 17,
+          "countryCode": "EG"
+        },
+        {
+          "id": "710C42",
+          "name": "710c42",
+          "streak": 16,
+          "countryCode": "DZ"
+        },
+        {
           "id": "9849A8",
           "name": "ايه",
           "streak": 8,
           "countryCode": "EG"
+        },
+        {
+          "id": "2D8012",
+          "name": "جمال",
+          "streak": 7,
+          "countryCode": "EG"
         }
       ],
       "30_days": [],
-      "60_days": [],
+      "60_days": [
+        {
+          "id": "4184C9",
+          "name": "الحمد لله ❤️",
+          "streak": 68,
+          "countryCode": "EG"
+        }
+      ],
       "90_days": []
     },
     "zabad": {
+      "7_days": [
+        {
+          "id": "710C42",
+          "name": "710c42",
+          "streak": 15,
+          "countryCode": "DZ"
+        },
+        {
+          "id": "C1DED9",
+          "name": "نور\") 🌷",
+          "streak": 11,
+          "countryCode": "EG"
+        },
+        {
+          "id": "9849A8",
+          "name": "ايه",
+          "streak": 8,
+          "countryCode": "EG"
+        },
+        {
+          "id": "2D8012",
+          "name": "جمال",
+          "streak": 7,
+          "countryCode": "EG"
+        }
+      ],
+      "30_days": [],
+      "60_days": [
+        {
+          "id": "4184C9",
+          "name": "الحمد لله ❤️",
+          "streak": 62,
+          "countryCode": "EG"
+        }
+      ],
+      "90_days": []
+    },
+    "quran": {
       "7_days": [
         {
           "id": "9849A8",
           "name": "ايه",
           "streak": 8,
           "countryCode": "EG"
+        },
+        {
+          "id": "2D8012",
+          "name": "جمال",
+          "streak": 7,
+          "countryCode": "EG"
         }
       ],
-      "30_days": [],
-      "60_days": [],
-      "90_days": []
-    },
-    "quran": {
-      "7_days": [],
-      "30_days": [],
+      "30_days": [
+        {
+          "id": "4184C9",
+          "name": "الحمد لله ❤️",
+          "streak": 59,
+          "countryCode": "EG"
+        }
+      ],
       "60_days": [],
       "90_days": []
     },
     "ghars": {
       "7_days": [
         {
+          "id": "710C42",
+          "name": "710c42",
+          "streak": 16,
+          "countryCode": "DZ"
+        },
+        {
+          "id": "9849A8",
+          "name": "ايه",
+          "streak": 8,
+          "countryCode": "EG"
+        },
+        {
           "id": "A84B07",
           "name": "اسماء",
           "streak": 8,
+          "countryCode": "EG"
+        },
+        {
+          "id": "2D8012",
+          "name": "جمال",
+          "streak": 7,
+          "countryCode": "EG"
+        }
+      ],
+      "30_days": [
+        {
+          "id": "4184C9",
+          "name": "الحمد لله ❤️",
+          "streak": 31,
+          "countryCode": "EG"
+        },
+        {
+          "id": "C1DED9",
+          "name": "نور\") 🌷",
+          "streak": 31,
+          "countryCode": "EG"
+        }
+      ],
+      "60_days": [],
+      "90_days": []
+    },
+    "alf_hasana": {
+      "7_days": [
+        {
+          "id": "710C42",
+          "name": "710c42",
+          "streak": 15,
+          "countryCode": "DZ"
+        },
+        {
+          "id": "2D8012",
+          "name": "جمال",
+          "streak": 7,
+          "countryCode": "EG"
+        },
+        {
+          "id": "9849A8",
+          "name": "ايه",
+          "streak": 7,
           "countryCode": "EG"
         }
       ],
       "30_days": [],
       "60_days": [],
-      "90_days": []
-    },
-    "alf_hasana": {
-      "7_days": [],
-      "30_days": [],
-      "60_days": [],
-      "90_days": []
+      "90_days": [
+        {
+          "id": "4184C9",
+          "name": "الحمد لله ❤️",
+          "streak": 113,
+          "countryCode": "EG"
+        }
+      ]
     },
     "kalimat": {
-      "7_days": [],
+      "7_days": [
+        {
+          "id": "710C42",
+          "name": "710c42",
+          "streak": 15,
+          "countryCode": "DZ"
+        }
+      ],
       "30_days": [],
-      "60_days": [],
+      "60_days": [
+        {
+          "id": "4184C9",
+          "name": "الحمد لله ❤️",
+          "streak": 68,
+          "countryCode": "EG"
+        }
+      ],
       "90_days": []
     },
     "hawqala": {
-      "7_days": [],
+      "7_days": [
+        {
+          "id": "710C42",
+          "name": "710c42",
+          "streak": 15,
+          "countryCode": "DZ"
+        },
+        {
+          "id": "9849A8",
+          "name": "ايه",
+          "streak": 8,
+          "countryCode": "EG"
+        },
+        {
+          "id": "2D8012",
+          "name": "جمال",
+          "streak": 7,
+          "countryCode": "EG"
+        }
+      ],
       "30_days": [],
-      "60_days": [],
+      "60_days": [
+        {
+          "id": "4184C9",
+          "name": "الحمد لله ❤️",
+          "streak": 63,
+          "countryCode": "EG"
+        }
+      ],
       "90_days": []
     },
     "salawat": {
@@ -110,13 +316,19 @@
           "name": "اسماء",
           "streak": 9,
           "countryCode": "EG"
+        },
+        {
+          "id": "2D8012",
+          "name": "جمال",
+          "streak": 7,
+          "countryCode": "EG"
         }
       ],
       "30_days": [
         {
           "id": "C1DED9",
           "name": "نور\") 🌷",
-          "streak": 55,
+          "streak": 56,
           "countryCode": "EG"
         },
         {
@@ -154,15 +366,15 @@
           "countryCode": "EG"
         },
         {
-          "id": "F80305",
-          "name": "يونس",
+          "id": "4184C9",
+          "name": "الحمد لله ❤️",
           "streak": 122,
           "countryCode": "EG"
         },
         {
-          "id": "4184C9",
-          "name": "الحمد لله ❤️",
-          "streak": 121,
+          "id": "F80305",
+          "name": "يونس",
+          "streak": 122,
           "countryCode": "EG"
         },
         {
@@ -180,7 +392,7 @@
         {
           "id": "9078C6",
           "name": "محب سيدنا محمد",
-          "streak": 103,
+          "streak": 104,
           "countryCode": "EG"
         }
       ]
