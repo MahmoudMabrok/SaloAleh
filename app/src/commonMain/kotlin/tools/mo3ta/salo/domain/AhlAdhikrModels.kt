@@ -3,8 +3,8 @@ package tools.mo3ta.salo.domain
 /**
  * أهل الذكر — the daily public milestone lists (7/30/60/90-day current streaks) per
  * challenge, published as a JSON snapshot by the "Ahl Adhikr Snapshot" workflow and
- * served from GitHub Pages. Identity is limited to a short public id and nickname;
- * the snapshot never carries tokens, backup codes, or private profile data.
+ * served from GitHub Pages. Identity is limited to a short public id, nickname, and
+ * coarse country code; the snapshot never carries tokens, backup codes, or private data.
  */
 
 /** The milestone tiers the snapshot publishes; each user appears in the highest tier reached. */
@@ -40,11 +40,12 @@ enum class AhlAdhikrChallenge(val key: String) {
     }
 }
 
-/** One published user: short public id (uid suffix), display name, current streak. */
+/** One published user: short public id (uid suffix), display name, country, current streak. */
 data class AhlAdhikrEntry(
     val id: String,
     val name: String,
     val streak: Int,
+    val countryCode: String = "",
 )
 
 /** A parsed snapshot: which day it covers and every challenge's milestone lists. */

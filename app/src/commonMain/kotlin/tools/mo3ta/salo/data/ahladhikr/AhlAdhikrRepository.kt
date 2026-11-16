@@ -60,7 +60,7 @@ class AhlAdhikrRepository(
         date = snapshot.date,
         challenges = snapshot.challenges.mapValues { (_, buckets) ->
             buckets.mapValues { (_, entries) ->
-                entries.map { AhlAdhikrEntryDto(it.id, it.name, it.streak) }
+                    entries.map { AhlAdhikrEntryDto(it.id, it.name, it.streak, it.countryCode) }
             }
         },
     )

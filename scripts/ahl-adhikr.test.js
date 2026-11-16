@@ -16,7 +16,7 @@ const {
 const { parseArgs, roundKeyForDate, writeSnapshotFiles, withRetry } = require('./generate-ahl-adhikr');
 const { DHIKR_CHALLENGE_ROOT, readChallengeRankedUsers } = require('./leaderboard-utils');
 
-const user = (uid, streak, nickname = '') => ({ uid, count: 1, nickname, streak, rank: 1 });
+const user = (uid, streak, nickname = '', countryCode = '') => ({ uid, count: 1, nickname, streak, rank: 1, countryCode });
 
 describe('cairoDateStr', () => {
   it('formats a UTC instant as its Cairo calendar day', () => {
@@ -86,10 +86,19 @@ describe('bucketByMilestone — thresholds', () => {
     assert.deepEqual(ids, [publicId('u-31'), publicId('u-30')].map(String));
   });
 
-  it('publishes only id, name, streak', () => {
+  it('publishes only public identity, country, and streak', () => {
     for (const entry of buckets['30_days']) {
-      assert.deepEqual(Object.keys(entry).sort(), ['id', 'name', 'streak']);
+      assert.deepEqual(Object.keys(entry).sort(), ['countryCode', 'id', 'name', 'streak']);
     }
+  });
+
+  it('normalizes a valid country code and hides malformed values', () => {
+    const entries = bucketByMilestone([
+      user('egyptian', 30, '', ' eg '),
+      user('unknown', 30, '', 'not-a-country'),
+    ]);
+    assert.equal(entries['30_days'].find(e => e.id === publicId('egyptian')).countryCode, 'EG');
+    assert.equal(entries['30_days'].find(e => e.id === publicId('unknown')).countryCode, '');
   });
 
   it('falls back to the public id when no nickname', () => {
@@ -106,12 +115,12 @@ describe('bucketByMilestone — thresholds', () => {
 describe('salawatStreaksFromPlayers', () => {
   it('takes the client-published roundStreak, exactly what the leaderboard shows', () => {
     const players = {
-      a100: { roundStreak: 112, totalCount: 5000, nickname: '  صاحب الهمة  ' },
-      a45: { roundStreak: 45, totalCount: 12, nickname: 'سهير' },
+      a100: { roundStreak: 112, totalCount: 5000, nickname: '  صاحب الهمة  ', countryCode: 'eg' },
+      a45: { roundStreak: 45, totalCount: 12, nickname: 'سهير', countryCode: 'sa' },
     };
     assert.deepEqual(salawatStreaksFromPlayers(players), {
-      a100: { streak: 112, nickname: 'صاحب الهمة' },
-      a45: { streak: 45, nickname: 'سهير' },
+      a100: { streak: 112, nickname: 'صاحب الهمة', countryCode: 'EG' },
+      a45: { streak: 45, nickname: 'سهير', countryCode: 'SA' },
     });
   });
 

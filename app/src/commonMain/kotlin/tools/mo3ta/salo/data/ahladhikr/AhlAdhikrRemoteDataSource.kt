@@ -24,9 +24,10 @@ internal data class AhlAdhikrEntryDto(
     val id: String = "",
     val name: String = "",
     val streak: Int = 0,
+    val countryCode: String = "",
 ) {
     fun toDomain(): AhlAdhikrEntry? =
-        if (id.isBlank() || streak <= 0) null else AhlAdhikrEntry(id, name.ifBlank { id }, streak)
+        if (id.isBlank() || streak <= 0) null else AhlAdhikrEntry(id, name.ifBlank { id }, streak, countryCode)
 }
 
 @Serializable
