@@ -13,15 +13,21 @@ class DailyNotificationWorker(
 
     override suspend fun doWork(): Result {
         Log.d("DailyWorker", "doWork() started")
-        val notifEnabled = NotificationManagerCompat.from(applicationContext).areNotificationsEnabled()
-        Log.d("DailyWorker", "areNotificationsEnabled=$notifEnabled")
-        if (!notifEnabled) {
-            Log.d("DailyWorker", "notifications disabled — returning early")
-            return Result.success()
+        return try {
+            val notifEnabled = NotificationManagerCompat.from(applicationContext).areNotificationsEnabled()
+            Log.d("DailyWorker", "areNotificationsEnabled=$notifEnabled")
+            val result = if (!notifEnabled) {
+                Log.d("DailyWorker", "notifications disabled — returning early")
+                Result.success()
+            } else {
+                Log.d("DailyWorker", "posting notification id=${NotificationChannels.NOTIF_ID_DAILY}")
+                AndroidReminderNotifier.postDaily(applicationContext)
+                Log.d("DailyWorker", "notification posted OK")
+                Result.success()
+            }
+            result
+        } finally {
+            NotificationScheduler.rescheduleDailyAfterTrigger(applicationContext)
         }
-        Log.d("DailyWorker", "posting notification id=${NotificationChannels.NOTIF_ID_DAILY}")
-        AndroidReminderNotifier.postDaily(applicationContext)
-        Log.d("DailyWorker", "notification posted OK")
-        return Result.success()
     }
 }

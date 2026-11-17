@@ -7,6 +7,7 @@ import android.content.Intent
 import android.os.Build
 import android.util.Log
 import androidx.core.content.getSystemService
+import androidx.work.ExistingWorkPolicy
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
@@ -128,10 +129,10 @@ actual object NotificationScheduler {
             return
         }
 
-        workManager.enqueueUniquePeriodicWork(
+        workManager.enqueueUniqueWork(
             TAG_DAILY,
-            ExistingPeriodicWorkPolicy.REPLACE,
-            PeriodicWorkRequestBuilder<DailyNotificationWorker>(1, TimeUnit.DAYS)
+            ExistingWorkPolicy.REPLACE,
+            OneTimeWorkRequestBuilder<DailyNotificationWorker>()
                 .setInitialDelay(delayUntilNextDailyMillis(), TimeUnit.MILLISECONDS)
                 .build(),
         )
@@ -150,10 +151,10 @@ actual object NotificationScheduler {
             return
         }
 
-        workManager.enqueueUniquePeriodicWork(
+        workManager.enqueueUniqueWork(
             TAG_FRIDAY,
-            ExistingPeriodicWorkPolicy.REPLACE,
-            PeriodicWorkRequestBuilder<FridayNotificationWorker>(1, TimeUnit.HOURS)
+            ExistingWorkPolicy.REPLACE,
+            OneTimeWorkRequestBuilder<FridayNotificationWorker>()
                 .setInitialDelay(delayUntilNextFridayMillis(), TimeUnit.MILLISECONDS)
                 .build(),
         )
@@ -172,17 +173,17 @@ actual object NotificationScheduler {
             return
         }
 
-        workManager.enqueueUniquePeriodicWork(
+        workManager.enqueueUniqueWork(
             TAG_EVENING,
-            ExistingPeriodicWorkPolicy.REPLACE,
-            PeriodicWorkRequestBuilder<EveningNotificationWorker>(1, TimeUnit.DAYS)
+            ExistingWorkPolicy.REPLACE,
+            OneTimeWorkRequestBuilder<EveningNotificationWorker>()
                 .setInitialDelay(delayUntilNextEveningMillis(), TimeUnit.MILLISECONDS)
                 .build(),
         )
         Log.d(TAG, "evening fallback work scheduled")
     }
 
-    private fun rescheduleEveningAfterTrigger(context: Context) {
+    internal fun rescheduleEveningAfterTrigger(context: Context) {
         val store = currentSettings(context)
         if (!store.eveningEnabled) {
             cancelExactAlarm(context, ACTION_EVENING_EXACT, REQUEST_EVENING_EXACT)
@@ -197,17 +198,17 @@ actual object NotificationScheduler {
                 triggerAtMillis = nextEveningTriggerAtMillis(),
             )
         } else {
-            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+            WorkManager.getInstance(context).enqueueUniqueWork(
                 TAG_EVENING,
-                ExistingPeriodicWorkPolicy.REPLACE,
-                PeriodicWorkRequestBuilder<EveningNotificationWorker>(1, TimeUnit.DAYS)
+                ExistingWorkPolicy.REPLACE,
+                OneTimeWorkRequestBuilder<EveningNotificationWorker>()
                     .setInitialDelay(delayUntilNextEveningMillis(), TimeUnit.MILLISECONDS)
                     .build(),
             )
         }
     }
 
-    private fun rescheduleDailyAfterTrigger(context: Context) {
+    internal fun rescheduleDailyAfterTrigger(context: Context) {
         val store = currentSettings(context)
         if (!store.dailyEnabled) {
             cancelExactAlarm(context, ACTION_DAILY_EXACT, REQUEST_DAILY_EXACT)
@@ -222,17 +223,17 @@ actual object NotificationScheduler {
                 triggerAtMillis = nextDailyTriggerAtMillis(),
             )
         } else {
-            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+            WorkManager.getInstance(context).enqueueUniqueWork(
                 TAG_DAILY,
-                ExistingPeriodicWorkPolicy.REPLACE,
-                PeriodicWorkRequestBuilder<DailyNotificationWorker>(1, TimeUnit.DAYS)
+                ExistingWorkPolicy.REPLACE,
+                OneTimeWorkRequestBuilder<DailyNotificationWorker>()
                     .setInitialDelay(delayUntilNextDailyMillis(), TimeUnit.MILLISECONDS)
                     .build(),
             )
         }
     }
 
-    private fun rescheduleFridayAfterTrigger(context: Context) {
+    internal fun rescheduleFridayAfterTrigger(context: Context) {
         val store = currentSettings(context)
         if (!store.fridayEnabled) {
             cancelExactAlarm(context, ACTION_FRIDAY_EXACT, REQUEST_FRIDAY_EXACT)
@@ -247,10 +248,10 @@ actual object NotificationScheduler {
                 triggerAtMillis = nextFridayTriggerAtMillis(),
             )
         } else {
-            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+            WorkManager.getInstance(context).enqueueUniqueWork(
                 TAG_FRIDAY,
-                ExistingPeriodicWorkPolicy.REPLACE,
-                PeriodicWorkRequestBuilder<FridayNotificationWorker>(1, TimeUnit.HOURS)
+                ExistingWorkPolicy.REPLACE,
+                OneTimeWorkRequestBuilder<FridayNotificationWorker>()
                     .setInitialDelay(delayUntilNextFridayMillis(), TimeUnit.MILLISECONDS)
                     .build(),
             )

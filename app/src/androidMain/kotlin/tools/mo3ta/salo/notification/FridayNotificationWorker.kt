@@ -15,19 +15,22 @@ class FridayNotificationWorker(
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
-        if (!NotificationManagerCompat.from(applicationContext).areNotificationsEnabled()) {
-            return Result.success()
+        return try {
+            val cairoTz = TimeZone.of("Africa/Cairo")
+            val now = Clock.System.now().toLocalDateTime(cairoTz)
+            val result = when {
+                !NotificationManagerCompat.from(applicationContext).areNotificationsEnabled() -> Result.success()
+                now.dayOfWeek != DayOfWeek.FRIDAY -> Result.success()
+                now.hour !in 9..16 -> Result.success()
+                else -> {
+                    // Round closes Friday 17:00 Cairo — last reminder hour is 16:00.
+                    AndroidReminderNotifier.postFriday(applicationContext)
+                    Result.success()
+                }
+            }
+            result
+        } finally {
+            NotificationScheduler.rescheduleFridayAfterTrigger(applicationContext)
         }
-
-        val cairoTz = TimeZone.of("Africa/Cairo")
-        val now = Clock.System.now().toLocalDateTime(cairoTz)
-
-        if (now.dayOfWeek != DayOfWeek.FRIDAY) return Result.success()
-        // Round closes Friday 17:00 Cairo — last reminder hour is 16:00.
-        if (now.hour !in 9..16) return Result.success()
-
-        AndroidReminderNotifier.postFriday(applicationContext)
-
-        return Result.success()
     }
 }
