@@ -13,19 +13,24 @@ class EveningNotificationWorker(
 
     override suspend fun doWork(): Result {
         Log.d("EveningWorker", "doWork() started")
-        val notifEnabled = NotificationManagerCompat.from(applicationContext).areNotificationsEnabled()
-        Log.d("EveningWorker", "areNotificationsEnabled=$notifEnabled")
-        if (!notifEnabled) {
-            Log.d("EveningWorker", "notifications disabled — returning early")
-            return Result.success()
+        return try {
+            val notifEnabled = NotificationManagerCompat.from(applicationContext).areNotificationsEnabled()
+            Log.d("EveningWorker", "areNotificationsEnabled=$notifEnabled")
+            val result = if (!notifEnabled) {
+                Log.d("EveningWorker", "notifications disabled — returning early")
+                Result.success()
+            } else if (NotificationScheduler.hasSentSalawatToday(applicationContext)) {
+                Log.d("EveningWorker", "salawat already sent today — skipping reminder")
+                Result.success()
+            } else {
+                Log.d("EveningWorker", "posting notification id=${NotificationChannels.NOTIF_ID_EVENING}")
+                AndroidReminderNotifier.postEvening(applicationContext)
+                Log.d("EveningWorker", "notification posted OK")
+                Result.success()
+            }
+            result
+        } finally {
+            NotificationScheduler.rescheduleEveningAfterTrigger(applicationContext)
         }
-        if (NotificationScheduler.hasSentSalawatToday(applicationContext)) {
-            Log.d("EveningWorker", "salawat already sent today — skipping reminder")
-            return Result.success()
-        }
-        Log.d("EveningWorker", "posting notification id=${NotificationChannels.NOTIF_ID_EVENING}")
-        AndroidReminderNotifier.postEvening(applicationContext)
-        Log.d("EveningWorker", "notification posted OK")
-        return Result.success()
     }
 }
