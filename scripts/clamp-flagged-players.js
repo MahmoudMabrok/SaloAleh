@@ -28,7 +28,7 @@ const REVIEWED_USERS = [
   },
   {
     uid: '498e706ae7dcb9e2875c518d995bb1f7c80e03d727db3f32d9f0478bfca84b07',
-    note: 'اسماء — 12,427 on 2026-11-10, now within the normal 20k daily range; no special clamp override',
+    note: 'اسماء — 12,427 on 2026-11-10, now within the normal 35k daily range; no special clamp override',
     maxTotal: {},
   },
   {

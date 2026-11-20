@@ -63,19 +63,19 @@ const flush = (delta, extra = {}) => ({
 });
 
 describe('anti-cheat: totalCount day ceiling', () => {
-  it('allows growth exactly at the 25000 cap', async () => {
+  it('allows growth exactly at the 35000 cap', async () => {
     await seed({ totalCount: 1000, yesterdayTotalScore: 1000 });
-    await assertSucceeds(asUser().ref(playerPath()).update(flush(25000)));
+    await assertSucceeds(asUser().ref(playerPath()).update(flush(35000)));
   });
 
-  it('rejects growth beyond the 25000 cap', async () => {
+  it('rejects growth beyond the 35000 cap', async () => {
     await seed({ totalCount: 1000, yesterdayTotalScore: 1000 });
-    await assertFails(asUser().ref(playerPath()).update(flush(25001)));
+    await assertFails(asUser().ref(playerPath()).update(flush(35001)));
   });
 
   it('treats a missing baseline as 0 (fresh round node after Friday close)', async () => {
     // No yesterdayTotalScore until the 23:45 Cairo close stamps one.
-    await assertSucceeds(asUser().ref(playerPath()).update(flush(25000)));
+    await assertSucceeds(asUser().ref(playerPath()).update(flush(35000)));
     await assertFails(asUser().ref(playerPath()).update(flush(1)));
   });
 
