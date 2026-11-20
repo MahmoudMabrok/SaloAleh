@@ -881,7 +881,7 @@
               ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 3"
             },
             "totalCount": {
-              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() - (newData.parent().child('yesterdayTotalScore').exists() ? newData.parent().child('yesterdayTotalScore').val() : 0) <= 25000"
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() - (newData.parent().child('yesterdayTotalScore').exists() ? newData.parent().child('yesterdayTotalScore').val() : 0) <= 35000"
             },
             "yesterdayTotalScore": {
               ".validate": "newData.val() === data.val()"
@@ -909,7 +909,7 @@
                   ".validate": "newData.isString() && newData.val() === $uid"
                 },
                 "delta": {
-                  ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= 25000"
+                  ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= 35000"
                 },
                 "at": {
                   ".validate": "newData.val() === now"

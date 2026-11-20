@@ -2,7 +2,7 @@
 // The client may append score events, but it cannot write todayCount or dailyBadge directly.
 const admin = require('firebase-admin');
 
-const DAILY_CAP = 25_000;
+const DAILY_CAP = 35_000;
 const BADGES = [
   ['spark', 10],
   ['sprout', 100],

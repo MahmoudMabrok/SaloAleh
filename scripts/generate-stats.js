@@ -171,7 +171,7 @@ async function main() {
 
   // Per-user daily close: append a score-history snapshot for each active player, flag anyone who
   // exceeded the abnormal daily threshold for admin review, flag anyone whose cumulative round
-  // total outran the day-of-round pace ceiling (day N * 20k) into users/{uid}/paceFlags/{dateKey},
+  // total outran the day-of-round pace ceiling (day N * 35k) into users/{uid}/paceFlags/{dateKey},
   // and reset todayCount so the next Cairo day starts fresh (the daily leaderboard ranks on the
   // client-pushed todayCount).
   const roundDay = roundDayNumber(roundKey, dateStr);

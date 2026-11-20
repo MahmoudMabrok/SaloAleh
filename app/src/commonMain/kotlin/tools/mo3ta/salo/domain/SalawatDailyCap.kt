@@ -8,7 +8,7 @@ package tools.mo3ta.salo.domain
  * manual ("record external") sheet. This one is the last gate before the network write: whatever
  * survives the manual cap still has to fit under it.
  */
-const val MOHAMED_LOVERS_DAILY_PUSH_CAP = 25_000
+const val MOHAMED_LOVERS_DAILY_PUSH_CAP = 35_000
 
 /**
  * Pure math for the daily push cap. All of it works off a single number — how much has already

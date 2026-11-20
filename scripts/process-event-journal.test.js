@@ -30,6 +30,17 @@ test('caps journal-derived count by server growth and daily limit', () => {
   assert.equal(result.dailyBadge, 'sprout');
 });
 
+test('allows the raised 35,000 daily limit when server growth permits it', () => {
+  const today = '2026-11-12';
+  const at = Date.parse('2026-11-12T10:00:00Z');
+  const result = derivePlayerFields({
+    totalCount: 40000,
+    yesterdayTotalScore: 0,
+    events: { a: { delta: 40000, at } },
+  }, today);
+  assert.equal(result.todayCount, 35000);
+});
+
 test('returns the highest earned badge and clears it below the first threshold', () => {
   assert.equal(badgeForCount(0), null);
   assert.equal(badgeForCount(10), 'spark');

@@ -13,15 +13,15 @@ const HAWQALA_CHALLENGE_ROOT = 'hawqala_challenge';
 const MOHAMED_LOVERS_ROOT = 'mohamed_lovers';
 
 // A day's salawat above this is treated as abnormal and recorded for admin review.
-// 20k is considered a natural daily total for this competition.
-const ABNORMAL_DAILY_THRESHOLD = 20000;
+// 35k is considered a natural daily total for this competition.
+const ABNORMAL_DAILY_THRESHOLD = 35_000;
 
 // Salawat pace ceiling: a player's cumulative round total is expected to grow by at
 // most this per competition day. On day N of the round a total above N * this is
 // treated as abnormal pace and recorded (per-user, for later analysis). Saturday —
 // the first day after the Friday 19:00 reset — is day 1, so its ceiling is one
-// increment (20k), Sunday (day 2) is 40k, and so on.
-const PACE_DAILY_INCREMENT = 20000;
+// increment (35k), Sunday (day 2) is 70k, and so on.
+const PACE_DAILY_INCREMENT = 35_000;
 
 // A player's competition score for the current Cairo day. Takes the larger of the
 // client-published absolute `todayCount` and the yesterday-diff (`totalCount - yesterdayTotalScore`):
