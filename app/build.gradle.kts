@@ -144,8 +144,8 @@ android {
         applicationId = "tools.mo3ta.salo"
         minSdk = 24
         targetSdk = 36
-        versionCode = 193
-        versionName = "4.2.3"
+        versionCode = 194
+        versionName = "4.2.4"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
