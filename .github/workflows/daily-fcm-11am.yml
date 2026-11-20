@@ -1,0 +1,16 @@
+name: Daily FCM Reminder - 11 AM
+
+on:
+  # GitHub Actions cron is UTC. 09:00 UTC is 11:00 Africa/Cairo during the
+  # current UTC+2 schedule used by the app.
+  schedule:
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+jobs:
+  send:
+    uses: ./.github/workflows/send-fcm-broadcast.yml
+    with:
+      title: 'حرز الشيطان'
+      body: 'عليك ١٠٠ مرة فقط لتحفظ نفسك من الشيطان والسحر.'
+    secrets: inherit
