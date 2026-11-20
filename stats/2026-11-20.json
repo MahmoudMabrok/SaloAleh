@@ -1,0 +1,180 @@
+{
+  "allTimeSalawat": 11671436,
+  "weekSalawat": 18668,
+  "todaySalawat": 18668,
+  "activePlayers": 41,
+  "countriesCount": 6,
+  "countries": [
+    "DZ",
+    "EG",
+    "LY",
+    "MA",
+    "SA",
+    "TN"
+  ],
+  "topScore": 5147,
+  "roundKey": "2026-11-27",
+  "leaderboard": [
+    {
+      "countryCode": "SA",
+      "dailyBadge": "crown",
+      "nickname": "فيصل ربي اغفر لامي",
+      "rank": 1,
+      "rankChange": "same",
+      "score": 5064,
+      "uid": "17ce92d704c1ec31092304af7633f1306481c22b11db23d29ce1c2561b08e153"
+    },
+    {
+      "bronzeMedals": 1,
+      "countryCode": "EG",
+      "goldMedals": 15,
+      "nickname": "يونس",
+      "rank": 2,
+      "rankChange": "new",
+      "score": 4500,
+      "silverMedals": 8,
+      "uid": "5a4b1d0ed314c539aefe3fedeb07054b2acf361dd98189761e80e047fbf80305"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "dome",
+      "nickname": "سلفيه وأ فتخر",
+      "rank": 3,
+      "rankChange": "down",
+      "score": 1500,
+      "uid": "114381b1f8800560af057f45b33f61c850dfceff88bb11b26afd728f7254d8d0"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "spark",
+      "nickname": "توتو",
+      "rank": 4,
+      "rankChange": "new",
+      "score": 1422,
+      "uid": "64347670a941ba513dd1fdc507d94839a5fedb37a98074be25c4c5ff1ee091ec"
+    },
+    {
+      "countryCode": "EG",
+      "nickname": "مريم محمد",
+      "rank": 5,
+      "rankChange": "down",
+      "roundStreak": 1,
+      "score": 1078,
+      "uid": "978b9d5af462c34a226034ea26d676e90b99b7ca398767f50e2814c424e50c05"
+    },
+    {
+      "bronzeMedals": 3,
+      "countryCode": "EG",
+      "dailyBadge": "tasbih",
+      "nickname": "سهير",
+      "rank": 6,
+      "rankChange": "down",
+      "score": 1033,
+      "uid": "c2f47956533f0de3c7d40a970fb8d0694187ed56f46c7b29e248d1b7b3f9240c"
+    },
+    {
+      "countryCode": "TN",
+      "dailyBadge": "tasbih",
+      "nickname": "امة الله",
+      "rank": 7,
+      "rankChange": "down",
+      "score": 863,
+      "uid": "4968ce77221ba7587e3f42060a0418b9579b2160d38daaabfcf80832e4842c93"
+    },
+    {
+      "countryCode": "EG",
+      "dailyBadge": "tasbih",
+      "nickname": "🤎",
+      "rank": 8,
+      "rankChange": "down",
+      "score": 782,
+      "uid": "c279bfb7544bfcfe766419f210267c2de0c6c428a9090ff017a6049e82fdcb3e"
+    },
+    {
+      "countryCode": "EG",
+      "nickname": "فطومى",
+      "rank": 9,
+      "rankChange": "same",
+      "roundStreak": 1,
+      "score": 681,
+      "uid": "54c07329b0bd693bf2fd0811131cbdf5b57ce178fda5243a394e7cd2f8a713a1"
+    },
+    {
+      "bronzeMedals": 1,
+      "countryCode": "EG",
+      "dailyBadge": "heart",
+      "nickname": "ايه",
+      "rank": 10,
+      "rankChange": "down",
+      "score": 345,
+      "uid": "187fd58d0668670c2478e0337aa70a1873e3ead80e8c43c03ee1eebc359849a8"
+    }
+  ],
+  "topStreaks": [
+    {
+      "rank": 1,
+      "uid": "72f869192aed16172c8cc1f78a80ee18cee8ae0488a57e050d1336205ab8465b",
+      "nickname": "فهد فهد فهد",
+      "score": 220,
+      "roundStreak": 6,
+      "countryCode": "SA"
+    },
+    {
+      "rank": 2,
+      "uid": "27561cf16bd947630aeb863ad0703a05a4a6eeaf3c74467580927a6ace48df80",
+      "nickname": "محمد",
+      "score": 10,
+      "roundStreak": 2,
+      "countryCode": "EG"
+    },
+    {
+      "rank": 3,
+      "uid": "978b9d5af462c34a226034ea26d676e90b99b7ca398767f50e2814c424e50c05",
+      "nickname": "مريم محمد",
+      "score": 1078,
+      "roundStreak": 1,
+      "countryCode": "EG"
+    },
+    {
+      "rank": 4,
+      "uid": "54c07329b0bd693bf2fd0811131cbdf5b57ce178fda5243a394e7cd2f8a713a1",
+      "nickname": "فطومى",
+      "score": 681,
+      "roundStreak": 1,
+      "countryCode": "EG"
+    },
+    {
+      "rank": 5,
+      "uid": "275916fdc1bb2ab8266a6aa2bfe57b60cdf66b7ccb6752a9930cad3e77ce558b",
+      "nickname": "اللهم اغفر لابي",
+      "score": 112,
+      "roundStreak": 1,
+      "countryCode": "EG"
+    },
+    {
+      "rank": 6,
+      "uid": "f1cec9fa39e5f5984edb2b0833a1124966c97785927df31854be18e19bdb15fd",
+      "nickname": "db15fd",
+      "score": 6,
+      "roundStreak": 1,
+      "countryCode": "EG"
+    },
+    {
+      "rank": 7,
+      "uid": "01e8b306de4924832b560ba66bf0214147104f2681bf2dbefdbf376d5c541c61",
+      "nickname": "عشاق النبي",
+      "score": 5,
+      "roundStreak": 1,
+      "countryCode": "EG"
+    },
+    {
+      "rank": 8,
+      "uid": "abc88c428394936579cfe0664f96f92b933a239267c39ae25924c975b821d114",
+      "nickname": "21d114",
+      "score": 5,
+      "roundStreak": 1,
+      "countryCode": "EG"
+    }
+  ],
+  "updatedAt": "2026-11-20T21:46:09.227Z"
+}
