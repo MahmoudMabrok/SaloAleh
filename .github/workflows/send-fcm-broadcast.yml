@@ -1,0 +1,54 @@
+name: Send FCM Broadcast
+
+on:
+  workflow_call:
+    inputs:
+      title:
+        description: 'Notification title'
+        required: true
+        type: string
+      body:
+        description: 'Notification body'
+        required: true
+        type: string
+    secrets:
+      FIREBASE_SERVICE_ACCOUNT:
+        required: true
+      FIREBASE_DATABASE_URL:
+        required: true
+  workflow_dispatch:
+    inputs:
+      title:
+        description: 'Notification title'
+        required: true
+        type: string
+      body:
+        description: 'Notification body'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  send:
+    name: Send FCM notification to all users
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install firebase-admin
+        run: npm install firebase-admin
+        working-directory: scripts
+
+      - name: Send broadcast
+        run: node scripts/send-fcm-broadcast.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          FCM_TITLE: ${{ inputs.title }}
+          FCM_BODY: ${{ inputs.body }}
