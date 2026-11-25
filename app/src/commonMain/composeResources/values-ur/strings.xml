@@ -18,6 +18,8 @@
 
     <!-- Info Sheet -->
     <string name="mohamed_lovers_info_sheet_title">محبانِ محمد ﷺ</string>
+    <string name="mohamed_lovers_dedication_line1">یہ ایپ صدقۂ جاریہ ہے</string>
+    <string name="mohamed_lovers_dedication_line2">اسے استعمال کرنے والے ہر شخص کے ماں باپ کی روحوں کے لیے</string>
     <string name="mohamed_lovers_status_title">حالت</string>
     <string name="mohamed_lovers_status_waiting_network">نیٹورک سے وقت مطابقت ہو رہی ہے…</string>
     <string name="mohamed_lovers_status_firebase_off">سروس سے رابطہ دستیاب نہیں</string>

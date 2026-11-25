@@ -1,10 +1,12 @@
 package tools.mo3ta.salo.ui.components
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
@@ -52,8 +54,12 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathOperation
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.layout.layout
@@ -84,6 +90,8 @@ import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_day
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_hour
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_minute
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_countdown_second
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_dedication_line1
+import tools.mo3ta.salo.generated.resources.mohamed_lovers_dedication_line2
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_info_sheet_title
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_ornament_divider
 import tools.mo3ta.salo.generated.resources.mohamed_lovers_rank_number
@@ -174,27 +182,7 @@ internal fun MohamedLoversInfoSheet(
                 .padding(horizontal = 18.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(width = 40.dp, height = 4.dp)
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(MohamedLoversPalette.GoldGlow.copy(alpha = 0.25f)),
-                )
-            }
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = stringResource(Res.string.mohamed_lovers_info_sheet_title),
-                style = TextStyle(
-                    fontFamily = MohamedLoversFonts.display,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.W500,
-                ),
-                color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.95f),
-            )
+            MohamedLoversInfoSheetHeader()
             if (!notificationsEnabled) {
                 NotificationWarningRow(onClick = { showNotifBenefits = true })
             }
@@ -237,6 +225,121 @@ internal fun MohamedLoversInfoSheet(
         }
     }
 }
+
+/** Drag handle, dedication banner, and sheet title. Shared with the banner snapshot test. */
+@Composable
+internal fun MohamedLoversInfoSheetHeader() {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(width = 40.dp, height = 4.dp)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(MohamedLoversPalette.GoldGlow.copy(alpha = 0.25f)),
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        DedicationBanner()
+        Spacer(Modifier.height(11.dp))
+        Text(
+            text = stringResource(Res.string.mohamed_lovers_info_sheet_title),
+            style = TextStyle(
+                fontFamily = MohamedLoversFonts.display,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.W500,
+            ),
+            color = MohamedLoversPalette.GoldGlow.copy(alpha = 0.95f),
+        )
+    }
+}
+
+@Composable
+private fun DedicationBanner() {
+    SheetCard {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(3.dp),
+        ) {
+            DedicationFirstLine(stringResource(Res.string.mohamed_lovers_dedication_line1))
+            Text(
+                text = stringResource(Res.string.mohamed_lovers_dedication_line2),
+                modifier = Modifier.fillMaxWidth(),
+                style = dedicationTextStyle(),
+                color = dedicationTextColor,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
+@Composable
+private fun DedicationFirstLine(text: String) {
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center,
+    ) {
+        val crescentWidth = 12.dp
+        val gap = 6.dp
+        val textMax = (maxWidth - (crescentWidth + gap) * 2).coerceAtLeast(0.dp)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            GoldCrescent(opensTowardStart = false)
+            Spacer(Modifier.width(gap))
+            Text(
+                text = text,
+                modifier = Modifier.widthIn(max = textMax),
+                style = dedicationTextStyle(),
+                color = dedicationTextColor,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.width(gap))
+            GoldCrescent(opensTowardStart = true)
+        }
+    }
+}
+
+/**
+ * Small gold crescent. [opensTowardStart] points the opening at the text so the
+ * pair bookends the line in both layout directions. Canvas coordinates stay
+ * screen-relative, so the opening is flipped for RTL.
+ */
+@Composable
+private fun GoldCrescent(opensTowardStart: Boolean) {
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val openToScreenRight = if (rtl) opensTowardStart else !opensTowardStart
+    Canvas(modifier = Modifier.size(width = 12.dp, height = 16.dp)) {
+        val radius = size.height * 0.40f
+        val shift = radius * 0.36f
+        val bodyX = if (openToScreenRight) size.width * 0.44f else size.width * 0.56f
+        val cutX = if (openToScreenRight) bodyX + shift else bodyX - shift
+        val centerY = size.height * 0.50f
+        val body = Path().apply { addOval(circle(Offset(bodyX, centerY), radius)) }
+        val cut = Path().apply { addOval(circle(Offset(cutX, centerY), radius * 0.90f)) }
+        val crescent = Path().apply { op(body, cut, PathOperation.Difference) }
+        drawPath(crescent, MohamedLoversPalette.GoldBase)
+    }
+}
+
+private fun circle(center: Offset, radius: Float) = Rect(
+    center.x - radius,
+    center.y - radius,
+    center.x + radius,
+    center.y + radius,
+)
+
+private fun dedicationTextStyle() = TextStyle(
+    fontFamily = MohamedLoversFonts.display,
+    fontWeight = FontWeight.W500,
+    fontSize = 14.sp,
+    lineHeight = 22.sp,
+    textAlign = TextAlign.Center,
+)
+
+private val dedicationTextColor
+    get() = MohamedLoversPalette.GoldGlow.copy(alpha = 0.95f)
 
 @Composable
 private fun ShareButton(state: MohamedLoversUiState) {
