@@ -3,6 +3,7 @@ package tools.mo3ta.salo.data.session
 import com.russhwolf.settings.Settings
 import tools.mo3ta.salo.data.billing.ProductRegistry
 import tools.mo3ta.salo.data.community.ExperiencesIntroStore
+import tools.mo3ta.salo.data.home.RankStripPulseStore
 
 /**
  * Wipes the identity-scoped half of local storage when an account is restored onto this device.
@@ -62,6 +63,7 @@ class LocalAccountReset(private val settings: Settings) {
             // One-shot "already seen" flags — kept so a restore does not replay every promo,
             // tooltip and announcement the user has already dismissed on this device.
             "rank_chip_tooltip_shown",
+            RankStripPulseStore.KEY_TAPPED,
             "bubble_tooltip_shown",
             "daily_lb_promo_shown",
             "top_bar_tooltips_shown",
@@ -89,6 +91,7 @@ class LocalAccountReset(private val settings: Settings) {
             // It must survive: MainActivity treats its absence as a first-ever open and calls
             // NotificationSettingsStore.initializeToOff(), which would silently switch off the
             // reminder toggles this reset just went out of its way to preserve.
+            RankStripPulseStore.KEY_LAUNCHES,
             "eng_notif_asked_at",
             "eng_review_dismiss_count",
             "salawat_variant_index",

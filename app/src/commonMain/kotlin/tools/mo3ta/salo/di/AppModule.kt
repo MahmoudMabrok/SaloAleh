@@ -38,6 +38,7 @@ import tools.mo3ta.salo.data.firebase.MohamedLoversFirebaseClient
 import tools.mo3ta.salo.data.hadith.DailyHadithStore
 import tools.mo3ta.salo.data.hadith.HadithListRepository
 import tools.mo3ta.salo.data.heart.HeartStore
+import tools.mo3ta.salo.data.home.RankStripPulseStore
 import tools.mo3ta.salo.data.language.LanguageStore
 import tools.mo3ta.salo.data.salawat.SalawatVariantStore
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
@@ -128,6 +129,7 @@ val appModule = module {
     single { LanguageStore(get()) }
     single { SalawatVariantStore(get()) }
     single { NotificationSettingsStore(get()) }
+    single { RankStripPulseStore(get()) }
     single { PremiumStore(get()) }
     single { ReferralStore(get()) }
     single { MilestoneTracker(get()) }

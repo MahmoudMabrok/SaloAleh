@@ -58,6 +58,7 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import tools.mo3ta.salo.data.billing.PremiumFeature
 import tools.mo3ta.salo.data.billing.PremiumStore
+import tools.mo3ta.salo.data.home.RankStripPulseStore
 import tools.mo3ta.salo.data.notification.NotificationSettingsStore
 import tools.mo3ta.salo.data.salawat.SalawatVariantStore
 import tools.mo3ta.salo.data.salawat.SalawatVariants
@@ -154,6 +155,7 @@ fun MohamedLoversScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     val analyticsManager: AnalyticsManager = koinInject()
     val settingsStore: NotificationSettingsStore = koinInject()
+    val rankStripPulseStore: RankStripPulseStore = koinInject()
     val salawatVariantStore: SalawatVariantStore = koinInject()
     val premiumStore: PremiumStore = koinInject()
     var showRankChip by remember { mutableStateOf(settingsStore.showRankChip) }
@@ -260,6 +262,7 @@ fun MohamedLoversScreen(
     var streakDialogCount by remember { mutableStateOf<Pair<Int, Boolean>?>(null) }
     var showMedalInfo by remember { mutableStateOf(false) }
     var showRankTooltip by remember { mutableStateOf(false) }
+    var rankStripPulse by remember { mutableStateOf(false) }
     var showBubbleTooltip by remember { mutableStateOf(false) }
     var selectedUserAchievements by remember { mutableStateOf<Pair<String, String>?>(null) }
     var showOthersAchievementsPromo by remember { mutableStateOf(false) }
@@ -280,6 +283,9 @@ fun MohamedLoversScreen(
 
     val currentUserEntry = state.topPlayers.firstOrNull { it.isCurrentUser } ?: state.selfEntry
     val rankChipVisible = showRankChip && (currentUserEntry?.rank ?: 0) > 0
+    LaunchedEffect(rankChipVisible) {
+        rankStripPulse = if (rankChipVisible) rankStripPulseStore.noteCardVisibleLaunch() else false
+    }
     LaunchedEffect(rankChipVisible, announcementsEnabled) {
         if ( rankChipVisible && !settingsStore.rankChipTooltipShown) {
             delay(1200)
@@ -391,11 +397,18 @@ fun MohamedLoversScreen(
                                         totalPlayers = state.roundPlayerCount,
                                         todayTaps = state.dailyGoalProgress,
                                         currentBadgeKey = state.currentDailyBadge,
+                                        pulse = rankStripPulse,
                                         onStripClick = {
+                                            rankStripPulseStore.markTapped()
+                                            rankStripPulse = false
                                             analyticsManager.logAction(AppAnalytics.OPEN_INFO_SHEET, mapOf(AppAnalytics.PARAM_SOURCE to "rank_strip"))
                                             infoSheetOpen = true
                                         },
-                                        onBadgeClick = { badgeTiersSheetOpen = true },
+                                        onBadgeClick = {
+                                            rankStripPulseStore.markTapped()
+                                            rankStripPulse = false
+                                            badgeTiersSheetOpen = true
+                                        },
                                     )
                                 }
                                 AnimatedVisibility(
