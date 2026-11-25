@@ -1,6 +1,7 @@
 package tools.mo3ta.salo.data.session
 
 import com.russhwolf.settings.MapSettings
+import tools.mo3ta.salo.data.home.RankStripPulseStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -42,6 +43,8 @@ class LocalAccountResetTest {
         settings.putBoolean("show_rank_chip", false)
         settings.putBoolean("top_bar_tooltips_shown", true)
         settings.putBoolean("experiences_intro_shown", true)
+        settings.putBoolean(RankStripPulseStore.KEY_TAPPED, true)
+        settings.putInt(RankStripPulseStore.KEY_LAUNCHES, 4)
         settings.putString("user_uid", "old-uid")
 
         LocalAccountReset(settings).wipeAccountData()
@@ -54,6 +57,8 @@ class LocalAccountResetTest {
         assertFalse(settings.getBoolean("show_rank_chip", true))
         assertTrue(settings.getBoolean("top_bar_tooltips_shown", false))
         assertTrue(settings.getBoolean("experiences_intro_shown", false))
+        assertTrue(settings.getBoolean(RankStripPulseStore.KEY_TAPPED, false))
+        assertEquals(4, settings.getInt(RankStripPulseStore.KEY_LAUNCHES, 0))
         assertNull(settings.getStringOrNull("user_uid"))
     }
 
