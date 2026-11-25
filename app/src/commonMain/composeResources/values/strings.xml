@@ -18,6 +18,8 @@
 
     <!-- Info Sheet -->
     <string name="mohamed_lovers_info_sheet_title">محبو محمد ﷺ</string>
+    <string name="mohamed_lovers_dedication_line1">هذا التطبيق صدقة جارية</string>
+    <string name="mohamed_lovers_dedication_line2">عن أرواح آباء وأمهات كل من يستخدمه</string>
     <string name="mohamed_lovers_status_title">الحالة</string>
     <string name="mohamed_lovers_status_waiting_network">جارٍ مزامنة الوقت من الشبكة…</string>
     <string name="mohamed_lovers_status_firebase_off">الاتصال بالخدمة غير متاح</string>

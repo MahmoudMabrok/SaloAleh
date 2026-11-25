@@ -18,6 +18,8 @@
 
     <!-- Info Sheet -->
     <string name="mohamed_lovers_info_sheet_title">爱穆罕默德 ﷺ</string>
+    <string name="mohamed_lovers_dedication_line1">本应用是一份持续的施舍</string>
+    <string name="mohamed_lovers_dedication_line2">为每一位使用者父母的灵魂</string>
     <string name="mohamed_lovers_status_title">状态</string>
     <string name="mohamed_lovers_status_waiting_network">正在同步网络时间…</string>
     <string name="mohamed_lovers_status_firebase_off">服务连接不可用</string>

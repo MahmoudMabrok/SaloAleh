@@ -18,6 +18,8 @@
 
     <!-- Info Sheet -->
     <string name="mohamed_lovers_info_sheet_title">Lovers of Muhammad &#xFDFA;</string>
+    <string name="mohamed_lovers_dedication_line1">This app is an ongoing charity</string>
+    <string name="mohamed_lovers_dedication_line2">for the souls of the fathers and mothers of everyone who uses it</string>
     <string name="mohamed_lovers_status_title">Status</string>
     <string name="mohamed_lovers_status_waiting_network">Syncing time from network&#x2026;</string>
     <string name="mohamed_lovers_status_firebase_off">Service connection unavailable</string>
