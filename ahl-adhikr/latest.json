@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-26T12:00:00Z",
-  "date": "2026-11-26",
+  "generatedAt": "2026-11-27T12:00:00Z",
+  "date": "2026-11-27",
   "source": "firebase-rtdb",
   "challenges": {
     "dhikr": {
@@ -8,13 +8,80 @@
         {
           "id": "F9240C",
           "name": "سهير",
-          "streak": 28,
+          "streak": 29,
+          "countryCode": "EG"
+        },
+        {
+          "id": "2FD00B",
+          "name": "محمود",
+          "streak": 26,
           "countryCode": "EG"
         },
         {
           "id": "9849A8",
           "name": "ايه",
+          "streak": 19,
+          "countryCode": "EG"
+        },
+        {
+          "id": "2D8012",
+          "name": "جمال",
           "streak": 18,
+          "countryCode": "EG"
+        },
+        {
+          "id": "08E153",
+          "name": "فيصل ربي اغفر لامي",
+          "streak": 15,
+          "countryCode": "SA"
+        },
+        {
+          "id": "1A4560",
+          "name": "عايدة المغربى",
+          "streak": 11,
+          "countryCode": "EG"
+        },
+        {
+          "id": "842C93",
+          "name": "امة الله",
+          "streak": 11,
+          "countryCode": "TN"
+        },
+        {
+          "id": "9078C6",
+          "name": "محب سيدنا محمد",
+          "streak": 10,
+          "countryCode": "EG"
+        },
+        {
+          "id": "C1DED9",
+          "name": "نور\") 🌷",
+          "streak": 10,
+          "countryCode": "EG"
+        },
+        {
+          "id": "089972",
+          "name": "وأغفر لأبــي 🤍🤲🏼",
+          "streak": 9,
+          "countryCode": "EG"
+        },
+        {
+          "id": "35F34C",
+          "name": "MK",
+          "streak": 8,
+          "countryCode": "EG"
+        }
+      ],
+      "30_days": [],
+      "60_days": [],
+      "90_days": []
+    },
+    "baqiyat": {
+      "7_days": [
+        {
+          "id": "F9240C",
+          "name": "سهير",
+          "streak": 27,
           "countryCode": "EG"
         },
         {
@@ -26,98 +93,30 @@
         {
           "id": "08E153",
           "name": "فيصل ربي اغفر لامي",
-          "streak": 14,
+          "streak": 15,
           "countryCode": "SA"
         },
         {
-          "id": "F80305",
-          "name": "يونس",
+          "id": "2FD00B",
+          "name": "محمود",
+          "streak": 14,
+          "countryCode": "EG"
+        },
+        {
+          "id": "1A4560",
+          "name": "عايدة المغربى",
           "streak": 11,
           "countryCode": "EG"
         },
         {
-          "id": "1A4560",
-          "name": "عايدة المغربى",
-          "streak": 10,
-          "countryCode": "EG"
-        },
-        {
           "id": "842C93",
           "name": "امة الله",
-          "streak": 10,
+          "streak": 11,
           "countryCode": "TN"
-        },
-        {
-          "id": "089972",
-          "name": "وأغفر لأبــي 🤍🤲🏼",
-          "streak": 8,
-          "countryCode": "EG"
         },
         {
           "id": "35F34C",
           "name": "MK",
-          "streak": 7,
-          "countryCode": "EG"
-        }
-      ],
-      "30_days": [
-        {
-          "id": "C84F24",
-          "name": "ماجده ابراهيم دسوقي",
-          "streak": 45,
-          "countryCode": "EG"
-        }
-      ],
-      "60_days": [],
-      "90_days": []
-    },
-    "baqiyat": {
-      "7_days": [
-        {
-          "id": "F9240C",
-          "name": "سهير",
-          "streak": 26,
-          "countryCode": "EG"
-        },
-        {
-          "id": "2D8012",
-          "name": "جمال",
-          "streak": 16,
-          "countryCode": "EG"
-        },
-        {
-          "id": "08E153",
-          "name": "فيصل ربي اغفر لامي",
-          "streak": 14,
-          "countryCode": "SA"
-        },
-        {
-          "id": "1A4560",
-          "name": "عايدة المغربى",
-          "streak": 10,
-          "countryCode": "EG"
-        },
-        {
-          "id": "842C93",
-          "name": "امة الله",
-          "streak": 10,
-          "countryCode": "TN"
-        },
-        {
-          "id": "F80305",
-          "name": "يونس",
-          "streak": 10,
-          "countryCode": "EG"
-        },
-        {
-          "id": "089972",
-          "name": "وأغفر لأبــي 🤍🤲🏼",
-          "streak": 7,
-          "countryCode": "EG"
-        },
-        {
-          "id": "C84F24",
-          "name": "ماجده ابراهيم دسوقي",
           "streak": 7,
           "countryCode": "EG"
         }
@@ -129,67 +128,72 @@
     "istighfar": {
       "7_days": [
         {
+          "id": "C1DED9",
+          "name": "نور\") 🌷",
+          "streak": 27,
+          "countryCode": "EG"
+        },
+        {
           "id": "9849A8",
           "name": "ايه",
-          "streak": 18,
+          "streak": 19,
           "countryCode": "EG"
         },
         {
           "id": "2D8012",
           "name": "جمال",
-          "streak": 17,
+          "streak": 18,
           "countryCode": "EG"
         },
         {
           "id": "08E153",
           "name": "فيصل ربي اغفر لامي",
-          "streak": 14,
+          "streak": 15,
           "countryCode": "SA"
         },
         {
-          "id": "F80305",
-          "name": "يونس",
-          "streak": 11,
+          "id": "2FD00B",
+          "name": "محمود",
+          "streak": 14,
           "countryCode": "EG"
         },
         {
           "id": "1A4560",
           "name": "عايدة المغربى",
-          "streak": 10,
+          "streak": 11,
           "countryCode": "EG"
         },
         {
           "id": "842C93",
           "name": "امة الله",
-          "streak": 10,
+          "streak": 11,
           "countryCode": "TN"
         },
         {
           "id": "FDCB3E",
           "name": "🤎",
-          "streak": 8,
+          "streak": 9,
           "countryCode": "EG"
         },
         {
-          "id": "089972",
-          "name": "وأغفر لأبــي 🤍🤲🏼",
+          "id": "35F34C",
+          "name": "MK",
           "streak": 7,
           "countryCode": "EG"
         }
       ],
-      "30_days": [
-        {
-          "id": "C84F24",
-          "name": "ماجده ابراهيم دسوقي",
-          "streak": 43,
-          "countryCode": "EG"
-        }
-      ],
+      "30_days": [],
       "60_days": [
+        {
+          "id": "4184C9",
+          "name": "الحمد لله ❤️",
+          "streak": 79,
+          "countryCode": "EG"
+        },
         {
           "id": "F9240C",
           "name": "سهير",
-          "streak": 62,
+          "streak": 63,
           "countryCode": "EG"
         }
       ],
@@ -200,126 +204,20 @@
         {
           "id": "C1DED9",
           "name": "نور\") 🌷",
-          "streak": 20,
-          "countryCode": "EG"
-        },
-        {
-          "id": "2D8012",
-          "name": "جمال",
-          "streak": 17,
-          "countryCode": "EG"
-        },
-        {
-          "id": "54D8D0",
-          "name": "سلفيه وأ فتخر",
-          "streak": 17,
+          "streak": 21,
           "countryCode": "EG"
         },
         {
           "id": "08E153",
           "name": "فيصل ربي اغفر لامي",
-          "streak": 14,
-          "countryCode": "SA"
-        },
-        {
-          "id": "F80305",
-          "name": "يونس",
-          "streak": 11,
-          "countryCode": "EG"
-        },
-        {
-          "id": "842C93",
-          "name": "امة الله",
-          "streak": 10,
-          "countryCode": "TN"
-        },
-        {
-          "id": "1A4560",
-          "name": "عايدة المغربى",
-          "streak": 9,
-          "countryCode": "EG"
-        }
-      ],
-      "30_days": [
-        {
-          "id": "C84F24",
-          "name": "ماجده ابراهيم دسوقي",
-          "streak": 45,
-          "countryCode": "EG"
-        }
-      ],
-      "60_days": [
-        {
-          "id": "F9240C",
-          "name": "سهير",
-          "streak": 73,
-          "countryCode": "EG"
-        }
-      ],
-      "90_days": []
-    },
-    "quran": {
-      "7_days": [
-        {
-          "id": "2D8012",
-          "name": "جمال",
-          "streak": 16,
-          "countryCode": "EG"
-        },
-        {
-          "id": "F80305",
-          "name": "يونس",
-          "streak": 12,
-          "countryCode": "EG"
-        },
-        {
-          "id": "08E153",
-          "name": "فيصل ربي اغفر لامي",
-          "streak": 9,
-          "countryCode": "SA"
-        },
-        {
-          "id": "1A4560",
-          "name": "عايدة المغربى",
-          "streak": 9,
-          "countryCode": "EG"
-        }
-      ],
-      "30_days": [],
-      "60_days": [],
-      "90_days": []
-    },
-    "ghars": {
-      "7_days": [
-        {
-          "id": "54D8D0",
-          "name": "سلفيه وأ فتخر",
-          "streak": 22,
-          "countryCode": "EG"
-        },
-        {
-          "id": "9849A8",
-          "name": "ايه",
-          "streak": 18,
-          "countryCode": "EG"
-        },
-        {
-          "id": "2D8012",
-          "name": "جمال",
-          "streak": 16,
-          "countryCode": "EG"
-        },
-        {
-          "id": "A84B07",
-          "name": "اسماء",
           "streak": 15,
-          "countryCode": "EG"
+          "countryCode": "SA"
         },
         {
-          "id": "08E153",
-          "name": "فيصل ربي اغفر لامي",
+          "id": "2FD00B",
+          "name": "محمود",
           "streak": 14,
-          "countryCode": "SA"
+          "countryCode": "EG"
         },
         {
           "id": "842C93",
@@ -328,27 +226,9 @@
           "countryCode": "TN"
         },
         {
-          "id": "F80305",
-          "name": "يونس",
-          "streak": 11,
-          "countryCode": "EG"
-        },
-        {
           "id": "1A4560",
           "name": "عايدة المغربى",
           "streak": 10,
-          "countryCode": "EG"
-        },
-        {
-          "id": "089972",
-          "name": "وأغفر لأبــي 🤍🤲🏼",
-          "streak": 8,
-          "countryCode": "EG"
-        },
-        {
-          "id": "FDCB3E",
-          "name": "🤎",
-          "streak": 8,
           "countryCode": "EG"
         },
         {
@@ -358,23 +238,122 @@
           "countryCode": "EG"
         }
       ],
+      "30_days": [],
+      "60_days": [
+        {
+          "id": "F9240C",
+          "name": "سهير",
+          "streak": 74,
+          "countryCode": "EG"
+        },
+        {
+          "id": "4184C9",
+          "name": "الحمد لله ❤️",
+          "streak": 73,
+          "countryCode": "EG"
+        }
+      ],
+      "90_days": []
+    },
+    "quran": {
+      "7_days": [
+        {
+          "id": "2FD00B",
+          "name": "محمود",
+          "streak": 23,
+          "countryCode": "EG"
+        },
+        {
+          "id": "2D8012",
+          "name": "جمال",
+          "streak": 17,
+          "countryCode": "EG"
+        },
+        {
+          "id": "08E153",
+          "name": "فيصل ربي اغفر لامي",
+          "streak": 10,
+          "countryCode": "SA"
+        },
+        {
+          "id": "842C93",
+          "name": "امة الله",
+          "streak": 7,
+          "countryCode": "TN"
+        }
+      ],
+      "30_days": [],
+      "60_days": [],
+      "90_days": []
+    },
+    "ghars": {
+      "7_days": [
+        {
+          "id": "2FD00B",
+          "name": "محمود",
+          "streak": 26,
+          "countryCode": "EG"
+        },
+        {
+          "id": "2D8012",
+          "name": "جمال",
+          "streak": 17,
+          "countryCode": "EG"
+        },
+        {
+          "id": "08E153",
+          "name": "فيصل ربي اغفر لامي",
+          "streak": 15,
+          "countryCode": "SA"
+        },
+        {
+          "id": "842C93",
+          "name": "امة الله",
+          "streak": 12,
+          "countryCode": "TN"
+        },
+        {
+          "id": "1A4560",
+          "name": "عايدة المغربى",
+          "streak": 11,
+          "countryCode": "EG"
+        },
+        {
+          "id": "9078C6",
+          "name": "محب سيدنا محمد",
+          "streak": 10,
+          "countryCode": "EG"
+        },
+        {
+          "id": "FDCB3E",
+          "name": "🤎",
+          "streak": 9,
+          "countryCode": "EG"
+        },
+        {
+          "id": "35F34C",
+          "name": "MK",
+          "streak": 8,
+          "countryCode": "EG"
+        }
+      ],
       "30_days": [
         {
           "id": "F9240C",
           "name": "سهير",
-          "streak": 56,
+          "streak": 57,
           "countryCode": "EG"
         },
         {
-          "id": "C84F24",
-          "name": "ماجده ابراهيم دسوقي",
-          "streak": 43,
+          "id": "4184C9",
+          "name": "الحمد لله ❤️",
+          "streak": 42,
           "countryCode": "EG"
         },
         {
           "id": "C1DED9",
           "name": "نور\") 🌷",
-          "streak": 40,
+          "streak": 41,
           "countryCode": "EG"
         }
       ],
@@ -386,6 +365,56 @@
         {
           "id": "2D8012",
           "name": "جمال",
+          "streak": 17,
+          "countryCode": "EG"
+        },
+        {
+          "id": "08E153",
+          "name": "فيصل ربي اغفر لامي",
+          "streak": 15,
+          "countryCode": "SA"
+        },
+        {
+          "id": "2FD00B",
+          "name": "محمود",
+          "streak": 14,
+          "countryCode": "EG"
+        },
+        {
+          "id": "842C93",
+          "name": "امة الله",
+          "streak": 11,
+          "countryCode": "TN"
+        },
+        {
+          "id": "1A4560",
+          "name": "عايدة المغربى",
+          "streak": 10,
+          "countryCode": "EG"
+        },
+        {
+          "id": "35F34C",
+          "name": "MK",
+          "streak": 8,
+          "countryCode": "EG"
+        }
+      ],
+      "30_days": [],
+      "60_days": [
+        {
+          "id": "F9240C",
+          "name": "سهير",
+          "streak": 80,
+          "countryCode": "EG"
+        }
+      ],
+      "90_days": []
+    },
+    "kalimat": {
+      "7_days": [
+        {
+          "id": "2D8012",
+          "name": "جمال",
           "streak": 16,
           "countryCode": "EG"
         },
@@ -396,38 +425,25 @@
           "countryCode": "SA"
         },
         {
-          "id": "F80305",
-          "name": "يونس",
+          "id": "2FD00B",
+          "name": "محمود",
+          "streak": 14,
+          "countryCode": "EG"
+        },
+        {
+          "id": "1A4560",
+          "name": "عايدة المغربى",
           "streak": 11,
           "countryCode": "EG"
         },
         {
           "id": "842C93",
           "name": "امة الله",
-          "streak": 10,
+          "streak": 11,
           "countryCode": "TN"
-        },
-        {
-          "id": "1A4560",
-          "name": "عايدة المغربى",
-          "streak": 9,
-          "countryCode": "EG"
-        },
-        {
-          "id": "35F34C",
-          "name": "MK",
-          "streak": 7,
-          "countryCode": "EG"
         }
       ],
-      "30_days": [
-        {
-          "id": "C84F24",
-          "name": "ماجده ابراهيم دسوقي",
-          "streak": 41,
-          "countryCode": "EG"
-        }
-      ],
+      "30_days": [],
       "60_days": [
         {
           "id": "F9240C",
@@ -438,110 +454,42 @@
       ],
       "90_days": []
     },
-    "kalimat": {
-      "7_days": [
-        {
-          "id": "C84F24",
-          "name": "ماجده ابراهيم دسوقي",
-          "streak": 16,
-          "countryCode": "EG"
-        },
-        {
-          "id": "2D8012",
-          "name": "جمال",
-          "streak": 15,
-          "countryCode": "EG"
-        },
-        {
-          "id": "08E153",
-          "name": "فيصل ربي اغفر لامي",
-          "streak": 13,
-          "countryCode": "SA"
-        },
-        {
-          "id": "9849A8",
-          "name": "ايه",
-          "streak": 13,
-          "countryCode": "EG"
-        },
-        {
-          "id": "F80305",
-          "name": "يونس",
-          "streak": 11,
-          "countryCode": "EG"
-        },
-        {
-          "id": "1A4560",
-          "name": "عايدة المغربى",
-          "streak": 10,
-          "countryCode": "EG"
-        },
-        {
-          "id": "842C93",
-          "name": "امة الله",
-          "streak": 10,
-          "countryCode": "TN"
-        },
-        {
-          "id": "089972",
-          "name": "وأغفر لأبــي 🤍🤲🏼",
-          "streak": 8,
-          "countryCode": "EG"
-        }
-      ],
-      "30_days": [],
-      "60_days": [
-        {
-          "id": "F9240C",
-          "name": "سهير",
-          "streak": 78,
-          "countryCode": "EG"
-        }
-      ],
-      "90_days": []
-    },
     "hawqala": {
       "7_days": [
         {
-          "id": "C84F24",
-          "name": "ماجده ابراهيم دسوقي",
+          "id": "2D8012",
+          "name": "جمال",
           "streak": 17,
           "countryCode": "EG"
         },
         {
-          "id": "2D8012",
-          "name": "جمال",
-          "streak": 16,
-          "countryCode": "EG"
-        },
-        {
           "id": "08E153",
           "name": "فيصل ربي اغفر لامي",
-          "streak": 14,
+          "streak": 15,
           "countryCode": "SA"
         },
         {
-          "id": "F80305",
-          "name": "يونس",
-          "streak": 11,
+          "id": "2FD00B",
+          "name": "محمود",
+          "streak": 14,
           "countryCode": "EG"
         },
         {
           "id": "1A4560",
           "name": "عايدة المغربى",
-          "streak": 10,
+          "streak": 11,
           "countryCode": "EG"
         },
         {
           "id": "842C93",
           "name": "امة الله",
-          "streak": 10,
+          "streak": 11,
           "countryCode": "TN"
         },
         {
-          "id": "089972",
-          "name": "وأغفر لأبــي 🤍🤲🏼",
-          "streak": 8,
+          "id": "35F34C",
+          "name": "MK",
+          "streak": 7,
           "countryCode": "EG"
         }
       ],
@@ -550,7 +498,7 @@
         {
           "id": "F9240C",
           "name": "سهير",
-          "streak": 63,
+          "streak": 64,
           "countryCode": "EG"
         }
       ],
@@ -561,7 +509,7 @@
         {
           "id": "9849A8",
           "name": "ايه",
-          "streak": 19,
+          "streak": 20,
           "countryCode": "EG"
         },
         {
@@ -579,32 +527,32 @@
         {
           "id": "08E153",
           "name": "فيصل ربي اغفر لامي",
-          "streak": 14,
+          "streak": 15,
           "countryCode": "SA"
         },
         {
           "id": "1C9BE0",
           "name": "كريمة",
-          "streak": 12,
+          "streak": 13,
           "countryCode": "DZ"
         },
         {
           "id": "842C93",
           "name": "امة الله",
-          "streak": 11,
+          "streak": 12,
           "countryCode": "TN"
+        },
+        {
+          "id": "FDCB3E",
+          "name": "🤎",
+          "streak": 12,
+          "countryCode": "EG"
         },
         {
           "id": "B8465B",
           "name": "فهد فهد فهد",
           "streak": 11,
           "countryCode": "SA"
-        },
-        {
-          "id": "FDCB3E",
-          "name": "🤎",
-          "streak": 11,
-          "countryCode": "EG"
         },
         {
           "id": "01E59E",
@@ -615,7 +563,7 @@
         {
           "id": "089972",
           "name": "وأغفر لأبــي 🤍🤲🏼",
-          "streak": 8,
+          "streak": 9,
           "countryCode": "EG"
         }
       ],
@@ -623,19 +571,19 @@
         {
           "id": "8FC0B5",
           "name": "الصاوى",
-          "streak": 53,
+          "streak": 55,
           "countryCode": "EG"
         },
         {
           "id": "54D8D0",
           "name": "سلفيه وأ فتخر",
-          "streak": 32,
+          "streak": 33,
           "countryCode": "EG"
         },
         {
           "id": "E091EC",
           "name": "توتو",
-          "streak": 32,
+          "streak": 33,
           "countryCode": "EG"
         }
       ],
@@ -649,7 +597,7 @@
         {
           "id": "C1DED9",
           "name": "نور\") 🌷",
-          "streak": 66,
+          "streak": 67,
           "countryCode": "EG"
         },
         {
@@ -663,31 +611,31 @@
         {
           "id": "2FD00B",
           "name": "محمود",
-          "streak": 133,
+          "streak": 134,
           "countryCode": "EG"
         },
         {
           "id": "F80305",
           "name": "يونس",
-          "streak": 132,
+          "streak": 133,
           "countryCode": "EG"
         },
         {
           "id": "F706BA",
           "name": "MF1979",
-          "streak": 131,
+          "streak": 132,
           "countryCode": "SA"
         },
         {
           "id": "F9240C",
           "name": "سهير",
-          "streak": 120,
+          "streak": 121,
           "countryCode": "EG"
         },
         {
           "id": "9078C6",
           "name": "محب سيدنا محمد",
-          "streak": 112,
+          "streak": 114,
           "countryCode": "EG"
         }
       ]
